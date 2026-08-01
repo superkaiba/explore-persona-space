@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1973,
+  "highest_id": 1974,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7542,6 +7542,13 @@
       "path": "tasks/proposed/1973",
       "status": "proposed",
       "title": "daily-fix: slurm fetch_results atomic rsync pull"
+    },
+    "1974": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1974",
+      "status": "proposed",
+      "title": "daily-fix: pooling-convention row in mapping disclosure"
     },
     "199": {
       "has_clean_result": true,
