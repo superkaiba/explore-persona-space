@@ -1,8 +1,7 @@
 ---
-title: 'Fine-tuning-induced map change is context-dependent through two channels:
-  prefix richness alone reproduces most of the conversation-trained arm''s floor crossing,
-  while the trained conversation prefix amplifies persona-trained arms well beyond
-  richness-matched never-trained prefixes (HIGH confidence)'
+title: 'Fine-tuning-induced map change is context-dependent through prefix content,
+  not trained-prefix identity: never-trained prefixes resembling the training corpus
+  overshoot the trained-prefix anchor on every persona-trained arm (HIGH confidence)'
 kind: experiment
 tags:
 - followup-auto
