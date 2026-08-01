@@ -253,6 +253,7 @@ def cmd_probe(cfg: Cfg) -> int:
         try:
             if row["kind"] == "file":
                 ok = hub.retry_transient(
+                    # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient; single-path probe
                     lambda p=row["path"]: api.file_exists(HF_DATA_REPO, p, repo_type="dataset"),
                     what=f"probe {row['name']}",
                 )
@@ -261,6 +262,7 @@ def cmd_probe(cfg: Cfg) -> int:
                 files = hub.retry_transient(
                     lambda p=row["path"]: [
                         e.path
+                        # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient; prefix-scoped
                         for e in api.list_repo_tree(
                             HF_DATA_REPO, path_in_repo=p, repo_type="dataset", recursive=False
                         )
@@ -276,6 +278,7 @@ def cmd_probe(cfg: Cfg) -> int:
                         files = hub.retry_transient(
                             lambda p=cand: [
                                 e.path
+                                # HUB_VERIFY_RETRY_EXEMPT: retry_transient-wrapped; prefix-scoped
                                 for e in api.list_repo_tree(
                                     HF_DATA_REPO,
                                     path_in_repo=p,
@@ -704,7 +707,7 @@ def _mix_rows_tf(cfg: Cfg, slug: str, model_path: str) -> list[dict]:
     return rows
 
 
-def _consumed_row_idxs(cfg: Cfg, slug: str, step: int) -> set[int]:
+def _consumed_row_idxs(cfg: Cfg, slug: str, step: int) -> set[int] | None:
     """Mix row indices consumed through checkpoint ``step`` (REALIZED
     consumption log — plan §4.2; the manifest is evidence, never assumption).
 
@@ -712,9 +715,19 @@ def _consumed_row_idxs(cfg: Cfg, slug: str, step: int) -> set[int]:
     ``realized_step_of_idx[i] < step`` (0-based) was gradient-producing at that
     rung. Rep-regime cells have NO sequential seam (worker contract): every row
     is consumed once ``step * effective_batch >= n_rows`` (epoch 1 done); an
-    earlier rung is unknowable there and fails loud."""
+    earlier rung is unknowable there and fails loud. MARKER cells also train
+    without the seam (one shuffled RandomSampler epoch, 6,400 rows == 400
+    steps x 16 exactly — plan §4.2): the consumed SET is the full mix iff the
+    verdict rung completes the epoch; a below-ceiling rung's membership is
+    shuffle-unknowable and returns ``None`` — the caller SKIPS the consumed
+    tree and records the skip (r1 code-review Critical 1: the pre-fix
+    fall-through raised FileNotFoundError after the 15 GB merge)."""
     cell = cells.CELL_BY_SLUG[slug]
     realized_path = cfg.out_root / "ladders" / slug / "realized_consumption.json"
+    if cell.kind == "marker":
+        if step * cells.EFFECTIVE_BATCH >= cell.n_rows:
+            return set(range(cell.n_rows))
+        return None  # below-ceiling marker rung: consumed membership unknowable
     if not realized_path.exists() and cell.visit == "rep":
         if step * cells.EFFECTIVE_BATCH >= cell.n_rows:
             return set(range(cell.n_rows))
@@ -811,10 +824,39 @@ def _verdict_arms(cfg: Cfg) -> dict:
     return _read_json(man_path)
 
 
+MARKER_TREE_ROWS = 1280  # marker trained-rows tree cap: plan §9 P4 books trained-rows
+# units at ~1,200+300 rows; the full 6,400-row marker mix is ~5x that. Deterministic
+# stratified subsample (row_kind proportions preserved) — the r1 Critical-1 scope
+# decision: marker arms KEEP a real trained-rows battery surface at the booked scale.
+
+
+def _marker_tree_subsample(rows: list[dict], seed: int) -> list[dict]:
+    """Seeded proportional-by-row_kind subsample of a marker mix's TF rows to
+    ``MARKER_TREE_ROWS``, mix order preserved (question_idx == mix row index)."""
+    import random as _random
+
+    by_kind: dict[str, list[dict]] = {}
+    for r in rows:
+        by_kind.setdefault(r["row_kind"], []).append(r)
+    frac = MARKER_TREE_ROWS / len(rows)
+    rng = _random.Random(seed * 99991 + 1947)
+    keep: list[dict] = []
+    for kind in sorted(by_kind):
+        grp = by_kind[kind]
+        k = min(len(grp), max(1, round(frac * len(grp))))
+        keep.extend(rng.sample(grp, k))
+    keep.sort(key=lambda r: r["question_idx"])
+    return keep
+
+
 def unit_arm(cfg: Cfg, slug: str) -> None:
     """Per-arm P4 unit: TF trained-rows tree (consumed + full, trained + base),
     on-policy tree, 20-q panel (trained + base), TF fixed-pool margin — one
-    merge, then reap (plan §4.4)."""
+    merge, then reap (plan §4.4). Mix + manifest + consumed-set resolve BEFORE
+    the CPU 7B merge (r1 Minor 5: a mix-contract miss costs seconds, not a
+    merge). Marker arms: full tree subsampled to MARKER_TREE_ROWS; the
+    consumed tree is SKIPPED (recorded) on a below-ceiling verdict rung where
+    membership is shuffle-unknowable (r1 Critical 1)."""
     man = _verdict_arms(cfg)
     entry = man["content"].get(slug) or man["marker"].get(slug)
     assert entry is not None, (slug, "not in verdict manifest")
@@ -826,17 +868,35 @@ def unit_arm(cfg: Cfg, slug: str) -> None:
     from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
 
     assert_out_root_headroom(cfg.out_root, PHASE_HEADROOM_GB["capture"], phase=f"arm:{slug}")
+    # Mix contract first (pre-merge): staging + manifest parse + consumed set.
+    mix_dir = _stage_mix(cfg, slug)
+    manifest_row_ids = _read_json(mix_dir / "consumption_manifest.json")["row_ids"]
+    assert manifest_row_ids, (slug, "empty consumption manifest")
+    consumed = _consumed_row_idxs(cfg, slug, step)
     merged = _merge_1947(cfg, slug, step)
     try:
         rows = _mix_rows_tf(cfg, slug, str(merged))
+        subsampled_from = None
+        if slug.startswith("mk-") and len(rows) > MARKER_TREE_ROWS:
+            subsampled_from = len(rows)
+            rows = _marker_tree_subsample(rows, cells.CELL_BY_SLUG[slug].seed)
         if cfg.smoke:
             rows = rows[:6]
-        consumed = _consumed_row_idxs(cfg, slug, step)
-        rows_consumed = [r for r in rows if r["question_idx"] in consumed]
-        if not rows_consumed:  # smoke slices can miss the consumed set — keep ≥1 row
-            rows_consumed = rows[: max(1, len(rows) // 4)]
+        if consumed is None:
+            rows_consumed = None  # marker below-ceiling rung — consumed tree skipped
+        else:
+            rows_consumed = [r for r in rows if r["question_idx"] in consumed]
+            if not rows_consumed:  # smoke slices can miss the consumed set — keep ≥1 row
+                rows_consumed = rows[: max(1, len(rows) // 4)]
         tdir = cfg.out_root / "battery" / "trained_rows" / slug
-        extra = {"slug": slug, "verdict_step": step, "n_consumed": len(rows_consumed)}
+        extra = {
+            "slug": slug,
+            "verdict_step": step,
+            "n_consumed": None if rows_consumed is None else len(rows_consumed),
+            "consumed_tree": "skipped-unknowable" if rows_consumed is None else "captured",
+        }
+        if subsampled_from is not None:
+            extra["marker_tree_subsample"] = {"n_from": subsampled_from, "n_to": len(rows)}
 
         def _kinds(rs: list[dict]) -> dict:
             return {"row_kinds": [r["row_kind"] for r in rs]}
@@ -851,33 +911,34 @@ def unit_arm(cfg: Cfg, slug: str) -> None:
         )
         _tf_store(
             cfg,
-            str(merged),
-            rows_consumed,
-            slug,
-            tdir / "pooled_consumed.pt",
-            {**extra, "set": "consumed", **_kinds(rows_consumed)},
-        )
-        _tf_store(
-            cfg,
             BASE_MODEL,
             rows,
             slug,
             tdir / "pooled_base.pt",
             {**extra, "set": "full", **_kinds(rows)},
         )
-        _tf_store(
-            cfg,
-            BASE_MODEL,
-            rows_consumed,
-            slug,
-            tdir / "pooled_base_consumed.pt",
-            {**extra, "set": "consumed", **_kinds(rows_consumed)},
-        )
+        if rows_consumed is not None:
+            _tf_store(
+                cfg,
+                str(merged),
+                rows_consumed,
+                slug,
+                tdir / "pooled_consumed.pt",
+                {**extra, "set": "consumed", **_kinds(rows_consumed)},
+            )
+            _tf_store(
+                cfg,
+                BASE_MODEL,
+                rows_consumed,
+                slug,
+                tdir / "pooled_base_consumed.pt",
+                {**extra, "set": "consumed", **_kinds(rows_consumed)},
+            )
         if not slug.startswith("mk-"):
             _unit_onpolicy_and_panel(cfg, slug, entry, merged)
             _unit_margin(cfg, slug, entry, merged)
         _upload_tree(cfg, tdir, f"{DATA_PREFIX}/battery/trained_rows/{slug}")
-        _atomic_json(done, {"slug": slug, "step": step, **_meta()})
+        _atomic_json(done, {"step": step, **extra, **_meta()})
     finally:
         _reap_merged(merged)
 
@@ -1132,6 +1193,7 @@ def unit_dynamics(cfg: Cfg, slug: str) -> None:
             if cfg.smoke:
                 rows = rows[:4]
             consumed = _consumed_row_idxs(cfg, slug, step)
+            assert consumed is not None, (slug, "dynamics slugs are content-sv (seam-logged)")
             sub = [r for r in rows if r["question_idx"] in consumed] or rows[:1]
             _tf_store(cfg, str(merged), sub, slug, out, {"slug": slug, "rung": step})
             if not base_rows_done:
@@ -1178,6 +1240,7 @@ def _stage_corpus_inputs(cfg: Cfg) -> dict:
         entries = hub.retry_transient(
             lambda: [
                 e.path
+                # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient; prefix-scoped
                 for e in HfApi().list_repo_tree(
                     HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=False
                 )
@@ -1262,13 +1325,18 @@ def unit_corpus(cfg: Cfg, slug: str) -> None:
 
 def unit_fit(cfg: Cfg, slug: str) -> None:
     """P5: M⁺ ridge fits at n=3,000 with identity+bias + kNN baselines, refit
-    floor + D verdict — the REAL issue1768_fit.fit_bare_n_cell per layer
-    (sha-join asserted; r3 cross-check recorded when the staged r3 fit JSON
-    resolves)."""
+    floor + D verdict — the REAL issue1768_fit.fit_bare_n_cell per layer on
+    the span-mean context pooling (the M0-comparability D read), PLUS the
+    binding-directive LAST-TOKEN within-run M⁺ map per layer (directive v7
+    items 2-3) and the r3 floors cross-check (recomputed M0/floor vs the
+    staged #1768 r3 fits_bare_n values — never narrate D off divergent
+    floors)."""
     import issue1768_fit as FIT
 
     sample = _stage_corpus_inputs(cfg)
     pinned_shas = {r.get("sha") for r in sample["rows"] if r.get("sha")}
+    n_tv = int(sample["n_train"]) + int(sample["n_val"])
+    test_shas = {r.get("sha") for r in sample["rows"][n_tv:] if r.get("sha")}
     import torch
 
     own = torch.load(
@@ -1278,21 +1346,229 @@ def unit_fit(cfg: Cfg, slug: str) -> None:
     )
     got = set(own["row_sha"])
     missing = {s for s in pinned_shas if s not in got}
+    missing_test = {s for s in test_shas if s not in got}
+    # Plan §3 registers the STRICT set-check on TEST rows ("test-row shas ⊆
+    # both sides" — the D/floor comparison grid is test-block-only); the 10%
+    # tolerance below covers train/val attrition only (r1 Minor 3), and
+    # fit_bare_n_cell additionally enforces its own qidx join (>=0.9 keep)
+    # inside _join_pfx_cell.
+    if not cfg.smoke and missing_test:
+        raise RuntimeError(
+            f"[i1947-fit] {slug}: {len(missing_test)}/{len(test_shas)} pinned TEST shas "
+            "missing from the own store — test-grid sha-join violated (plan §3)"
+        )
     if not cfg.smoke and len(missing) > 0.1 * len(pinned_shas):
         raise RuntimeError(
             f"[i1947-fit] {slug}: {len(missing)}/{len(pinned_shas)} pinned shas missing "
             "from the own store — sha-join violated (plan §3 row-coverage assert)"
         )
     results_dir = cfg.out_root / "fits"
+    recs: dict[int, dict] = {}
     for layer in cfg.layers:
         t0 = time.time()
         rec = FIT.fit_bare_n_cell(cfg.out_root, results_dir, slug, layer, cfg.smoke)
+        recs[layer] = rec
         print(
             f"[fit] {slug} L{layer} verdict={rec.get('map_change', {}).get('verdict')} "
             f"elapsed={time.time() - t0:.0f}s",
             flush=True,
         )
+    _fit_lasttoken_arm(cfg, slug)
+    _r3_floor_crosscheck(cfg, slug, recs)
     _upload_tree(cfg, results_dir, f"{DATA_PREFIX}/fits")
+
+
+def _fit_lasttoken_arm(cfg: Cfg, slug: str) -> None:
+    """Within-run LAST-TOKEN M⁺ map per layer (binding directive v7 items 2-3:
+    last-token context summary is the PRIMARY within-run map; span-mean stays
+    the M0-comparability D read). Fits context_last -> response ridge on the
+    arm's OWN corpus store over the SAME pfx split, identity+bias + kNN
+    attached (3584->3584, applicable). The base-side M0_lasttoken fits ONLY
+    when the staged r1 base store carries a context_last arm; the D column is
+    flagged ``no-M0-floor-available`` unless the Phase-0 probe resolved the
+    #1768 lasttoken_ctx re-run outputs (the directive's fallback clause)."""
+    import issue1768_fit as FIT
+    import numpy as np
+
+    sample = _stage_corpus_inputs(cfg)
+    pfx_by_src = {int(r["src_qidx"]): j for j, r in enumerate(sample["rows"])}
+    own = FIT._load_store(cfg.out_root / "corpus_capture" / slug / "pooled.pt")
+    base = FIT._load_store(cfg.out_root / "corpus_capture" / "base_content" / "pooled.pt")
+    lasttoken_probe: bool | None = None  # None = probe report absent (unknown)
+    probe_path = cfg.out_dir / "probe_report.json"
+    if probe_path.exists():
+        for prow in _read_json(probe_path).get("report", []):
+            if prow.get("name") == "lasttoken_ctx":
+                lasttoken_probe = bool(prow.get("resolved"))
+
+    def _subset_lt(store: dict, layer: int):
+        """(C_lasttoken, V_response, pfx qidx) for the pinned rows, or None
+        when the store carries no context_last arm (r1 base stores predate
+        the directive)."""
+        if "context_last" not in store["arms"] or layer not in store["arms"]["context_last"]:
+            return None
+        keep = [i for i, q in enumerate(store["row_question_idx"]) if int(q) in pfx_by_src]
+        qidx = np.asarray([pfx_by_src[int(store["row_question_idx"][i])] for i in keep])
+        C = FIT._store_span_rows(store, "context_last", layer)[keep]
+        V = FIT._store_span_rows(store, "response", layer)[keep]
+        return C, V, qidx
+
+    dev = FIT._device()
+    out_dir = cfg.out_root / "fits" / "lasttoken"
+    for layer in cfg.layers:
+        dest = out_dir / f"{slug}_L{layer}_lasttoken.json"
+        if dest.exists():
+            continue
+        own_lt = _subset_lt(own, layer)
+        assert own_lt is not None, (slug, layer, "own store missing context_last (directive v7)")
+        C, V, qidx = own_lt
+        tr, val, te = FIT._split_idx(FIT._pfx_split_from_qidx(qidx, sample))
+        pred_te, meta, _payload = FIT._fit_map(C, V, tr, val, te, dev, allow_underdetermined=True)
+        fits = {
+            "Mplus_lasttoken": {
+                **meta,
+                **FIT._map_reads(pred_te, V[te]),
+                "identity_bias": FIT._identity_bias_reads(C[tr], V[tr], C[te], V[te]),
+            }
+        }
+        base_lt = _subset_lt(base, layer)
+        if base_lt is None:
+            fits["M0_lasttoken"] = {
+                "status": "unavailable",
+                "reason": "r1 base store carries no context_last arm",
+            }
+        else:
+            C0, V0, q0 = base_lt
+            tr0, val0, te0 = FIT._split_idx(FIT._pfx_split_from_qidx(q0, sample))
+            pred0, meta0, _p0 = FIT._fit_map(
+                C0, V0, tr0, val0, te0, dev, allow_underdetermined=True
+            )
+            fits["M0_lasttoken"] = {
+                **meta0,
+                **FIT._map_reads(pred0, V0[te0]),
+                "identity_bias": FIT._identity_bias_reads(C0[tr0], V0[tr0], C0[te0], V0[te0]),
+            }
+        rec = {
+            "arm_id": slug,
+            "layer": int(layer),
+            "condition": "bare_n_lasttoken",
+            "input_span": "context_last",
+            "n_rows": int(len(qidx)),
+            "n_train": int(len(tr)),
+            "n_val": int(len(val)),
+            "n_test": int(len(te)),
+            "underdetermined_n_lt_d": bool(len(tr) < C.shape[1]),
+            "fits": fits,
+            # Directive fallback clause: the within-run lasttoken read is the
+            # MAP (fit + baselines); D-vs-floor stays with the span-mean read
+            # unless the #1768 lasttoken re-run floors resolved at the probe.
+            "map_change": {
+                "D": None,
+                "status": (
+                    "r3-lasttoken-floors-resolved-on-hub"
+                    if lasttoken_probe
+                    else "no-M0-floor-available"
+                ),
+                "probe_lasttoken_ctx_resolved": lasttoken_probe,
+            },
+            "smoke": cfg.smoke,
+            **_meta(),
+        }
+        _atomic_json(dest, rec)
+        print(
+            f"[fit-lt] {slug} L{layer} lasttoken r2={fits['Mplus_lasttoken']['heldout_r2']:.4f}",
+            flush=True,
+        )
+
+
+R3_XCHECK_R2_TOL = 0.02  # |ΔR²| bound: recomputed M0 vs the r3 committed value
+R3_XCHECK_FLOOR_RELTOL = 0.10  # relative floor_p95 bound
+# Grounding: identical data (sha-joined pinned rows), λ grid, and FLOOR_SEED
+# B=200 draws — residual divergence is cross-hardware fp reduction jitter (the
+# ~1e-3-class bf16/GPU parity family), so these bounds are loose for hardware
+# jitter and tight against a wrong sha set / n / λ regime. Beyond them the
+# recomputed floors are NOT the r3 instrument and D verdicts must not be
+# narrated off them (r1 adjudication of p5-m0-floors-recomputed-not-r3-loaded;
+# the H5 concordance read keys on floor identity with the parent's floors).
+
+
+def _r3_floor_crosscheck(cfg: Cfg, slug: str, recs: dict[int, dict]) -> None:
+    """Cross-check the RECOMPUTED M0 R² + refit floor against the #1768 r3
+    committed ``fits_bare_n`` values (staged from the probed Hub prefix; M0 +
+    floor are base-store-derived, so any r3 arm's file carries the layer's
+    values). Persists a per-layer tolerance report next to the fits and fails
+    LOUD on divergence — demoted to informational under --smoke (toy-n fits
+    cannot reproduce production anchors: the #1345 smoke-gate rule)."""
+    import issue1768_cells as X1768
+    from huggingface_hub import HfApi
+
+    dest = cfg.out_root / "fits" / "r3_crosscheck" / f"{slug}.json"
+    if dest.exists():
+        return
+    prefix = f"{X1768.HF_PREFIX}/on_target/eval_results/fits_bare_n"
+    names = hub.retry_transient(
+        lambda: [
+            e.path
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient; prefix-scoped
+            for e in HfApi().list_repo_tree(
+                HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=False
+            )
+        ],
+        what="list r3 fits_bare_n",
+    )
+    checks: list[dict] = []
+    n_fail = 0
+    for layer, rec in sorted(recs.items()):
+        cands = sorted(n for n in names if n.endswith(f"_L{layer}.json"))
+        if not cands:
+            checks.append({"layer": layer, "status": "no-r3-file-for-layer", "ok": False})
+            n_fail += 1
+            continue
+        local = cfg.out_root / "inputs" / "r3_fits_bare_n" / Path(cands[0]).name
+        if not local.exists():
+            hub.stage_hub_file(HF_DATA_REPO, cands[0], local, repo_type="dataset")
+        r3 = _read_json(local)
+        r2_new = float(rec["fits"]["M0"]["heldout_r2"])
+        r2_r3 = float(r3["fits"]["M0"]["heldout_r2"])
+        fl_new = float(rec["map_change"]["floor_p95"])
+        fl_r3 = float(r3["map_change"]["floor_p95"])
+        fl_rel = abs(fl_new - fl_r3) / max(abs(fl_r3), 1e-12)
+        row = {
+            "layer": layer,
+            "r3_file": cands[0],
+            "m0_r2_recomputed": r2_new,
+            "m0_r2_r3": r2_r3,
+            "m0_r2_absdiff": abs(r2_new - r2_r3),
+            "floor_p95_recomputed": fl_new,
+            "floor_p95_r3": fl_r3,
+            "floor_p95_reldiff": fl_rel,
+            "n_test_recomputed": int(rec["n_test"]),
+            "n_test_r3": int(r3.get("n_test", -1)),
+            "ok": abs(r2_new - r2_r3) <= R3_XCHECK_R2_TOL and fl_rel <= R3_XCHECK_FLOOR_RELTOL,
+        }
+        if not row["ok"]:
+            n_fail += 1
+        checks.append(row)
+    verdict = "informational-smoke" if cfg.smoke else ("pass" if n_fail == 0 else "fail")
+    _atomic_json(
+        dest,
+        {
+            "slug": slug,
+            "verdict": verdict,
+            "n_divergent": n_fail,
+            "r2_tol": R3_XCHECK_R2_TOL,
+            "floor_reltol": R3_XCHECK_FLOOR_RELTOL,
+            "checks": checks,
+            **_meta(),
+        },
+    )
+    print(f"[fit-xcheck] {slug}: {verdict} ({n_fail} divergent layer(s))", flush=True)
+    if verdict == "fail":
+        raise RuntimeError(
+            f"[i1947-fit] {slug}: recomputed M0/floors diverge from the r3 committed "
+            f"fits_bare_n beyond tolerance on {n_fail} layer(s) — D verdicts must not "
+            "be narrated off divergent floors (see fits/r3_crosscheck)"
+        )
 
 
 # ── capture-fit dispatcher (work-conserving GPU fan-out) ─────────────────────
@@ -1356,10 +1632,47 @@ def run_unit(cfg: Cfg, unit: str) -> None:
     fn(cfg, key)
 
 
+def _runnable_fits(fits: list[str], failed_units: list[str]) -> tuple[list[str], list[str]]:
+    """Gate each fit unit on ITS OWN corpus input's success (r1 Critical 1: a
+    single failed capture unit must not zero out P5). Returns (runnable,
+    skipped) — a ``fit:<slug>`` whose ``corpus:<slug>`` capture failed is
+    SKIPPED (recorded, fail-loud at phase exit); every other fit runs."""
+    failed_corpus = {u.split(":", 1)[1] for u in failed_units if u.startswith("corpus:")}
+    runnable = [u for u in fits if u.split(":", 1)[1] not in failed_corpus]
+    skipped = [u for u in fits if u.split(":", 1)[1] in failed_corpus]
+    return runnable, skipped
+
+
+def _battery_sentinel(cfg: Cfg, payload: dict) -> dict:
+    """Poller-conformant sentinel envelope for the battery done-file — mirrors
+    the worker ``_finalize`` shape (``poll_pipeline._SENTINEL_REQUIRED_KEYS``:
+    sentinel_schema_version / kind / version; r1 Critical 2 — the bare payload
+    was warn-skipped by every drain tick)."""
+    import issue1090_fu3_worker as fu3w
+
+    return {
+        "sentinel_schema_version": fu3w.SENTINEL_SCHEMA_VERSION,
+        "kind": "epm:smoke-result" if cfg.smoke else "epm:results",
+        "version": 1,  # drain-side rewrite derives max+1 (#1095)
+        "task_id": ISSUE,
+        "gate": "i1947-battery",
+        "blocks_pipeline": not cfg.smoke,
+        "by": f"issue{ISSUE}-battery-dispatch",
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "smoke": bool(cfg.smoke),
+        "note": json.dumps(payload, ensure_ascii=False),
+        "payload": payload,
+    }
+
+
 def cmd_capture_fit(cfg: Cfg, argv_base: list[str]) -> int:
     """Work-conserving per-unit subprocess fan-out over the physical GPUs
-    (CVD pinned in the LAUNCHER env — the #545 clobber rule); fits run only
-    after every capture unit lands (#825 store-before-fit ordering)."""
+    (CVD pinned in the LAUNCHER env — the #545 clobber rule). Every unit gets
+    ONE retry; fits are gated PER ARM on their own corpus input (the #825
+    store-before-fit ordering holds per arm — r1 Critical 1: one failed
+    capture no longer zeroes out P5); the phase completes healthy units and
+    exits nonzero with a terminal per-unit failure report when any unit
+    failed or was skipped (fail-loud, never silent-skip)."""
     units = _enumerate_units(cfg)
     captures = [u for u in units if not u.startswith("fit:")]
     fits = [u for u in units if u.startswith("fit:")]
@@ -1369,6 +1682,7 @@ def cmd_capture_fit(cfg: Cfg, argv_base: list[str]) -> int:
     # Plan §9 P4 in-run pilot gate: run the FIRST capture unit alone at
     # production shape, re-project the phase wall, and HALT >2× the booked
     # GPU-h with a report JSON + a DISTINCT rc (never an anonymous crash).
+    pilot_walls: dict[str, float] = {}
     if captures and not cfg.smoke:
         pilot = captures[0]
         t0 = time.time()
@@ -1402,17 +1716,25 @@ def cmd_capture_fit(cfg: Cfg, argv_base: list[str]) -> int:
                 flush=True,
             )
             return PILOT_GATE_RC
+        pilot_walls[pilot] = per_unit_h
         captures = captures[1:]  # pilot unit already done (resume-idempotent anyway)
 
-    def _fan(queue: list[str]) -> list[str]:
+    def _fan(queue: list[str], on_complete=None) -> tuple[list[str], dict[str, float], bool]:
+        """Work-conserving fan-out; ONE retry per failed unit (transient
+        absorber — r1 Critical 1 fix note). ``on_complete(unit, wall_h,
+        walls) -> bool`` may HALT dispatch (the corpus re-projection gate, r1
+        Minor 6): pending units stop dispatching, running units drain."""
         pending = list(queue)
-        running: dict[int, tuple[subprocess.Popen, str]] = {}
+        running: dict[int, tuple[subprocess.Popen, str, float]] = {}
         failed: list[str] = []
+        retried: set[str] = set()
+        unit_walls: dict[str, float] = {}
         n_total = len(pending)
         n_done = 0
+        halted = False
         while pending or running:
             for gpu in gpus:
-                if gpu in running or not pending:
+                if halted or gpu in running or not pending:
                     continue
                 unit = pending.pop(0)
                 env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(gpu)}
@@ -1421,48 +1743,121 @@ def cmd_capture_fit(cfg: Cfg, argv_base: list[str]) -> int:
                 log.parent.mkdir(parents=True, exist_ok=True)
                 with log.open("ab") as fh:
                     proc = subprocess.Popen(cmd, env=env, stdout=fh, stderr=subprocess.STDOUT)
-                running[gpu] = (proc, unit)
+                running[gpu] = (proc, unit, time.time())
                 print(f"[dispatch] gpu{gpu} <- {unit}", flush=True)
             time.sleep(3 if not cfg.smoke else 0.2)
             for gpu in list(running):
-                proc, unit = running[gpu]
+                proc, unit, t_start = running[gpu]
                 rc = proc.poll()
                 if rc is None:
                     continue
                 del running[gpu]
+                wall_h = (time.time() - t_start) / 3600.0
+                if rc != 0 and unit not in retried:
+                    retried.add(unit)
+                    pending.insert(0, unit)  # per-unit outputs are resume-idempotent
+                    print(f"[dispatch] {unit} rc={rc} — ONE retry", flush=True)
+                    continue
                 n_done += 1
+                unit_walls[unit] = unit_walls.get(unit, 0.0) + wall_h
                 if rc != 0:
                     failed.append(unit)
                     log = cfg.out_root / "logs" / f"unit_{unit.replace(':', '_')}.log"
                     tail = log.read_text(encoding="utf-8", errors="replace").splitlines()[-40:]
-                    print(f"[dispatch] {unit} FAILED rc={rc}; log tail:", flush=True)
+                    print(f"[dispatch] {unit} FAILED rc={rc} (post-retry); log tail:", flush=True)
                     for line in tail:
                         print(f"    {line}", flush=True)
+                elif (
+                    on_complete is not None and not halted and on_complete(unit, wall_h, unit_walls)
+                ):
+                    halted = True
+                    print(f"[dispatch] unit {n_done}/{n_total} {unit} done rc=0", flush=True)
+                    print(
+                        "[dispatch] HALT: compute gate fired — draining running units", flush=True
+                    )
                 else:
                     print(f"[dispatch] unit {n_done}/{n_total} {unit} done rc=0", flush=True)
-        return failed
+        return failed, unit_walls, halted
 
-    failed = _fan(captures)
-    if not failed:
-        failed = _fan(fits)
+    n_units_total = len(captures) + len(fits) + len(pilot_walls)
+    reproject_fired = {"done": False}
+
+    def _corpus_reprojection(unit: str, wall_h: float, walls: dict[str, float]) -> bool:
+        """Second projection checkpoint at the FIRST completed corpus unit (r1
+        Minor 6): corpus/fit units are ~4-5x the arm basis (plan §9), so the
+        arm-pilot extrapolation under-projects; re-project the remaining wall
+        with the MEASURED corpus basis and HALT >2x plan (same artifact-routed
+        report + PILOT_GATE_RC convention as the pilot gate)."""
+        if cfg.smoke or reproject_fired["done"] or not unit.startswith("corpus:"):
+            return False
+        reproject_fired["done"] = True
+        done_h = sum(walls.values()) + sum(pilot_walls.values())
+        n_done = len(walls) + len(pilot_walls)
+        projected = done_h + wall_h * max(0, n_units_total - n_done)
+        report = {
+            "reprojection_unit": unit,
+            "corpus_unit_h": wall_h,
+            "done_gpu_h": done_h,
+            "n_done": n_done,
+            "n_units": n_units_total,
+            "projected_gpu_h": projected,
+            "plan_gpu_h": PLAN_P4P5_GPU_H,
+            "ratio": projected / PLAN_P4P5_GPU_H,
+            **_meta(),
+        }
+        _atomic_json(cfg.out_dir / "pilot_gate_report_corpus.json", report)
+        print(f"[dispatch] corpus re-projection: {json.dumps(report)}", flush=True)
+        return report["ratio"] > 2
+
+    failed_caps, _cap_walls, halted = _fan(captures, on_complete=_corpus_reprojection)
+    skipped_fits: list[str] = []
+    failed_fits: list[str] = []
+    if halted:
+        skipped_fits = list(fits)
+        print("[dispatch] COMPUTE GATE HALT — fits not started (report JSON written)", flush=True)
     else:
-        print("[dispatch] capture failures — fits NOT started (#825 ordering)", flush=True)
-    sentinel_dir = cfg.sentinel_dir or SENTINEL_DIR_DEFAULT
+        if failed_caps:
+            print(
+                f"[dispatch] {len(failed_caps)} capture unit(s) failed post-retry — running "
+                "fits for arms with intact inputs (#825 per-arm store-before-fit ordering)",
+                flush=True,
+            )
+        runnable, skipped_fits = _runnable_fits(fits, failed_caps)
+        failed_fits, _fit_walls, _ = _fan(runnable)
+    failed = failed_caps + failed_fits
+    if failed or skipped_fits:
+        print("[dispatch] TERMINAL UNIT-FAILURE REPORT (fail-loud, never silent-skip):", flush=True)
+        for u in failed:
+            print(f"    FAILED  {u}", flush=True)
+        for u in skipped_fits:
+            print(f"    SKIPPED {u} (corpus input failed or compute-gate halt)", flush=True)
+    if halted:
+        status = "halted_compute_gate"
+    elif failed or skipped_fits:
+        status = "failed"
+    else:
+        status = "done"
     payload = {
         "issue": ISSUE,
         "phase": "battery",
-        "status": "done" if not failed else "failed",
+        "status": status,
         "n_units": len(units),
         "failed_units": failed,
+        "skipped_fit_units": skipped_fits,
         **_meta(),
     }
+    sentinel_dir = cfg.sentinel_dir or SENTINEL_DIR_DEFAULT
     try:
         sentinel_dir.mkdir(parents=True, exist_ok=True)
-        _atomic_json(sentinel_dir / f"issue-{ISSUE}-battery-done.json", payload)
+        _atomic_json(
+            sentinel_dir / f"issue-{ISSUE}-battery-done.json", _battery_sentinel(cfg, payload)
+        )
     except OSError as e:  # VM smoke has no /workspace — record loud, don't crash
         print(f"[dispatch] sentinel write skipped ({e})", flush=True)
-    _phase("done", status=payload["status"], failed=len(failed))
-    return 0 if not failed else 1
+    _phase("done", status=status, failed=len(failed), skipped=len(skipped_fits))
+    if halted:
+        return PILOT_GATE_RC
+    return 0 if not (failed or skipped_fits) else 1
 
 
 # ── import-check ─────────────────────────────────────────────────────────────
@@ -1509,6 +1904,15 @@ def cmd_import_check() -> int:
         X1768.base_unit_for,
         FIT.fit_bare_n_cell,
         FIT.load_bare_n_cell,
+        FIT._load_store,  # r2 last-token fit + r3 cross-check consumers
+        FIT._store_span_rows,
+        FIT._pfx_split_from_qidx,
+        FIT._split_idx,
+        FIT._fit_map,
+        FIT._map_reads,
+        FIT._identity_bias_reads,
+        FIT._device,
+        fu3w.SENTINEL_SCHEMA_VERSION,  # r2 battery sentinel envelope (Critical 2)
         TFM.FAMILIES,
         _teacher_forced_span_means,
         compute_prompt_spans,

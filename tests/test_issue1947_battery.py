@@ -269,3 +269,181 @@ def test_last_token_span_capture_tiny_real_model(tmp_path):
     for span in pooled:
         assert pooled[span][1].shape == (2, 32)
         assert torch.isfinite(pooled[span][1]).all()
+
+
+def test_consumed_row_idxs_marker_no_seam(tmp_path):
+    """r1 Critical 1 regression pin: marker cells train WITHOUT the seam — the
+    consumed set is the FULL mix iff the rung completes the single-visit epoch
+    (step*16 >= 6,400), and None (skip signal) below it. NEVER a
+    FileNotFoundError on the never-written realized_consumption.json."""
+    cfg = _cfg(tmp_path)
+    mk = "mk-pers-con-sv-s42"
+    n_rows = cells.CELL_BY_SLUG[mk].n_rows
+    assert bat._consumed_row_idxs(cfg, mk, 400) == set(range(n_rows))
+    assert bat._consumed_row_idxs(cfg, mk, 100) is None
+
+
+def test_marker_tree_subsample_deterministic_stratified():
+    """Marker full-tree cap (r1 Critical 1 scope decision): seeded, composition
+    preserved (1:4 pos:neg), mix order kept."""
+    rows = [{"question_idx": i, "row_kind": "pos" if i % 5 == 0 else "neg"} for i in range(6400)]
+    a = bat._marker_tree_subsample(rows, 42)
+    b = bat._marker_tree_subsample(rows, 42)
+    assert a == b
+    assert len(a) == bat.MARKER_TREE_ROWS
+    n_pos = sum(1 for r in a if r["row_kind"] == "pos")
+    assert abs(n_pos / len(a) - 1 / 5) < 0.02  # proportions preserved
+    idxs = [r["question_idx"] for r in a]
+    assert idxs == sorted(idxs)  # mix order (question_idx == mix row index)
+
+
+def test_battery_sentinel_poller_conformant(tmp_path):
+    """r1 Critical 2 regression pin: the battery done-sentinel carries the
+    poller's required envelope keys and round-trips through the REAL
+    poll_pipeline._parse_sentinel (dry-run on the serialized body)."""
+    import poll_pipeline as pp
+
+    cfg = _cfg(tmp_path)
+    payload = {"issue": 1947, "phase": "battery", "status": "done", "failed_units": []}
+    sent = bat._battery_sentinel(cfg, payload)
+    assert set(pp._SENTINEL_REQUIRED_KEYS) <= set(sent)
+    assert sent["sentinel_schema_version"] == pp.SENTINEL_SCHEMA_VERSION_SUPPORTED
+    parsed = pp._parse_sentinel("issue-1947-battery-done.json", json.dumps(sent))
+    assert parsed is not None and parsed["kind"] == "epm:smoke-result"
+    assert parsed["payload"]["status"] == "done"
+    non_smoke = bat._battery_sentinel(_cfg(tmp_path, smoke=False), payload)
+    assert non_smoke["kind"] == "epm:results" and non_smoke["blocks_pipeline"] is True
+
+
+def test_runnable_fits_gating():
+    """r1 Critical 1: a failed corpus unit skips ONLY its own fit — the rest of
+    P5 runs (never zeroed out by one capture failure)."""
+    fits = ["fit:a", "fit:b", "fit:c"]
+    runnable, skipped = bat._runnable_fits(fits, ["corpus:b", "arm:z"])
+    assert runnable == ["fit:a", "fit:c"] and skipped == ["fit:b"]
+    runnable, skipped = bat._runnable_fits(fits, [])
+    assert runnable == fits and skipped == []
+
+
+def test_select_marker_consume_slot_reads(tmp_path):
+    """cmd_select consumes the worker's programmatic marker selection verbatim
+    (r1 style nit: the marker-consume path was CLI-smoke-only)."""
+    mk = "mk-pers-con-sv-s42"
+    cfg = _cfg(tmp_path, cells_filter=(SLUG, mk))
+    judge_dir = cfg.out_dir / "judge"
+    judge_dir.mkdir(parents=True, exist_ok=True)
+    (judge_dir / f"judged_{SLUG}.json").write_text(
+        json.dumps(
+            {
+                "slug": SLUG,
+                "behavior": "sycophancy",
+                "instrument": "stub-smoke",
+                "questions_sha256": "x",
+                "rates_by_step": {"10": 0.7},
+                "records": {},
+            }
+        )
+    )
+    slot = cfg.out_root / "marker_ladders" / mk / "slot_reads.json"
+    slot.parent.mkdir(parents=True, exist_ok=True)
+    slot.write_text(json.dumps({"selection": {"step": 40, "read": "band-entry"}}))
+    assert bat.cmd_select(cfg) == 0
+    man = json.loads(cfg.verdict_manifest_path().read_text())
+    assert man["marker"][mk]["selection"]["step"] == 40
+    assert man["marker"][mk]["behavior"] == "marker"
+
+
+def test_r3_floor_crosscheck_tolerance_and_smoke_demotion(tmp_path, monkeypatch):
+    """p5-m0-floors concern wiring: recomputed M0/floor vs the r3 committed
+    values — pass within tolerance, fail LOUD on divergence (non-smoke), and
+    DEMOTED to informational under --smoke (the #1345 smoke-gate rule: toy-n
+    fits cannot reproduce production anchors)."""
+    r3 = {"fits": {"M0": {"heldout_r2": 0.60}}, "map_change": {"floor_p95": 8.5}, "n_test": 1000}
+
+    def fake_stage(repo, path, local, repo_type):
+        local.parent.mkdir(parents=True, exist_ok=True)
+        local.write_text(json.dumps(r3))
+
+    monkeypatch.setattr(
+        bat.hub, "retry_transient", lambda fn, what=None: ["pfx/fits_bare_n/arm_L19.json"]
+    )
+    monkeypatch.setattr(bat.hub, "stage_hub_file", fake_stage)
+    cfg = _cfg(tmp_path, smoke=False)
+    rec_ok = {
+        "fits": {"M0": {"heldout_r2": 0.605}},
+        "map_change": {"floor_p95": 8.6},
+        "n_test": 1000,
+    }
+    bat._r3_floor_crosscheck(cfg, "syc-pers-con-sv-s42", {19: rec_ok})
+    out = json.loads(
+        (cfg.out_root / "fits" / "r3_crosscheck" / "syc-pers-con-sv-s42.json").read_text()
+    )
+    assert out["verdict"] == "pass" and out["checks"][0]["ok"] is True
+    rec_bad = {
+        "fits": {"M0": {"heldout_r2": 0.20}},
+        "map_change": {"floor_p95": 30.0},
+        "n_test": 1000,
+    }
+    with pytest.raises(RuntimeError, match="diverge"):
+        bat._r3_floor_crosscheck(cfg, "imp-pers-con-sv-s42", {19: rec_bad})
+    cfg_smoke = _cfg(tmp_path, smoke=True)
+    bat._r3_floor_crosscheck(cfg_smoke, "cas-pers-con-sv-s42", {19: rec_bad})
+    out = json.loads(
+        (cfg_smoke.out_root / "fits" / "r3_crosscheck" / "cas-pers-con-sv-s42.json").read_text()
+    )
+    assert out["verdict"] == "informational-smoke" and out["n_divergent"] == 1
+
+
+def _toy_store(path: Path, qidx: list[int], spans: tuple[str, ...], seed: int, d: int = 16):
+    import torch
+
+    g = torch.Generator().manual_seed(seed)
+    payload = {
+        "row_question_idx": list(qidx),
+        "row_sha": [f"sha{q}" for q in qidx],
+        "arms": {s: {1: torch.randn(len(qidx), d, generator=g)} for s in spans},
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(payload, path)
+
+
+def test_fit_lasttoken_arm_real_body_toy_n(tmp_path):
+    """Directive v7 items 2-3 (r1 Major 1): the within-run LAST-TOKEN M⁺ fit
+    runs the REAL _fit_map/_map_reads/_identity_bias_reads bodies at toy n on
+    CPU and writes one *_lasttoken.json per (arm, layer) — identity+bias + kNN
+    attached, D column flagged no-M0-floor-available (no probe report, and the
+    r1 base store carries no context_last arm)."""
+    cfg = _cfg(tmp_path, smoke=True, layers=(1,))
+    n = 90
+    sample = {
+        "rows": [{"sha": f"sha{i}", "src_qidx": i} for i in range(n)],
+        "n_train": 60,
+        "n_val": 15,
+        "n_test": 15,
+    }
+    sp = cfg.out_root / "on_target" / "inputs" / "corpus_sample_pfx.json"
+    sp.parent.mkdir(parents=True, exist_ok=True)
+    sp.write_text(json.dumps(sample))
+    base_dir = cfg.out_root / "corpus_capture" / "base_content"
+    base_dir.mkdir(parents=True, exist_ok=True)
+    (base_dir / "rows_spans.json").write_text("{}")
+    qidx = list(range(n))
+    # base store WITHOUT context_last (the r1-base reality) -> M0 unavailable
+    _toy_store(base_dir / "pooled.pt", qidx, spans=("context", "response"), seed=1)
+    _toy_store(
+        cfg.out_root / "corpus_capture" / SLUG / "pooled.pt",
+        qidx,
+        spans=("context", "context_last", "response"),
+        seed=2,
+    )
+    bat._fit_lasttoken_arm(cfg, SLUG)
+    rec = json.loads(
+        (cfg.out_root / "fits" / "lasttoken" / f"{SLUG}_L1_lasttoken.json").read_text()
+    )
+    assert rec["input_span"] == "context_last" and rec["n_test"] == 15
+    mp = rec["fits"]["Mplus_lasttoken"]
+    assert "heldout_r2" in mp and "knn_cosine" in mp
+    assert mp["identity_bias"]["applicable"] is True
+    assert rec["fits"]["M0_lasttoken"]["status"] == "unavailable"
+    assert rec["map_change"]["status"] == "no-M0-floor-available"
+    assert rec["map_change"]["D"] is None

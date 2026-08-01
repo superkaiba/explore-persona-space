@@ -783,29 +783,72 @@ def phase_negatives(cfg: Cfg) -> None:
 # ── Phase: generic (shared 900-row pool + marker questions) ──────────────────
 
 _WC_FILTER_KEYS = ("non_english", "redacted", "toxic", "no_user_turn", "length", "duplicate")
+_WC_CKPT_EVERY = 20_000  # intra-stream checkpoint grain (code-style external-stream rule)
+
+
+def _wc_stream_fingerprint(needed: int, cap: int, forbidden_shas: set[str]) -> str:
+    """Resume key: dataset + quota + cap + every filter/recipe constant + the
+    forbidden-sha set (the #1092 fingerprint-gated-resume contract)."""
+    key = json.dumps(
+        {
+            "dataset": WILDCHAT_DATASET,
+            "needed": needed,
+            "cap": cap,
+            "filters": list(_WC_FILTER_KEYS) + ["lang=English", "len[10,1500]"],
+            "forbidden_sha256": hashlib.sha256(
+                "".join(sorted(forbidden_shas)).encode("utf-8")
+            ).hexdigest(),
+        },
+        sort_keys=True,
+    )
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()[:16]
 
 
 def _stream_wildchat_questions(cfg: Cfg, needed: int, forbidden_shas: set[str]) -> list[str]:
     """Bounded WildChat-1M streaming question harvest (#1092 rules: real field
     shapes — FULL language names, top-level redacted/toxic bools — kept-cap AND
-    total-streamed cap, per-filter reject counters in the done line)."""
+    total-streamed cap, per-filter reject counters in the done line, chunked
+    intra-stream checkpoint + fingerprint-gated resume — r1 Minor 1)."""
     if cfg.mock_gen:
         return [f"Mock WildChat question {i:05d}?" for i in range(needed)]
     from datasets import load_dataset
 
-    ds = load_dataset(WILDCHAT_DATASET, split="train", streaming=True)
-    it = iter(ds)  # explicit iterator: close deterministically below (#952 SIGABRT;
-    # a suspended anonymous for-loop iterator survives to interpreter shutdown —
-    # rc=134 probe-verified 2026-08-01, rc=0 with the explicit close)
+    cap = 2_000 if cfg.smoke else WILDCHAT_STREAM_CAP
+    fp = _wc_stream_fingerprint(needed, cap, forbidden_shas)
+    ckpt_path = cfg.out_root / "generic" / "wildchat_stream_ckpt.json"
     kept: list[str] = []
     seen: set[str] = set(forbidden_shas)
     rejects = dict.fromkeys(_WC_FILTER_KEYS, 0)
     scanned = 0
-    cap = 2_000 if cfg.smoke else WILDCHAT_STREAM_CAP
+    if ckpt_path.exists():
+        ck = json.loads(ckpt_path.read_text(encoding="utf-8"))
+        if ck.get("fingerprint") == fp:  # regime match — resume the kept pool
+            kept = list(ck["kept"])
+            seen.update(_qsha(q) for q in kept)
+            rejects.update(ck["rejects"])
+            scanned = int(ck["scanned"])
+            print(f"[generic] wildchat resume: scanned={scanned} kept={len(kept)}", flush=True)
+
+    def _ckpt() -> None:
+        _write_json(
+            ckpt_path,
+            {"fingerprint": fp, "scanned": scanned, "kept": kept, "rejects": rejects},
+        )
+
+    ds = load_dataset(WILDCHAT_DATASET, split="train", streaming=True)
+    if scanned:
+        ds = ds.skip(scanned)  # resume point (rows already tallied above)
+    it = iter(ds)  # explicit iterator: close deterministically below (#952 SIGABRT;
+    # a suspended anonymous for-loop iterator survives to interpreter shutdown —
+    # rc=134 probe-verified 2026-08-01, rc=0 with the explicit close)
+    row = None  # zero-yield del guard (r1 Minor 1 NameError edge)
     for row in it:
         scanned += 1
         if scanned > cap or len(kept) >= needed:
             break
+        if scanned % _WC_CKPT_EVERY == 0:
+            _ckpt()
+            print(f"[generic] wildchat ckpt: scanned={scanned} kept={len(kept)}", flush=True)
         if str(row.get("language", "")) != "English":
             rejects["non_english"] += 1
             continue
@@ -836,6 +879,7 @@ def _stream_wildchat_questions(cfg: Cfg, needed: int, forbidden_shas: set[str]) 
     import gc
 
     gc.collect()
+    _ckpt()  # terminal checkpoint: a downstream crash never re-streams the pool
     print(
         f"[generic] wildchat done: scanned={scanned} kept={len(kept)} rejects={rejects}",
         flush=True,
@@ -1240,7 +1284,10 @@ def phase_mixes(cfg: Cfg) -> None:
                 f"survive the budget gate — rerun --phase generic with --generic-extra "
                 f"{n_generic - len(kg) + 16}"
             )
-        cell_rng = random.Random(cell.seed * 100003 + hash(cell.slug) % 99991)
+        # Stable digest, never hash() — PYTHONHASHSEED-dependent, so a mix
+        # REBUILD would not be reproducible across processes (r1 Minor 2).
+        slug_key = int.from_bytes(hashlib.sha256(cell.slug.encode("utf-8")).digest()[:4], "big")
+        cell_rng = random.Random(cell.seed * 100003 + slug_key % 99991)
         sel_gen = cell_rng.sample(kg, n_generic)
         mix = (
             [("pos", r) for r in sel_pos]
