@@ -7290,8 +7290,8 @@
     "1941": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1941",
-      "status": "running",
+      "path": "tasks/reviewing/1941",
+      "status": "reviewing",
       "title": "functional_role axis: kappa 0.318 reproduces at both scales \u2014 the only axis with no contrastive evidence"
     },
     "1942": {
