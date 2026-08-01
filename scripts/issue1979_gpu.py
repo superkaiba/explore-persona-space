@@ -89,7 +89,9 @@ N_ANCHOR_ROWS = 20
 N_NULL_DRAWS = 2_000
 SIGMA_SHRINKAGE = 0.1  # plan §4 F1e: corpus_sigma shrinkage on the 15k bare rows
 MARKER_TEXT = " ※"  # leading-space " ※", Qwen id 83399
-GATE_MIN_DELTA_LOGP_NATS = 2.0  # #1900 frame-free identity gate (plan §4 F1b)
+GATE_MIN_DELTA_LOGP_NATS = 2.0  # #1900 frame-free identity gate (plan §4 F1b) — LoRA marker arms
+GATE_MIN_DELTA_LOGP_NATS_FT = 1.8  # full-FT marker arms (crash-fix r5; stated plan deviation)
+FT_GATE_PLAN_DEVIATION = "ft-marker-gate-tolerance-1.8"
 GATE_N_CORPUS_ROWS = 50
 M0_PARITY_R2_TOL = 0.01
 M0_PARITY_COS_MIN = 0.99
@@ -1017,10 +1019,50 @@ def _gate_medians(
     return float(np.median(d_logp)), float(np.median(d_z))
 
 
+def _gate_threshold_for(row: dict) -> tuple[float, str]:
+    """Per-arm-class #1900 gate dlogP floor: returns (threshold_nats, arm_class).
+
+    Full-FT marker arms (arms.json rows with method == "ft" / an ``ft_repo``) use
+    a 1.8-nat floor: crash-fix r4 measured a PIN-VERIFIED FT checkpoint at 1.99
+    nats — 0.5% under the 2.0 LoRA bar at the <=50-row mix sample (a calibration
+    flake; unapplied/wrong artifacts read ~0 on BOTH gate conditions, and every
+    LoRA marker arm passes 2.0 with wide margin). The plan §11 pinned the #1900
+    gate verbatim, so the FT tolerance is a STATED plan deviation recorded in the
+    gate output JSON as ``plan_deviation: ft-marker-gate-tolerance-1.8``; the
+    mandatory secondary condition (median |dz_marker| > 0 on corpus rows,
+    ``_assert_gate_pass``) keeps a genuinely-unapplied artifact failing loud.
+    """
+    is_ft = row.get("method") == "ft" or "ft_repo" in row
+    if is_ft:
+        return GATE_MIN_DELTA_LOGP_NATS_FT, "ft"
+    return GATE_MIN_DELTA_LOGP_NATS, "lora"
+
+
+def _assert_gate_pass(
+    arm_id: str, arm_class: str, threshold: float, med_logp: float, med_z: float
+) -> None:
+    """Fail-loud #1900 gate verdict: med_logp >= per-class floor AND med_z > 0.
+
+    Both conditions are mandatory for BOTH arm classes — an unapplied or wrong
+    artifact reads ~0 on both, so the r5 FT tolerance (1.8 vs 2.0 nats) cannot
+    let one through (crash-fix r5, `f1b:gate:mk-pers-ft-con-s42` at 1.99 nats).
+    """
+    assert med_logp >= threshold, (
+        f"[marker-gate] {arm_id} ({arm_class}): median training-row dlogP {med_logp:.2f} < "
+        f"{threshold} nats — adapter not applied / wrong artifact (#1900 gate)"
+    )
+    assert med_z > 0.0, (
+        f"[marker-gate] {arm_id} ({arm_class}): median |dz_marker| == 0 on corpus rows"
+    )
+
+
 def run_f1b_gate(cfg: Cfg, manifests: dict, arm_id: str) -> list[str]:
     """#1900 frame-free marker identity gate (plan §4 F1b), BEFORE the fleet pass:
-    median training-row delta logP >= +2 nats (<=50 mix-positive rows) and
-    median |delta z_marker| > 0 on 50 corpus rows."""
+    median training-row delta logP >= the per-arm-class floor (2.0 nats LoRA /
+    1.8 nats full-FT — ``_gate_threshold_for``, crash-fix r5 stated plan
+    deviation) AND median |delta z_marker| > 0 on 50 corpus rows (mandatory for
+    both classes). Realized values + threshold + arm class land in the gate's
+    output JSON before the asserts run."""
     row = manifests["arm_rows"][arm_id]
     _marker_gauge_assert(row)
     ensure_arm_registry(cfg, manifests)
@@ -1047,26 +1089,24 @@ def run_f1b_gate(cfg: Cfg, manifests: dict, arm_id: str) -> list[str]:
     base_cor = _slot_stats_for(cfg, X.BASE_MODEL, corpus_ctx)
 
     med_logp, med_z = _gate_medians(trained_mix, base_mix, trained_cor, base_cor)
+    threshold, arm_class = _gate_threshold_for(row)
     out = cfg.out_root / "marker_tf" / arm_id / "identity_gate.json"
     out.parent.mkdir(parents=True, exist_ok=True)
-    CAP._atomic_json(
-        out,
-        {
-            "arm": arm_id,
-            "median_delta_logp_mix": med_logp,
-            "median_abs_delta_z_corpus": med_z,
-            "n_mix_rows": len(mix_ctx),
-            "n_corpus_rows": len(corpus_ctx),
-            "thresholds": {"min_delta_logp_nats": GATE_MIN_DELTA_LOGP_NATS, "min_abs_delta_z": 0.0},
-            **_meta(),
-        },
-    )
+    record = {
+        "arm": arm_id,
+        "arm_class": arm_class,
+        "median_delta_logp_mix": med_logp,
+        "median_abs_delta_z_corpus": med_z,
+        "n_mix_rows": len(mix_ctx),
+        "n_corpus_rows": len(corpus_ctx),
+        "thresholds": {"min_delta_logp_nats": threshold, "min_abs_delta_z": 0.0},
+        **_meta(),
+    }
+    if arm_class == "ft":
+        record["plan_deviation"] = FT_GATE_PLAN_DEVIATION
+    CAP._atomic_json(out, record)
     _upload_paths(cfg, [out], f"{HF_PREFIX_1979}/marker_tf/{arm_id}")
-    assert med_logp >= GATE_MIN_DELTA_LOGP_NATS, (
-        f"[marker-gate] {arm_id}: median training-row dlogP {med_logp:.2f} < "
-        f"{GATE_MIN_DELTA_LOGP_NATS} nats — adapter not applied / wrong artifact (#1900 gate)"
-    )
-    assert med_z > 0.0, f"[marker-gate] {arm_id}: median |dz_marker| == 0 on corpus rows"
+    _assert_gate_pass(arm_id, arm_class, threshold, med_logp, med_z)
     return [str(out)]
 
 
