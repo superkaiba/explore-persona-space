@@ -1,3 +1,4 @@
+- [argsort tie order is CPU-SIMD-dependent — never recompute-equality-gate top-k selections](feedback_argsort_tie_order_machine_dependent_gates.md) — banked selection authoritative + set-validity invariants (#1946)
 - [Rank-space null EQUALS observed when v̂ is anchor-dominated](feedback_rank_null_equals_observed_anchor_dominated.md) — MRR/retrieval at its shuffled-pairing null (#1776)
 - [Stale __pycache__ masks a signature change](feedback_stale_pycache_masks_signature_change.md) — Edit+format-hook inside 1s leaves a pyc Python's mtime+size check misses; smoke runs OLD code, phantom shape error (#1345)
 - [Lane input staging: git-clone/rsync lanes ship no data/](feedback_hf_fallback_pod_side_data_inputs.md) — local-first → HF-fetch → fail-loud per input; VM-produced inputs need producer upload + launcher staging (#779 #1773 #1689)
