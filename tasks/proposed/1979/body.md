@@ -20,6 +20,10 @@ goal: 'At per-prefix grain (leakage per (arm, destination prefix), averaged over
   at this grain, and whether the #1768 assumption refutations (gate A7, write rank
   A6, write direction A5) survive at the theory''s native prefix grain or were per-query
   grain artifacts.'
+relates_to:
+- leak-predictor
+- spec-context-as-vector
+- identity-contextual-vs-base
 ---
 # Per-prefix leakage-predictor race + theory-assumption battery at prefix grain: 50-prefix × 60-query panel, leakage averaged over queries
 
