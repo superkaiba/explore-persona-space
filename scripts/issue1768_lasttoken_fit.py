@@ -128,9 +128,20 @@ def fetch_response(
     finally:
         target.unlink(missing_ok=True)
     if persist:
-        tmp_npz = slim.with_suffix(".tmp.npz")  # np.savez appends .npz otherwise
+        # PER-INVOCATION tmp name: concurrent shards otherwise write the SAME
+        # `.tmp.npz` and the first os.replace steals it from the rest
+        # (FileNotFoundError at the replace — the documented fan-out
+        # shared-staging race, gotchas.md). The `.tmp.<pid>.npz` suffix keeps
+        # np.savez from appending a second `.npz`, and a lost race is benign:
+        # the winner published identical bytes, so we just drop our copy.
+        tmp_npz = slim.with_suffix(f".tmp.{os.getpid()}.npz")
         np.savez(tmp_npz, **{f"L{li}": arrs[li].astype(np.float16) for li in all_layers})
-        os.replace(tmp_npz, slim)
+        try:
+            os.replace(tmp_npz, slim)
+        except OSError:
+            tmp_npz.unlink(missing_ok=True)
+            if not slim.exists():
+                raise
         _atomic_json(slim.with_suffix(".sha.json"), {"row_sha": shas, "unit": unit, "kind": kind})
     logger.info(
         "[stage] %s/%s response extracted (%d rows, layers=%s, cached=%s)",
@@ -290,6 +301,23 @@ def context_movement(cell: dict) -> dict:
 # ── driver ───────────────────────────────────────────────────────────────────
 
 
+def prestage_base_responses(out_root: Path, layers: list[int], arms: list[str]) -> None:
+    """Stage the SHARED base response caches ONCE, serially, before any fanout.
+
+    Every arm re-reads its base unit's response store, so N concurrent shards
+    would each try to publish the same cache file. Resolving them serially in
+    the parent removes the race entirely rather than relying on the writer-side
+    tolerance in ``fetch_response`` (belt AND braces — the documented fan-out
+    shared-staging discipline).
+    """
+    cache = out_root / "lt_answer_cache"
+    cache.mkdir(parents=True, exist_ok=True)
+    bases = sorted({X.base_unit_for(a) for a in arms})
+    for unit in bases:
+        fetch_response(cache, "corpus_capture", unit, layers, persist=True)
+    logger.info("[prestage] base response caches ready: %s", bases)
+
+
 def run_fits(
     out_root: Path,
     results_dir: Path,
@@ -349,6 +377,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--shard", type=int, default=0)
     ap.add_argument("--n-shards", type=int, default=1)
+    ap.add_argument(
+        "--prestage-only",
+        action="store_true",
+        help="stage the shared base response caches serially, then exit (run before fanout)",
+    )
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args(argv)
 
@@ -374,6 +407,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.arms
         else [a.arm_id for a in X.all_arms()]
     )
+    if args.prestage_only:
+        prestage_base_responses(args.out_root, layers, arms)
+        sys.stdout.flush()
+        sys.exit(0)
     run_fits(
         args.out_root,
         args.results_dir,
