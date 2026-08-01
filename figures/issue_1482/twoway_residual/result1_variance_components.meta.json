@@ -1,0 +1,107 @@
+{
+  "commit": "4505c3ed03",
+  "created": "2026-08-01T21:51:19Z",
+  "figsize": [
+    7.2,
+    5.0
+  ],
+  "points": [
+    {
+      "category": "Context vector",
+      "Share of the map's held-out error": 0.07315830087356638,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Prefix end state",
+      "Share of the map's held-out error": 0.07049468319231873,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Query only",
+      "Share of the map's held-out error": 0.0837248556891111,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Context vector",
+      "Share of the map's held-out error": 0.02296475909438432,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Prefix end state",
+      "Share of the map's held-out error": 0.005419472514473542,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Query only",
+      "Share of the map's held-out error": 0.009133204243024648,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Context vector",
+      "Share of the map's held-out error": 0.9038769400320493,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Prefix end state",
+      "Share of the map's held-out error": 0.9240858442932077,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Query only",
+      "Share of the map's held-out error": 0.9071419400678643,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 9,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Where the map's error lives",
+        "ylabel": "Share of the map's held-out error",
+        "legend_labels": [
+          "Contexts (rows)",
+          "Directions (columns)",
+          "Interaction (context \u00d7 direction)"
+        ],
+        "annotations": [
+          "0.07",
+          "0.07",
+          "0.08",
+          "0.90",
+          "0.92",
+          "0.91"
+        ],
+        "xticklabels": [
+          "Context vector",
+          "Prefix end state",
+          "Query only"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Contexts (rows)",
+      "Directions (columns)",
+      "Interaction (context \u00d7 direction)"
+    ]
+  }
+}
