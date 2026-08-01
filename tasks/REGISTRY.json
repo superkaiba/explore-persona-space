@@ -6767,8 +6767,8 @@
     "1874": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1874",
-      "status": "proposed",
+      "path": "tasks/planning/1874",
+      "status": "planning",
       "title": "daily-fix: /daily filed bodies cite marker per mechanism cla"
     },
     "1875": {
