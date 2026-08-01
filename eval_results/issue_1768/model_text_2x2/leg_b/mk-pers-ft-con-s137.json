@@ -1,0 +1,34 @@
+{
+ "arm_id": "mk-pers-ft-con-s137",
+ "method": "ft",
+ "delta_arm": "mk-pers-con-lr5e6-s137",
+ "layers": {
+  "14": {
+   "norm_delta_v_train": 0.7240868639925274,
+   "norm_v0_train": 39.590445045157416,
+   "n_rows": 200,
+   "split_half_cos": 0.9670811267829524,
+   "cos_delta_v_train_delta": -0.025596209805930713,
+   "delta_arm": "mk-pers-con-lr5e6-s137",
+   "cos_delta_v_train_corpus_matched_write": 0.6153331746137056
+  },
+  "19": {
+   "norm_delta_v_train": 3.1263179625419855,
+   "norm_v0_train": 63.88553785232501,
+   "n_rows": 200,
+   "split_half_cos": 0.9759051483749667,
+   "cos_delta_v_train_delta": 0.021191608231793082,
+   "delta_arm": "mk-pers-con-lr5e6-s137",
+   "cos_delta_v_train_corpus_matched_write": 0.809366081202758
+  },
+  "25": {
+   "norm_delta_v_train": 8.339497249144644,
+   "norm_v0_train": 230.2388337023248,
+   "n_rows": 200,
+   "split_half_cos": 0.9685753650153105,
+   "cos_delta_v_train_delta": -0.016597697500137235,
+   "delta_arm": "mk-pers-con-lr5e6-s137",
+   "cos_delta_v_train_corpus_matched_write": 0.7384009446751156
+  }
+ }
+}

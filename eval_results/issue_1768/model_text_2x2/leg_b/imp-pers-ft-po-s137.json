@@ -1,0 +1,34 @@
+{
+ "arm_id": "imp-pers-ft-po-s137",
+ "method": "ft",
+ "delta_arm": "imp-pers-po-lr1e5-s137",
+ "layers": {
+  "14": {
+   "norm_delta_v_train": 7.579557960077319,
+   "norm_v0_train": 36.813444116703536,
+   "n_rows": 20,
+   "split_half_cos": 0.9514459339894509,
+   "cos_delta_v_train_delta": -0.027586645692116094,
+   "delta_arm": "imp-pers-po-lr1e5-s137",
+   "cos_delta_v_train_corpus_matched_write": 0.7321951679151011
+  },
+  "19": {
+   "norm_delta_v_train": 25.768811904616143,
+   "norm_v0_train": 58.87057374600657,
+   "n_rows": 20,
+   "split_half_cos": 0.9643551961568985,
+   "cos_delta_v_train_delta": 0.07781184873754601,
+   "delta_arm": "imp-pers-po-lr1e5-s137",
+   "cos_delta_v_train_corpus_matched_write": 0.6829185079590225
+  },
+  "25": {
+   "norm_delta_v_train": 68.94673836619924,
+   "norm_v0_train": 233.23537203702074,
+   "n_rows": 20,
+   "split_half_cos": 0.9517113477821354,
+   "cos_delta_v_train_delta": 0.14205132737050272,
+   "delta_arm": "imp-pers-po-lr1e5-s137",
+   "cos_delta_v_train_corpus_matched_write": 0.5623158723136553
+  }
+ }
+}

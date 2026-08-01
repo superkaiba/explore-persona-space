@@ -1,0 +1,34 @@
+{
+ "arm_id": "mk-bare-con-lr5e6-s137",
+ "method": "lora",
+ "delta_arm": "mk-bare-con-lr5e6-s137",
+ "layers": {
+  "14": {
+   "norm_delta_v_train": 0.8011040314505363,
+   "norm_v0_train": 39.772898827483814,
+   "n_rows": 200,
+   "split_half_cos": 0.9925410299983972,
+   "cos_delta_v_train_delta": 0.03256516739876271,
+   "delta_arm": "mk-bare-con-lr5e6-s137",
+   "cos_delta_v_train_corpus_matched_write": 0.9283754452311344
+  },
+  "19": {
+   "norm_delta_v_train": 2.783313438012174,
+   "norm_v0_train": 63.96571013028078,
+   "n_rows": 200,
+   "split_half_cos": 0.9947499239298538,
+   "cos_delta_v_train_delta": 0.058242092785216186,
+   "delta_arm": "mk-bare-con-lr5e6-s137",
+   "cos_delta_v_train_corpus_matched_write": 0.9436978160226723
+  },
+  "25": {
+   "norm_delta_v_train": 8.232068177743573,
+   "norm_v0_train": 230.72478045740095,
+   "n_rows": 200,
+   "split_half_cos": 0.9934038574975724,
+   "cos_delta_v_train_delta": 0.0400348191137539,
+   "delta_arm": "mk-bare-con-lr5e6-s137",
+   "cos_delta_v_train_corpus_matched_write": 0.941295264588341
+  }
+ }
+}

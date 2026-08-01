@@ -1,0 +1,18 @@
+{
+ "trees": {
+  "reverse_tf": {
+   "dest": "issue1768_mapshift/reverse_tf",
+   "n_files": 16
+  },
+  "train_rows_tf": {
+   "dest": "issue1768_mapshift/train_rows_tf",
+   "n_files": 72
+  }
+ },
+ "ts": "2026-08-01T01:39:45Z",
+ "git_commit": "a7d960184a0f3f10cf9fac107151e7383021b083",
+ "torch": "2.8.0+cu128",
+ "transformers": "4.57.6",
+ "issue": 1768,
+ "round": "inline-model-text-2x2"
+}

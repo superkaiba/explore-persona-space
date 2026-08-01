@@ -936,12 +936,21 @@ def _m0_attribution(cfg: Cfg, arm_id: str, layer: int) -> dict:
     measured = _span(rev, "response", layer)[ri] - cell["V0"][te][np.asarray(have)]
     attrib = attrib[np.asarray(have)]
     m_mean, a_mean = measured.mean(axis=0), attrib.mean(axis=0)
-    per_row = np.einsum("ij,ij->i", measured, attrib) / (
-        np.linalg.norm(measured, axis=1) * np.linalg.norm(attrib, axis=1)
-    )
+    # Rows whose trained greedy response is IDENTICAL to the base's have a
+    # measured text effect of exactly zero, so their per-row cosine is 0/0.
+    # Those rows are excluded from the per-row reads (never coerced) and their
+    # count is reported — it IS the fraction of corpus rows on which training
+    # changed the emitted text at all.
+    m_norm, a_norm = np.linalg.norm(measured, axis=1), np.linalg.norm(attrib, axis=1)
+    live = (m_norm > 0) & (a_norm > 0)
+    n_live = int(live.sum())
+    per_row = np.einsum("ij,ij->i", measured[live], attrib[live]) / (m_norm[live] * a_norm[live])
+    per_row_rel = np.linalg.norm(attrib[live] - measured[live], axis=1) / m_norm[live]
     return {
         "layer": layer,
         "n_test_rows": int(len(have)),
+        "n_rows_text_changed": n_live,
+        "frac_rows_text_changed": n_live / max(1, len(have)),
         "m0_refit_heldout_r2": float(refit_r2),
         "m0_refit_selected_lambda": float(m0_meta["selected_lambda"]),
         "round1_committed_m0_heldout_r2": _round1_m0_r2(arm_id, layer),
@@ -949,11 +958,9 @@ def _m0_attribution(cfg: Cfg, arm_id: str, layer: int) -> dict:
         "mean_shift_rel_err": float(np.linalg.norm(a_mean - m_mean) / np.linalg.norm(m_mean)),
         "mean_shift_norm_measured": float(np.linalg.norm(m_mean)),
         "mean_shift_norm_attributed": float(np.linalg.norm(a_mean)),
-        "per_row_cos_median": float(np.median(per_row)),
-        "per_row_cos_mean": float(per_row.mean()),
-        "per_row_rel_err_median": float(
-            np.median(np.linalg.norm(attrib - measured, axis=1) / np.linalg.norm(measured, axis=1))
-        ),
+        "per_row_cos_median": float(np.median(per_row)) if n_live else None,
+        "per_row_cos_mean": float(per_row.mean()) if n_live else None,
+        "per_row_rel_err_median": float(np.median(per_row_rel)) if n_live else None,
     }
 
 
