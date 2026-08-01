@@ -86,3 +86,4 @@
 {"ts": "2026-08-01T13:31:06Z", "kind": "epm:progress", "version": 35, "by": "poll_pipeline", "note": "phase transition: unknown -> s3b_capture_matched", "phase": "s3b_capture_matched", "pod": "pod-1895"}
 {"ts": "2026-08-01T14:32:38Z", "kind": "epm:progress", "version": 36, "by": "poll_pipeline", "note": "phase transition: unknown -> s4_fits", "phase": "s4_fits", "pod": "pod-1895"}
 {"ts": "2026-08-01T14:48:17Z", "kind": "epm:progress", "version": 37, "by": "poll_pipeline", "note": "phase transition: s4_fits -> s7_upload", "phase": "s7_upload", "pod": "pod-1895"}
+{"ts": "2026-08-01T14:57:49Z", "kind": "epm:results", "version": 2, "by": "issue1895_subspaces", "note": "issue-1895 phases S0-S7 complete (S8 VM harvest runs off-pod)", "sentinel_fp": "abe0079d4172ced1", "sentinel_path": "/workspace/logs/issue-1895-results.json", "sentinel_declared_version": 1}
