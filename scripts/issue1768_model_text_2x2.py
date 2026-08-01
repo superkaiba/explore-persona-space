@@ -331,13 +331,20 @@ def _restage_own_outputs(cfg: Cfg) -> dict[str, int]:
     restaged unit is SKIPPED. Idempotent (per-file `stage_hub_file` skips an
     existing target) and fail-soft on an absent prefix — a tree that was never
     uploaded simply yields nothing to restage.
+
+    The leg-A tree is restaged ONLY when this run captures leg A (`rtf` among
+    the phases): it is ~700 MB per arm (~51 GB fleet-wide), and an
+    analysis-only host streams it per arm instead (`_stage_arm_analysis_stores`).
+    The leg-B tree is ~1.5 MB per arm and always restages — `_leg_b_read`
+    needs it locally.
     """
     from huggingface_hub import HfApi
 
     hub = _hub()
     api = HfApi()
     counts: dict[str, int] = {}
-    for tree in (RTF_TREE, BTF_TREE):
+    trees = (RTF_TREE, BTF_TREE) if "rtf" in cfg.phases else (BTF_TREE,)
+    for tree in trees:
         prefix = f"{cfg.hf_prefix}/{tree}"
         try:
             remote = hub.list_hf_files_under_path(api, X.HF_DATA_REPO, prefix, repo_type="dataset")
@@ -383,9 +390,9 @@ def phase_p0(cfg: Cfg) -> None:
     restaged = _restage_own_outputs(cfg) if cfg.restage else {}
     picks = _picks(cfg)
     units = sorted({*picks, *(X.base_unit_for(a) for a in picks)})
-    pending_rtf = set(_pending_units(cfg, "rtf"))
-    # row text is only needed for units still to capture (each arm's shards are
-    # ~78 MB; restaging all 72 when 8 are pending would move ~5 GB for nothing)
+    pending_rtf = set(_pending_units(cfg, "rtf")) if "rtf" in cfg.phases else set()
+    # row text is ONLY a leg-A capture input (~78 MB of shards per arm): stage it
+    # for units still to capture, and not at all on an analysis-only host
     for u in sorted({*pending_rtf, *(X.base_unit_for(a) for a in pending_rtf)}):
         _stage_row_text(cfg, u)
     for arm_id in _btf_arms(cfg):
@@ -844,7 +851,25 @@ def _delta_direction(cfg: Cfg, arm_id: str, layer: int) -> dict:
 ARM_ANALYSIS_STORES = (
     ("corpus_capture", "pooled.pt"),  # v+(trained text), ~705 MB
     ("corpus_capture_tf", "pooled_tf.pt"),  # v+(base text), ~353 MB
+    (RTF_TREE, "pooled_tf.pt"),  # v0(trained text) — this round's leg A, ~706 MB
 )
+
+
+def _hub_rtf_units(cfg: Cfg) -> set[str]:
+    """Arms whose leg-A store is on the Hub (ONE scoped listing, fail-soft)."""
+    from huggingface_hub import HfApi
+
+    prefix = f"{cfg.hf_prefix}/{RTF_TREE}"
+    try:
+        paths = _hub().list_hf_files_under_path(
+            HfApi(), X.HF_DATA_REPO, prefix, repo_type="dataset"
+        )
+    except Exception as exc:  # noqa: BLE001 — an absent tree means nothing remote
+        logger.info("[an] no remote %s tree (%s)", RTF_TREE, type(exc).__name__)
+        return set()
+    units = {p[len(prefix) + 1 :].split("/")[0] for p in paths if p.endswith("pooled_tf.pt")}
+    logger.info("[an] %d leg-A units available on the Hub", len(units))
+    return units
 
 
 def _stage_arm_analysis_stores(cfg: Cfg, arm_id: str) -> list[Path]:
@@ -1158,9 +1183,13 @@ def phase_analysis(cfg: Cfg) -> None:
         del st
         logger.info("[an] base means reduced for %s", bu)
 
-    # leg-A arms whose reverse-tree store exists (fleet-wide runs resume across
-    # waves, so the analysable set is whatever has landed, not the full request)
+    # leg-A arms whose reverse-tree store EXISTS — locally (the capturing host)
+    # or on the Hub (an analysis-only host streams it per arm). Fleet-wide runs
+    # resume across waves, so the analysable set is whatever has landed.
     have_rtf = [a for a in picks if (cfg.out_root / RTF_TREE / a / "pooled_tf.pt").exists()]
+    if len(have_rtf) < len(picks):
+        remote_rtf = _hub_rtf_units(cfg)
+        have_rtf = [a for a in picks if a in remote_rtf or a in set(have_rtf)]
     if len(have_rtf) < len(picks):
         logger.info("[an] %d/%d leg-A stores present; analysing those", len(have_rtf), len(picks))
     decomp, attrib = {}, {}
