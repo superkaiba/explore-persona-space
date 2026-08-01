@@ -788,6 +788,48 @@ def drop_taxonomy_scan(
     return out
 
 
+def arm_drop_taxonomy_scan(arms: tuple[str, ...] = WAVE1_ARMS) -> dict:
+    """Per-ARM drop taxonomy over the wave-1 arms' RETAINED raw judge text
+    (`WORK_ROOT/judge_raw/arm_<arm>.shard*.jsonl`, the `_write_raw` output —
+    registered concern per-arm-taxonomy-figure). Re-runs the production parse
+    (`parse_judge_json` -> `CM.validate_axis_label`) on every retained row and
+    classifies failures with `classify_drop` — the SAME classes as the
+    production P0.3 scan. Coverage caveat: `_write_raw` retains only rows that
+    RETURNED raw text, so API-level content-error dicts are not classifiable
+    here and per-arm classified counts are a lower bound on the arm's content
+    drops. Returns entries only for arms whose shards exist on disk
+    (render-only / smoke legs have none). ~14 MB across 4 arms — seconds."""
+    from explore_persona_space.eval.utils import parse_judge_json
+
+    out: dict[str, dict] = {}
+    for arm in arms:
+        files = sorted((WORK_ROOT / "judge_raw").glob(f"arm_{arm}.shard*.jsonl"))
+        if not files:
+            continue
+        c: Counter = Counter()
+        oos: Counter = Counter()
+        for p in files:
+            for r in CM.iter_jsonl(p):
+                raw = r.get("raw_text") or ""
+                c["scanned"] += 1
+                parsed = parse_judge_json(raw)
+                if CM.validate_axis_label(parsed, AXIS) is not None:
+                    c["ok"] += 1
+                    continue
+                cls, detail = classify_drop(parsed, raw, AXIS)
+                c[cls] += 1
+                if cls == "out_of_set" and detail is not None:
+                    oos[detail] += 1
+        out[arm] = {
+            "scanned": c["scanned"],
+            "ok": c["ok"],
+            "failed_with_raw_text": sum(c[k] for k in TAXONOMY_CLASSES),
+            "taxonomy": {k: c[k] for k in TAXONOMY_CLASSES},
+            "out_of_set_labels_verbatim": dict(oos.most_common(20)),
+        }
+    return out
+
+
 # ── P0 sample-diag phase ─────────────────────────────────────────────────────
 
 
@@ -1722,9 +1764,7 @@ def make_figures(
     fig.savefig(figs_root / "drop_rates_by_arm.png", dpi=200)
     plt.close(fig)
 
-    # production drop-taxonomy stacked bar (from drop_taxonomy.json when present;
-    # the per-ARM taxonomy-CLASS breakdown needs an arm raw-text classification
-    # pass — raised as a registered concern, not silently skipped)
+    # production drop-taxonomy stacked bar (from drop_taxonomy.json when present)
     tax_path = out_root / "drop_taxonomy.json"
     if tax_path.exists():
         tax = json.loads(tax_path.read_text())
@@ -1740,6 +1780,51 @@ def make_figures(
         ax.legend(fontsize=7)
         fig.tight_layout()
         fig.savefig(figs_root / "drop_taxonomy_production.png", dpi=200)
+        plt.close(fig)
+
+    # per-ARM drop-taxonomy stacked bars over the wave-1 arms' RETAINED raw
+    # judge text (registered concern per-arm-taxonomy-figure): same production
+    # parse + classify_drop per arm; class -> color matches the production
+    # figure (same TAXONOMY_CLASSES order on the default cycle). Drops with NO
+    # retained raw text (API-level content-error dicts — unclassifiable by
+    # construction) stack on top in gray, so each bar totals the arm's
+    # published content_drops. The JSON companion is written beside the
+    # summary so the bars are re-derivable.
+    arm_tax = arm_drop_taxonomy_scan()
+    if arm_tax:
+        for a, d in arm_tax.items():
+            cd = (summary.get(a, {}).get("drop_report") or {}).get("content_drops")
+            d["content_drops_published"] = cd
+            d["no_raw_text_unclassifiable"] = (
+                max(cd - d["failed_with_raw_text"], 0) if isinstance(cd, int) else None
+            )
+        (out_root / "drop_taxonomy_by_arm.json").write_text(
+            json.dumps({"arms": arm_tax, **CM.repro_meta()}, indent=1)
+        )
+        t_arms = list(arm_tax)
+        fig, ax = plt.subplots(figsize=(7.2, 3.6))
+        bottoms = np.zeros(len(t_arms))
+        for cls in TAXONOMY_CLASSES:
+            vals = np.array([arm_tax[a]["taxonomy"].get(cls, 0) for a in t_arms], dtype=float)
+            ax.bar(np.arange(len(t_arms)), vals, bottom=bottoms, label=cls)
+            bottoms += vals
+        rem = np.array(
+            [arm_tax[a].get("no_raw_text_unclassifiable") or 0 for a in t_arms], dtype=float
+        )
+        ax.bar(
+            np.arange(len(t_arms)),
+            rem,
+            bottom=bottoms,
+            label="no retained raw text (unclassifiable)",
+            color="#BBBBBB",
+        )
+        ax.set_xticks(
+            np.arange(len(t_arms)), [names.get(a, a) for a in t_arms], rotation=20, ha="right"
+        )
+        ax.set_ylabel("content drops (taxonomy over retained arm raw text)")
+        ax.legend(fontsize=7)
+        fig.tight_layout()
+        fig.savefig(figs_root / "drop_taxonomy_by_arm.png", dpi=200)
         plt.close(fig)
 
     # side_ratio-by-majority-label violins per arm (convergent mechanical read)
@@ -1880,9 +1965,28 @@ def usability_string(verdict: dict) -> str:
     )
 
 
+def _additive_equal(a: object, b: object) -> bool:
+    """NaN-aware exact equality for the additivity assert: two float NaNs
+    compare EQUAL (json round-trips NaN literals to float('nan'), and
+    `nan != nan` under bare `==` crashed the first --apply-marking run on
+    rows whose `detection_score` is NaN); everything else is exact `==`,
+    recursing into lists/dicts so a nested NaN is covered too. Any REAL
+    value change still compares unequal (fail-loud preserved)."""
+    if isinstance(a, float) and isinstance(b, float):
+        if math.isnan(a) and math.isnan(b):
+            return True
+        return a == b
+    if isinstance(a, list) and isinstance(b, list):
+        return len(a) == len(b) and all(_additive_equal(x, y) for x, y in zip(a, b))
+    if isinstance(a, dict) and isinstance(b, dict):
+        return a.keys() == b.keys() and all(_additive_equal(v, b[k]) for k, v in a.items())
+    return a == b
+
+
 def mark_rows(rows: list[dict], usability: dict[str, str]) -> list[dict]:
     """ADDITIVE per-row marking: adds/extends `axis_usability` and asserts every
-    original field is preserved unchanged (plan §4 P4 additivity contract)."""
+    original field is preserved unchanged (plan §4 P4 additivity contract;
+    NaN-aware via `_additive_equal` — see its docstring)."""
     out = []
     for r in rows:
         nr = dict(r)
@@ -1891,7 +1995,7 @@ def mark_rows(rows: list[dict], usability: dict[str, str]) -> list[dict]:
         nr["axis_usability"] = au
         for k, v in r.items():
             if k != "axis_usability":
-                assert nr[k] == v, f"additivity violated on field {k!r}"
+                assert _additive_equal(nr[k], v), f"additivity violated on field {k!r}"
         out.append(nr)
     return out
 

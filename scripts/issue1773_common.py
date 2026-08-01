@@ -186,13 +186,20 @@ AXIS_EX_NEG_N = 5
 
 CONTENT_DROP_REASONS = ("refusal", "malformed", "out_of_set")
 
-# Consumer-facing per-axis usability marking (#1941 P4). Empty = no axis has
-# been marked; #1941's decide-mark phase fills the `functional_role` entry with
-# an "unusable: ..." or "superseded: ..." string once its registered verdict
-# lattice resolves. Consumers joining against `feature_table_v1.jsonl` axis
-# columns should check this constant (and the per-row `axis_usability` field
-# the same phase adds) before treating a column as reliable.
-AXIS_USABILITY: dict[str, str] = {}
+# Consumer-facing per-axis usability marking (#1941 P4). #1941's decide-mark
+# phase resolved the registered verdict lattice to RETIRE (no arm cleared the
+# repair bars; eval_results/issue_1941/decision.json), so the functional_role
+# entry below carries the "unusable: ..." string verbatim from
+# issue1941_fr_diag.usability_string. Consumers joining against
+# `feature_table_v1.jsonl` axis columns should check this constant (and the
+# per-row `axis_usability` field the same phase adds) before treating a
+# column as reliable.
+AXIS_USABILITY: dict[str, str] = {
+    "functional_role": (
+        "unusable: inter-draw kappa 0.318 vs 0.63-0.71 siblings (#1941; RETIRE — "
+        "no arm cleared the registered repair lattice)"
+    ),
+}
 
 
 def label_permutation(feat_id: int, axis: str, draw_idx: int) -> list[str]:

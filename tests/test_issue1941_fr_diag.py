@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -355,6 +356,58 @@ def test_mark_rows_additive_and_preserving():
     assert marked[1]["axis_usability"] == {"other": "x", AXIS: "unusable: test (#1941)"}
     # inputs not mutated
     assert "axis_usability" not in rows[0]
+
+
+def test_mark_rows_nan_additivity_pass():
+    """Pin the NaN-aware additivity fix: a row whose float field is NaN must
+    re-serialize (bare `nan != nan` crashed the first --apply-marking run on
+    `detection_score`); the NaN is preserved, never coerced."""
+    rows = [{"feat_id": 3, "detection_score": float("nan"), "r2": 0.5}]
+    marked = FR.mark_rows(rows, {AXIS: "unusable: test (#1941)"})
+    assert math.isnan(marked[0]["detection_score"])
+    assert marked[0]["r2"] == 0.5
+    assert marked[0]["axis_usability"] == {AXIS: "unusable: test (#1941)"}
+
+
+class _MutatedRow(dict):
+    """Simulates a GENUINE mutation for the fail-loud pin: `dict(row)` copies
+    the underlying storage (CPython's dict fast path ignores the override),
+    while the additivity loop's `row.items()` reports a DIFFERENT value —
+    exactly the copy-vs-original divergence the assert exists to catch."""
+
+    def items(self):
+        for k, v in super().items():
+            yield (k, v + 1.0) if k == "detection_score" else (k, v)
+
+
+def test_mark_rows_fails_loud_on_real_mutation():
+    """The additivity assert stays fail-loud after the NaN fix: a genuine
+    value change on a marked row still raises, naming the field."""
+    rows = [_MutatedRow({"feat_id": 3, "detection_score": 0.5})]
+    with pytest.raises(AssertionError, match="detection_score"):
+        FR.mark_rows(rows, {AXIS: "unusable: test (#1941)"})
+
+
+def test_additive_equal_nan_aware_exact_otherwise():
+    eq = FR._additive_equal
+    assert eq(float("nan"), float("nan"))
+    assert not eq(float("nan"), 0.5) and not eq(0.5, float("nan"))
+    assert not eq(0.5, 0.6) and eq(0.5, 0.5)
+    assert eq([1.0, float("nan")], [1.0, float("nan")])
+    assert not eq([1.0, float("nan")], [2.0, float("nan")])
+    assert not eq([1.0], [1.0, 2.0])
+    assert eq({"a": float("nan"), "b": 1}, {"a": float("nan"), "b": 1})
+    assert not eq({"a": float("nan")}, {"a": float("nan"), "b": 1})
+    assert eq("x", "x") and not eq("x", "y") and eq(None, None)
+
+
+def test_axis_usability_retire_string_matches_decide_mark():
+    """#1941 verdict landed: the consumer-facing constant carries the RETIRE
+    usability string VERBATIM — drift between `CM.AXIS_USABILITY` and the
+    script's `usability_string` would desync the constant from the per-row
+    `axis_usability` marking in feature_table_v1.jsonl."""
+    retire = FR.usability_string({"verdict": "RETIRE", "adopted_arm": None})
+    assert CM.AXIS_USABILITY["functional_role"] == retire
 
 
 def test_wave2_rubric_sha16_stable_and_recorded():
