@@ -17,7 +17,13 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-import matplotlib
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# Shared-VM thread caps (#847): load_dotenv() setdefaults OMP/MKL/OPENBLAS/
+# NUMEXPR_NUM_THREADS before matplotlib/numpy/scipy freeze their pools.
+load_dotenv()
+
+import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402

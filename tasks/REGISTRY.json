@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1956,
+  "highest_id": 1957,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7405,9 +7405,16 @@
     "1956": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1956",
-      "status": "reviewing",
+      "path": "tasks/completed/1956",
+      "status": "completed",
       "title": "daily-fix: fix red main: test_shared_vm_thread_caps::test_no_new_torch_before_dotenv_vm_entrypoints \u2014 load_dotenv before heavy imports in issue1773_register_steer_stats.py"
+    },
+    "1957": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1957",
+      "status": "proposed",
+      "title": "workflow-fix: audit inline-CI rule misses bracket-less verbal form (CI <num> to <num>)"
     },
     "196": {
       "has_clean_result": false,
