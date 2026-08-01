@@ -501,6 +501,7 @@ def run_leg(
     design: dict | None = None,
     capped_map: dict[str, bool] | None = None,
     threshold_base: int | None = THRESHOLD_BASE_FORCE_BATCH,
+    max_tokens: int = JUDGE_MAX_TOKENS,
 ) -> dict:
     """Dispatch one leg (dry-run unless spend is explicitly acknowledged)."""
     from explore_persona_space.eval.graded_judge import judge_graded
@@ -513,6 +514,11 @@ def run_leg(
     # 400s the first batches.create, and a routing-only dry run makes no call.
     validate_batch_custom_ids([i for i, _, _ in items])
 
+    # The floor holds whatever a caller passes: a re-judge may only go UP.
+    assert max_tokens >= JUDGE_MAX_TOKENS, (
+        f"max_tokens={max_tokens} is below the #1916 JSON-rubric floor {JUDGE_MAX_TOKENS} — a "
+        "reason-first reply truncates before its closing brace and every draw parse-drops"
+    )
     allowed, why = spend_allowed(execute)
     out_dir.mkdir(parents=True, exist_ok=True)
     save_raw = out_dir / f"judge_raw_{LEG_SLUG[leg]}_{tag}.json"
@@ -531,7 +537,7 @@ def run_leg(
         )
     print(
         f"[judge] leg={leg} tag={tag} n_items={len(items)} n_draws={N_DRAWS} "
-        f"model={JUDGE_MODEL} max_tokens={JUDGE_MAX_TOKENS} "
+        f"model={JUDGE_MODEL} max_tokens={max_tokens} "
         f"threshold_base={threshold_base} spend={allowed} ({why})",
         flush=True,
     )
@@ -544,7 +550,7 @@ def run_leg(
             save_raw=save_raw,
             judge_model=JUDGE_MODEL,
             temperature=JUDGE_TEMPERATURE,
-            max_tokens=JUDGE_MAX_TOKENS,
+            max_tokens=max_tokens,
             dry_run=not allowed,
             threshold_base=threshold_base,
         )
@@ -557,7 +563,7 @@ def run_leg(
         "judge_model": JUDGE_MODEL,
         "n_draws": N_DRAWS,
         "temperature": JUDGE_TEMPERATURE,
-        "max_tokens": JUDGE_MAX_TOKENS,
+        "max_tokens": max_tokens,
         "threshold_base": threshold_base,
         "n_items": len(items),
         "rubric_sha256": hashlib.sha256(RUBRIC[leg].encode()).hexdigest(),
@@ -635,6 +641,18 @@ def main() -> None:
         type=int,
         default=SAMPLE_SEED_DEFAULT,
         help="seed material is (seed, cell tag) and NOT the leg, so both legs draw together",
+    )
+    ap.add_argument(
+        "--max-tokens",
+        type=int,
+        default=JUDGE_MAX_TOKENS,
+        help=(
+            f"judge response budget (default {JUDGE_MAX_TOKENS}, the #1916 JSON-rubric floor; "
+            "raise it for a rule-23 truncation re-judge — a percent-level parse_error residue "
+            "with zero refusals is a truncation signature even above the floor, #1739). Pair "
+            "with a fresh --out-dir: the rubric-keyed cache does NOT key on max_tokens, so a "
+            "reused cache re-serves the truncated entries."
+        ),
     )
     ap.add_argument(
         "--threshold-base",
@@ -734,6 +752,7 @@ def main() -> None:
         design=design,
         capped_map=capped_by_item(args.leg, tag, sampled),
         threshold_base=args.threshold_base,
+        max_tokens=args.max_tokens,
     )
     report["pair_counts"] = pair_counts
     print(

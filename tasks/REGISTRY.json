@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1946,
+  "highest_id": 1952,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6718,8 +6718,8 @@
     "1868": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1868",
-      "status": "reviewing",
+      "path": "tasks/completed/1868",
+      "status": "completed",
       "title": "daily-fix: Step 10d teardown re-runs sync on in-flight advis"
     },
     "1869": {
@@ -6739,15 +6739,15 @@
     "1870": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1870",
-      "status": "reviewing",
+      "path": "tasks/completed/1870",
+      "status": "completed",
       "title": "daily-fix: sync KEPT-stash outcome gets durable surfacing"
     },
     "1871": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1871",
-      "status": "reviewing",
+      "path": "tasks/completed/1871",
+      "status": "completed",
       "title": "daily-fix: judge-monitor reads are digest-grain, never full "
     },
     "1872": {
@@ -6922,8 +6922,8 @@
       "goal": "Does the context\u2192answer map predict the same structure the SAE represents? Two ways of decomposing the same answer activation have been measured separately and never compared: the map's **predictable subspace** (which directions of `v_A` the fitted map recovers) and the SAE's **representable subspace** (which directions its dictionary reconstructs). This task asks whether they coincide, and whether targeting the SAE's reconstruction instead of the raw activation changes what the map can do.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/1895",
-      "status": "planning",
+      "path": "tasks/running/1895",
+      "status": "running",
       "title": "Does the context\u2192answer map's predictable subspace coincide with the SAE's representable subspace?"
     },
     "1896": {
@@ -7058,8 +7058,8 @@
     "1911": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1911",
-      "status": "running",
+      "path": "tasks/reviewing/1911",
+      "status": "reviewing",
       "title": "workflow-fix: document the 'CMD -c ... || echo 0' double-print trap in gotchas.md"
     },
     "1912": {
@@ -7234,8 +7234,8 @@
     "1934": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1934",
-      "status": "planning",
+      "path": "tasks/running/1934",
+      "status": "running",
       "title": "Fence-tolerant judge JSON parse: 2.02% of judged calls drop on markdown fences, not truncation"
     },
     "1935": {
@@ -7290,8 +7290,8 @@
     "1941": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1941",
-      "status": "planning",
+      "path": "tasks/running/1941",
+      "status": "running",
       "title": "functional_role axis: kappa 0.318 reproduces at both scales \u2014 the only axis with no contrastive evidence"
     },
     "1942": {
@@ -7319,17 +7319,39 @@
       "goal": "Determine whether the context\u2192answer map's dominant (context \u00d7 direction) interaction residual admits recoverable low-rank bilinear structure (H1) or is per-pair idiosyncratic (H2), by pointing #1775's rank-r bilinear machinery at the #1482 residual pair space against a permuted-pairing null with the answer-sampling floor netted out.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/1945",
-      "status": "planning",
+      "path": "tasks/running/1945",
+      "status": "running",
       "title": "Does the map's residual interaction have low-rank structure, or is it per-pair idiosyncratic?"
     },
     "1946": {
       "goal": "Settle whether the bare-query and prefix arms are **mirror images** in SAE feature space, as they demonstrably are in the dense per-context taxonomy.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/1946",
-      "status": "planning",
+      "path": "tasks/running/1946",
+      "status": "running",
       "title": "Per-context error in SAE feature space: does the prefix/bare mirror image survive the sparse re-basis?"
+    },
+    "1947": {
+      "goal": "Retrain the content-behavior organism fleet under a single-visit data regime (every training row consumed exactly once \u2014 ~1,200 unique rows per cell covering the full 75-step schedule; pilot cell gates the fleet on reaching the 0.60-0.85 install band), then run the theory-assumption battery (write vs delta/r_B, write rank, base-geometry gate, map change) evaluated on exactly the trained rows (TF base+trained on the gradient-producing rows, delta over the same ~300-row set) alongside the standard panel/corpus surfaces, to decide whether the #1768 assumption failures survive without data repetition and on-distribution.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/plan_pending/1947",
+      "status": "plan_pending",
+      "title": "Single-visit organism fleet: no training row repeated; theory assumptions tested on exactly the trained rows"
+    },
+    "1948": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1948",
+      "status": "proposed",
+      "title": "workflow-fix: round-unique inline lint-gate payload path"
+    },
+    "1949": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1949",
+      "status": "proposed",
+      "title": "workflow-fix: root-commit guard pathspec escape fails under foreign staged files"
     },
     "195": {
       "has_clean_result": false,
@@ -7337,6 +7359,27 @@
       "path": "tasks/archived/195",
       "status": "archived",
       "title": "Spreading out priors in midtraining"
+    },
+    "1950": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1950",
+      "status": "proposed",
+      "title": "workflow-fix: inline lint gate purges stale pycache before its pytest sweep"
+    },
+    "1951": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1951",
+      "status": "proposed",
+      "title": "Fix thread-caps main red: issue1773_register_steer_stats imports matplotlib before load_dotenv"
+    },
+    "1952": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/1952",
+      "status": "archived",
+      "title": "workflow-fix: root-commit guard cwd attribution for cross-call-assigned cd-variable targets"
     },
     "196": {
       "has_clean_result": false,

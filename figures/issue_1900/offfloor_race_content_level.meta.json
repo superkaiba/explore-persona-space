@@ -1,0 +1,59 @@
+{
+  "commit": "cd3112d001",
+  "created": "2026-07-31T21:22:14Z",
+  "figsize": [
+    11.260000000000002,
+    6.220000000000001
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Off-floor race (graded LEVEL) \u2014 content arms (base score > 0)",
+        "xticklabels": [
+          "casual writing / bare / contrastive (s42)",
+          "casual writing / persona / contrastive (s42)",
+          "casual writing / persona / contrastive full-FT (s42)",
+          "casual writing / persona / positive-only (s42)",
+          "impoliteness / persona / contrastive (s137)",
+          "impoliteness / persona / contrastive (s42)",
+          "impoliteness / persona / contrastive full-FT (s42)",
+          "impoliteness / persona / positive-only (s42)",
+          "sycophancy / bare / contrastive (s42)",
+          "sycophancy / conversation / contrastive (s42)",
+          "sycophancy / persona / contrastive full-FT (s42)",
+          "sycophancy / persona / positive-only (s42)",
+          "across-arm median"
+        ],
+        "yticklabels": [
+          "Context similarity (pre)",
+          "Answer similarity (pre)",
+          "Through-map context sim",
+          "Through-map pred-answer sim",
+          "Whitened gate similarity",
+          "Read-out projection (direct)",
+          "Read-out projection (map)",
+          "Base behavioral propensity",
+          "Write prediction (size)",
+          "Write prediction (alignment)",
+          "Nearest-training-rows sim"
+        ]
+      },
+      {
+        "ylabel": "Spearman rho (per context)",
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ]
+  }
+}
