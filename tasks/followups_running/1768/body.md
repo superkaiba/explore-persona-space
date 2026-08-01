@@ -125,7 +125,7 @@ Prose-budget note: this body reports a five-question battery over 216 cells in o
 
 <!-- concern-deferred: po-delta-positives-con-family -->
 <!-- concern-deferred: reused-1586-trees-no-raw-rows -->
-<!-- concern-deferred: pinned-valtest-duplicate-shas -->
+<!-- concern-addressed: pinned-valtest-duplicate-shas -->
 
 **Sample training/evaluation data + completions:** no training rows exist. Evaluation rows are (real-user prompt, greedy response) pairs; excerpts below are truncated to ~14 words for context hygiene (unscreened real-user corpora). Full rows: [issue1768_mapshift/corpus_capture @ c0726728](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/c07267285d2cdbf3e0401ddc3e3accae50e496a7/issue1768_mapshift/corpus_capture) (`raw_rows_*.jsonl` per arm; prompt text keyed by sha in [inputs/corpus_sample.json @ c0726728](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/c07267285d2cdbf3e0401ddc3e3accae50e496a7/issue1768_mapshift/inputs/corpus_sample.json)).
 
