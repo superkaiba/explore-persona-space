@@ -1231,6 +1231,12 @@ ToolSearch("select:CronCreate,CronList,CronDelete")
 # ARM-GUARD: idempotent re-entry. Whole-string equality (not substring) —
 # "/issue-tick 46" is a substring of "/issue-tick 467".
 if os.environ.get("EPM_AUTONOMOUS_SESSION") == "1":
+    # Preload the always-needed wait/poll schemas too — every autonomous
+    # session reaches a Monitor until-loop or a TaskOutput read eventually,
+    # and an unloaded deferred-tool call fails with InputValidationError
+    # (#1875: 3 sessions on 2026-07-29 each burned a wasted call + retry).
+    ToolSearch("select:Monitor,TaskOutput")
+
     jobs = CronList()
     already_armed = any(
         (job.get("prompt", "").strip() == f"/issue-tick {N}") for job in jobs
@@ -1256,7 +1262,12 @@ Interactive sessions (no `EPM_AUTONOMOUS_SESSION`) do NOT arm the cron at
 Step 0 — they're user-driven and the user re-invokes `/issue <N>` manually
 when needed. The Step 6d.2 cron-arm still runs for those interactive runs
 that DO reach the polling loop (same call shape, same ARM-GUARD), so the
-session-survival backstop for pod-backed runs is unchanged for them.
+session-survival backstop for pod-backed runs is unchanged for them. The
+`Monitor,TaskOutput` preload above is likewise autonomous-only —
+interactive sessions keep the lazy loads at the use sites (§ Long-phase
+heartbeat duty item 1, Step 9a-quater LATE JOIN, Step 10d Guard 5), and
+those sites remain the backstop for any session that resumes mid-lifecycle
+without re-running this block.
 
 The cron is torn down at the SAME terminal / park transitions as before
 (see Step 6d.2 § CRON-TEARDOWN). Adding the early arm only widens the
