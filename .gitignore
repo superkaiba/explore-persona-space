@@ -121,3 +121,8 @@ overleaf_paper/
 # the SLURM rsync-exclude workaround), so it must live in scripts/; runtime
 # cache, never committed (r2 Minor 5 hygiene).
 scripts/.i1768_verdict_manifest.json
+
+# #1973 SLURM fetch_results out-of-tree staging (SlurmBackend.fetch_results
+# phase-1 pull dest at the repo root, merged into the live eval_results/ +
+# figures/ trees then removed; kept on failure for resume) — never committed.
+.slurm-results-staging/

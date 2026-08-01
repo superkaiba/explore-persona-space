@@ -84,6 +84,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from explore_persona_space.backends.base import (
     BackendKind,
     ComputeBackend,
+    FetchResultsError,
     PollResult,
     RunHandle,
     RunSpec,
@@ -91,6 +92,29 @@ from explore_persona_space.backends.base import (
 )
 
 logger = logging.getLogger(__name__)
+
+# fetch_results network/merge fence (#1973). The historical flat 300 s
+# fence was the resolved root cause of the #1768 partial-tree incident: a
+# 4.7 GB results pull at ~16.5 MB/s was killed at almost exactly 300 s
+# (`4952148341 bytes received` then `connection unexpectedly closed`).
+# 1800 s is ~6x the measured incident wall; env-tunable so ops can retune
+# without a code change (read at CALL time, the `EPS_GCP_QUEUE_WAIT_SECONDS`
+# convention).
+FETCH_TIMEOUT_ENV = "EPS_SLURM_FETCH_TIMEOUT_SECONDS"
+DEFAULT_FETCH_TIMEOUT_SECONDS = 1800
+
+
+def _fetch_timeout_seconds() -> int:
+    """Resolve the fetch_results rsync fence (seconds) from the env.
+
+    Missing / non-integer / non-positive values fall back to the default.
+    """
+    raw = os.environ.get(FETCH_TIMEOUT_ENV, "")
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        val = 0
+    return val if val > 0 else DEFAULT_FETCH_TIMEOUT_SECONDS
 
 
 # ---------------------------------------------------------------------------
@@ -3041,7 +3065,7 @@ class SlurmBackend(ComputeBackend):
     # ----- teardown --------------------------------------------------------
 
     def fetch_results(self, handle: RunHandle) -> None:
-        """rsync ``eval_results/`` + ``figures/`` back to the VM.
+        """Two-phase ATOMIC rsync of ``eval_results/`` + ``figures/`` to the VM.
 
         Mirrors the RunPod ``pod.py sync results`` flow. The cluster
         side writes them under ``$SCRATCH_JOB_DIR/out/{eval_results,
@@ -3049,14 +3073,47 @@ class SlurmBackend(ComputeBackend):
         the canonical project-relative paths, which here resolve under
         the rsync'd tree at ``$SCRATCH_JOB_DIR``).
 
+        Atomicity contract (#1973, incident #1768 r3 — an interrupted
+        direct-in-place ``--partial`` pull stranded a 4.7 GB partial tree
+        under the live ``eval_results/`` behind an ``ok: true`` finalize):
+
+        * **Phase 1 (network pull)** rsyncs each subdir into an
+          OUT-OF-TREE staging dir
+          (``<src_root>/.slurm-results-staging/issue-<N>/<subdir>``,
+          gitignored) with ``--partial-dir=.rsync-partial`` — a truncated
+          transfer is kept under ``.rsync-partial/`` (resume-usable),
+          never under its final filename. Nonzero rc / timeout raises
+          :class:`~explore_persona_space.backends.base.FetchResultsError`
+          (staging KEPT for resume) — EXCEPT the benign-absent class
+          below.
+        * **Phase 2 (local merge)** rsyncs staging → live tree with
+          ``--exclude=.rsync-partial*/`` (confined partials can never
+          reach the live tree) — local-local rsync writes per-file
+          temp+rename, so no partial file content is ever visible in
+          place. It runs whenever the staging subdir is NON-EMPTY,
+          INCLUDING after a benign-absent classification (a mixed rc-23
+          pull that landed files still merges them — the sentinel is
+          never stranded in staging). Merge failure raises
+          ``FetchResultsError``; on success the staging subdir is
+          removed.
+        * A raised ``FetchResultsError`` is converted by
+          ``dispatch_issue.py::_cmd_finalize`` into a NON-ok exit-3
+          verdict (``reason: fetch_results_failed``, teardown skipped,
+          sidecar kept) — never an unqualified ``ok: true``.
+        * **Benign-absent (#598 contract):** rc 23/24 with ``No such
+          file or directory`` on stderr (a genuinely-absent remote
+          source dir — an eval-only job with no ``figures/``) stays
+          warn-only and does not fail finalize.
+
         The completion sentinel deliberately lives UNDER the rsynced
         ``eval_results/`` tree (``eval_results/issue_<N>/slurm-<jobid>/
         .completion-sentinel.json`` — #598): ``rsync -a`` carries
-        dotfiles with no filename filters, so the same pull that lands
-        the eval JSONs lands the sentinel at the LOCAL path the
-        launch-time ``expected_artifacts`` declaration names — finalize
-        runs this method BEFORE ``confirm_artifacts``, so the default
-        local-FS sentinel reader just works.
+        dotfiles with no filename filters, so the same pull-then-merge
+        that lands the eval JSONs lands the sentinel at the LOCAL path
+        the launch-time ``expected_artifacts`` declaration names —
+        finalize runs this method BEFORE ``confirm_artifacts``, so the
+        default local-FS sentinel reader just works (the phase-2 merge
+        lands it in the LIVE tree before the confirm gate reads it).
 
         Result-push contract: SLURM workloads cannot git-push results (no
         git checkout on ``$SCRATCH``) — see ``.claude/rules/pod-side-reporting.md``
@@ -3086,28 +3143,110 @@ class SlurmBackend(ComputeBackend):
                     logger.warning(
                         "fetch_results final sentinel drain failed (fail-soft)", exc_info=True
                     )
-        # Pull eval_results/ + figures/ from $SCRATCH_JOB_DIR back to repo root.
-        # ``--mkpath`` on the pull direction too (rsync sometimes needs it for
-        # the local destination chain).
+        # Pull eval_results/ + figures/ from $SCRATCH_JOB_DIR back to repo
+        # root via out-of-tree staging + local merge (see the docstring's
+        # atomicity contract). ``--mkpath`` on the pull direction too (rsync
+        # sometimes needs it for the local destination chain).
         local_root = self._src_root
+        issue = (handle.extra or {}).get("issue")
+        issue_slug = str(issue) if issue is not None else str(handle.pod_name)
+        staging_root = local_root / ".slurm-results-staging" / f"issue-{issue_slug}"
+        timeout_s = _fetch_timeout_seconds()
         for subdir in ("eval_results", "figures"):
             src = f"{cluster.ssh_host}:{handle.scratch_dir}/{subdir}/"
-            dst = str(local_root / subdir) + "/"
-            argv = ["rsync", "-a", "--mkpath", "--partial", src, dst]
-            logger.info("rsync pull %s → %s", src, dst)
-            proc = subprocess.run(argv, check=False, timeout=300)
+            staging_dir = staging_root / subdir
+            staging_dst = str(staging_dir) + "/"
+            # Phase 1 — network pull into OUT-OF-TREE staging.
+            # ``--partial-dir`` (relative → resolves inside each staging
+            # destination dir) REPLACES bare ``--partial``: a truncated
+            # transfer is kept under ``.rsync-partial/``, never under its
+            # final filename, so it stays resume-usable but can never be
+            # merged into the live tree under a complete-looking name.
+            argv = ["rsync", "-a", "--mkpath", "--partial-dir=.rsync-partial", src, staging_dst]
+            logger.info("rsync pull %s → %s (staging)", src, staging_dst)
+            try:
+                proc = subprocess.run(argv, check=False, capture_output=True, timeout=timeout_s)
+            except subprocess.TimeoutExpired as exc:
+                raise FetchResultsError(
+                    f"SlurmBackend.fetch_results: rsync pull of {src} exceeded the "
+                    f"{timeout_s}s fence ({FETCH_TIMEOUT_ENV}) — live tree untouched; "
+                    f"partials stay confined under {staging_dir}/.rsync-partial/ for "
+                    "resume on the next finalize."
+                ) from exc
             if proc.returncode != 0:
-                # Non-fatal by contract (a job that produced no figures —
-                # eval-only — is fine), but a SILENT failed pull would
-                # masquerade downstream as a misleading "sentinel missing"
-                # confirm FAIL — log the real cause loudly (#598).
-                logger.warning(
-                    "SlurmBackend.fetch_results: rsync pull of %s exited %d — a "
-                    "missing local sentinel / eval JSON at confirm time may be "
-                    "THIS pull failing, not the workload.",
-                    src,
-                    proc.returncode,
+                stderr_bytes = proc.stderr or b""
+                stderr_tail = stderr_bytes.decode("utf-8", errors="replace")[-500:]
+                benign_absent = proc.returncode in (23, 24) and (
+                    b"No such file or directory" in stderr_bytes
                 )
+                if benign_absent:
+                    # Non-fatal by contract (a job that produced no figures —
+                    # eval-only — is fine), but a SILENT failed pull would
+                    # masquerade downstream as a misleading "sentinel missing"
+                    # confirm FAIL — log the real cause loudly (#598). Does
+                    # NOT skip phase 2: a mixed rc-23 pull that landed files
+                    # (sentinel included) still merges them.
+                    logger.warning(
+                        "SlurmBackend.fetch_results: rsync pull of %s exited %d "
+                        "(benign-absent: remote source dir missing — #598 "
+                        "contract). A missing local sentinel / eval JSON at "
+                        "confirm time may be THIS pull, not the workload. "
+                        "stderr tail: %s",
+                        src,
+                        proc.returncode,
+                        stderr_tail,
+                    )
+                else:
+                    raise FetchResultsError(
+                        f"SlurmBackend.fetch_results: rsync pull of {src} exited "
+                        f"{proc.returncode} — live tree untouched; staging kept at "
+                        f"{staging_dir} for resume (partials confined under "
+                        f".rsync-partial/). stderr tail: {stderr_tail}"
+                    )
+            # Phase 2 — local merge staging → live tree, whenever the staging
+            # subdir holds anything (INCLUDING after benign-absent). Local
+            # rsync writes per-file temp+rename, so no partial file content
+            # is ever visible in place; ``--exclude`` keeps confined partials
+            # out of the live tree. ``--remove-source-files`` bounds
+            # transient disk to ~1 in-flight file instead of 2x the results
+            # size (the #1768 incident disk was 85% full).
+            if not staging_dir.is_dir() or not any(staging_dir.iterdir()):
+                continue
+            live_dst = str(local_root / subdir) + "/"
+            merge_argv = [
+                "rsync",
+                "-a",
+                "--remove-source-files",
+                "--exclude=.rsync-partial*/",
+                staging_dst,
+                live_dst,
+            ]
+            logger.info("rsync merge %s → %s (live)", staging_dst, live_dst)
+            try:
+                merge = subprocess.run(
+                    merge_argv, check=False, capture_output=True, timeout=timeout_s
+                )
+            except subprocess.TimeoutExpired as exc:
+                raise FetchResultsError(
+                    f"SlurmBackend.fetch_results: local merge of {staging_dst} into "
+                    f"{live_dst} exceeded the {timeout_s}s fence ({FETCH_TIMEOUT_ENV}); "
+                    "staging kept for resume — complete files already renamed into "
+                    "the live tree stay valid, no partial content is visible there."
+                ) from exc
+            if merge.returncode != 0:
+                merge_tail = (merge.stderr or b"").decode("utf-8", errors="replace")[-500:]
+                raise FetchResultsError(
+                    f"SlurmBackend.fetch_results: local merge of {staging_dst} into "
+                    f"{live_dst} exited {merge.returncode} (disk-full class?); staging "
+                    "kept for resume — complete files already renamed into the live "
+                    "tree stay valid, no partial content is visible there. "
+                    f"stderr tail: {merge_tail}"
+                )
+            # Merge succeeded: the staging subdir now holds only directory
+            # husks (--remove-source-files removes files, not dirs) + any
+            # excluded .rsync-partial/ leftovers from a PRIOR interrupted
+            # pull that this successful pull re-transferred — remove it.
+            shutil.rmtree(staging_dir)
 
     def confirm_artifacts(self, handle: RunHandle) -> bool:
         """Backend-agnostic artifact verification.
