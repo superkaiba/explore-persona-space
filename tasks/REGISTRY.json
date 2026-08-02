@@ -7652,8 +7652,8 @@
     "1989": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1989",
-      "status": "reviewing",
+      "path": "tasks/completed/1989",
+      "status": "completed",
       "title": "workflow-fix: repro-artifacts-clean gate vs working-tree git status"
     },
     "199": {
