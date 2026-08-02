@@ -7932,8 +7932,8 @@
     "2023": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2023",
-      "status": "reviewing",
+      "path": "tasks/completed/2023",
+      "status": "completed",
       "title": "workflow-fix: inline_lint_gate false-blocks payload on PASSING-test captured tracebacks"
     },
     "2024": {
