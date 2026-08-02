@@ -157,3 +157,45 @@ def test_g1v2_pass_when_recal_clears_bar(tmp_path):
 def test_g1v2_nan_recal_never_manufactures_kill(tmp_path):
     _seed_g1v2_inputs(tmp_path, raw=[0.01, 0.05], recal_best=None)
     assert f36.run_g1v2_check(tmp_path) == 0
+
+
+# ---------------------------------------------------------------------------
+# Lane-robust provenance resolution (fellows job 17987: rsync scratch has no
+# .git; a check=True git rev-parse crashed g2_parity AFTER the compare ran)
+# ---------------------------------------------------------------------------
+def test_resolve_code_sha_env_wins(monkeypatch):
+    monkeypatch.setenv("EPS_GIT_SHA", "abc123launcherexported")
+    assert cm.resolve_code_sha() == "abc123launcherexported"
+
+
+def test_resolve_code_sha_gitless_dir_degrades(tmp_path, monkeypatch):
+    """The git-absent branch: a non-git cwd resolves the literal, never raises."""
+    monkeypatch.delenv("EPS_GIT_SHA", raising=False)
+    assert cm.resolve_code_sha(repo_root=tmp_path) == "unknown-no-git"
+
+
+def test_resolve_code_sha_real_git_matches_head(monkeypatch):
+    """Git-ful lanes keep the real sha (GCP/RunPod behavior unchanged)."""
+    import subprocess
+
+    monkeypatch.delenv("EPS_GIT_SHA", raising=False)
+    expected = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=REPO, capture_output=True, text=True, check=True
+    ).stdout.strip()
+    got = cm.resolve_code_sha(repo_root=REPO)
+    assert got == expected
+    assert len(got) == 40
+
+
+def test_dispatch_no_checked_git_revparse():
+    """Fails pre-fix: no dispatcher heredoc may shell git rev-parse with check=True."""
+    text = (REPO / "scripts" / "issue1336_dispatch.sh").read_text()
+    banned = '["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True'
+    assert banned not in text, "pod-side check=True git rev-parse crashes git-less rsync lanes"
+
+
+def test_dispatch_upload_v2_git_leg_guarded():
+    """The v2 result-commit leg must be fenced behind a git-availability probe."""
+    text = (REPO / "scripts" / "issue1336_dispatch.sh").read_text()
+    assert "[ -e .git ] && git rev-parse --git-dir" in text
+    assert "no git checkout (rsync lane)" in text

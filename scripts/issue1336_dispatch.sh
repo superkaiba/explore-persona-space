@@ -592,9 +592,9 @@ if decision is not None:
         }
     )
 
-sha = subprocess.run(
-    ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
-).stdout.strip()
+from explore_persona_space.experiments.issue_1336.common import resolve_code_sha
+
+sha = resolve_code_sha()  # lane-robust: rsync lanes have no .git (fellows job 17987)
 gpu_hours = round(
     (time.time() - float(os.environ["RES_START"])) / 3600.0 * max(int(os.environ["RES_NGPU"]), 1),
     2,
@@ -915,9 +915,9 @@ if verdict is not None:
             "routed_decision": verdict["routed_decision"],
         }
     )
-sha = subprocess.run(
-    ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
-).stdout.strip()
+from explore_persona_space.experiments.issue_1336.common import resolve_code_sha
+
+sha = resolve_code_sha()  # lane-robust: rsync lanes have no .git (fellows job 17987)
 gpu_hours = round(
     (time.time() - float(os.environ["RES_START"])) / 3600.0 * max(int(os.environ["RES_NGPU"]), 1),
     2,
@@ -1147,9 +1147,9 @@ def compare(a: dict, b: dict) -> dict:
 
 committed = load_rows(diag / "d2_turnstore_committed")
 corrected = load_rows(diag / "d2_turnstore_corrected")
-sha = subprocess.run(
-    ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
-).stdout.strip()
+from explore_persona_space.experiments.issue_1336.common import resolve_code_sha
+
+sha = resolve_code_sha()  # lane-robust: rsync lanes have no .git (fellows job 17987)
 result = {
     "metadata": {"git_commit": sha, "ts_unix": time.time(), "n_allowlist": len(allow)},
     "offset_override": json.loads((diag / "d2_offset_override.json").read_text()),
@@ -1262,9 +1262,9 @@ from pathlib import Path
 
 diag = Path(os.environ["RES_DIAG"])
 parity = json.loads((diag / "d2_capture_parity.json").read_text())
-sha = subprocess.run(
-    ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
-).stdout.strip()
+from explore_persona_space.experiments.issue_1336.common import resolve_code_sha
+
+sha = resolve_code_sha()  # lane-robust: rsync lanes have no .git (fellows job 17987)
 note = {
     "phase": "d2_probe",
     "eval_numbers": {
@@ -1560,9 +1560,9 @@ if verdict is not None:
             "route_reason": verdict["route_reason"],
         }
     )
-sha = subprocess.run(
-    ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
-).stdout.strip()
+from explore_persona_space.experiments.issue_1336.common import resolve_code_sha
+
+sha = resolve_code_sha()  # lane-robust: rsync lanes have no .git (fellows job 17987)
 gpu_hours = round(
     (time.time() - float(os.environ["RES_START"])) / 3600.0 * max(int(os.environ["RES_NGPU"]), 1),
     2,
@@ -1953,9 +1953,9 @@ stored = load_rows(stored_dir)
 cmp_block = compare(recap, stored)
 min_cos = min(cmp_block["slots"]["min_mean_cosine"], cmp_block["profiles"]["min_mean_cosine"])
 ok = min_cos >= THRESH
-sha = subprocess.run(
-    ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
-).stdout.strip()
+from explore_persona_space.experiments.issue_1336.common import resolve_code_sha
+
+sha = resolve_code_sha()  # lane-robust: rsync lanes have no .git (fellows job 17987)
 payload = {
     "metadata": {"git_commit": sha, "ts_unix": time.time(), "n_allowlist": len(allow)},
     "gate": "G2",
@@ -2470,24 +2470,35 @@ hub.retry_transient(
 print("[upload_v2] eval_results mirror uploaded")
 PY
     # Commit eval JSONs to the issue branch; push verified (#1205/#1880 —
-    # fetch+rebase before retry, never a swallowed push).
-    local branch rc=0
-    branch=$(git rev-parse --abbrev-ref HEAD)
-    git add "$OUT_DIR"
-    if ! git diff --cached --quiet; then
-        git commit -m "task #1336: v2 eval results ($([ "${1:-}" = halted ] && echo 'G1-prime halt' || echo 'full ladder'))"
+    # fetch+rebase before retry, never a swallowed push). Rsync lanes
+    # (fellows/SLURM) have NO .git in the scratch tree, so workload-side git
+    # is structurally impossible there (pod-side-reporting.md, SLURM lane
+    # bullet): the HF mirror above already persisted the JSONs durably, the
+    # lane's fetch_results rsync-pulls eval_results/ back to the VM, and the
+    # VM-side ORCHESTRATOR owns the commit. Probe [-e .git] (dir in clones,
+    # file in worktrees) rather than bare rev-parse so upward .git discovery
+    # from an ancestor dir can never target the wrong repo.
+    if [ -e .git ] && git rev-parse --git-dir >/dev/null 2>&1; then
+        local branch rc=0
+        branch=$(git rev-parse --abbrev-ref HEAD)
+        git add "$OUT_DIR"
+        if ! git diff --cached --quiet; then
+            git commit -m "task #1336: v2 eval results ($([ "${1:-}" = halted ] && echo 'G1-prime halt' || echo 'full ladder'))"
+        fi
+        git push origin "HEAD:$branch" || rc=$?
+        if [ "$rc" -ne 0 ] || [ "$(git rev-list --count "origin/$branch..HEAD")" != "0" ]; then
+            echo "[upload_v2] push not landed — one retry after rebase" >&2
+            git pull --rebase=merges --autostash origin "$branch"
+            git push origin "HEAD:$branch"
+        fi
+        if [ "$(git rev-list --count "origin/$branch..HEAD")" != "0" ]; then
+            echo "[upload_v2] FATAL: result commit not on origin/$branch after retry" >&2
+            exit 86
+        fi
+        echo "[upload_v2] result commit verified on origin/$branch"
+    else
+        echo "[upload_v2] no git checkout (rsync lane) — eval-results commit is VM-side (HF mirror uploaded above; fetch_results pulls eval_results/ to the VM)"
     fi
-    git push origin "HEAD:$branch" || rc=$?
-    if [ "$rc" -ne 0 ] || [ "$(git rev-list --count "origin/$branch..HEAD")" != "0" ]; then
-        echo "[upload_v2] push not landed — one retry after rebase" >&2
-        git pull --rebase=merges --autostash origin "$branch"
-        git push origin "HEAD:$branch"
-    fi
-    if [ "$(git rev-list --count "origin/$branch..HEAD")" != "0" ]; then
-        echo "[upload_v2] FATAL: result commit not on origin/$branch after retry" >&2
-        exit 86
-    fi
-    echo "[upload_v2] result commit verified on origin/$branch"
 }
 
 write_results_sentinel_v2() { # $1 = halted true|false
@@ -2538,9 +2549,9 @@ eval_numbers = {
     "halted_at_g1v2": halted,
 }
 
-sha = subprocess.run(
-    ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
-).stdout.strip()
+from explore_persona_space.experiments.issue_1336.common import resolve_code_sha
+
+sha = resolve_code_sha()  # lane-robust: rsync lanes have no .git (fellows job 17987)
 gpu_hours = round(
     (time.time() - float(os.environ["RES_START"])) / 3600.0 * max(int(os.environ["RES_NGPU"]), 1),
     2,

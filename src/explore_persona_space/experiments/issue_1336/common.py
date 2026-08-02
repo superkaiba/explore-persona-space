@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import contextlib
 import json
+import os
+import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -104,12 +106,45 @@ __all__ = [
     "fc_expected_layers",
     "load_qwen_recal_cal",
     "preds_layers",
+    "resolve_code_sha",
     "tulu_prompt",
     "v2_bars",
     "v2_cell_id",
     "v2_surface_index",
     "v2_surfaces",
 ]
+
+
+def resolve_code_sha(repo_root: str | Path | None = None) -> str:
+    """Lane-robust code-sha for provenance metadata — NEVER raises.
+
+    The fellows/SLURM lane materializes the scratch tree via rsync with NO
+    ``.git`` (job 17987: a pod-side ``git rev-parse HEAD`` with ``check=True``
+    exited 128 and crashed g2_parity AFTER the parity compare had run), so
+    provenance resolution degrades instead of crashing (the #1902
+    ``_git_sha`` convention):
+
+    1. ``EPS_GIT_SHA`` env wins when the launcher exports one;
+    2. ``git rev-parse HEAD`` with ``check=False`` — git-ful lanes
+       (GCP/RunPod clones) keep returning the real sha, behavior unchanged;
+    3. the literal ``"unknown-no-git"`` on any failure (rc != 0, git binary
+       absent) — provenance metadata must never kill a phase.
+    """
+    env = os.environ.get("EPS_GIT_SHA", "").strip()
+    if env:
+        return env
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=str(repo_root) if repo_root is not None else None,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return "unknown-no-git"
+    sha = proc.stdout.strip()
+    return sha if proc.returncode == 0 and sha else "unknown-no-git"
 
 
 @contextlib.contextmanager
