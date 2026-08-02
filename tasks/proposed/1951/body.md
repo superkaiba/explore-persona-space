@@ -2,7 +2,8 @@
 title: 'Fix thread-caps main red: issue1773_register_steer_stats imports matplotlib
   before load_dotenv'
 kind: infra
-tags: []
+tags:
+- urgent-main-red
 created_at: '2026-07-31T23:29:55Z'
 has_clean_result: false
 origin_prompt: 'Auto-filed from #1946 implementer round: origin/main red on tests/test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints
