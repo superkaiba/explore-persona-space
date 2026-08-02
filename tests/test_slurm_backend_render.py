@@ -311,6 +311,124 @@ def test_capture_7b_hydra_path_still_raises_at_stages_for_spec() -> None:
         stages_for_spec(spec)
 
 
+def test_h100_intents_in_slurm_intent_tables() -> None:
+    """#1926 (AC1/AC2): the H100-flavored GCP intents (#631) resolve in
+    BOTH SLURM intent-default tables — lora-7b-h100 at 1 GPU (matches GCP
+    ``a3-highgpu-1g``) / lora-class 6.0h (the #940 RunPod translation maps
+    it to ``lora-7b`` = 6.0h), eval-h100 at 2 GPUs (matches GCP
+    ``a3-highgpu-2g``, TP=2) / eval-class 4.0h — so an auto-lane dispatch
+    of either no longer ValueErrors off the free fellows/SLURM lanes onto
+    paid capacity."""
+    lora = RunSpec(issue=1926, intent="lora-7b-h100", backend="cluster", cluster="nibi")
+    assert default_gpus_for_intent(lora) == 1
+    assert time_budget_hours(lora) == 6.0
+    ev = RunSpec(issue=1926, intent="eval-h100", backend="cluster", cluster="nibi")
+    assert default_gpus_for_intent(ev) == 2
+    assert time_budget_hours(ev) == 4.0
+
+
+def test_lora_7b_h100_workload_cmd_renders_end_to_end() -> None:
+    """#1926 (AC5, the #1896 AC3 pattern): a lora-7b-h100 spec carrying
+    ``workload_cmd`` renders end-to-end through ``stages_for_spec`` (single
+    custom stage) + ``render_sbatch`` — the production dispatch shape —
+    with the intent-table-driven ``--time`` and 1-GPU gres lines."""
+    spec = RunSpec(
+        issue=1926,
+        intent="lora-7b-h100",
+        backend="cluster",
+        cluster="nibi",
+        workload_cmd="bash scripts/issue1926_lora.sh",
+    )
+    plan = stages_for_spec(spec)
+    assert [s.name for s in plan.stages] == ["workload"]
+    assert plan.stages[0].backend == "custom"
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=plan,
+        scratch_dir="/scratch/tjiral/eps/issue-1926",
+    )
+    assert "#SBATCH --time=06:00:00" in script  # 6.0h from _DEFAULT_TIME_BUDGETS_HOURS
+    assert "#SBATCH --gpus-per-node=h100:1" in script  # 1 GPU, nibi typed gres
+
+
+def test_eval_h100_workload_cmd_renders_end_to_end() -> None:
+    """#1926 (AC5): same production dispatch shape for eval-h100 — 4.0h +
+    a 2-GPU gres line. Unlike the RunPod rung (where eval-h100 is a
+    DELIBERATE translation gap — no same-width RunPod intent), the SLURM
+    lane allocates the GPU count natively from the intent table, so a
+    2-GPU single-node TP=2 request needs no width translation."""
+    spec = RunSpec(
+        issue=1926,
+        intent="eval-h100",
+        backend="cluster",
+        cluster="nibi",
+        workload_cmd="bash scripts/issue1926_eval.sh",
+    )
+    plan = stages_for_spec(spec)
+    assert [s.name for s in plan.stages] == ["workload"]
+    assert plan.stages[0].backend == "custom"
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=plan,
+        scratch_dir="/scratch/tjiral/eps/issue-1926",
+    )
+    assert "#SBATCH --time=04:00:00" in script  # 4.0h from _DEFAULT_TIME_BUDGETS_HOURS
+    assert "#SBATCH --gpus-per-node=h100:2" in script  # 2 GPUs, nibi typed gres
+
+
+@pytest.mark.parametrize("intent", ["lora-7b-h100", "eval-h100"])
+def test_h100_intents_hydra_path_still_raises_at_stages_for_spec(intent: str) -> None:
+    """#1926 (AC6, the #1896 AC4 pattern): hydra-path H100 intents (no
+    ``workload_cmd``) STILL raise at ``stages_for_spec`` — deliberate
+    partial support: no canonical H100-flavored Hydra chain exists, only
+    the two intent-default tables gained rows. Pins the design so a future
+    reader doesn't misread the remaining ValueError as an oversight."""
+    spec = RunSpec(issue=1926, intent=intent, backend="cluster", cluster="nibi")
+    with pytest.raises(ValueError, match="unsupported intent"):
+        stages_for_spec(spec)
+
+
+def test_slurm_tables_cover_all_gcp_gpu_intents() -> None:
+    """#1926 (AC4): the completeness pin — every GCP-mapped GPU intent
+    (``gcp.INTENT_TO_MACHINE`` key with ``gpu_count > 0``) resolves in
+    BOTH SLURM intent-default tables XOR sits on the documented-exclusion
+    list ``SLURM_INTENT_DELIBERATE_GAPS`` (the SLURM twin of the RunPod
+    rung's ``RUNPOD_INTENT_FOR_GCP_INTENT`` translation-map pin, #940) —
+    so a future GCP GPU intent added without deciding its SLURM fate
+    fails CI at the adding PR (the way capture-7b reopened this class
+    before #1896 and lora-7b-h100 did after it)."""
+    # Test-side import only: slurm.py must NOT import gcp.py (no cycle).
+    from explore_persona_space.backends import gcp
+    from explore_persona_space.backends.slurm import (
+        _DEFAULT_GPUS_FOR_INTENT,
+        _DEFAULT_TIME_BUDGETS_HOURS,
+        SLURM_INTENT_DELIBERATE_GAPS,
+    )
+
+    gcp_gpu_intents = {
+        intent for intent, machine in gcp.INTENT_TO_MACHINE.items() if machine.gpu_count > 0
+    }
+    assert gcp_gpu_intents, "gcp.INTENT_TO_MACHINE lost all GPU intents?"
+    for intent in sorted(gcp_gpu_intents):
+        in_tables = intent in _DEFAULT_GPUS_FOR_INTENT and intent in _DEFAULT_TIME_BUDGETS_HOURS
+        in_gaps = intent in SLURM_INTENT_DELIBERATE_GAPS
+        assert in_tables != in_gaps, (
+            f"GCP GPU intent {intent!r} must resolve in BOTH SLURM intent tables XOR sit in "
+            "SLURM_INTENT_DELIBERATE_GAPS (add both table rows, or document the exclusion)"
+        )
+    # Hygiene: the gap set is disjoint from both tables, and every gap
+    # member is a GCP-mapped GPU intent (a stale gap entry fails here).
+    assert not (SLURM_INTENT_DELIBERATE_GAPS & set(_DEFAULT_GPUS_FOR_INTENT))
+    assert not (SLURM_INTENT_DELIBERATE_GAPS & set(_DEFAULT_TIME_BUDGETS_HOURS))
+    assert gcp_gpu_intents >= SLURM_INTENT_DELIBERATE_GAPS
+    # The two tables cover the SAME intent set (non-GCP intents like
+    # inf-70b/ft-70b included), so a future one-table-only row fails here
+    # instead of ValueError-ing at dispatch time.
+    assert set(_DEFAULT_TIME_BUDGETS_HOURS) == set(_DEFAULT_GPUS_FOR_INTENT)
+
+
 # ---------------------------------------------------------------------------
 # job_name + plan-hash
 # ---------------------------------------------------------------------------

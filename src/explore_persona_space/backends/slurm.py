@@ -563,6 +563,14 @@ _DEFAULT_TIME_BUDGETS_HOURS: dict[str, float] = {
     # /workspace exists but nothing drains it (CLAUDE.md fellows SENTINEL
     # HAZARD).
     "capture-7b": 4.0,
+    # #1926: the H100-flavored GCP intents (#631) — lora-7b-h100 is the
+    # 1x H100 lora-scale path (lora-class wall-time; the #940 RunPod
+    # translation maps it to "lora-7b" = 6.0h) and eval-h100 the 2x H100
+    # TP=2 eval path (eval-class wall-time). workload_cmd specs only;
+    # the hydra path stays fail-fast at stages_for_spec (no canonical
+    # H100-flavored Hydra chain).
+    "lora-7b-h100": 6.0,
+    "eval-h100": 4.0,
     "debug": 1.0,
     "ft-7b": 23.5,  # leave a margin under the 24h short-bin cap
     "inf-70b": 12.0,
@@ -625,11 +633,38 @@ _DEFAULT_GPUS_FOR_INTENT: dict[str, int] = {
     "lora": 1,
     "eval": 1,
     "capture-7b": 1,  # #1896: single-GPU 7B capture — matches GCP a2-ultragpu-1g (#752)
+    "lora-7b-h100": 1,  # #1926: 1x H100 lora-scale path — matches GCP a3-highgpu-1g (#631)
+    "eval-h100": 2,  # #1926: 2x H100 TP=2 eval path — matches GCP a3-highgpu-2g (#631)
     "debug": 1,
     "ft-7b": 4,
     "inf-70b": 8,
     "ft-70b": 8,
 }
+
+
+# #1926: documented-exclusion list consumed by the completeness pin test
+# (tests/test_slurm_backend_render.py::test_slurm_tables_cover_all_gcp_gpu_intents):
+# every GCP-mapped GPU intent (``gcp.INTENT_TO_MACHINE`` key with
+# ``gpu_count > 0``) must either resolve in BOTH intent-default tables above
+# or sit on this list — the SLURM twin of the RunPod rung's
+# ``RUNPOD_INTENT_FOR_GCP_INTENT`` + ``RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS``
+# pin (#940), so a future GCP GPU intent added without deciding its SLURM
+# fate fails CI at the adding PR instead of ValueError-ing off the free
+# fellows/SLURM lanes onto paid capacity (the way capture-7b did before
+# #1896 and lora-7b-h100 did before #1926).
+#
+# The 8-GPU sweep intents are GCP/RunPod-only PENDING AN OPEN DESIGN CALL
+# (surfaced, not silently decided): a single 8-GPU job consumes HALF of a
+# fellows per-QoS 16-GPU/user cap (high-eur / normal-eur MaxTRESPU
+# gres/gpu=16 — see the fellows CLUSTER_CONFIGS qos/qos_ladder note above,
+# #1899), and the GCP wide-rung width-degrade ladder (#1121/#1379:
+# 8g -> 4g -> 2g on capacity miss) has no SLURM analogue — a
+# capacity-starved 8-GPU sbatch would just queue at full width.
+#
+# Consumed by the pin test ONLY, never by runtime routing: these intents
+# keep failing fast at ``time_budget_hours`` / ``default_gpus_for_intent``
+# on the SLURM lane and route to GCP/RunPod exactly as today.
+SLURM_INTENT_DELIBERATE_GAPS: frozenset[str] = frozenset({"sweep-8g-a100", "sweep-8g-h100"})
 
 
 def default_gpus_for_intent(spec: RunSpec) -> int:
