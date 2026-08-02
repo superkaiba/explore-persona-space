@@ -135,7 +135,10 @@ sampled 0-100 judge score is the preferred primary. Drop — never coerce — a
 malformed / REFUSAL / out-of-range judge return. Transport errors
 (429/529/timeout/connection) are retried with bounded backoff and re-judged —
 never persisted as drops — and the per-arm drop report splits content-drops
-from transport-losses (`.claude/rules/llm-judging.md` rule 24). A proxy
+from transport-losses (`.claude/rules/llm-judging.md` rule 24). Judge
+`max_tokens` is generous (≥ 1024 single-rationale / ≥ 2048 multi-field JSON
+— a cap is not a spend) and any ≥ ~5,000-call judge wave is pilot-gated
+before the production dispatch (rule 26). A proxy
 saturated at a floor/ceiling across conditions is presumed uninformative.
 Full recipe: `.claude/rules/llm-judging.md` (full guideline set);
 CLAUDE.md § Measurement validity; `.claude/rules/selection-symmetric-nulls.md`.

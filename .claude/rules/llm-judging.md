@@ -191,14 +191,23 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     Qwen-class outputs). Hold every nuisance variable fixed across the
     conditions being compared.
 
-23. **Size the judge response `max_tokens` for the rationale, not the score.**
-    A reason-then-score rubric (rule 7) emits its justification BEFORE the
-    integer, so the response-token budget must cover the full rationale:
-    give a multi-field reason-then-score JSON rubric (several labeled
-    reasoning fields before the score — the #1769 fu1 rubric shape)
-    **≥ ~600 response tokens**, and a short single-rationale rubric
-    **≥ ~300** (the #1090 recovery point); a score-only rubric (bare
-    integer, no rationale) can stay small. The 300 floor measurably failed
+23. **Size the judge response `max_tokens` for the rationale, not the score —
+    and be GENEROUS: a cap is not a spend.** The API bills only GENERATED
+    tokens; `max_tokens` is a ceiling, so headroom above the typical
+    rationale costs nothing on well-formed responses. The only real costs
+    of a larger cap are (a) a one-time cold re-judge at the over-keyed
+    `api_dispatch` adapter-cache layer when a budget changes, and (b) rare
+    degenerate long responses — both bounded and both far cheaper than the
+    re-judge waves an undersized cap forces. A reason-then-score rubric
+    (rule 7) emits its justification BEFORE the integer, so the
+    response-token budget must cover the full rationale: give a multi-field
+    reason-then-score JSON rubric (several labeled reasoning fields before
+    the score — the #1769 fu1 rubric shape) **≥ 2048 response tokens**, and
+    a short single-rationale rubric **≥ 1024** (floors raised 600/300 →
+    2048/1024 on 2026-08-02 after three truncation re-judge waves in one
+    week — #1739 / #1769 / #1774 — each at or above the then-floor); a
+    score-only rubric (bare integer, no rationale) can stay small. The
+    historical floors' failure record: the 300 floor measurably failed
     twice in one week for multi-field JSON rubrics. #1739's sycophancy wave
     at `max_tokens=400` (86,521 rollouts × 3 draws) truncation-censored
     5.4% of draws, recovered to 2.3% by a surgical re-judge at 800.
@@ -252,8 +261,8 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     diagnosis). Mechanics: `judge_completions_batch`
     (`eval/batch_judge.py`) accepts `max_tokens` (default 256);
     `graded_judge.judge_graded` threads an optional `max_tokens` kwarg
-    (introduced by #1090) — reasoning-rubric callers pass ≥ ~300
-    (single-rationale) / ≥ ~600 (multi-field JSON) (the 64
+    (introduced by #1090) — reasoning-rubric callers pass ≥ 1024
+    (single-rationale) / ≥ 2048 (multi-field JSON) (the 64
     default is kept for legacy cache stability at the api_dispatch layer);
     neither library default is sized for a reasoning rubric — pass the
     budget explicitly. This is the judge-side analogue of the CLAUDE.md
@@ -283,6 +292,37 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     query language, so the unnamed neighbor rode the judged contrast; caught
     ~2h post-ship, rubric amendments posted in-flight, durable instrument
     #1773.
+
+26. **Pilot-gate every large judge wave — measure the drop profile BEFORE
+    the production spend.** Before any production judge dispatch of
+    ≥ ~5,000 calls, run a PILOT of ~100–200 draws spanning the arms /
+    conditions (and every rubric in the wave) at the EXACT production
+    instrument (rubric, judge model, `max_tokens`), and gate the full
+    dispatch on BOTH: (a) `stop_reason == "max_tokens"` fraction ≈ 0 in
+    the pilot's raw responses — any nonzero truncation signature → raise
+    the budget (generously; rule 23's cap-is-not-a-spend point) and
+    re-pilot; and (b) per-arm parse-failure rate < ~2%, or explained as a
+    known content-drop class per rule 9 (e.g. empty judge responses on
+    degenerate steered text, #1769). Record the pilot verdict — per-arm
+    drop rate + `stop_reason` tally + the `max_tokens` used — in the run
+    digest / plan §6. Rationale: rule 23's binding check is POST-HOC
+    (measured only after the full wave is spent), so every miss costs a
+    full re-judge — three waves in one week (#1739: a surgical re-judge
+    at 800 over 86,521×3 draws; #1769: the whole 21k-call fu1 wave
+    re-judged at 600, ~1h wall + a second batch spend; #1774: a per-draw
+    truncation-recovery merge) would each have been prevented by a
+    ~200-call pilot. This is the judge-side twin of the MEASURED 1-cell
+    pilot the compute-sizing rule mandates for wall-time
+    (`.claude/rules/plan-compute-sizing.md` § Per-cell fit phases). Run
+    the pilot against a fresh/pilot `cache_dir` (rule 24(ii)'s cache
+    discipline) so production reuse is a deliberate decision, never a
+    silent replay. Until `stop_reason` is threaded into persisted judge
+    results (#2021: per-draw stop_reason + a truncation-vs-content drop
+    split + a `judge_pilot_gate` helper), read the pilot's stop_reasons
+    from the raw responses / a direct Messages-API re-issue — never from
+    truncated failure-log text (rule 23, #1773). Exempt: score-only
+    rubrics and waves < ~5,000 calls (the post-hoc per-arm drop report,
+    rules 9/18/23, still binds there).
 
 ## D. Judge model
 
@@ -403,7 +443,8 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
 18. **Pin & report, per DV:** scoring mode, scale, N samples + temperature,
     judge model + date, prompt hash, the response `max_tokens` budget + the
     per-arm dropped-draw rate SPLIT content-drops vs transport-losses
-    (rules 23/24), per-behavior reliability
+    (rules 23/24), the rule-26 pilot-gate verdict for any ≥5k-call wave,
+    per-behavior reliability
     (test-retest + judge–human agreement), and the reliability ceiling
     √(r_yy). A judged DV is a measurement instrument; report it like one.
 
@@ -478,12 +519,19 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
   rubric-bearing key; the plan names the cache key fields per rule 22.
 - Rule 23 (response-budget sizing) rides the same lens load: a plan whose
   judged DV uses a reason-then-score rubric names its judge `max_tokens`
-  (≥ ~600 for multi-field reason-then-score JSON rubrics / ≥ ~300 for
-  single-rationale rubrics, or a stated justification — the floor is a
+  (≥ 2048 for multi-field reason-then-score JSON rubrics / ≥ 1024 for
+  single-rationale rubrics — floors raised from 600/300 on 2026-08-02 —
+  or a stated justification; the floor is a
   floor, not a guarantee: the post-resize per-arm drop re-measure binds at
   ANY budget, #1739) and its per-arm drop-rate report;
   the Statistics & Measurement critic REVISEs an unsized reasoning-rubric
   judge. Plan-enforced in v1 — no mechanical lint.
+- Rule 26 (pilot gate) rides the same lens load: a plan whose judged DV
+  dispatches ≥ ~5,000 judge calls names its pilot gate (pilot size, arms
+  spanned, the two gate thresholds) or states the exemption; the
+  Statistics & Measurement critic REVISEs an ungated large wave.
+  Plan-enforced in v1 — no mechanical lint (same class as rules 23/24);
+  the `judge_pilot_gate` helper is #2021's deliverable.
 - Rule 24 (transport-vs-content split) rides the same lens load: a plan whose
   judged-DV pipeline persists API/transport errors as dropped draws — or
   whose per-arm drop report does not split content-drops from
@@ -505,6 +553,12 @@ and the ~2,638 stored API-529 transport-error draws behind rule 24); task
 body #1206 (the transport-vs-content split);
 task body #1739 (the above-floor 400-token truncation residue behind the
 rule-23 measured point and the REFUSAL tally split);
+task bodies #1769 + #1774 (the two further truncation re-judge waves that,
+with #1739, drove the 2026-08-02 generous-floor raise and rule 26's pilot
+gate); task body #1934 (the #1773 log-derived misdiagnosis behind rule 26's
+stop_reason-from-raw-responses requirement); task #2021 (stop_reason
+threading + truncation-vs-content drop split + the `judge_pilot_gate`
+helper);
 task body #1482 (the category-axis confusable-neighbor incident behind
 rule 25);
 `.claude/rules/persona-vectors-recipe.md` (the graded-judge precedent +
