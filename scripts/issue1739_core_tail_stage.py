@@ -25,11 +25,26 @@ listing); one pinned revision per invocation; counts-only logging.
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import shutil
 import sys
-from concurrent.futures import ThreadPoolExecutor
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+
+# Force the PLAIN download path for THIS script only (must precede the hub /
+# huggingface_hub import — env is frozen at import): this helper stages a
+# many-small-npz storm (274 npz of 277 files for the hall bundle; larger for
+# syc), byte-for-byte the class that WEDGES xet_get indefinitely
+# (att-20260730-055211-syc, py-spy-confirmed) and errors hf_transfer
+# (att-20260730-063858-syc), while the plain path handles small files fine —
+# same pattern as issue1739_restore_partial.py. This helper has NO big-file
+# leg (largest staged file ~5 MB); natpv's accelerator-REQUIRING u_store tar
+# staging runs in its OWN uv subprocess and is untouched by these
+# process-local disables.
+os.environ["HF_HUB_DISABLE_XET"] = "1"
+os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
 
 REPO = "superkaiba1/explore-persona-space-data"
 # Bank-copy names the driver writes: <behavior>__<regime>_fc.npz (regime e1|e2p).
@@ -46,6 +61,12 @@ def main(argv: list[str] | None = None) -> int:
 
     from explore_persona_space.orchestrate import hub
 
+    print(
+        "[tail-stage] plain HF download path: "
+        f"HF_HUB_DISABLE_XET={os.environ['HF_HUB_DISABLE_XET']} "
+        f"HF_HUB_ENABLE_HF_TRANSFER={os.environ['HF_HUB_ENABLE_HF_TRANSFER']}",
+        flush=True,
+    )
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--attempt", required=True, help="crash-persist attempt id (att-...)")
     ap.add_argument("--behavior", required=True, help="ONE behavior (one CORE box per behavior)")
@@ -90,15 +111,23 @@ def main(argv: list[str] | None = None) -> int:
     ]
     jobs += [(f, bank_dir / f.rsplit("/", 1)[1]) for f in bank_files]
     n_new = sum(1 for _f, tgt in jobs if not tgt.exists())
+    t0 = time.monotonic()
     with ThreadPoolExecutor(max_workers=min(6, len(jobs))) as pool:
-        futs = [
+        futs = {
             pool.submit(
                 hub.stage_hub_file, args.repo, f, tgt, repo_type="dataset", revision=revision
-            )
+            ): f
             for f, tgt in jobs
-        ]
-        for fut in futs:
+        }
+        for i, fut in enumerate(as_completed(futs), start=1):
             fut.result()  # re-raises — fail-loud (stage_hub_file is atomic + retried)
+            if i % 25 == 0 or i == len(futs):
+                print(
+                    f"[tail-stage] staged {i}/{len(futs)} "
+                    f"(last: {futs[fut].rsplit('/', 1)[1]}) "
+                    f"elapsed={time.monotonic() - t0:.0f}s",
+                    flush=True,
+                )
 
     # Reconstruct the natpv --e1-fc-bank / driver bank-copy input layout.
     staged_regimes: dict[str, Path] = {}
