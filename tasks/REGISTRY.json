@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2019,
+  "highest_id": 2020,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7907,6 +7907,13 @@
       "path": "tasks/completed/202",
       "status": "completed",
       "title": "Workflow optimizations"
+    },
+    "2020": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2020",
+      "status": "proposed",
+      "title": "workflow-fix: close-miss escalation clause for the on-policy yield floor"
     },
     "203": {
       "has_clean_result": false,
