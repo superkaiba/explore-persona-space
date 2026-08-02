@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1990,
+  "highest_id": 1991,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7669,6 +7669,13 @@
       "path": "tasks/proposed/1990",
       "status": "proposed",
       "title": "workflow-fix: sidecar canary tolerant of foreign concurrent "
+    },
+    "1991": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1991",
+      "status": "proposed",
+      "title": "workflow-fix: blanket-add latch misses equivalent-blanket sp"
     },
     "2": {
       "has_clean_result": false,
