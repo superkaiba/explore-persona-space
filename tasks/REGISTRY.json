@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1984,
+  "highest_id": 1985,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7620,6 +7620,13 @@
       "path": "tasks/completed/1984",
       "status": "completed",
       "title": "workflow-fix: widen the leading version-stamp stripper to also accept the "
+    },
+    "1985": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1985",
+      "status": "proposed",
+      "title": "workflow-fix: pre_reg audit synonym classes for plan-verdict framing"
     },
     "199": {
       "has_clean_result": true,
