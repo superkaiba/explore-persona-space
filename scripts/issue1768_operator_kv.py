@@ -456,6 +456,17 @@ def main(argv: list[str] | None = None) -> int:
     )
     ap.add_argument("--arms", default="")
     ap.add_argument("--block", type=int, default=50_000)
+    ap.add_argument(
+        "--overwrite",
+        action="store_true",
+        help=(
+            "recompute cells even when the JSON exists. Needed because in the SHARED "
+            "repo root a deleted-but-committed file can be RESTORED under a running "
+            "pass (observed: 4 deleted cells reappeared ~70 s after deletion and were "
+            "then skipped as 'present'), so 'delete then regenerate' is not reliable "
+            "here -- overwrite is."
+        ),
+    )
     ap.add_argument("--phase", default="all")
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args(argv)
@@ -519,12 +530,14 @@ def main(argv: list[str] | None = None) -> int:
         k = 0
         # ARM-OUTER so one download of each arm's answer stores serves every layer
         for arm_id in arms:
-            if any(not (dest_dir / f"{arm_id}_L{li}.json").exists() for li in layers):
+            if args.overwrite or any(
+                not (dest_dir / f"{arm_id}_L{li}.json").exists() for li in layers
+            ):
                 MA._prewarm_arm_cache(cache, arm_id)
             for layer in layers:
                 k += 1
                 dest = dest_dir / f"{arm_id}_L{layer}.json"
-                if dest.exists():
+                if dest.exists() and not args.overwrite:
                     logger.info(
                         "[opkv] unit %d/%d %s L%d: present, skip", k, len(todo), arm_id, layer
                     )

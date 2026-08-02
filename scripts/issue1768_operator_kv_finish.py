@@ -87,8 +87,18 @@ def build(figs_dir: Path) -> dict:
         if missing:
             stale.append(f"{arm_}_L{li_}.json missing {missing}")
     assert not stale, (
-        "operator_kv records are SCHEMA-STALE (delete these and regenerate; the "
+        "operator_kv records are SCHEMA-STALE (regenerate with --overwrite; the "
         "per-arm pass skips existing files):\n  " + "\n  ".join(stale)
+    )
+
+    # COVERAGE GATE. The schema gate above only inspects records that EXIST, so a
+    # pass that silently produced fewer cells (a deleted cell never regenerated)
+    # would still build a summary -- just a smaller one. Pin the expected grid.
+    n_expected = len(MA.arm_picks()) * len(layers_present)
+    assert len(recs) == n_expected, (
+        f"operator_kv coverage hole: {len(recs)} cells for "
+        f"{len(MA.arm_picks())} arms x {len(layers_present)} layers "
+        f"(expected {n_expected}); regenerate the missing cells with --overwrite"
     )
 
     rng = np.random.default_rng(NULL_SEED)
