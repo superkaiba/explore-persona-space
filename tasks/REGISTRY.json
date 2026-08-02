@@ -7164,8 +7164,8 @@
     "1925": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1925",
-      "status": "approved",
+      "path": "tasks/running/1925",
+      "status": "running",
       "title": "daily-fix: pre-commit hook for agent-memory index size"
     },
     "1926": {
