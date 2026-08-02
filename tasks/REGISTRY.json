@@ -7335,8 +7335,8 @@
       "goal": "Retrain the content-behavior organism fleet under a single-visit data regime (every training row consumed exactly once \u2014 ~1,200 unique rows per cell covering the full 75-step schedule; pilot cell gates the fleet on reaching the 0.60-0.85 install band), then run the theory-assumption battery (write vs delta/r_B, write rank, base-geometry gate, map change) evaluated on exactly the trained rows (TF base+trained on the gradient-producing rows, delta over the same ~300-row set) alongside the standard panel/corpus surfaces, to decide whether the #1768 assumption failures survive without data repetition and on-distribution.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/1947",
-      "status": "interpreting",
+      "path": "tasks/reviewing/1947",
+      "status": "reviewing",
       "title": "Theory-assumption failures survive retraining without data repetition, tested on exactly the trained rows (MODERATE confidence)"
     },
     "1948": {
