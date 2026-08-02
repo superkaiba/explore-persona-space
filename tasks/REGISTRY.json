@@ -7911,8 +7911,8 @@
     "2020": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2020",
-      "status": "proposed",
+      "path": "tasks/planning/2020",
+      "status": "planning",
       "title": "workflow-fix: close-miss escalation clause for the on-policy yield floor"
     },
     "203": {
