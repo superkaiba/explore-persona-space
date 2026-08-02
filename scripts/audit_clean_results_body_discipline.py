@@ -368,8 +368,9 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # `median ±0.16` sat in ## Results prose through a full
         # clean-result gate). Sign class includes the typographic U+2212
         # minus (the effect_size_pp convention), dash-FIRST so `-` stays a
-        # literal, never a `+`..U+2212 range (the interval_inline `[-+−]`
-        # ordering). Scan source: the interval_inline chain (caption
+        # literal, never a `+`..U+2212 range (the interval_inline
+        # dash-first sign-class ordering). Scan source: the
+        # interval_inline chain (caption
         # blockquotes, Why-this-test lines, GFM table rows, fenced code,
         # Data/Methodology example blocks, Context blockquotes all exempt;
         # inline backticks KEPT per #667). Corpus measurement 2026-08-02
