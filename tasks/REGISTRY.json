@@ -7262,8 +7262,8 @@
     "1938": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1938",
-      "status": "proposed",
+      "path": "tasks/planning/1938",
+      "status": "planning",
       "title": "workflow-fix: gotchas.md entry \u2014 VAST /workspace EBADF from posix_fallocate"
     },
     "1939": {
