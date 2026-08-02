@@ -3240,9 +3240,11 @@ class SlurmBackend(ComputeBackend):
         ``backend.estimate_start_seconds(spec)`` without re-deriving the
         cluster. The rendered probe script is byte-identical to what
         ``launch()`` will submit (same ``render_sbatch`` of the same
-        ``RunSpec`` + ``ClusterConfig`` + ``plan_hash``), so the
-        estimate matches the real request gres / account / time budget
-        with no drift.
+        ``RunSpec`` + ``ClusterConfig`` + ``plan_hash`` + resolved
+        ``code_sha`` — a repo-state push in the seconds between the two
+        renders can only move the ``EPS_GIT_SHA`` export line, #2026),
+        so the estimate matches the real request gres / account / time
+        budget with no drift.
         """
         cluster = self._cluster_for_spec(spec)
         rendered = self._render_script_for(spec, cluster)
