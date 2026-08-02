@@ -7171,8 +7171,8 @@
     "1926": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1926",
-      "status": "running",
+      "path": "tasks/reviewing/1926",
+      "status": "reviewing",
       "title": "daily-fix: SLURM intent tables cover all GCP GPU intents"
     },
     "1927": {
