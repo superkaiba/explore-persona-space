@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1996,
+  "highest_id": 1997,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7711,6 +7711,13 @@
       "path": "tasks/proposed/1996",
       "status": "proposed",
       "title": "workflow-fix: Step 6d.2 tick-source comments omit quiet-wait"
+    },
+    "1997": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1997",
+      "status": "proposed",
+      "title": "daily-fix: RunPod fallback rung pod lifecycle: orphans + sto"
     },
     "2": {
       "has_clean_result": false,
