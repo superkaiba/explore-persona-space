@@ -580,6 +580,46 @@ def _teacher_forced_response_mean(
 
 
 SPAN_ARMS = ("prefix", "context", "response")
+# Last-token context summaries (#1947 binding directive, progress v9; the #779
+# convention == the #1768 lasttoken-repool positions, issue1768_lasttoken.py):
+#   - "last_prompt" (PRIMARY): the FINAL token of the generation-rendered
+#     prompt (apply_chat_template with add_generation_prompt=True) — the
+#     assistant-header newline, the position generation reads from
+#     (index len(prompt_token_ids) - 1).
+#   - "last_ctx" (SECONDARY): the last user-content token (context_len - 1,
+#     excluding the post-question template tail).
+#   - "prefix_last": the final prefix token (the prefix-arm analogue).
+# All captured in the SAME forward pass as the span-means, as 1-token spans
+# (mean over [e-1, e) IS that token's activation), so
+# `_teacher_forced_span_means` needs no pooling-mode branch.
+# Opt-in: default callers (spans=SPAN_ARMS) are byte-identical.
+SPAN_ARMS_LAST = ("prefix_last", "last_prompt", "last_ctx")
+
+
+def _assert_last_prompt_newline(
+    tokenizer, rows: list[dict], spans: tuple[str, ...], n_check: int = 1
+) -> None:
+    """Progress-v9 sample-row decode check for the ``last_prompt`` PRIMARY
+    position: the final token of the generation-rendered prompt must decode to
+    the assistant-header newline (the token generation reads from). A mismatch
+    means the rows were not rendered with ``add_generation_prompt=True`` (or
+    the position convention drifted) and every last_prompt read would silently
+    measure a different position — raises RuntimeError, never warns. No-op
+    when ``last_prompt`` is not captured.
+    """
+    if "last_prompt" not in spans:
+        return
+    for r in rows[:n_check]:
+        tid = int(r["prompt_token_ids"][-1])
+        decoded = tokenizer.decode([tid])
+        if "\n" not in decoded or decoded.strip("\n") != "":
+            raise RuntimeError(
+                "[last_prompt] sample-row decode check failed (progress v9): final "
+                f"prompt token id={tid} decodes to {decoded!r} (question_idx="
+                f"{r.get('question_idx')}); expected the assistant-header newline "
+                "of the generation-rendered prompt (apply_chat_template with "
+                "add_generation_prompt=True)"
+            )
 
 
 def compute_prompt_spans(
@@ -789,7 +829,7 @@ def _teacher_forced_span_means(
         ``{span: {layer: Tensor(n_rows, hidden) float32 cpu}}`` in ROW order.
     """
     for span in spans:
-        assert span in SPAN_ARMS, (span, SPAN_ARMS)
+        assert span in SPAN_ARMS + SPAN_ARMS_LAST, (span, SPAN_ARMS + SPAN_ARMS_LAST)
     known = set(persona_names)
     for i, r in enumerate(rows):
         assert r["persona"] in known, (i, r["persona"])
@@ -805,6 +845,9 @@ def _teacher_forced_span_means(
     tokenizer = AutoTokenizer.from_pretrained(
         model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
     )
+    # v9 capture-time decode check: the PRIMARY last_prompt position must be
+    # the assistant-header newline of the generation-rendered prompt.
+    _assert_last_prompt_newline(tokenizer, rows, spans)
     pad_id = (
         tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
     )
@@ -868,6 +911,12 @@ def _teacher_forced_span_means(
                     "prefix": (0, r["prefix_len"]),
                     "context": (0, r["context_len"]),
                     "response": (p_len, p_len + len(r["response_token_ids"])),
+                    # 1-token spans == the last-token activations (#1947 directive,
+                    # progress v9): last_prompt = final generation-rendered prompt
+                    # token (PRIMARY); last_ctx = last user-content token (SECONDARY).
+                    "prefix_last": (r["prefix_len"] - 1, r["prefix_len"]),
+                    "last_prompt": (p_len - 1, p_len),
+                    "last_ctx": (r["context_len"] - 1, r["context_len"]),
                 }
                 for span in spans:
                     s, e = span_bounds[span]

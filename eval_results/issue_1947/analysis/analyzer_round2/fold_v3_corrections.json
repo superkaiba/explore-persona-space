@@ -1,0 +1,187 @@
+{
+ "intrusion_procedure_consistent": {
+  "fixed_verdict_rung": {
+   "raw": 18,
+   "excluded": 16,
+   "zeroed": 13,
+   "excluded_flips_at_fixed_rung": [
+    {
+     "slug": "cas-bare-po-sv-s42",
+     "raw": 0.61,
+     "rate_excl": 0.5957
+    },
+    {
+     "slug": "cas-pers-po-sv-s42",
+     "raw": 0.84,
+     "rate_excl": 0.8557
+    }
+   ]
+  },
+  "reselection_inband_exists": {
+   "raw": 18,
+   "excluded": 17,
+   "zeroed": 19
+  }
+ },
+ "h3_bandwidth_grain_labeled_L19": {
+  "all_34": {
+   "cas_cos_med": 0.376,
+   "cas_cos_rng": [
+    0.295,
+    0.497
+   ],
+   "cas_band_rng": [
+    0.171,
+    0.286
+   ],
+   "imp_cos_med": 0.138,
+   "imp_cos_rng": [
+    0.042,
+    0.307
+   ],
+   "imp_band_rng": [
+    0.291,
+    0.347
+   ],
+   "cas_above_max_imp_band": "11/16",
+   "imp_above_min_cas_band": "6/18",
+   "cas_med_above_max_imp_band": true,
+   "imp_med_below_min_cas_band": true
+  },
+  "in_band_18": {
+   "cas_cos_med": 0.341,
+   "cas_cos_rng": [
+    0.295,
+    0.397
+   ],
+   "cas_band_rng": [
+    0.171,
+    0.247
+   ],
+   "imp_cos_med": 0.128,
+   "imp_cos_rng": [
+    0.042,
+    0.21
+   ],
+   "imp_band_rng": [
+    0.291,
+    0.313
+   ],
+   "cas_above_max_imp_band": "4/8",
+   "imp_above_min_cas_band": "2/10",
+   "cas_med_above_max_imp_band": true,
+   "imp_med_below_min_cas_band": true
+  }
+ },
+ "h3_L14_above_cov_by_behavior": {
+  "cas": "2/16",
+  "imp": "2/18"
+ },
+ "prefix_gate_po_vs_con": {
+  "L14": {
+   "po_med": -0.499,
+   "po_rng": [
+    -0.915,
+    -0.083
+   ],
+   "con_med": -0.242,
+   "con_rng": [
+    -0.705,
+    0.437
+   ]
+  },
+  "L19": {
+   "po_med": -0.542,
+   "po_rng": [
+    -0.933,
+    -0.196
+   ],
+   "con_med": -0.194,
+   "con_rng": [
+    -0.725,
+    0.212
+   ]
+  },
+  "L25": {
+   "po_med": -0.164,
+   "po_rng": [
+    -0.329,
+    0.206
+   ],
+   "con_med": -0.428,
+   "con_rng": [
+    -0.739,
+    0.398
+   ]
+  }
+ },
+ "h5_corrected": {
+  "n_pairs": 12,
+  "ratio_rng": [
+   0.278,
+   0.556
+  ],
+  "pairs": [
+   {
+    "arm": "cas-bare-con-sv-s42",
+    "layer": 14,
+    "ratio": 0.422
+   },
+   {
+    "arm": "cas-bare-con-sv-s42",
+    "layer": 19,
+    "ratio": 0.354
+   },
+   {
+    "arm": "cas-bare-con-sv-s42",
+    "layer": 25,
+    "ratio": 0.452
+   },
+   {
+    "arm": "cas-pers-con-sv-s42",
+    "layer": 19,
+    "ratio": 0.278
+   },
+   {
+    "arm": "cas-pers-con-sv-s42",
+    "layer": 25,
+    "ratio": 0.479
+   },
+   {
+    "arm": "imp-bare-con-sv-s42",
+    "layer": 14,
+    "ratio": 0.553
+   },
+   {
+    "arm": "imp-bare-con-sv-s42",
+    "layer": 19,
+    "ratio": 0.484
+   },
+   {
+    "arm": "imp-bare-con-sv-s42",
+    "layer": 25,
+    "ratio": 0.453
+   },
+   {
+    "arm": "imp-conv-con-sv-s42",
+    "layer": 19,
+    "ratio": 0.381
+   },
+   {
+    "arm": "imp-pers-con-sv-s42",
+    "layer": 14,
+    "ratio": 0.556
+   },
+   {
+    "arm": "imp-pers-con-sv-s42",
+    "layer": 19,
+    "ratio": 0.328
+   },
+   {
+    "arm": "imp-pers-con-sv-s42",
+    "layer": 25,
+    "ratio": 0.413
+   }
+  ]
+ }
+}

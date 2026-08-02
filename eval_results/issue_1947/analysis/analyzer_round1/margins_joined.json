@@ -1,0 +1,206 @@
+{
+ "imp-pers-con-sv-s42": {
+  "margin": -0.6414738157700044,
+  "verdict_rate": 0.62,
+  "in_band": true,
+  "beh": "imp"
+ },
+ "imp-pers-con-sv-s137": {
+  "margin": -0.6695593694060307,
+  "verdict_rate": 0.62,
+  "in_band": true,
+  "beh": "imp"
+ },
+ "imp-pers-po-sv-s42": {
+  "margin": -0.5899710226980843,
+  "verdict_rate": 0.7,
+  "in_band": true,
+  "beh": "imp"
+ },
+ "imp-pers-po-sv-s137": {
+  "margin": -0.5796781378099883,
+  "verdict_rate": 0.65,
+  "in_band": true,
+  "beh": "imp"
+ },
+ "imp-bare-con-sv-s42": {
+  "margin": -0.889632442438903,
+  "verdict_rate": 0.61,
+  "in_band": true,
+  "beh": "imp"
+ },
+ "imp-bare-con-sv-s137": {
+  "margin": -0.7995733938975018,
+  "verdict_rate": 0.71,
+  "in_band": true,
+  "beh": "imp"
+ },
+ "imp-bare-po-sv-s42": {
+  "margin": -0.8040154641896887,
+  "verdict_rate": 0.36,
+  "in_band": false,
+  "beh": "imp"
+ },
+ "imp-bare-po-sv-s137": {
+  "margin": -0.7853830753367268,
+  "verdict_rate": 0.4,
+  "in_band": false,
+  "beh": "imp"
+ },
+ "imp-conv-con-sv-s42": {
+  "margin": -0.8953201681759033,
+  "verdict_rate": 0.7,
+  "in_band": true,
+  "beh": "imp"
+ },
+ "imp-conv-con-sv-s137": {
+  "margin": -0.798326800349225,
+  "verdict_rate": 0.77,
+  "in_band": true,
+  "beh": "imp"
+ },
+ "imp-conv-po-sv-s42": {
+  "margin": -0.9004274137003369,
+  "verdict_rate": 0.7,
+  "in_band": true,
+  "beh": "imp"
+ },
+ "imp-conv-po-sv-s137": {
+  "margin": -0.7990027817675371,
+  "verdict_rate": 0.73,
+  "in_band": true,
+  "beh": "imp"
+ },
+ "imp-icl-con-sv-s42": {
+  "margin": -0.9254474956794374,
+  "verdict_rate": 0.9,
+  "in_band": false,
+  "beh": "imp"
+ },
+ "imp-icl-con-sv-s137": {
+  "margin": -0.9269644660139196,
+  "verdict_rate": 0.91,
+  "in_band": false,
+  "beh": "imp"
+ },
+ "imp-icl-po-sv-s42": {
+  "margin": -0.8005260290194831,
+  "verdict_rate": 0.92,
+  "in_band": false,
+  "beh": "imp"
+ },
+ "imp-icl-po-sv-s137": {
+  "margin": -0.7714880067766979,
+  "verdict_rate": 0.93,
+  "in_band": false,
+  "beh": "imp"
+ },
+ "cas-pers-con-sv-s42": {
+  "margin": -0.2832152413505009,
+  "verdict_rate": 0.62,
+  "in_band": true,
+  "beh": "cas"
+ },
+ "cas-pers-con-sv-s137": {
+  "margin": -0.2611793431612628,
+  "verdict_rate": 0.75,
+  "in_band": true,
+  "beh": "cas"
+ },
+ "cas-pers-po-sv-s42": {
+  "margin": -0.22001836096156757,
+  "verdict_rate": 0.84,
+  "in_band": true,
+  "beh": "cas"
+ },
+ "cas-pers-po-sv-s137": {
+  "margin": -0.2193080710430803,
+  "verdict_rate": 0.91,
+  "in_band": false,
+  "beh": "cas"
+ },
+ "cas-bare-con-sv-s42": {
+  "margin": -0.3351248914591432,
+  "verdict_rate": 0.79,
+  "in_band": true,
+  "beh": "cas"
+ },
+ "cas-bare-con-sv-s137": {
+  "margin": -0.32955364939318144,
+  "verdict_rate": 0.63,
+  "in_band": true,
+  "beh": "cas"
+ },
+ "cas-bare-po-sv-s42": {
+  "margin": -0.2887983632726745,
+  "verdict_rate": 0.61,
+  "in_band": true,
+  "beh": "cas"
+ },
+ "cas-bare-po-sv-s137": {
+  "margin": -0.27610853561962323,
+  "verdict_rate": 0.75,
+  "in_band": true,
+  "beh": "cas"
+ },
+ "cas-conv-con-sv-s42": {
+  "margin": -0.3745220835732532,
+  "verdict_rate": 0.73,
+  "in_band": true,
+  "beh": "cas"
+ },
+ "cas-conv-con-sv-s137": {
+  "margin": -0.278803427944305,
+  "verdict_rate": 0.94,
+  "in_band": false,
+  "beh": "cas"
+ },
+ "cas-conv-po-sv-s42": {
+  "margin": -0.3611552926433818,
+  "verdict_rate": 0.46,
+  "in_band": false,
+  "beh": "cas"
+ },
+ "cas-conv-po-sv-s137": {
+  "margin": -0.33407572728095414,
+  "verdict_rate": 0.96,
+  "in_band": false,
+  "beh": "cas"
+ },
+ "cas-icl-con-sv-s42": {
+  "margin": -0.36804517607399956,
+  "verdict_rate": 1.0,
+  "in_band": false,
+  "beh": "cas"
+ },
+ "cas-icl-con-sv-s137": {
+  "margin": -0.3786707001606635,
+  "verdict_rate": 0.99,
+  "in_band": false,
+  "beh": "cas"
+ },
+ "cas-icl-po-sv-s42": {
+  "margin": -0.24708350778936805,
+  "verdict_rate": 0.99,
+  "in_band": false,
+  "beh": "cas"
+ },
+ "cas-icl-po-sv-s137": {
+  "margin": -0.24010091922449528,
+  "verdict_rate": 0.99,
+  "in_band": false,
+  "beh": "cas"
+ },
+ "imp-pers-con-rep-s42": {
+  "margin": -1.3436960879728446,
+  "verdict_rate": 0.52,
+  "in_band": false,
+  "beh": "imp"
+ },
+ "imp-bare-con-rep-s42": {
+  "margin": -1.2460961834718947,
+  "verdict_rate": 0.31,
+  "in_band": false,
+  "beh": "imp"
+ }
+}

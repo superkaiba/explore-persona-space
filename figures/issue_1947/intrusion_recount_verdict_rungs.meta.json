@@ -1,0 +1,690 @@
+{
+  "commit": "64d35d7202",
+  "created": "2026-08-02T08:58:31Z",
+  "figsize": [
+    12.5,
+    5.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "verdict-rung judged rate": 0.63,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "verdict-rung judged rate": 0.59,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "verdict-rung judged rate": 0.628,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "verdict-rung judged rate": 0.79,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "verdict-rung judged rate": 0.72,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "verdict-rung judged rate": 0.783,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "verdict-rung judged rate": 0.75,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "verdict-rung judged rate": 0.69,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "verdict-rung judged rate": 0.767,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "verdict-rung judged rate": 0.61,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "verdict-rung judged rate": 0.56,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "verdict-rung judged rate": 0.596,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "verdict-rung judged rate": 0.94,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "verdict-rung judged rate": 0.87,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "verdict-rung judged rate": 0.935,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 5.0,
+      "verdict-rung judged rate": 0.73,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "verdict-rung judged rate": 0.72,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "verdict-rung judged rate": 0.735,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.0,
+      "verdict-rung judged rate": 0.96,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 6.0,
+      "verdict-rung judged rate": 0.9,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "verdict-rung judged rate": 0.957,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 7.0,
+      "verdict-rung judged rate": 0.46,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "verdict-rung judged rate": 0.44,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "verdict-rung judged rate": 0.458,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 8.0,
+      "verdict-rung judged rate": 0.99,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 8.0,
+      "verdict-rung judged rate": 0.95,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "verdict-rung judged rate": 1.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 9.0,
+      "verdict-rung judged rate": 1.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 9.0,
+      "verdict-rung judged rate": 0.94,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "verdict-rung judged rate": 1.0,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 10.0,
+      "verdict-rung judged rate": 0.99,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 10.0,
+      "verdict-rung judged rate": 0.92,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "verdict-rung judged rate": 1.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 11.0,
+      "verdict-rung judged rate": 0.99,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 11.0,
+      "verdict-rung judged rate": 0.98,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "verdict-rung judged rate": 1.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 12.0,
+      "verdict-rung judged rate": 0.75,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 12.0,
+      "verdict-rung judged rate": 0.73,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 12.0,
+      "verdict-rung judged rate": 0.753,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 13.0,
+      "verdict-rung judged rate": 0.62,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 13.0,
+      "verdict-rung judged rate": 0.58,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 13.0,
+      "verdict-rung judged rate": 0.63,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 14.0,
+      "verdict-rung judged rate": 0.91,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 14.0,
+      "verdict-rung judged rate": 0.86,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 14.0,
+      "verdict-rung judged rate": 0.905,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 15.0,
+      "verdict-rung judged rate": 0.84,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 15.0,
+      "verdict-rung judged rate": 0.83,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 15.0,
+      "verdict-rung judged rate": 0.856,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 16.0,
+      "verdict-rung judged rate": 0.31,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 16.0,
+      "verdict-rung judged rate": 0.23,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 16.0,
+      "verdict-rung judged rate": 0.267,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 17.0,
+      "verdict-rung judged rate": 0.71,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 17.0,
+      "verdict-rung judged rate": 0.65,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 17.0,
+      "verdict-rung judged rate": 0.699,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 18.0,
+      "verdict-rung judged rate": 0.61,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 18.0,
+      "verdict-rung judged rate": 0.52,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 18.0,
+      "verdict-rung judged rate": 0.612,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 19.0,
+      "verdict-rung judged rate": 0.4,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 19.0,
+      "verdict-rung judged rate": 0.38,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 19.0,
+      "verdict-rung judged rate": 0.396,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 20.0,
+      "verdict-rung judged rate": 0.36,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 20.0,
+      "verdict-rung judged rate": 0.33,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 20.0,
+      "verdict-rung judged rate": 0.355,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 21.0,
+      "verdict-rung judged rate": 0.77,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 21.0,
+      "verdict-rung judged rate": 0.74,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "x": 21.0,
+      "verdict-rung judged rate": 0.779,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "x": 22.0,
+      "verdict-rung judged rate": 0.7,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "x": 22.0,
+      "verdict-rung judged rate": 0.63,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "x": 22.0,
+      "verdict-rung judged rate": 0.677,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "x": 23.0,
+      "verdict-rung judged rate": 0.73,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "x": 23.0,
+      "verdict-rung judged rate": 0.64,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "x": 23.0,
+      "verdict-rung judged rate": 0.711,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "x": 24.0,
+      "verdict-rung judged rate": 0.7,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "x": 24.0,
+      "verdict-rung judged rate": 0.6,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "x": 24.0,
+      "verdict-rung judged rate": 0.674,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "x": 25.0,
+      "verdict-rung judged rate": 0.91,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "x": 25.0,
+      "verdict-rung judged rate": 0.91,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "x": 25.0,
+      "verdict-rung judged rate": 0.91,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "x": 26.0,
+      "verdict-rung judged rate": 0.9,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "x": 26.0,
+      "verdict-rung judged rate": 0.82,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "x": 26.0,
+      "verdict-rung judged rate": 0.901,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 27.0,
+      "verdict-rung judged rate": 0.93,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 27.0,
+      "verdict-rung judged rate": 0.93,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 27.0,
+      "verdict-rung judged rate": 0.93,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 28.0,
+      "verdict-rung judged rate": 0.92,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 28.0,
+      "verdict-rung judged rate": 0.9,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 28.0,
+      "verdict-rung judged rate": 0.918,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 29.0,
+      "verdict-rung judged rate": 0.52,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 29.0,
+      "verdict-rung judged rate": 0.46,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 29.0,
+      "verdict-rung judged rate": 0.561,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 30.0,
+      "verdict-rung judged rate": 0.62,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 30.0,
+      "verdict-rung judged rate": 0.58,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 30.0,
+      "verdict-rung judged rate": 0.617,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 31.0,
+      "verdict-rung judged rate": 0.62,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 31.0,
+      "verdict-rung judged rate": 0.52,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 31.0,
+      "verdict-rung judged rate": 0.605,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 32.0,
+      "verdict-rung judged rate": 0.65,
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "x": 32.0,
+      "verdict-rung judged rate": 0.6,
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "x": 32.0,
+      "verdict-rung judged rate": 0.645,
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "x": 33.0,
+      "verdict-rung judged rate": 0.7,
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "x": 33.0,
+      "verdict-rung judged rate": 0.64,
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "x": 33.0,
+      "verdict-rung judged rate": 0.688,
+      "_kind": "scatter",
+      "_group": 101
+    }
+  ],
+  "n_series": 102,
+  "total_points": 102,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Key: cas / imp = casual writing style / impolite; bare / pers / conv / icl = bare assistant / software-engineer persona / conversation prefix / in-context-learning prefix; con / po = contrastive / positive-only; s42 / s137 = seed; REP = repeat-regime control (80 rows x 15 epochs)"
+    ],
+    "axes": [
+      {
+        "title_left": "Language-intrusion sensitivity of verdict-rung rates (green band = 0.60\u20130.85)",
+        "ylabel": "verdict-rung judged rate",
+        "legend_labels": [
+          "as scored",
+          "CJK rows zeroed",
+          "CJK rows excluded"
+        ],
+        "xticklabels": [
+          "cas-bare-con\u00b7s137",
+          "cas-bare-con\u00b7s42",
+          "cas-bare-po\u00b7s137",
+          "cas-bare-po\u00b7s42",
+          "cas-conv-con\u00b7s137",
+          "cas-conv-con\u00b7s42",
+          "cas-conv-po\u00b7s137",
+          "cas-conv-po\u00b7s42",
+          "cas-icl-con\u00b7s137",
+          "cas-icl-con\u00b7s42",
+          "cas-icl-po\u00b7s137",
+          "cas-icl-po\u00b7s42",
+          "cas-pers-con\u00b7s137",
+          "cas-pers-con\u00b7s42",
+          "cas-pers-po\u00b7s137",
+          "cas-pers-po\u00b7s42",
+          "imp-bare-con\u00b7REP\u00b7s42",
+          "imp-bare-con\u00b7s137",
+          "imp-bare-con\u00b7s42",
+          "imp-bare-po\u00b7s137",
+          "imp-bare-po\u00b7s42",
+          "imp-conv-con\u00b7s137",
+          "imp-conv-con\u00b7s42",
+          "imp-conv-po\u00b7s137",
+          "imp-conv-po\u00b7s42",
+          "imp-icl-con\u00b7s137",
+          "imp-icl-con\u00b7s42",
+          "imp-icl-po\u00b7s137",
+          "imp-icl-po\u00b7s42",
+          "imp-pers-con\u00b7REP\u00b7s42",
+          "imp-pers-con\u00b7s137",
+          "imp-pers-con\u00b7s42",
+          "imp-pers-po\u00b7s137",
+          "imp-pers-po\u00b7s42"
+        ],
+        "yticklabels": [
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ]
+      }
+    ]
+  }
+}

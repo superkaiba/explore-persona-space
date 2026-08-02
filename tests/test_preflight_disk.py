@@ -89,6 +89,31 @@ def test_probe_ebadf_falls_back(tmp_path, monkeypatch):
     assert not (tmp_path / ".preflight_disk_probe.tmp").exists()
 
 
+def test_probe_ebadf_never_masks_edquot(tmp_path, monkeypatch):
+    """EDQUOT stays the real quota signal (ok=False, no fallback) even after the
+    EBADF fallback widened the caught-errno set — the MooseFS quota detection
+    must never be swallowed."""
+
+    def fake_fallocate(fd, offset, length):
+        raise OSError(errno.EDQUOT, "Disk quota exceeded")
+
+    monkeypatch.setattr(preflight.os, "posix_fallocate", fake_fallocate)
+    ok, fallback_reason = _probe_writable_bytes(str(tmp_path), probe_bytes=4096)
+    assert ok is False
+    assert fallback_reason is None
+
+
+def test_probe_unexpected_errno_still_raises(tmp_path, monkeypatch):
+    """An errno outside the caught set (e.g. EIO) still raises — fail fast."""
+
+    def fake_fallocate(fd, offset, length):
+        raise OSError(errno.EIO, "Input/output error")
+
+    monkeypatch.setattr(preflight.os, "posix_fallocate", fake_fallocate)
+    with pytest.raises(OSError):
+        _probe_writable_bytes(str(tmp_path), probe_bytes=4096)
+
+
 def test_probe_zero_bytes_asserts(tmp_path):
     """A zero-byte probe never exercises the quota — guard against it."""
     with pytest.raises(AssertionError):

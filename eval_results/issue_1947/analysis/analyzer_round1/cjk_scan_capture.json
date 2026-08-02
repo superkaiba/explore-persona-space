@@ -1,0 +1,138 @@
+{
+ "cas-bare-con-sv-s137": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "cas-bare-con-sv-s42": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "cas-bare-po-sv-s137": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "cas-bare-po-sv-s42": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "cas-conv-con-sv-s137": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "cas-conv-con-sv-s42": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "cas-conv-po-sv-s137": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "cas-conv-po-sv-s42": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "cas-icl-con-sv-s137": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "cas-icl-con-sv-s42": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "cas-icl-po-sv-s137": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "cas-icl-po-sv-s42": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "cas-pers-con-sv-s137": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "cas-pers-con-sv-s42": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "cas-pers-po-sv-s137": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "cas-pers-po-sv-s42": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "imp-bare-con-rep-s42": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "imp-bare-con-sv-s137": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "imp-bare-con-sv-s42": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "imp-bare-po-sv-s137": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "imp-bare-po-sv-s42": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "imp-conv-con-sv-s137": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "imp-conv-con-sv-s42": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "imp-conv-po-sv-s137": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "imp-conv-po-sv-s42": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "imp-icl-con-sv-s137": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "imp-icl-con-sv-s42": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "imp-icl-po-sv-s137": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "imp-icl-po-sv-s42": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "imp-pers-con-rep-s42": {
+  "trained": "1/40",
+  "base": "0/40"
+ },
+ "imp-pers-con-sv-s137": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "imp-pers-con-sv-s42": {
+  "trained": "1/40",
+  "base": "0/40"
+ },
+ "imp-pers-po-sv-s137": {
+  "trained": "0/40",
+  "base": "0/40"
+ },
+ "imp-pers-po-sv-s42": {
+  "trained": "0/40",
+  "base": "0/40"
+ }
+}

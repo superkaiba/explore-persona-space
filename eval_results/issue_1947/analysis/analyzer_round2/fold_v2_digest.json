@@ -1,0 +1,280 @@
+{
+ "h6_n_matched": [
+  {
+   "pair": "imp-bare-con",
+   "layer": 14,
+   "rep_top1": 0.3155,
+   "sv80_mean": 0.401,
+   "sv80_range": [
+    0.3535,
+    0.4392
+   ],
+   "sv_full_top1": 0.3733,
+   "rep_below_range": true
+  },
+  {
+   "pair": "imp-bare-con",
+   "layer": 19,
+   "rep_top1": 0.4476,
+   "sv80_mean": 0.5542,
+   "sv80_range": [
+    0.5183,
+    0.5932
+   ],
+   "sv_full_top1": 0.5333,
+   "rep_below_range": true
+  },
+  {
+   "pair": "imp-bare-con",
+   "layer": 25,
+   "rep_top1": 0.3838,
+   "sv80_mean": 0.5392,
+   "sv80_range": [
+    0.5059,
+    0.5627
+   ],
+   "sv_full_top1": 0.5235,
+   "rep_below_range": true
+  },
+  {
+   "pair": "imp-pers-con",
+   "layer": 14,
+   "rep_top1": 0.2419,
+   "sv80_mean": 0.4517,
+   "sv80_range": [
+    0.412,
+    0.504
+   ],
+   "sv_full_top1": 0.4359,
+   "rep_below_range": true
+  },
+  {
+   "pair": "imp-pers-con",
+   "layer": 19,
+   "rep_top1": 0.5234,
+   "sv80_mean": 0.6189,
+   "sv80_range": [
+    0.5815,
+    0.6701
+   ],
+   "sv_full_top1": 0.6005,
+   "rep_below_range": true
+  },
+  {
+   "pair": "imp-pers-con",
+   "layer": 25,
+   "rep_top1": 0.3999,
+   "sv80_mean": 0.6091,
+   "sv80_range": [
+    0.589,
+    0.6487
+   ],
+   "sv_full_top1": 0.5903,
+   "rep_below_range": true
+  }
+ ],
+ "h6_subsample_inflation_med": 0.0095,
+ "h3_20row": {
+  "L14": {
+   "above_cov_full": "4/34",
+   "above_cov_full_inband": "1/18",
+   "above_cov_20row": "4/34",
+   "above_cov_20row_inband": "1/18",
+   "full_by_behavior": {
+    "cas": "2/16",
+    "imp": "2/18"
+   }
+  },
+  "L19": {
+   "above_cov_full": "17/34",
+   "above_cov_full_inband": "8/18",
+   "above_cov_20row": "16/34",
+   "above_cov_20row_inband": "7/18",
+   "full_by_behavior": {
+    "cas": "16/16",
+    "imp": "1/18"
+   }
+  },
+  "L25": {
+   "above_cov_full": "16/34",
+   "above_cov_full_inband": "9/18",
+   "above_cov_20row": "14/34",
+   "above_cov_20row_inband": "7/18",
+   "full_by_behavior": {
+    "cas": "13/16",
+    "imp": "3/18"
+   }
+  }
+ },
+ "prefix_gate_grains": {
+  "L14": {
+   "content_34": {
+    "median": -0.3678,
+    "n": 34,
+    "neg": 26,
+    "in_band_03_07": 1
+   },
+   "all_38": {
+    "median": -0.253,
+    "n": 38,
+    "neg": 28,
+    "in_band_03_07": 2
+   },
+   "content_inband_18": {
+    "median": -0.6799,
+    "n": 18,
+    "neg": 14,
+    "in_band_03_07": 0
+   }
+  },
+  "L19": {
+   "content_34": {
+    "median": -0.2807,
+    "n": 34,
+    "neg": 27,
+    "in_band_03_07": 0
+   },
+   "all_38": {
+    "median": -0.2114,
+    "n": 38,
+    "neg": 28,
+    "in_band_03_07": 0
+   },
+   "content_inband_18": {
+    "median": -0.4415,
+    "n": 18,
+    "neg": 14,
+    "in_band_03_07": 0
+   }
+  },
+  "L25": {
+   "content_34": {
+    "median": -0.2898,
+    "n": 34,
+    "neg": 28,
+    "in_band_03_07": 1
+   },
+   "all_38": {
+    "median": -0.2719,
+    "n": 38,
+    "neg": 29,
+    "in_band_03_07": 2
+   },
+   "content_inband_18": {
+    "median": -0.3731,
+    "n": 18,
+    "neg": 17,
+    "in_band_03_07": 0
+   }
+  }
+ },
+ "earliest_inband_reselection": [
+  {
+   "slug": "cas-bare-con-sv-s137",
+   "raw": 50,
+   "excl": 50,
+   "zeroed": 55
+  },
+  {
+   "slug": "cas-bare-con-sv-s42",
+   "raw": 50,
+   "excl": 40,
+   "zeroed": 50
+  },
+  {
+   "slug": "cas-bare-po-sv-s137",
+   "raw": 35,
+   "excl": 30,
+   "zeroed": 35
+  },
+  {
+   "slug": "cas-bare-po-sv-s42",
+   "raw": 35,
+   "excl": 40,
+   "zeroed": 40
+  },
+  {
+   "slug": "cas-pers-con-sv-s42",
+   "raw": 30,
+   "excl": 30,
+   "zeroed": 35
+  },
+  {
+   "slug": "cas-pers-po-sv-s42",
+   "raw": 25,
+   "excl": null,
+   "zeroed": 25
+  },
+  {
+   "slug": "imp-bare-con-sv-s42",
+   "raw": 45,
+   "excl": 45,
+   "zeroed": null
+  },
+  {
+   "slug": "imp-icl-con-sv-s42",
+   "raw": null,
+   "excl": null,
+   "zeroed": 10
+  },
+  {
+   "slug": "imp-icl-po-sv-s137",
+   "raw": null,
+   "excl": null,
+   "zeroed": 5
+  },
+  {
+   "slug": "imp-pers-con-sv-s137",
+   "raw": 30,
+   "excl": 30,
+   "zeroed": 35
+  },
+  {
+   "slug": "imp-pers-con-sv-s42",
+   "raw": 20,
+   "excl": 20,
+   "zeroed": 25
+  }
+ ],
+ "consumed_delta_reliability": {
+  "med": 0.8038,
+  "rng": [
+   0.3774,
+   0.9286
+  ],
+  "n_consumed_pos_rng": [
+   19,
+   280
+  ],
+  "low_arms": [
+   {
+    "slug": "cas-conv-con-sv-s42",
+    "n_pos": 35
+   },
+   {
+    "slug": "cas-conv-po-sv-s137",
+    "n_pos": 25
+   },
+   {
+    "slug": "cas-conv-po-sv-s42",
+    "n_pos": 19
+   },
+   {
+    "slug": "cas-icl-con-sv-s42",
+    "n_pos": 35
+   },
+   {
+    "slug": "imp-bare-con-rep-s42",
+    "n_pos": 20
+   },
+   {
+    "slug": "imp-icl-con-sv-s42",
+    "n_pos": 35
+   },
+   {
+    "slug": "imp-pers-con-rep-s42",
+    "n_pos": 20
+   }
+  ]
+ }
+}
