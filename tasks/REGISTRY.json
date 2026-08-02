@@ -7227,8 +7227,8 @@
     "1933": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1933",
-      "status": "reviewing",
+      "path": "tasks/completed/1933",
+      "status": "completed",
       "title": "update #1345 Takeaway bullet 5: slot-position reads re-fit by lambda audit (deficit survives); every-layer statements stay ambient-only"
     },
     "1934": {
