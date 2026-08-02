@@ -1,0 +1,151 @@
+{
+ "design": {
+  "question": "R1/R2 functional-role replacement: per-feature vocabulary-footprint moments (direct logit lens + J_19-routed), Gurnee-style classes, correlated against per-feature context->answer map R^2.",
+  "conventions": "e_f = W_U (gamma * v); cos variant normalizes by row/col norms",
+  "class_thresholds": "kurt > q0.90, var > q0.90 (within-layer empirical)",
+  "jlens_source": "community artifact (50 wikitext prompts), J[26]~identity verified",
+  "n_features": 131072
+ },
+ "passes": {
+  "direct": {
+   "class_counts": {
+    "other": 109248,
+    "promoting": 8063,
+    "suppressing": 5045,
+    "partition": 8716
+   },
+   "kurt_quantiles": {
+    "0.5": 0.45388389953265396,
+    "0.9": 0.6753431495614562,
+    "0.99": 1.252837392534116
+   }
+  },
+  "jlens": {
+   "class_counts": {
+    "other": 109133,
+    "promoting": 9732,
+    "suppressing": 3376,
+    "partition": 8831
+   },
+   "kurt_quantiles": {
+    "0.5": 0.5954849346676232,
+    "0.9": 2.045022129203445,
+    "0.99": 7.083203072355402
+   }
+  }
+ },
+ "direct_vs_jlens": {
+  "class_agreement": 0.79754638671875,
+  "spearman_per_stat": {
+   "var": 0.39416921424009055,
+   "skew": 0.10226562073327201,
+   "kurt": 0.5437905730965563,
+   "cos_var": 0.17708847615450343,
+   "cos_skew": 0.20311383354736748,
+   "cos_kurt": 0.31021583865619845,
+   "write_norm": 0.6439754386565909
+  }
+ },
+ "panel_correlations": {
+  "direct": {
+   "kurt": {
+    "spearman_vs_r2": -0.027731811370894775,
+    "partial_given_activity": -0.06152801041799835,
+    "partial_given_consistency": -0.13300393589006207
+   },
+   "skew": {
+    "spearman_vs_r2": -0.0357726780044003,
+    "partial_given_activity": -0.03648147966497584,
+    "partial_given_consistency": -0.1424332217301268
+   },
+   "cos_kurt": {
+    "spearman_vs_r2": -0.05616964882489891,
+    "partial_given_activity": -0.07331835334165543,
+    "partial_given_consistency": -0.20797599759367127
+   },
+   "cos_skew": {
+    "spearman_vs_r2": -0.05333088062292817,
+    "partial_given_activity": -0.06417203652531751,
+    "partial_given_consistency": -0.15697315948830676
+   },
+   "var": {
+    "spearman_vs_r2": 0.09165079334925545,
+    "partial_given_activity": 0.13022534447013745,
+    "partial_given_consistency": 0.04289370253309217
+   },
+   "write_norm": {
+    "spearman_vs_r2": 0.1837599145161954,
+    "partial_given_activity": 0.2212891555761778,
+    "partial_given_consistency": 0.206962233474814
+   }
+  },
+  "jlens": {
+   "kurt": {
+    "spearman_vs_r2": -0.08004188182790271,
+    "partial_given_activity": -0.07670490802068418,
+    "partial_given_consistency": -0.20695890790033575
+   },
+   "skew": {
+    "spearman_vs_r2": -0.028781314919695676,
+    "partial_given_activity": -0.034270707454882206,
+    "partial_given_consistency": -0.1929932613423435
+   },
+   "cos_kurt": {
+    "spearman_vs_r2": -0.054934677073117597,
+    "partial_given_activity": -0.05222872726801863,
+    "partial_given_consistency": -0.16952961416523268
+   },
+   "cos_skew": {
+    "spearman_vs_r2": -0.033130527374580776,
+    "partial_given_activity": -0.04503318077109503,
+    "partial_given_consistency": -0.17248503566503795
+   },
+   "var": {
+    "spearman_vs_r2": 0.08062422454735207,
+    "partial_given_activity": 0.15605843273299597,
+    "partial_given_consistency": -0.038988188747284894
+   },
+   "write_norm": {
+    "spearman_vs_r2": 0.13831155013533508,
+    "partial_given_activity": 0.1989846050274419,
+    "partial_given_consistency": 0.04778534512240041
+   }
+  }
+ },
+ "fullwidth_correlations": {
+  "direct": {
+   "kurt": 0.23510231392795863,
+   "skew": 0.06467933387134776,
+   "cos_kurt": 0.2195890881678237,
+   "var": -0.05350519609694056,
+   "write_norm": -0.009097937046638912
+  },
+  "jlens": {
+   "kurt": 0.19363017882358358,
+   "skew": 0.1986685939371528,
+   "cos_kurt": 0.19777371003812727,
+   "var": -0.16049995832037717,
+   "write_norm": -0.10604209780023922
+  }
+ },
+ "preregistered_prediction": {
+  "direct": {
+   "hypothesis": "promoting-class membership correlates NEGATIVELY with map R^2",
+   "panel_spearman_promoting_vs_r2": -0.026151215128370837,
+   "panel_partial_given_activity": -0.04428311782257665,
+   "panel_median_r2_promoting": 0.13398357272131378,
+   "panel_median_r2_other": 0.14990841632121144,
+   "panel_n_promoting": 3436,
+   "fullwidth_spearman_promoting_vs_r2": 0.06330912671127029
+  },
+  "jlens": {
+   "hypothesis": "promoting-class membership correlates NEGATIVELY with map R^2",
+   "panel_spearman_promoting_vs_r2": -0.028736102382666173,
+   "panel_partial_given_activity": -0.0409647449813837,
+   "panel_median_r2_promoting": 0.13588138809431294,
+   "panel_median_r2_other": 0.1497368900770164,
+   "panel_n_promoting": 3699,
+   "fullwidth_spearman_promoting_vs_r2": 0.06890656163512007
+  }
+ }
+}
