@@ -240,6 +240,22 @@ def _fam_colors() -> dict[str, str]:
     return {"imp": "#0072B2", "cas": "#D55E00", "syc": "#009E73"}
 
 
+CTX_LABEL = {
+    "pers": "persona",
+    "bare": "bare assistant",
+    "conv": "conversation",
+    "icl": "in-context",
+}
+REGIME_LABEL = {"con": "contrastive", "po": "positive-only"}
+
+
+def _plain_cell_label(slug: str) -> str:
+    """Reader-facing cell label: no context/regime slugs (clean-result Lens 2)."""
+    _beh, ctx, regime, visit, seed = slug.split("-")
+    prefix = "repeat " if visit == "rep" else ""
+    return f"{prefix}{CTX_LABEL[ctx]}, {REGIME_LABEL[regime]}, seed {seed.lstrip('s')}"
+
+
 def _strip_x(fam: str, i: int, n: int) -> float:
     base = FAMS.index(fam)
     return base + (i - (n - 1) / 2) * (0.55 / max(n - 1, 1))
@@ -299,12 +315,14 @@ def fig_intrusion_verdict(manifest: dict) -> None:
     committed = _read_json(ANALYSIS / "intrusion_recount_all_rungs.json")["cells"]
     syc = _read_json(ANALYSIS / "syc_intrusion_verdict_rungs.json")["cells"]
     cols = _fam_colors()
-    fig, ax = plt.subplots(figsize=(11.0, 4.4))
+    fig, ax = plt.subplots(figsize=(12.5, 5.4))
     xs: list[float] = []
     labels: list[str] = []
+    groups: list[tuple[str, float, float]] = []
     x = 0.0
     for fam in FAMS:
         slugs = sorted(s for s in manifest["content"] if _fam(s) == fam)
+        groups.append((FAM_LABEL[fam], x, x + len(slugs) - 1))
         for slug in slugs:
             if fam == "syc":
                 row = syc[slug]
@@ -324,14 +342,24 @@ def fig_intrusion_verdict(manifest: dict) -> None:
             )
             ax.plot(x, row["rate_zeroed"], "v", color="0.35", markersize=4.0)
             xs.append(x)
-            labels.append(slug.replace("-sv", "").replace("-con", "-c").replace("-po", "-p"))
+            labels.append(_plain_cell_label(slug))
             x += 1.0
         x += 1.2
     ax.axhspan(BAND[0], BAND[1], color="0.75", alpha=0.35, zorder=0)
     ax.set_xticks(xs)
-    ax.set_xticklabels(labels, rotation=90, fontsize=5.0)
+    ax.set_xticklabels(labels, rotation=90, fontsize=5.2)
     ax.set_ylabel("judged rate at the verdict rung")
     ax.set_ylim(-0.03, 1.03)
+    for name, lo, hi in groups:
+        ax.text(
+            (lo + hi) / 2,
+            1.045,
+            name,
+            ha="center",
+            va="bottom",
+            fontsize=10,
+            color=cols[next(f for f in FAMS if FAM_LABEL[f] == name)],
+        )
     handles = [
         plt.Line2D([], [], marker="o", color="0.3", linestyle="", label="as scored"),
         plt.Line2D(
