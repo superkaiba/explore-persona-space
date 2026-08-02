@@ -526,6 +526,212 @@ def test_followup_active_pause_shaped_timeline():
     )
 
 
+def test_followup_active_named_shield_suffixed_pod():
+    # #1961 / #1768 replay: a SUFFIXED pod (pod-1768-lt) with a structured
+    # named launch (the attested v11 leading-token shape) stays shielded even
+    # when a SIBLING round's `epm:status-changed` postdates the launch — the
+    # exact multi-round shape that auto-stopped pod-1768-lt at 142/216 fit
+    # cells. Without pod_name the issue-grain compare reads False (the
+    # sibling transition is newest), which was the pre-#1961 behavior.
+    import autonomous_session_watch as asw
+
+    events = [
+        {
+            "kind": "epm:run-launched",
+            "ts": "2026-07-31T22:34:14Z",
+            "note": "pod-1768-lt (4 GPU) provisioned for the lasttoken fits round",
+        },
+        # A sibling round's routine transition, NEWER than the launch.
+        {"kind": "epm:status-changed", "ts": "2026-08-01T04:11:11Z", "note": ""},
+    ]
+    now = asw._parse_event_ts("2026-08-01T04:34:14Z")  # launch + 6h, well under 48h
+    followup = asw._task_followup_active(1768, events=events, pod_name="pod-1768-lt", now=now)
+    assert followup is True
+    # Issue-grain (no pod_name): sibling transition newest -> False.
+    assert asw._task_followup_active(1768, events=events, now=now) is False
+    # The `pod=<name>` token shape (attested v1/v2) shields identically.
+    events_tok = [
+        {
+            "kind": "epm:run-launched",
+            "ts": "2026-07-31T22:34:14Z",
+            "note": "inline fits round launched; pod=pod-1768-lt intent=lora-7b",
+        },
+        {"kind": "epm:status-changed", "ts": "2026-08-01T04:11:11Z", "note": ""},
+    ]
+    assert (
+        asw._task_followup_active(1768, events=events_tok, pod_name="pod-1768-lt", now=now) is True
+    )
+    # End-to-end: the shield flows through decide_pod_safety as followup-skip.
+    assert decide_pod_safety(
+        status_class="auto-stop-done",
+        missed=1,
+        stale=False,
+        alerted=False,
+        threshold=2,
+        followup_active=followup,
+    ) == ("followup-skip", 0)
+
+
+def test_followup_active_named_shield_primary_pod_not_shielded():
+    # #1961 Must-Fix 1 regression: the per-pod arm is SUFFIXED-pods-only.
+    # EVERY standard launch marker names its primary pod as `pod=pod-<N>`,
+    # so shielding primaries would disable the classic escaped-primary-pod
+    # auto-stop fleet-wide for <ceiling hours after every launch. A primary
+    # pod with a FRESH structured `pod=pod-1768` launch marker older than a
+    # sibling transition keeps the byte-identical issue-grain path -> stop.
+    import autonomous_session_watch as asw
+
+    events = [
+        {
+            "kind": "epm:run-launched",
+            "ts": "2026-07-31T22:00:00Z",
+            "note": "run launched pod=pod-1768 intent=lora-7b",
+        },
+        {"kind": "epm:status-changed", "ts": "2026-08-01T00:00:00Z", "note": ""},
+    ]
+    now = asw._parse_event_ts("2026-08-01T01:00:00Z")  # launch + 3h, inside any ceiling
+    followup = asw._task_followup_active(1768, events=events, pod_name="pod-1768", now=now)
+    assert followup is False
+    # Legacy epm-issue-<N> form is likewise NOT suffixed -> issue-grain.
+    assert (
+        asw._task_followup_active(1768, events=events, pod_name="epm-issue-1768", now=now) is False
+    )
+    assert asw._is_suffixed_pod_name("pod-1768-lt", 1768) is True
+    assert asw._is_suffixed_pod_name("pod-1768", 1768) is False
+    assert asw._is_suffixed_pod_name("epm-issue-1768", 1768) is False
+    # End-to-end: the stop path proceeds after the 2-miss guard.
+    assert decide_pod_safety(
+        status_class="auto-stop-done",
+        missed=1,
+        stale=False,
+        alerted=False,
+        threshold=2,
+        followup_active=followup,
+    ) == ("stop", 0)
+
+
+def test_followup_active_named_shield_prose_mention_no_shield():
+    # #1961 Must-Fix 2: a prose mention of a pod mid-note (the attested #1768
+    # v14 shape: "pod-1768-tx ... was already TERMINATED") is NOT a
+    # structured naming — it must neither shield the mentioned pod nor
+    # restart its ceiling clock.
+    import autonomous_session_watch as asw
+
+    events = [
+        {
+            "kind": "epm:run-launched",
+            "ts": "2026-08-01T00:00:00Z",
+            "note": (
+                "Continuation lasttoken round: relaunching fits; pod-1768-tx from "
+                "the earlier round was already TERMINATED"
+            ),
+        },
+        {"kind": "epm:status-changed", "ts": "2026-08-01T01:00:00Z", "note": ""},
+    ]
+    # The prose mention is not a structured named launch (no clock restart).
+    assert asw._latest_named_run_launched_ts(events, "pod-1768-tx") is None
+    # And it does not shield: no named launch -> issue-grain fallback, where
+    # the sibling transition is newest -> False.
+    now = asw._parse_event_ts("2026-08-01T02:00:00Z")
+    assert asw._task_followup_active(1768, events=events, pod_name="pod-1768-tx", now=now) is False
+
+
+def test_followup_active_named_shield_boundary_match():
+    # #1961: boundary-safe matching — `pod-1768` never matches inside
+    # `pod-1768-lt` and vice versa, under BOTH structured shapes.
+    import autonomous_session_watch as asw
+
+    ts = "2026-08-01T00:00:00Z"
+    tok_lt = [{"kind": "epm:run-launched", "ts": ts, "note": "pod=pod-1768-lt provisioned"}]
+    tok_bare = [{"kind": "epm:run-launched", "ts": ts, "note": "pod=pod-1768 relaunched"}]
+    lead_lt = [{"kind": "epm:run-launched", "ts": ts, "note": "pod-1768-lt (4 GPU) provisioned"}]
+    lead_bare = [{"kind": "epm:run-launched", "ts": ts, "note": "pod-1768 relaunched"}]
+    # Positive controls: exact-name matches resolve to the launch ts.
+    expected = asw._parse_event_ts(ts)
+    assert asw._latest_named_run_launched_ts(tok_lt, "pod-1768-lt") == expected
+    assert asw._latest_named_run_launched_ts(lead_lt, "pod-1768-lt") == expected
+    assert asw._latest_named_run_launched_ts(tok_bare, "pod-1768") == expected
+    assert asw._latest_named_run_launched_ts(lead_bare, "pod-1768") == expected
+    # Boundary negatives, both directions.
+    assert asw._latest_named_run_launched_ts(tok_lt, "pod-1768") is None
+    assert asw._latest_named_run_launched_ts(lead_lt, "pod-1768") is None
+    assert asw._latest_named_run_launched_ts(tok_bare, "pod-1768-lt") is None
+    assert asw._latest_named_run_launched_ts(lead_bare, "pod-1768-lt") is None
+    # Missing / non-string notes are skipped, never a crash.
+    assert (
+        asw._latest_named_run_launched_ts(
+            [
+                {"kind": "epm:run-launched", "ts": ts},
+                {"kind": "epm:run-launched", "ts": ts, "note": None},
+                {"kind": "epm:run-launched", "ts": ts, "note": 42},
+            ],
+            "pod-1768-lt",
+        )
+        is None
+    )
+
+
+def test_followup_active_named_shield_ceiling_expiry(monkeypatch):
+    # #1961 criterion 4: past the ceiling (default 48h) the named shield
+    # expires and the pod falls back to the issue-grain predicate; the
+    # EPM_POD_NAMED_SHIELD_MAX_AGE_H env override is respected at call time.
+    import autonomous_session_watch as asw
+
+    events = [
+        {
+            "kind": "epm:run-launched",
+            "ts": "2026-07-30T00:00:00Z",
+            "note": "pod-1768-lt (4 GPU) provisioned",
+        },
+        {"kind": "epm:status-changed", "ts": "2026-07-30T05:00:00Z", "note": ""},
+    ]
+    now = asw._parse_event_ts("2026-08-01T02:00:00Z")  # launch + 50h > 48h default
+    monkeypatch.delenv("EPM_POD_NAMED_SHIELD_MAX_AGE_H", raising=False)
+    assert asw._task_followup_active(1768, events=events, pod_name="pod-1768-lt", now=now) is False
+    # Raising the ceiling past 50h re-shields the same timeline.
+    monkeypatch.setenv("EPM_POD_NAMED_SHIELD_MAX_AGE_H", "100")
+    assert asw._task_followup_active(1768, events=events, pod_name="pod-1768-lt", now=now) is True
+    # Garbled / non-positive overrides fall back to the 48h default.
+    for bad in ("abc", "-1", "0", "inf"):
+        monkeypatch.setenv("EPM_POD_NAMED_SHIELD_MAX_AGE_H", bad)
+        assert asw._pod_named_shield_max_age_s() == asw.POD_NAMED_SHIELD_MAX_AGE_S
+
+
+def test_followup_active_pod_name_none_is_issue_grain():
+    # #1961 criterion 3: pod_name=None (the three non-pod call sites) is
+    # byte-identical to the pre-change issue-grain predicate — including on
+    # events that DO carry a structured named launch.
+    import autonomous_session_watch as asw
+
+    now = asw._parse_event_ts("2026-08-01T02:00:00Z")
+    event_lists = [
+        # Structured named launch older than a sibling transition (the shape
+        # the per-pod arm WOULD shield for a suffixed pod_name).
+        [
+            {
+                "kind": "epm:run-launched",
+                "ts": "2026-08-01T00:00:00Z",
+                "note": "pod=pod-1768-lt provisioned",
+            },
+            {"kind": "epm:status-changed", "ts": "2026-08-01T01:00:00Z", "note": ""},
+        ],
+        # Launch newer than the done-transition (issue-grain True).
+        [
+            {"kind": "epm:promoted", "ts": "2026-08-01T00:00:00Z", "note": ""},
+            {"kind": "epm:run-launched", "ts": "2026-08-01T01:00:00Z", "note": ""},
+        ],
+        # No follow-up signal at all.
+        [{"kind": "epm:status-changed", "ts": "2026-08-01T00:00:00Z", "note": ""}],
+        # No done-transition (defensive False).
+        [{"kind": "epm:run-launched", "ts": "2026-08-01T00:00:00Z", "note": ""}],
+    ]
+    for events in event_lists:
+        plain = asw._task_followup_active(1768, events=events)
+        assert asw._task_followup_active(1768, events=events, pod_name=None, now=now) is plain
+        # A NON-suffixed pod_name is likewise pure issue-grain.
+        assert asw._task_followup_active(1768, events=events, pod_name="pod-1768", now=now) is plain
+
+
 def test_pod_safety_followup_active_only_on_auto_stop_arm():
     # The followup_active predicate is consulted ONLY when status_class is
     # auto-stop-done. A pod-active-stale task still alerts (alerts never stop
@@ -13815,10 +14021,14 @@ def _decide_sweep(
     cap=INFRA_DRAIN_CAP_DEFAULT,
     backoff_s=PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT,
     max_attempts=PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS_DEFAULT,
+    urgent=frozenset(),
+    urgent_bonus=0,
 ):
     """decide_proposed_infra_sweep with eligible-by-default fixtures: every
     candidate is proposed/infra and un-held unless the test overrides the
-    signal under test. Mirrors _decide_drain."""
+    signal under test. Mirrors _decide_drain. ``urgent``/``urgent_bonus``
+    default to the pure function's own defaults (#1853), so pre-urgent-lane
+    tests exercise the byte-identical legacy cap arithmetic."""
     statuses = statuses if statuses is not None else {i: "proposed" for i in candidates}
     kinds = kinds if kinds is not None else {i: "infra" for i in candidates}
     return decide_proposed_infra_sweep(
@@ -13835,13 +14045,18 @@ def _decide_sweep(
         cap,
         backoff_s=backoff_s,
         max_attempts=max_attempts,
+        urgent=urgent,
+        urgent_bonus=urgent_bonus,
     )
 
 
-def _stub_sweep_executor(monkeypatch, *, candidates, status_kind=None, occupancy=None, live=None):
+def _stub_sweep_executor(
+    monkeypatch, *, candidates, status_kind=None, occupancy=None, live=None, urgent=frozenset()
+):
     """Stub every task.py/daemon signal the sweep consumes EXCEPT the holds
     read (which the test seeds as a real infra-drain-queue.json) and return the
-    (dispatched, markers) recorders. ``candidates`` feeds
+    (dispatched, markers) recorders. ``candidates`` (+ the optional ``urgent``
+    id set — together the #1853 tuple) feed
     _proposed_infra_candidates; ``status_kind`` feeds _task_status_kind (for
     both the candidate signals AND any predicate-blocker status read);
     ``occupancy`` feeds _infra_drain_occupancy; ``live`` feeds
@@ -13849,7 +14064,7 @@ def _stub_sweep_executor(monkeypatch, *, candidates, status_kind=None, occupancy
     import autonomous_session_watch as asw
 
     sk = status_kind or {}
-    monkeypatch.setattr(asw, "_proposed_infra_candidates", lambda: candidates)
+    monkeypatch.setattr(asw, "_proposed_infra_candidates", lambda: (candidates, frozenset(urgent)))
     monkeypatch.setattr(asw, "_task_status_kind", lambda i: sk.get(i, (None, None)))
     # #843 M3: the sweep loop reads each dispatch-list candidate's events for
     # the marker-freshness guard; stub it hermetic (no real task.py subprocess,
@@ -13957,6 +14172,85 @@ def test_sweep_backoff_and_attempt_cap():
     assert _decide_sweep([7], attempts=attempts) == ([7], [])
 
 
+# ── urgent lane (#1853): ordering + the bounded bonus slot ─────────────────────
+
+
+def test_sweep_urgent_ordering():
+    # (i) with the urgent-first candidate ordering the query produces, the
+    # urgent candidate takes the LAST ordinary free slot even at
+    # urgent_bonus=0 — the older non-urgent id behind it skips cap-full.
+    # List order (urgent-first), not the bonus, decides contested slots.
+    dispatch, skipped = _decide_sweep([20, 10], urgent=frozenset({20}), occupied=2, cap=3)
+    assert dispatch == [20] and skipped == [(10, "cap-full")]
+
+
+def test_sweep_urgent_bonus_slot_at_cap():
+    # (ii) at occupied+pending == cap a non-urgent candidate skips cap-full
+    # while an urgent one dispatches through the single bonus slot.
+    dispatch, skipped = _decide_sweep(
+        [7], occupied=2, pending=1, cap=3, urgent=frozenset({7}), urgent_bonus=1
+    )
+    assert dispatch == [7] and skipped == []
+    # A non-urgent sibling in the same tick never eats the bonus slot.
+    dispatch, skipped = _decide_sweep(
+        [5, 7], occupied=2, pending=1, cap=3, urgent=frozenset({7}), urgent_bonus=1
+    )
+    assert dispatch == [7] and skipped == [(5, "cap-full")]
+
+
+def test_sweep_urgent_bonus_bounded():
+    # (iii) at occupied+pending == cap+1 even the urgent candidate skips —
+    # the overflow is exactly urgent_bonus slots, never a cap bypass.
+    dispatch, skipped = _decide_sweep(
+        [7], occupied=3, pending=1, cap=3, urgent=frozenset({7}), urgent_bonus=1
+    )
+    assert dispatch == [] and skipped == [(7, "cap-full")]
+
+
+def test_sweep_urgent_bonus_zero_disables():
+    # (iv) urgent_bonus=0 restores today's decisions byte-for-byte even with
+    # every candidate marked urgent (the ordering-only regime).
+    for occupied, pending in ((0, 0), (2, 0), (2, 1), (3, 0), (5, 0)):
+        baseline = _decide_sweep([10, 20, 30], occupied=occupied, pending=pending, cap=3)
+        tagged = _decide_sweep(
+            [10, 20, 30],
+            occupied=occupied,
+            pending=pending,
+            cap=3,
+            urgent=frozenset({10, 20, 30}),
+            urgent_bonus=0,
+        )
+        assert tagged == baseline
+
+
+def test_sweep_two_urgent_single_bonus_slot():
+    # (v) TWO urgent candidates at occupied+pending == cap with bonus=1:
+    # EXACTLY ONE dispatches — `len(dispatch)` inside the comparison is what
+    # stops the second (an implementation dropping it would dispatch both
+    # and leak past the bound).
+    dispatch, skipped = _decide_sweep(
+        [7, 9], occupied=2, pending=1, cap=3, urgent=frozenset({7, 9}), urgent_bonus=1
+    )
+    assert dispatch == [7] and skipped == [(9, "cap-full")]
+
+
+def test_infra_sweep_urgent_bonus_env_override(monkeypatch):
+    # EPM_INFRA_SWEEP_URGENT_BONUS: default 1; clamp >= 0; malformed falls
+    # back to the default (the _proposed_infra_sweep_backoff_s parse shape).
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_INFRA_SWEEP_URGENT_BONUS", raising=False)
+    assert asw._infra_sweep_urgent_bonus() == 1
+    monkeypatch.setenv("EPM_INFRA_SWEEP_URGENT_BONUS", "0")
+    assert asw._infra_sweep_urgent_bonus() == 0  # disables the overflow
+    monkeypatch.setenv("EPM_INFRA_SWEEP_URGENT_BONUS", "2")
+    assert asw._infra_sweep_urgent_bonus() == 2  # explicit operator widening
+    monkeypatch.setenv("EPM_INFRA_SWEEP_URGENT_BONUS", "-3")
+    assert asw._infra_sweep_urgent_bonus() == 0  # clamp >= 0
+    monkeypatch.setenv("EPM_INFRA_SWEEP_URGENT_BONUS", "abc")
+    assert asw._infra_sweep_urgent_bonus() == 1  # malformed -> default
+
+
 def test_sweep_sentinel_registered():
     # A watcher-posted sweep dispatch marker must never reset the
     # orphan/stalled staleness clocks for the session it just spawned.
@@ -13986,7 +14280,7 @@ def test_sweep_dispatches_orphaned_proposed_infra(isolated_registry, monkeypatch
     assert markers[0][2] == "proposed-infra-sweep"
     assert asw._PROPOSED_INFRA_SWEEP_NOTE_SENTINEL in markers[0][1]
     out = capsys.readouterr().out
-    assert "candidates=1 occupied=0(+0 pending) cap=5 dispatched=1 skipped=0" in out
+    assert "candidates=1 urgent=0 occupied=0(+0 pending) cap=5 dispatched=1 skipped=0" in out
 
 
 # ── (c-watcher) no double-dispatch when a live session exists ──────────────────
@@ -14156,7 +14450,8 @@ def test_sweep_candidate_query_filters_non_infra_kinds(isolated_registry, monkey
 
     monkeypatch.setattr(asw.subprocess, "run", _fake_run)
     cands = asw._proposed_infra_candidates()
-    assert cands == [685]  # only the infra row, experiment/campaign filtered
+    # only the infra row, experiment/campaign filtered; no urgent tags.
+    assert cands == ([685], frozenset())
 
 
 # ── needs-human excluded at the candidate-query layer (#706) ───────────────────
@@ -14200,7 +14495,7 @@ def test_sweep_candidate_query_skips_needs_human(isolated_registry, monkeypatch)
 
     monkeypatch.setattr(asw.subprocess, "run", _fake_run)
     cands = asw._proposed_infra_candidates()
-    assert cands == [701, 702]  # needs-human row #700 filtered out
+    assert cands == ([701, 702], frozenset())  # needs-human row #700 filtered out
 
 
 def test_sweep_candidate_query_admits_row_without_tags_key(isolated_registry, monkeypatch):
@@ -14240,7 +14535,101 @@ def test_sweep_candidate_query_admits_row_without_tags_key(isolated_registry, mo
 
     monkeypatch.setattr(asw.subprocess, "run", _fake_run)
     cands = asw._proposed_infra_candidates()
-    assert cands == [711, 712]  # needs-human #710 skipped; no-tags-key #712 admitted
+    # needs-human #710 skipped; no-tags-key #712 admitted
+    assert cands == ([711, 712], frozenset())
+
+
+# ── urgent lane at the candidate-query layer (#1853) ───────────────────────────
+
+
+def test_sweep_candidate_query_orders_urgent_first(isolated_registry, monkeypatch):
+    # #1853 leg (b): `urgent-main-red` rows order ahead of ALL older
+    # non-urgent ids (oldest-first within each class), and the urgent id set
+    # rides the returned tuple for the decide-level bonus arithmetic.
+    import json
+    from types import SimpleNamespace
+
+    import autonomous_session_watch as asw
+
+    def _fake_run(cmd, **kw):
+        return SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps(
+                [
+                    {"id": 700, "kind": "infra", "status": "proposed", "tags": []},
+                    {
+                        "id": 701,
+                        "kind": "infra",
+                        "status": "proposed",
+                        "tags": ["urgent-main-red"],
+                    },
+                    {"id": 703, "kind": "infra", "status": "proposed"},
+                    {
+                        "id": 705,
+                        "kind": "batch",
+                        "status": "proposed",
+                        "tags": ["wf-fix", "urgent-main-red"],
+                    },
+                ]
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+    cands = asw._proposed_infra_candidates()
+    assert cands == ([701, 705, 700, 703], frozenset({701, 705}))
+
+
+def test_sweep_needs_human_excludes_even_when_urgent(isolated_registry, monkeypatch):
+    # (vi) the #706 needs-human exclusion BEATS urgent-main-red: a row tagged
+    # BOTH never appears in the candidate ids NOR the urgent set (the
+    # exclusion `continue` stays ordered BEFORE the urgency collection).
+    import json
+    from types import SimpleNamespace
+
+    import autonomous_session_watch as asw
+
+    def _fake_run(cmd, **kw):
+        return SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps(
+                [
+                    {
+                        "id": 700,
+                        "kind": "infra",
+                        "status": "proposed",
+                        "tags": ["needs-human", "urgent-main-red"],
+                    },
+                    {"id": 702, "kind": "infra", "status": "proposed", "tags": []},
+                ]
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+    cands = asw._proposed_infra_candidates()
+    assert cands == ([702], frozenset())
+
+
+def test_sweep_pass_threads_urgent_bonus(isolated_registry, monkeypatch, capsys):
+    # Executor-level threading pin: the pass passes `urgent=` +
+    # `urgent_bonus=_infra_sweep_urgent_bonus()` (default 1) into the decide
+    # call — at occupied == cap an urgent candidate still dispatches through
+    # the bonus slot, and the summary carries the urgent count.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_INFRA_SWEEP_URGENT_BONUS", raising=False)
+    dispatched, _markers = _stub_sweep_executor(
+        monkeypatch,
+        candidates=[684],
+        urgent={684},
+        status_kind={684: ("proposed", "infra")},
+        occupancy=[1, 2, 3, 4, 5],  # occupied_active == cap (5)
+    )
+    asw.proposed_infra_sweep_pass(dry_run=False, now=_SWEEP_NOW, daemon_reachable=True)
+    assert dispatched == [684]
+    out = capsys.readouterr().out
+    assert "candidates=1 urgent=1 occupied=5(+0 pending) cap=5 dispatched=1 skipped=0" in out
 
 
 # ── unmet predicate held / satisfied (queue-file gate, executor half) ──────────
@@ -15012,7 +15401,9 @@ def _patch_short_window_guards(monkeypatch, *, running_pods, followup_active):
     import autonomous_session_watch as asw
 
     monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda caller="": running_pods)
-    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None: followup_active)
+    monkeypatch.setattr(
+        asw, "_task_followup_active", lambda issue, events=None, **_kw: followup_active
+    )
 
 
 def _run_short_window_case(

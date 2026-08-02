@@ -370,7 +370,19 @@ Run the structural verifier against the plan version just persisted:
   vocabulary is quoted but nothing in the run posts through sentinels; a
   genuinely sentinel-signaling plan instead pins a drained lane —
   `backend: gcp` / `backend: runpod` / `backend: fellows` (the fellows
-  drain landed at #1898)).
+  drain landed at #1898)), and
+  `N/A — no committed outputs` (check 44 — the commit-to-git vocabulary is
+  incidental or quotes a sibling/incident, not this plan's own declared
+  committed outputs; a plan genuinely committing outputs under a
+  gitignore-matched path instead notes the force-add + staged-index
+  verification in the same section as the declaration, or relocates the
+  output out of the ignored root), and
+  `N/A — no base-side predictor vs change DV` (check 45 — the change-DV /
+  base-side-predictor vocabulary is incidental or quotes a sibling's
+  design, not this plan's own predictor race; a plan genuinely racing a
+  base-side predictor against a trained−base change DV instead registers a
+  level/change companion column AND states the winner sign convention —
+  signed Spearman ρ vs |ρ|).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
@@ -461,6 +473,19 @@ existence at `main` does not imply existence at the pin (incident #1345 — 2/4 
 returned 0 files at the plan's pinned revision after a default-branch probe read
 CONFIRMED). State the verdict per stem (CONFIRMED-at-pin / WRONG / UNVERIFIED).
 
+For a ROW-GRAIN-CONSUMING reuse row — a file whose row/line count feeds a plan
+floor, sizing arithmetic, per-mix quota, or subset draw — ALSO verify the REALIZED
+GRAIN: `hf_hub_download` the file at the pinned revision and COUNT its rows (a line
+count is seconds per file; one representative file per named family is acceptable,
+EXCEPT when the derived plan figure is a PER-FILE floor/minimum — then count ALL
+files in the family, since one representative cannot witness a heterogeneous-grain
+minimum). Compare the count against every plan figure derived from it; a
+floor/sizing/quota/draw figure resting on an ASSUMED range with no counted basis is
+UNVERIFIED — flag it (incident #1900: the plan assumed 50-300 positive rows/mix for
+the reused `delta_tf/<mix>/pos.jsonl`; realized grain was exactly 20 rows/mix, and a
+plan-derived 40-row hard floor killed the launch). State the verdict per counted
+file (GRAIN-CONFIRMED <n> rows / WRONG / UNVERIFIED).
+
 DO NOT trust the plan's reasoning. DO NOT trust your own training data for version-specific
 claims (API signatures, library features, default values). SEARCH and READ to verify.
 
@@ -482,6 +507,9 @@ Common traps to watch for:
   pin held only in a code constant (zero hex in the plan prose) is YOUR coverage, not
   the mechanical check's — instruction 2 ("read the actual code/config") resolves the
   constant, then probe at it
+- "The reused file has ~N rows" — for a count that feeds a floor / sizing / quota /
+  draw, download at the pin and COUNT; an assumed grain range is the #1900 crash
+  class (assumed 50-300/mix, realized 20)
 ```
 
 **After the Verifier returns:**

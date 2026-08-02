@@ -1,5 +1,5 @@
 ---
-description: Pod-side dispatcher result-reporting contract (sentinel files, poll_pipeline.py drain, epm:results payload, pod-side sentinel READ-BACK tolerance under the .processed drain-rename (#1311)) + pid-file launch contract (rewrite on EVERY (re)launch, #813) + relaunch-descope record & handle-sidecar currency (#1689) + legacy pod-side preflight gates; relocated verbatim from experiment-implementer.md, #829
+description: Pod-side dispatcher result-reporting contract (sentinel files, poll_pipeline.py drain, epm:results payload, pod-side sentinel READ-BACK tolerance under the .processed drain-rename (#1311)) + pid-file launch contract (rewrite on EVERY (re)launch, #813) + relaunch-descope record & handle-sidecar currency (#1689) + full-stdio-detach on ssh-remote (re)launch (#1768) + legacy pod-side preflight gates; relocated verbatim from experiment-implementer.md, #829
 paths:
   - "scripts/*dispatch*"
   - "scripts/poll_pipeline.py"
@@ -282,7 +282,7 @@ relaunch, a watch-session correction — not just first launches:
    `.claude/agents/experimenter.md` § During Execution steps 1/1b) and
    (ii) `$!` of the detached child captured in the SAME command chain
    as the launch — the launcher-less pod form
-   (`setsid nohup ... < /dev/null & printf '%s\n' "$!" > <pid>.tmp && mv <pid>.tmp <pid>`,
+   (`setsid nohup ... < /dev/null >> <log> 2>&1 & printf '%s\n' "$!" > <pid>.tmp && mv <pid>.tmp <pid>`,
    experimenter.md § During Execution) and the VM-side analogue
    (SKILL.md § Detached VM-side long compute phases, whose `bash -c`
    wrapper is the load-bearing `$!`-capture shape under job control).
@@ -355,6 +355,35 @@ relaunch, a watch-session correction — not just first launches:
    with NO marker, and the handle kept pointing at the OLD attempt's
    `.completion-sentinel.json` — both found only by a user-requested
    manual audit (#1689 epm:progress v64).
+1f. **Full stdio detach on every ssh-remote (re)launch — the wrapper is
+   never the signal.** The remote launch command MUST redirect ALL THREE
+   stdio fds in the SAME command: `< /dev/null` for stdin AND
+   `> <log> 2>&1` (or `>> <log> 2>&1`) for stdout/stderr. `setsid` +
+   `nohup` alone do NOT release the ssh channel: sshd waits for EOF on
+   the remote stdout/stderr, so a detached child that inherits those fds
+   keeps the channel open and the LOCAL ssh client hangs indefinitely
+   (standard ssh fd semantics; same-run corroboration: #1768
+   `epm:failure-lesson v2` — "it holds the ssh channel open so the local
+   client hangs"). The local wrapper's lifetime is NEVER a signal: bound
+   the local ssh call with a backstop
+   (`timeout --kill-after=10s 60s ssh ...`) and verify the launch via
+   the pid file + log breadcrumbs (items 1/1d), never via the wrapper
+   staying alive. The `&`-precedence trap: in
+   `ssh pod 'cd X && setsid nohup <cmd> > log 2>&1 < /dev/null & echo $! > pidfile'`
+   the trailing `&` backgrounds the ENTIRE `cd && setsid` list, so `$!`
+   is an un-setsid'd wrapper subshell — HUP-vulnerable and (when any fd
+   is attached) the very process holding the channel. Mitigation: make
+   `&` bind to the setsid unit alone via a brace group
+   (`cd X && { setsid nohup <cmd> < /dev/null > log 2>&1 & echo $! ... ; }`),
+   or repoint the pidfile at the setsid session leader (SESS==PID) per
+   the #1768 r3 failure-lesson. Worked example (incident #1768 relaunch
+   #4, 2026-07-30): the pod-side relaunch executed ~01:05Z left the
+   local ssh wrapper hanging (~2.5 h, then killed — mechanism recorded
+   as inferred-not-reproduced in the /daily 2026-07-29 problem sweep);
+   the launching session died with `epm:run-launched` unposted, and the
+   watcher-respawned successor back-posted `epm:run-launched v4` at
+   03:47:35Z after an identity-verified probe — a ~2.7 h window in which
+   the healthy run was invisible to the poller's marker-pid probe.
 2. **The fresh `epm:run-launched` carries the SAME live pid (`pid=`) AND
    `pid_file=`** (SKILL.md § "Any relaunch must re-post `epm:run-launched`").
    `poll_pipeline.py` computes `pid_alive = pidfile_pid_alive OR
@@ -411,6 +440,37 @@ the file and the marker still reads `dead`.
   piped-push masking class — the pipe mirror stays enforced by
   `workflow_lint.py --check-piped-git-push`, this swallow shape by
   `--check-push-failure-swallow`).
+- **Fetch + rebase before every pod/instance-side results-git push
+  (#1880).** A lane's terminal push races ANY orchestrator branch commit
+  made mid-run (a sibling lane's crash-fix relaunch is the normal
+  multi-lane case): a bare push retry that detects behind>0 but never
+  fetches loses DETERMINISTICALLY — non-fast-forward rejection → workload
+  exit 1 → a HEALTHY run crash-persists and powers off (#1739 hallu lane,
+  2026-07-30: 270 cells rc=0, Hub sidecars verified, then exit 1 at the
+  terminal push — 31h of complete science, ~30 min manual recovery from
+  crash-persist). Push recipe:
+  `git fetch origin <branch> && git rebase origin/<branch>` (result
+  commits are additive per-lane files — a content conflict is
+  near-impossible), then push and re-verify per the rev-list bullet
+  above; bounded 2 attempts. NOTE the rebase rewrites the LOCAL result
+  commits' SHAs pre-push — no standard-contract consumer pins them (the
+  artifact-presence assert below is path-keyed against the pushed tree;
+  fix-sha ancestry probes reference origin ancestors, which
+  rebase-onto-origin preserves) — a future driver that records its own
+  result-commit SHA must record it AFTER the push-verify, never before.
+  On rebase conflict: `git rebase --abort` and proceed to the lane's
+  EXISTING fail-loud path (GCE: bundle + exit 86; crash-persist preserves
+  the results) — the standing "never declare done with an unpushed result
+  commit" contract and the Part A-ter sentinel ordering are UNCHANGED (a
+  push-failure-tolerant exit-0 disposition was considered and REJECTED:
+  it would let a run classify done-like with results only in a bundle).
+- **Orchestrator side (#1880):** avoid pushing to the issue branch while
+  lanes are mid-run when feasible; when a mid-run push is required (a
+  sibling lane's crash-fix relaunch), expect in-flight lanes' terminal
+  pushes to need the fetch+rebase path above — a lane running a pre-#1880
+  driver will deterministically false-crash at its terminal push (the
+  #1739 shape) with its results intact in crash-persist; treat that
+  failure as recoverable-transport, not a science loss.
 - **Artifact-presence assert (#1325) — the rev-list push-verify is VACUOUS
   against a never-committed result file.** `rev-list --count
   origin/<branch>..HEAD == 0` proves the COMMITS pushed; it says nothing
@@ -461,9 +521,11 @@ the file and the marker still reads `dead`.
 - **GCE lane:** the startup script configures a `GITHUB_TOKEN` env-reading
   credential helper (workload pushes authenticate; pre-#1205 they failed
   DETERMINISTICALLY — the clone is tokenless) and runs a post-workload
-  push-verify backstop (retry → bundle the unpushed range to
-  `data/issue_<N>/`, crash-persist-swept per #854 item 5 → `exit 86` →
-  EXIT trap → `phase=failed` + crash-persist + poweroff). The backstop
+  push-verify backstop (fetch + rebase onto `origin/<branch>` with inline
+  committer identity, then retry — the #1880 recipe above; a rebase
+  conflict aborts into the same fail-loud tail → bundle the unpushed
+  range to `data/issue_<N>/`, crash-persist-swept per #854 item 5 →
+  `exit 86` → EXIT trap → `phase=failed` + crash-persist + poweroff). The backstop
   covers forgetful dispatch scripts; scripts SHOULD still verify their own
   push so the failure surfaces at the failing phase with its own context.
   The backstop pushes `HEAD` to the CLONED branch (`HEAD:<repo_branch>`)

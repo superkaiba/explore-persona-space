@@ -194,15 +194,32 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
 23. **Size the judge response `max_tokens` for the rationale, not the score.**
     A reason-then-score rubric (rule 7) emits its justification BEFORE the
     integer, so the response-token budget must cover the full rationale:
-    give any reasoning rubric **≥ ~300 response tokens** (the #1090 recovery
-    point); a score-only rubric (bare integer, no rationale) can stay small.
-    The floor is a floor, not a guarantee: #1739's sycophancy wave at
-    `max_tokens=400` (86,521 rollouts × 3 draws) still truncation-censored
-    5.4% of draws — a surgical higher-budget re-judge recovered them to
-    2.3% — so the post-resize per-arm drop re-measure below is the binding
-    check at ANY budget, and a percent-level parse-error residue at an
-    above-floor budget is still a truncation signature to re-judge, never
-    noise.
+    give a multi-field reason-then-score JSON rubric (several labeled
+    reasoning fields before the score — the #1769 fu1 rubric shape)
+    **≥ ~600 response tokens**, and a short single-rationale rubric
+    **≥ ~300** (the #1090 recovery point); a score-only rubric (bare
+    integer, no rationale) can stay small. The 300 floor measurably failed
+    twice in one week for multi-field JSON rubrics. #1739's sycophancy wave
+    at `max_tokens=400` (86,521 rollouts × 3 draws) truncation-censored
+    5.4% of draws, recovered to 2.3% by a surgical re-judge at 800.
+    #1769's fu1 wave at the 300 floor (21,000 draws) dropped 1606/21,000
+    draws overall (7.6%); the hallucination arms dropped 12.5% of their
+    own draws (874/7000), worst arm hallucination/decode_only/a3 42.5%
+    (425/1000) — arm-asymmetric. Forensics on the 600-budget re-judge
+    split the overall drops: ~300 of the 1606 were true truncation,
+    recovered at 600, while the residual (1251/1291 of the mt600 parse
+    failures; hallucination arms still 9.8%, worst arm 34.8%) were EMPTY
+    judge responses on degenerate steered text — content-class per rule 9,
+    NOT budget — with per-arm mean scores stable across budgets (max shift
+    1.5 pts). The real cost of an under-sized floor is the disambiguation:
+    at a too-small budget, truncation drops and content drops are
+    indistinguishable, so the whole 21k-call wave had to be re-judged
+    (~1h wall + a second 21k-call batch spend) to tell them apart; 600
+    eliminated the truncation signature for this rubric class. The floor
+    is a floor, not a guarantee: the post-resize per-arm drop re-measure
+    below is the binding check at ANY budget, and a percent-level
+    parse-error residue at an above-floor budget is still a truncation
+    signature to re-judge, never noise.
     An undersized cap fails SILENTLY: the API truncates the response at
     `max_tokens` before the score token is ever emitted, the truncated text
     fails to parse, and rule 9's drop-never-coerce then discards the draw —
@@ -226,10 +243,17 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     reported rate IS the per-rubric verification that the floor suffices
     (the floor is rubric-dependent; where the raw response is available,
     confirm truncation directly via `stop_reason == "max_tokens"` /
-    truncated-text inspection). Mechanics: `judge_completions_batch`
+    truncated-text inspection). Drop-class diagnosis MUST inspect
+    `stop_reason` / the raw stored response — NEVER the failure-LOG text,
+    which loggers routinely truncate (`Text: %.200s`) before writing: a
+    "0 of N failures carried a closing brace" read off 200-char log
+    prefixes is uninformative by construction (#1773, 2026-07-31 — a
+    direct re-issue showed 39/40 `end_turn`, refuting the log-derived
+    diagnosis). Mechanics: `judge_completions_batch`
     (`eval/batch_judge.py`) accepts `max_tokens` (default 256);
     `graded_judge.judge_graded` threads an optional `max_tokens` kwarg
-    (introduced by #1090) — reasoning-rubric callers pass ~300 (the 64
+    (introduced by #1090) — reasoning-rubric callers pass ≥ ~300
+    (single-rationale) / ≥ ~600 (multi-field JSON) (the 64
     default is kept for legacy cache stability at the api_dispatch layer);
     neither library default is sized for a reasoning rubric — pass the
     budget explicitly. This is the judge-side analogue of the CLAUDE.md
@@ -454,9 +478,10 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
   rubric-bearing key; the plan names the cache key fields per rule 22.
 - Rule 23 (response-budget sizing) rides the same lens load: a plan whose
   judged DV uses a reason-then-score rubric names its judge `max_tokens`
-  (≥ ~300, or a stated justification — the floor is a floor, not a
-  guarantee: the post-resize per-arm drop re-measure binds at ANY budget,
-  #1739) and its per-arm drop-rate report;
+  (≥ ~600 for multi-field reason-then-score JSON rubrics / ≥ ~300 for
+  single-rationale rubrics, or a stated justification — the floor is a
+  floor, not a guarantee: the post-resize per-arm drop re-measure binds at
+  ANY budget, #1739) and its per-arm drop-rate report;
   the Statistics & Measurement critic REVISEs an unsized reasoning-rubric
   judge. Plan-enforced in v1 — no mechanical lint.
 - Rule 24 (transport-vs-content split) rides the same lens load: a plan whose

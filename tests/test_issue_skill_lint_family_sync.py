@@ -30,6 +30,14 @@ family-atomic block, never a third inlined FAMILY_OF copy — so a
 main-side spec fix landing after the Step 5a sync can no longer red the
 9c gate (#1742 class). Pin tests (12) and (13) cover the two additions.
 
+#1883 (2026-08-01) adds the `:(glob)tests/test_issue_skill_*.py`
+skill-pin glob to the "workflow" family (both FAMILY_OF copies + both
+SPECS lists), closing the #1824 vintage-skew residual: main's SKILL.md
+synced without its paired pin test, and 3 test_issue_skill_* pin tests
+red the Step 9c gate (~30-min gate re-run + manual reconciliation).
+Test (14) additionally pins SPECS <-> SPECS_10D token-set equality
+(SPECS_10D was previously unpinned).
+
 These tests fail the suite if a later SKILL.md editor drops the family
 entries, the boundary-paragraph family exception, the post-gate re-sync
 bullet (or reorders it before the gate's stale-verdict rm), the 9a-ter
@@ -44,6 +52,7 @@ A legitimate rewording of the pinned lines in SKILL.md must update the
 matching assertions here IN THE SAME COMMIT, or the suite goes red.
 """
 
+import re
 from pathlib import Path
 
 SKILL = Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
@@ -91,7 +100,8 @@ def test_step5a_specs_include_lint_family():
         "tests/test_guard_lessons_edit.py "
         "tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py "
         ":(glob)tests/test_workflow_lint*.py "
-        ':(glob)tests/test_guard_*.py"'
+        ":(glob)tests/test_guard_*.py "
+        ':(glob)tests/test_issue_skill_*.py"'
     ) in _text(), (
         "Step 5a SPECS must carry the #1560 lint/guard family "
         "(workflow_lint.py, .claude/hooks, the :(glob) test_workflow_lint* "
@@ -101,7 +111,9 @@ def test_step5a_specs_include_lint_family():
         "used outside the :(glob) test_workflow_lint* pattern) — the "
         "guard-family widening pinned by #1709 covers all "
         "tests/test_guard_*.py (vintage-skew class "
-        "#1489/#1482/#1417/#1675→#1682)"
+        "#1489/#1482/#1417/#1675→#1682) — plus the #1883 skill-pin glob "
+        ":(glob)tests/test_issue_skill_*.py (prose-pin tests over "
+        ".claude/skills content; the #1824 vintage skew)"
     )
 
 
@@ -126,6 +138,12 @@ def test_sync_scope_paragraph_names_family_boundary():
     assert "collection-time ImportError" in span, (
         "the cross-check-at-root operational rule must carry the "
         "collection-time-ImportError staleness symptom"
+    )
+    assert "`:(glob)tests/test_issue_skill_*.py`" in span, (
+        "the boundary paragraph must name the #1883 skill-pin glob "
+        ":(glob)tests/test_issue_skill_*.py as a workflow-family member "
+        "(backtick-wrapped, so this pins the PROSE mention — the bare "
+        "bash-block occurrences do not satisfy it)"
     )
 
 
@@ -264,6 +282,12 @@ def test_step5a_family_atomicity_declared_in_bash():
     assert 'FAMILY_OF["tests/test_workflow_yaml.py"]="workflow"' in span, (
         "the workflow family must include tests/test_workflow_yaml.py "
         "(imports render_*_table from workflow_lint AND reads workflow.yaml data)"
+    )
+    assert 'FAMILY_OF[":(glob)tests/test_issue_skill_*.py"]="workflow"' in span, (
+        "the workflow family must include the skill pin-test glob "
+        ":(glob)tests/test_issue_skill_*.py — prose-pin tests over "
+        ".claude/skills content; syncing SKILL.md without its paired pin "
+        "test reds the Step 9c gate (#1824 vintage skew; #1883)"
     )
     assert 'FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"' in span, (
         "the lint family must include tests/test_autonomous_session_watch.py "
@@ -440,4 +464,29 @@ def test_step9c_pregate_sync_present():
     )
     assert "never inline a THIRD `FAMILY_OF` copy" in region, (
         "the 9c re-sync must bind as a reference, not a third inlined copy"
+    )
+
+
+# --- (14) SPECS <-> SPECS_10D token-set equality (#1883 pin) -----------------
+
+
+def test_specs_and_specs_10d_token_sets_match():
+    """#1883: the Step 5a SPECS list and the Step 10d auto-merge inline
+    copy's SPECS_10D list must carry the SAME pathspec token set. Check
+    (10) mechanically pins the FAMILY_OF entries across the two copies;
+    SPECS_10D itself was previously unpinned, so an editor adding a spec
+    to SPECS but not SPECS_10D would silently produce a divergent
+    post-gate re-sync — this test catches that."""
+    text = _text()
+    m5 = re.search(r'^\s*SPECS="([^"]+)"', _step5a_span(text), flags=re.M)
+    assert m5, "Step 5a must declare SPECS as a one-line double-quoted assignment"
+    m10 = re.search(r'^\s*SPECS_10D="([^"]+)"', _automerge_span(text), flags=re.M)
+    assert m10, (
+        "the auto-merge inline block must declare SPECS_10D as a one-line double-quoted assignment"
+    )
+    assert set(m5.group(1).split()) == set(m10.group(1).split()), (
+        "SPECS (Step 5a) and SPECS_10D (Step 10d auto-merge inline copy) "
+        "must carry identical pathspec token sets (#1883; the two lists "
+        "are the same sync surface — a member added to one but not the "
+        "other silently diverges the post-gate re-sync)"
     )

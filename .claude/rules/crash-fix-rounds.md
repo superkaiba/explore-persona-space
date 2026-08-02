@@ -1,5 +1,5 @@
 ---
-description: Retry/crash-fix round contract for implementer agents — failure-lesson block, fix-engaged signal, scope guard, kill-before-relaunch + timeout-bounded smokes; §§1-3 relocated verbatim from experiment-implementer.md (#829); kill-before-relaunch added (#848); relaunch-side fix-commit ancestry + stale-checkpoint hygiene (#1081); step-2 explicit-PID kill (#1198); MooseFS content-read probe on same-pod relaunches (#1112/#1594); relaunch compute-character re-statement on engine/device/width/scope changes (#1749)
+description: Retry/crash-fix round contract for implementer agents — failure-lesson block, fix-engaged signal, scope guard, kill-before-relaunch + timeout-bounded smokes; §§1-3 relocated verbatim from experiment-implementer.md (#829); kill-before-relaunch added (#848); relaunch-side fix-commit ancestry + stale-checkpoint hygiene (#1081); step-2 explicit-PID kill (#1198); MooseFS content-read probe on same-pod relaunches (#1112/#1594); relaunch compute-character re-statement on engine/device/width/scope changes (#1749); live-launcher forward-phase enumeration before in-place phase duplication (#1856)
 paths:
   - "scripts/**/*.py"
   - "src/explore_persona_space/**"
@@ -217,6 +217,39 @@ load-186 VM overload).
    by explicit PID. Weaker than step 1 (a writer that opens-writes-closes
    is invisible between writes) — prefer the cmdline probe when possible.
 
+**Live-launcher forward-phase enumeration (REQUIRED before duplicating any
+phase in-place; #1482).** Steps 1-3 cover instances ALREADY RUNNING; a live
+launcher's UPCOMING phases are invisible to any pgrep probe. Before
+launching a detached duplicate / manual "recovery" instance of a workload
+PHASE (a fits pass, an upload walk, an eval leg) on a machine — pod, GCE
+instance, or the shared VM — where the workload's own launcher/dispatcher
+is STILL LIVE, enumerate the launcher's REMAINING phase sequence: read its
+cmdline (`ps -o args= -p <pid>` — e.g. a `--phase all` expansion) and/or
+its dispatcher leg list + current `[phase=...]` log position. REMAINING
+includes re-enterable phases — a resume/retry loop can RE-enter a phase it
+already ran. If the phase you are about to duplicate appears in that
+remaining sequence — OR the enumeration is unreadable / membership is
+ambiguous (no leg list, no log position, an opaque cmdline): treat that
+EXACTLY as membership; never launch the duplicate on unproven absence
+(same fail-safe family as step 1's "Ambiguous → do NOT kill") — take ONE
+of exactly two dispositions: (a) DEFER hands-off (DEFAULT — let the
+launcher run its own sequence), or (b) TERMINATE the launcher first via
+steps 1-3 and own the whole remaining sequence yourself. NEVER run the
+duplicate alongside the live launcher. A long ETA is NOT a third
+disposition: the recovery's own actions can collapse the launcher's ETA.
+And membership is a SUFFICIENT trigger, not a necessary one — the
+collision is resource-level, so a duplicate that contends for GPU/RAM
+with ANY remaining phase warrants the same disposition. (#1482,
+2026-07-29: the orchestrator's bulk store commit deduplicated the live
+launcher's remaining E2 upload walk — ~33 h projected → finished in ~1 h —
+and the launcher advanced to ITS OWN fits while the orchestrator's
+detached fits, launched on the "idle" GPU, held 55.9 GiB; the launcher's
+fits OOMed (torch.OutOfMemoryError, 4 GiB needed / 1.22 GiB free), wrote a
+failed sentinel, crash-persisted, and powered the instance off at
+10:03:33Z — killing the healthy detached fits too. Cost: one instance
+restart + ~15 min GPU smoke/pilot re-run + ~1 h no-op dedup re-walk, plus
+one fit unit lost to a resume-predicate miss.)
+
 **After the kill, the relaunch itself must rewrite the pid file** with
 the new live pid in the same command chain, then confirm it before
 posting the fresh marker (`.claude/rules/pod-side-reporting.md`
@@ -413,6 +446,14 @@ the relaunch ran the pre-fix commit, checkpointed garbage — val R²
      ancestors). A rebase that rewrote the fix SHA
      fails the probe LOUD: re-resolve the SHA on the rewritten branch
      (or have the implementer re-declare), never skip the probe.
+   - **Mid-run branch-push race (#1880):** pushing fix commits to
+     `origin/issue-<N>` while SIBLING lanes of the same issue are mid-run
+     advances origin past their clones — their terminal results-git
+     pushes then take the fetch+rebase path
+     (`.claude/rules/pod-side-reporting.md` § Result-push verification
+     contract, #1880), and a lane running a pre-#1880 driver
+     deterministically false-crashes at its terminal push with its
+     results intact in crash-persist.
 2. **Stale-checkpoint disposition (element 5), executed in the SAME
    command chain as the launch** (the pid-file-contract shape,
    `.claude/rules/pod-side-reporting.md` § Pid-file launch contract),
