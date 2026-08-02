@@ -1605,6 +1605,10 @@ def _physical_gpus() -> list[int]:
             check=False,
         )
         ids = [int(x) for x in out.stdout.split() if x.strip().isdigit()]
+        excl = {
+            int(x) for x in os.environ.get("EPM_EXCLUDE_GPUS", "").split(",") if x.strip().isdigit()
+        }
+        ids = [i for i in ids if i not in excl]
         return ids or [0]
     except (OSError, ValueError):
         return [0]
