@@ -177,7 +177,7 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 65 results total (2 prepended + CHECKS[1:]=49 + 14 appended, counting
+    # 66 results total (2 prepended + CHECKS[1:]=50 + 14 appended, counting
     # the #1827 plan-conditions check narrated below; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
@@ -197,7 +197,11 @@ def test_good_body_passes_all():
     # brace-path claims adjacent to pinned HF tree links), and check 48
     # `check_v4_quant_result_figure` (#1832 — PASS-skip, not a v4 body),
     # and check 49 `check_v4_result_figure_cardinality` (#1879 —
-    # PASS-skip, not a v4 body)
+    # PASS-skip, not a v4 body),
+    # and check 50 `check_repro_artifacts_clean` (#1989 — probes the REAL
+    # repo's working tree for the fixture's repro-named eval_results dirs;
+    # `passed=True` in every state by construction — WARN/skip never flip
+    # it, the check-29 precedent)
     # ride CHECKS;
     # 36/37/39/44/48/49
     # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
@@ -209,9 +213,10 @@ def test_good_body_passes_all():
     # verify_text (needs the issue number) and PASS-skips here (legacy body).
     # The plan-conditions coverage check (#1827) is dispatched in verify_text
     # (needs plans/plan.md) and NO-OP PASSes here (no plan sibling).
-    assert len(results) == 65
+    assert len(results) == 66
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
+    assert "repro-named result dirs clean in working tree" in {r.name for r in results}
     assert "plan conditions coverage" in {r.name for r in results}
     assert "judge drop-line population reconciles" in {r.name for r in results}
     assert _HF_32_NAME in {r.name for r in results}
@@ -5776,7 +5781,7 @@ def test_checks_list_size():
     v3-gated checks added 2026-W24 are — check 18
     (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     check 19b (`check_data_unwrapped_example_table`, WARN), check 20
-    (`check_v3_word_caps`) — PLUS the THIRTEEN generation-agnostic checks:
+    (`check_v3_word_caps`) — PLUS the FOURTEEN generation-agnostic checks:
     check 22 (`check_figure_url_sha_matches_repro`: inline figure URL sha
     vs the `## Reproducibility` per-figure commit claim), check 23
     (`check_hf_url_resolves`: HF Hub revision-pin existence via a bounded
@@ -5831,7 +5836,13 @@ def test_checks_list_size():
     silently skip under the check-24 fail-soft convention; ONE WARN per
     body naming the basenames; existence-only `git cat-file -e` probes,
     never a content read; incident #1434's 3 sidecar-less "po" figures,
-    #1478). The
+    #1478), and check 50 (`check_repro_artifacts_clean`, WARN:
+    `(ood_)eval_results/issue_<K>/...` dirs named in the fence-stripped
+    repro region probed with a path-scoped `git status --porcelain -u` at
+    the resolved repo root — untracked/modified entries WARN, probe
+    failure degrades to a skip note, gitignored files excluded by default
+    porcelain; incident #1768's uncommitted operator_kv result files,
+    #1989). The
     migration is a RETARGET — every former check
     was kept (some dormant for a period — e.g. `check_figure_caption`,
     vacuous until #1424 tightened it) so downstream
@@ -5850,9 +5861,9 @@ def test_checks_list_size():
     needs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 65 results (2 prepended + CHECKS[1:]=49 +
+    So `verify_text` returns 66 results (2 prepended + CHECKS[1:]=50 +
     14 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 50 (check 36 `check_v4_result_paragraph_sentences` (#1368),
+    at 51 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
     `check_v4_sample_disclosure_count` — the Sample-slot
@@ -5864,12 +5875,14 @@ def test_checks_list_size():
     `check_footer_hf_paths_pinned` (#1509) — check 45
     `check_figure_caption_count_claims_vs_sidecar` (#1511) — check 46
     `check_hf_brace_expanded_path_claims` (#1520) — check 48
-    `check_v4_quant_result_figure` (#1832) — and check 49
-    `check_v4_result_figure_cardinality` (#1879) ride CHECKS).
+    `check_v4_quant_result_figure` (#1832) — check 49
+    `check_v4_result_figure_cardinality` (#1879) — and check 50
+    `check_repro_artifacts_clean` (#1989) ride CHECKS).
     """
-    assert len(verify_task_body.CHECKS) == 50
+    assert len(verify_task_body.CHECKS) == 51
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
+    assert verify_task_body.check_repro_artifacts_clean in verify_task_body.CHECKS
     assert verify_task_body.check_footer_hf_paths_pinned in verify_task_body.CHECKS
     assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
     assert verify_task_body.check_figure_prose_numerics_vs_sidecar in verify_task_body.CHECKS
@@ -11822,11 +11835,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (50 as of
-    check 49, #1879; belt-and-suspenders beside the migration-history
+    position 7 and the CHECKS count matches the current registry (51 as of
+    check 50, #1989; belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 50
+    assert len(verify_task_body.CHECKS) == 51
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
