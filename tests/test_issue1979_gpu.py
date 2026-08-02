@@ -399,3 +399,72 @@ def test_worker_flags_thread_smoke_subset(tmp_path):
     flags = cfg.worker_flags()
     assert "--smoke-subset" in flags  # run_f1e's f1d_fit_specs view in the worker
     assert "--arms" in flags and "c-lora-a" in flags[flags.index("--arms") + 1]
+
+
+# ── (e) f1g means: _prefix_means mask semantics (crash-fix r7, attempt 2) ────
+#
+# The fellows attempt-2 smoke leg (--panel-limit 1 --query-limit 2) crashed
+# f1g:means with KeyError 'wildchat_prefix_real545' at _prefix_means: the
+# HF-staged parent on-policy store carries the FULL 50-prefix panel, the
+# manifests slice pid_ix down to members[:1], and the helper built its
+# prefix-id index over ALL store rows BEFORE applying row_mask — so a
+# masked-OUT row's out-of-slice prefix KeyError'd even though the row was
+# about to be discarded. Toy stores below use the REAL panel ids (incl. the
+# family that broke) at the real _save_store schema.
+
+_PANEL2 = ["persona_software_engineer", "wildchat_prefix_real545"]
+
+
+def _toy_store(row_prefix_ids: list[str], layer: int = 19, d: int = 4) -> dict:
+    """Real store schema (_save_store keys) at toy scale, fp16 like production."""
+    import torch
+
+    n = len(row_prefix_ids)
+    T = torch.arange(1, n * d + 1, dtype=torch.float16).reshape(n, d)
+    return {
+        "schema_version": 1,
+        "unit": "toy-parent",
+        "tree": "onpolicy(toy)",
+        "row_sha": [f"sha{i}" for i in range(n)],
+        "row_prefix_id": list(row_prefix_ids),
+        "row_query_sha": [f"q{i}" for i in range(n)],
+        "spans": {"response": {layer: T}},
+        "positions": {},
+        "metadata": {},
+    }
+
+
+def test_prefix_means_masks_fullgrain_store_before_index_build():
+    """The crash shape: full-panel store + sliced pid_ix + mask trimming to the
+    slice must NOT KeyError on a masked-out row's out-of-slice prefix."""
+    import torch
+
+    store = _toy_store([_PANEL2[0], _PANEL2[0], _PANEL2[1], _PANEL2[1]])
+    prefix_ids = _PANEL2[:1]  # the --panel-limit 1 smoke slice
+    mask = [True, True, False, False]  # parent_mask: row_sha in the sliced grid
+    out = G._prefix_means(store, 19, "response", prefix_ids, mask)
+    assert out.shape == (1, 4), out.shape
+    T = store["spans"]["response"][19].to(torch.float32)
+    torch.testing.assert_close(out, T[:2].mean(0, keepdim=True))
+
+
+def test_prefix_means_masked_output_matches_prefilter_semantics():
+    """Parent-parity pin: for a panel-covering store (every pre-f1g caller),
+    the mask-first index build equals computing over the pre-filtered rows,
+    and the unmasked path is unchanged."""
+    import torch
+
+    store = _toy_store([_PANEL2[0], _PANEL2[1], _PANEL2[0], _PANEL2[1]])
+    T = store["spans"]["response"][19].to(torch.float32)
+    out = G._prefix_means(store, 19, "response", _PANEL2, [True, False, False, True])
+    torch.testing.assert_close(out, torch.stack([T[0], T[3]]))
+    out_all = G._prefix_means(store, 19, "response", _PANEL2)
+    torch.testing.assert_close(out_all, torch.stack([(T[0] + T[2]) / 2, (T[1] + T[3]) / 2]))
+
+
+def test_prefix_means_masked_in_foreign_prefix_still_fails_loud():
+    """A masked-IN row with an out-of-panel prefix stays a loud KeyError —
+    the fix relaxes only masked-OUT rows, never a consumed-row violation."""
+    store = _toy_store(_PANEL2)
+    with pytest.raises(KeyError):
+        G._prefix_means(store, 19, "response", _PANEL2[:1], [True, True])

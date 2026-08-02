@@ -1488,10 +1488,14 @@ def _prefix_means(
 
     ``row_mask`` (optional bool sequence over store rows) restricts the mean to
     a row subset — used for the even/odd QUERY-half means (plan §6 A5 disjoint
-    legs). ``dtype`` (default fp32 — the parent F1e convention, unchanged)
-    sets the accumulation dtype; the f1g amendment passes ``torch.float64``
-    (plan v6 §8 fp-noise mitigation). Fails loud when any prefix has zero rows
-    in the (masked) selection.
+    legs). The prefix-id index is built over the masked-IN rows ONLY: a
+    masked-OUT row's prefix may legitimately lie outside ``prefix_ids`` (the
+    f1g smoke slice masks the HF-staged FULL-panel parent store down to the
+    sliced grid — crash-fix r7, KeyError 'wildchat_prefix_real545'); a
+    masked-IN out-of-panel prefix still fails loud. ``dtype`` (default fp32 —
+    the parent F1e convention, unchanged) sets the accumulation dtype; the f1g
+    amendment passes ``torch.float64`` (plan v6 §8 fp-noise mitigation). Fails
+    loud when any prefix has zero rows in the (masked) selection.
     """
     import torch
 
@@ -1501,11 +1505,13 @@ def _prefix_means(
     else:
         T = store["spans"][span_or_pos][layer].to(acc)
     pid_ix = {p: i for i, p in enumerate(prefix_ids)}
-    idx = torch.tensor([pid_ix[p] for p in store["row_prefix_id"]], dtype=torch.long)
+    row_pids = store["row_prefix_id"]
     if row_mask is not None:
         keep = torch.tensor(list(row_mask), dtype=torch.bool)
-        assert keep.shape[0] == T.shape[0], (keep.shape, T.shape)
-        T, idx = T[keep], idx[keep]
+        assert keep.shape[0] == T.shape[0] == len(row_pids), (keep.shape, T.shape, len(row_pids))
+        T = T[keep]
+        row_pids = [p for p, m in zip(row_pids, row_mask) if m]
+    idx = torch.tensor([pid_ix[p] for p in row_pids], dtype=torch.long)
     sums = torch.zeros(len(prefix_ids), T.shape[1], dtype=T.dtype)
     sums.index_add_(0, idx, T)
     counts = torch.zeros(len(prefix_ids), dtype=T.dtype).index_add_(
