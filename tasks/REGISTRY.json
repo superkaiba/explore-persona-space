@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1993,
+  "highest_id": 1994,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7690,6 +7690,13 @@
       "path": "tasks/proposed/1993",
       "status": "proposed",
       "title": "daily-fix: crash-fix: shared-module propagation + stale disp"
+    },
+    "1994": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1994",
+      "status": "proposed",
+      "title": "workflow-fix: phase-done lint test hangs at interpreter exit"
     },
     "2": {
       "has_clean_result": false,
