@@ -481,7 +481,7 @@ the #1092 failure, not a compliant plan.
 monitoring notes require a SAMPLED window — never one instantaneous
 `nvidia-smi` read.** Any claim that a workload is GPU-bound / "pinned
 at N%" / idle states its sampling basis: ≥10 readings over ≥60 s (e.g.
-`nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader -l 6`
+`nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader -l 7`
 for 10 samples), reported as mean + peak. GPU duty cycles are bursty,
 so a point sample can land on a transient peak and invert the
 conclusion (#1773: a pre-spend checkpoint claimed "GPU pinned at 90%"
