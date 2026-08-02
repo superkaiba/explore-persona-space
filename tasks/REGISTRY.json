@@ -7220,8 +7220,8 @@
     "1932": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1932",
-      "status": "running",
+      "path": "tasks/reviewing/1932",
+      "status": "reviewing",
       "title": "correct #1310 Takeaway bullet 3 + title qualifier per nd-estimator/lambda audits (per-turn deflation was a lambda-selection artifact)"
     },
     "1933": {
