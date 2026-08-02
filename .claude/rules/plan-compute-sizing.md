@@ -409,7 +409,17 @@ OUTPUT growth (produced files, log advance, `/proc/<pid>/io`
 write_bytes), never CPU% alone — a frozen or quadratically-grinding
 serial screen reads ~100% CPU for hours (#1738's live read needed
 positive forward-progress evidence beyond CPU% exactly because the
-screen phase logs sparsely). TRIVIALITY EXEMPTION — never
+screen phase logs sparsely). PER-REGIME BINDING — SHAPE also includes
+the lane's production REGIME (behavior / budget / corpus): a pilot
+wall measured on one lane's regime is a MEASURED basis for THAT lane
+only; proxying it to a lane with a different behavior/budget regime
+makes it a GUESSED basis there — re-pilot per regime, or fence that
+lane at ≥2× the worst-case extrapolation and mark its row
+`pilot-gated` (#1739: per-group walls measured on the evil behavior
+at top budget 8,000 were proxied to the 16,000-budget behaviors; 4 of
+6 lanes halted at their own pilot gates — sycophancy projected 5.2 h
+vs plan_wall 4.5 h — and all 4 needed relaunches with measured
+fences). TRIVIALITY EXEMPTION — never
 self-certified by an asserted cost: a row may skip the pilot ONLY when
 total_calls ≤ ~500 AND its sub-floor (~15–30 min) projection is computed
 from a MEASURED or prior-issue-CITED per-call figure; an ASSERTED
@@ -465,6 +475,21 @@ projection until pilot-measured: a `pilot-gated` battery row BOOKS ≥2×
 its naive wall/RSS projection in the §9 headline (and any fence/cap
 derived from it) until the pilot lands — booking the naive figure is
 the #1092 failure, not a compliant plan.
+
+
+**GPU-utilization / "GPU-bound" claims in dispatch, checkpoint, and
+monitoring notes require a SAMPLED window — never one instantaneous
+`nvidia-smi` read.** Any claim that a workload is GPU-bound / "pinned
+at N%" / idle states its sampling basis: ≥10 readings over ≥60 s (e.g.
+`nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader -l 7`
+for 10 samples), reported as mean + peak. GPU duty cycles are bursty,
+so a point sample can land on a transient peak and invert the
+conclusion (#1773: a pre-spend checkpoint claimed "GPU pinned at 90%"
+from ONE sample; a 30-reading/60 s re-measure showed mean 12.6% — the
+91% peak appeared exactly once — and an H100 billed ~7 h at ~87% idle
+behind the wrong claim). This is the utilization sibling of the
+per-cell block's output-growth health-read rule (never CPU% alone,
+#1738).
 
 
 **Store-heavy / IO-heavy phase sizing — measure one item's serialization +
