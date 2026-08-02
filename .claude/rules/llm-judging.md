@@ -200,7 +200,8 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     degenerate long responses, and (c) a higher per-request OTPM
     reservation on the SYNC dispatch path (the rate limiter reserves
     `max_tokens` per in-flight request, cutting effective concurrency —
-    prefer the Batch API, which the large-wave rule already mandates) —
+    prefer the Batch API, which the CLAUDE.md large-judge-set Batch-API
+    mandate (§ LLM judge bullet) already requires) —
     all bounded and all far cheaper than the
     re-judge waves an undersized cap forces. A reason-then-score rubric
     (rule 7) emits its justification BEFORE the integer, so the
