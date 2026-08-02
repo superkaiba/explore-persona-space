@@ -36,10 +36,13 @@ while [ $# -gt 0 ]; do
 done
 : "${OUT_ROOT:?--out-root is required}"
 
-if [ "$PHASE" = "f1" ] && [ "$SMOKE_FIRST" = "1" ]; then
+# Smoke-gate admits BOTH the parent full run (f1) and the plan-v6 f1g
+# amendment leg — the inner --phase passthrough keeps smoke == sweep with the
+# one-cell parameterization (consistency-checker v2 note, plan v6 §4 Diff 2).
+if { [ "$PHASE" = "f1" ] || [ "$PHASE" = "f1g" ]; } && [ "$SMOKE_FIRST" = "1" ]; then
   SMOKE_ROOT="${OUT_ROOT}-smoke"
   echo "[smoke-first] smoke leg -> ${SMOKE_ROOT} (panel=1 queries=2, one unit per arm class)"
-  uv run python scripts/issue1979_gpu.py --phase f1 --out-root "$SMOKE_ROOT" \
+  uv run python scripts/issue1979_gpu.py --phase "$PHASE" --out-root "$SMOKE_ROOT" \
     --panel-limit 1 --query-limit 2 --smoke-subset --skip-upload
   echo "[smoke-first] smoke leg passed (rc=0) — starting the full leg"
 fi

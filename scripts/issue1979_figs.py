@@ -503,6 +503,81 @@ def a5_dots(battery: dict, out_dir: Path) -> None:
     _save(fig, "a5_alignment", out_dir)
 
 
+def a5_decomposition_panel(decomp: dict, out_dir: Path) -> None:
+    """Weights-vs-text decomposition of the on-policy delta per marker arm
+    (amendment marker-a5-weights-vs-text, plan v6 §6 hero figure).
+
+    Left: per-arm pooled cosines vs the matched-text write — open gray circle =
+    the parent full-delta read, colored dots = the weights-carried vs
+    different-text components, light-gray bars = each component's
+    corpus-covariance norm-matched null 95% band. Right: per-prefix cosine
+    strips per component (points = prefixes — the low-level per-unit panel).
+    """
+    per = decomp["arms"]
+    if not per:
+        return
+    ids = sorted(per)
+    pal = paper_palette(2)
+    comp_meta = (
+        ("weights", pal[0], -0.18, "weights-carried component"),
+        ("text", pal[1], +0.18, "different-text component"),
+    )
+    fig, axes = plt.subplots(
+        1, 2, figsize=(13, 0.42 * len(ids) + 2.4), sharey=True, constrained_layout=True
+    )
+    ax = axes[0]
+    for i, a in enumerate(ids):
+        v = per[a]
+        ax.scatter(
+            [v["parent_leg_cos"]],
+            [i],
+            s=46,
+            facecolors="none",
+            edgecolors="dimgray",
+            zorder=2,
+            label="full on-policy delta (parent read)" if i == 0 else None,
+        )
+        for comp, color, dy, lbl in comp_meta:
+            c = v["primary"][comp]
+            b = c["null_bands"]["corpus_cov"]
+            ax.plot([b["p2_5"], b["p97_5"]], [i + dy, i + dy], color="lightgray", lw=4, zorder=1)
+            ax.scatter(
+                [c["pooled_cos"]],
+                [i + dy],
+                s=30,
+                color=color,
+                zorder=3,
+                label=lbl if i == 0 else None,
+            )
+    ax.axvline(0, color="black", lw=0.6)
+    ax.set_yticks(range(len(ids)))
+    ax.set_yticklabels([_arm_label(a) for a in ids], fontsize=6)
+    ax.set_xlabel("cos(matched-text write, delta component) — layer-19 span mean")
+    ax.set_title(
+        "pooled write-alignment per delta component\n"
+        "(gray bars = corpus-covariance norm-matched null 95%)",
+        fontsize=8,
+    )
+    ax.legend(fontsize=5.5, loc="best")
+    ax2 = axes[1]
+    for i, a in enumerate(ids):
+        for comp, color, dy, lbl in comp_meta:
+            xs = per[a]["primary"][comp]["per_prefix_cos"]
+            ax2.scatter(
+                xs,
+                [i + dy] * len(xs),
+                s=7,
+                alpha=0.45,
+                color=color,
+                label=lbl if i == 0 else None,
+            )
+    ax2.axvline(0, color="black", lw=0.6)
+    ax2.set_xlabel("per-prefix cos(matched-text write, delta component)")
+    ax2.set_title("per-prefix alignment strips (one point per destination prefix)", fontsize=8)
+    ax2.legend(fontsize=5.5, loc="best")
+    _save(fig, "a5_decomposition", out_dir)
+
+
 MED_KEYS = [
     ("r_p1_given_p7", "context sim | propensity"),
     ("r_p1_given_p2_p7", "context sim | answer sim + propensity"),
@@ -672,6 +747,8 @@ def main(argv: list[str] | None = None) -> int:
         a6_dots(battery, args.out_dir)
     if want("a5_alignment"):
         a5_dots(battery, args.out_dir)
+    if want("a5_decomposition") and (args.race_dir / "a5_decomposition.json").exists():
+        a5_decomposition_panel(_load(args.race_dir, "a5_decomposition.json"), args.out_dir)
     if want("mediation_forest"):
         mediation_forest(_load(args.race_dir, "mediation.json"), args.out_dir)
     if want("mapping_arm"):

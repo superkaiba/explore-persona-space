@@ -998,6 +998,270 @@ def battery_verdicts(cfg: dict, tensors: dict, inputs_root: Path, asms: list[dic
     }
 
 
+# ── A5 weights-vs-text decomposition (amendment marker-a5-weights-vs-text) ────
+
+A5_DECOMP_PARITY_TOL = 0.005  # bug gate: re-derived pooled leg_d cos vs the persisted value
+A5_DECOMP_MEANS_COS_MIN = 0.999  # bug gate: per-(arm, prefix) re-derived on-policy means parity
+A5_DECOMP_IDENTITY_TOL = 1e-3  # bug gate: max |weights + text − leg_d| (fp64 from fp16 inputs)
+A5_CARRY_FACTOR = 0.5  # clause (iii) "comparable magnitude" factor (plan v6 §3, registered)
+A5_CARRY_FACTORS_RECORD = (0.25, 0.5, 0.75)  # 0.25/0.75 = record-only robustness (plan v6 §4)
+
+
+def a5_decomposition(
+    cfg: dict, tensors: dict, inputs_root: Path, decomp_in: dict, parity_ref: dict
+) -> dict:
+    """Weights-vs-text decomposition of the parent A5 delta leg per marker arm
+    (plan v6 §4 Diff 3; L19 / span_mean_context — the parent A5 convention).
+
+    PRIMARY odd-pivot (registered): ``weights = (W_onpolicy + Vbar0) − Hbar_odd``,
+    ``text = Hbar_odd − Vbar0_odd`` (H̄ cancels ⇒ weights + text = leg_d exactly);
+    all-pivot recorded as demoted sensitivity (no null bands). Parity gates
+    (±0.005 pooled leg_d cos vs the persisted ``battery_verdicts.json``;
+    ≥0.999 re-derived-means cos) are BUG GATES — a failure halts, never
+    re-scores. Null bands per component: 2,000 norm-matched draws, isotropic +
+    corpus-cov (``sigma_chol.pt`` L19), the parent ``band()`` convention,
+    ``np.random.default_rng(SEED)``.
+    """
+    import torch
+
+    marker_rows = {a["arm_id"]: a for a in cfg["marker_arms"]}
+    marker_ids = list(marker_rows)
+    assert marker_ids, "a5_decomposition: no marker arms selected"
+    dprefix = list(decomp_in["meta"]["prefix_ids"])
+    assert dprefix == cfg["prefix_ids"], (
+        "basetf_decomp_inputs prefix order != config prefix order",
+        dprefix[:3],
+        cfg["prefix_ids"][:3],
+    )
+    sig = torch.load(inputs_root / "battery/sigma_chol.pt", map_location="cpu", weights_only=False)
+    chol19 = np.asarray(sig["L19"]["chol"].float().numpy(), dtype=np.float64)
+    rng = np.random.default_rng(SEED)
+    draws_iso = rng.standard_normal((2000, chol19.shape[0]))
+    draws_cov = draws_iso @ chol19.T
+
+    def band(target: np.ndarray) -> dict:
+        """Norm-matched null cosine quantiles vs `target` — the parent A5
+        ``battery_verdicts.band`` convention (iso + corpus-cov)."""
+        tn = target / (np.linalg.norm(target) + 1e-12)
+        out = {}
+        for name, draws in (("isotropic", draws_iso), ("corpus_cov", draws_cov)):
+            dn = draws / (np.linalg.norm(draws, axis=1, keepdims=True) + 1e-12)
+            cos = dn @ tn
+            out[name] = {
+                "p2_5": float(np.quantile(cos, 0.025)),
+                "p97_5": float(np.quantile(cos, 0.975)),
+                "abs_p95": float(np.quantile(np.abs(cos), 0.95)),
+            }
+        return out
+
+    def dec(aid: str, layer: int, name: str) -> np.ndarray:
+        key = f"{aid}/L{layer}/{name}"
+        assert key in decomp_in, f"basetf_decomp_inputs.pt missing tensor {key}"
+        return np.asarray(decomp_in[key].float().numpy(), dtype=np.float64)
+
+    def pcos(a: np.ndarray, b: np.ndarray) -> float:
+        return float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b) + 1e-12))
+
+    arms_out: dict = {}
+    for aid in marker_ids:
+        slot = f"{aid}/L19/span_mean_context"
+        Vbar0 = tensors[f"{slot}/Vbar0"]
+        Ve = tensors["base/marker/L19/Vbar0_even"]
+        Vo = tensors["base/marker/L19/Vbar0_odd"]
+        W_o = tensors[f"{slot}/W_onpolicy"]
+        leg_w = (tensors[f"{slot}/W_matched"] + Vbar0) - Ve  # matched_all − v̄0_even
+        leg_d = (W_o + Vbar0) - Vo  # onpol_all − v̄0_odd (the parent delta leg)
+        O_all = W_o + Vbar0  # observed on-policy all-query mean
+        pooled_w = leg_w.mean(axis=0)
+        cos_wd = pcos(pooled_w, leg_d.mean(axis=0))
+        rb = RB_CACHE[marker_rows[aid]["beh_key"]][19]
+
+        # parity gate (plan §6 criterion 3): reproduce the persisted parent read
+        ref = float(parity_ref["A5"][aid]["pooled_cos_disjoint"])
+        O_re = dec(aid, 19, "Obar_all")
+        mp = np.sum((O_re - Vbar0) * W_o, axis=1) / (
+            np.linalg.norm(O_re - Vbar0, axis=1) * np.linalg.norm(W_o, axis=1) + 1e-12
+        )
+        print(
+            f"[a5-decomp] {aid}: leg_d pooled cos re-derived {cos_wd:.4f} vs persisted "
+            f"{ref:.4f} (tol ±{A5_DECOMP_PARITY_TOL}); means-parity min cos "
+            f"{float(mp.min()):.6f} (floor {A5_DECOMP_MEANS_COS_MIN})",
+            flush=True,
+        )
+        assert abs(cos_wd - ref) <= A5_DECOMP_PARITY_TOL, (
+            aid,
+            f"leg_d parity gate: re-derived {cos_wd:.4f} vs persisted {ref:.4f} — "
+            "keying/staging bug; NO verdict published (plan §6 kill criterion)",
+        )
+        assert float(mp.min()) >= A5_DECOMP_MEANS_COS_MIN, (
+            aid,
+            f"re-derived on-policy means parity: min cos {float(mp.min()):.6f} < "
+            f"{A5_DECOMP_MEANS_COS_MIN} — aggregation-convention drift",
+        )
+
+        def decompose(H_odd: np.ndarray, O: np.ndarray, leg: np.ndarray, with_bands: bool) -> dict:
+            """One decomposition read: components vs leg_w + identity bug gate."""
+            weights, text = O - H_odd, H_odd - Vo
+            max_err = float(np.max(np.abs((weights + text) - leg)))
+            assert max_err <= A5_DECOMP_IDENTITY_TOL, (
+                aid,
+                f"identity |weights + text − leg_d| max {max_err:.2e} > {A5_DECOMP_IDENTITY_TOL}",
+            )
+            ref_cos = pcos(pooled_w, leg.mean(axis=0))
+            out = {
+                "leg_d_pooled_cos": ref_cos,
+                "identity_max_abs_err": max_err,
+                "component_inter_cos": pcos(weights.mean(axis=0), text.mean(axis=0)),
+            }
+            for name, comp in (("weights", weights), ("text", text)):
+                px = comp.mean(axis=0)
+                c = pcos(pooled_w, px)
+                per_pref = np.sum(leg_w * comp, axis=1) / (
+                    np.linalg.norm(leg_w, axis=1) * np.linalg.norm(comp, axis=1) + 1e-12
+                )
+                entry = {
+                    "pooled_cos": c,
+                    "median_per_prefix_cos": float(np.median(per_pref)),
+                    "per_prefix_cos": [float(v) for v in per_pref],
+                    "pooled_norm": float(np.linalg.norm(px)),
+                    "readout_cos_pooled_rb_record_only": pcos(px, rb),
+                }
+                if with_bands:
+                    b = band(px)
+                    entry["null_bands"] = b
+                    entry["carries_by_factor"] = {
+                        str(f): bool(
+                            (c < 0)
+                            and (abs(c) > b["corpus_cov"]["abs_p95"])
+                            and (abs(c) >= f * abs(ref_cos))
+                        )
+                        for f in A5_CARRY_FACTORS_RECORD
+                    }
+                    entry["carries"] = entry["carries_by_factor"][str(A5_CARRY_FACTOR)]
+                out[name] = entry
+            return out
+
+        primary = decompose(dec(aid, 19, "Hbar_odd"), O_all, leg_d, with_bands=True)
+        # all-pivot sensitivity — record-only, demoted (plan v6 §4: text_all
+        # anti-shares the even-half sampling error with leg_w); no null bands.
+        sens_all = decompose(dec(aid, 19, "Hbar_all"), O_all, leg_d, with_bands=False)
+        # marker-row-excluded repeat: exclusion applies to the two TRAINED-TEXT
+        # stores only, not v̄0 (~0.3% of rows — plan v6 §4 analyzer note (c)).
+        O_nomk = dec(aid, 19, "Obar_all_nomk")
+        nomk = decompose(dec(aid, 19, "Hbar_odd_nomk"), O_nomk, O_nomk - Vo, with_bands=True)
+        expl = {}
+        for li in (14, 25):  # exploratory dump (pooled reads only, record-only)
+            slot_l = f"{aid}/L{li}/span_mean_context"
+            Vb_l = tensors[f"{slot_l}/Vbar0"]
+            w_l = (
+                (tensors[f"{slot_l}/W_matched"] + Vb_l) - tensors[f"base/marker/L{li}/Vbar0_even"]
+            ).mean(axis=0)
+            Vo_l = tensors[f"base/marker/L{li}/Vbar0_odd"]
+            O_l = tensors[f"{slot_l}/W_onpolicy"] + Vb_l
+            H_odd_l = dec(aid, li, "Hbar_odd")
+            expl[f"L{li}"] = {
+                "weights_pooled_cos": pcos(w_l, (O_l - H_odd_l).mean(axis=0)),
+                "text_pooled_cos": pcos(w_l, (H_odd_l - Vo_l).mean(axis=0)),
+                "leg_d_pooled_cos": pcos(w_l, (O_l - Vo_l).mean(axis=0)),
+            }
+        arms_out[aid] = {
+            "parent_leg_cos": ref,
+            "parity": {
+                "leg_d_pooled_cos_rederived": cos_wd,
+                "vs_persisted": ref,
+                "tol": A5_DECOMP_PARITY_TOL,
+                "means_parity_min_cos": float(mp.min()),
+                "means_parity_floor": A5_DECOMP_MEANS_COS_MIN,
+            },
+            "primary": primary,
+            "sensitivity_all_pivot_record_only": sens_all,
+            "marker_row_excluded": nomk,
+            "exploratory_layers_record_only": expl,
+            "counts": decomp_in["meta"]["per_arm"].get(aid),
+        }
+
+    # JSON-key audit (plan §6 criterion 4): every arm carries both components'
+    # pooled cosines, null bands, per-prefix vectors + a carries verdict.
+    for aid in marker_ids:
+        for blk in ("primary", "marker_row_excluded"):
+            for comp in ("weights", "text"):
+                e = arms_out[aid][blk][comp]
+                for key in ("pooled_cos", "null_bands", "per_prefix_cos", "carries"):
+                    assert key in e, (aid, blk, comp, key)
+
+    n = len(marker_ids)
+    maj = math.ceil(4 * n / 6)  # the registered ≥4-of-6 majority (plan §3), n-scaled
+
+    def lattice_for(block: str, factor: float) -> dict:
+        wc = sum(
+            1
+            for aid in marker_ids
+            if arms_out[aid][block]["weights"]["carries_by_factor"][str(factor)]
+        )
+        tc = sum(
+            1
+            for aid in marker_ids
+            if arms_out[aid][block]["text"]["carries_by_factor"][str(factor)]
+        )
+        verdict = (
+            "weights-carried"
+            if wc >= maj and tc < maj
+            else "text-carried"
+            if tc >= maj and wc < maj
+            else "both-carried"
+            if wc >= maj and tc >= maj
+            else "interaction-artifact"
+        )
+        return {
+            "n_arms": n,
+            "majority": maj,
+            "factor": factor,
+            "weights_carry_count": wc,
+            "text_carry_count": tc,
+            "verdict": verdict,
+        }
+
+    return {
+        "meta": _meta(),
+        "convention": (
+            "leg_w = matched_all − v̄0_even; leg_d = onpol_all − v̄0_odd; PRIMARY odd-pivot: "
+            "weights = onpol_all − H̄_b_tr_odd, text = H̄_b_tr_odd − v̄0_odd (H̄ = per-prefix "
+            "odd-half mean of h_base(trained_text)); L19 span_mean_context; norm-matched "
+            "null bands iso + corpus-cov, 2000 draws, rng seed = SEED (plan v6 §4)"
+        ),
+        "params": {
+            "parity_tol": A5_DECOMP_PARITY_TOL,
+            "means_parity_cos_min": A5_DECOMP_MEANS_COS_MIN,
+            "identity_tol": A5_DECOMP_IDENTITY_TOL,
+            "carry_factor": A5_CARRY_FACTOR,
+            "carry_factors_record": list(A5_CARRY_FACTORS_RECORD),
+            "n_null_draws": 2000,
+            "seed": SEED,
+        },
+        "arms": arms_out,
+        "lattice": lattice_for("primary", A5_CARRY_FACTOR),
+        "lattice_marker_row_excluded": lattice_for("marker_row_excluded", A5_CARRY_FACTOR),
+        "lattice_robustness_record_only": {
+            str(f): {
+                "primary": lattice_for("primary", f),
+                "marker_row_excluded": lattice_for("marker_row_excluded", f),
+            }
+            for f in A5_CARRY_FACTORS_RECORD
+            if f != A5_CARRY_FACTOR
+        },
+        "analyzer_notes": [
+            "(a) per-arm trained-vs-base text-identity fractions ride arms.<aid>.counts "
+            "(token-id equality from gen_rows) — context for the near-identical-text regime "
+            "the odd-pivot registration guards against",
+            "(b) the §3 lattice's both-carried branch reads: the weights-carried rewrite of "
+            "the A5 marker Takeaways bullet still applies (write-direction violation), with "
+            "text-carried change additionally present",
+            "(c) marker-row exclusion applies to the two trained-text stores but not v̄0 — "
+            "negligible at ~0.3% of rows; note in the sensitivity caption",
+        ],
+    }
+
+
 # ── prefix-based v_P -> v_A mapping arm (EXPLORATORY; LOFO over families) ─────
 
 
@@ -1514,6 +1778,61 @@ def build_fixtures(root: Path) -> None:
 # ── main ──────────────────────────────────────────────────────────────────────
 
 
+def run_decomp_only(args) -> int:
+    """``--decomp-only`` entry (plan v6 §4 Diff 3): stage the standard battery
+    inputs + ``battery/basetf_decomp_inputs.pt``, run ONLY ``a5_decomposition``
+    + its figure panel, exit — no judge reads, no bootstrap battery."""
+    import torch
+
+    t0 = time.time()
+    print("[phase=decomp_load]", flush=True)
+    cfg = load_config(args.config_dir)
+    if args.arms:
+        keep = {a for a in args.arms.split(",") if a}
+        cfg["marker_arms"] = [a for a in cfg["marker_arms"] if a["arm_id"] in keep]
+    assert cfg["marker_arms"], "no marker arms selected"
+    marker_ids = [a["arm_id"] for a in cfg["marker_arms"]]
+    if not args.skip_stage:
+        mixes = sorted({a["mix_arm_id"] for a in cfg["marker_arms"]})
+        stage_inputs(args.inputs_root, mixes, marker_ids)
+        dest = args.inputs_root / "battery/basetf_decomp_inputs.pt"
+        if not dest.exists():  # staged inside the branch — stage_inputs untouched
+            from explore_persona_space.orchestrate import hub
+
+            hub.stage_hub_file(
+                J._data_repo(),
+                f"{HF_PREFIX_1979}/battery/basetf_decomp_inputs.pt",
+                dest,
+                repo_type="dataset",
+            )
+    tensors = load_tensors(args.inputs_root)
+    load_rb(args.inputs_root)
+    decomp_in = torch.load(
+        args.inputs_root / "battery/basetf_decomp_inputs.pt",
+        map_location="cpu",
+        weights_only=False,
+    )
+    if args.parity_ref is not None:
+        parity_ref = json.loads(Path(args.parity_ref).read_text())
+    else:  # the committed parent A5 verdicts (plan §10 parity reference)
+        parity_ref = _read_repo_json("eval_results/issue_1979/race/battery_verdicts.json")
+
+    print("[phase=decomp_stats]", flush=True)
+    result = a5_decomposition(cfg, tensors, args.inputs_root, decomp_in, parity_ref)
+    _atomic_json(args.out_dir / "a5_decomposition.json", result)
+    print("[phase=decomp_fig]", flush=True)
+    from issue1979_figs import a5_decomposition_panel
+
+    args.fig_dir.mkdir(parents=True, exist_ok=True)
+    a5_decomposition_panel(result, args.fig_dir)
+    print(
+        f"[phase=done] decomp arms={len(result['arms'])} "
+        f"verdict={result['lattice']['verdict']} elapsed={time.time() - t0:.1f}s",
+        flush=True,
+    )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument(
@@ -1529,6 +1848,20 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--skip-stage", action="store_true", help="inputs already local (fixtures)")
     ap.add_argument("--build-fixtures", type=Path, default=None, metavar="DIR")
     ap.add_argument("--import-check", action="store_true")
+    ap.add_argument(
+        "--decomp-only",
+        action="store_true",
+        help="A5 weights-vs-text decomposition ONLY (amendment marker-a5-weights-vs-text, "
+        "plan v6 §4 Diff 3) — no judge reads, no bootstrap battery",
+    )
+    ap.add_argument("--fig-dir", type=Path, default=REPO_ROOT / "figures/issue_1979")
+    ap.add_argument(
+        "--parity-ref",
+        type=Path,
+        default=None,
+        help="battery_verdicts.json parity reference (default: the committed "
+        "eval_results/issue_1979/race/battery_verdicts.json)",
+    )
     args = ap.parse_args(argv)
 
     if args.import_check:
@@ -1560,12 +1893,24 @@ def main(argv: list[str] | None = None) -> int:
             np.zeros((4, 3)), np.zeros((4, 3)), np.zeros((2, 3))
         )
         inspect.signature(knn_retrieval).bind(np.zeros((4, 3)), np.zeros((4, 3)), ks=(1,))
+        # --decomp-only deferred imports (plan v6 §4 Diff 3)
+        from explore_persona_space.orchestrate import hub
+
+        from issue1979_figs import a5_decomposition_panel
+
+        inspect.signature(a5_decomposition_panel).bind(decomp={}, out_dir=Path("/tmp"))
+        inspect.signature(hub.stage_hub_file).bind(
+            repo_id="r", path_in_repo="p", target=Path("/tmp/x"), repo_type="dataset"
+        )
         print("[import-check] OK — race deferred imports resolved + signature-bound")
         return 0
 
     if args.build_fixtures is not None:
         build_fixtures(args.build_fixtures)
         return 0
+
+    if args.decomp_only:
+        return run_decomp_only(args)
 
     t0 = time.time()
     print("[phase=f3_load]", flush=True)
