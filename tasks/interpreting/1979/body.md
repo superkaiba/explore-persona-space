@@ -1,6 +1,7 @@
 ---
-title: Per-prefix leakage-predictor race + theory-assumption battery at prefix grain
-  (50 prefixes x 60 shared queries)
+title: Pushing a prefix's context vector through the base context-to-answer map best
+  predicts where fine-tuning delivers behavior change, while base propensity keeps
+  the level read (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-01T07:47:20Z'
