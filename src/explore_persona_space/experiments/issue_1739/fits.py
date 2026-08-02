@@ -748,6 +748,7 @@ def krr_scalar_fold_predict(
     preds = np.empty((n_layers, xe.shape[1]))
     ymu = float(y[inner_i].mean())
     per_layer_sel: list[dict] = [{} for _ in range(n_layers)]
+    n_degenerate = 0
     for lo in range(0, n_layers, layer_chunk):
         sl = slice(lo, min(lo + layer_chunk, n_layers))
         xt = torch.as_tensor(x[sl], device=dev)  # (c, ntr, d)
@@ -757,7 +758,25 @@ def krr_scalar_fold_predict(
         c, g = d_g.shape[0], d_g.shape[1]
         iu = torch.triu_indices(g, g, offset=1, device=dev)
         med = d_g[:, iu[0], iu[1]].median(dim=1).values  # (c,)
-        assert bool((med > 0).all()), "median-heuristic gamma: zero median sq distance"
+        # A degenerate median (duplicate-dominated subsample: median sq
+        # distance 0) is a RECORDED per-layer skip, never a grid-killing
+        # assert — one bad (layer, gamma) cell must not abort a whole fits
+        # invocation (code-review r1 Minor 5; the #1739-r10 batched-solve
+        # incident class). The layer computes under a placeholder gamma to
+        # keep the batch shape, then its predictions are overwritten with
+        # NaN and flagged in diag_out (downstream nanargmax/spearman treat
+        # NaN layers as absent).
+        degenerate = med <= 0  # (c,) bool
+        if bool(degenerate.any()):
+            logger.warning(
+                "[fits] krr median-heuristic gamma degenerate (median sq distance 0) on "
+                "%d/%d layer(s) in chunk [%d:%d) — NaN predictions recorded for those layers",
+                int(degenerate.sum()),
+                c,
+                lo,
+                lo + c,
+            )
+        med = torch.where(degenerate, torch.ones_like(med), med)
         base_gamma = 1.0 / med
         yc = torch.as_tensor(y[inner_i] - ymu, dtype=torch.float64, device=dev)  # (ni,)
         y_val = torch.as_tensor(y[val_i], dtype=torch.float64, device=dev)
@@ -792,22 +811,35 @@ def krr_scalar_fold_predict(
                     sel = torch.stack([gamma, torch.full_like(gamma, lam)], dim=1)  # (c, 2)
                     best_gl = torch.where(improved[:, None], sel, best_gl)
             del k_mm, inv_sqrt, phi_in, gram, phi_y, a_eig, q_eig, qtb, phi_val, phi_ev
+        best_pred[degenerate] = float("nan")  # recorded skip, never a fabricated fit
         preds[sl] = best_pred.cpu().numpy()
         gl = best_gl.cpu().numpy()
         vm = best_mse.cpu().numpy()
+        deg = degenerate.cpu().numpy()
         for li in range(c):
             per_layer_sel[lo + li] = {
                 "gamma": float(gl[li, 0]),
                 "lambda": float(gl[li, 1]),
                 "val_mse": float(vm[li]),
             }
+            if bool(deg[li]):
+                per_layer_sel[lo + li]["degenerate_gamma"] = True
+                n_degenerate += 1
         del xt, xev_t, z_lm, d_g, best_pred, best_mse, best_gl
         if dev.type == "cuda":
             torch.cuda.empty_cache()
+    if n_degenerate == n_layers:
+        # Every layer degenerate = pathological input (identical rows across
+        # ALL layers), not a per-cell blip — fail loud, never all-NaN output.
+        raise ValueError(
+            f"krr_scalar_fold_predict: median-heuristic gamma degenerate on ALL "
+            f"{n_layers} layers (duplicate-dominated inputs)"
+        )
     if diag_out is not None:
         diag_out.update(
             {
                 "kernel": "RBF Nystrom (layer-batched; one eigh per (layer, gamma))",
+                "n_degenerate_gamma_layers": n_degenerate,
                 "m_centers": m,
                 "n_inner": len(inner_i),
                 "n_val": int(n_val),

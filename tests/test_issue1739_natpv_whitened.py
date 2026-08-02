@@ -357,7 +357,12 @@ def test_fc_scoped_output_names_and_regimes():
     assert natpv.cube_dir_name(wht_fc) == "cube_whitened_fc"
     assert natpv.reduce_out_name(raw_fc) == "regime_comparison_fc.json"
     assert natpv.reduce_out_name(wht_fc) == "regime_comparison_whitened_fc.json"
-    assert natpv.regimes_for(wht_fc) == ("e1_fc", "e2_fc", "e2p_fc")
+    # fc regime set is {e1_fc, e2p_fc} ONLY — matched-e2_fc is structurally
+    # dropped (plan v9 restriction: within-context weights cancel exactly on
+    # context-level rows).
+    assert natpv.regimes_for(wht_fc) == ("e1_fc", "e2p_fc")
+    assert natpv.contrast_regimes_for(wht_fc) == (("e2p", True),)
+    assert natpv.contrast_regimes_for(argparse.Namespace()) == (("e2", False), ("e2p", True))
     assert natpv.base_regime("e2p_fc") == "e2p"
     assert natpv.base_regime("e1") == "e1"
     # t1 defaults unchanged — including Namespaces predating the flag.
@@ -382,7 +387,9 @@ def test_load_directions_fc_reads_core_leg_bank_and_own_fc_dirs(tmp_path):
         rb=rng.normal(size=(28, 3584)).astype(np.float16),
         layers=np.arange(28),
     )
-    for regime in ("e2_fc", "e2p_fc"):
+    # ONLY e2p_fc exists on the fc leg (matched-e2_fc structurally dropped);
+    # _load_directions must NOT require an r_b_e2_fc dir.
+    for regime in ("e2p_fc",):
         d = stage / behavior / f"r_b_{regime}"
         d.mkdir(parents=True)
         np.savez(
@@ -393,7 +400,7 @@ def test_load_directions_fc_reads_core_leg_bank_and_own_fc_dirs(tmp_path):
         )
     args = argparse.Namespace(space="whitened", summary_kind="context_end", e1_fc_bank=bank)
     out = natpv._load_directions(behavior, stage, args)
-    assert sorted(out) == ["e1_fc", "e2_fc", "e2p_fc"]
+    assert sorted(out) == ["e1_fc", "e2p_fc"]
     for v in out.values():
         assert v.shape == (28, 3584)
     missing = argparse.Namespace(

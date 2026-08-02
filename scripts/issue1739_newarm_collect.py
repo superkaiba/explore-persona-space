@@ -162,7 +162,11 @@ def gather(root: Path) -> dict:
 
 
 def fc_suffix_gate(rows: list[dict]) -> None:
-    """Success criterion (ii): 100% of fc-leg rows carry an _fc regime label."""
+    """Success criterion (ii): 100% of fc-leg rows carry an _fc regime label —
+    and NO row anywhere carries the structurally-undefined ``e2_fc`` regime
+    (plan v9 structural restriction, concern e2fc-structurally-null-direction:
+    an e2_fc row means a leg ran the dropped matched-e2 construction, whose
+    direction is exact-cancellation float residue)."""
     bad = [
         r
         for r in rows
@@ -172,6 +176,14 @@ def fc_suffix_gate(rows: list[dict]) -> None:
         raise SystemExit(
             f"[collect] fc-suffix gate FAILED: {len(bad)} fc-leg rows without an _fc regime "
             f"(first: {[{k: bad[0].get(k) for k in ('arm', 'regime', 'behavior')}]})"
+        )
+    null_rows = [r for r in rows if str(r.get("regime")) == "e2_fc"]
+    if null_rows:
+        raise SystemExit(
+            f"[collect] structural-restriction gate FAILED: {len(null_rows)} rows carry the "
+            "dropped matched-e2_fc regime (structurally-zero direction; plan v9) — a leg ran "
+            f"the refused construction (first: "
+            f"{[{k: null_rows[0].get(k) for k in ('leg', 'arm', 'behavior')}]})"
         )
 
 
@@ -189,9 +201,12 @@ def _mean(vals: list[float]) -> float | None:
     return (sum(vals) / len(vals)) if vals else None
 
 
-def summarize(rows: list[dict]) -> list[dict]:
+def summarize(rows: list[dict], k1_flags: dict[tuple[str, str], bool] | None = None) -> list[dict]:
     """Per-(leg, behavior, arm, regime, variant, rung_kind, eval_rung, budget_l,
-    u_rung_label) mean rho_frozen + n — the fc/17/18-extended aggregation."""
+    u_rung_label) mean rho_frozen + n — the fc/17/18-extended aggregation.
+    K1-flagged (behavior, eval_rung) groups carry a ``k1_spread_floor`` field
+    so no hypothesis read averages them in silently (fit-and-star)."""
+    k1_flags = k1_flags or {}
     groups: dict[tuple, list[float]] = {}
     for r in rows:
         key = tuple(
@@ -228,8 +243,10 @@ def summarize(rows: list[dict]) -> list[dict]:
         if str(leg).startswith("oracle") and behavior == "hallucination":
             row["read"] = (
                 "SECONDARY (hall oracle bar joins the within-round u=full arm12 rider; "
-                "committed hall arm12 rows are u=250 — u-mismatched, flagged per plan v8)"
+                "committed hall arm12 rows are u=250 — u-mismatched, flagged per plan v9)"
             )
+        if _k1_flagged(k1_flags, behavior, eval_rung):
+            row["k1_spread_floor"] = K1_FLAG_TEXT
         out.append(row)
     return out
 
@@ -300,8 +317,41 @@ def _write_jsonl(path: Path, rows: list[dict]) -> None:
     tmp.replace(path)
 
 
-def render_figures(pairs: list[dict], oracle_rows: list[dict], fig_dir: Path) -> list[Path]:
-    """The two round figures: (a) fc-vs-t1 delta-rho, (b) oracle family bar."""
+def load_k1_flags(path: Path | None) -> dict[tuple[str, str], bool]:
+    """K1 verdict table (issue1739_k1_floor.py --out) -> {(behavior, rung):
+    passes_floor}. Absent/None path -> {} (figures render unannotated, and the
+    summary carries no floor fields — the pre-K1-join behavior)."""
+    if path is None or not Path(path).is_file():
+        return {}
+    payload = json.loads(Path(path).read_text())
+    out: dict[tuple[str, str], bool] = {}
+    for behavior, verdict in (payload.get("verdicts") or {}).items():
+        for rung, row in (verdict.get("rungs") or {}).items():
+            out[(str(behavior), str(rung))] = bool(row.get("passes_floor"))
+    return out
+
+
+K1_FLAG_TEXT = "N/A — unmeasurable (spread floor)"
+
+
+def _k1_flagged(k1_flags: dict, behavior, rung) -> bool:
+    """True when the K1 table names this (behavior, rung) a floor FAILURE."""
+    return k1_flags.get((str(behavior), str(rung))) is False
+
+
+def render_figures(
+    pairs: list[dict],
+    oracle_rows: list[dict],
+    fig_dir: Path,
+    k1_flags: dict[tuple[str, str], bool] | None = None,
+) -> list[Path]:
+    """The two round figures: (a) fc-vs-t1 delta-rho, (b) oracle family bar.
+
+    Zero-bar discipline (code-review r1 Minor 1 + CLAUDE.md After-Every-
+    Experiment 8c): a cell with NO rows draws NO bar (never a zero bar), and
+    a K1-FLAGGED rung renders as ``N/A — unmeasurable (spread floor)`` — no
+    bars, annotated x label — never an unannotated/zero bar."""
+    k1_flags = k1_flags or {}
     import matplotlib
 
     matplotlib.use("Agg")
@@ -324,10 +374,11 @@ def render_figures(pairs: list[dict], oracle_rows: list[dict], fig_dir: Path) ->
         ax = axes[0][bi]
         for ai, arm in enumerate(arms_order):
             deltas = [p["delta_rho"] for p in pairs if p["behavior"] == b and p["arm"] == arm]
-            if not deltas:
-                continue
+            mean_delta = _mean(deltas)
+            if not deltas or mean_delta is None:
+                continue  # no matched pairs: NO bar (never a zero bar)
             ax.scatter([ai] * len(deltas), deltas, s=8, alpha=0.4, color=colors[ai])
-            ax.bar(ai, _mean(deltas) or 0.0, width=0.6, color=colors[ai], alpha=0.6)
+            ax.bar(ai, mean_delta, width=0.6, color=colors[ai], alpha=0.6)
         ax.axhline(0.0, lw=0.8, color="0.4")
         ax.set_xticks(range(len(arms_order)))
         ax.set_xticklabels([a.split("_")[0] for a in arms_order], rotation=0)
@@ -352,24 +403,33 @@ def render_figures(pairs: list[dict], oracle_rows: list[dict], fig_dir: Path) ->
         rungs = sorted({str(r.get("eval_rung")) for r in oracle_rows if r["behavior"] == b})
         width = 0.8 / max(len(ORACLE_ARMS), 1)
         for ai, arm in enumerate(ORACLE_ARMS):
-            ys = []
-            for rung in rungs:
+            labeled = False
+            for i, rung in enumerate(rungs):
+                if _k1_flagged(k1_flags, b, rung):
+                    continue  # flagged rung: annotated N/A, never a bar
                 vals = [
                     r.get("rho_frozen")
                     for r in oracle_rows
                     if r["behavior"] == b and r["arm"] == arm and str(r.get("eval_rung")) == rung
                 ]
-                ys.append(_mean(vals))
-            xs = [i + ai * width for i in range(len(rungs))]
-            ax.bar(
-                xs,
-                [y if y is not None else 0.0 for y in ys],
-                width=width,
-                color=colors[ai],
-                label=arm.split("_")[0],
-            )
+                y = _mean(vals)
+                if y is None:
+                    continue  # no rows: NO bar (never a zero bar)
+                ax.bar(
+                    i + ai * width,
+                    y,
+                    width=width,
+                    color=colors[ai],
+                    label=None if labeled else arm.split("_")[0],
+                )
+                labeled = True
         ax.set_xticks([i + width for i in range(len(rungs))])
-        ax.set_xticklabels(rungs, rotation=30, ha="right", fontsize=7)
+        ax.set_xticklabels(
+            [r + ("\n" + K1_FLAG_TEXT if _k1_flagged(k1_flags, b, r) else "") for r in rungs],
+            rotation=30,
+            ha="right",
+            fontsize=6,
+        )
         title = b + (" [SECONDARY: u=250-committed mismatch]" if b == "hallucination" else "")
         ax.set_title(title, fontsize=9)
         if bi == 0:
@@ -415,6 +475,15 @@ def main(argv: list[str] | None = None) -> int:
         "(default: eval_results/issue_1739/wide_ood/*_transfer.jsonl)",
     )
     ap.add_argument("--figures-dir", type=Path, default=_REPO_ROOT / "figures/issue_1739")
+    ap.add_argument(
+        "--k1-verdicts",
+        type=Path,
+        default=_REPO_ROOT / "eval_results/issue_1739/new_arm_round/k1_verdicts.json",
+        help="K1 spread-floor verdict table (issue1739_k1_floor.py --out); flagged "
+        "(behavior, rung) cells render 'N/A — unmeasurable (spread floor)' in the "
+        "figures and carry a k1_spread_floor field in the summary groups — never a "
+        "zero bar. Missing file -> unannotated (a WARNING is printed).",
+    )
     ap.add_argument("--skip-figures", action="store_true")
     ap.add_argument(
         "--strict",
@@ -470,6 +539,13 @@ def main(argv: list[str] | None = None) -> int:
         if r.get("arm") in ORACLE_ARMS
         and (str(r.get("leg", "")).startswith("oracle") or r.get("leg") == "maxood_committed")
     ]
+    k1_flags = load_k1_flags(args.k1_verdicts)
+    if not k1_flags:
+        print(
+            f"[collect] WARNING: no K1 verdict table at {args.k1_verdicts} — figures/summary "
+            "render without spread-floor annotations (run issue1739_k1_floor.py --out first)",
+            flush=True,
+        )
     summary = {
         "n_transfer_rows": len(transfer_rows),
         "n_cells_rows": len(cells_rows),
@@ -477,10 +553,12 @@ def main(argv: list[str] | None = None) -> int:
         "n_skips": len(got["skips"]),
         "n_accounting_violations": len(got["violations"]),
         "n_fc_vs_t1_pairs": len(pairs),
-        "join_rule": "u=full-matched ONLY (plan v8 Must-Fix 2); hall oracle bar = SECONDARY "
+        "join_rule": "u=full-matched ONLY (plan v9 Must-Fix 2); hall oracle bar = SECONDARY "
         "vs the within-round u=full arm12 rider (committed hall arm12 rows are u=250)",
+        "k1_verdicts_path": str(args.k1_verdicts) if k1_flags else None,
+        "k1_flagged_rungs": sorted(f"{b}/{r}" for (b, r), ok in k1_flags.items() if not ok),
         "sources": got["sources"],
-        "groups": summarize(transfer_rows + cells_rows),
+        "groups": summarize(transfer_rows + cells_rows, k1_flags),
         "git_commit": _git_commit(),
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
@@ -489,7 +567,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"[collect] summary -> {arm_dir / 'newarm_spearman_summary.json'}", flush=True)
 
     if not args.skip_figures:
-        written = render_figures(pairs, oracle_rows, args.figures_dir)
+        written = render_figures(pairs, oracle_rows, args.figures_dir, k1_flags)
         for p in written:
             print(f"[collect] figure -> {p}", flush=True)
     print(

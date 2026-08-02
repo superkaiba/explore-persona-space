@@ -73,8 +73,9 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="t1",
         help="r_B extraction POINT (new-arm-round item 1): 't1' (default — the committed "
         "answer-avg direction, byte-identical behavior) or 'context_end' (final-context-token "
-        "direction; every regime label in unit/row keys gains an '_fc' suffix — e1_fc/e2_fc/"
-        "e2p_fc — so fc rows can never collide with committed rows at resume/merge time)",
+        "direction; every regime label in unit/row keys gains an '_fc' suffix — e1_fc/e2p_fc; "
+        "matched-e2 is REFUSED under context_end, plan v9 structural restriction — so fc rows "
+        "can never collide with committed rows at resume/merge time)",
     )
     ap.add_argument(
         "--fixed-coordinate",
@@ -232,7 +233,25 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     ap.add_argument("--synthetic-dim", type=int, default=8)
     ap.add_argument("--synthetic-layers", type=int, default=3)
-    return ap.parse_args(argv)
+    args = ap.parse_args(argv)
+    if args.rb_point == "context_end" and "e2" in args.regimes:
+        # Plan v9 registered STRUCTURAL RESTRICTION (concern
+        # e2fc-structurally-null-direction, code-review r1): the matched-pair
+        # E2 weights contrast hi/lo ROLLOUTS within a context, and every
+        # rollout of a context shares the identical context_end activation,
+        # so the weighted contrast cancels EXACTLY — the "direction" is float
+        # residue (measured |max| per-context net weight 5.4e-20 on the real
+        # evil DV) that K2's zero/NaN check cannot see. Refused STRUCTURALLY
+        # at the flag, never via a norm threshold. e2p (pooled across-context
+        # weights) and e1 are unaffected.
+        ap.error(
+            "--rb-point context_end refuses --regimes e2: the matched-pair (within-context) "
+            "contrast is structurally ZERO at a context-level activation — every rollout of "
+            "a context shares the context_end row, so the hi/lo weights cancel exactly "
+            "(plan v9 structural restriction, concern e2fc-structurally-null-direction). "
+            "Use e1/e2p."
+        )
+    return args
 
 
 # ---------------------------------------------------------------------------
@@ -426,7 +445,9 @@ class LabeledTable:
     per_rollout: object | None  # (n, K) per-rollout mean judge scores (NaN = dropped)
     ctx_order: list[str]
     rungs: list[str]
-    ans_rows: dict | None  # {layer: (n_rows, d)} per-rollout t1 rows (e2/e2p only)
+    # {layer: (n_rows, d)} per-rollout rows of the requested rollout_rows_kind
+    # ('t1' default; 'context_end' under --rb-point context_end) — e2/e2p only.
+    ans_rows: dict | None
     ans_row_ctx: object | None  # (n_rows,) index into ctx_order
     ans_row_k: object | None  # (n_rows,) rollout k
     # per-context rung label aligned with ctx_order (M-A ladder; defaults keep
@@ -609,6 +630,16 @@ def _extract_rb(regime: str, args: argparse.Namespace, tbl: LabeledTable, layers
 
     fc = regime.endswith("_fc")
     base = regime.removesuffix("_fc")
+    if fc and base == "e2":
+        # Defense-in-depth twin of the --rb-point flag refusal (plan v9
+        # structural restriction): matched-pair weights cancel exactly on
+        # context-level rows, so an e2_fc direction cannot exist. Structural
+        # refusal — never a norm check (K2 is blind to the float residue).
+        raise SystemExit(
+            "matched-e2_fc is structurally undefined: within-context hi/lo weights cancel "
+            "exactly on context_end rows (plan v9 structural restriction, concern "
+            "e2fc-structurally-null-direction) — use e1_fc/e2p_fc"
+        )
 
     def _k2_gate(rb):
         # K2 (plan v8 §7): a degenerate fc direction (zero/NaN norm at any

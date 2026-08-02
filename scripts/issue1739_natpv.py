@@ -406,10 +406,26 @@ def phase_directions(args, behavior: str, stage: Path) -> None:
 
     kind = getattr(args, "summary_kind", "t1")
     suffix = "_fc" if is_fc(args) else ""
+    # M4 (code-review r1 Minor 4): skip the 52-70 GB tar re-stream when every
+    # direction npz this invocation would write already exists (a box crash
+    # after directions must not re-stream on re-run). EPM_I1739_NATPV_FORCE=1
+    # overrides. Directions are deterministic from (labels, tar, kind).
+    out_files = [
+        stage / behavior / f"r_b_{base + suffix}" / f"{behavior}.npz"
+        for base, _pooled in contrast_regimes_for(args)
+    ]
+    if os.environ.get("EPM_I1739_NATPV_FORCE", "") != "1" and all(f.is_file() for f in out_files):
+        logger.info(
+            "[%s] directions already persisted (%s) — skipping tar stream "
+            "(EPM_I1739_NATPV_FORCE=1 to recompute)",
+            behavior,
+            ", ".join(f.parent.name for f in out_files),
+        )
+        return
     labels = load_labels(behavior, stage / "inputs")
     ridx = load_row_index(stage, behavior)
     weights, quals = {}, {}
-    for regime, pooled in (("e2", False), ("e2p", True)):
+    for regime, pooled in contrast_regimes_for(args):
         weights[regime], quals[regime] = _row_weights(
             labels, ridx, pooled=pooled, spread_min=E2_SPREAD_MIN
         )
@@ -520,7 +536,9 @@ def _load_directions(behavior: str, stage: Path, args=None):
             raise RuntimeError(f"E1 bank layers {obj['layers']!r} != 0..27")
         out["e1"] = rb
     suffix = "_fc" if fc else ""
-    for regime in ("e2", "e2p"):
+    # fc drops matched-e2 (structurally undefined at context_end — plan v9).
+    bases = [b for b, _p in contrast_regimes_for(args)] if fc else ["e2", "e2p"]
+    for regime in bases:
         f = stage / behavior / f"r_b_{regime}{suffix}" / f"{behavior}.npz"
         with np.load(f, allow_pickle=False) as z:
             out[regime + suffix] = np.asarray(z["rb"], dtype=np.float64)
@@ -570,10 +588,20 @@ def is_fc(args) -> bool:
 
 
 def regimes_for(args) -> tuple[str, ...]:
-    """Effective regime labels: fc runs suffix every label with ``_fc`` so the
-    fc cube/reduce/direction artifacts can never collide with committed t1
-    ones (the fits-CLI ``--rb-point`` convention, mirrored)."""
-    return tuple(r + "_fc" for r in REGIMES) if is_fc(args) else REGIMES
+    """Effective regime labels: fc runs suffix labels with ``_fc`` so the fc
+    cube/reduce/direction artifacts can never collide with committed t1 ones
+    (the fits-CLI ``--rb-point`` convention, mirrored). The fc set is
+    ``("e1_fc", "e2p_fc")`` ONLY — matched-e2_fc is structurally undefined:
+    the within-context hi/lo weights cancel exactly on context-level rows
+    (plan v9 structural restriction, concern
+    e2fc-structurally-null-direction)."""
+    return ("e1_fc", "e2p_fc") if is_fc(args) else REGIMES
+
+
+def contrast_regimes_for(args) -> tuple[tuple[str, bool], ...]:
+    """(base regime, pooled) pairs phase_directions builds: fc drops matched
+    e2 per the structural restriction above; t1 keeps the committed pair."""
+    return (("e2p", True),) if is_fc(args) else (("e2", False), ("e2p", True))
 
 
 def base_regime(regime: str) -> str:
@@ -831,6 +859,31 @@ def phase_project(args, behavior: str, stage: Path) -> None:
     """Per-row scalar projection cube for all reads x regimes x layers (one pass)."""
     import numpy as np
 
+    # M4 (code-review r1 Minor 4): skip the full-tar re-stream when the cube
+    # already exists AND is newer than every direction npz it consumed (a
+    # stale cube after a directions re-run must rebuild). Force with
+    # EPM_I1739_NATPV_FORCE=1.
+    cube_path = stage / behavior / cube_dir_name(args) / "cube.npz"
+    fc_suffix = "_fc" if is_fc(args) else ""
+    dir_files = [
+        stage / behavior / f"r_b_{b + fc_suffix}" / f"{behavior}.npz"
+        for b, _p in contrast_regimes_for(args)
+    ]
+    if is_fc(args):
+        dir_files.append(Path(args.e1_fc_bank) / f"{behavior}.npz")
+    if (
+        os.environ.get("EPM_I1739_NATPV_FORCE", "") != "1"
+        and cube_path.is_file()
+        and all(f.is_file() for f in dir_files)
+        and cube_path.stat().st_mtime >= max(f.stat().st_mtime for f in dir_files)
+    ):
+        logger.info(
+            "[%s] cube already persisted and newer than its directions (%s) — skipping "
+            "tar stream (EPM_I1739_NATPV_FORCE=1 to recompute)",
+            behavior,
+            cube_path,
+        )
+        return
     ridx = load_row_index(stage, behavior)
     directions = _load_directions(behavior, stage, args)
     regimes = regimes_for(args)
@@ -1028,7 +1081,9 @@ def phase_reduce(args, behavior: str, stage: Path) -> None:
             }
     e2_meta = {}
     suffix = "_fc" if is_fc(args) else ""
-    for regime in ("e2" + suffix, "e2p" + suffix):
+    # fc has no matched-e2 direction (plan v9 structural restriction).
+    for base, _pooled in contrast_regimes_for(args):
+        regime = base + suffix
         with np.load(
             stage / behavior / f"r_b_{regime}" / f"{behavior}.npz", allow_pickle=False
         ) as z:

@@ -1295,6 +1295,28 @@ def test_krr_scalar_fold_predict_selects_on_inner_val():
     assert np.isfinite(diag["per_layer"][0]["val_mse"])
 
 
+def test_krr_degenerate_gamma_layer_is_recorded_not_fatal():
+    """One duplicate-dominated layer (median sq distance 0) yields NaN preds +
+    a diag flag for THAT layer only — never a grid-killing assert (code-review
+    r1 Minor 5); ALL layers degenerate fails loud."""
+    rng = np.random.default_rng(2)
+    ly, ntr, nev, d = 2, 30, 4, 3
+    x = rng.normal(size=(ly, ntr, d))
+    x[1] = 1.0  # layer 1: all rows identical -> median sq distance exactly 0
+    xe = rng.normal(size=(ly, nev, d))
+    y = x[0, :, 0] + 0.1 * rng.normal(size=ntr)
+    diag: dict = {}
+    pred = fits.krr_scalar_fold_predict(x, y, xe, seed=0, device="cpu", diag_out=diag)
+    assert np.isfinite(pred[0]).all(), "healthy layer must stay finite"
+    assert np.isnan(pred[1]).all(), "degenerate layer must be NaN (recorded skip)"
+    assert diag["per_layer"][1].get("degenerate_gamma") is True
+    assert "degenerate_gamma" not in diag["per_layer"][0]
+    assert diag["n_degenerate_gamma_layers"] == 1
+    x_all = np.ones((ly, ntr, d))
+    with pytest.raises(ValueError, match="ALL"):
+        fits.krr_scalar_fold_predict(x_all, y, xe, seed=0, device="cpu")
+
+
 def _fc_labeled_table(cli, n_ctx=3, k=2, ly=2, d=4, seed=0):
     """Tiny LabeledTable whose ans_rows carry the CONTEXT_END per-rollout rows
     (what _load_labeled loads under rollout_rows_kind='context_end')."""
@@ -1317,9 +1339,10 @@ def _fc_labeled_table(cli, n_ctx=3, k=2, ly=2, d=4, seed=0):
 
 
 def test_extract_rb_fc_applies_split_weights_to_the_loaded_rows():
-    """e2_fc = the SAME matched_pair_split_weights row weights applied to the
-    rows _load_labeled loaded (context_end under --rb-point context_end) —
-    position is the ONLY change (plan v8 item 1)."""
+    """e2p_fc = the SAME pooled matched_pair_split_weights row weights applied
+    to the rows _load_labeled loaded (context_end under --rb-point
+    context_end) — position is the ONLY change (plan v9 item 1; matched-e2_fc
+    is structurally dropped, see the refusal tests below)."""
     import argparse
 
     from explore_persona_space.experiments.issue_1739.constants import E2_SPREAD_MIN
@@ -1327,16 +1350,40 @@ def test_extract_rb_fc_applies_split_weights_to_the_loaded_rows():
     cli = _load_fits_cli()
     tbl = _fc_labeled_table(cli)
     args = argparse.Namespace(behavior="toy", e1_store=None, rb_point="context_end")
-    rb = cli._extract_rb("e2_fc", args, tbl, [0, 1], 4)
+    rb = cli._extract_rb("e2p_fc", args, tbl, [0, 1], 4)
     w_hi, w_lo, _n = fits.matched_pair_split_weights(
-        tbl.per_rollout, spread_min=E2_SPREAD_MIN, pooled=False
+        tbl.per_rollout, spread_min=E2_SPREAD_MIN, pooled=True
     )
     w_row = (w_hi - w_lo)[tbl.ans_row_ctx, tbl.ans_row_k]
     for li in (0, 1):
         np.testing.assert_allclose(rb[li], w_row @ tbl.ans_rows[li])
-    # pooled variant routes through the SAME builder under the fc label
-    rb_p = cli._extract_rb("e2p_fc", args, tbl, [0, 1], 4)
-    assert rb_p.shape == rb.shape
+
+
+def test_extract_rb_refuses_matched_e2_under_fc():
+    """Plan v9 structural restriction: matched-e2_fc is REFUSED structurally
+    (the within-context hi/lo weights cancel exactly on context-level rows;
+    K2's norm check is blind to the float residue)."""
+    import argparse
+
+    cli = _load_fits_cli()
+    tbl = _fc_labeled_table(cli)
+    args = argparse.Namespace(behavior="toy", e1_store=None, rb_point="context_end")
+    with pytest.raises(SystemExit, match="structurally undefined"):
+        cli._extract_rb("e2_fc", args, tbl, [0, 1], 4)
+
+
+def test_parse_args_refuses_e2_regime_at_context_end():
+    """Flag-level enforcement of the plan-v9 structural restriction: the CLI
+    refuses --regimes e2 under --rb-point context_end (argparse error, rc 2);
+    e1/e2p under context_end and e2 under t1 both parse."""
+    cli = _load_fits_cli()
+    with pytest.raises(SystemExit) as exc:
+        cli._parse_args(["--rb-point", "context_end", "--regimes", "e1", "e2", "e2p"])
+    assert exc.value.code == 2
+    ok_fc = cli._parse_args(["--rb-point", "context_end", "--regimes", "e1", "e2p"])
+    assert ok_fc.regimes == ["e1", "e2p"]
+    ok_t1 = cli._parse_args(["--regimes", "e1", "e2", "e2p"])
+    assert ok_t1.regimes == ["e1", "e2", "e2p"]
 
 
 def test_extract_rb_fc_k2_halts_on_a_degenerate_direction():
@@ -1350,7 +1397,7 @@ def test_extract_rb_fc_k2_halts_on_a_degenerate_direction():
         tbl.ans_rows[li] = np.zeros_like(tbl.ans_rows[li])
     args = argparse.Namespace(behavior="toy", e1_store=None, rb_point="context_end")
     with pytest.raises(SystemExit, match="K2 HALT"):
-        cli._extract_rb("e2_fc", args, tbl, [0, 1], 4)
+        cli._extract_rb("e2p_fc", args, tbl, [0, 1], 4)
 
 
 def test_rb_point_and_fixed_coordinate_cli_defaults():

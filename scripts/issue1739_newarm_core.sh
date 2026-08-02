@@ -6,8 +6,10 @@
 #   stage      issue1739_leg2.sh (idempotent) + stage-time data-repo sha meta
 #   pilot      fits.py --pilot at the fc grid shape (rc=7 = designed halt)
 #   fits       fits.py --rb-point context_end over the rb-dep roster
-#              (arm1/arm6/arm11 @ e1_fc [+ e2_fc/e2p_fc for evil+syc]; hall is
-#              e1_fc ONLY — its dv_dataset has no per_rollout_scores and
+#              (arm1/arm6/arm11 @ e1_fc [+ e2p_fc for evil+syc]; matched-
+#              e2_fc is DROPPED — structurally zero at context_end, plan v9
+#              restriction, refused at the --rb-point flag; hall is e1_fc
+#              ONLY — its dv_dataset has no per_rollout_scores and
 #              _extract_rb SystemExits on e2/e2p, a LOAD-BEARING restriction)
 #   natpv      hall+syc natural-rung fc leg (whitened space; e1_fc from the
 #              fits leg's own r_b_e1_fc bank)
@@ -28,14 +30,15 @@ BANK_DIR="eval_results/issue_1739/new_arm_round/fc/rb_fc_bank"
 TENSORS_ROOT="analysis_tensors/issue_1739"
 NATPV_STAGE="${EPM_I1739_NATPV_STAGE:-data/issue_1739/natpv_stage}"
 # K3 fence: abort when the pilot projects past ABORT_MULT x PLAN_WALL_H
-# (plan §9 core row: planned 3.2 h, fc-grid ceiling 6.4 h, box fence 8 h).
-PLAN_WALL_H="${EPM_I1739_NEWARM_CORE_PLAN_WALL_H:-3.2}"
+# (plan v9 §9 core row: planned 2.7 h, fc-grid ceiling 4.7 h — down from 6.4
+# with the e2_fc drop; box fence 8 h).
+PLAN_WALL_H="${EPM_I1739_NEWARM_CORE_PLAN_WALL_H:-2.7}"
 ABORT_MULT="${EPM_I1739_NEWARM_CORE_ABORT_MULT:-2}"
 ROSTER="arm1_ctx_e1 arm6_map_proj_e1 arm11_oracle_proj"
 
 case "$B" in
-  evil) REGIMES="e1 e2 e2p"; BUDGETS="250 2500 8000" ;;
-  sycophancy) REGIMES="e1 e2 e2p"; BUDGETS="250 2500 16000" ;;
+  evil) REGIMES="e1 e2p"; BUDGETS="250 2500 8000" ;;
+  sycophancy) REGIMES="e1 e2p"; BUDGETS="250 2500 16000" ;;
   hallucination) REGIMES="e1"; BUDGETS="250 2500 16000" ;;
   *) echo "[newarm-core] FATAL: unknown behavior '$B'" >&2; exit 2 ;;
 esac
@@ -102,7 +105,7 @@ if [ "$B" != "evil" ]; then
     --stage "$NATPV_STAGE" \
     --u-store data/issue_1739/hf_dl/u_store \
     --e1-fc-bank "$TENSORS_ROOT/r_b_e1_fc"
-  for r in e2_fc e2p_fc; do
+  for r in e2p_fc; do
     src="$NATPV_STAGE/$B/r_b_${r}/$B.npz"
     [ -f "$src" ] || { echo "[newarm-core] FATAL: missing natpv fc npz $src" >&2; exit 1; }
     cp "$src" "$BANK_DIR/${B}__natpv_${r}.npz"
