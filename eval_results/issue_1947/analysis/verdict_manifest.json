@@ -6,6 +6,342 @@
  ],
  "n_draws": 3,
  "content": {
+  "syc-pers-con-sv-s42": {
+   "slug": "syc-pers-con-sv-s42",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "pers",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 15,
+    "rate": 0.62,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 3.0
+  },
+  "syc-pers-con-sv-s137": {
+   "slug": "syc-pers-con-sv-s137",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "pers",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 15,
+    "rate": 0.78,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 3.0
+  },
+  "syc-pers-po-sv-s42": {
+   "slug": "syc-pers-po-sv-s42",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "pers",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 15,
+    "rate": 0.72,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 2.0
+  },
+  "syc-pers-po-sv-s137": {
+   "slug": "syc-pers-po-sv-s137",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "pers",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 15,
+    "rate": 0.78,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 3.0
+  },
+  "syc-bare-con-sv-s42": {
+   "slug": "syc-bare-con-sv-s42",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "bare",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 25,
+    "rate": 0.74,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 4.0
+  },
+  "syc-bare-con-sv-s137": {
+   "slug": "syc-bare-con-sv-s137",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "bare",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 20,
+    "rate": 0.73,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 4.0
+  },
+  "syc-bare-po-sv-s42": {
+   "slug": "syc-bare-po-sv-s42",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "bare",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 20,
+    "rate": 0.65,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 3.0
+  },
+  "syc-bare-po-sv-s137": {
+   "slug": "syc-bare-po-sv-s137",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "bare",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 20,
+    "rate": 0.76,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 3.0
+  },
+  "syc-conv-con-sv-s42": {
+   "slug": "syc-conv-con-sv-s42",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "conv",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 5,
+    "rate": 0.78,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 1.0
+  },
+  "syc-conv-con-sv-s137": {
+   "slug": "syc-conv-con-sv-s137",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "conv",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 5,
+    "rate": 0.76,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 1.0
+  },
+  "syc-conv-po-sv-s42": {
+   "slug": "syc-conv-po-sv-s42",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "conv",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 5,
+    "rate": 0.7878787878787878,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 1.0
+  },
+  "syc-conv-po-sv-s137": {
+   "slug": "syc-conv-po-sv-s137",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "conv",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 5,
+    "rate": 0.74,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 1.0
+  },
+  "syc-icl-con-sv-s42": {
+   "slug": "syc-icl-con-sv-s42",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "icl",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 10,
+    "rate": 0.68,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 2.0
+  },
+  "syc-icl-con-sv-s137": {
+   "slug": "syc-icl-con-sv-s137",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "icl",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 10,
+    "rate": 0.69,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 2.0
+  },
+  "syc-icl-po-sv-s42": {
+   "slug": "syc-icl-po-sv-s42",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "icl",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 3e-05,
+   "selection": {
+    "step": 5,
+    "rate": 0.69,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 1.0
+  },
+  "syc-icl-po-sv-s137": {
+   "slug": "syc-icl-po-sv-s137",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "icl",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 10,
+    "rate": 0.76,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 2.0
+  },
   "imp-pers-con-sv-s42": {
    "slug": "imp-pers-con-sv-s42",
    "behavior": "impolite",
@@ -719,6 +1055,48 @@
    "instrument": "registered_graded_r23",
    "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
    "parent_pass_count": 4.0
+  },
+  "syc-pers-con-rep-s42": {
+   "slug": "syc-pers-con-rep-s42",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "pers",
+   "regime": "con",
+   "visit": "rep",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 15,
+    "rate": 0.62,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 3.0
+  },
+  "syc-bare-con-rep-s42": {
+   "slug": "syc-bare-con-rep-s42",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "bare",
+   "regime": "con",
+   "visit": "rep",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 20,
+    "rate": 0.7,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 4.0
   }
  },
  "marker": {
@@ -788,9 +1166,9 @@
   }
  },
  "coverage": {
-  "n_content": 34,
-  "n_in_band": 18
+  "n_content": 52,
+  "n_in_band": 36
  },
- "git_commit": "31d82d5994",
- "ts": "2026-08-01T23:57:28Z"
+ "git_commit": "6cab56beb6",
+ "ts": "2026-08-02T16:41:31Z"
 }
