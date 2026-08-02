@@ -12,12 +12,41 @@ from __future__ import annotations
 
 import json
 import math
+import subprocess
 import sys
 from pathlib import Path
 
 LIVE = Path("eval_results/issue_1947/analysis/battery")
 BACKUP = Path("/mnt/eps-data/thomasjiralerspong/issue1947_p6_fleet/_precommit_backup/battery")
 IGNORE = {"ts", "issue", "git_commit"}
+# The P6 writer, for the concurrency guard below. Bracket one character so the
+# probe's own argv can never self-match (the ownership-probe idiom).
+P6_WRITER_PATTERN = "issue1947_analysi[s].py"
+
+
+def refuse_if_p6_running() -> None:
+    """Refuse to audit while the P6 writer is live — a mid-write read is torn.
+
+    `issue1947_analysis.py` writes each battery cell with an atomic replace, but
+    the audit walks the WHOLE set, so a run in flight yields a mixture of
+    already-rewritten and not-yet-rewritten cells. Observed live: an audit run
+    mid-P6 reported 2 spurious STRUCTURAL diffs that vanished once the writer
+    finished. Silence there would be a wrong PASS/FAIL, so fail loud instead.
+    """
+    try:
+        out = subprocess.run(
+            ["pgrep", "-af", P6_WRITER_PATTERN], capture_output=True, text=True, check=False
+        )
+    except OSError as e:  # pgrep absent — report, do not silently skip the guard
+        print(f"[audit] WARNING: liveness guard could not run ({e}); proceeding")
+        return
+    hits = [ln for ln in out.stdout.splitlines() if ln.strip()]
+    if hits:
+        print("[audit] REFUSING: the P6 writer is still running — a mid-write audit is torn:")
+        for h in hits[:4]:
+            print("   ", h[:160])
+        print("[audit] wait for it to exit, then re-run (--allow-concurrent overrides).")
+        raise SystemExit(2)
 
 
 def walk(a, b, path: str, out: list[tuple[str, float, object, object]]) -> None:
@@ -43,6 +72,8 @@ def walk(a, b, path: str, out: list[tuple[str, float, object, object]]) -> None:
 
 
 def main() -> int:
+    if "--allow-concurrent" not in sys.argv:
+        refuse_if_p6_running()
     old_files = sorted(BACKUP.glob("*.json"))
     assert old_files, f"no backup cells under {BACKUP}"
     n_same = 0
