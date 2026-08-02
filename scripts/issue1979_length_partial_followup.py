@@ -153,6 +153,7 @@ def _summaries(reads: list[dict]) -> dict:
 def _figure(reads: list[dict]) -> None:
     import matplotlib.pyplot as plt
 
+    import issue1979_figs as F  # plain-English rendered-text labels (paper-plots §3.5)
     from explore_persona_space.analysis.paper_plots import (
         paper_palette_role,
         savefig_paper,
@@ -163,8 +164,11 @@ def _figure(reads: list[dict]) -> None:
     c_raw = paper_palette_role("baseline")
     c_par = paper_palette_role("primary")
     groups = [
-        ("content", "content arms: rho(p3b_tc, dv_change)"),
-        ("marker", "marker arms: rho(p9_k8, dv_dlogp)"),
+        ("content", "content arms: through-map predicted-answer similarity vs leakage change"),
+        (
+            "marker",
+            "marker arms: nearest-training-rows context similarity vs marker log-prob change",
+        ),
     ]
     n_rows = [sum(1 for r in reads if r["kind"] == k) for k, _ in groups]
     fig, axes = plt.subplots(
@@ -184,7 +188,7 @@ def _figure(reads: list[dict]) -> None:
             label="length-partialled",
         )
         ax.set_yticks(ys)
-        ax.set_yticklabels([r["arm_id"] for r in grp], fontsize=7)
+        ax.set_yticklabels([F._arm_label(r["arm_id"]) for r in grp], fontsize=7)
         ax.axvline(0.0, color="0.8", lw=0.8, zorder=0)
         ax.set_title(title, fontsize=9)
     axes[0].legend(loc="lower right", fontsize=7)
