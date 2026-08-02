@@ -130,6 +130,25 @@ def _stage_v2_corpus(corpus: str, smoke: bool, explicit_path: str | None) -> lis
     return [{"prompt_idx": int(r["prompt_idx"]), "prompt": r["prompt"]} for r in rows]
 
 
+def new_rows_only(corpus: str, rows: list[dict]) -> list[dict]:
+    """Extension-only rows for a concat corpus (plan v13 §4 Phase GEN).
+
+    Wave-1 covered prompt_idx < cm.V2_CONCAT_BOUNDARY[corpus] and its rollout
+    text is reused verbatim, so generation stages ONLY the new rows. Non-concat
+    corpora pass through unchanged. Fail-loud on an empty result (a corpus
+    built before the production-anchored extension idx convention).
+    """
+    if corpus not in cm.V2_CONCAT_BOUNDARY:
+        return rows
+    boundary = cm.V2_CONCAT_BOUNDARY[corpus]
+    kept = [r for r in rows if int(r["prompt_idx"]) >= boundary]
+    assert kept, (
+        f"{corpus}: no new prompts (prompt_idx >= {boundary}) — corpus build "
+        "predates the production-anchored extension idx convention"
+    )
+    return kept
+
+
 def run_prep(corpora: list[str], smoke: bool, corpus_files: dict[str, str] | None = None) -> None:
     """Stage every requested corpus + apply the load-time prompt-token gate."""
     from transformers import AutoTokenizer
@@ -155,7 +174,22 @@ def run_prep(corpora: list[str], smoke: bool, corpus_files: dict[str, str] | Non
                 f"unknown corpus {corpus!r} — not in cm.CORPORA nor "
                 f"issue1336_stage_corpora.V2_CORPORA ({sorted(set(cm.CORPORA) | set(V2_CORPORA))})"
             )
-        if smoke:
+        if corpus in cm.V2_CONCAT_BOUNDARY:
+            # Phase GEN generates NEW prompts only (plan v13 §4). Filter
+            # BEFORE the smoke slice so both modes stage the same
+            # extension-only population (smoke corpora anchor extension rows
+            # at the production boundary — Unit D).
+            n_all = len(rows)
+            rows = new_rows_only(corpus, rows)
+            print(
+                f"[prep] {corpus}: new-rows filter "
+                f"(idx >= {cm.V2_CONCAT_BOUNDARY[corpus]}): kept {len(rows)}/{n_all}"
+            )
+        if smoke and corpus not in V2_CORPORA:
+            # v2 smoke corpora are already builder-sized (SMOKE_SAMPLE_N /
+            # SMOKE_LMSYS_NEW_N — the latter deliberately ABOVE cm.SMOKE_N so
+            # the kept stem clears the fit's n floor after real-prompt render
+            # drops); slicing them back to SMOKE_N re-floors the fit smoke.
             rows = rows[: cm.SMOKE_N]
         kept, dropped = [], []
         for r in rows:

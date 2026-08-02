@@ -384,6 +384,24 @@ V2_CORPORA: dict[str, dict] = {
 # caveat). Same turnstore bundle as the context arm; only X = prefix slot.
 V2_PREFIX_ARM = (("lmsys23k", "naturalistic"),)
 
+# Extended-corpus concat registry (plan v13 §4 Phase GEN/EXT/FIT). Canonical
+# home is HERE so gen prep (new-prompts-only filter), the extractor
+# (extension-only rows), and the fit/ladder concat loader all read ONE
+# boundary; `issue1336_extract_turnstore.py` aliases these for its
+# established consumers. Wave-1 covered prompt_idx 0..4999 of each extended
+# corpus; the v2 round generates/extracts ONLY prompt_idx >= boundary.
+V2_CONCAT_SOURCES = {"lmsys23k": "lmsys5k", "gsm8k_train_full": "gsm8k_train5k"}
+V2_CONCAT_BOUNDARY = {"lmsys23k": 5000, "gsm8k_train_full": 5000}
+
+# Phase GEN scope (plan §4): gsm8k_test1319 is FULLY reused from wave 1 —
+# no new generation and no new extraction; its wave-1 turnstores are staged
+# verbatim into the v2 turnstore dir at c_stage (plan §9 phase_outputs).
+V2_FULLY_REUSED_GEN = ("gsm8k_test1319",)
+
+# Wave-1 reuse revision pin (plan §10: generations + 20 turnstores + preds
+# Hub-verified @ data-repo rev 8c54f9fc; c_stage stages at this revision).
+WAVE1_HF_REV = "8c54f9fc"
+
 # v2 estimator constants (plan §11):
 # - LAMBDAS_23: Source #779 LAMBDAS_N1M (issue779_ffc_n1m_fits.py:112) — the
 #   Qwen-line standard at n > d; spans both observed v8 edge regimes (floor

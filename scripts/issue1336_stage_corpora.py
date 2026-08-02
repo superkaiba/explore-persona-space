@@ -141,7 +141,12 @@ SHARD_MAX_BYTES = 9_000_000
 # structural asserts (split sizes, component counts) still run in BOTH modes.
 SMOKE_SAMPLE_N = 8
 SMOKE_LMSYS_PREFIX_N = 8
-SMOKE_LMSYS_NEW_N = 8
+# 24, not 8 (Unit D fit-floor sizing): real lmsys extension prompts pass the
+# gen render filter (u1 >= 8 content tokens) at ~0.4-0.5 measured on the
+# smoke stream, and the downstream v2 fit smoke needs the kept stem at or
+# above the demonstrated n=8 floor (24 staged -> ~10-12 kept; 8 staged -> 3
+# kept crashed the fold sweep all-NaN — smoke-slice arithmetic, #1489 class).
+SMOKE_LMSYS_NEW_N = 24
 SMOKE_LMSYS_SCAN_CAP = 3000
 SMOKE_SFT_QUOTAS = {
     "ai2-adapt-dev/tulu_v3.9_wildchat_100k": 3,
@@ -982,10 +987,16 @@ def _build_lmsys_corpus(ctx: dict) -> tuple[list[dict], dict]:
         {"prompt_idx": int(r["prompt_idx"]), "prompt": r["prompt"], "src": "track_s"}
         for r in track_rows[:prefix_n]
     ]
+    # Extension prompt_idx is anchored at the PRODUCTION prefix width
+    # (LMSYS_PREFIX_N), not the realized prefix_n: production is byte-identical
+    # (prefix_n == LMSYS_PREFIX_N there), and the SMOKE corpus then carries the
+    # same structural invariant the extractor's extension filter asserts
+    # (every extension row >= cm.V2_CONCAT_BOUNDARY["lmsys23k"]) — smoke IS the
+    # sweep through the identical filter, no smoke-only boundary (Unit D).
     for j, r in enumerate(acc.ext_rows):
         kept.append(
             {
-                "prompt_idx": prefix_n + j,
+                "prompt_idx": LMSYS_PREFIX_N + j,
                 "prompt": r["prompt"],
                 "src": "lmsys_stream",
                 "scan_index": r["scan_index"],

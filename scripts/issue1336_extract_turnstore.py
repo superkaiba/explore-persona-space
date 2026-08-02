@@ -88,8 +88,12 @@ SHARD_SIZE = 500
 # v2 EXTENDED corpora: the v2 stem holds only the NEW rows; the fit loader
 # concatenates the wave-1 stem (rows < boundary) with the v2 extension stem
 # (rows >= boundary) — plan v13 §4 Phase EXT.
-CONCAT_SOURCES = {"lmsys23k": "lmsys5k", "gsm8k_train_full": "gsm8k_train5k"}
-CONCAT_BOUNDARY = {"lmsys23k": 5000, "gsm8k_train_full": 5000}
+# Aliased from the canonical registry home (Unit D): gen prep's
+# new-prompts-only filter and this extractor's extension filter must read ONE
+# boundary — cm.V2_CONCAT_* is the single source; these names stay for the
+# established et.CONCAT_* consumers (fit driver, ladder, tests).
+CONCAT_SOURCES = cm.V2_CONCAT_SOURCES
+CONCAT_BOUNDARY = cm.V2_CONCAT_BOUNDARY
 CONCAT_MIN_JOIN_RATE = 0.99  # index-join floor (parent join-fix convention)
 
 # Architecture invariants; rebound from the tiny model's config in smoke mode

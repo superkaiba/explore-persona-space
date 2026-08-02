@@ -85,6 +85,17 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--g0-local-dir", type=Path, default=None, help="pre-staged G0 bundle dir")
     ap.add_argument("--g0-dl-dir", type=Path, default=Path("data/issue_1336/g0_qwen"))
     ap.add_argument("--g1-check", action="store_true", help="evaluate the G1 kill gate")
+    ap.add_argument(
+        "--g0v2",
+        action="store_true",
+        help="run the G0' three-leg fit-core parity gate (plan v13 §7): (a) legacy-pinned "
+        "Qwen S1 refit, (b) Gram-vs-primal equality, (c) v2-recipe anchor -> v2 bars JSON",
+    )
+    ap.add_argument(
+        "--g1v2-check",
+        action="store_true",
+        help="evaluate the G1' v2 kill gate (After-RLVR lmsys23k chat cell vs bar_v2)",
+    )
     ap.add_argument("--cells", default=None, help="comma cell ids | all | smoke")
     ap.add_argument("--turnstore-dir", type=Path, default=None)
     ap.add_argument(
@@ -281,6 +292,200 @@ def run_g0(args) -> int:
         f"{'PASS' if ok else 'FAIL'}"
     )
     return 0 if ok else 3
+
+
+def _g0_xy_at_gate_layer(args) -> tuple[np.ndarray, np.ndarray, np.ndarray, int, bool]:
+    """(X_layer, Y_layer, conv_ids, layer, fixture) for the pinned Qwen S1 cell.
+
+    Shared staging/normalization for run_g0v2 (mirrors run_g0's load path
+    byte-for-byte; run_g0 itself is left untouched — v1 gate unchanged).
+    """
+    bundle_dir = args.g0_local_dir or _g0_stage(args.g0_dl_dir)
+    bundle = fc._load_bundle_any(bundle_dir, "instruct", "chat", "s")
+    fixture = args.g0_local_dir is not None
+    exp_layers = int(cm.G0["expected_layers"]) if not fixture else _bundle_n_layers(bundle)
+    with cm.fc_expected_layers(fc, exp_layers):
+        xy = fc._cell_xy(bundle, {"slot_index": 0, "target_turn_index": 1})
+    X, Y, conv_ids = xy["X"], xy["Y"], xy["conv_ids"]
+    layer = int(cm.G0["layer"])
+    if not fixture:
+        assert X.shape[1] == cm.G0["expected_layers"], (X.shape[1], cm.G0["expected_layers"])
+        assert X.shape[2] == cm.G0["expected_hidden"], (X.shape[2], cm.G0["expected_hidden"])
+    else:
+        layer = min(layer, X.shape[1] - 1)
+    return X[:, [layer], :], Y[:, [layer], :], conv_ids, layer, fixture
+
+
+def run_g0v2(args) -> int:
+    """G0' three-leg fit-core parity gate (plan v13 §4/§7).
+
+    (a) LEGACY parity: Qwen S1 refit under the explicit pre-#1887 pins
+        (lambda_selection="gcv", GCV_DOF_CAP=None, LEGACY_UNGUARDED_GCV=True,
+        13-pt logspace(-2,4) grid, FORCED Gram route) — layer-19 R^2 within
+        +-tol of the committed 0.6731.
+    (b) Gram-vs-primal equality: the SAME cell under the FULL v2 recipe
+        (23-pt grid, inner-group-CV n_inner=2) run through BOTH routes
+        (fc.FORCE_GRAM True/False, matched grid + folds): |dR^2| <= 1e-6.
+    (c) v2-recipe anchor: S_qwen_v2 = the primal leg-(b) read, recorded
+        BEFORE any Llama read (driver ordering); writes gates_v2/v2_bars.json
+        via cm.v2_bars (ex_v2 / bar_v2 / bands).
+
+    Fixture mode (--g0-local-dir): legs run identically but the (a) anchor
+    tolerance is INFORMATIONAL (production-n-calibrated verdicts are demoted
+    under smoke — the #1345 gate-calibration rule); the (b) numerics-equality
+    leg stays ENFORCED at any n. Returns 0 on pass, 3 on gate failure.
+    """
+    Xl, Yl, conv_ids, layer, fixture = _g0_xy_at_gate_layer(args)
+    n = len(conv_ids)
+    d = int(Xl.shape[2])
+    n_train_min = n - int(np.ceil(n / cm.N_FOLDS))  # smallest train fold (approx, group folds)
+    committed, tol = float(cm.G0["committed_r2"]), float(cm.G0["tol"])
+    common = dict(
+        n_folds=cm.N_FOLDS,
+        seed=cm.FIT_SEED,
+        null_draws=0,
+        collect_cosines=False,
+        frozen_layers=(),
+    )
+
+    # Leg (a): legacy pins, module-patched + restored (the documented
+    # issue825_fit_cells patch convention; FORCE_GRAM pins the legacy route).
+    saved = (fc.GCV_DOF_CAP, fc.LEGACY_UNGUARDED_GCV, fc.FORCE_GRAM, fc.N_INNER_LAMBDA_FOLDS)
+    try:
+        fc.GCV_DOF_CAP = None
+        fc.LEGACY_UNGUARDED_GCV = True
+        fc.FORCE_GRAM = True
+        sweep_a = fc.heldout_r2_sweep(
+            Xl, Yl, conv_ids, lambda_selection="gcv", lambdas=np.logspace(-2, 4, 13), **common
+        )
+    finally:
+        fc.GCV_DOF_CAP, fc.LEGACY_UNGUARDED_GCV, fc.FORCE_GRAM, fc.N_INNER_LAMBDA_FOLDS = saved
+    r2_legacy = float(sweep_a["r2_obs"][0])
+    dev_a = abs(r2_legacy - committed)
+    pass_a = dev_a <= tol
+
+    # Legs (b) + (c): full v2 recipe, both routes on the matched grid + folds.
+    v2_grid = np.asarray(cm.LAMBDAS_23, dtype=np.float64)
+    try:
+        fc.N_INNER_LAMBDA_FOLDS = cm.N_INNER_LAMBDA_FOLDS_V2
+        fc.FORCE_GRAM = True
+        sweep_gram = fc.heldout_r2_sweep(
+            Xl, Yl, conv_ids, lambda_selection="inner-group-cv", lambdas=v2_grid, **common
+        )
+        fc.FORCE_GRAM = False
+        sweep_primal = fc.heldout_r2_sweep(
+            Xl, Yl, conv_ids, lambda_selection="inner-group-cv", lambdas=v2_grid, **common
+        )
+    finally:
+        fc.GCV_DOF_CAP, fc.LEGACY_UNGUARDED_GCV, fc.FORCE_GRAM, fc.N_INNER_LAMBDA_FOLDS = saved
+    r2_gram = float(sweep_gram["r2_obs"][0])
+    r2_primal = float(sweep_primal["r2_obs"][0])
+    delta_b = abs(r2_gram - r2_primal)
+    pass_b = delta_b <= 1e-6
+    lam_g, lam_p = sweep_gram.get("gcv_lambda"), sweep_primal.get("gcv_lambda")
+    lambda_match = (
+        bool(np.allclose(np.nan_to_num(np.asarray(lam_g)), np.nan_to_num(np.asarray(lam_p))))
+        if lam_g is not None and lam_p is not None
+        else None
+    )
+    assert n_train_min > d, (
+        f"G0'(b) expects the primal regime (n_train {n_train_min} > d {d}) — "
+        "the equality leg must exercise the production regime switch"
+    )
+
+    # Leg (c): the primal v2-recipe read IS the anchor; bars ride cm.v2_bars.
+    s_qwen_v2 = r2_primal
+    bars = cm.v2_bars(s_qwen_v2)
+
+    enforced_a = not fixture
+    ok = (pass_a or not enforced_a) and pass_b
+    payload = {
+        "metadata": _metadata(cm.FIT_SEED, n),
+        "gate": "G0v2",
+        "stem": cm.G0["stem"],
+        "revision": cm.G0["revision"],
+        "layer": layer,
+        "recorded_before_llama_reads": True,
+        "leg_a_legacy": {
+            "r2": r2_legacy,
+            "committed_r2": committed,
+            "tol": tol,
+            "abs_dev": dev_a,
+            "pass": bool(pass_a),
+            "enforced": bool(enforced_a),
+            "pins": {
+                "lambda_selection": "gcv",
+                "GCV_DOF_CAP": None,
+                "LEGACY_UNGUARDED_GCV": True,
+                "FORCE_GRAM": True,
+                "grid": "logspace(-2,4,13)",
+            },
+        },
+        "leg_b_gram_vs_primal": {
+            "r2_gram": r2_gram,
+            "r2_primal": r2_primal,
+            "abs_delta": delta_b,
+            "tol": 1e-6,
+            "pass": bool(pass_b),
+            "enforced": True,
+            "lambda_match": lambda_match,
+            "n_train_min": int(n_train_min),
+            "d": d,
+        },
+        "leg_c_v2_anchor": {"s_qwen_v2": s_qwen_v2, "bars": bars},
+        "local_dir_fixture": fixture,
+        "pass": bool(ok),
+    }
+    _write_json(args.out_dir / "gates_v2" / "g0v2.json", payload)
+    bars_payload = {"metadata": _metadata(cm.FIT_SEED, n), "fixture": fixture, **bars}
+    _write_json(args.out_dir / "gates_v2" / "v2_bars.json", bars_payload)
+    print(
+        f"[g0v2] (a) legacy R2={r2_legacy:.4f} dev={dev_a:.4f} "
+        f"{'PASS' if pass_a else 'FAIL'}{'' if enforced_a else ' (informational: fixture)'} | "
+        f"(b) |gram-primal|={delta_b:.2e} {'PASS' if pass_b else 'FAIL'} | "
+        f"(c) s_qwen_v2={s_qwen_v2:.4f} ex_v2={bars['ex_v2']:.4f} bar_v2={bars['bar_v2']:.4f}"
+    )
+    return 0 if ok else 3
+
+
+def run_g1v2_check(out_dir: Path) -> int:
+    """G1' v2 rig-health kill gate (plan v13 §7).
+
+    KILL <=> BOTH the raw AND the recalibrated best-swept-layer R^2 of the
+    After-RLVR lmsys23k chat cell sit below bar_v2 = 0.20 * ex_v2 (the G0'(c)
+    exchange-rate-scaled bar). Writes gates_v2/g1v2_gate.json; returns 3 on
+    KILL, 0 on pass. A NaN read never counts as below-bar (fail-safe: a
+    missing/degenerate recal read must not manufacture a kill).
+    """
+    bars_path = out_dir / "gates_v2" / "v2_bars.json"
+    assert bars_path.exists(), (
+        f"{bars_path} missing — run the G0' v2 gate first (driver-enforced ordering)"
+    )
+    bar = float(json.loads(bars_path.read_text())["bar_v2"])
+    cell_id = cm.v2_cell_id("rlvr", "chat", "lmsys23k")
+    cell_path = out_dir / "cells_v2" / f"cells_{cell_id}.json"
+    assert cell_path.exists(), f"{cell_path} missing — fit the G1' cell before the check"
+    cell = json.loads(cell_path.read_text())
+    raw = np.asarray(cell["r2_per_layer_obs"], dtype=float)
+    raw_best = float(np.nanmax(raw)) if np.isfinite(raw).any() else float("nan")
+    recal_best = float((cell.get("recal") or {}).get("s_recal", float("nan")))
+    below = lambda v: bool(np.isfinite(v) and v < bar)  # noqa: E731
+    kill = below(raw_best) and below(recal_best)
+    payload = {
+        "metadata": _metadata(cm.FIT_SEED, int(cell.get("n", 0) or 0)),
+        "gate": "G1v2",
+        "cell": cell_id,
+        "raw_best_r2": raw_best,
+        "recal_best_r2": recal_best,
+        "bar_v2": bar,
+        "verdict": "kill" if kill else "pass",
+    }
+    _write_json(out_dir / "gates_v2" / "g1v2_gate.json", payload)
+    print(
+        f"[g1v2] raw_best={raw_best:.4f} recal_best={recal_best:.4f} vs bar_v2={bar:.4f} -> "
+        f"{'KILL' if kill else 'PASS'}"
+    )
+    return 3 if kill else 0
 
 
 # ---------------------------------------------------------------------------
@@ -857,9 +1062,13 @@ def main() -> int:
     args = parse_args()
     if args.g0 or args.g0_probe_only:
         return run_g0(args)
+    if args.g0v2:
+        return run_g0v2(args)
     if args.g1_check:
         return run_g1_check(args.out_dir)
-    assert args.cells, "--cells is required (or --g0 / --g1-check)"
+    if args.g1v2_check:
+        return run_g1v2_check(args.out_dir)
+    assert args.cells, "--cells is required (or --g0 / --g0v2 / --g1-check / --g1v2-check)"
     smoke = args.smoke
     v2 = args.v2
     if v2:

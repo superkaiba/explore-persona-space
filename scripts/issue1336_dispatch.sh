@@ -38,6 +38,12 @@
 #   bash scripts/issue1336_dispatch.sh d2_probe [--smoke]      # plan v7 D2 (conditional)
 #   bash scripts/issue1336_dispatch.sh e1_recal [--smoke]      # plan v9 E1 recal CPU leg
 #   bash scripts/issue1336_dispatch.sh e2_refit [--smoke]      # plan v9 E2 (conditional GPU leg)
+#   bash scripts/issue1336_dispatch.sh all_v2 [--smoke]        # plan v13 full-corpora round:
+#       c_stage -> g0v2 -> g2_parity -> gen_v2 -> extract_v2 -> fit_v2 ->
+#       ladder -> upload_v2 (each also invocable standalone). Smoke IS the
+#       sweep (same phases, same subprocess shape, tiny cells); the ONLY
+#       GPU-less-host stub is gen_v2's vLLM engine leg (fixture-faked at the
+#       engine boundary, recorded as a stub in the phase log).
 set -euo pipefail
 
 REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"
@@ -1591,6 +1597,1020 @@ print(f"[signal] wrote e1/e2 results sentinel {os.environ['RES_OUT']}")
 PY
 }
 
+# ---------------------------------------------------------------------------
+# v2 phases (plan v13, round `full-corpora-stage-evals-metric-ladder`):
+# c_stage -> g0v2 -> g2_parity -> gen_v2 -> extract_v2 -> fit_v2 -> ladder ->
+# upload_v2. Same conventions as the v1 phases: OK-flag/done-marker resume,
+# single exit point per phase, work-conserving run_queue over the realized
+# GPU width, sentinels only (pod side never shells task.py), per-phase
+# resolved-mount headroom asserts (#1333/#1586 resume-aware form).
+# ---------------------------------------------------------------------------
+WAVE1_TS_DIR="data/issue_1336/turnstore_wave1"
+V2_BARS="$OUT_DIR/gates_v2/v2_bars.json"
+GPU_HOURS_BUDGETED_V2=98 # plan v13 §9 total
+FIT_V2_PLANNED_WALL_H=2.3 # plan §9 FIT row (booked, x2 pilot presumption)
+LADDER_PLANNED_WALL_H=1.4 # plan §9 LAD row (booked, x2 pilot presumption)
+
+registry_lines_v2() { # $1 = python expression printing job lines (v2 registries)
+    SMOKE_ENV=$SMOKE uv run python - "$1" <<'PY'
+import os
+import sys
+
+from explore_persona_space.experiments.issue_1336 import common as cm
+
+smoke = os.environ.get("SMOKE_ENV") == "1"
+models = list(cm.SMOKE_MODELS) if smoke else list(cm.MODELS)
+# GEN/EXTRACT corpus set: production = every corpus with NEW prompts (plan
+# §4: gsm8k_test1319 is fully reused); smoke = the concat corpus + ONE
+# fresh-build corpus so BOTH corpus classes get a smoke cell (multi-arm
+# smoke rule; fit-grain smoke stays cm.SMOKE_CORPORA_V2).
+gen_corpora = (
+    ["lmsys23k", "sft11k"]
+    if smoke
+    else [c for c in cm.V2_CORPORA if c not in cm.V2_FULLY_REUSED_GEN]
+)
+fit_corpora = list(cm.SMOKE_CORPORA_V2) if smoke else list(cm.V2_CORPORA)
+fit_cells = cm.cells_v2_for(tuple(models), tuple(fit_corpora))
+capture_cells = [
+    c for c in cm.cells_v2_for(tuple(models), tuple(gen_corpora)) if c["x_slot"] == "context"
+]
+surfaces = [(c, f) for (c, f) in cm.v2_surfaces() if c in fit_corpora]
+pairs = [(a, b) for (a, b) in cm.PAIRS if a in models and b in models]
+exec(sys.argv[1])
+PY
+}
+
+_headroom_v2() { # $1=phase $2=need_gb (production) — smoke asserts a 1 GB floor
+    local need="$2"
+    [ "$SMOKE" -eq 1 ] && need=1
+    HR_PHASE="$1" HR_NEED="$need" uv run python - <<'PY'
+import os
+from pathlib import Path
+
+from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
+
+root = Path("data/issue_1336")
+root.mkdir(parents=True, exist_ok=True)
+free = assert_out_root_headroom(root, float(os.environ["HR_NEED"]), phase=os.environ["HR_PHASE"])
+print(f"[headroom] {os.environ['HR_PHASE']}: {free:.1f} GB free >= {os.environ['HR_NEED']} GB")
+PY
+}
+
+phase_c_stage() {
+    echo "[phase=c_stage]"
+    if [ "$SMOKE" -eq 1 ]; then
+        # Smoke: build the tiny corpora LOCALLY with the REAL builder code
+        # (incl. the bounded lmsys streaming probe; never uploaded).
+        if [ ! -f "$DONE_DIR/c_stage__smoke_corpora.done" ]; then
+            uv run python scripts/issue1336_stage_corpora.py --smoke \
+                >> "$JOB_LOG_DIR/c_stage__smoke_corpora.log" 2>&1
+            touch "$DONE_DIR/c_stage__smoke_corpora.done"
+        fi
+        echo "[c_stage] smoke corpora built (local scratch; no Hub staging)"
+        return 0
+    fi
+    _headroom_v2 c_stage 90
+    # 1. corpora_v2 via the Unit-A manifest-aware reader (local-first ->
+    #    HF fallback; sha-verified shards). The staged-count line is the
+    #    crash-fix fix-engaged signal (plan §9 cross-phase reads).
+    if [ ! -f "$DONE_DIR/c_stage__corpora.done" ]; then
+        uv run python - <<'PY' >> "$JOB_LOG_DIR/c_stage__corpora.log" 2>&1
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path("scripts").resolve()))
+from issue1336_stage_corpora import V2_CORPORA, load_v2_corpus_rows
+
+n_rows = 0
+for slug in V2_CORPORA:
+    rows = load_v2_corpus_rows(slug)
+    n_rows += len(rows)
+    print(f"[stage] corpus {slug}: {len(rows)} rows")
+root = Path("data/issue_1336/corpora_v2")
+n_files = sum(1 for p in root.rglob("*") if p.is_file())
+print(f"[stage] corpora_v2 staged: {n_files} files ({n_rows} rows, {len(V2_CORPORA)} corpora)")
+PY
+        touch "$DONE_DIR/c_stage__corpora.done"
+        grep -h '\[stage\] corpora_v2 staged' "$JOB_LOG_DIR/c_stage__corpora.log" | tail -n 1
+    fi
+    # 2. wave-1 generations (concat text-sha join source + the G2 allowlist).
+    if [ ! -f "$DONE_DIR/c_stage__wave1_gen.done" ]; then
+        uv run python - <<'PY' >> "$JOB_LOG_DIR/c_stage__wave1_gen.log" 2>&1
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path("scripts").resolve()))
+import issue1336_diagnose_g1 as dg
+
+from explore_persona_space.experiments.issue_1336 import common as cm
+
+api, dl, hub = dg._hub_helpers()
+total = 0
+for m in cm.MODELS:
+    for c in ("lmsys5k", "gsm8k_train5k"):
+        target = Path("data/issue_1336/gen") / m / c
+        if (target / "answers.jsonl").exists():
+            print(f"[stage] wave-1 gen {m}/{c}: already staged")
+            continue
+        tmp = Path("data/issue_1336/wave1_gen_stage_tmp")
+        staged = dg._stage_prefix(
+            api,
+            hub,
+            dl,
+            f"{cm.HF_PREFIX_1336}/raw_completions/generation/{m}/{c}",
+            tmp,
+            revision=cm.WAVE1_HF_REV,
+        )
+        assert staged, f"no wave-1 gen files under {m}/{c} @ {cm.WAVE1_HF_REV}"
+        target.mkdir(parents=True, exist_ok=True)
+        for f in staged:
+            f.rename(target / f.name)
+        dg._maybe_reassemble_answers(target)
+        total += len(staged)
+        print(f"[stage] wave-1 gen {m}/{c}: {len(staged)} files")
+print(f"[stage] wave-1 generations staged: {total} files")
+PY
+        touch "$DONE_DIR/c_stage__wave1_gen.done"
+    fi
+    # 3. wave-1 turnstores: concat stems (lmsys5k both formats +
+    #    gsm8k_train5k chat) flat into WAVE1_TS_DIR; the 5 fully-reused
+    #    gsm8k_test1319 stems land verbatim in the v2 turnstore dir (their
+    #    fits read them there — no re-extraction, plan §4 Phase EXT).
+    if [ ! -f "$DONE_DIR/c_stage__wave1_ts.done" ]; then
+        uv run python - <<'PY' >> "$JOB_LOG_DIR/c_stage__wave1_ts.log" 2>&1
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path("scripts").resolve()))
+import issue1336_diagnose_g1 as dg
+
+from explore_persona_space.experiments.issue_1336 import common as cm
+
+api, dl, hub = dg._hub_helpers()
+wave1 = Path("data/issue_1336/turnstore_wave1")
+ts_v2 = Path("data/issue_1336/turnstore_v2")
+tmp = Path("data/issue_1336/wave1_ts_stage_tmp")
+jobs = []
+for m in cm.MODELS:
+    jobs.append((cm.cell_id(m, "chat", "lmsys5k"), wave1))
+    jobs.append((cm.cell_id(m, "naturalistic", "lmsys5k"), wave1))
+    jobs.append((cm.cell_id(m, "chat", "gsm8k_train5k"), wave1))
+    jobs.append((cm.cell_id(m, "chat", "gsm8k_test1319"), ts_v2))
+n_files = 0
+for stem, dest in jobs:
+    dest.mkdir(parents=True, exist_ok=True)
+    if any(dest.glob(f"{stem}_shard*.pt")):
+        print(f"[stage] wave-1 turnstore {stem}: already staged")
+        continue
+    staged = dg._stage_prefix(
+        api,
+        hub,
+        dl,
+        f"{cm.HF_PREFIX_1336}/analysis_tensors/turnstore_{stem}",
+        tmp,
+        revision=cm.WAVE1_HF_REV,
+    )
+    assert staged, f"no files staged for wave-1 turnstore {stem} @ {cm.WAVE1_HF_REV}"
+    for f in staged:
+        f.rename(dest / f.name)
+    n_files += len(staged)
+    print(f"[stage] wave-1 turnstore {stem}: {len(staged)} files -> {dest}")
+print(f"[stage] wave-1 turnstores staged: {n_files} files")
+PY
+        touch "$DONE_DIR/c_stage__wave1_ts.done"
+    fi
+    # 4. Qwen S1 stems @ deb7a452 (g0v2 inputs; idempotent re-check inside
+    #    the gate itself).
+    if [ ! -f "$DONE_DIR/c_stage__g0stems.done" ]; then
+        uv run python - <<'PY' >> "$JOB_LOG_DIR/c_stage__g0stems.log" 2>&1
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path("scripts").resolve()))
+import issue1336_fit_cells as fitc
+
+fitc._g0_stage(Path("data/issue_1336/g0_qwen"))
+print("[stage] Qwen S1 stems staged (g0v2 inputs)")
+PY
+        touch "$DONE_DIR/c_stage__g0stems.done"
+    fi
+    # 5. lmsys5k prompts (pinned track_s) — the G2 recapture's render source.
+    if [ ! -f "$DONE_DIR/c_stage__prompts.done" ]; then
+        uv run python scripts/issue1336_gen_answers.py --prep --corpora lmsys5k \
+            >> "$JOB_LOG_DIR/c_stage__prompts.log" 2>&1
+        touch "$DONE_DIR/c_stage__prompts.done"
+    fi
+    echo "[c_stage] staging complete"
+}
+
+phase_g0v2() {
+    echo "[phase=g0v2]"
+    local rc=0
+    if [ "$SMOKE" -eq 1 ]; then
+        # Fixture-shaped leg (the real Qwen leg needs HF staging): leg (b)
+        # Gram-vs-primal equality stays ENFORCED at any n; the (a) anchor
+        # tolerance is informational on the fixture (#1345 gate-calibration
+        # rule — production-n verdicts never kill a smoke).
+        uv run python scripts/issue1336_smoke_fixtures.py g0-fixture \
+            --out "$OUT_DIR/g0v2_fixture" >> "$JOB_LOG_DIR/g0v2__fixture.log" 2>&1
+        uv run python scripts/issue1336_fit_cells.py --g0v2 \
+            --g0-local-dir "$OUT_DIR/g0v2_fixture" --out-dir "$OUT_DIR" \
+            >> "$JOB_LOG_DIR/g0v2__gate.log" 2>&1 || rc=$?
+    else
+        uv run python scripts/issue1336_fit_cells.py --g0v2 --out-dir "$OUT_DIR" \
+            >> "$JOB_LOG_DIR/g0v2__gate.log" 2>&1 || rc=$?
+    fi
+    tail -n 3 "$JOB_LOG_DIR/g0v2__gate.log" || true
+    emit_signal "epm:progress" "g0v2" "issue1336 G0' fit-core parity gate rc=$rc (smoke=$SMOKE): see $OUT_DIR/gates_v2/g0v2.json + v2_bars.json"
+    if [ "$rc" -ne 0 ]; then
+        emit_signal "epm:failure" "g0v2" "failure_class: code — G0' v2 fit-core parity gate FAILED (rc=$rc): legacy parity and/or Gram-vs-primal equality did not hold; see $OUT_DIR/gates_v2/g0v2.json. No Llama GPU phases were run (driver-enforced ordering)."
+        echo "[phase=g0v2_failed] G0' gate failed rc=$rc" >&2
+        exit "$rc"
+    fi
+}
+
+phase_g2_parity() {
+    echo "[phase=g2_parity]"
+    local gdir="$OUT_DIR/gates_v2" n_rows="${G2_N_ROWS:-100}" stored_dir="$WAVE1_TS_DIR"
+    local gen_root="data/issue_1336/gen" prompts_root="data/issue_1336/prompts" tiny_flag=""
+    mkdir -p "$gdir"
+    if [ "$SMOKE" -eq 1 ]; then
+        n_rows=4
+        gen_root="data/issue_1336/gen_smoke"
+        prompts_root="data/issue_1336/prompts_smoke"
+        uv run python scripts/issue1336_smoke_fixtures.py tiny-model --out "$OUT_DIR/tiny_model" \
+            >> "$JOB_LOG_DIR/g2__fixtures.log" 2>&1
+        uv run python scripts/issue1336_smoke_fixtures.py gen \
+            >> "$JOB_LOG_DIR/g2__fixtures.log" 2>&1
+        tiny_flag="--tiny-model-dir $OUT_DIR/tiny_model"
+        # No stored wave-1 capture in smoke: the "stored" side is a SECOND
+        # deterministic tiny-model capture of the same rows (the compare +
+        # threshold code path runs for real; cos == 1.0 by determinism).
+        stored_dir="$gdir/g2_stored_smoke"
+        rm -rf "$stored_dir"
+    fi
+    rm -rf "$gdir/g2_recapture"
+    # 1. Row allowlist: the first n kept wave-1 chat rows.
+    ALW_OUT="$gdir/g2_row_allowlist.json" ALW_GEN="$gen_root" ALW_N="$n_rows" \
+        uv run python - <<'PY'
+import json
+import os
+from pathlib import Path
+
+rows = []
+with open(
+    Path(os.environ["ALW_GEN"]) / "rlvr" / "lmsys5k" / "answers.jsonl", encoding="utf-8"
+) as fh:
+    for line in fh:  # text-mode iteration, never splitlines() (U+2028 in user text)
+        line = line.strip()
+        if line:
+            rows.append(json.loads(line))
+kept = [r for r in rows if r.get("kept")]
+n = int(os.environ["ALW_N"])
+assert len(kept) >= n, f"only {len(kept)} kept wave-1 rows < requested {n}"
+ids = [f"s{r['prompt_idx']}" for r in kept[:n]]
+Path(os.environ["ALW_OUT"]).write_text(json.dumps(ids) + "\n")
+print(f"[g2] allowlist: {len(ids)} rows -> {os.environ['ALW_OUT']}")
+PY
+    # 2. Recapture with TODAY's extractor (v1 corpus mode — same script the
+    #    v2 extension cells run; fresh out-dir so no stale done marker).
+    local xtr_cmd
+    xtr_cmd="uv run python scripts/issue1336_extract_turnstore.py --model rlvr --corpus lmsys5k --format chat --gen-root $gen_root --prompts-root $prompts_root --row-allowlist $gdir/g2_row_allowlist.json $tiny_flag $SMOKE_FLAG"
+    if [ "$NGPU" -gt 0 ]; then
+        # shellcheck disable=SC2086
+        CUDA_VISIBLE_DEVICES=0 $xtr_cmd --out-dir "$gdir/g2_recapture" \
+            >> "$JOB_LOG_DIR/g2__recapture.log" 2>&1
+    else
+        # shellcheck disable=SC2086
+        $xtr_cmd --out-dir "$gdir/g2_recapture" >> "$JOB_LOG_DIR/g2__recapture.log" 2>&1
+    fi
+    if [ "$SMOKE" -eq 1 ]; then
+        # shellcheck disable=SC2086
+        $xtr_cmd --out-dir "$stored_dir" >> "$JOB_LOG_DIR/g2__recapture.log" 2>&1
+    fi
+    # 3. Per-layer cosine vs the stored wave-1 vectors (plan §7: >= 0.999).
+    local rc=0
+    PAR_GDIR="$gdir" PAR_STORED="$stored_dir" uv run python - <<'PY' || rc=$?
+import json
+import os
+import subprocess
+import time
+from pathlib import Path
+
+import torch
+
+gdir = Path(os.environ["PAR_GDIR"])
+stored_dir = Path(os.environ["PAR_STORED"])
+stem = "rlvr_chat_lmsys5k"
+allow = set(json.loads((gdir / "g2_row_allowlist.json").read_text()))
+# Plan §7 registered bar; the env override exists ONLY for the degenerate
+# smoke probe of the FAIL branch (never a production loosening lever).
+THRESH = float(os.environ.get("EPM_1336_G2_COS_THRESH", "0.999"))
+
+
+def load_rows(d: Path) -> dict:
+    rows = {}
+    for pt in sorted(d.glob(f"{stem}_shard*.pt")):
+        payload = torch.load(pt, map_location="cpu")
+        for cid, slots, profiles in zip(
+            payload["conv_ids"], payload["slots"], payload["profiles"], strict=True
+        ):
+            if cid in allow:
+                rows[cid] = (slots.float(), profiles.float())
+    assert rows, f"no allowlist rows found under {d}"
+    return rows
+
+
+def compare(a: dict, b: dict) -> dict:
+    common = sorted(set(a) & set(b))
+    assert common, "no common rows to compare"
+    n_layers = a[common[0]][0].shape[1]
+    out = {"n_rows": len(common)}
+    for kind, idx in (("slots", 0), ("profiles", 1)):
+        cos_by_layer, mad_by_layer = [], []
+        for li in range(n_layers):
+            cs, md = [], []
+            for cid in common:
+                x = a[cid][idx][:, li, :]
+                y = b[cid][idx][:, li, :]
+                num = (x * y).sum(dim=-1)
+                den = (x.norm(dim=-1) * y.norm(dim=-1)).clamp_min(1e-12)
+                cs.extend((num / den).tolist())
+                md.append(float((x - y).abs().max()))
+            cos_by_layer.append(sum(cs) / len(cs))
+            mad_by_layer.append(max(md))
+        out[kind] = {
+            "mean_cosine_per_layer": cos_by_layer,
+            "max_abs_diff_per_layer": mad_by_layer,
+            "min_mean_cosine": min(cos_by_layer),
+            "max_abs_diff": max(mad_by_layer),
+        }
+    return out
+
+
+recap = load_rows(gdir / "g2_recapture")
+stored = load_rows(stored_dir)
+cmp_block = compare(recap, stored)
+min_cos = min(cmp_block["slots"]["min_mean_cosine"], cmp_block["profiles"]["min_mean_cosine"])
+ok = min_cos >= THRESH
+sha = subprocess.run(
+    ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+).stdout.strip()
+payload = {
+    "metadata": {"git_commit": sha, "ts_unix": time.time(), "n_allowlist": len(allow)},
+    "gate": "G2",
+    "threshold_min_mean_cosine": THRESH,
+    "min_mean_cosine": min_cos,
+    "recapture_vs_stored": cmp_block,
+    "pass": bool(ok),
+    "fallback_on_fail": "recapture reused wave-1 cells fresh (+~7 GPU-h, plan §7 registered)",
+}
+out_path = gdir / "g2_capture_parity.json"
+out_path.write_text(json.dumps(payload, indent=2) + "\n")
+print(f"[g2] min mean cosine {min_cos:.6f} vs {THRESH} -> {'PASS' if ok else 'FAIL'} ({out_path})")
+raise SystemExit(0 if ok else 3)
+PY
+    if [ "$rc" -eq 3 ]; then
+        # Registered fallback (plan §7 G2, no re-approval needed): arm the
+        # fresh recapture of every reused wave-1 cell; extract_v2 consumes
+        # the flag. Surfaces in the sentinel for the VM orchestrator.
+        touch "$DONE_DIR/g2_fallback_recapture"
+        emit_signal "epm:progress" "g2_parity" "issue1336 G2 capture-parity gate FAIL (min cosine below 0.999) — registered fallback ARMED: extract_v2 re-captures the reused wave-1 cells fresh (+~7 GPU-h, plan §7); see $gdir/g2_capture_parity.json"
+        echo "[g2] FAIL — registered fallback armed (fresh wave-1 recapture in extract_v2)"
+    elif [ "$rc" -ne 0 ]; then
+        echo "[g2_parity] compare failed rc=$rc" >&2
+        exit "$rc"
+    else
+        emit_signal "epm:progress" "g2_parity" "issue1336 G2 capture-parity gate PASS (smoke=$SMOKE): wave-1 turnstores concatenable; see $gdir/g2_capture_parity.json"
+    fi
+}
+
+phase_gen_v2() {
+    echo "[phase=gen_v2]"
+    _headroom_v2 gen_v2 10
+    if [ "$SMOKE" -eq 1 ] && [ "$NGPU" -eq 0 ]; then
+        # GPU-less smoke host: the vLLM ENGINE leg cannot run here — recorded
+        # STUB (never a faked exit-0 of the engine). Prep (new-rows filter +
+        # budget gate), template parity, render validation, audits, and
+        # output writes run for REAL via the boundary-faked fixture.
+        if [ ! -f "$DONE_DIR/gen_v2__fixture.done" ]; then
+            uv run python scripts/issue1336_smoke_fixtures.py gen-v2 \
+                >> "$JOB_LOG_DIR/gen_v2__fixture.log" 2>&1
+            touch "$DONE_DIR/gen_v2__fixture.done"
+        fi
+        echo "[gen_v2] STUB: vLLM engine leg skipped on GPU-less host (smoke_fixtures gen-v2 faked ONLY the engine boundary; real engine path requires a GPU)"
+        return 0
+    fi
+    # CPU staging (corpora rows + new-prompts-only filter + budget gate).
+    if [ ! -f "$DONE_DIR/gen_v2__prep.done" ]; then
+        local gen_corpora
+        gen_corpora=$(registry_lines_v2 'print(",".join(gen_corpora))')
+        uv run python scripts/issue1336_gen_answers.py --prep --corpora "$gen_corpora" \
+            $SMOKE_FLAG >> "$JOB_LOG_DIR/gen_v2__prep.log" 2>&1
+        touch "$DONE_DIR/gen_v2__prep.done"
+        echo "[gen_v2] corpus prep complete ($gen_corpora)"
+    fi
+    # One vLLM job per (model, corpus) — 30 jobs production (plan §9),
+    # work-conserving across the realized width; rlvr first so the G1' cell's
+    # inputs land earliest. Per-cell --upload persists rollout TEXT to HF
+    # BEFORE any downstream reduction (upload policy).
+    local jobs="$DONE_DIR/jobs_gen_v2.tsv"
+    registry_lines_v2 '
+flags = "--smoke" if smoke else "--upload"
+order = ["rlvr", "base", "sft", "dpo", "rlvr_long"]
+for m in [m for m in order if m in models]:
+    for c in gen_corpora:
+        print(
+            f"{m}__{c}\tuv run python scripts/issue1336_gen_answers.py "
+            f"--model {m} --corpora {c} {flags}"
+        )
+' > "$jobs"
+    run_queue gen_v2 "$jobs"
+    # Mirror generation audits into the eval tree (keep-rate figure inputs).
+    SMOKE_ENV=$SMOKE OUT_ENV="$OUT_DIR" registry_lines_v2 '
+import json
+import shutil
+from pathlib import Path
+
+root = Path("data/issue_1336") / ("gen_smoke" if smoke else "gen")
+dst_dir = Path(os.environ["OUT_ENV"]) / "gen_audits_v2"
+dst_dir.mkdir(parents=True, exist_ok=True)
+n = 0
+for m in models:
+    for c in gen_corpora:
+        src = root / m / c / "audit.json"
+        assert src.exists(), f"missing gen audit {src}"
+        json.loads(src.read_text())  # fail loud on a truncated write
+        shutil.copyfile(src, dst_dir / f"audit_{m}_{c}.json")
+        n += 1
+print(f"[gen_v2] mirrored {n} audits -> {dst_dir}")
+'
+}
+
+phase_extract_v2() {
+    echo "[phase=extract_v2]"
+    local tiny_flag=""
+    if [ "$SMOKE" -eq 1 ] && [ "$NGPU" -eq 0 ]; then
+        uv run python scripts/issue1336_smoke_fixtures.py tiny-model \
+            --out "$OUT_DIR/tiny_model" >> "$JOB_LOG_DIR/extract_v2__fixtures.log" 2>&1
+        tiny_flag="--tiny-model-dir $OUT_DIR/tiny_model"
+    fi
+    # Pending-scaled headroom (#1586 resume-aware form): ~9 GB per pending
+    # capture cell (turnstore shards) + 5 GB margin.
+    SMOKE_ENV=$SMOKE registry_lines_v2 '
+from pathlib import Path
+
+from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
+
+ts = Path("data/issue_1336") / ("turnstore_v2_smoke" if smoke else "turnstore_v2")
+pend = [
+    c
+    for c in capture_cells
+    if not (ts / (cm.cell_id(c["model"], c["format"], c["corpus"]) + ".done.json")).exists()
+]
+need = 1 if smoke else max(5, 9 * len(pend) + 5)
+free = assert_out_root_headroom(Path("data/issue_1336"), float(need), phase="extract_v2")
+print(f"[headroom] extract_v2: pending={len(pend)} need={need} GB free={free:.1f} GB")
+'
+    # G2 registered fallback: re-capture EVERY reused wave-1 cell fresh with
+    # today's extractor (+~7 GPU-h contingency, plan §7 — no re-approval).
+    if [ -f "$DONE_DIR/g2_fallback_recapture" ] && [ "$SMOKE" -eq 0 ]; then
+        echo "[extract_v2] G2 fallback armed — recapturing reused wave-1 cells fresh"
+        if [ ! -f "$DONE_DIR/extract_v2__fallback_prep.done" ]; then
+            rm -rf "$WAVE1_TS_DIR"
+            # Remove the STAGED gsm8k_test stems (parity-failed generation);
+            # fresh extraction re-writes them below.
+            find data/issue_1336/turnstore_v2 -maxdepth 1 -name '*_chat_gsm8k_test1319*' \
+                -delete 2>/dev/null || true
+            uv run python scripts/issue1336_gen_answers.py --prep \
+                --corpora gsm8k_train5k,gsm8k_test1319 \
+                >> "$JOB_LOG_DIR/extract_v2__fallback_prep.log" 2>&1
+            touch "$DONE_DIR/extract_v2__fallback_prep.done"
+        fi
+        local fjobs="$DONE_DIR/jobs_extract_v2_fallback.tsv"
+        registry_lines_v2 '
+for m in models:
+    for fmt, c, dest in (
+        ("chat", "lmsys5k", "data/issue_1336/turnstore_wave1"),
+        ("naturalistic", "lmsys5k", "data/issue_1336/turnstore_wave1"),
+        ("chat", "gsm8k_train5k", "data/issue_1336/turnstore_wave1"),
+        ("chat", "gsm8k_test1319", "data/issue_1336/turnstore_v2"),
+    ):
+        print(
+            f"w1_{m}_{fmt}_{c}\tuv run python scripts/issue1336_extract_turnstore.py "
+            f"--model {m} --corpus {c} --format {fmt} --out-dir {dest} --upload"
+        )
+' > "$fjobs"
+        run_queue extract_v2_w1 "$fjobs"
+    fi
+    # v2 extension cells (35 production jobs = 40 context-arm cells minus the
+    # 5 fully-reused gsm8k_test cells; prefix-arm cells share these bundles).
+    local jobs="$DONE_DIR/jobs_extract_v2.tsv"
+    EXTRACT_TINY_FLAG="$tiny_flag" registry_lines_v2 '
+flags = "--smoke" if smoke else "--upload"
+tiny = os.environ.get("EXTRACT_TINY_FLAG", "")
+ordered = sorted(
+    capture_cells,
+    key=lambda c: 0 if (c["model"] == "rlvr" and c["corpus"] == "lmsys23k") else 1,
+)
+for c in ordered:
+    m, fmt, cc = c["model"], c["format"], c["corpus"]
+    print(
+        f"{m}_{fmt}_{cc}\tuv run python scripts/issue1336_extract_turnstore.py "
+        f"--v2 --model {m} --corpus {cc} --format {fmt} {tiny} {flags}"
+    )
+' > "$jobs"
+    run_queue extract_v2 "$jobs"
+    # Consumed v2 gen-cache reap (#1489 last-consumer rule): the v2 corpora's
+    # gen outputs are consumed ONLY by this phase (the fit/ladder sha-join
+    # reads WAVE-1 gen answers, which are retained); per-cell rollout text is
+    # already on the Hub (per-cell --upload above).
+    if [ "$SMOKE" -eq 0 ]; then
+        registry_lines_v2 '
+import shutil
+from pathlib import Path
+
+n = 0
+freed = 0
+for m in models:
+    for c in gen_corpora:
+        d = Path("data/issue_1336/gen") / m / c
+        if d.exists():
+            freed += sum(p.stat().st_size for p in d.rglob("*") if p.is_file())
+            shutil.rmtree(d)
+            n += 1
+print(
+    f"[reap] consumed v2 gen caches removed: {n} dirs, {freed / 1e6:.0f} MB "
+    "(rollout text on Hub; wave-1 gen retained for the fit/ladder sha-join)"
+)
+'
+    fi
+}
+
+_fit_one_cell_v2() { # $1=cell_id — direct G1' fit on GPU 0 (queue-compatible done key)
+    local cell="$1" done_f jlog rc=0 extra
+    done_f="$DONE_DIR/fit_v2__${cell}.done"
+    [ -f "$done_f" ] && {
+        echo "[fit_v2] skip $cell (G1' fit already complete)"
+        return 0
+    }
+    jlog="$JOB_LOG_DIR/fit_v2__${cell}.log"
+    extra="--matched-n --wave1-turnstore-dir $WAVE1_TS_DIR"
+    [ "$SMOKE" -eq 1 ] && extra="--smoke"
+    if [ "$NGPU" -gt 0 ]; then
+        # shellcheck disable=SC2086
+        CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1336_fit_cells.py --v2 \
+            --cells "$cell" --out-dir "$OUT_DIR" $extra >> "$jlog" 2>&1 || rc=$?
+    else
+        # shellcheck disable=SC2086
+        uv run python scripts/issue1336_fit_cells.py --v2 \
+            --cells "$cell" --out-dir "$OUT_DIR" $extra >> "$jlog" 2>&1 || rc=$?
+    fi
+    if [ "$rc" -ne 0 ]; then
+        echo "[fit_v2] FAILED $cell rc=$rc (log: $jlog)" >&2
+        tail -25 "$jlog" >&2 || true
+        return "$rc"
+    fi
+    touch "$done_f"
+}
+
+g1v2_halt() { # $1=verdict summary string
+    echo "[g1v2] KILL verdict — halting remaining v2 phases, persisting artifacts"
+    emit_signal "epm:progress" "g1v2" "issue1336 G1' kill gate fired: $1 — halting ladder; artifacts persisted; see $OUT_DIR/gates_v2/g1v2_gate.json"
+    phase_upload_v2 halted
+    write_results_sentinel_v2 true
+    echo "[phase=done]"
+    exit 0
+}
+
+phase_fit_v2() {
+    echo "[phase=fit_v2]"
+    ensure_recal_cal # recal companion + G1' recal read (plan §7)
+    _headroom_v2 fit_v2 40
+    [ -f "$V2_BARS" ] || {
+        emit_signal "epm:failure" "fit_v2" "failure_class: code — $V2_BARS missing: the G0' v2 gate must run before any fit (driver-enforced ordering)"
+        echo "[fit_v2] FATAL: missing $V2_BARS" >&2
+        exit 78
+    }
+    # G1' FIRST (plan §7): fit the After-RLVR lmsys23k chat cell, evaluate the
+    # kill gate BEFORE the ladder-wide fit spend. The timed fit doubles as the
+    # §9 pilot (MEASURED 1-cell basis at production shape).
+    local g1cell="rlvr_chat_lmsys23k" rc=0 t0 t1 g1_wall
+    t0=$(date +%s)
+    _fit_one_cell_v2 "$g1cell"
+    t1=$(date +%s)
+    g1_wall=$((t1 - t0))
+    uv run python scripts/issue1336_fit_cells.py --g1v2-check --out-dir "$OUT_DIR" || rc=$?
+    if [ "$rc" -eq 3 ]; then
+        if [ "$SMOKE" -eq 1 ] && [ "${EPM_1336_FORCE_G1V2_HALT:-0}" != "1" ]; then
+            # Smoke slices cannot carry the R2 bar — record the verdict, keep
+            # exercising the chain. The halt BRANCH is exercised via
+            # EPM_1336_FORCE_G1V2_HALT=1 (v1 G1 convention).
+            echo "[g1v2] smoke: kill verdict recorded ($OUT_DIR/gates_v2/g1v2_gate.json); halt not enforced on the smoke slice"
+        else
+            g1v2_halt "After-RLVR lmsys23k best within-stage R2 below bar_v2 on BOTH the raw and recalibrated scales"
+        fi
+    elif [ "$rc" -ne 0 ]; then
+        echo "[fit_v2] g1v2-check failed rc=$rc" >&2
+        exit "$rc"
+    fi
+    # Pilot re-projection (plan §9 FIT row is pilot-gated; measured 1-cell
+    # basis, never the plan's asserted per-eigh class).
+    if [ "$SMOKE" -eq 0 ]; then
+        G1_WALL="$g1_wall" NGPU_ENV="$NGPU" PLANNED="$FIT_V2_PLANNED_WALL_H" \
+            OUT_ENV="$OUT_DIR" DONE_ENV="$DONE_DIR" registry_lines_v2 '
+from pathlib import Path
+
+wall = float(os.environ["G1_WALL"])
+ngpu = max(int(os.environ["NGPU_ENV"]), 1)
+planned = float(os.environ["PLANNED"])
+done_dir = Path(os.environ.get("DONE_ENV", "data/issue_1336/done"))
+pend = [c for c in fit_cells if not (done_dir / ("fit_v2__" + c["cell_id"] + ".done")).exists()]
+projected = wall * len(pend) / ngpu / 3600.0
+ratio = projected / planned if planned else float("inf")
+print(
+    f"[fit_v2] pilot: g1-cell wall={wall:.0f}s pending={len(pend)} "
+    f"projected={projected:.2f}h vs planned {planned}h (x{ratio:.2f})"
+)
+flag = Path(os.environ["OUT_ENV"]) / "gates_v2" / "fit_v2_pilot.json"
+import json
+
+flag.parent.mkdir(parents=True, exist_ok=True)
+flag.write_text(
+    json.dumps(
+        {
+            "component": "FIT (45 v2 cell sweeps)",
+            "pilot_cell_wall_s": wall,
+            "n_pending": len(pend),
+            "ngpu": ngpu,
+            "projected_wall_h": round(projected, 3),
+            "planned_wall_h": planned,
+            "ratio": round(ratio, 3),
+            "basis": "measured 1-cell pilot (G1 cell) through the production entrypoint",
+        },
+        indent=2,
+    )
+    + "\n"
+)
+if ratio > 2.0:
+    print(f"[fit_v2] DEVIATION over 2x: projected {projected:.2f}h vs planned {planned}h")
+'
+        # Emit the deviation sentinel iff the pilot re-projection crossed 2x
+        # (the VM orchestrator owns marker routing — pod writes sentinels only).
+        local ratio_line
+        ratio_line=$(uv run python -c "import json;d=json.load(open('$OUT_DIR/gates_v2/fit_v2_pilot.json'));print('OVER' if d['ratio']>2.0 else 'OK', d['planned_wall_h'], d['projected_wall_h'], d['ratio'])")
+        if [ "${ratio_line%% *}" = "OVER" ]; then
+            set -- $ratio_line
+            emit_signal "epm:compute-deviation" "fit_v2" "component: FIT (45 v2 cell sweeps)
+planned_wall_h: $2
+projected_wall_h: $3
+ratio: $4
+basis: measured 1-cell pilot (G1' cell) through the production entrypoint at production shape"
+        fi
+    fi
+    # Full queue (per-cell done keys fit_v2__<cell>; the G1' cell skips).
+    local jobs="$DONE_DIR/jobs_fit_v2.tsv"
+    OUT_ENV="$OUT_DIR" W1_ENV="$WAVE1_TS_DIR" registry_lines_v2 '
+extra = "--smoke" if smoke else ("--matched-n --wave1-turnstore-dir " + os.environ["W1_ENV"])
+out = os.environ["OUT_ENV"]
+ordered = sorted(fit_cells, key=lambda c: 0 if c["cell_id"] == "rlvr_chat_lmsys23k" else 1)
+for cell in ordered:
+    cid = cell["cell_id"]
+    print(
+        f"{cid}\tuv run python scripts/issue1336_fit_cells.py --v2 "
+        f"--cells {cid} --out-dir {out} {extra}"
+    )
+' > "$jobs"
+    run_queue fit_v2 "$jobs"
+    if [ "$SMOKE" -eq 0 ]; then
+        upload_preds_v2 cells || echo "[upload] WARNING: incremental preds_v2 upload failed rc=$? — terminal phase_upload_v2 retries fail-loud" >&2
+    fi
+}
+
+phase_ladder() {
+    echo "[phase=ladder]"
+    _headroom_v2 ladder 25
+    [ -f "$V2_BARS" ] || {
+        emit_signal "epm:failure" "ladder" "failure_class: code — $V2_BARS missing: the G0' v2 gate must run before the ladder (band = 0.0201*ex_v2)"
+        echo "[ladder] FATAL: missing $V2_BARS" >&2
+        exit 78
+    }
+    # Headline layer via the decision module's PRE-REGISTERED rule (reused,
+    # never duplicated — plan §4 Phase LAD).
+    OUT_ENV="$OUT_DIR" SMOKE_ENV=$SMOKE uv run python - > "$DONE_DIR/headline_v2.txt" <<'PY'
+import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path("scripts").resolve()))
+import issue1336_decision_v2 as dv
+
+from explore_persona_space.experiments.issue_1336 import common as cm
+
+smoke = os.environ.get("SMOKE_ENV") == "1"
+frozen = cm.SMOKE_FROZEN_LAYERS if smoke else cm.FROZEN_LAYERS
+block = dv.headline_layer_rule_v2(Path(os.environ["OUT_ENV"]) / "cells_v2", frozen, smoke)
+print(int(block["headline_layer"]))
+PY
+    local headline
+    headline=$(tail -n 1 "$DONE_DIR/headline_v2.txt")
+    case "$headline" in *[!0-9]* | "")
+        echo "[ladder] FATAL: bad headline layer '$headline'" >&2
+        exit 70
+        ;;
+    esac
+    echo "[ladder] headline layer = $headline (pre-registered stage-symmetric rule)"
+    # 1-battery pilot at production shape FIRST (Unit-C compute note: the
+    # realized eigh count is ~2x the §9 per-battery assumption — measure one
+    # full battery, re-project, sentinel on >2x the booked row).
+    if [ "$SMOKE" -eq 0 ] && [ ! -f "$DONE_DIR/ladder__pilot.done" ]; then
+        local p0 p1 pilot_wall
+        p0=$(date +%s)
+        if [ "$NGPU" -gt 0 ]; then
+            CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue1336_metric_ladder.py \
+                --pair base:sft --corpus lmsys23k --format chat \
+                --bars-json "$V2_BARS" --full-tier-layers "$headline" \
+                --out-dir "$OUT_DIR" --wave1-turnstore-dir "$WAVE1_TS_DIR" \
+                >> "$JOB_LOG_DIR/ladder__pilot.log" 2>&1
+        else
+            uv run python scripts/issue1336_metric_ladder.py \
+                --pair base:sft --corpus lmsys23k --format chat \
+                --bars-json "$V2_BARS" --full-tier-layers "$headline" \
+                --out-dir "$OUT_DIR" --wave1-turnstore-dir "$WAVE1_TS_DIR" \
+                >> "$JOB_LOG_DIR/ladder__pilot.log" 2>&1
+        fi
+        p1=$(date +%s)
+        pilot_wall=$((p1 - p0))
+        echo "$pilot_wall" > "$DONE_DIR/ladder_pilot_wall_s"
+        touch "$DONE_DIR/ladder__pilot.done"
+        PILOT_WALL="$pilot_wall" NGPU_ENV="$NGPU" PLANNED="$LADDER_PLANNED_WALL_H" \
+            OUT_ENV="$OUT_DIR" uv run python - <<'PY'
+import json
+import os
+from pathlib import Path
+
+wall = float(os.environ["PILOT_WALL"])
+ngpu = max(int(os.environ["NGPU_ENV"]), 1)
+planned = float(os.environ["PLANNED"])
+projected = wall * 56 / ngpu / 3600.0  # 56 pair-surface batteries (7 pairs x 8 surfaces)
+ratio = projected / planned if planned else float("inf")
+out = Path(os.environ["OUT_ENV"]) / "gates_v2" / "ladder_pilot.json"
+out.parent.mkdir(parents=True, exist_ok=True)
+out.write_text(
+    json.dumps(
+        {
+            "component": "LAD (224 tier batteries)",
+            "pilot_battery_wall_s": wall,
+            "projected_wall_h": round(projected, 3),
+            "planned_wall_h": planned,
+            "ratio": round(ratio, 3),
+            "basis": "measured 1-battery pilot (base:sft x lmsys23k chat) at production shape; upper bound (ignores cross-pair W_s caching)",
+        },
+        indent=2,
+    )
+    + "\n"
+)
+print(f"[ladder] pilot battery wall={wall:.0f}s projected={projected:.2f}h vs planned {planned}h (x{ratio:.2f})")
+PY
+        local lratio
+        lratio=$(uv run python -c "import json;d=json.load(open('$OUT_DIR/gates_v2/ladder_pilot.json'));print('OVER' if d['ratio']>2.0 else 'OK', d['planned_wall_h'], d['projected_wall_h'], d['ratio'])")
+        if [ "${lratio%% *}" = "OVER" ]; then
+            set -- $lratio
+            emit_signal "epm:compute-deviation" "ladder" "component: LAD (224 tier batteries)
+planned_wall_h: $2
+projected_wall_h: $3
+ratio: $4
+basis: measured 1-battery pilot at production shape (upper bound; cross-pair W_s caching not credited)"
+        fi
+    fi
+    # Queue: ONE job per surface, all pairs per invocation (W_s cached across
+    # pairs sharing the source — Unit-C PrepCache).
+    local jobs="$DONE_DIR/jobs_ladder.tsv"
+    OUT_ENV="$OUT_DIR" HL_ENV="$headline" BARS_ENV="$V2_BARS" W1_ENV="$WAVE1_TS_DIR" \
+        registry_lines_v2 '
+out, hl, bars = os.environ["OUT_ENV"], os.environ["HL_ENV"], os.environ["BARS_ENV"]
+flag = "--smoke" if smoke else ""
+w1 = "" if smoke else (" --wave1-turnstore-dir " + os.environ["W1_ENV"])
+pair_arg = ",".join(f"{a}:{b}" for a, b in pairs)
+for corpus, fmt in surfaces:
+    print(
+        f"{corpus}_{fmt}\tuv run python scripts/issue1336_metric_ladder.py "
+        f"--pairs {pair_arg} --corpus {corpus} --format {fmt} "
+        f"--bars-json {bars} --full-tier-layers {hl} --out-dir {out}{w1} {flag}"
+    )
+' > "$jobs"
+    run_queue ladder "$jobs"
+    if [ "$SMOKE" -eq 0 ]; then
+        upload_preds_v2 ladder || echo "[upload] WARNING: incremental metric_ladder_preds upload failed rc=$? — terminal phase_upload_v2 retries fail-loud" >&2
+    fi
+}
+
+upload_preds_v2() { # $1 = cells|ladder — bulk upload_folder (one commit), fail loud
+    local which="$1" src dest
+    if [ "$which" = "cells" ]; then
+        src="data/issue_1336/preds_v2"
+        dest="$HF_PREFIX/analysis_tensors/preds_v2"
+    else
+        src="data/issue_1336/metric_ladder_preds"
+        dest="$HF_PREFIX/analysis_tensors/metric_ladder_preds"
+    fi
+    [ -d "$src" ] || {
+        echo "[upload] no $src yet — skipping preds upload"
+        return 0
+    }
+    UP_SRC="$src" UP_DEST="$dest" UP_REPO="$HF_DATA_REPO" uv run python - <<'PY'
+import os
+
+from huggingface_hub import upload_folder
+
+from explore_persona_space.orchestrate import hub
+
+assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing in workload env"
+hub.retry_transient(
+    lambda: upload_folder(
+        repo_id=os.environ["UP_REPO"],
+        repo_type="dataset",
+        folder_path=os.environ["UP_SRC"],
+        path_in_repo=os.environ["UP_DEST"],
+    ),
+    what=f"preds_v2 upload {os.environ['UP_DEST']}",
+)
+print(f"[upload] {os.environ['UP_SRC']} -> {os.environ['UP_DEST']} (one bulk commit)")
+PY
+}
+
+phase_upload_v2() { # $1 optional "halted" — persistence-only on a G1' kill
+    echo "[phase=upload_v2]"
+    if [ "$SMOKE" -eq 1 ]; then
+        echo "[upload_v2] smoke: HF upload + git push skipped (scratch outputs only)"
+        return 0
+    fi
+    upload_preds_v2 cells
+    upload_preds_v2 ladder
+    # Eval-results mirror (JSON only, non-LFS path; ephemeral-lane rule).
+    UP_SRC="$OUT_DIR" UP_DEST="$HF_PREFIX/eval_results_mirror_v2" UP_REPO="$HF_DATA_REPO" \
+        uv run python - <<'PY'
+import os
+
+from huggingface_hub import upload_folder
+
+from explore_persona_space.orchestrate import hub
+
+assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing in workload env"
+hub.retry_transient(
+    lambda: upload_folder(
+        repo_id=os.environ["UP_REPO"],
+        repo_type="dataset",
+        folder_path=os.environ["UP_SRC"],
+        path_in_repo=os.environ["UP_DEST"],
+        allow_patterns=["*.json"],
+    ),
+    what="eval_results_mirror_v2 upload",
+)
+print("[upload_v2] eval_results mirror uploaded")
+PY
+    # Commit eval JSONs to the issue branch; push verified (#1205/#1880 —
+    # fetch+rebase before retry, never a swallowed push).
+    local branch rc=0
+    branch=$(git rev-parse --abbrev-ref HEAD)
+    git add "$OUT_DIR"
+    if ! git diff --cached --quiet; then
+        git commit -m "task #1336: v2 eval results ($([ "${1:-}" = halted ] && echo 'G1-prime halt' || echo 'full ladder'))"
+    fi
+    git push origin "HEAD:$branch" || rc=$?
+    if [ "$rc" -ne 0 ] || [ "$(git rev-list --count "origin/$branch..HEAD")" != "0" ]; then
+        echo "[upload_v2] push not landed — one retry after rebase" >&2
+        git pull --rebase=merges --autostash origin "$branch"
+        git push origin "HEAD:$branch"
+    fi
+    if [ "$(git rev-list --count "origin/$branch..HEAD")" != "0" ]; then
+        echo "[upload_v2] FATAL: result commit not on origin/$branch after retry" >&2
+        exit 86
+    fi
+    echo "[upload_v2] result commit verified on origin/$branch"
+}
+
+write_results_sentinel_v2() { # $1 = halted true|false
+    local ts path
+    ts=$(date +%s)
+    path="$LOG_DIR/issue-1336-$(printf '%s' "$RESULTS_KIND" | tr ':' '_')-${ts}.json"
+    RES_OUT="$path" RES_KIND="$RESULTS_KIND" RES_HALTED="$1" RES_OUTDIR="$OUT_DIR" \
+        RES_NGPU="$NGPU" RES_START="$(cat "$DONE_DIR/start_ts")" RES_SMOKE="$SMOKE" \
+        RES_BUDGET="$GPU_HOURS_BUDGETED_V2" RES_REPO="$HF_DATA_REPO" RES_PREFIX="$HF_PREFIX" \
+        uv run python - <<'PY'
+import json
+import os
+import subprocess
+import time
+from pathlib import Path
+
+from explore_persona_space.experiments.issue_1336 import common as cm
+
+out_dir = Path(os.environ["RES_OUTDIR"])
+halted = os.environ["RES_HALTED"] == "true"
+smoke = os.environ["RES_SMOKE"] == "1"
+
+
+def _maybe(p: Path):
+    return json.loads(p.read_text()) if p.exists() else None
+
+
+g0v2 = _maybe(out_dir / "gates_v2" / "g0v2.json")
+g2 = _maybe(out_dir / "gates_v2" / "g2_capture_parity.json")
+g1v2 = _maybe(out_dir / "gates_v2" / "g1v2_gate.json")
+bars = _maybe(out_dir / "gates_v2" / "v2_bars.json")
+n_cells = len(sorted((out_dir / "cells_v2").glob("cells_*.json"))) if (out_dir / "cells_v2").exists() else 0
+n_pairs = len(sorted((out_dir / "metric_ladder").glob("pair_*.json"))) if (out_dir / "metric_ladder").exists() else 0
+
+eval_numbers = {
+    "g0v2_pass": bool(g0v2["pass"]) if g0v2 else None,
+    "g0v2_s_qwen_v2": (g0v2 or {}).get("leg_c_v2_anchor", {}).get("s_qwen_v2"),
+    "ex_v2": (bars or {}).get("ex_v2"),
+    "bar_v2": (bars or {}).get("bar_v2"),
+    "g2_pass": bool(g2["pass"]) if g2 else None,
+    "g2_min_mean_cosine": (g2 or {}).get("min_mean_cosine"),
+    "g2_fallback_recapture_armed": bool(g2 is not None and not g2.get("pass", True)),
+    "g1v2_verdict": (g1v2 or {}).get("verdict"),
+    "g1v2_raw_best_r2": (g1v2 or {}).get("raw_best_r2"),
+    "g1v2_recal_best_r2": (g1v2 or {}).get("recal_best_r2"),
+    "n_cells_v2_json": n_cells,
+    "n_metric_ladder_pairs": n_pairs,
+    "halted_at_g1v2": halted,
+}
+
+sha = subprocess.run(
+    ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+).stdout.strip()
+gpu_hours = round(
+    (time.time() - float(os.environ["RES_START"])) / 3600.0 * max(int(os.environ["RES_NGPU"]), 1),
+    2,
+)
+plan_deviations = []
+if halted:
+    plan_deviations.append(
+        "G1' kill gate fired — remaining fit/ladder phases halted by design; artifacts persisted"
+    )
+if eval_numbers["g2_fallback_recapture_armed"]:
+    plan_deviations.append(
+        "G2 capture parity FAILED — reused wave-1 cells were re-captured fresh (registered §7 fallback, +~7 GPU-h)"
+    )
+
+note = {
+    "eval_numbers": eval_numbers,
+    "eval_paths": sorted(
+        str(p)
+        for sub in ("gates_v2", "cells_v2", "metric_ladder")
+        for p in (out_dir / sub).rglob("*.json")
+    )[:200],
+    "halted": halted,
+    "reproducibility_card": {
+        "models": [cm.MODELS[m]["hf_id"] for m in cm.MODELS],
+        "hf_data_repo": os.environ["RES_REPO"],
+        "hf_prefix": os.environ["RES_PREFIX"] + "/",
+        "hf_hub_url": (
+            f"https://huggingface.co/datasets/{os.environ['RES_REPO']}/tree/main/"
+            f"{os.environ['RES_PREFIX']}"
+        ),
+        "adapter_paths": "n/a (no training in the v2 full-corpora round)",
+        "wandb_url": "n/a (no training in the v2 full-corpora round)",
+        "constants": {
+            "sampling": dict(cm.SAMPLING),
+            "n_folds": cm.N_FOLDS,
+            "fit_seed": cm.FIT_SEED,
+            "null_draws": cm.N_NULL_DRAWS,
+            "n_bootstrap": cm.N_BOOTSTRAP,
+            "frozen_layers": list(cm.FROZEN_LAYERS),
+            "lambda_grid": "np.logspace(-3, 8, 23) + adaptive edge (<=2 decades/side)",
+            "n_inner_lambda_folds": cm.N_INNER_LAMBDA_FOLDS_V2,
+            "matched_n_v2": cm.MATCHED_N_V2,
+            "matched_n_v2_seed": cm.MATCHED_N_V2_SEED,
+            "corpus_sample_seed": 1336,
+            "wave1_rev": cm.WAVE1_HF_REV,
+            "track_s_rev": cm.TRACK_S_REV,
+        },
+        "worktree_path": ".claude/worktrees/issue-1336-fullcorpora",
+        "final_commit_sha": sha,
+        "gpu_hours_used": gpu_hours,
+        "gpu_hours_budgeted": float(os.environ["RES_BUDGET"]),
+        "plan_deviations": plan_deviations,
+    },
+}
+payload = {
+    "sentinel_schema_version": 1,
+    "kind": os.environ["RES_KIND"],
+    "version": 1,
+    "task_id": 1336,
+    "by": "issue1336_dispatch",
+    "smoke": smoke,
+    "halted": halted,
+    "note": json.dumps(note),
+}
+with open(os.environ["RES_OUT"], "w") as fh:
+    json.dump(payload, fh, indent=2)
+print(f"[signal] wrote v2 results sentinel {os.environ['RES_OUT']} (halted={halted})")
+PY
+}
+
 run_phase() { # $1 = phase name
     if phase_done "$1"; then
         echo "[dispatch1336] phase $1 already complete — skipping"
@@ -1612,6 +2632,25 @@ all)
     echo "[phase=done]"
     ;;
 g0_gate | gen | extract | fit | align | upload)
+    run_phase "$PHASE_ARG"
+    echo "[dispatch1336] single-phase invocation of $PHASE_ARG complete (no terminal done line)"
+    ;;
+all_v2)
+    # Plan v13 chain (round full-corpora-stage-evals-metric-ladder), resumable
+    # per phase/cell; the G0'/G2/G1' gates are driver-enforced IN ORDER before
+    # any Llama read / reuse concat / ladder-wide fit spend respectively.
+    run_phase c_stage
+    run_phase g0v2
+    run_phase g2_parity
+    run_phase gen_v2
+    run_phase extract_v2
+    run_phase fit_v2
+    run_phase ladder
+    run_phase upload_v2
+    write_results_sentinel_v2 false
+    echo "[phase=done]"
+    ;;
+c_stage | g0v2 | g2_parity | gen_v2 | extract_v2 | fit_v2 | ladder | upload_v2)
     run_phase "$PHASE_ARG"
     echo "[dispatch1336] single-phase invocation of $PHASE_ARG complete (no terminal done line)"
     ;;
@@ -1656,7 +2695,7 @@ __phase_key)
     exit 0
     ;;
 *)
-    echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload|d1_battery|d1_vmsteps|d2_probe|e1_recal|e2_refit [--smoke]" >&2
+    echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload|d1_battery|d1_vmsteps|d2_probe|e1_recal|e2_refit|all_v2|c_stage|g0v2|g2_parity|gen_v2|extract_v2|fit_v2|ladder|upload_v2 [--smoke]" >&2
     exit 2
     ;;
 esac

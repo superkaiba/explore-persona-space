@@ -228,6 +228,50 @@ def _write_store(out_dir: Path, stem: str, n: int, layers: int, dim: int, seed: 
     print(f"[stores] wrote {stem} (n={n}, L={layers}, D={dim})")
 
 
+def cmd_gen_v2(args) -> None:
+    """v2 gen smoke: REAL prep (new-rows filter + budget gate) + generation
+    filter/audit code over the Unit-A smoke corpora, vLLM boundary faked.
+
+    Requires `issue1336_stage_corpora.py --smoke` outputs first (fail-loud —
+    ``load_v2_corpus_rows`` refuses the Hub in smoke). Used by the
+    dispatcher's gen_v2 phase on a GPU-less host: the ENGINE leg is a
+    recorded stub there; prep, template parity, render validation, audits,
+    and output writes are the production code path.
+    """
+    import issue1336_gen_answers as g
+
+    corpora = [c for c in (args.corpora or "lmsys23k,sft11k").split(",") if c]
+    g.run_prep(corpora, smoke=True)
+
+    class _FakeLLM:
+        def __init__(self, *a, **k):
+            pass
+
+    class _FakeSamplingParams:
+        def __init__(self, *a, **k):
+            pass
+
+    fake_vllm = type(sys)("vllm")
+    fake_vllm.LLM = _FakeLLM
+    fake_vllm.SamplingParams = _FakeSamplingParams
+    sys.modules["vllm"] = fake_vllm
+    g._vllm_generate_chunked = lambda llm, texts, sampling: [
+        _SYNTH_COMPLETIONS[i % len(_SYNTH_COMPLETIONS)] for i in range(len(texts))
+    ]
+    for slug in cm.SMOKE_MODELS:
+        g.run_generation(slug, corpora, smoke=True, upload=False)
+        for corpus in corpora:
+            out = Path("data/issue_1336/gen_smoke") / slug / corpus
+            audit = json.loads((out / "audit.json").read_text())
+            kept = [r for r in g._read_jsonl(out / "answers.jsonl") if r["kept"]]
+            assert kept, f"gen-v2 fixture kept 0 rows for {slug}/{corpus}"
+            # Digest-only print (real-corpus prompt text never printed).
+            print(
+                f"[gen-v2-smoke] {slug}/{corpus}: kept {len(kept)}/{audit['n_prompts']} "
+                f"(drops {audit['drop_reasons']}) — real prep/filter/audit path OK"
+            )
+
+
 def cmd_stores(args) -> None:
     """Six smoke-cell noise stores (shared conv_ids; prefix slot row-constant)."""
     out_dir = Path(args.turnstore_dir)
@@ -527,6 +571,8 @@ def main() -> None:
     p = sub.add_parser("tiny-model")
     p.add_argument("--out", required=True)
     sub.add_parser("gen")
+    p = sub.add_parser("gen-v2")
+    p.add_argument("--corpora", default=None, help="comma v2 corpora (default lmsys23k,sft11k)")
     p = sub.add_parser("stores")
     p.add_argument("--turnstore-dir", default="data/issue_1336/turnstore_smoke")
     p = sub.add_parser("stores-v2")
@@ -547,6 +593,7 @@ def main() -> None:
     {
         "tiny-model": cmd_tiny_model,
         "gen": cmd_gen,
+        "gen-v2": cmd_gen_v2,
         "stores": cmd_stores,
         "stores-v2": cmd_stores_v2,
         "g0-fixture": cmd_g0_fixture,
