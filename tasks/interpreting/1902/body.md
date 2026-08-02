@@ -1,6 +1,6 @@
 ---
-title: How each post-training stage (SFT → DPO → RLVR) reshapes the context→answer
-  activation map (OLMo-2 checkpoint chain)
+title: SFT rewrites the OLMo-2 context→answer activation map; DPO mostly preserves
+  it and RLVR leaves it essentially unchanged (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-30T23:52:28Z'

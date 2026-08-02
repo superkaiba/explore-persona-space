@@ -6990,7 +6990,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1902",
       "status": "interpreting",
-      "title": "How each post-training stage (SFT \u2192 DPO \u2192 RLVR) reshapes the context\u2192answer activation map (OLMo-2 checkpoint chain)"
+      "title": "SFT rewrites the OLMo-2 context\u2192answer activation map; DPO mostly preserves it and RLVR leaves it essentially unchanged (MODERATE confidence)"
     },
     "1903": {
       "has_clean_result": false,
