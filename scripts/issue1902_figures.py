@@ -307,6 +307,31 @@ def fig_hero_grid_mlp(eval_dir: Path, fig_dir: Path) -> None:
 # ── hero 3: transfer matrices + retention ────────────────────────────────────
 
 
+MODE_LABEL = {
+    "direct": "direct",
+    "gl": "general-linear-aligned",
+    "orth": "orthogonal-aligned",
+    "fixedtext": "fixed answer text",
+}
+
+
+def _per_fold_retention(units: Path, pair: str, n_folds: int = 6) -> list[float]:
+    """Per-fold retention rho(i->j) = fold gl-transfer R2 / fold diagonal R2 (single, ctx)."""
+    i, j = pair.split("->")
+    out: list[float] = []
+    for f in range(n_folds):
+        xp = units / f"xfer_{i}{j}_f{f}.json"
+        dp = units / f"star_{j}_single_f{f}.json"
+        if not (xp.exists() and dp.exists()):
+            continue
+        with open(xp, encoding="utf-8") as fh:
+            num = json.load(fh)["r2"]["gl"]
+        with open(dp, encoding="utf-8") as fh:
+            den = json.load(fh)["r2"]
+        out.append(num / den)
+    return out
+
+
 def fig_hero_transfer(eval_dir: Path, fig_dir: Path) -> None:
     xf = _load(eval_dir, "transfer/transfer_matrix.json")
     grid = _load(eval_dir, "fits/grid_cells.json")
@@ -322,28 +347,26 @@ def fig_hero_transfer(eval_dir: Path, fig_dir: Path) -> None:
                     Q[mi, si] = cell.get("r2_at_star", np.nan)
                 else:
                     Q[mi, si] = xf["pairs"].get(f"{i}->{j}", {}).get("r2", {}).get(mode, np.nan)
-        _heat(ax, Q, stages, f"{mode} transfer (held-out R², L{xf['layer_star']})")
+        _heat(
+            ax,
+            Q,
+            stages,
+            f"{MODE_LABEL.get(mode, mode)} transfer\n(held-out R², layer {xf['layer_star']})",
+        )
         ax.set_xlabel("target checkpoint j")
         ax.set_ylabel("source checkpoint i")
     h1 = xf.get("h1", {})
-
-    def _ci_str(ci) -> str:
-        try:
-            lo, hi = ci
-            return f"[{lo:+.3f}, {hi:+.3f}]"
-        except (TypeError, ValueError):
-            return str(ci)
-
+    ci = h1.get("ci_delta_conf") or [float("nan"), float("nan")]
     fig.suptitle(
-        f"Cross-stage transfer — R_adj={h1.get('r_adj', float('nan')):.3f} "
-        f"({h1.get('verdict', '?')}; 95% CI Δconf {_ci_str(h1.get('ci_delta_conf'))}, "
-        f"Δkill {_ci_str(h1.get('ci_delta_kill'))})",
+        f"Cross-stage transfer — median adjacent-transition retention "
+        f"{h1.get('r_adj', float('nan')):.3f} (95% CI {0.8 + ci[0]:.3f}–{0.8 + ci[1]:.3f})",
         y=1.05,
     )
     savefig_paper(fig, "hero3_transfer_matrices", dir=fig_dir)
     plt.close(fig)
     # retention + matched nulls per pair (low-level per-unit view)
     pairs = list(xf["pairs"])
+    units = eval_dir / "fits" / "units"
     fig, ax = plt.subplots(figsize=(max(5.0, 0.7 * len(pairs)), 3.4))
     xs = np.arange(len(pairs))
     ax.bar(
@@ -362,17 +385,44 @@ def fig_hero_transfer(eval_dir: Path, fig_dir: Path) -> None:
                 ax.scatter(
                     [k] * len(vals), vals, s=8, color=c, label=lab if k == 0 else None, zorder=3
                 )
+        folds = _per_fold_retention(units, p)
+        if folds:
+            xjit = k + np.linspace(-0.18, 0.18, num=len(folds))
+            ax.scatter(
+                xjit,
+                folds,
+                s=12,
+                color="#333333",
+                zorder=4,
+                label="per-fold retention (6 folds, labeled)" if k == 0 else None,
+            )
+            for fi, v in enumerate(folds):
+                ax.annotate(
+                    f"f{fi}", (xjit[fi], v), fontsize=5, xytext=(1, 2), textcoords="offset points"
+                )
     ax.axhline(0.8, ls="--", color="grey", lw=0.8)
     ax.axhline(0.5, ls=":", color="grey", lw=0.8)
     ax.set_xticks(xs, [pair_label(p) for p in pairs], rotation=45, ha="right")
     ax.set_ylabel("retention / null R²")
-    ax.set_title("Per-pair retention with matched nulls (0.8 conf / 0.5 kill bars)")
+    ax.set_title("Per-pair retention with matched nulls (reference lines at 0.8 and 0.5)")
     ax.legend(fontsize=7)
     savefig_paper(fig, "hero3b_retention_nulls", dir=fig_dir)
     plt.close(fig)
 
 
 # ── clusters (H2) ────────────────────────────────────────────────────────────
+
+
+def _cluster_panel_title(key: str, rec: dict) -> str:
+    """Plain-English panel title for a per-cluster key like 'B->S_single'."""
+    trans, _, corpus = key.partition("_")
+    corpus_lbl = {"single": "single-turn", "multi": "multi-turn"}.get(corpus, corpus)
+    p = rec["null_max_abs_p"]
+    p_str = "p < 0.001" if p < 0.001 else f"p = {p:.3f}"
+    return (
+        f"{pair_label(trans)} — {corpus_lbl}\n"
+        f"(most-moved cluster {rec['most_moved_cluster']}; permutation {p_str})"
+    )
 
 
 def fig_clusters(eval_dir: Path, fig_dir: Path) -> None:
@@ -387,11 +437,7 @@ def fig_clusters(eval_dir: Path, fig_dir: Path) -> None:
             for c, v in zip(ids, vals):
                 ax.annotate(str(c), (c, v), fontsize=5, xytext=(1, 2), textcoords="offset points")
             ax.axhline(0, color="grey", lw=0.6)
-            ax.set_title(
-                f"{key} (most-moved c{rec['most_moved_cluster']}; "
-                f"perm-null p={rec['null_max_abs_p']:.3f})",
-                fontsize=8,
-            )
+            ax.set_title(_cluster_panel_title(key, rec), fontsize=8)
             ax.set_xlabel("cluster id")
             ax.set_ylabel("ΔQ_c (held-out R² delta)")
         savefig_paper(fig, "clusters_delta_qc_scatter", dir=fig_dir)
@@ -421,7 +467,7 @@ def fig_clusters(eval_dir: Path, fig_dir: Path) -> None:
         labels = [contrast_label.get(k, k) for k in contrasts]
         ax.set_xticks(xs, labels, rotation=0, fontsize=7)
         ax.set_ylabel("ΔQ (class-level held-out R² delta)")
-        ax.set_title("Registered class contrasts (95% bootstrap CI)")
+        ax.set_title("Class contrasts (95% bootstrap CI)")
         savefig_paper(fig, "clusters_registered_contrasts", dir=fig_dir)
         plt.close(fig)
 
@@ -646,6 +692,31 @@ def fig_render_robustness(eval_dir: Path, fig_dir: Path) -> None:
         label="native render",
         color=paper_palette(2)[1],
     )
+    units = eval_dir / "fits" / "units"
+    for xi, m in enumerate(rows):
+        for off, field in ((-0.2, "plain_r2"), (0.2, "native_r2")):
+            vals = []
+            for p in sorted(units.glob(f"robust_{m}_f*.json")):
+                with open(p, encoding="utf-8") as fh:
+                    vals.append(json.load(fh)[field])
+            if vals:
+                xjit = xi + off + np.linspace(-0.09, 0.09, num=len(vals))
+                ax.scatter(
+                    xjit,
+                    vals,
+                    s=10,
+                    color="#333333",
+                    zorder=4,
+                    label="per-fold values (6 folds, labeled)" if xi == 0 and off < 0 else None,
+                )
+                for fi, v in enumerate(vals):
+                    ax.annotate(
+                        f"f{fi}",
+                        (xjit[fi], v),
+                        fontsize=4.5,
+                        xytext=(1, 1),
+                        textcoords="offset points",
+                    )
     ax.set_xticks(xs, [STAGE_LABEL.get(m, m) for m in rows])
     ax.set_ylabel("OOF R² at layer* (2k subset;\nper-fold n_tr ≈ 1.7k < d = 4096)")
     ax.set_title(

@@ -1,16 +1,16 @@
 {
-  "commit": "e7fa88bd12",
-  "created": "2026-08-02T00:38:43Z",
+  "commit": "0c790774d1",
+  "created": "2026-08-02T02:51:48Z",
   "figsize": [
     13.2,
     3.6
   ],
   "text": {
-    "suptitle": "Cross-stage transfer \u2014 R_adj=0.893 (Confirmed; 95% CI \u0394conf [+0.075, +0.108], \u0394kill [+0.375, +0.408])",
+    "suptitle": "Cross-stage transfer \u2014 median adjacent-transition retention 0.893 (95% CI 0.875\u20130.908)",
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "direct transfer (held-out R\u00b2, L31)",
+        "title_left": "direct transfer\n(held-out R\u00b2, layer 31)",
         "xlabel": "target checkpoint j",
         "ylabel": "source checkpoint i",
         "annotations": [
@@ -45,7 +45,7 @@
         ]
       },
       {
-        "title_left": "gl transfer (held-out R\u00b2, L31)",
+        "title_left": "general-linear-aligned transfer\n(held-out R\u00b2, layer 31)",
         "xlabel": "target checkpoint j",
         "ylabel": "source checkpoint i",
         "annotations": [
@@ -80,7 +80,7 @@
         ]
       },
       {
-        "title_left": "orth transfer (held-out R\u00b2, L31)",
+        "title_left": "orthogonal-aligned transfer\n(held-out R\u00b2, layer 31)",
         "xlabel": "target checkpoint j",
         "ylabel": "source checkpoint i",
         "annotations": [
@@ -115,7 +115,7 @@
         ]
       },
       {
-        "title_left": "fixedtext transfer (held-out R\u00b2, L31)",
+        "title_left": "fixed answer text transfer\n(held-out R\u00b2, layer 31)",
         "xlabel": "target checkpoint j",
         "ylabel": "source checkpoint i",
         "annotations": [

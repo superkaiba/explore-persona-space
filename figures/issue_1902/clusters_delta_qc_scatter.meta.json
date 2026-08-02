@@ -1,6 +1,6 @@
 {
-  "commit": "8f6456d855",
-  "created": "2026-08-02T00:04:31Z",
+  "commit": "0c790774d1",
+  "created": "2026-08-02T02:51:57Z",
   "figsize": [
     25.200000000000003,
     3.4
@@ -1454,7 +1454,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "B->S_single (most-moved c32; perm-null p=0.000)",
+        "title_left": "base\u2192SFT \u2014 single-turn\n(most-moved cluster 32; permutation p < 0.001)",
         "xlabel": "cluster id",
         "ylabel": "\u0394Q_c (held-out R\u00b2 delta)",
         "annotations": [
@@ -1520,7 +1520,7 @@
         ]
       },
       {
-        "title_left": "S->D_single (most-moved c2; perm-null p=0.027)",
+        "title_left": "SFT\u2192DPO \u2014 single-turn\n(most-moved cluster 2; permutation p = 0.027)",
         "xlabel": "cluster id",
         "ylabel": "\u0394Q_c (held-out R\u00b2 delta)",
         "annotations": [
@@ -1588,7 +1588,7 @@
         ]
       },
       {
-        "title_left": "D->R_single (most-moved c2; perm-null p=0.000)",
+        "title_left": "DPO\u2192RLVR \u2014 single-turn\n(most-moved cluster 2; permutation p < 0.001)",
         "xlabel": "cluster id",
         "ylabel": "\u0394Q_c (held-out R\u00b2 delta)",
         "annotations": [
@@ -1655,7 +1655,7 @@
         ]
       },
       {
-        "title_left": "B->S_multi (most-moved c27; perm-null p=0.398)",
+        "title_left": "base\u2192SFT \u2014 multi-turn\n(most-moved cluster 27; permutation p = 0.398)",
         "xlabel": "cluster id",
         "ylabel": "\u0394Q_c (held-out R\u00b2 delta)",
         "annotations": [
@@ -1720,7 +1720,7 @@
         ]
       },
       {
-        "title_left": "S->D_multi (most-moved c25; perm-null p=0.000)",
+        "title_left": "SFT\u2192DPO \u2014 multi-turn\n(most-moved cluster 25; permutation p < 0.001)",
         "xlabel": "cluster id",
         "ylabel": "\u0394Q_c (held-out R\u00b2 delta)",
         "annotations": [
@@ -1784,7 +1784,7 @@
         ]
       },
       {
-        "title_left": "D->R_multi (most-moved c13; perm-null p=0.413)",
+        "title_left": "DPO\u2192RLVR \u2014 multi-turn\n(most-moved cluster 13; permutation p = 0.413)",
         "xlabel": "cluster id",
         "ylabel": "\u0394Q_c (held-out R\u00b2 delta)",
         "annotations": [

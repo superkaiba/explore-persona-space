@@ -1,6 +1,6 @@
 {
-  "commit": "8f6456d855",
-  "created": "2026-08-02T00:04:32Z",
+  "commit": "0c790774d1",
+  "created": "2026-08-02T02:51:58Z",
   "figsize": [
     4.5,
     3.4
@@ -90,7 +90,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Registered class contrasts (95% bootstrap CI)",
+        "title_left": "Class contrasts (95% bootstrap CI)",
         "ylabel": "\u0394Q (class-level held-out R\u00b2 delta)",
         "xticklabels": [
           "DPO\u2192RLVR\nmath (GSM8K)",
