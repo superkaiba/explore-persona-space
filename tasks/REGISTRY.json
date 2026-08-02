@@ -7086,8 +7086,8 @@
     "1915": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1915",
-      "status": "reviewing",
+      "path": "tasks/completed/1915",
+      "status": "completed",
       "title": "daily-fix: rsync_covered checks RSYNC_EXCLUDE_PATTERNS"
     },
     "1916": {
