@@ -1,0 +1,739 @@
+{
+  "commit": "28ef4fd302",
+  "created": "2026-08-02T00:01:00Z",
+  "figsize": [
+    8.6,
+    4.2
+  ],
+  "points": [
+    {
+      "candidate predictor (pre-fine-tuning)": -0.26,
+      "P(winner) across 2,000 bootstrap draws": 0.6545,
+      "error": 0.020841065802880587,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 0.74,
+      "P(winner) across 2,000 bootstrap draws": 0.1685,
+      "error": 0.016404845814575658,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 1.74,
+      "P(winner) across 2,000 bootstrap draws": 0.0725,
+      "error": 0.011364937087375362,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 2.74,
+      "P(winner) across 2,000 bootstrap draws": 0.045,
+      "error": 0.009085503838533113,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 3.74,
+      "P(winner) across 2,000 bootstrap draws": 0.022,
+      "error": 0.006428680486693983,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 4.74,
+      "P(winner) across 2,000 bootstrap draws": 0.0215,
+      "error": 0.0063568317737690665,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 5.74,
+      "P(winner) across 2,000 bootstrap draws": 0.014,
+      "error": 0.005149244915519166,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 6.74,
+      "P(winner) across 2,000 bootstrap draws": 0.002,
+      "error": 0.0019580390190187726,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 7.74,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 8.74,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 9.74,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 10.74,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": "through-map predicted-answer sim",
+      "P(winner) across 2,000 bootstrap draws": 0.806,
+      "error": 0.01733043482431995,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": "kNN answer-side",
+      "P(winner) across 2,000 bootstrap draws": 0.156,
+      "error": 0.01590283657716446,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": "write-pred alignment",
+      "P(winner) across 2,000 bootstrap draws": 0.015,
+      "error": 0.005327271346571339,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": "read-out proj (through map)",
+      "P(winner) across 2,000 bootstrap draws": 0.0185,
+      "error": 0.005905709627132036,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": "context sim (raw)",
+      "P(winner) across 2,000 bootstrap draws": 0.0005,
+      "error": 0.0007398774846836707,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": "answer sim (raw)",
+      "P(winner) across 2,000 bootstrap draws": 0.003,
+      "error": 0.002396896493384727,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": "nearest training rows (context)",
+      "P(winner) across 2,000 bootstrap draws": 0.0005,
+      "error": 0.0007398774846836707,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": "through-map context sim",
+      "P(winner) across 2,000 bootstrap draws": 0.0005,
+      "error": 0.0007398774846836707,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": "whitened gate",
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": "read-out proj (direct)",
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": "base propensity",
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": "write-pred size",
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 0.26,
+      "P(winner) across 2,000 bootstrap draws": 0.649,
+      "error": 0.020917846906409854,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 1.26,
+      "P(winner) across 2,000 bootstrap draws": 0.127,
+      "error": 0.014593183915787539,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 2.26,
+      "P(winner) across 2,000 bootstrap draws": 0.0575,
+      "error": 0.010202713119557956,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 3.26,
+      "P(winner) across 2,000 bootstrap draws": 0.0645,
+      "error": 0.01076571371530936,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 4.26,
+      "P(winner) across 2,000 bootstrap draws": 0.06,
+      "error": 0.010408319749123776,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 5.26,
+      "P(winner) across 2,000 bootstrap draws": 0.0255,
+      "error": 0.006908791486215229,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 6.26,
+      "P(winner) across 2,000 bootstrap draws": 0.013,
+      "error": 0.0049644521147856795,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 7.26,
+      "P(winner) across 2,000 bootstrap draws": 0.001,
+      "error": 0.001192618076576117,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 8.26,
+      "P(winner) across 2,000 bootstrap draws": 0.0025,
+      "error": 0.0021886057205444754,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 9.26,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 10.26,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 11.26,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": -0.26,
+      "P(winner) across 2,000 bootstrap draws": 0.6336589341971194,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 0.74,
+      "P(winner) across 2,000 bootstrap draws": 0.15209515418542435,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 1.7399999999999998,
+      "P(winner) across 2,000 bootstrap draws": 0.06113506291262463,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 2.74,
+      "P(winner) across 2,000 bootstrap draws": 0.035914496161466886,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 3.74,
+      "P(winner) across 2,000 bootstrap draws": 0.015571319513306016,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 4.74,
+      "P(winner) across 2,000 bootstrap draws": 0.015143168226230932,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 5.74,
+      "P(winner) across 2,000 bootstrap draws": 0.008850755084480834,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 6.74,
+      "P(winner) across 2,000 bootstrap draws": 4.196098098122698e-05,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 7.74,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 8.74,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 9.74,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 10.74,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": -0.26,
+      "P(winner) across 2,000 bootstrap draws": 0.6753410658028806,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 0.74,
+      "P(winner) across 2,000 bootstrap draws": 0.18490484581457567,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 1.7399999999999998,
+      "P(winner) across 2,000 bootstrap draws": 0.08386493708737536,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 2.74,
+      "P(winner) across 2,000 bootstrap draws": 0.05408550383853311,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 3.74,
+      "P(winner) across 2,000 bootstrap draws": 0.02842868048669398,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 4.74,
+      "P(winner) across 2,000 bootstrap draws": 0.027856831773769065,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 5.74,
+      "P(winner) across 2,000 bootstrap draws": 0.019149244915519167,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 6.74,
+      "P(winner) across 2,000 bootstrap draws": 0.003958039019018773,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 7.74,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 8.74,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 9.74,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 10.74,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 0.0,
+      "P(winner) across 2,000 bootstrap draws": 0.7886695651756801,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 1.0,
+      "P(winner) across 2,000 bootstrap draws": 0.14009716342283554,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 2.0,
+      "P(winner) across 2,000 bootstrap draws": 0.00967272865342866,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 3.0,
+      "P(winner) across 2,000 bootstrap draws": 0.012594290372867963,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 4.0,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 5.0,
+      "P(winner) across 2,000 bootstrap draws": 0.000603103506615273,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 6.0,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 7.0,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 8.0,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 9.0,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 10.0,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 11.0,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 0.0,
+      "P(winner) across 2,000 bootstrap draws": 0.82333043482432,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 1.0,
+      "P(winner) across 2,000 bootstrap draws": 0.17190283657716446,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 2.0,
+      "P(winner) across 2,000 bootstrap draws": 0.02032727134657134,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 3.0,
+      "P(winner) across 2,000 bootstrap draws": 0.024405709627132035,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 4.0,
+      "P(winner) across 2,000 bootstrap draws": 0.0014797549693673414,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 5.0,
+      "P(winner) across 2,000 bootstrap draws": 0.005396896493384727,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 6.0,
+      "P(winner) across 2,000 bootstrap draws": 0.0014797549693673414,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 7.0,
+      "P(winner) across 2,000 bootstrap draws": 0.0014797549693673414,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 8.0,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 9.0,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 10.0,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 11.0,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 0.26,
+      "P(winner) across 2,000 bootstrap draws": 0.6280821530935902,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 1.2599999999999998,
+      "P(winner) across 2,000 bootstrap draws": 0.11240681608421246,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 2.26,
+      "P(winner) across 2,000 bootstrap draws": 0.04729728688044205,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 3.26,
+      "P(winner) across 2,000 bootstrap draws": 0.053734286284690645,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 4.26,
+      "P(winner) across 2,000 bootstrap draws": 0.04959168025087622,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 5.26,
+      "P(winner) across 2,000 bootstrap draws": 0.01859120851378477,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 6.26,
+      "P(winner) across 2,000 bootstrap draws": 0.00803554788521432,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 7.26,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 8.26,
+      "P(winner) across 2,000 bootstrap draws": 0.0003113942794555247,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 9.26,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 10.26,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 11.26,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 0.26,
+      "P(winner) across 2,000 bootstrap draws": 0.6699178469064099,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 1.2599999999999998,
+      "P(winner) across 2,000 bootstrap draws": 0.14159318391578754,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 2.26,
+      "P(winner) across 2,000 bootstrap draws": 0.06770271311955796,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 3.26,
+      "P(winner) across 2,000 bootstrap draws": 0.07526571371530937,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 4.26,
+      "P(winner) across 2,000 bootstrap draws": 0.07040831974912377,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 5.26,
+      "P(winner) across 2,000 bootstrap draws": 0.03240879148621523,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 6.26,
+      "P(winner) across 2,000 bootstrap draws": 0.01796445211478568,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 7.26,
+      "P(winner) across 2,000 bootstrap draws": 0.002385236153152234,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 8.26,
+      "P(winner) across 2,000 bootstrap draws": 0.004688605720544475,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 9.26,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 10.26,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "candidate predictor (pre-fine-tuning)": 11.26,
+      "P(winner) across 2,000 bootstrap draws": 0.0,
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 108,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Content change race: winner probability per candidate\n(winner re-selected inside every draw; 12 content arms)",
+        "xlabel": "candidate predictor (pre-fine-tuning)",
+        "ylabel": "P(winner) across 2,000 bootstrap draws",
+        "legend_labels": [
+          "prefix resample (primary)",
+          "query cluster",
+          "family cluster"
+        ],
+        "xticklabels": [
+          "through-map predicted-answer sim",
+          "kNN answer-side",
+          "write-pred alignment",
+          "read-out proj (through map)",
+          "context sim (raw)",
+          "answer sim (raw)",
+          "nearest training rows (context)",
+          "through-map context sim",
+          "whitened gate",
+          "read-out proj (direct)",
+          "base propensity",
+          "write-pred size"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "prefix resample (primary)",
+      "query cluster",
+      "family cluster"
+    ]
+  }
+}
