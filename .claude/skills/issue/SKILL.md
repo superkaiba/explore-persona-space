@@ -7541,7 +7541,13 @@ check verifies the filesystem the staging path resolves to (`df -P <path>`)
 has free headroom ≥ ~1.5× the projected bytes (headroom for partial shards,
 retries, and cross-filesystem cache→`local_dir` copies; the routing mandate
 binds even when the headroom probe passes — #823 projected ~6 GB, realized
-14 GB). While the #681 worktree bind-mount is pending, the worktree's own
+14 GB). And when the staged/materialized FIT/ANALYSIS INPUTS reach ≥ ~50 GB
+(`VM_ANALYSIS_FOOTPRINT_GB_MAX`), the disk routing alone is NOT enough — the
+CONSUMING phase itself ROUTES OFF the shared VM at dispatch (`cpu-bigmem` via
+`dispatch_issue.py --intent cpu-bigmem`, or a pod), never launched VM-local
+to be rerouted after deaths (#1345: a 65 GB boundary-round fit died silently
+4× over ~2.5 h on the shared VM before the cpu-bigmem reroute the plan-time
+carve-out prescribes). While the #681 worktree bind-mount is pending, the worktree's own
 `data/` dir resolves to `/` — exactly what the `df -P` probe catches.
 Projected wall-time > ~15 min for any fit/battery stage additionally makes
 element (1)'s per-call basis MEASUREMENT-REQUIRED: run a 1-cell/1-unit pilot
@@ -7561,7 +7567,17 @@ a user-facing wall-time estimate from a guessed per-call basis (2026-07-23,
 healthy ~25 min/cell full run at exit=124 — relaunch+resume — and two
 same-day chat wall-time estimates were off by ~an order of magnitude).
 Projected wall-time > ~1h without a batched inner loop is a STOP: vectorize first
-(`.claude/rules/vectorize-many-cell-fits.md`), then launch. If the
+(`.claude/rules/vectorize-many-cell-fits.md`), then launch. And an
+ITERATIVE-OPTIMIZATION fit leg (gradient descent on parameters — a torch-MLP
+LOCO, per-cell probes via SGD/AdamW; the CLAUDE.md compute-character
+carve-out class) whose projected PHASE wall-time on CPU, after vectorization,
+exceeds the carve-out's ~15–30 min floor ROUTES to a GPU lane at dispatch
+(`lora-7b` / `eval` / `debug`, smallest that fits) — a many-cell loop of
+individually-fast fits counts, per-cell > ~15 min is sufficient by itself,
+and GPU-worthiness is decided AT DISPATCH, never behind a descope-if-slow or
+run-CPU-and-see gate (#1768: an inline 16-cell MLP battery at ~10–20 min/cell
+dispatched CPU-bound; the user had to order 'just run on GPU', where it
+finished in minutes). If the
 realized implementation later adds a fit/battery the dispatch statement
 did not cover — or materially changes its arithmetic — an updated
 statement is posted before that launch. A round with no fit/battery stage AND no ≥ ~5 GB download/staging states one line: `compute-character: no fit/battery stages, no multi-GB staging`.
@@ -9388,7 +9404,8 @@ orchestrators driving one round is the #778 root cause.
      9a-ter § Compute-character pre-launch statement — same five elements,
      same > ~1h stop-and-vectorize + >~15 min measured-pilot / ≥2×
      pilot-extrapolated fence sizing + ≥~16 GB-RSS off-VM + ≥ ~5 GB off-`/`
-     disk-routing rules): REQUIRED in the
+     disk-routing + ≥ ~50 GB consuming-phase-off-VM + iterative-fit
+     GPU-at-dispatch rules): REQUIRED in the
      `stage=followup-<phase>` dispatch breadcrumb (or an adjacent
      `epm:progress` note) before dispatching ANY stage of the round that
      launches a fit, sweep, or statistical battery — INCLUDING
