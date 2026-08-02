@@ -35,6 +35,7 @@ tests/test_issue_skill_followup_cap_park_note_pin.py
 tests/test_issue_skill_forensics_ingest_pointer.py
 tests/test_issue_skill_gate_scope_brief_pin.py
 tests/test_issue_skill_gate_single_flight.py
+tests/test_issue_skill_gist_update_recipe.py
 tests/test_issue_skill_humanize_verify_first_pin.py
 tests/test_issue_skill_inline_gate_pin.py
 tests/test_issue_skill_inline_measurement_duties.py
