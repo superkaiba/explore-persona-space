@@ -1942,3 +1942,81 @@ def test_union_stage_pulls_preds_and_refuses_a_half_staged_union(monkeypatch):
     stage_src = inspect.getsource(sm.cmd_stage_cells)
     assert "would REFIT" in stage_src, "a JSONs-without-preds union must fail loud"
     assert "stage-cells" in inspect.getsource(sm.main)
+
+
+# ---------------------------------------------------------------------------
+# 3m. Full-pool companion lattice (Option A) — isolation + allowlist bypass
+# ---------------------------------------------------------------------------
+def test_full_pool_bypasses_the_arm_matched_comparator_filter(monkeypatch):
+    """The comparator stores hold 2,936 of 4,472 because load_comparator_convs
+    filters to the arm-kept union. --full-pool passes keep_ids=None, which that
+    function ALREADY handles — the companion needs the bypass, not a new path."""
+    cap = _cap_module(monkeypatch)
+    import inspect
+
+    src = inspect.getsource(cap.main)
+    assert "if args.full_pool" in src and "arm_kept_conv_ids" in src
+    # The None branch is the pre-existing full-pool path, not something new.
+    load_src = inspect.getsource(cap.load_comparator_convs)
+    assert "if keep_ids is None:\n        return convs" in load_src
+    convs = [{"conv_id": "s1", "prompt": "q", "response": "a"} for _ in range(1)]
+    assert convs, "fixture"
+
+
+def test_companion_isolates_by_hf_prefix_not_by_a_sibling_variant(monkeypatch):
+    """Isolation must not go through EPM_I1345_VARIANT: assert_round_env hard-
+    refuses any variant but the round's, and that guard exists to stop wrong-scope
+    runs clobbering the V1 anchor. A prefix suffix isolates the companion without
+    weakening it for every future run."""
+    cap = _cap_module(monkeypatch)
+    import issue1345_boundary_ablation_gen as gen_mod
+
+    base = cap.hf_tensor_prefix(False)
+    comp = cap.hf_tensor_prefix(False, "fulln")
+    assert comp == f"{base}_fulln" and comp != base
+    assert cap.hf_tensor_prefix(False, "") == base, "no suffix => byte-identical default"
+    # The guard the sibling-variant route would have had to weaken is still hard.
+    import inspect
+
+    guard = inspect.getsource(gen_mod.assert_round_env)
+    assert "c.VARIANT == ROUND_VARIANT" in guard
+
+
+def test_capture_records_which_row_pool_a_store_came_from(monkeypatch):
+    """A full-pool store and a matched store share stem/model/provenance, so
+    without this field the only thing telling them apart is the directory they
+    happen to sit in — and a mis-staged store would read as the other one."""
+    cap = _cap_module(monkeypatch)
+    import inspect
+
+    src = inspect.getsource(cap.main)
+    assert '"row_pool": "full" if args.full_pool else "arm_matched"' in src
+    assert '"full_pool": bool(args.full_pool)' in src
+
+
+def test_persist_store_threads_the_prefix_suffix(monkeypatch):
+    """Without the thread-through the companion would upload onto the matched
+    tree — same stems, silent clobber of the primary lattice's stores."""
+    cap = _cap_module(monkeypatch)
+    import inspect
+
+    assert "hf_prefix_suffix" in inspect.signature(cap.persist_store).parameters
+    body = inspect.getsource(cap.persist_store)
+    assert "hf_tensor_prefix(smoke, hf_prefix_suffix)" in body
+    assert "hf_prefix_suffix=args.hf_prefix_suffix" in inspect.getsource(cap.main)
+
+
+def test_grid_and_paired_cells_take_no_fits_side_allowlist(monkeypatch):
+    """The companion needs NO fits change: allow[] is populated only for the
+    comparator/matched cells, so grid + on-policy paired cells already fit over
+    whatever rows their STORE holds. Row count is a capture-time property."""
+    fits = _fits_module(monkeypatch)
+    import inspect
+    import re
+
+    src = inspect.getsource(fits.main)
+    sites = re.findall(r"allow\[cell\[.cell_id.\]\] = (\S+)", src)
+    assert sites == ["sorted(arm_convs[arm])", "ids"], sites
+    # ...and neither assignment sits in the grid / on-policy block.
+    blk = src[src.index("cells += grid_cells(key)") : src.index("cells += op_cells")]
+    assert "allow[" not in blk

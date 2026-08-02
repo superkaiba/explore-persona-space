@@ -305,9 +305,18 @@ def onpolicy_stems(model_key: str = bg.MODEL_KEY) -> dict[str, str]:
     return {k: stem_for(k, model_key, PROV_ONPOLICY) for k in ONPOLICY_STORES}
 
 
-def hf_tensor_prefix(smoke: bool) -> str:
-    """HF data-repo prefix for this round's stores."""
-    return f"{c.HF_SMOKE_PREFIX if smoke else c.HF_ISSUE_PREFIX}/analysis_tensors"
+def hf_tensor_prefix(smoke: bool, suffix: str = "") -> str:
+    """HF data-repo prefix for this round's stores.
+
+    ``suffix`` gives a COMPANION lattice its own sibling tree
+    (`analysis_tensors_fulln`) while keeping the round's variant, stems, and the
+    `assert_round_env` scope guard untouched. Isolating by prefix rather than by
+    a sibling EPM_I1345_VARIANT is deliberate: the variant guard exists to refuse
+    wrong-scope runs and protect the V1 anchor, so widening it to admit a
+    companion would weaken the check for every future run to save one flag.
+    """
+    base = c.HF_SMOKE_PREFIX if smoke else c.HF_ISSUE_PREFIX
+    return f"{base}/analysis_tensors{('_' + suffix) if suffix else ''}"
 
 
 # ---------------------------------------------------------------------------
@@ -862,6 +871,7 @@ def persist_store(
     extra: dict,
     provenance: str = PROV_INJECTED,
     model_key: str = bg.MODEL_KEY,
+    hf_prefix_suffix: str = "",
 ) -> None:
     """Upload this arm's/comparator's shards + sidecars + manifest to HF.
 
@@ -904,7 +914,7 @@ def persist_store(
     }
     man_path = out_dir / f"store_manifest_{stem}.json"
     c.write_json(man_path, manifest)
-    prefix = hf_tensor_prefix(smoke)
+    prefix = hf_tensor_prefix(smoke, hf_prefix_suffix)
     g._hf_upload_folder(
         out_dir,
         prefix,
@@ -1001,6 +1011,19 @@ def main() -> None:
         help="--arm ONLY: read the kept stories from a local {conv_id, story, answer, "
         "parsed_turns} JSONL (the on-policy story-slot rows) instead of this round's "
         "gen output / the pinned V1 bundle. Requires --provenance onpolicy",
+    )
+    ap.add_argument(
+        "--full-pool",
+        action="store_true",
+        help="COMPANION lattice: capture EVERY kept row instead of the arm-matched "
+        "subset (comparator scope). Pair with --out-dir and --hf-prefix-suffix so the "
+        "full-pool stores never collide with the matched ones.",
+    )
+    ap.add_argument(
+        "--hf-prefix-suffix",
+        default="",
+        help="suffix the HF tensor prefix (analysis_tensors_<suffix>) so a companion "
+        "lattice uploads to its own sibling tree without touching the round variant",
     )
     ap.add_argument("--skip-upload", action="store_true", help="local-only (smoke plumbing)")
     ap.add_argument("--smoke", action="store_true", help="first 8 rows; causal check ON")
@@ -1106,7 +1129,15 @@ def main() -> None:
             print(f"[smoke] limiting to {len(stories)} {key} stories", flush=True)
         rendered, render_stats = render_arm(key, stories, tokenizer, provenance=args.provenance)
     else:
-        keep_ids = arm_kept_conv_ids(args.stories_dir, bg.GEN_ARMS, v1_dl_dir=args.dl_dir)
+        # --full-pool: fit the COMPANION lattice on every kept row rather than the
+        # arm-matched subset. The filter below is what took the comparator stores to
+        # 2,936 of 4,472; None keeps the full pool (load_comparator_convs already has
+        # the branch), which is the whole point of the n>d regime check.
+        keep_ids = (
+            None
+            if args.full_pool
+            else arm_kept_conv_ids(args.stories_dir, bg.GEN_ARMS, v1_dl_dir=args.dl_dir)
+        )
         convs = load_comparator_convs(args.dl_dir, keep_ids, convs_jsonl=args.convs_jsonl)
         if args.smoke:
             convs = convs[:8]
@@ -1280,9 +1311,16 @@ def main() -> None:
                 "n_shards": len(paths),
                 "render_stats": render_stats,
                 "slot_diagnostics": diag,
+                # Which POOL this store was captured on. A full-pool companion and
+                # a matched store share stem/model/provenance, so without this the
+                # only difference between them lives in the directory they happen
+                # to sit in — and a mis-staged store would read as the other one.
+                "row_pool": "full" if args.full_pool else "arm_matched",
+                "full_pool": bool(args.full_pool),
             },
             provenance=args.provenance,
             model_key=args.model,
+            hf_prefix_suffix=args.hf_prefix_suffix,
         )
     print(f"[done] {key}: {n_done} rows -> {len(paths)} shard(s) in {args.out_dir}", flush=True)
     sys.stdout.flush()
