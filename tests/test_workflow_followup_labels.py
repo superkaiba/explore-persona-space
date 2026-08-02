@@ -472,6 +472,43 @@ def test_version_stamp_anchoring_negatives():
     assert parse_followup_note_field("- v2. followup_label: y; source: z", "source") == "z"
 
 
+def test_label_parse_dash_led_version_stamp_1900():
+    # VERBATIM #1900 v2 run-marker head shape (2026-08-01T03:30:56Z): the
+    # dash-led stamp form `v1 — ` (em-dash) live sessions actually emit —
+    # pre-#1984 the `v<k>. `-only stamp regex left the head unstripped, the
+    # explicit followup_label parsed None, and the corpus-replay invariant
+    # went red fleet-wide.
+    assert (
+        parse_followup_note_field(
+            "v1 — followup_label: tfmargin-validation-expand; source: proposer-9b-cheap; "
+            "round: 2; outcome: complete",
+            "followup_label",
+        )
+        == "tfmargin-validation-expand"
+    )
+    # ASCII-hyphen and en-dash variants parse identically (same char class).
+    assert parse_followup_note_field("v1 - followup_label: x; source: y", "followup_label") == "x"
+    assert parse_followup_note_field("v1 \u2013 followup_label: x", "followup_label") == "x"
+    # The #1900 v1 head shape (stamp before a `source:` first segment): the
+    # stamp strips and the first-segment field parses too.
+    assert (
+        parse_followup_note_field(
+            "v1 — source: proposer-9b-cheap; followup_label: offfloor-surface-race", "source"
+        )
+        == "proposer-9b-cheap"
+    )
+
+
+def test_dash_led_version_stamp_anchoring_negatives():
+    # No whitespace AFTER the dash → not a stamp (`v2-alpha` is a token, not
+    # decoration): nothing strips, the field sits mid-segment, parses None.
+    assert parse_followup_note_field("v2-alpha followup_label: x", "followup_label") is None
+    # Whitespace optional BEFORE the dash: `v1— field` still strips.
+    assert parse_followup_note_field("v1— followup_label: x", "followup_label") == "x"
+    # Composes with the bullet strip + `; `-split, like the dot form.
+    assert parse_followup_note_field("- v2 — followup_label: y; source: z", "source") == "z"
+
+
 def test_semicolon_split_anchoring_negatives():
     # (i) paren-wrapped mid-line mention (the #685 shape): the segment starts
     # with "(", not the field core → None (segments are anchored exactly like
@@ -1159,6 +1196,10 @@ def _run_labels(events: list[dict]) -> set[str]:
 # (#1092's `v1. `-stamp-led run note is deliberately NOT allowlisted — its
 # fields are explicit, and the parser strips the leading version stamp as
 # decoration; see `parse_followup_note_field`.)
+# (#1900's `v1 — `-dash-stamp-led run markers — incl. (1900,
+# "2026-08-01T03:30:56Z") — are likewise deliberately NOT allowlisted: their
+# fields are explicit, and the #1984-widened parser strips the dash-led
+# version stamp as decoration too.)
 KNOWN_MALFORMED_RUN_MARKERS = {(1090, "2026-07-07T09:54:27Z")}
 
 
