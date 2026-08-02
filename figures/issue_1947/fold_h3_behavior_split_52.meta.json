@@ -1,0 +1,70 @@
+{
+  "commit": "47090f4c3b",
+  "created": "2026-08-02T20:38:49Z",
+  "figsize": [
+    11.5,
+    4.2
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "numbers under each family = cells above their own covariance null"
+    ],
+    "axes": [
+      {
+        "title_left": "layer 14",
+        "ylabel": "matched-text cosine with\nthe displacement unit",
+        "annotations": [
+          "2/18",
+          "2/16",
+          "1/18"
+        ],
+        "xticklabels": [
+          "impolite",
+          "casual style",
+          "sycophancy"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "layer 19",
+        "annotations": [
+          "1/18",
+          "16/16",
+          "12/18"
+        ],
+        "xticklabels": [
+          "impolite",
+          "casual style",
+          "sycophancy"
+        ]
+      },
+      {
+        "title_left": "layer 25",
+        "legend_labels": [
+          "full 1,200-row read",
+          "mean of twenty 20-row draws",
+          "per-cell covariance null upper bound"
+        ],
+        "annotations": [
+          "3/18",
+          "13/16",
+          "16/18"
+        ],
+        "xticklabels": [
+          "impolite",
+          "casual style",
+          "sycophancy"
+        ]
+      }
+    ]
+  }
+}
