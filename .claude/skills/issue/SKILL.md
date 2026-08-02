@@ -2459,6 +2459,9 @@ else
 #     from workflow.yaml via `workflow_lint.py --emit-tables`; syncing
 #     one without the other creates a stale-derived tree — the 0e2c3b21
 #     incident, 2026-07-26)
+#     <-> :(glob)tests/test_issue_skill_*.py (prose-pin tests over
+#     .claude/skills content; syncing SKILL.md without its paired pin
+#     test reds the Step 9c gate — the #1824 vintage skew, #1883)
 #   FAMILY_lint: scripts/workflow_lint.py <-> :(glob)tests/test_workflow_lint*.py
 #     plus tests/test_workflow_yaml.py and tests/test_autonomous_session_watch.py
 #     (pin tests import symbols from workflow_lint.py; syncing new pin
@@ -2475,6 +2478,7 @@ declare -A FAMILY_OF
 FAMILY_OF[".claude/workflow.yaml"]="workflow"
 FAMILY_OF[".claude/skills"]="workflow"    # contains markers.md, the derived table target
 FAMILY_OF["tests/test_workflow_yaml.py"]="workflow"    # imports render_*_table from workflow_lint AND reads workflow.yaml data via load_workflow_yaml — a workflow-data behavioral test
+FAMILY_OF[":(glob)tests/test_issue_skill_*.py"]="workflow"
 FAMILY_OF["scripts/workflow_lint.py"]="lint"
 FAMILY_OF[":(glob)tests/test_workflow_lint*.py"]="lint"
 FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"    # test_codex_outage_docstring_pass_count_lint_stays_green imports check_asw_docstring_pass_count from workflow_lint
@@ -2484,7 +2488,7 @@ FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
 # Singletons: .claude/agents, .claude/rules, CLAUDE.md — each is its
 # own family key (set below in the pass-1 loop by defaulting to its own path).
 
-SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py"
+SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
 # Bounded freshness fetch (#1747 — the #1289/#1714 shape): local main can lag
 # origin on the shared root; a failed fetch degrades to last-fetched
 # origin/main — never a wedge, never a fallback to local main.
@@ -2576,13 +2580,15 @@ safely override the skip for those specific files with a manual
 **The sync scope is specs + the spec-coupled lint/guard family — do NOT
 extend it further into `scripts/`, `tests/`, or `src/`.** The family
 exception (#1560: `scripts/workflow_lint.py`, `.claude/hooks`,
-`:(glob)tests/test_guard_*.py`, `:(glob)tests/test_workflow_lint*.py`)
+`:(glob)tests/test_guard_*.py`, `:(glob)tests/test_workflow_lint*.py`;
+#1883 adds `:(glob)tests/test_issue_skill_*.py`, the prose-pin tests
+over `.claude/skills` content — the #1824 vintage skew)
 exists because those files execute FROM the worktree tree on four
 surfaces — the Step 10d TG legs, worktree pytest / Step 9c, the hooks'
 own-tree `workflow_lint` import, and the inline gate invoked in a
 worktree — and their constants/budgets pair with the specs this sync
 already refreshes: half-syncing manufactured the #1489/#1482/#1417 gate
-blocks. The family is deliberately closed up to ONE seam: its only src
+blocks. The lint/guard family is deliberately closed up to ONE seam: its only src
 imports are from the low-churn `explore_persona_space.workflow` module
 (the linter's 2-symbol import at `workflow_lint.py:672-681`, plus
 `tests/test_workflow_lint.py:96`'s 3-symbol
@@ -2590,12 +2596,23 @@ imports are from the low-churn `explore_persona_space.workflow` module
 residual: a synced family file ImportError-ing on that module means
 branch-era `src/explore_persona_space/workflow.py` skew (rebase onto
 origin/main, or cross-check at the repo root; module stable since
-2026-06-13). Family atomicity (#1714): within the spec-coupled
+2026-06-13). The skill-pin glob (`:(glob)tests/test_issue_skill_*.py`,
+#1883) carries two additional accepted seams of the same β-class:
+`tests/test_issue_skill_long_phase_heartbeat.py` imports the
+scripts-side `autonomous_session_watch` + `tick_triage` modules
+(L53-54), and `tests/test_issue_skill_trigger_dense_tag_adoption.py`
+importlib-loads `scripts/select_step9c_tests.py` by path and text-pins
+a literal in `src/explore_persona_space/backends/excerpt_digest.py` —
+same remedy: a synced pin test failing on branch-era `scripts/`/`src/`
+skew means rebase onto origin/main, or cross-check at the repo root.
+Family atomicity (#1714): within the spec-coupled
 lint/guard family, the per-item branch-side-edit skip is transitive —
 a branch-side edit on ANY family member widens the skip to the WHOLE
 family (never narrows it). Three families are declared: workflow
 (`.claude/workflow.yaml` + `.claude/skills` where the derived
-`markers.md` and SKILL.md generated tables live), lint
+`markers.md` and SKILL.md generated tables live, plus
+`:(glob)tests/test_issue_skill_*.py` — the prose-pin tests over that
+skills content, #1883), lint
 (`scripts/workflow_lint.py` + `:(glob)tests/test_workflow_lint*.py`
 plus the explicit importers `tests/test_workflow_yaml.py` and
 `tests/test_autonomous_session_watch.py`), and guard (`.claude/hooks`
@@ -10498,13 +10515,29 @@ The worktree is **NOT removed** — it persists for inspection and is
 reaped later by the daily stale-worktree audit (`worktree_audit.py`,
 09:47) once the task reaches a terminal status and the worktree is idle.
 
-**Idempotent.** Skip the whole step if `epm:merged` already exists on the
-task (an experiment that merged at Step 9b is a no-op here). Also skip if
-no PR exists or the branch is already merged into `main`.
+**Idempotent.** Skip the whole step iff `epm:merged` already exists on the
+task AND the branch carries no NOVEL payload vs fetched `origin/main`
+(payload-scoped, #1897: a same-issue follow-up round produces NEW payload
+on the same branch, and a prior round's `epm:merged` marker alone must not
+strand it — #1768 round-2; an experiment that merged at Step 9b with
+nothing new since is a no-op here). "No novel payload" is NOT a bare
+commit count — the default merge forms land COPIES of the branch commits
+(`--rebase` replays them, `--squash` folds them into one), so a
+fully-merged branch reads `rev-list --count origin/main..issue-<N>` > 0
+forever (#1897 round-2). Use the layered novel-payload predicate from the
+safe-case probe below (§ "The auto-merge procedure"), fail-SAFE toward
+"payload exists": zero commits ahead → no payload; else
+`git cherry origin/main issue-<N>` emits no `+` line → landed
+(rebase-replayed copies keep their patch-ids); else the branch's own
+changed files are content-identical on `origin/main` → landed
+(squash-landed content); else → novel payload. Also skip if no PR
+exists or the branch is already merged into `main` (no novel payload by
+the same predicate).
 
 #### Bare push / merge snippets (canonical — copy verbatim, never compose a piped variant)
 
-Every `git push` / `git merge` / `gh pr merge|create` in this skill — and any
+Every `git push` / `git merge` / `git commit` / `gh pr merge|create` in this
+skill — and any
 IMPROVISED recovery around one — runs BARE with its exit code checked. Never
 pipe one through `tail` / `grep` / `head` / any filter: bash makes a
 pipeline's exit status the LAST stage's, so the pipe masks a rejected push
@@ -10530,7 +10563,10 @@ git push origin main || uv run python scripts/sync_repo_root.py
 
 # (3) PR merge (for sites OUTSIDE Step 10d/9b — those two run the full
 #     lint-verdict-gated blocks below, never this bare form) — branch the
-#     flow on the EXIT CODE, never on filtered output:
+#     flow on the EXIT CODE, never on filtered output (and exit 0 is NOT
+#     proof THIS attempt landed: an already-merged PR exits 0 — improvised
+#     sites verify the landing per the Step 10d landing-verification read,
+#     state/mergedAt freshness, #1897):
 if gh pr merge <PR> --rebase --delete-branch=false; then
   echo "merged"
 else
@@ -10542,6 +10578,15 @@ fi
 git push origin main > /tmp/issue-<N>-push.log 2>&1; PUSH_RC=$?
 tail -20 /tmp/issue-<N>-push.log
 [ "$PUSH_RC" -eq 0 ] || { echo "PUSH FAILED (rc=$PUSH_RC)"; false; }
+
+# (5) Commit whose OUTPUT you need (pre-commit hooks print there): redirect
+#     to a FILE — never pipe (a piped hook-running commit is SIGPIPE-killed
+#     mid-pre-commit-hook, #1584/#1591) — and read the file in a SEPARATE
+#     command; pathspec-limited per CLAUDE.md § Concurrent repo-root
+#     committers:
+git commit -m "<msg>" -- <paths> > /tmp/issue-<N>-commit.log 2>&1; COMMIT_RC=$?
+tail -20 /tmp/issue-<N>-commit.log
+[ "$COMMIT_RC" -eq 0 ] || { echo "COMMIT FAILED (rc=$COMMIT_RC)"; false; }
 ```
 
 Inside Step 10d itself, use the full executable blocks below (they wrap
@@ -11566,10 +11611,28 @@ tests BEFORE anything lands:
       # unstable across trees (unrelated dirt in ONE tree changes it ->
       # false NEW line on an innocent payload); every real offense also
       # emits its dedicated per-file evidence line, which survives.
+      # Two structural false-positive filters (#1689): the pytest
+      # warnings-summary SECTION is dropped up front (awk range
+      # `^=+ warnings summary` .. the `^-- Docs:` terminator — a PASSING
+      # test's warnings are not failure signal, and a branch-new test's
+      # warnings have no baseline twin by construction), and $WT/$REPO_ROOT
+      # absolute tree prefixes are normalized to one <TREE> token so the
+      # SAME pre-existing line from the two trees cancels under comm -23
+      # (WT substitution FIRST — $REPO_ROOT is a string prefix of $WT; the
+      # never-matching parameter defaults keep an unset var from becoming an
+      # empty-pattern sed that fails into an EMPTY hits file under the
+      # trailing `|| true` = silent fail-open).
+      # Residual: realpath-divergent prefixes (the #681 /mnt/eps-data
+      # bind-mount — a test printing os.path.realpath output emits a prefix
+      # matching neither $WT nor $REPO_ROOT) stay uncancelled; fail
+      # direction = the pre-existing status quo for that line class.
       for leg in baseline gated; do
-        grep -F -f /tmp/issue-<N>-tg-files.txt "/tmp/issue-<N>-tg-$leg.txt" \
+        awk '/^=+ warnings summary/{w=1; next} w && /^-- Docs:/{w=0; next} !w' \
+          "/tmp/issue-<N>-tg-$leg.txt" \
+          | grep -F -f /tmp/issue-<N>-tg-files.txt \
           | grep -vE '^E +assert ' \
           | sed -E 's/at line [0-9]+/at line N/g; s/:[0-9]+:/::/g; s/:[0-9]+([^0-9]|$)/:N\1/g' \
+          | sed -e "s|${WT:-/__eps_no_wt__}|<TREE>|g" -e "s|${REPO_ROOT:-/__eps_no_root__}|<TREE>|g" \
           | sort -u \
           > "/tmp/issue-<N>-tg-$leg-hits.txt" || true
       done
@@ -11738,9 +11801,14 @@ tests BEFORE anything lands:
   masking WARN; compare additionally marks NON-file-anchored scan-set nodes
   scratch-ineligible (`step9c_baseline.py` `FILE_ANCHORED_SCAN_TESTS` members
   are scratch-resolved, still WARNed — #1337)). File-grain hits
-  = pytest-output lines naming a payload-matched path, line numbers blanked
+  = pytest-output lines naming a payload-matched path, the pytest
+  warnings-summary section excluded up front (a PASSING test's warnings are
+  not failure signal; a branch-new test's warnings have no baseline twin —
+  #1689), line numbers blanked
   so main-vs-branch drift of the SAME pre-existing offense cannot fake a NEW
-  line, pytest's ellipsis-truncated `E   assert ...` repr line dropped (its
+  line, `$WT`/`$REPO_ROOT` absolute tree prefixes normalized to a common
+  `<TREE>` token so the same line from the two trees cancels (#1689),
+  pytest's ellipsis-truncated `E   assert ...` repr line dropped (its
   content is unstable across trees; every real offense also emits a dedicated
   per-file evidence line); NEW = gated hits − baseline hits (`comm -23`,
   `/tmp/issue-<N>-tg-new.txt`). And junit-NODE-grain for unit-test failures
@@ -12080,10 +12148,69 @@ tests BEFORE anything lands:
 #### The auto-merge procedure (safe case: guard 3 clean — mainline-based, own commits in scope)
 
 ```bash
-PR=$(gh pr view <PR> --json number -q .number 2>/dev/null) || true
+# PR-object liveness probe (#1768 round-2 / #1897): a follow-up round's
+# branch outlives its round-1 PR — a MERGED/CLOSED PR is a TERMINAL
+# GitHub object (new branch commits never attach), and `gh pr merge` on
+# one exits 0 with "was already merged" (false success: verdict
+# consumed, payload stranded). Resolve state + pre-attempt mergedAt
+# alongside the number, and require OPEN before any merge attempt.
+# (`gh pr view issue-<N>` by branch name prefers the OPEN PR when one
+# exists, so the re-resolve after `gh pr create` binds the fresh PR.)
+PR_INFO=$(gh pr view issue-<N> --json number,state,mergedAt \
+  -q '[(.number | tostring), .state, (.mergedAt // "null")] | join(" ")' 2>/dev/null) || true
+PR=$(echo "$PR_INFO" | cut -d' ' -f1)
+PR_STATE=$(echo "$PR_INFO" | cut -d' ' -f2)
+PRE_MERGED_AT=$(echo "$PR_INFO" | cut -d' ' -f3)
 if [ -z "$PR" ]; then
   echo "No PR for issue-<N>; nothing to merge."   # skip; post nothing
 else
+  if [ "$PR_STATE" != "OPEN" ]; then
+    # Fresh draft PR only if the branch carries NOVEL payload (bounded
+    # fetch + layered novel-payload predicate): a terminal PR never
+    # merges new commits — and a bare COMMIT count is patch-blind: the
+    # default merge forms land COPIES of the branch commits (--rebase
+    # replays them, --squash folds them into one), so a fully-merged
+    # branch reads `rev-list --count` > 0 forever (#1897 round-2).
+    # Layered predicate, fail-SAFE toward "novel" (a false 'novel'
+    # costs one bounded duplicate draft PR; a false 'landed' strands
+    # payload — so every git-error path keeps NOVEL_PAYLOAD=yes):
+    #   (1) zero commits ahead -> no payload (cheap short-circuit);
+    #   (2) `git cherry` emits NO '+' line -> every commit is
+    #       patch-equivalent upstream -> landed (rebase form: replayed
+    #       commits keep their patch-ids; squash does NOT);
+    #   (3) the branch's own changed files are content-identical to
+    #       origin/main -> landed (squash form; also covers rebase);
+    #   (4) else -> novel payload.
+    timeout --kill-after=30s 120s git -C "$REPO_ROOT" fetch origin main --quiet || true
+    NOVEL_PAYLOAD=yes
+    if [ "$(git -C "$WT" rev-list --count origin/main..issue-<N>)" -eq 0 ]; then
+      NOVEL_PAYLOAD=no   # (1) no commits at all
+    elif CHERRY=$(git -C "$WT" cherry origin/main issue-<N>) \
+         && [ -z "$(printf '%s\n' "$CHERRY" | grep '^+')" ]; then
+      NOVEL_PAYLOAD=no   # (2) rebase-landed copies (a cherry FAILURE falls through — fail-safe)
+    else
+      OWN_FILES=$(git -C "$WT" diff --name-only origin/main...issue-<N>)
+      if [ -n "$OWN_FILES" ] \
+         && git -C "$WT" diff --quiet origin/main issue-<N> -- $OWN_FILES; then
+        NOVEL_PAYLOAD=no # (3) squash-landed content (a diff ERROR keeps 'yes' — fail-safe)
+      fi
+    fi
+    if [ "$NOVEL_PAYLOAD" = "yes" ]; then
+      gh pr create --draft --head issue-<N> \
+        --title "issue-<N>: <task title> (round follow-up)" \
+        --body "Closes task #<N>. Fresh PR: prior PR #$PR is $PR_STATE (#1897 probe)."
+      PR_INFO=$(gh pr view issue-<N> --json number,state,mergedAt \
+        -q '[(.number | tostring), .state, (.mergedAt // "null")] | join(" ")')
+      PR=$(echo "$PR_INFO" | cut -d' ' -f1)
+      PR_STATE=$(echo "$PR_INFO" | cut -d' ' -f2)
+      PRE_MERGED_AT=$(echo "$PR_INFO" | cut -d' ' -f3)
+    else
+      echo "issue-<N> has no novel payload vs origin/main (zero commits ahead, or every commit patch-equivalent / content already landed via rebase or squash) — nothing to merge (prior PR #$PR $PR_STATE stays the record)."
+      # Take the existing already-merged skip path (Idempotent bullet);
+      # post nothing new; do NOT run the guards/merge below on a
+      # terminal PR.
+    fi
+  fi
   # Run guards 1-3 above first. If guard 3 says "unsafe", skip this
   # block and run the artifact-confirmed merge below instead.
   #
@@ -12173,13 +12300,14 @@ else
     FAMILY_OF[".claude/workflow.yaml"]="workflow"
     FAMILY_OF[".claude/skills"]="workflow"
     FAMILY_OF["tests/test_workflow_yaml.py"]="workflow"
+    FAMILY_OF[":(glob)tests/test_issue_skill_*.py"]="workflow"
     FAMILY_OF["scripts/workflow_lint.py"]="lint"
     FAMILY_OF[":(glob)tests/test_workflow_lint*.py"]="lint"
     FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"
     FAMILY_OF[".claude/hooks"]="guard"
     FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
     FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
-    SPECS_10D=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py"
+    SPECS_10D=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
     MB_10D=$(git -C "$WT" merge-base HEAD origin/main)
     declare -A DIRTY_FAMILIES_10D
     for f in $SPECS_10D; do
@@ -12273,7 +12401,7 @@ else
       # bounded until-loop — never a leading foreground sleep
       # (harness-blocked; the shape-0 convention).
       TIP=$(git -C "$WT" rev-parse HEAD); HS_TRIES=0
-      until HS=$(gh pr view <PR> --json headRefOid,mergeable -q '.headRefOid + " " + .mergeable' 2>/dev/null) \
+      until HS=$(gh pr view "$PR" --json headRefOid,mergeable -q '.headRefOid + " " + .mergeable' 2>/dev/null) \
             && [ "${HS%% *}" = "$TIP" ] && [ "${HS##* }" != "UNKNOWN" ]; do
         HS_TRIES=$((HS_TRIES + 1))
         if [ "$HS_TRIES" -ge 6 ]; then
@@ -12285,18 +12413,39 @@ else
       if [ "${HS%% *}" = "$TIP" ]; then
         echo "head-sync pre-check: parity at $TIP (mergeable=${HS##* })"
       fi
-      gh pr ready <PR>
-      if gh pr merge <PR> $MERGE_FORM --delete-branch=false; then
-        rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on MERGE SUCCESS — the verdict certified exactly the tip that landed
-        # Root-sync before epm:merged (#1725, safe-case): the just-merged diff is on
-        # origin/main; a workflow-surface fix in it is NOT yet live at the
-        # shared repo root, and the very next call — the epm:merged post —
-        # runs argv-prose guards from the pre-fix root copy (session
-        # 7ce3a81f, 2026-07-26: git-verb note text blocked ~25s post-merge).
-        # sync_repo_root.py is single-flight flock-serialized; fail-soft
-        # (the post-merge-guard pre-sync at the guard block below remains the fallback).
-        uv run python "$REPO_ROOT/scripts/sync_repo_root.py" || \
-          echo "[step10d/safe-case] pre-marker sync failed; post-merge-guard pre-sync remains the fallback"
+      gh pr ready "$PR"
+      if gh pr merge "$PR" $MERGE_FORM --delete-branch=false; then
+        # Landing verification (#1897): exit 0 is NOT proof THIS attempt
+        # landed — `gh pr merge` on an already-merged PR exits 0 with
+        # "was already merged" (#1768 round-2). Verify via the PR object
+        # (never branch-sha ancestry: a rebase merge lands rebased
+        # COPIES — new shas). Check-first bounded poll for GitHub's
+        # async state settle; the empty-PRE_MERGED_AT conjunct fails
+        # CLOSED (a partial re-entry in a fresh shell leaves it unset).
+        LANDED_OK=no
+        for _ in 1 2 3; do
+          POST=$(gh pr view "$PR" --json state,mergedAt \
+            -q '[.state, (.mergedAt // "null")] | join(" ")' 2>/dev/null) || POST=""
+          if [ -n "$PRE_MERGED_AT" ] && [ "${POST%% *}" = "MERGED" ] \
+             && [ "${POST##* }" != "null" ] \
+             && [ "${POST##* }" != "$PRE_MERGED_AT" ]; then LANDED_OK=yes; break; fi
+          sleep 10
+        done
+        if [ "$LANDED_OK" = yes ]; then
+          rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on VERIFIED merge success only — the verdict certified exactly the tip that landed
+          # Root-sync before epm:merged (#1725, safe-case): the just-merged diff is on
+          # origin/main; a workflow-surface fix in it is NOT yet live at the
+          # shared repo root, and the very next call — the epm:merged post —
+          # runs argv-prose guards from the pre-fix root copy (session
+          # 7ce3a81f, 2026-07-26: git-verb note text blocked ~25s post-merge).
+          # sync_repo_root.py is single-flight flock-serialized; fail-soft
+          # (the post-merge-guard pre-sync at the guard block below remains the fallback).
+          uv run python "$REPO_ROOT/scripts/sync_repo_root.py" || \
+            echo "[step10d/safe-case] pre-marker sync failed; post-merge-guard pre-sync remains the fallback"
+        else
+          echo "MERGE NOT VERIFIED — gh pr merge exited 0 but the PR object shows no FRESH merge (state/mergedAt unchanged vs pre-attempt: the exit-0 'was already merged' false-success shape, #1768/#1897). Verdict NOT consumed; re-enter via the PR-state probe at the top of this block (fresh PR) AT MOST ONCE per Step 10d invocation — a SECOND unverified exit-0 success -> epm:merge-failed. Do NOT report success."
+          false
+        fi
       else
         echo "MERGE FAILED — classify the gh error text: (0) \"Base branch was modified\" -> transient base-advance (Known failure shape 0 below): wait ~20s via a bounded until-loop or a bg-Bash re-check — NEVER a leading foreground \`sleep\` (harness-blocked; 3 wasted turns on 2026-07-18 alone) — then re-enter this SAME conditional (the verdict still certifies the tip; max 2 re-entries per Step 10d invocation, counted regardless of re-bind — a re-entry may legitimately carry a moved tip via a second sync+re-bind, #1807); (1) \"can't be rebased\" (--rebase form only) -> the #1041 --squash retry (Known failure shape 1 below; SHA-bound verdict remains valid for the SAME tip); (2) \"Pull Request has merge conflicts\" -> the #1128 re-snapshot-and-retry-once (Known failure shape 2 below); (3) \"Head branch is out of date\" -> PR head-sync lag (Known failure shape 3 below): confirm pushed, bounded headRefOid re-poll, close/reopen nudge ONCE if still stale, then re-enter this SAME conditional (the verdict still certifies the tip; max 2 re-entries per Step 10d invocation, counted regardless of re-bind — #1807); (4) anything else -> the Failure bullet (merge-conflict recovery ONCE, then epm:merge-failed). Do NOT hand-write the verdict file."
         false
@@ -12539,6 +12688,23 @@ uv run python scripts/task.py post-marker <N> epm:progress \
   --note "[long-phase-heartbeat] step10d-merge attempt=<k> shape=3"
 ```
 
+**Exit-0 false success — `gh pr merge` on an already-merged/closed PR
+(#1768 round-2 / #1897).** Shapes 0–3 above all key on NON-zero merge
+exits; this shape is different in kind: `gh pr merge` against a PR a
+PRIOR round already merged/closed EXITS 0 with `! Pull request ... was
+already merged` — a terminal PR object never merges new branch commits,
+so the round's payload stays stranded off `main` while the flow reads
+success (#1768 round-2: `gh pr merge 1527 --rebase` ran against the
+round-1 PR, the success arm consumed the verdict, and the 22-commit
+round-2 payload was stranded; recovery cost a fresh PR + a full gate
+re-run). Prevention is the PR-object liveness probe at the safe-case
+entry (state must be OPEN, else a fresh pre-checked draft PR);
+detection is the `Landing verification (#1897)` read in BOTH merge
+success arms (state == MERGED AND mergedAt fresh vs the pre-attempt
+value) — the verdict is consumed only on a VERIFIED landing, and an
+unverified exit-0 routes to MERGE NOT VERIFIED (verdict survives; at
+most one probe re-entry, then `epm:merge-failed`).
+
 - **Success:** post `epm:merged v1` VIA THE `--file` CHANNEL — never `--note`
   — with a scratch file at `/tmp/issue-<N>-merged-note.md` (composed VIA
   THE WRITE TOOL immediately before the post-marker call — NEVER a Bash
@@ -12559,7 +12725,11 @@ uv run python scripts/task.py post-marker <N> epm:progress \
 
   **Authoritative merge-SHA derivation (#1722).** Read the merge SHA
   from the PR object itself, AFTER `gh pr merge` reports success:
-  `MERGE_SHA=$(gh pr view <PR> --json mergeCommit -q .mergeCommit.oid)`.
+  `MERGE_SHA=$(gh pr view "$PR" --json mergeCommit -q .mergeCommit.oid)`
+  (`$PR` = the probe-rebound PR number from the safe-case block, #1897 —
+  in a fresh shell, re-bind it via the PR-state probe's branch-name
+  resolve, never by pasting a prior round's PR number: compose-time
+  PR-number substitution is the #1768 round-2 mechanism).
   This is the shape SKILL.md already uses elsewhere for other PR fields
   (`state`, `mergeable`, `headRefOid`), and `mergeCommit` is a documented
   `gh pr view --json` field — it resolves the merge commit for BOTH
@@ -12598,7 +12768,7 @@ uv run python scripts/task.py post-marker <N> epm:progress \
   instead of a false MISMATCH. Then confirm `task #<N>` (or the
   issue-branch name `issue-<N>`) appears in `$SUBJECT`. Only a
   RESOLVED-but-foreign subject is a MISMATCH: ABORT the post and
-  re-derive from `gh pr view <PR> --json mergeCommit`. The null case
+  re-derive from `gh pr view "$PR" --json mergeCommit`. The null case
   from a not-yet-merged PR still fails loud (`git log -1 --format=%s
   null` errors locally AND the remote read 404s → empty `$SUBJECT`);
   an EMPTY `$SUBJECT` after both reads is an ABORT (cannot certify),
@@ -12822,10 +12992,34 @@ if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/nu
    && [ "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" = "$(git -C "$WT" rev-parse HEAD)" ]; then
   git -C "$WT" push
   # gh recomputes mergeability asynchronously after a push — it can be
-  # momentarily stale. Re-check before concluding failure:
-  gh pr view <PR> --json mergeable -q .mergeable   # brief wait/retry until MERGEABLE
+  # momentarily stale. Re-check before concluding failure; ALSO bind the
+  # pre-attempt mergedAt for the landing verification below (fenced
+  # blocks are separate shells — the safe-case probe's binding is not in
+  # scope here, #1897):
+  PRE_STATE=$(gh pr view <PR> --json mergeable,state,mergedAt \
+    -q '[.mergeable, .state, (.mergedAt // "null")] | join(" ")' 2>/dev/null) || PRE_STATE=""
+  PRE_MERGED_AT=${PRE_STATE##* }
+  echo "$PRE_STATE"   # brief wait/retry until mergeable=MERGEABLE
   if gh pr merge <PR> --squash --delete-branch=false; then
-    rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on MERGE SUCCESS — the verdict certified exactly the tip that landed
+    # Landing verification (#1897): same contract as the safe-case arm —
+    # exit 0 is NOT proof THIS attempt landed (`gh pr merge` on an
+    # already-merged PR exits 0, #1768 round-2); verify via the PR
+    # object, never branch-sha ancestry; empty PRE_MERGED_AT fails CLOSED.
+    LANDED_OK=no
+    for _ in 1 2 3; do
+      POST=$(gh pr view <PR> --json state,mergedAt \
+        -q '[.state, (.mergedAt // "null")] | join(" ")' 2>/dev/null) || POST=""
+      if [ -n "$PRE_MERGED_AT" ] && [ "${POST%% *}" = "MERGED" ] \
+         && [ "${POST##* }" != "null" ] \
+         && [ "${POST##* }" != "$PRE_MERGED_AT" ]; then LANDED_OK=yes; break; fi
+      sleep 10
+    done
+    if [ "$LANDED_OK" = yes ]; then
+      rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on VERIFIED merge success only — the verdict certified exactly the tip that landed
+    else
+      echo "MERGE NOT VERIFIED — gh pr merge exited 0 but the PR object shows no FRESH merge (the exit-0 'was already merged' false-success shape, #1768/#1897). Verdict NOT consumed; re-enter via the safe-case PR-state probe (fresh PR) AT MOST ONCE per Step 10d invocation — a SECOND unverified exit-0 success -> epm:merge-failed. Do NOT report success."
+      false
+    fi
   else
     echo "MERGE FAILED post-push — classify: (0) \"Base branch was modified\" -> shape-0 same-tip retry (verdict survives); anything else -> epm:merge-failed (do NOT hand-write the verdict file)."
     false
@@ -13235,8 +13429,10 @@ Decision tree:
     fi
   fi
   # TG GATED leg (#1147) — the root tree now carries the payload; same
-  # grep -> line-number-blank -> comm -23 subtraction as the shared gate's
-  # executable block (own-diff here = the additive-files list; structurally
+  # warnings-section drop -> grep -> line-number-blank -> tree-prefix
+  # normalization -> comm -23 subtraction as the shared gate's executable
+  # block, incl. its #1689 filter rationale + realpath-divergent residual
+  # (own-diff here = the additive-files list; structurally
   # unreachable today, see the dormancy comment above the TG baseline leg).
   if [ "$TG_CRASH" = no ] && [ -s /tmp/issue-<N>-tg-map.txt ]; then
     ( cd "$REPO_ROOT" && timeout --kill-after=30s ${TG_T}s \
@@ -13248,9 +13444,12 @@ Decision tree:
       > /tmp/issue-<N>-tg-gated.txt 2>&1 || TG_RC=$?
     if [ "$TG_RC" -gt 1 ] || [ "$TG_BASE_RC" -gt 1 ]; then TG_CRASH=yes; fi
     for leg in baseline gated; do
-      grep -F -f /tmp/issue-<N>-tg-files.txt "/tmp/issue-<N>-tg-$leg.txt" \
+      awk '/^=+ warnings summary/{w=1; next} w && /^-- Docs:/{w=0; next} !w' \
+        "/tmp/issue-<N>-tg-$leg.txt" \
+        | grep -F -f /tmp/issue-<N>-tg-files.txt \
         | grep -vE '^E +assert ' \
         | sed -E 's/at line [0-9]+/at line N/g; s/:[0-9]+:/::/g; s/:[0-9]+([^0-9]|$)/:N\1/g' \
+        | sed -e "s|${WT:-/__eps_no_wt__}|<TREE>|g" -e "s|${REPO_ROOT:-/__eps_no_root__}|<TREE>|g" \
         | sort -u \
         > "/tmp/issue-<N>-tg-$leg-hits.txt" || true
     done

@@ -443,6 +443,136 @@ def test_b13_blanket_add_chained_fails_closed(stage_form: str, art_repo: Path, c
     _assert_blocked(_run(f"{stage_form} && git commit -m x", art_repo, cert))
 
 
+# ---------------------------------------------------------------------------
+# Path-limited `git add --all -- <pathspec>` exemption (issue #1977, plan §5).
+# The blanket-staging latch defers to a per-ADD-clause post-scan: the
+# sanctioned shape (root cwd, pre-`--` tokens ONLY from {-A,--all}, a literal
+# `--`, >=1 clean literal pathspec candidate, zero rejections) resolves its
+# landing set per file via a cwd-gated scoped `git status` and flows into
+# Layer-2 classification; EVERY other shape keeps the fail-closed block
+# (B13 above is unchanged).
+# ---------------------------------------------------------------------------
+def test_add_pathlimited_artifact_pathspec_allowed(art_repo: Path, cert: Path) -> None:
+    """Plan §5.1: an artifact-only landing set under the exempted shape ALLOWS."""
+    _write(art_repo, "tasks/t.md", "note\n")  # untracked artifact the add would stage
+    _assert_allowed(_run("git add --all -- tasks/t.md && git commit -m x", art_repo, cert))
+
+
+def test_add_pathlimited_gated_with_fresh_worktree_cert_allowed(
+    code_repo: Path, cert: Path
+) -> None:
+    """Plan §5.2: the gated add-path enters classification, and a fresh
+    worktree-content-bound cert satisfies it (classification ran + passed)."""
+    _cert_line(cert, GATED, _worktree_sha(code_repo, GATED))
+    _assert_allowed(_run(f"git add --all -- {GATED} && git commit -m x", code_repo, cert))
+
+
+def test_add_pathlimited_gated_no_cert_blocks(code_repo: Path, cert: Path) -> None:
+    """Plan §5.3: same shape WITHOUT the cert blocks — the add's path enters
+    pending (the exemption opens no unclassified staging channel)."""
+    _assert_blocked(_run(f"git add --all -- {GATED} && git commit -m x", code_repo, cert))
+
+
+def test_add_pathlimited_dir_pathspec_resolves_untracked_gated(code_repo: Path, cert: Path) -> None:
+    """Plan §5.4: a dir pathspec resolves PER FILE via the scoped git status
+    read — the untracked, uncertified gated file under scripts/ blocks even
+    though the staged gated file is certified."""
+    _cert_line(cert, GATED, _worktree_sha(code_repo, GATED))
+    r = _run("git add --all -- scripts && git commit -m x", code_repo, cert)
+    _assert_blocked(r)
+    assert "scripts/issue9_new.py" in r.stderr, r.stderr
+
+
+def test_add_pathlimited_opaque_candidate_blocks(art_repo: Path, cert: Path) -> None:
+    """Plan §5.5: an opaque ($VAR) candidate keeps the latch."""
+    _assert_blocked(_run('git add --all -- "$V" && git commit -m x', art_repo, cert))
+
+
+@pytest.mark.parametrize(
+    "cand", [".", "./", "'*'", "*"], ids=["dot", "dotslash", "quoted-star", "star"]
+)
+def test_add_pathlimited_blanket_equivalent_candidate_blocks(
+    cand: str, art_repo: Path, cert: Path
+) -> None:
+    """Plan §5.6: blanket-equivalent candidate spellings are rejected."""
+    _assert_blocked(_run(f"git add --all -- {cand} && git commit -m x", art_repo, cert))
+
+
+def test_add_pathlimited_no_ddash_blocks(art_repo: Path, cert: Path) -> None:
+    """Plan §5.7: without a literal `--` the exemption never arms."""
+    _write(art_repo, "tasks/t.md", "note\n")
+    _assert_blocked(_run("git add --all tasks/t.md && git commit -m x", art_repo, cert))
+
+
+def test_add_pathlimited_pre_ddash_positional_blocks(tmp_path: Path, cert: Path) -> None:
+    """Plan §5.8 (MF-2): a pre-`--` positional is a LIVE pathspec the scoped
+    status read would under-enumerate — the latch stays even with gated
+    content under the positional."""
+    repo = _init_repo(tmp_path, "preddash")
+    _stage(repo, "tasks/t.md", "note\n")
+    _write(repo, "src/issue9_mod.py", "print(1)\n")  # untracked gated, under `src`
+    _assert_blocked(_run("git add --all src -- tasks/t.md && git commit -m x", repo, cert))
+
+
+def test_add_pathlimited_force_flag_blocks(code_repo: Path, cert: Path) -> None:
+    """Plan §5.9 (MF-2): `-f` stages ignored files the status read cannot see
+    — any pre-`--` flag outside {-A,--all} keeps the latch, cert or no cert."""
+    _cert_line(cert, GATED, _worktree_sha(code_repo, GATED))
+    _assert_blocked(_run(f"git add --all -f -- {GATED} && git commit -m x", code_repo, cert))
+
+
+def test_add_pathlimited_subdir_cwd_blocks(art_repo: Path, cert: Path) -> None:
+    """Plan §5.10 (MF-1, c11-analogue): the exempted shape with hook cwd = a
+    repo SUBDIR — the pathspec-resolution base is not provably the root."""
+    _write(art_repo, "tasks/t.md", "note\n")
+    r = _run(
+        "git add --all -- tasks/t.md && git commit -m x",
+        art_repo,
+        cert,
+        cwd=art_repo / "tasks",
+    )
+    _assert_blocked(r)
+
+
+def test_add_pathlimited_missing_cwd_blocks(art_repo: Path, cert: Path) -> None:
+    """Plan §5.10 (MF-1, c14-analogue): a missing hook-input cwd fails the
+    cwd gate — block."""
+    _write(art_repo, "tasks/t.md", "note\n")
+    _assert_blocked(
+        _run("git add --all -- tasks/t.md && git commit -m x", art_repo, cert, cwd=_OMIT_CWD)
+    )
+
+
+def test_add_pathlimited_cd_prefix_blocks(art_repo: Path, cert: Path) -> None:
+    """Plan §5.11 (MF-1): an in-command cd to a repo subdir moves the
+    resolution base (the cd_nonroot path) — block."""
+    _write(art_repo, "tasks/t.md", "note\n")
+    _assert_blocked(
+        _run("cd tasks && git add --all -- tasks/t.md && git commit -m x", art_repo, cert)
+    )
+
+
+def test_add_pathlimited_env_chdir_wrapper_blocks(art_repo: Path, cert: Path) -> None:
+    """Plan §5.11 (MF-1): an `env --chdir=<dir>` wrapper on the add clause is
+    exemption-INELIGIBLE — the latch stays."""
+    _assert_blocked(
+        _run(
+            "env --chdir=/tmp git add --all -- tasks/t.md && git commit -m x",
+            art_repo,
+            cert,
+        )
+    )
+
+
+def test_add_pathlimited_sibling_blanket_clause_still_blocks(art_repo: Path, cert: Path) -> None:
+    """Plan §5.12: a clean exempted clause must not un-latch a sibling
+    bare-blanket clause in the same command."""
+    _write(art_repo, "tasks/t.md", "note\n")
+    _assert_blocked(
+        _run("git add --all -- tasks/t.md && git add -A && git commit -m x", art_repo, cert)
+    )
+
+
 def _tracked_modified_unstaged_repo(tmp_path: Path) -> Path:
     """Gated file committed, then edited in the worktree; nothing staged —
     only the commit-clause pathspec / post-message ``-a`` carries the payload."""

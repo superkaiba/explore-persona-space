@@ -440,6 +440,37 @@ the file and the marker still reads `dead`.
   piped-push masking class — the pipe mirror stays enforced by
   `workflow_lint.py --check-piped-git-push`, this swallow shape by
   `--check-push-failure-swallow`).
+- **Fetch + rebase before every pod/instance-side results-git push
+  (#1880).** A lane's terminal push races ANY orchestrator branch commit
+  made mid-run (a sibling lane's crash-fix relaunch is the normal
+  multi-lane case): a bare push retry that detects behind>0 but never
+  fetches loses DETERMINISTICALLY — non-fast-forward rejection → workload
+  exit 1 → a HEALTHY run crash-persists and powers off (#1739 hallu lane,
+  2026-07-30: 270 cells rc=0, Hub sidecars verified, then exit 1 at the
+  terminal push — 31h of complete science, ~30 min manual recovery from
+  crash-persist). Push recipe:
+  `git fetch origin <branch> && git rebase origin/<branch>` (result
+  commits are additive per-lane files — a content conflict is
+  near-impossible), then push and re-verify per the rev-list bullet
+  above; bounded 2 attempts. NOTE the rebase rewrites the LOCAL result
+  commits' SHAs pre-push — no standard-contract consumer pins them (the
+  artifact-presence assert below is path-keyed against the pushed tree;
+  fix-sha ancestry probes reference origin ancestors, which
+  rebase-onto-origin preserves) — a future driver that records its own
+  result-commit SHA must record it AFTER the push-verify, never before.
+  On rebase conflict: `git rebase --abort` and proceed to the lane's
+  EXISTING fail-loud path (GCE: bundle + exit 86; crash-persist preserves
+  the results) — the standing "never declare done with an unpushed result
+  commit" contract and the Part A-ter sentinel ordering are UNCHANGED (a
+  push-failure-tolerant exit-0 disposition was considered and REJECTED:
+  it would let a run classify done-like with results only in a bundle).
+- **Orchestrator side (#1880):** avoid pushing to the issue branch while
+  lanes are mid-run when feasible; when a mid-run push is required (a
+  sibling lane's crash-fix relaunch), expect in-flight lanes' terminal
+  pushes to need the fetch+rebase path above — a lane running a pre-#1880
+  driver will deterministically false-crash at its terminal push (the
+  #1739 shape) with its results intact in crash-persist; treat that
+  failure as recoverable-transport, not a science loss.
 - **Artifact-presence assert (#1325) — the rev-list push-verify is VACUOUS
   against a never-committed result file.** `rev-list --count
   origin/<branch>..HEAD == 0` proves the COMMITS pushed; it says nothing
@@ -490,9 +521,11 @@ the file and the marker still reads `dead`.
 - **GCE lane:** the startup script configures a `GITHUB_TOKEN` env-reading
   credential helper (workload pushes authenticate; pre-#1205 they failed
   DETERMINISTICALLY — the clone is tokenless) and runs a post-workload
-  push-verify backstop (retry → bundle the unpushed range to
-  `data/issue_<N>/`, crash-persist-swept per #854 item 5 → `exit 86` →
-  EXIT trap → `phase=failed` + crash-persist + poweroff). The backstop
+  push-verify backstop (fetch + rebase onto `origin/<branch>` with inline
+  committer identity, then retry — the #1880 recipe above; a rebase
+  conflict aborts into the same fail-loud tail → bundle the unpushed
+  range to `data/issue_<N>/`, crash-persist-swept per #854 item 5 →
+  `exit 86` → EXIT trap → `phase=failed` + crash-persist + poweroff). The backstop
   covers forgetful dispatch scripts; scripts SHOULD still verify their own
   push so the failure surfaces at the failing phase with its own context.
   The backstop pushes `HEAD` to the CLONED branch (`HEAD:<repo_branch>`)

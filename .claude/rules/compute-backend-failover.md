@@ -187,9 +187,19 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
 **Sweep scope (explicit):** the partial sweep covers exactly the three
 named directories above (`eval_results/issue_<N>/`, `data/issue_<N>/`,
 `data/issue<N>/`) plus the `$WORKLOAD_ROOT/logs/` worker-log tree (#885)
-plus the `/workspace/logs` dispatcher convention dir (#1605) —
-still NOT universal artifact discovery (e.g. `figures/issue_*`,
-checkpoints, `ood_eval_results/` are not swept). Worker logs are swept
+plus the `/workspace/logs` dispatcher convention dir (#1605) plus — as of
+#1890 (incident #1739: a banked 412 MB MLP-map fit died with the
+auto-DELETEd boot disk) — the `analysis_tensors*` staging trees at BOTH
+live roots: `$WORKLOAD_ROOT/analysis_tensors*` (the issue-scoped relative
+convention) AND `/workspace/analysis_tensors*` (the GCE scratch-root flat
+convention; env-overridable `EPS_PERSIST_WS_TENSORS_ROOT`, the #1605
+isolation precedent), sibling dir names covered via the glob, swept LAST
+among the dirs (largest class; the traceback-first ordering is intact and
+a budget timeout mid-tensor-upload is BY DESIGN), with any nested
+`store/` pruned by the standing IGNORE excludes (mirrored-on-HF durable
+class — never re-uploaded) — still NOT universal artifact discovery
+(e.g. `figures/issue_*`, checkpoints, `ood_eval_results/` are not
+swept). Worker logs are swept
 when they land under `$WORKLOAD_ROOT/logs/` (relative `logs/…` or
 `$REPO_ROOT/logs/…` on the workload-cmd branch, where the startup script
 exports `REPO_ROOT="$WORKLOAD_ROOT"` — #641) AND, as of #1605, under
