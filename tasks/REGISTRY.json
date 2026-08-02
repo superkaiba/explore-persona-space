@@ -7185,8 +7185,8 @@
     "1928": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1928",
-      "status": "reviewing",
+      "path": "tasks/completed/1928",
+      "status": "completed",
       "title": "daily-fix: git guards cwd/compound awareness (ssh, worktree)"
     },
     "1929": {
