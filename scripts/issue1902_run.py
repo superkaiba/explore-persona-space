@@ -79,6 +79,12 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 load_dotenv()
 
 import issue1902_common as C  # noqa: E402
+from explore_persona_space.eval.vllm_util import (  # noqa: E402
+    GPU_FREE_MARGIN_GIB,
+    SHARED_NODE_UTIL_CAP,
+    VLLM_UTIL_FLOOR,
+    vllm_util_for_free,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -667,11 +673,11 @@ def _gen_gpu_mem_util() -> float:
     (``Free memory on device (81.2/139.8 GiB) ... less than desired GPU
     memory utilization (0.6, 83.88 GiB)``). Compute from
     ``torch.cuda.mem_get_info()`` on the leg's CVD-pinned device instead
-    (``C.vllm_util_for_free``: min(cap, (free − margin)/total), fail-loud
-    below the floor). An explicit ``VLLM_GPU_MEM_UTIL`` env stays the
-    operator override. Safe pre-``LLM()``: module top pins
-    ``VLLM_WORKER_MULTIPROC_METHOD=spawn``, so parent-side cuInit cannot
-    fork-poison the EngineCore (#628).
+    (``explore_persona_space.eval.vllm_util.vllm_util_for_free``:
+    min(cap, (free − margin)/total), fail-loud below the floor). An
+    explicit ``VLLM_GPU_MEM_UTIL`` env stays the operator override. Safe
+    pre-``LLM()``: module top pins ``VLLM_WORKER_MULTIPROC_METHOD=spawn``,
+    so parent-side cuInit cannot fork-poison the EngineCore (#628).
     """
     env_util = os.environ.get("VLLM_GPU_MEM_UTIL")
     if env_util:
@@ -682,16 +688,16 @@ def _gen_gpu_mem_util() -> float:
     import torch
 
     free_b, total_b = torch.cuda.mem_get_info(0)
-    util = C.vllm_util_for_free(free_b, total_b)
+    util = vllm_util_for_free(free_b, total_b)
     logger.info(
         "[gen] gpu_memory_utilization=%.3f free=%.1fGiB total=%.1fGiB "
         "(cap=%.2f margin=%.1fGiB floor=%.2f)",
         util,
         free_b / 2**30,
         total_b / 2**30,
-        C.VLLM_UTIL_CAP,
-        C.GPU_FREE_MARGIN_GIB,
-        C.VLLM_UTIL_FLOOR,
+        SHARED_NODE_UTIL_CAP,
+        GPU_FREE_MARGIN_GIB,
+        VLLM_UTIL_FLOOR,
     )
     return util
 

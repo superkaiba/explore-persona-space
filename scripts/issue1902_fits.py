@@ -71,6 +71,7 @@ import numpy as np  # noqa: E402
 
 import issue1902_common as C  # noqa: E402
 import issue1902_run as R  # noqa: E402
+from explore_persona_space.eval.vllm_util import GPU_FREE_MARGIN_GIB  # noqa: E402
 
 logger = R.logger
 
@@ -184,18 +185,18 @@ def layer_chunk_cap_for_free(free_bytes: int, n_tr: int, chunk: int = LAYER_CHUN
     property (#1902 crash 1 sweep). Per-layer cost ~= n_tr^2 x 8 B (fp64
     Gram) x ``EIGH_WORKSPACE_FACTOR``. Downscale-only: an exclusive host
     resolves to ``chunk`` unchanged; raises ``RuntimeError`` when even one
-    layer does not fit under ``C.GPU_FREE_MARGIN_GIB`` margin.
+    layer does not fit under ``GPU_FREE_MARGIN_GIB`` margin.
     """
     per_layer = n_tr * n_tr * 8 * EIGH_WORKSPACE_FACTOR
     if per_layer <= 0:
         return chunk
-    usable = free_bytes - int(C.GPU_FREE_MARGIN_GIB * 2**30)
+    usable = free_bytes - int(GPU_FREE_MARGIN_GIB * 2**30)
     cap = usable // per_layer
     if cap < 1:
         raise RuntimeError(
             f"GPU too full for even a 1-layer Gram eigh: free={free_bytes / 2**30:.1f} GiB, "
             f"need ~{per_layer / 2**30:.1f} GiB/layer (n_tr={n_tr}, factor "
-            f"{EIGH_WORKSPACE_FACTOR}) + {C.GPU_FREE_MARGIN_GIB:.0f} GiB margin — shared-node "
+            f"{EIGH_WORKSPACE_FACTOR}) + {GPU_FREE_MARGIN_GIB:.0f} GiB margin — shared-node "
             "co-tenancy (fellows H200) is the expected cause; re-dispatch when the device frees."
         )
     return min(chunk, int(cap))

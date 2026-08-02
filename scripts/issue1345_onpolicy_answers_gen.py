@@ -94,6 +94,14 @@ import issue1345_common as c  # noqa: E402
 import issue1345_gen_stories as g  # noqa: E402 — HF/upload + yield-floor helpers
 import issue1345_gen_stories_paired as gp  # noqa: E402 — matched-n seed pool
 
+# Shared-node vLLM util recipe (#1902 crash 1), hoisted to the shared module by
+# #1942 (this file's local copy was a deliberate re-port while #1902's branch
+# was unmerged). This round runs on exclusive hosts → EXCLUSIVE_HOST_UTIL_CAP.
+from explore_persona_space.eval.vllm_util import (  # noqa: E402
+    EXCLUSIVE_HOST_UTIL_CAP,
+    resolve_vllm_util,
+)
+
 # ---------------------------------------------------------------------------
 # Shapes
 # ---------------------------------------------------------------------------
@@ -130,20 +138,6 @@ ONPOLICY_MAX_NEW_TOKENS = c.STORY_MAX_NEW_TOKENS
 MAX_MODEL_LEN = g.MAX_MODEL_LEN
 PROMPT_TOKEN_BUDGET = MAX_MODEL_LEN - ONPOLICY_MAX_NEW_TOKENS - 64
 ANSWER_CHAR_MIN = gp.ANSWER_CHAR_MIN
-
-# vLLM `gpu_memory_utilization` is a fraction of TOTAL device memory, so a fixed
-# value demands that share regardless of what other tenants hold — on a
-# GPU-SHARED fellows SLURM node (no GPU cgroup isolation; ~58 GiB/device held by
-# other tenants, measured 2026-07-31) a hardcoded 0.85 demands 118 GiB of a
-# 139.8 GiB H200 and EngineCore raises ValueError at init (#1902 crash 1).
-# Recipe ported from `scripts/issue1902_common.py::vllm_util_for_free` (that
-# helper is STRANDED on the unmerged issue-1902 branch, so importing it would
-# break on main); the CAP is this round's exclusive-host value, not #1902's 0.55.
-VLLM_UTIL_CAP = 0.85
-GPU_FREE_MARGIN_GIB = 6.0
-# Below this fraction of TOTAL, 7B bf16 weights (~15 GiB) + a minimum KV cache
-# cannot fit — fail loud instead of dying cryptically inside EngineCore init.
-VLLM_UTIL_FLOOR = 0.20
 
 # Smoke slice: enough rows that the validation + drop-accounting paths run, and
 # the yield floor resolves to 1 so ANY kept row proceeds (g.resolve_yield_floor).
@@ -223,49 +217,6 @@ def build_gen_prompt(row: dict, *, shape: str) -> str:
     if shape == SHAPE_STORY_SLOT:
         return row["prefix"]
     return answer_slot_prefix(row["question"], chat=shape == SHAPE_CHAT)
-
-
-def vllm_util_for_free(free_bytes: int, total_bytes: int) -> float:
-    """`gpu_memory_utilization` computed from LIVE free device memory (#1902).
-
-    Returns ``min(VLLM_UTIL_CAP, (free - margin) / total)``; raises below
-    ``VLLM_UTIL_FLOOR`` (weights + a minimum KV cache cannot fit — another
-    tenant holds the device; re-dispatch, never silently degrade).
-    """
-    if total_bytes <= 0:
-        raise RuntimeError(f"nonsensical total device memory: {total_bytes} bytes")
-    free_gib = free_bytes / 2**30
-    total_gib = total_bytes / 2**30
-    util = min(VLLM_UTIL_CAP, (free_gib - GPU_FREE_MARGIN_GIB) / total_gib)
-    if util < VLLM_UTIL_FLOOR:
-        raise RuntimeError(
-            f"GPU too full for a vLLM engine: free={free_gib:.1f} GiB of {total_gib:.1f} GiB "
-            f"total -> computed gpu_memory_utilization {util:.3f} < floor {VLLM_UTIL_FLOOR} "
-            f"after the {GPU_FREE_MARGIN_GIB:.0f} GiB margin. On a GPU-SHARED node (fellows "
-            "H200) another tenant holds the device — re-dispatch when it frees, or pin a "
-            "different allocated GPU."
-        )
-    return util
-
-
-def resolve_vllm_util() -> float:
-    """Live-probed engine util, or the cap when CUDA is unavailable (CPU smoke)."""
-    try:
-        import torch
-
-        if not torch.cuda.is_available():
-            return VLLM_UTIL_CAP
-        free_b, total_b = torch.cuda.mem_get_info()
-    except (ImportError, RuntimeError) as exc:  # no CUDA / no driver — CPU path
-        print(f"[gpu] mem_get_info unavailable ({exc}); using cap {VLLM_UTIL_CAP}", flush=True)
-        return VLLM_UTIL_CAP
-    util = vllm_util_for_free(free_b, total_b)
-    print(
-        f"[gpu] free={free_b / 2**30:.1f} GiB total={total_b / 2**30:.1f} GiB "
-        f"-> gpu_memory_utilization={util:.3f} (cap {VLLM_UTIL_CAP})",
-        flush=True,
-    )
-    return util
 
 
 # ---------------------------------------------------------------------------
@@ -906,8 +857,9 @@ def main() -> None:
         dtype="bfloat16",
         max_model_len=MAX_MODEL_LEN,
         # Live-probed, NOT hardcoded: a GPU-SHARED fellows node would otherwise
-        # crash at EngineCore init (#1902).
-        gpu_memory_utilization=resolve_vllm_util(),
+        # crash at EngineCore init (#1902). This round runs on exclusive hosts,
+        # so the exclusive-host cap applies (0.85, not the shared-node 0.55).
+        gpu_memory_utilization=resolve_vllm_util(cap=EXCLUSIVE_HOST_UTIL_CAP),
         enforce_eager=os.environ.get("EPM_VLLM_ENFORCE_EAGER", "0") == "1",
         enable_prefix_caching=(
             False if os.environ.get("EPM_VLLM_DISABLE_PREFIX_CACHING", "0") == "1" else None
