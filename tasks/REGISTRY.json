@@ -7129,15 +7129,15 @@
     "1920": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1920",
-      "status": "reviewing",
+      "path": "tasks/completed/1920",
+      "status": "completed",
       "title": "daily-fix: living_docs.py bounded index.lock retry"
     },
     "1921": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1921",
-      "status": "running",
+      "path": "tasks/reviewing/1921",
+      "status": "reviewing",
       "title": "daily-fix: four CLAUDE.md discipline clauses"
     },
     "1922": {
@@ -7164,8 +7164,8 @@
     "1925": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1925",
-      "status": "proposed",
+      "path": "tasks/approved/1925",
+      "status": "approved",
       "title": "daily-fix: pre-commit hook for agent-memory index size"
     },
     "1926": {
@@ -7335,8 +7335,8 @@
       "goal": "Retrain the content-behavior organism fleet under a single-visit data regime (every training row consumed exactly once \u2014 ~1,200 unique rows per cell covering the full 75-step schedule; pilot cell gates the fleet on reaching the 0.60-0.85 install band), then run the theory-assumption battery (write vs delta/r_B, write rank, base-geometry gate, map change) evaluated on exactly the trained rows (TF base+trained on the gradient-producing rows, delta over the same ~300-row set) alongside the standard panel/corpus surfaces, to decide whether the #1768 assumption failures survive without data repetition and on-distribution.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/1947",
-      "status": "running",
+      "path": "tasks/interpreting/1947",
+      "status": "interpreting",
       "title": "Single-visit organism fleet: no training row repeated; theory assumptions tested on exactly the trained rows"
     },
     "1948": {

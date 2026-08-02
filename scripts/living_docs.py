@@ -87,10 +87,13 @@ import argparse
 import contextlib
 import fcntl
 import json
+import logging
 import os
+import random
 import re
 import subprocess
 import sys
+import time
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -103,6 +106,8 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from explore_persona_space import task_workflow as tw  # noqa: E402
+
+_log = logging.getLogger("living_docs")
 
 # ─── Schema constants ──────────────────────────────────────────────────────
 
@@ -383,18 +388,85 @@ def _git(args: list[str], *, cwd: Path, check: bool = True) -> subprocess.Comple
     Strips inherited ``GIT_DIR`` / ``GIT_WORK_TREE`` / ``GIT_INDEX_FILE``
     / ``GIT_OBJECT_DIRECTORY`` so a caller's env cannot redirect the
     commit, matching ``task_workflow._run_git``.
+
+    Lock-contention retry (#1917 parity; #1920): the command runs with
+    ``check=False`` internally; if it exits non-zero AND stderr matches the
+    canonical git lock-contention signature
+    (``task_workflow._GIT_LOCK_CONTENTION_RE`` — a concurrent git process
+    holds ``.git/index.lock`` or a sibling ``*.lock``), sleep a jittered
+    ``random.uniform(*task_workflow._GIT_LOCK_RETRY_SLEEP_RANGE_S)``
+    interval and rerun, until success OR the per-call wall budget is
+    exhausted (``task_workflow._lock_wait_bound_s()`` —
+    ``EPM_TASKPY_LOCK_WAIT_SECONDS``, default 60 s; ``0`` disables retries;
+    the budget is read LAZILY at the first collision and the deadline is
+    captured there, so any positive budget guarantees at least one retry).
+    The retry keys on the STDERR SIGNATURE, never the return code, so
+    ``check=False`` rc-as-signal call sites (``diff --cached --quiet``,
+    ``push``) keep their rc semantics with zero retries, non-lock failures
+    surface immediately with zero sleeps, and the happy path takes zero
+    sleeps and zero extra env reads. After the loop the caller's ``check``
+    semantics apply unchanged: ``check=True`` raises
+    ``subprocess.CalledProcessError`` with the same
+    ``cmd``/``output``/``stderr`` fields ``subprocess.run(check=True)``
+    would produce.
     """
     env = dict(os.environ)
     for k in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY"):
         env.pop(k, None)
-    return subprocess.run(
-        ["git", *args],
-        cwd=str(cwd),
-        env=env,
-        check=check,
-        capture_output=True,
-        text=True,
-    )
+
+    def _attempt() -> subprocess.CompletedProcess[str]:
+        # ``env`` is computed once per ``_git`` call and stable across
+        # attempts (deliberate — do not re-sanitize per attempt).
+        return subprocess.run(
+            ["git", *args],
+            cwd=str(cwd),
+            env=env,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+    result = _attempt()
+    if result.returncode != 0 and tw._GIT_LOCK_CONTENTION_RE.search(result.stderr or ""):
+        # Budget + deadline captured HERE, at the FIRST lock-signature
+        # failure (lazy env read — never on the happy path), so any positive
+        # budget guarantees >= 1 retry before the deadline check can trip.
+        bound = tw._lock_wait_bound_s()
+        deadline = time.monotonic() + bound
+        first_collision = True
+        while (
+            result.returncode != 0
+            and tw._GIT_LOCK_CONTENTION_RE.search(result.stderr or "")
+            and time.monotonic() < deadline
+        ):
+            delay = random.uniform(*tw._GIT_LOCK_RETRY_SLEEP_RANGE_S)
+            if first_collision:
+                _log.warning(
+                    "git %s hit a lock collision (a concurrent git process holds the "
+                    "lock); retrying in %.1fs (bounded wait: up to %.0fs total, %s)",
+                    args[0] if args else "",
+                    delay,
+                    bound,
+                    tw._LOCK_WAIT_ENV,
+                )
+                first_collision = False
+            time.sleep(delay)
+            result = _attempt()
+        if result.returncode != 0 and tw._GIT_LOCK_CONTENTION_RE.search(result.stderr or ""):
+            _log.error(
+                "git %s still failing on a lock collision after the %.0fs retry "
+                "budget (%s; 0 disables). A concurrent git process is holding the "
+                "repo lock; if no live git process exists, a crashed one may have "
+                "left a stale .git/index.lock — inspect and remove it manually.",
+                args[0] if args else "",
+                bound,
+                tw._LOCK_WAIT_ENV,
+            )
+    if check and result.returncode != 0:
+        raise subprocess.CalledProcessError(
+            result.returncode, result.args, output=result.stdout, stderr=result.stderr
+        )
+    return result
 
 
 def _git_commit(paths: list[Path], message: str, *, repo_root: Path) -> None:

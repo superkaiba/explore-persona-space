@@ -4,8 +4,8 @@ title: Map-then-project persona-vector prediction trails matched-budget context-
 kind: experiment
 tags:
 - trigger-dense
-- keep-running
 - followup-manual
+- keep-running
 created_at: '2026-07-28T01:08:06Z'
 has_clean_result: true
 origin_prompt: run in background with happy coder and MAKE SURE IT PARALLELIZES AND
