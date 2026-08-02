@@ -7370,8 +7370,8 @@
     "1951": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1951",
-      "status": "planning",
+      "path": "tasks/approved/1951",
+      "status": "approved",
       "title": "Fix thread-caps main red: issue1773_register_steer_stats imports matplotlib before load_dotenv"
     },
     "1952": {
