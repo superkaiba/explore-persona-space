@@ -1,0 +1,681 @@
+{
+  "commit": "7d731349ab",
+  "created": "2026-08-02T01:49:03Z",
+  "figsize": [
+    8.5,
+    5.2
+  ],
+  "points": [
+    {
+      "Length-matching variant (both answers in the shared length band)": -0.275,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.0428475973954584,
+      "error": 0.04925689702318866,
+      "series": "base \u2192 SFT",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.725,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.050018050615970644,
+      "error": 0.04370185447602752,
+      "series": "base \u2192 SFT",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.725,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.04263547129851464,
+      "error": 0.03873898320721049,
+      "series": "base \u2192 SFT",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.725,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.02737777499368399,
+      "error": 0.023778432557412073,
+      "series": "base \u2192 SFT",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": -0.165,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.05260352584612027,
+      "error": 0.035108245288885516,
+      "series": "SFT \u2192 base",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.835,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.053245846265011054,
+      "error": 0.03140676148557472,
+      "series": "SFT \u2192 base",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.835,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.04631723682925415,
+      "error": 0.02679500560468521,
+      "series": "SFT \u2192 base",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.835,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.03288851581912866,
+      "error": 0.01776737300835613,
+      "series": "SFT \u2192 base",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": -0.055,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.007617452649488765,
+      "error": 0.014242856370383791,
+      "series": "SFT \u2192 DPO",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.945,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.009437871073702753,
+      "error": 0.01121114957954108,
+      "series": "SFT \u2192 DPO",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.945,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.015210220565289756,
+      "error": 0.011032952556466004,
+      "series": "SFT \u2192 DPO",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.945,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.025584799016383997,
+      "error": 0.010223481274008722,
+      "series": "SFT \u2192 DPO",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.055,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.00025955046963854755,
+      "error": 0.010803859446814114,
+      "series": "DPO \u2192 SFT",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.055,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.0008777904668278991,
+      "error": 0.00824396914907604,
+      "series": "DPO \u2192 SFT",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.055,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.0015125279933627667,
+      "error": 0.00732307344944351,
+      "series": "DPO \u2192 SFT",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 3.055,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.015111105884139553,
+      "error": 0.010101542879981593,
+      "series": "DPO \u2192 SFT",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.165,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.006007791758735892,
+      "error": 0.004614044573566399,
+      "series": "DPO \u2192 RLVR",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.165,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.005109234451086686,
+      "error": 0.004774218030578555,
+      "series": "DPO \u2192 RLVR",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.165,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.004717098081747029,
+      "error": 0.004738357717709463,
+      "series": "DPO \u2192 RLVR",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 3.165,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.004785663965548248,
+      "error": 0.004997924652558377,
+      "series": "DPO \u2192 RLVR",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.275,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.006004404626428039,
+      "error": 0.004648923171675092,
+      "series": "RLVR \u2192 DPO",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.275,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.005025992571951909,
+      "error": 0.00477273607101864,
+      "series": "RLVR \u2192 DPO",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.275,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.004564832288342258,
+      "error": 0.004719586427585666,
+      "series": "RLVR \u2192 DPO",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 3.275,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.00456795914850372,
+      "error": 0.00501636256942967,
+      "series": "RLVR \u2192 DPO",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": -0.275,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.0428475973954584,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.725,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.050018050615970644,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.725,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.04263547129851464,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.725,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.02737777499368399,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": -0.275,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.0034227145928561603,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.725,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.007604568838915068,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.725,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.004308536425666337,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.725,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.0049193361456163,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": -0.275,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.09509107945352116,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.725,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.09500827779097011,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.725,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.08178650284008732,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.725,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.05247620126044045,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": -0.165,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.05260352584612027,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.835,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.053245846265011054,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.835,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.04631723682925415,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.835,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.03288851581912866,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": -0.165,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.09039546812196578,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.835,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.08733448414527416,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.835,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.07610808805430477,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.835,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.05273202672809009,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": -0.165,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.020178977544194746,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.835,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.024520961174124726,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.835,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.022518076844934357,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.835,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.01719728071137783,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": -0.055,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.007617452649488765,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.945,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.009437871073702753,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.945,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.015210220565289756,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.945,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.025584799016383997,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": -0.055,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.006397348742396305,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.945,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.0020402048067603012,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.945,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.004832402994082198,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.945,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.01515093604317295,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": -0.055,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.022088363998371278,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.945,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.02038209435232186,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.945,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.026898308107014206,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.945,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.03559789859119039,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.055,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.00025955046963854755,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.055,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.0008777904668278991,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.055,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.0015125279933627667,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 3.055,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.015111105884139553,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.055,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.011117097666503572,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.055,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.007340834913428304,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.055,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.00927360241610485,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 3.055,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.024741204312157816,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.055,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.010490621227124656,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.055,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.009147103384723774,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.055,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.005372544482782168,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 3.055,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.004538118552194629,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.165,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.006007791758735892,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.165,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.005109234451086686,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.165,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.004717098081747029,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 3.165,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.004785663965548248,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.165,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.001639637264584345,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.165,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.0005712402764377709,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.165,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.00010731149200805812,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 3.165,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.0002712995417169708,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.165,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.010867726411717142,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.165,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.01011967633759488,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.165,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.009584026927426985,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 3.165,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.009724549763399783,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.275,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.006004404626428039,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.275,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.005025992571951909,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.275,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.004564832288342258,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 3.275,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.00456795914850372,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.275,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.010886198427221539,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.275,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.010011271448860461,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.275,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.009382799462858318,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 3.275,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.009466123141971105,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 0.275,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.0015883520838713555,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 1.275,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": -0.0004657993068231808,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 2.275,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 5.637339231301299e-05,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Length-matching variant (both answers in the shared length band)": 3.275,
+      "Paired same-rows answer-text-axis \u0394R\u00b2": 0.0005666019968882351,
+      "_kind": "line",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 96,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Answer-text effect under paired per-row length control\n(same rows, both answer sources; 95% cluster-bootstrap CI)",
+        "xlabel": "Length-matching variant (both answers in the shared length band)",
+        "ylabel": "Paired same-rows answer-text-axis \u0394R\u00b2",
+        "legend_labels": [
+          "base \u2192 SFT",
+          "SFT \u2192 base",
+          "SFT \u2192 DPO",
+          "DPO \u2192 SFT",
+          "DPO \u2192 RLVR",
+          "RLVR \u2192 DPO"
+        ],
+        "xticklabels": [
+          "|\u0394len| \u2264 8",
+          "|\u0394len| \u2264 16",
+          "|\u0394len| \u2264 32",
+          "band only"
+        ],
+        "yticklabels": [
+          "\u22120.100",
+          "\u22120.075",
+          "\u22120.050",
+          "\u22120.025",
+          "0.000",
+          "0.025",
+          "0.050",
+          "0.075",
+          "0.100",
+          "0.125"
+        ]
+      }
+    ],
+    "series": [
+      "base \u2192 SFT",
+      "SFT \u2192 base",
+      "SFT \u2192 DPO",
+      "DPO \u2192 SFT",
+      "DPO \u2192 RLVR",
+      "RLVR \u2192 DPO"
+    ]
+  }
+}
