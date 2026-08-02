@@ -5,7 +5,7 @@ title: Pushing a prefix's context vector through the base context-to-answer map 
 kind: experiment
 tags: []
 created_at: '2026-08-01T07:47:20Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1900
 origin_prompt: i want to test all these [full predictor roster incl. mediation checkbox]
   as well as the theory assumptions, at the per-prefix level (leakage averaged across
