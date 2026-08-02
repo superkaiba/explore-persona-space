@@ -1117,3 +1117,147 @@ def test_b34_pipelined_assignment_refused(code_repo: Path, cert: Path) -> None:
     r = _run(f'{_WT_ASSIGN} | true; cd "$WT" && git commit -m x', code_repo, cert)
     _assert_blocked(r)
     assert "reason=pipelined-assignment" in r.stderr, r.stderr
+
+
+# ---------------------------------------------------------------------------
+# rd-group (issue #1928; plan pins r1-r16 map to rd1-rd16 — the `rd` prefix
+# avoids the pre-existing #1857 rehash test_r1..test_r4 name family):
+# strictly-recognized redirect tokens on a commit
+# clause engage pathspec scoping exactly like their redirect-free twins
+# (r1-r5); every ambiguity keeps the opaque -> whole-index -> block fallback
+# (r6-r13), and the three excluded token families — process substitution,
+# here-doc / here-string operators, non-clean-literal attached targets —
+# genuinely refuse (r14-r16).
+
+
+def test_rd1_add_then_pathspec_commit_with_redirect_and_chain_allowed(
+    foreign_repo: Path, cert: Path
+) -> None:
+    """Incident shape R-F2: non-gated add && pathspec commit + redirect +
+    fd-dup, then a `;`-chained echo/tail pair."""
+    cmd = (
+        "git add tasks/t.md && git commit -m x -- tasks/t.md "
+        "> /tmp/i1928_commit.log 2>&1; echo done; tail -2 /tmp/i1928_commit.log"
+    )
+    _assert_allowed(_run(cmd, foreign_repo, cert))
+
+
+def test_rd2_pathspec_commit_with_fd_dup_and_pipe_allowed(foreign_repo: Path, cert: Path) -> None:
+    """Incident shape R-F3: pathspec commit + `2>&1` piped into a read-only
+    consumer clause."""
+    _assert_allowed(_run("git commit -m x -- tasks/t.md 2>&1 | tail -5", foreign_repo, cert))
+
+
+def test_rd3_multi_pathspec_detached_redirect_newline_chain_allowed(
+    foreign_repo: Path, cert: Path
+) -> None:
+    """Incident shape R-F5: multi-pathspec commit + detached redirect +
+    fd-dup, newline-chained echo/tail."""
+    cmd = (
+        "git commit -m x -- tasks/t.md docs/b.md > /tmp/i1928_commit.log 2>&1\n"
+        "echo committed\ntail -3 /tmp/i1928_commit.log"
+    )
+    _assert_allowed(_run(cmd, foreign_repo, cert))
+
+
+def test_rd4_attached_target_redirect_allowed(foreign_repo: Path, cert: Path) -> None:
+    """Attached-target form: operator + clean-literal target as ONE token."""
+    _assert_allowed(
+        _run("git commit -m x -- tasks/t.md >/tmp/i1928_commit.log", foreign_repo, cert)
+    )
+
+
+def test_rd5_certified_own_gated_payload_with_redirect_allowed(
+    foreign_repo: Path, cert: Path
+) -> None:
+    """c6 analogue: CERTIFIED own gated payload pathspec commit + redirect is
+    allowed despite the foreign uncertified staged file."""
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _cert_line(cert, "scripts/own.py", _worktree_sha(foreign_repo, "scripts/own.py"))
+    cmd = "git commit -m x -- scripts/own.py > /tmp/i1928_commit.log 2>&1"
+    _assert_allowed(_run(cmd, foreign_repo, cert))
+
+
+def test_rd6_bare_commit_with_redirect_blocks(foreign_repo: Path, cert: Path) -> None:
+    """Danger control: a bare commit sweeps the whole staged index regardless
+    of the redirect (commit_bare_clause path)."""
+    _assert_blocked(_run("git commit -m x > /tmp/i1928_commit.log 2>&1", foreign_repo, cert))
+
+
+def test_rd7_pathspec_naming_foreign_gated_with_redirect_blocks(
+    foreign_repo: Path, cert: Path
+) -> None:
+    _assert_blocked(
+        _run("git commit -m x -- scripts/foreign.py > /tmp/i1928_commit.log", foreign_repo, cert)
+    )
+
+
+def test_rd8_variable_pathspec_token_with_redirect_blocks(foreign_repo: Path, cert: Path) -> None:
+    """MF-2 unchanged: a `$`-bearing pathspec token stays opaque even when a
+    recognized redirect rides the same clause."""
+    _assert_blocked(_run("git commit -m x -- $SPEC > /tmp/i1928_commit.log", foreign_repo, cert))
+
+
+def test_rd9_quoted_spacey_pathspec_with_redirect_blocks(foreign_repo: Path, cert: Path) -> None:
+    """Accepted fail-closed residual: a masked (quoted) pathspec + redirect
+    fails rawtail token-count parity and stays opaque."""
+    _assert_blocked(
+        _run('git commit -m x -- "tasks/my file.md" > /tmp/i1928_commit.log', foreign_repo, cert)
+    )
+
+
+def test_rd10_include_flag_with_redirect_blocks(foreign_repo: Path, cert: Path) -> None:
+    """scope_unsafe unchanged: `--include`-class flags still disable scoping."""
+    _assert_blocked(
+        _run("git commit --include -m x -- tasks/t.md > /tmp/i1928_commit.log", foreign_repo, cert)
+    )
+
+
+def test_rd11_subdir_cwd_with_redirect_blocks(foreign_repo: Path, cert: Path) -> None:
+    """cwd gate unchanged: a non-root hook cwd never scopes."""
+    cmd = "git commit -m x -- t.md > /tmp/i1928_commit.log"
+    _assert_blocked(_run(cmd, foreign_repo, cert, cwd=foreign_repo / "tasks"))
+
+
+def test_rd12_in_command_cd_with_redirect_blocks(foreign_repo: Path, cert: Path) -> None:
+    """cd_nonroot unchanged: an in-command relative cd never scopes."""
+    _assert_blocked(
+        _run("cd tasks && git commit -m x -- t.md > /tmp/i1928_commit.log", foreign_repo, cert)
+    )
+
+
+def test_rd13_malformed_redirect_shaped_positional_stays_opaque_blocks(
+    foreign_repo: Path, cert: Path
+) -> None:
+    """A word-attached `>`-bearing token matches NO redirect form: grammar
+    fallback -> classify_candidate -> opaque -> whole-index -> block."""
+    _assert_blocked(_run("git commit -m x -- tasks/t.md out>>result>x", foreign_repo, cert))
+
+
+@pytest.mark.parametrize("tok", [">(cat)", "<(cat)"])
+def test_rd14_process_substitution_form_token_refused(
+    tok: str, foreign_repo: Path, cert: Path
+) -> None:
+    """Must-Fix (i): process-substitution-form tokens are NOT redirects — the
+    grammar classifies them `no` -> opaque -> whole-index -> block."""
+    _assert_blocked(_run(f"git commit -m x -- tasks/t.md {tok}", foreign_repo, cert))
+
+
+@pytest.mark.parametrize("tok", ["<< EOF", "<<-EOF", "<<< data", "<<<data"])
+def test_rd15_heredoc_herestring_operator_token_refused(
+    tok: str, foreign_repo: Path, cert: Path
+) -> None:
+    """Must-Fix (ii): here-doc / here-string operator tokens (bare and
+    word-attached) are NOT the single input-redirect form — `no` -> opaque
+    -> whole-index -> block."""
+    _assert_blocked(_run(f"git commit -m x -- tasks/t.md {tok}", foreign_repo, cert))
+
+
+@pytest.mark.parametrize("tok", [">$LOGFILE", "2>$(mktemp)"])
+def test_rd16_redirect_with_non_clean_literal_attached_target_refused(
+    tok: str, foreign_repo: Path, cert: Path
+) -> None:
+    """Must-Fix (iii): an operator whose ATTACHED target carries `$` or a
+    command-substitution form fails the clean-literal test — `no` -> opaque
+    -> whole-index -> block."""
+    _assert_blocked(_run(f"git commit -m x -- tasks/t.md {tok}", foreign_repo, cert))
