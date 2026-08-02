@@ -16,6 +16,11 @@
 #   bank       copy fc r_B npzs into new_arm_round/fc/rb_fc_bank/
 #   upload     per-box HF self-upload (fail-loud upload_folder + exact-set
 #              verify) under issue1739_new_arm_round/fc/
+# TAIL-RESUME (crash-fix r5): EPM_I1739_CORE_RESUME_PARTIAL_ATT=<att-id> skips
+# stage/pilot/fits, stages the attempt's crash-persisted fits outputs back via
+# scripts/issue1739_core_tail_stage.py, then runs bank copy + natpv + upload
+# unchanged (natpv self-stages its remaining inputs: u_store via
+# phase_whitening, maps/judge JSONs via _stage_hf).
 # Counts-only logging; no corpus content printed.
 set -euo pipefail
 REPO_ROOT="${REPO_ROOT:-${WORKLOAD_ROOT:-$PWD}}"
@@ -45,6 +50,18 @@ esac
 
 echo "[newarm-core] start $(date -u +%FT%TZ) behavior=$B regimes='$REGIMES' budgets='$BUDGETS'"
 export EPM_I1739_BEHAVIORS="$B"
+
+RESUME_ATT="${EPM_I1739_CORE_RESUME_PARTIAL_ATT:-}"
+if [ -n "$RESUME_ATT" ]; then
+  # Tail-resume: the fits grid completed on a prior box and was crash-persisted
+  # under issue1739_partial/$RESUME_ATT/. Stage it back and skip straight to
+  # the natpv tail; stage_meta.json + pilot_report.json ride along from the
+  # staged tree, so stage-meta/pilot are not re-run.
+  echo "[newarm-core] tail-resume from $RESUME_ATT: skip pre-stage/pilot/fits $(date -u +%FT%TZ)"
+  uv run python scripts/issue1739_core_tail_stage.py \
+    --attempt "$RESUME_ATT" --behavior "$B" --regimes $REGIMES
+else
+
 bash scripts/issue1739_leg2.sh
 uv run python scripts/issue1739_newarm_box.py stage-meta \
   --leg "fc/$B" --behavior "$B" --out "$OUT_ROOT/stage_meta.json"
@@ -91,6 +108,8 @@ fi
 echo "[newarm-core] fc fits grid $(date -u +%FT%TZ)"
 uv run python scripts/issue1739_fits.py "${fits_argv[@]}"
 
+fi  # end tail-resume vs full-run split
+
 echo "[newarm-core] fc r_B bank copy $(date -u +%FT%TZ)"
 mkdir -p "$BANK_DIR"
 for r in $REGIMES; do
@@ -103,10 +122,22 @@ NATPV_PAIR=""
 if [ "$B" != "evil" ]; then
   # natpv natural-rung fc leg (plan §4 item 4): hall + syc only; whitening
   # recomputes idempotently when the prior round's npz is absent.
-  echo "[newarm-core] natpv fc leg $(date -u +%FT%TZ)"
+  # r5 fix: phase_directions/project consume row_index shards that ONLY
+  # --phase rowindex writes (load_row_index raises without them —
+  # att-20260802-061638-newarmcorehall died here). phase_rowindex re-streams
+  # the full tar unconditionally, so the driver skips it when shards already
+  # exist; a PARTIAL shard set still fails loud downstream at the
+  # phase_directions/project per-shard row-count crosscheck.
+  natpv_phases=(--phase whitening --phase directions --phase project --phase reduce)
+  if compgen -G "$NATPV_STAGE/$B/row_index/row_index*.jsonl" > /dev/null; then
+    echo "[newarm-core] natpv rowindex shards present under $NATPV_STAGE/$B/row_index — skip re-stream"
+  else
+    natpv_phases=(--phase rowindex "${natpv_phases[@]}")
+  fi
+  echo "[newarm-core] natpv fc leg (phases: ${natpv_phases[*]}) $(date -u +%FT%TZ)"
   uv run python scripts/issue1739_natpv.py \
     --behavior "$B" \
-    --phase whitening --phase directions --phase project --phase reduce \
+    "${natpv_phases[@]}" \
     --space whitened --summary-kind context_end \
     --stage "$NATPV_STAGE" \
     --u-store data/issue_1739/hf_dl/u_store \
