@@ -181,10 +181,12 @@ def test_good_plan_passes_all():
         "c41_regression_anchor_executed": "SKIP",
         "c42_commit_sha_resolves": "SKIP",
         "c43_sentinel_lane": "SKIP",
+        "c44_committed_paths_gitignored": "SKIP",
+        "c45_change_dv_base_predictor_companion": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 42
+    assert len(results) == 44
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -5888,19 +5890,23 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    # 36 = the 32 pre-c40 skips + c40 (SKIP: `plan.md` carries no v{K} version)
+    # 38 = the 32 pre-c40 skips + c40 (SKIP: `plan.md` carries no v{K} version)
     # + c41 (kind-exempt SKIP: regression-anchor check is infra|batch-only and
     # --plan-file mode defaults to kind=experiment)
     # + c42 (SKIP: GOOD_PLAN cites no commit SHAs; the check is trigger-
     #   conditional, #1683/#1700)
     # + c43 (SKIP: GOOD_PLAN declares no /workspace sentinel paths; trigger-
-    #   conditional, #1775).
-    assert payload["n_skip"] == 36
+    #   conditional, #1775)
+    # + c44 (SKIP: GOOD_PLAN declares no committed-output paths; trigger-
+    #   conditional, #1900)
+    # + c45 (SKIP: GOOD_PLAN carries no change-DV signature; trigger-
+    #   conditional, #1906).
+    assert payload["n_skip"] == 38
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 44
-    assert len({c["id"] for c in payload["checks"]}) == 44
+    assert len(payload["checks"]) == 46
+    assert len({c["id"] for c in payload["checks"]}) == 46
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -9181,3 +9187,461 @@ def test_c43_midline_label_prefixed_escape_warns():
         "(results ride HF uploads).\n"
     )
     assert _status(plan, C43) == "WARN"
+
+
+# ─── Check 44 — declared-committed paths not gitignored (#1900) ─────────────
+
+C44 = "c44_committed_paths_gitignored"
+
+# The founding #1900 shape: an output/config path declared committed to the
+# issue branch while a live `data/*` gitignore rule matches it — a plain
+# `git add` silently skips it (rc=0, the #958 signature) and the git-clone
+# lanes (GCP/fellows) crash at their first read (#734).
+C44_DECL = (
+    "The subset/arm configs land at `data/issue_9999/foo.json`, committed to "
+    "the issue branch so the clone-based lanes can read them."
+)
+
+
+def _c44_plan(decl: str, extra: str = "") -> str:
+    """GOOD_PLAN + a `## 10. Outputs` section carrying a committed-path
+    declaration (and optional same-section extra prose)."""
+    return GOOD_PLAN + "\n## 10. Outputs\n\n" + decl + "\n" + extra
+
+
+@pytest.fixture()
+def c44_repo(tmp_path, monkeypatch):
+    """Tmp git repo with a `data/*` ignore rule; `_C44_REPO_ROOT`
+    monkeypatched so `git check-ignore` runs against it (the c34/c41/c42
+    monkeypatch-seam pattern), never the live repo."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", str(repo)], check=True, capture_output=True)
+    (repo / ".gitignore").write_text("data/*\n")
+    monkeypatch.setattr(verify_plan, "_C44_REPO_ROOT", repo)
+    return repo
+
+
+def test_c44_registered_in_checks():
+    # Advisory-1 membership pin: a forgotten registry append cannot ship
+    # green (the check function existing is not the check running).
+    assert verify_plan.check_committed_paths_not_gitignored in verify_plan.CHECKS
+
+
+def test_c44_no_trigger_skips():
+    # GOOD_PLAN carries no commit-to-git vocabulary — SKIP before any git
+    # access (trigger-conditional).
+    assert _status(GOOD_PLAN, C44) == "SKIP"
+
+
+def test_c44_runs_for_all_kinds(c44_repo):
+    # ALL kinds: a gitignore-eaten declared output strands infra/batch
+    # workflow-fix lanes exactly as experiment lanes (#1900 was kind:infra's
+    # sibling class; the founding plan was an experiment).
+    for kind in ("experiment", "analysis", "infra", "batch", "survey"):
+        assert _status(_c44_plan(C44_DECL), C44, kind=kind) == "WARN", kind
+
+
+def test_c44_ignored_declared_path_warns(c44_repo):
+    _, by_id = _run(_c44_plan(C44_DECL))
+    r = by_id[C44]
+    assert r.status == "WARN"
+    assert "data/issue_9999/foo.json" in r.detail  # the offending path
+    assert "data/*" in r.detail  # its matching .gitignore rule
+    assert "#958" in r.detail  # the silent-skip signature
+    assert "#1900" in r.detail  # the founding instance
+    assert "Staged-index verification" in r.detail  # the remedy recipe
+    assert "N/A — no committed outputs" in r.detail  # the escape remedy
+    assert "unwrapped" in r.detail  # the #1263 own-line clarifier contract
+
+
+def test_c44_tracked_ignored_path_passes(c44_repo):
+    # The #1900 post-fix state: the path is force-added (tracked in the
+    # index), so index-aware DEFAULT `git check-ignore` reads it
+    # not-ignored — a tracked file rides the clone regardless of ignore
+    # rules. This is why the check must never pass `--no-index`.
+    target = c44_repo / "data" / "issue_9999" / "foo.json"
+    target.parent.mkdir(parents=True)
+    target.write_text("{}\n")
+    subprocess.run(
+        ["git", "-C", str(c44_repo), "add", "-f", "data/issue_9999/foo.json"],
+        check=True,
+        capture_output=True,
+    )
+    _, by_id = _run(_c44_plan(C44_DECL))
+    r = by_id[C44]
+    assert r.status == "PASS", r.detail
+    assert "not-ignored" in r.detail or "none of the" in r.detail
+
+
+def test_c44_force_add_note_same_section_passes(c44_repo):
+    plan = _c44_plan(
+        C44_DECL,
+        "\nStaging: `git add -f data/issue_9999/foo.json`, then verify the "
+        "staged index per /issue Step 9a-ter § Staged-index verification.\n",
+    )
+    _, by_id = _run(plan)
+    r = by_id[C44]
+    assert r.status == "PASS", r.detail
+    assert "same-section" in r.detail
+
+
+def test_c44_force_add_note_other_section_still_warns(c44_repo):
+    # Plan-wide satisfiers are deliberately NOT accepted: a force-add note in
+    # a DIFFERENT section must not silence a specific declared path.
+    plan = _c44_plan(C44_DECL) + (
+        "\n## 12. Staging mechanics\n\n"
+        "Elsewhere the pipeline runs `git add -f` with staged-index "
+        "verification for unrelated artifacts.\n"
+    )
+    assert _status(plan, C44) == "WARN"
+
+
+def test_c44_na_escape_skips():
+    # The standalone escape short-circuits BEFORE any git access (the c34 NA
+    # idiom) — no repo fixture needed.
+    plan = _c44_plan(C44_DECL) + "\nN/A — no committed outputs\n"
+    _, by_id = _run(plan)
+    r = by_id[C44]
+    assert r.status == "SKIP"
+    assert "escape declared" in r.detail
+
+
+def test_c44_wrapped_or_fenced_escape_does_not_satisfy(c44_repo):
+    # Anti-paste `_standalone_na_declared` semantics (#1238): a
+    # backtick-wrapped or fenced paste of the escape is NOT a declaration.
+    for pasted in (
+        "\n`N/A — no committed outputs`\n",
+        "\n```\nN/A — no committed outputs\n```\n",
+    ):
+        assert _status(_c44_plan(C44_DECL) + pasted, C44) == "WARN", pasted
+
+
+def test_c44_brace_expansion_extracts_both(c44_repo):
+    # The founding #1900 token shape: `{subset.json,arms.json}` expands to
+    # BOTH members. Track one member; only the untracked sibling WARNs.
+    tracked = c44_repo / "data" / "issue_9999" / "a.json"
+    tracked.parent.mkdir(parents=True)
+    tracked.write_text("{}\n")
+    subprocess.run(
+        ["git", "-C", str(c44_repo), "add", "-f", "data/issue_9999/a.json"],
+        check=True,
+        capture_output=True,
+    )
+    plan = _c44_plan(
+        "The configs `data/issue_9999/{a.json,b.json}` are committed to the "
+        "issue branch for the clone-based lanes."
+    )
+    _, by_id = _run(plan)
+    r = by_id[C44]
+    assert r.status == "WARN"
+    assert "data/issue_9999/b.json" in r.detail
+    assert "data/issue_9999/a.json" not in r.detail  # tracked → not ignored
+
+
+def test_c44_glob_reduces_to_literal_dir_prefix(c44_repo):
+    # A glob token reduces to its deepest literal directory prefix and the
+    # DIRECTORY is checked (`data/issue_9999/out/*.json` → `data/issue_9999/out`,
+    # which `data/*` matches).
+    plan = _c44_plan(
+        "Per-cell JSONs at `data/issue_9999/out/*.json` are committed to the "
+        "issue branch after the sweep."
+    )
+    _, by_id = _run(plan)
+    r = by_id[C44]
+    assert r.status == "WARN"
+    assert "data/issue_9999/out" in r.detail
+
+
+def test_c44_absolute_and_url_tokens_do_not_trigger(c44_repo):
+    # Absolute pod-side paths and URL tails are NOT repo paths — with no
+    # extractable repo-relative token the check SKIPs (never calls git on
+    # `/workspace/...`).
+    plan = _c44_plan(
+        "Sentinels at /workspace/logs/issue-9999/out.json are committed to "
+        "the repo mirror at https://huggingface.co/datasets/foo/bar only."
+    )
+    _, by_id = _run(plan)
+    r = by_id[C44]
+    assert r.status == "SKIP"
+    assert "without extractable" in r.detail
+
+
+def test_c44_git_unavailable_skips(monkeypatch):
+    # Fail-open on git unavailability (the c42 contract): OSError from
+    # subprocess.run on BOTH attempts (one 0.1 s retry) -> SKIP, never FAIL.
+    def raise_oserror(*a, **kw):
+        raise OSError("git not found")
+
+    monkeypatch.setattr(verify_plan.subprocess, "run", raise_oserror)
+    _, by_id = _run(_c44_plan(C44_DECL))
+    r = by_id[C44]
+    assert r.status == "SKIP"
+    assert "unavailable" in r.detail.lower()
+    assert "inconclusive" in r.detail.lower()
+
+
+def test_c44_skill_roster_carries_escape():
+    # Durability pin (c31-compliant) for the SKILL.md prose edit: the
+    # canonical N/A escape-phrases block must carry the check-44 escape,
+    # backtick-wrapped (the generative sync test propagates the docstring
+    # registration; this pins the consumer surface directly).
+    text = (REPO_ROOT / ".claude/skills/adversarial-planner/SKILL.md").read_text()
+    anchor = text.index("Canonical N/A escape phrases")
+    block = text[anchor : text.index("bounce to the planner", anchor)]
+    assert "`N/A — no committed outputs`" in block
+    assert "(check 44" in block
+
+
+# ─── Check 45 — trained-base change DV vs base-side predictor companion ────
+
+C45 = "c45_change_dv_base_predictor_companion"
+
+# Synthetic trigger: a change-DV signature (arm a) + a base-side predictor
+# raced on ONE line (arm b), no satisfiers. Each arm's fixture line carries
+# ONLY its own arm's vocabulary so a dead arm cannot ride the other (the
+# #1114 per-arm-fixture lesson / the c43 arm-split precedent).
+C45_CHANGE_DV_LINE = "\nThe leakage DV is the per-context judge score, trained − base, per arm.\n"
+C45_RACE_LINE = "\nCandidates raced: P7 (base behavioral propensity) is the incumbent.\n"
+C45_TRIGGERED = GOOD_PLAN + C45_CHANGE_DV_LINE + C45_RACE_LINE
+
+C45_COMPANION_LINE = (
+    "\nRegistered companion column: a trained-side LEVEL Spearman column for P7 "
+    "(pure re-reduction of persisted inputs).\n"
+)
+C45_CONVENTION_LINE = (
+    "\nWinner-selection convention (registered): the champion argmax is over SIGNED Spearman ρ.\n"
+)
+
+# Real-corpus anchor (#1900 v4 — the founding must-WARN instance): verbatim
+# contiguous spans inlined from tasks/awaiting_promotion/1900/plans/v4.md
+# (L11 Plan-Summary baselines span, L151 marker change-DV table row, L161
+# selection-symmetric-nulls line) — inlined as string fixtures so the test
+# never reads tasks/ paths at runtime.
+C45_1900_V4_EXCERPT = GOOD_PLAN + (
+    "\n**Baselines / controls:** incumbent P7 (base behavioral propensity) raced and "
+    "partialled; identity+bias and kNN-retrieval reads on every refit map; "
+    "selection-symmetric winner call; leak-through-M guard via map refits that exclude "
+    "the judge subset.\n"
+    "\n| Marker leakage (primary) | marker propensity at the trained slot | Δ log P(marker) "
+    "trained−base at the end of the arm's OWN response (three-space contract) | Yes — "
+    "on-policy text, trained slot; TF read is the marker rule's sanctioned form |\n"
+    '\n**Selection-symmetric nulls:** the headline "best predictor" is a max over the 11 '
+    "raced candidates ⇒ (i) per-draw same-selection: winner re-selected inside every "
+    "bootstrap resample and every permutation draw; (ii) per-draw × per-candidate matrices "
+    "persisted (above); (iii) CI at the winner reported as selection-inherited (frozen CI "
+    "also shown, labeled); (iv) band-vs-ceiling: the permutation band's upper bound is "
+    "reported against the bounded-DV ceiling |ρ| ≤ 1 (plainly reachable; margin reported); "
+    "the champion-vs-P7 contrast is a difference statistic — its conditional ceiling is "
+    "1 − ρ̂_P7(arm) with ρ̂_P7 the realized per-arm P7 Spearman (named comparison-arm "
+    "quantity; reported as an interval across arms).\n"
+)
+
+# Real-corpus anchor (#1900 v5 — the revised must-PASS shape): the same
+# trigger spans plus verbatim spans of v5 L48 (winner-selection convention)
+# and L96 (registered companion columns).
+C45_1900_V5_EXCERPT = GOOD_PLAN + (
+    "\n**Baselines / controls:** incumbent P7 (base behavioral propensity) raced and "
+    "partialled; identity+bias and kNN-retrieval reads on every refit map; "
+    "selection-symmetric winner call; leak-through-M guard via map refits that exclude "
+    "the judge subset.\n"
+    "\nWinner-selection convention (registered): the champion argmax is over SIGNED "
+    "Spearman ρ — a deployable leakage predictor must predict positively; a sign-flipped "
+    "candidate (the #444 backwards-distance shape) is a reportable finding but never the "
+    "winner; |ρ| views ride the exploratory dump only.\n"
+    "\n- **Registered DV-identity companion columns (Stats-lens MF, round 1 — both are "
+    "pure re-reductions of already-persisted inputs; primaries unchanged):** (a) marker "
+    "panel — a trained-side LEVEL log P Spearman column for P7 (the four-float contract "
+    'stores both sides), labeled "level companion — the primary marker change-DV couples '
+    "P7 (a base-side log P) with a mechanical ≈ −1 component (the #559/#605 pattern), so "
+    "P7's marker-panel rank is read jointly with this column\"; (b) content panel — a "
+    "per-context graded CHANGE (trained − base) companion race column (base scores "
+    'already judged for P7), labeled "change companion".\n'
+)
+
+
+def test_c45_no_trigger_skips():
+    # Fixture (f): GOOD_PLAN carries neither a change-DV signature nor a
+    # base-predictor race line.
+    assert _status(GOOD_PLAN, C45) == "SKIP"
+
+
+def test_c45_change_dv_alone_skips():
+    # Arm (b) dead: a change-DV signature with no raced base-side predictor
+    # must not trigger.
+    assert _status(GOOD_PLAN + C45_CHANGE_DV_LINE, C45) == "SKIP"
+
+
+def test_c45_race_line_alone_skips():
+    # Arm (a) dead: a base-side predictor race with no change-DV signature
+    # must not trigger.
+    assert _status(GOOD_PLAN + C45_RACE_LINE, C45) == "SKIP"
+
+
+def test_c45_split_line_race_vocabulary_skips():
+    # Arm (b) is a SAME-LINE conjunction: the base-side token and the
+    # predictor-context token on different lines must not trigger.
+    plan = (
+        GOOD_PLAN
+        + C45_CHANGE_DV_LINE
+        + (
+            "\nThe base behavioral propensity is also reported per unit.\n"
+            "Eleven candidates are raced per arm.\n"
+        )
+    )
+    assert _status(plan, C45) == "SKIP"
+
+
+def test_c45_kind_exempt_skips():
+    # Fixture (e): infra workflow-fix plans (this check's own plan included)
+    # legitimately QUOTE the trigger vocabulary without racing predictors.
+    for kind in ("infra", "batch", "analysis", "survey"):
+        assert _status(C45_TRIGGERED, C45, kind=kind) == "SKIP"
+
+
+def test_c45_fenced_trigger_skips():
+    # Fixture (g): trigger vocabulary confined to a fenced block must not
+    # trigger (strip_fences, the c39 convention).
+    plan = (
+        GOOD_PLAN
+        + "\n```\n"
+        + C45_CHANGE_DV_LINE.strip()
+        + "\n"
+        + C45_RACE_LINE.strip()
+        + "\n```\n"
+    )
+    assert _status(plan, C45) == "SKIP"
+
+
+def test_c45_triggered_no_satisfiers_warns():
+    # Fixture (a): triggered plan with neither satisfier WARNs naming BOTH
+    # halves + the #559/#605 rationale + the escape phrase.
+    _, by_id = _run(C45_TRIGGERED)
+    r = by_id[C45]
+    assert r.status == "WARN"
+    assert "companion column" in r.detail
+    assert "winner sign" in r.detail
+    assert "#559" in r.detail and "#605" in r.detail
+    assert "~ -1" in r.detail  # the mechanical coefficient rationale
+    assert "Statistics lens item 2" in r.detail
+    assert "N/A — no base-side predictor vs change DV" in r.detail
+    assert "unwrapped" in r.detail
+
+
+def test_c45_both_satisfiers_pass():
+    # Fixture (b): companion registration + winner sign convention → PASS.
+    plan = C45_TRIGGERED + C45_COMPANION_LINE + C45_CONVENTION_LINE
+    _, by_id = _run(plan)
+    r = by_id[C45]
+    assert r.status == "PASS"
+    assert "companion column registered" in r.detail
+
+
+def test_c45_companion_only_warns_naming_convention():
+    # Fixture (c): companion registered but NO winner sign convention →
+    # WARN naming the missing convention half.
+    _, by_id = _run(C45_TRIGGERED + C45_COMPANION_LINE)
+    r = by_id[C45]
+    assert r.status == "WARN"
+    assert "winner sign convention" in r.detail
+    assert "registered level/change companion column AND" not in r.detail
+
+
+def test_c45_convention_only_warns_naming_companion():
+    # Convention stated but NO companion column → WARN naming the missing
+    # companion half.
+    _, by_id = _run(C45_TRIGGERED + C45_CONVENTION_LINE)
+    r = by_id[C45]
+    assert r.status == "WARN"
+    assert "companion column" in r.detail
+    assert "AND a stated winner sign" not in r.detail
+
+
+def test_c45_standalone_escape_passes():
+    # Fixture (d): the standalone escape line PASSes a triggered plan.
+    plan = C45_TRIGGERED + "\nN/A — no base-side predictor vs change DV\n"
+    _, by_id = _run(plan)
+    r = by_id[C45]
+    assert r.status == "PASS"
+    assert "N/A declared" in r.detail
+
+
+def test_c45_fenced_escape_does_not_satisfy():
+    # Anti-paste `_standalone_na_declared` semantics (c43/c39 parity): the
+    # escape inside a fence (a quoted bounce brief) must not satisfy.
+    plan = C45_TRIGGERED + "\n```\nN/A — no base-side predictor vs change DV\n```\n"
+    assert _status(plan, C45) == "WARN"
+
+
+def test_c45_backtick_wrapped_escape_does_not_satisfy():
+    # A backtick-wrapped paste of the remedy's quoted form is NOT a
+    # declaration (#1238 anti-paste doctrine — declare escapes UNWRAPPED).
+    plan = C45_TRIGGERED + "\n`N/A — no base-side predictor vs change DV`\n"
+    assert _status(plan, C45) == "WARN"
+
+
+def test_c45_bare_abs_rho_is_not_a_convention():
+    # Fixture (j), the degenerate-|rho| guard (critic MF1): companion
+    # registered + incidental max-|rho| prose on a line WITHOUT
+    # winner/convention/champion/argmax context + NO stated convention →
+    # still WARN (bare |rho| is not a standalone satisfier — predictor-race
+    # plans near-universally carry max-|rho| prose, #1900 v4).
+    plan = (
+        C45_TRIGGERED
+        + C45_COMPANION_LINE
+        + (
+            "\nExploratory dump: per-layer max-|ρ| heatmaps over the 28 read layers ride "
+            "the appendix.\n"
+        )
+    )
+    _, by_id = _run(plan)
+    r = by_id[C45]
+    assert r.status == "WARN"
+    assert "winner sign convention" in r.detail
+
+
+def test_c45_abs_rho_with_winner_context_counts_as_convention():
+    # The conjunction arm: |rho| / `absolute` DOES count on a line also
+    # carrying winner/convention/champion/argmax context.
+    plan = (
+        C45_TRIGGERED
+        + C45_COMPANION_LINE
+        + ("\nThe winner is the argmax over candidates of |ρ| (absolute-value view).\n")
+    )
+    assert _status(plan, C45) == "PASS"
+
+
+def test_c45_1900_v4_excerpt_triggers_and_warns():
+    # Fixture (h), founding instance: the #1900 v4 excerpt triggers (base
+    # behavioral propensity raced + trained-base change DV) and WARNs — v4
+    # registered NO companion column (the round-1 Stats Must-Fix). Its
+    # selection-symmetric |rho| line legitimately carries winner context on
+    # the same line, so the missing half named is the companion.
+    _, by_id = _run(C45_1900_V4_EXCERPT)
+    r = by_id[C45]
+    assert r.status == "WARN"
+    assert "companion column" in r.detail
+
+
+def test_c45_1900_v5_excerpt_triggers_and_passes():
+    # Fixture (h), revised shape: the #1900 v5 excerpt registers the
+    # DV-identity companion columns AND the winner-selection convention →
+    # PASS.
+    _, by_id = _run(C45_1900_V5_EXCERPT)
+    r = by_id[C45]
+    assert r.status == "PASS"
+
+
+def test_c45_escape_registered_in_skill():
+    # Fixture (i), durability pin: the c45 escape phrase is registered
+    # verbatim (backtick-wrapped, whitespace-normalized — the block wraps
+    # long phrases across indented continuation lines) in the
+    # adversarial-planner SKILL.md canonical N/A escape list, so a later
+    # SKILL.md edit cannot silently drop it. The generative
+    # docstring→SKILL.md sync pin above covers it too; this per-check pin
+    # fails with a named test.
+    text = (REPO_ROOT / ".claude" / "skills" / "adversarial-planner" / "SKILL.md").read_text()
+    anchor = text.index("Canonical N/A escape phrases")
+    block = text[anchor : text.index("bounce to the planner", anchor)]
+    norm = re.sub(r"\s+", " ", block)
+    assert "`N/A — no base-side predictor vs change DV` (check 45" in norm

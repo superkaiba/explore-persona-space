@@ -1,6 +1,6 @@
 {
-  "commit": "74e43d5b63",
-  "created": "2026-08-01T02:13:15Z",
+  "commit": "11ba097801",
+  "created": "2026-08-01T09:17:21Z",
   "figsize": [
     15.0,
     7.6
@@ -8,7 +8,7 @@
   "points": [
     {
       "x": 0.0,
-      "cosine": 0.7559550951107978,
+      "cosine": 0.7559550951107977,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
@@ -22,42 +22,42 @@
     },
     {
       "x": 2.0,
-      "cosine": 0.7922615644863221,
+      "cosine": 0.7922615644863222,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 3.0,
-      "cosine": 0.7775016605430436,
+      "cosine": 0.7775016605430437,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 4.0,
-      "cosine": 0.7631264079783624,
+      "cosine": 0.7631264079783625,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 5.0,
-      "cosine": 0.7624127351707856,
+      "cosine": 0.7624127351707854,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 6.0,
-      "cosine": 0.782083027713175,
+      "cosine": 0.7820830277131748,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 7.0,
-      "cosine": 0.7070250877145247,
+      "cosine": 0.7070250877145248,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
@@ -78,14 +78,14 @@
     },
     {
       "x": 10.0,
-      "cosine": 0.6697037426044398,
+      "cosine": 0.6697037426044399,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 11.0,
-      "cosine": 0.6319486152244176,
+      "cosine": 0.6319486152244178,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
@@ -99,7 +99,7 @@
     },
     {
       "x": 13.0,
-      "cosine": 0.706604892302097,
+      "cosine": 0.7066048923020971,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
@@ -113,14 +113,14 @@
     },
     {
       "x": 15.0,
-      "cosine": 0.7912136262054649,
+      "cosine": 0.7912136262054648,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 16.0,
-      "cosine": 0.7633878310009791,
+      "cosine": 0.7633878310009792,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
@@ -134,7 +134,7 @@
     },
     {
       "x": 18.0,
-      "cosine": 0.7786743947010604,
+      "cosine": 0.7786743947010599,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
@@ -162,21 +162,21 @@
     },
     {
       "x": 22.0,
-      "cosine": 0.6522891252128223,
+      "cosine": 0.6522891252128225,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 23.0,
-      "cosine": 0.7820725472793172,
+      "cosine": 0.7820725472793175,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 24.0,
-      "cosine": 0.8089009591313714,
+      "cosine": 0.8089009591313715,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
@@ -190,7 +190,7 @@
     },
     {
       "x": 26.0,
-      "cosine": 0.7061861162513369,
+      "cosine": 0.706186116251337,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
@@ -204,28 +204,28 @@
     },
     {
       "x": 28.0,
-      "cosine": 0.6829185079590225,
+      "cosine": 0.6829185079590224,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 29.0,
-      "cosine": 0.6864006622369689,
+      "cosine": 0.6864006622369692,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 30.0,
-      "cosine": 0.6922905557396333,
+      "cosine": 0.6922905557396334,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 31.0,
-      "cosine": 0.6918721867427924,
+      "cosine": 0.6918721867427923,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
@@ -239,7 +239,7 @@
     },
     {
       "x": 33.0,
-      "cosine": 0.946976512750718,
+      "cosine": 0.9469765127507176,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
@@ -253,14 +253,14 @@
     },
     {
       "x": 35.0,
-      "cosine": 0.9464287036911623,
+      "cosine": 0.9464287036911622,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 36.0,
-      "cosine": 0.7218954445829833,
+      "cosine": 0.7218954445829836,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
@@ -281,7 +281,7 @@
     },
     {
       "x": 39.0,
-      "cosine": 0.7213848666268031,
+      "cosine": 0.7213848666268033,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
@@ -302,56 +302,56 @@
     },
     {
       "x": 42.0,
-      "cosine": 0.7267238851266141,
+      "cosine": 0.726723885126614,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 43.0,
-      "cosine": 0.766162793139673,
+      "cosine": 0.7661627931396731,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 44.0,
-      "cosine": 0.816604657252971,
+      "cosine": 0.8166046572529708,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 45.0,
-      "cosine": 0.8140241214773073,
+      "cosine": 0.8140241214773075,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 46.0,
-      "cosine": 0.809366081202758,
+      "cosine": 0.8093660812027579,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 47.0,
-      "cosine": 0.7832498933201532,
+      "cosine": 0.7832498933201533,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 48.0,
-      "cosine": 0.7974048711846139,
+      "cosine": 0.7974048711846142,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 49.0,
-      "cosine": 0.7908096240953609,
+      "cosine": 0.790809624095361,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
@@ -365,7 +365,7 @@
     },
     {
       "x": 51.0,
-      "cosine": 0.8237961765634674,
+      "cosine": 0.8237961765634677,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
@@ -379,21 +379,21 @@
     },
     {
       "x": 53.0,
-      "cosine": 0.7434126141817654,
+      "cosine": 0.7434126141817656,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 54.0,
-      "cosine": 0.7134646724242469,
+      "cosine": 0.7134646724242473,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 55.0,
-      "cosine": 0.7215020131797794,
+      "cosine": 0.7215020131797797,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
@@ -407,7 +407,7 @@
     },
     {
       "x": 57.0,
-      "cosine": 0.7836719115829582,
+      "cosine": 0.7836719115829585,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
@@ -421,7 +421,7 @@
     },
     {
       "x": 59.0,
-      "cosine": 0.781277702144975,
+      "cosine": 0.7812777021449753,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
@@ -435,14 +435,14 @@
     },
     {
       "x": 61.0,
-      "cosine": 0.6518991660137948,
+      "cosine": 0.6518991660137947,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 62.0,
-      "cosine": 0.626750177285967,
+      "cosine": 0.6267501772859672,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
@@ -456,56 +456,56 @@
     },
     {
       "x": 64.0,
-      "cosine": 0.7380131204023849,
+      "cosine": 0.7380131204023846,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 65.0,
-      "cosine": 0.7385863930443196,
+      "cosine": 0.73858639304432,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 66.0,
-      "cosine": 0.8343810941495375,
+      "cosine": 0.8343810941495378,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 67.0,
-      "cosine": 0.754563511338173,
+      "cosine": 0.7545635113381729,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 68.0,
-      "cosine": 0.6287345261866731,
+      "cosine": 0.6287345261866729,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 69.0,
-      "cosine": 0.6232036117563085,
+      "cosine": 0.6232036117563083,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 70.0,
-      "cosine": 0.7048694624992246,
+      "cosine": 0.7048694624992244,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 71.0,
-      "cosine": 0.6361814256572667,
+      "cosine": 0.6361814256572664,
       "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
       "_kind": "line",
       "_group": 0
@@ -526,7 +526,7 @@
     },
     {
       "x": 2.0,
-      "cosine": 0.33841029172128034,
+      "cosine": 0.3384102917212804,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
@@ -540,7 +540,7 @@
     },
     {
       "x": 4.0,
-      "cosine": 0.377723251931507,
+      "cosine": 0.37772325193150696,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
@@ -554,14 +554,14 @@
     },
     {
       "x": 6.0,
-      "cosine": 0.386731421293179,
+      "cosine": 0.3867314212931791,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 7.0,
-      "cosine": 0.44849487211065886,
+      "cosine": 0.44849487211065897,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
@@ -575,14 +575,14 @@
     },
     {
       "x": 9.0,
-      "cosine": 0.4274939851911231,
+      "cosine": 0.42749398519112314,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 10.0,
-      "cosine": 0.45832712257691804,
+      "cosine": 0.45832712257691816,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
@@ -610,28 +610,28 @@
     },
     {
       "x": 14.0,
-      "cosine": 0.472412348066532,
+      "cosine": 0.47241234806653204,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 15.0,
-      "cosine": 0.344225423254069,
+      "cosine": 0.3442254232540689,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 16.0,
-      "cosine": 0.3329416389423575,
+      "cosine": 0.33294163894235757,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 17.0,
-      "cosine": 0.37097900379858006,
+      "cosine": 0.3709790037985801,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
@@ -645,7 +645,7 @@
     },
     {
       "x": 19.0,
-      "cosine": 0.20743236009025007,
+      "cosine": 0.20743236009025012,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
@@ -659,49 +659,49 @@
     },
     {
       "x": 21.0,
-      "cosine": 0.19764081874129127,
+      "cosine": 0.1976408187412913,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 22.0,
-      "cosine": 0.19633032950249496,
+      "cosine": 0.196330329502495,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 23.0,
-      "cosine": 0.3284681873224931,
+      "cosine": 0.32846818732249305,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 24.0,
-      "cosine": 0.22973777490111577,
+      "cosine": 0.22973777490111585,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 25.0,
-      "cosine": 0.217332990893154,
+      "cosine": 0.21733299089315397,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 26.0,
-      "cosine": 0.08018941250767257,
+      "cosine": 0.08018941250767254,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 27.0,
-      "cosine": 0.06869184221011394,
+      "cosine": 0.06869184221011393,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
@@ -715,105 +715,105 @@
     },
     {
       "x": 29.0,
-      "cosine": 0.09104245071134015,
+      "cosine": 0.0910424507113401,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 30.0,
-      "cosine": 0.13864361441592213,
+      "cosine": 0.13864361441592216,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 31.0,
-      "cosine": 0.13537087248339782,
+      "cosine": 0.13537087248339788,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 32.0,
-      "cosine": 0.058242092785216186,
+      "cosine": 0.05824209278521615,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 33.0,
-      "cosine": 0.07196158995219414,
+      "cosine": 0.07196158995219416,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 34.0,
-      "cosine": 0.08778186888734155,
+      "cosine": 0.08778186888734152,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 35.0,
-      "cosine": 0.08027194021173112,
+      "cosine": 0.0802719402117312,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 36.0,
-      "cosine": 0.11393084717308323,
+      "cosine": 0.11393084717308329,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 37.0,
-      "cosine": 0.11557758053456733,
+      "cosine": 0.11557758053456722,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 38.0,
-      "cosine": 0.11165588763393249,
+      "cosine": 0.11165588763393257,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 39.0,
-      "cosine": 0.11735195715400303,
+      "cosine": 0.11735195715400304,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 40.0,
-      "cosine": 0.09443198212695626,
+      "cosine": 0.09443198212695628,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 41.0,
-      "cosine": 0.08562182689099868,
+      "cosine": 0.0856218268909987,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 42.0,
-      "cosine": 0.09668013592501964,
+      "cosine": 0.09668013592501966,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 43.0,
-      "cosine": 0.07479473926319972,
+      "cosine": 0.07479473926319977,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
@@ -827,14 +827,14 @@
     },
     {
       "x": 45.0,
-      "cosine": 0.08620392191145314,
+      "cosine": 0.08620392191145318,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 46.0,
-      "cosine": 0.021191608231793082,
+      "cosine": 0.021191608231793068,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
@@ -848,14 +848,14 @@
     },
     {
       "x": 48.0,
-      "cosine": 0.0046671235874893545,
+      "cosine": 0.0046671235874893285,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 49.0,
-      "cosine": 0.0014341934523285865,
+      "cosine": 0.0014341934523285711,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
@@ -869,7 +869,7 @@
     },
     {
       "x": 51.0,
-      "cosine": 0.10738249148506301,
+      "cosine": 0.10738249148506314,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
@@ -890,91 +890,91 @@
     },
     {
       "x": 54.0,
-      "cosine": 0.3126632987202355,
+      "cosine": 0.31266329872023546,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 55.0,
-      "cosine": 0.3129001513546217,
+      "cosine": 0.31290015135462157,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 56.0,
-      "cosine": 0.20014054530356717,
+      "cosine": 0.20014054530356723,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 57.0,
-      "cosine": 0.21133732419912193,
+      "cosine": 0.211337324199122,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 58.0,
-      "cosine": 0.2138434898992937,
+      "cosine": 0.21384348989929375,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 59.0,
-      "cosine": 0.21639476341190558,
+      "cosine": 0.21639476341190553,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 60.0,
-      "cosine": 0.0759776733619386,
+      "cosine": 0.07597767336193861,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 61.0,
-      "cosine": 0.07817563641094055,
+      "cosine": 0.07817563641094052,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 62.0,
-      "cosine": 0.06898221564497607,
+      "cosine": 0.0689822156449761,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 63.0,
-      "cosine": 0.060771651973107896,
+      "cosine": 0.060771651973107944,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 64.0,
-      "cosine": 0.3070192193188779,
+      "cosine": 0.3070192193188778,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 65.0,
-      "cosine": 0.30322896381621744,
+      "cosine": 0.3032289638162174,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 66.0,
-      "cosine": 0.3226289329599921,
+      "cosine": 0.32262893295999223,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
@@ -988,7 +988,7 @@
     },
     {
       "x": 68.0,
-      "cosine": 0.3125818002022442,
+      "cosine": 0.3125818002022441,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
@@ -1002,7 +1002,7 @@
     },
     {
       "x": 70.0,
-      "cosine": 0.3375878430486647,
+      "cosine": 0.33758784304866474,
       "series": "cos($\\Delta v_{train}$, $\\delta$)",
       "_kind": "line",
       "_group": 1
@@ -1028,7 +1028,7 @@
     },
     {
       "category": "cas-bare-po-lr1e5-s137",
-      "$\\|\\Delta v_{train}\\|$ at L19": 16.622168058536808,
+      "$\\|\\Delta v_{train}\\|$ at L19": 16.622168058536804,
       "_kind": "bar",
       "_group": 2
     },
@@ -1064,7 +1064,7 @@
     },
     {
       "category": "cas-pers-con-lr1e5-s42",
-      "$\\|\\Delta v_{train}\\|$ at L19": 16.243716830641848,
+      "$\\|\\Delta v_{train}\\|$ at L19": 16.24371683064185,
       "_kind": "bar",
       "_group": 2
     },
@@ -1106,7 +1106,7 @@
     },
     {
       "category": "imp-bare-con-lr3e5-s137",
-      "$\\|\\Delta v_{train}\\|$ at L19": 25.89863680920431,
+      "$\\|\\Delta v_{train}\\|$ at L19": 25.898636809204312,
       "_kind": "bar",
       "_group": 2
     },
@@ -1124,7 +1124,7 @@
     },
     {
       "category": "imp-bare-po-lr1e5-s42",
-      "$\\|\\Delta v_{train}\\|$ at L19": 22.050700892698067,
+      "$\\|\\Delta v_{train}\\|$ at L19": 22.05070089269807,
       "_kind": "bar",
       "_group": 2
     },
@@ -1142,7 +1142,7 @@
     },
     {
       "category": "imp-conv-po-lr1e5-s137",
-      "$\\|\\Delta v_{train}\\|$ at L19": 21.137173536070133,
+      "$\\|\\Delta v_{train}\\|$ at L19": 21.13717353607013,
       "_kind": "bar",
       "_group": 2
     },
@@ -1160,19 +1160,19 @@
     },
     {
       "category": "imp-pers-con-lr3e5-s137",
-      "$\\|\\Delta v_{train}\\|$ at L19": 28.74396201167898,
+      "$\\|\\Delta v_{train}\\|$ at L19": 28.743962011678974,
       "_kind": "bar",
       "_group": 2
     },
     {
       "category": "imp-pers-con-lr3e5-s42",
-      "$\\|\\Delta v_{train}\\|$ at L19": 26.93639323325765,
+      "$\\|\\Delta v_{train}\\|$ at L19": 26.936393233257643,
       "_kind": "bar",
       "_group": 2
     },
     {
       "category": "imp-pers-ft-con-s137",
-      "$\\|\\Delta v_{train}\\|$ at L19": 25.642083606604388,
+      "$\\|\\Delta v_{train}\\|$ at L19": 25.642083606604384,
       "_kind": "bar",
       "_group": 2
     },
@@ -1196,7 +1196,7 @@
     },
     {
       "category": "imp-pers-po-lr1e5-s137",
-      "$\\|\\Delta v_{train}\\|$ at L19": 24.599969551359067,
+      "$\\|\\Delta v_{train}\\|$ at L19": 24.599969551359063,
       "_kind": "bar",
       "_group": 2
     },
@@ -1208,19 +1208,19 @@
     },
     {
       "category": "mk-bare-con-lr5e6-s137",
-      "$\\|\\Delta v_{train}\\|$ at L19": 2.783313438012174,
+      "$\\|\\Delta v_{train}\\|$ at L19": 2.7833134380121733,
       "_kind": "bar",
       "_group": 2
     },
     {
       "category": "mk-bare-con-lr5e6-s42",
-      "$\\|\\Delta v_{train}\\|$ at L19": 2.7237143355700666,
+      "$\\|\\Delta v_{train}\\|$ at L19": 2.723714335570066,
       "_kind": "bar",
       "_group": 2
     },
     {
       "category": "mk-bare-po-lr5e6-s137",
-      "$\\|\\Delta v_{train}\\|$ at L19": 3.2739926545232,
+      "$\\|\\Delta v_{train}\\|$ at L19": 3.2739926545231994,
       "_kind": "bar",
       "_group": 2
     },
@@ -1232,13 +1232,13 @@
     },
     {
       "category": "mk-conv-con-lr5e6-s137",
-      "$\\|\\Delta v_{train}\\|$ at L19": 4.01459057902768,
+      "$\\|\\Delta v_{train}\\|$ at L19": 4.014590579027679,
       "_kind": "bar",
       "_group": 2
     },
     {
       "category": "mk-conv-con-lr5e6-s42",
-      "$\\|\\Delta v_{train}\\|$ at L19": 4.308747783002496,
+      "$\\|\\Delta v_{train}\\|$ at L19": 4.308747783002497,
       "_kind": "bar",
       "_group": 2
     },
@@ -1250,7 +1250,7 @@
     },
     {
       "category": "mk-conv-po-lr5e6-s42",
-      "$\\|\\Delta v_{train}\\|$ at L19": 3.9018714107707804,
+      "$\\|\\Delta v_{train}\\|$ at L19": 3.90187141077078,
       "_kind": "bar",
       "_group": 2
     },
@@ -1304,31 +1304,31 @@
     },
     {
       "category": "mk-pers-ft-po-s137",
-      "$\\|\\Delta v_{train}\\|$ at L19": 3.1778739863944727,
+      "$\\|\\Delta v_{train}\\|$ at L19": 3.177873986394472,
       "_kind": "bar",
       "_group": 2
     },
     {
       "category": "mk-pers-ft-po-s42",
-      "$\\|\\Delta v_{train}\\|$ at L19": 3.171203215238791,
+      "$\\|\\Delta v_{train}\\|$ at L19": 3.1712032152387906,
       "_kind": "bar",
       "_group": 2
     },
     {
       "category": "mk-pers-po-lr5e6-s137",
-      "$\\|\\Delta v_{train}\\|$ at L19": 3.253901579702869,
+      "$\\|\\Delta v_{train}\\|$ at L19": 3.2539015797028688,
       "_kind": "bar",
       "_group": 2
     },
     {
       "category": "mk-pers-po-lr5e6-s42",
-      "$\\|\\Delta v_{train}\\|$ at L19": 3.157230639894034,
+      "$\\|\\Delta v_{train}\\|$ at L19": 3.157230639894033,
       "_kind": "bar",
       "_group": 2
     },
     {
       "category": "syc-bare-con-lr1e5-s137",
-      "$\\|\\Delta v_{train}\\|$ at L19": 21.653775913758373,
+      "$\\|\\Delta v_{train}\\|$ at L19": 21.65377591375837,
       "_kind": "bar",
       "_group": 2
     },
@@ -1346,7 +1346,7 @@
     },
     {
       "category": "syc-bare-po-lr1e5-s42",
-      "$\\|\\Delta v_{train}\\|$ at L19": 21.64694246190473,
+      "$\\|\\Delta v_{train}\\|$ at L19": 21.646942461904725,
       "_kind": "bar",
       "_group": 2
     },
@@ -1364,7 +1364,7 @@
     },
     {
       "category": "syc-conv-po-lr1e5-s137",
-      "$\\|\\Delta v_{train}\\|$ at L19": 4.176622610736649,
+      "$\\|\\Delta v_{train}\\|$ at L19": 4.176622610736648,
       "_kind": "bar",
       "_group": 2
     },
@@ -1376,7 +1376,7 @@
     },
     {
       "category": "syc-icl-con-lr1e5-s137",
-      "$\\|\\Delta v_{train}\\|$ at L19": 21.662515419768813,
+      "$\\|\\Delta v_{train}\\|$ at L19": 21.66251541976881,
       "_kind": "bar",
       "_group": 2
     },
@@ -1388,7 +1388,7 @@
     },
     {
       "category": "syc-icl-po-lr1e5-s137",
-      "$\\|\\Delta v_{train}\\|$ at L19": 20.45122103998124,
+      "$\\|\\Delta v_{train}\\|$ at L19": 20.451221039981238,
       "_kind": "bar",
       "_group": 2
     },
@@ -1406,7 +1406,7 @@
     },
     {
       "category": "syc-pers-con-lr1e5-s42",
-      "$\\|\\Delta v_{train}\\|$ at L19": 20.28806465457855,
+      "$\\|\\Delta v_{train}\\|$ at L19": 20.288064654578548,
       "_kind": "bar",
       "_group": 2
     },
@@ -1436,7 +1436,7 @@
     },
     {
       "category": "syc-pers-po-lr1e5-s137",
-      "$\\|\\Delta v_{train}\\|$ at L19": 17.69999301189579,
+      "$\\|\\Delta v_{train}\\|$ at L19": 17.699993011895785,
       "_kind": "bar",
       "_group": 2
     },

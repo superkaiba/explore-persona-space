@@ -168,6 +168,8 @@ def test_good_body_passes_all():
     # check-20 word caps (needs `issue` for the events-based round budget,
     # #921; PASS-skip: not a v4 body), the
     # #732 judge-API-error denominator check (PASS-skip: legacy body), the
+    # judge drop-line population check (#1776 incident / task #1881;
+    # PASS-skip: legacy body), the
     # check-35 cross-issue reuse-provenance check (PASS-skip: not a v4
     # body, #1256), AND
     # the check-31 orphaned-per-unit-figures probe (needs `issue` for
@@ -175,7 +177,7 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 63 results total (2 prepended + CHECKS[1:]=48 + 13 appended, counting
+    # 66 results total (2 prepended + CHECKS[1:]=50 + 14 appended, counting
     # the #1827 plan-conditions check narrated below; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
@@ -193,9 +195,15 @@ def test_good_body_passes_all():
     # PASS, no registered count claim), and check 46
     # `check_hf_brace_expanded_path_claims` (#1520 — vacuous PASS, no
     # brace-path claims adjacent to pinned HF tree links), and check 48
-    # `check_v4_quant_result_figure` (#1832 — PASS-skip, not a v4 body)
+    # `check_v4_quant_result_figure` (#1832 — PASS-skip, not a v4 body),
+    # and check 49 `check_v4_result_figure_cardinality` (#1879 —
+    # PASS-skip, not a v4 body),
+    # and check 50 `check_repro_artifacts_clean` (#1989 — probes the REAL
+    # repo's working tree for the fixture's repro-named eval_results dirs;
+    # `passed=True` in every state by construction — WARN/skip never flip
+    # it, the check-29 precedent)
     # ride CHECKS;
-    # 36/37/39/44/48
+    # 36/37/39/44/48/49
     # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
     # 41 is the fake-sha NO-OP PASS above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
@@ -205,10 +213,12 @@ def test_good_body_passes_all():
     # verify_text (needs the issue number) and PASS-skips here (legacy body).
     # The plan-conditions coverage check (#1827) is dispatched in verify_text
     # (needs plans/plan.md) and NO-OP PASSes here (no plan sibling).
-    assert len(results) == 63
+    assert len(results) == 66
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
+    assert "repro-named result dirs clean in working tree" in {r.name for r in results}
     assert "plan conditions coverage" in {r.name for r in results}
+    assert "judge drop-line population reconciles" in {r.name for r in results}
     assert _HF_32_NAME in {r.name for r in results}
     assert _HF_40_NAME in {r.name for r in results}
     assert "Context follow-up provenance vs followup-scope markers" in {r.name for r in results}
@@ -5771,7 +5781,7 @@ def test_checks_list_size():
     v3-gated checks added 2026-W24 are — check 18
     (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     check 19b (`check_data_unwrapped_example_table`, WARN), check 20
-    (`check_v3_word_caps`) — PLUS the THIRTEEN generation-agnostic checks:
+    (`check_v3_word_caps`) — PLUS the FOURTEEN generation-agnostic checks:
     check 22 (`check_figure_url_sha_matches_repro`: inline figure URL sha
     vs the `## Reproducibility` per-figure commit claim), check 23
     (`check_hf_url_resolves`: HF Hub revision-pin existence via a bounded
@@ -5826,7 +5836,13 @@ def test_checks_list_size():
     silently skip under the check-24 fail-soft convention; ONE WARN per
     body naming the basenames; existence-only `git cat-file -e` probes,
     never a content read; incident #1434's 3 sidecar-less "po" figures,
-    #1478). The
+    #1478), and check 50 (`check_repro_artifacts_clean`, WARN:
+    `(ood_)eval_results/issue_<K>/...` dirs named in the fence-stripped
+    repro region probed with a path-scoped `git status --porcelain -u` at
+    the resolved repo root — untracked/modified entries WARN, probe
+    failure degrades to a skip note, gitignored files excluded by default
+    porcelain; incident #1768's uncommitted operator_kv result files,
+    #1989). The
     migration is a RETARGET — every former check
     was kept (some dormant for a period — e.g. `check_figure_caption`,
     vacuous until #1424 tightened it) so downstream
@@ -5840,12 +5856,14 @@ def test_checks_list_size():
     check-21 body-Parameters-⊆-doc (needs the methodology doc path),
     the v4 check-20 word caps (needs `issue` for the events-based
     folded-round budget scaling, #921), the #732 judge-API-error
-    denominator check (needs eval JSONs), and the check-31
+    denominator check (needs eval JSONs), the judge drop-line
+    population check (#1776 incident / task #1881; same eval-JSON
+    needs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 63 results (2 prepended + CHECKS[1:]=48 +
-    13 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 49 (check 36 `check_v4_result_paragraph_sentences` (#1368),
+    So `verify_text` returns 66 results (2 prepended + CHECKS[1:]=50 +
+    14 appended — see `test_good_body_passes_all`), but `CHECKS` stays
+    at 51 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
     `check_v4_sample_disclosure_count` — the Sample-slot
@@ -5856,18 +5874,22 @@ def test_checks_list_size():
     `check_github_tree_adjacent_file_claims` (#1507) — check 44
     `check_footer_hf_paths_pinned` (#1509) — check 45
     `check_figure_caption_count_claims_vs_sidecar` (#1511) — check 46
-    `check_hf_brace_expanded_path_claims` (#1520) — and check 48
-    `check_v4_quant_result_figure` (#1832) ride CHECKS).
+    `check_hf_brace_expanded_path_claims` (#1520) — check 48
+    `check_v4_quant_result_figure` (#1832) — check 49
+    `check_v4_result_figure_cardinality` (#1879) — and check 50
+    `check_repro_artifacts_clean` (#1989) ride CHECKS).
     """
-    assert len(verify_task_body.CHECKS) == 49
+    assert len(verify_task_body.CHECKS) == 51
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
+    assert verify_task_body.check_repro_artifacts_clean in verify_task_body.CHECKS
     assert verify_task_body.check_footer_hf_paths_pinned in verify_task_body.CHECKS
     assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
     assert verify_task_body.check_figure_prose_numerics_vs_sidecar in verify_task_body.CHECKS
     assert verify_task_body.check_figure_beat_claims_vs_sidecar_text in verify_task_body.CHECKS
     assert verify_task_body.check_v4_result_paragraph_sentences in verify_task_body.CHECKS
     assert verify_task_body.check_v4_quant_result_figure in verify_task_body.CHECKS
+    assert verify_task_body.check_v4_result_figure_cardinality in verify_task_body.CHECKS
     assert verify_task_body.check_footer_reuse_bullets_pinned in verify_task_body.CHECKS
     assert verify_task_body.check_v4_sample_disclosure_count in verify_task_body.CHECKS
     assert verify_task_body.check_hf_unpinned_count_claims in verify_task_body.CHECKS
@@ -7900,6 +7922,55 @@ def test_v3_unwrapped_data_table_cell_tag_warns():
     warn = by_name["Data unwrapped example table (v3)"]
     assert warn.passed and warn.is_warn, warn.render()
     assert "BS_E0" in warn.detail or "Method A" in warn.detail
+
+
+def test_v3_unwrapped_data_table_sub_tag_code_warns():
+    """Check 19b: an `H1c`-form sub-tag code in a bare `## Data` table
+    cell WARNs — mirror-sync with the audit's widened `condition_labels`
+    pattern (single optional lowercase sub-tag letter, #1914)."""
+    bare_table = (
+        "Per-hypothesis row counts (2 of 2,000 rows shown for illustration):\n\n"
+        "| Hypothesis | Rows | Note |\n"
+        "|---|---|---|\n"
+        "| H1c | 1000 | sub-hypothesis arm |\n"
+        "| H4b | 1000 | sub-hypothesis arm |\n\n"
+    )
+    body = _V3_GOOD_BODY.replace(
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n",
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n\n" + bare_table,
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]  # WARN ≠ FAIL
+    by_name = _results_by_name(results)
+    warn = by_name["Data unwrapped example table (v3)"]
+    assert warn.passed and warn.is_warn, warn.render()
+    assert "H1c" in warn.detail
+
+
+def test_v3_unwrapped_data_table_plural_h2s_does_not_warn():
+    """Check 19b: a plural markdown-heading form (`H2s`) in a bare table
+    cell does NOT WARN — the widened sub-tag letter class excludes `s`
+    (measured false-positive class, #1914)."""
+    bare_table = (
+        "Heading forms used (full breakdown):\n\n"
+        "| Heading form | Count |\n"
+        "|---|---|\n"
+        "| Three H2s total | 3 |\n"
+        "| legacy H2s | 5 |\n\n"
+    )
+    body = _V3_GOOD_BODY.replace(
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n",
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n\n" + bare_table,
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    warn = by_name["Data unwrapped example table (v3)"]
+    assert warn.passed and not warn.is_warn, warn.render()
 
 
 def test_v3_takeaways_too_few_bullets_fails():
@@ -11764,11 +11835,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (49 as of
-    check 48, #1832; belt-and-suspenders beside the migration-history
+    position 7 and the CHECKS count matches the current registry (51 as of
+    check 50, #1989; belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 49
+    assert len(verify_task_body.CHECKS) == 51
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -13702,6 +13773,259 @@ def test_judge_error_denominator_sibling_issue_graceful_pass(tmp_path):
     assert res.passed and not res.is_warn, res.render()
 
 
+# ─── Judge drop-line population reconciliation (#1776 incident, task #1881) ─
+#
+# Signal: a judge-health drop-line sentence "<X> content drops [and <T>
+# transport losses] of|across <Y> draws" in the fence-stripped
+# Methodology+Results region, reconciled against schema-keyed judge-artifact
+# populations (dict leaves carrying numeric `content_drops` + `valid_draws`)
+# under eval_results/issue_<N>/. FAIL only on the provably CROSSED pair
+# (numerator from one population, denominator from another, no single
+# population matching both — the #1776 incident shape); WARN when nothing
+# reconciles; graceful PASS everywhere else. Ground truth (#1776
+# followup_p3p4/judge/judge_scores.json): all-arms (192, 67,500),
+# baseline-excluded (156, 56,250), per-trait 22,500 draws each.
+
+_CHECK1881_NAME = "judge drop-line population reconciles"
+
+# The VERBATIM incident sentence, recovered from #1776's body.md git history
+# (commit fcc5a5d47bc3c9fb8842c70708340d80ca1b9842, tasks/*/1776/body.md L71)
+# — the all-arms drop numerator (192) quoted over the steered-only draw
+# denominator (56,250).
+_CHECK1881_INCIDENT_SENTENCE = (
+    "Dose-round judge health: 192 content drops of 56,250 draws "
+    "(0.34%, worst arm 0.9%), zero transport losses, zero empty rollouts."
+)
+
+
+def _drop_line_body(sentence: str) -> str:
+    """A valid v4 body whose Methodology `**Evaluation:**` line carries
+    `sentence` (a judge-health drop-line). Asserts the splice landed so a
+    future `_V4_GOOD_BODY` rewording fails loud instead of silently testing
+    a drop-line-less body."""
+    out = _V4_GOOD_BODY.replace(
+        "- **Evaluation:** Betley alignment score, Claude Sonnet judge, 200 probes; "
+        "chosen to match the prior eval surface; no preprocessing.",
+        "- **Evaluation:** Betley alignment score, Claude Sonnet judge, 200 probes; "
+        f"chosen to match the prior eval surface; no preprocessing. Judge health: {sentence}",
+    )
+    assert sentence in out, "fixture splice failed — _V4_GOOD_BODY Evaluation line changed"
+    return out
+
+
+def _make_drop_population_tree(root: Path, issue: int) -> Path:
+    """Write a synthetic #1776-followup_p3p4-shaped judge summary under
+    `root/eval_results/issue_<N>/judge/judge_scores.json`: per_arm[trait][arm]
+    leaves carrying `content_drops`/`valid_draws`/`transport_losses`,
+    reproducing the incident ground-truth totals — whole-file (192, 67,500),
+    baseline-excluded (156, 56,250), per-trait 22,500 draws each
+    (evil 20, sycophancy 40, hallucination 132 drops)."""
+    eval_dir = root / "eval_results" / f"issue_{issue}" / "judge"
+    eval_dir.mkdir(parents=True, exist_ok=True)
+
+    def leaf(drops: int, total: int) -> dict:
+        return {
+            "mean_score": 1.0,
+            "content_drops": drops,
+            "valid_draws": total - drops,
+            "transport_losses": 0,
+        }
+
+    per_arm = {}
+    for trait, steered_drops in (("evil", 8), ("sycophancy", 28), ("hallucination", 120)):
+        per_arm[trait] = {
+            "baseline_a0": leaf(12, 3750),
+            f"{trait}_a1": leaf(steered_drops, 6250),
+            f"{trait}_a2": leaf(0, 6250),
+            f"{trait}_a3": leaf(0, 6250),
+        }
+    (eval_dir / "judge_scores.json").write_text(json.dumps({"per_arm": per_arm, "n_draws": 25}))
+    return eval_dir
+
+
+def test_judge_drop_line_crossed_pairing_fails(tmp_path):
+    """The VERBATIM #1776 incident sentence — an all-arms drop numerator
+    (192, whole-file) quoted over the steered-only draw denominator
+    (56,250, baseline-excluded) — FAILs as a provably crossed population
+    pair, naming BOTH consistent pairings (192/67,500 and 156/56,250)."""
+    _make_drop_population_tree(tmp_path, 999)
+    body = _drop_line_body(_CHECK1881_INCIDENT_SENTENCE)
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert not res.passed, res.render()
+    assert "CROSSED" in res.detail, res.render()
+    assert "192/67,500" in res.detail, res.render()
+    assert "156/56,250" in res.detail, res.render()
+
+
+def test_judge_drop_line_all_arms_exact_passes(tmp_path):
+    """The corrected all-arms form (192, 67,500) matches the whole-file
+    population on both coordinates → PASS."""
+    _make_drop_population_tree(tmp_path, 999)
+    body = _drop_line_body("192 content drops of 67,500 draws (0.28%).")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+    assert "reconcile" in res.detail, res.render()
+
+
+def test_judge_drop_line_baseline_excluded_passes(tmp_path):
+    """The steered-only form (156, 56,250) matches the baseline-excluded
+    population → PASS (the honest way to quote the steered denominator)."""
+    _make_drop_population_tree(tmp_path, 999)
+    body = _drop_line_body("156 content drops of 56,250 draws (0.28%).")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_judge_drop_line_per_subtree_passes(tmp_path):
+    """A per-trait claim (132, 22,500) matches the per_arm.hallucination
+    subtree population → PASS (per-subtree candidates resolve naturally)."""
+    _make_drop_population_tree(tmp_path, 999)
+    body = _drop_line_body("hallucination: 132 content drops of 22,500 draws.")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_judge_drop_line_transport_and_across_variants(tmp_path):
+    """The `and <T> transport losses` + `across` phrasing parses, Y is
+    accepted as drops+valid+transport, and discovery is SCHEMA-keyed — the
+    leaves live in a file NOT named judge_scores*.json (the #1776
+    judge_swap.json class)."""
+    eval_dir = tmp_path / "eval_results" / "issue_999"
+    eval_dir.mkdir(parents=True)
+    payload = {
+        "per_arm": {
+            "a_retention": {
+                "swap": {"content_drops": 0, "valid_draws": 13300, "transport_losses": 0}
+            },
+            "b_content": {
+                "swap": {"content_drops": 0, "valid_draws": 13295, "transport_losses": 5}
+            },
+        }
+    }
+    (eval_dir / "judge_swap.json").write_text(json.dumps(payload))
+    body = _drop_line_body("0 content drops and 5 transport losses across 26,600 draws.")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_judge_drop_line_regex_singular_and_denominatorless():
+    """Regex shape pins: singular `content drop` / `transport loss` parse;
+    a denominator-less mention carries no population pair and never
+    matches (critic non-blocking item 5)."""
+    m = verify_task_body._JUDGE_DROP_LINE_RE.search(
+        "1 content drop and 1 transport loss of 100 draws"
+    )
+    assert m is not None
+    assert m.group("drops") == "1" and m.group("transport") == "1" and m.group("draws") == "100"
+    assert verify_task_body._JUDGE_DROP_LINE_RE.search("1,938 content drops (1.6%)") is None
+
+
+def test_judge_drop_line_denominatorless_sentence_no_claim(tmp_path):
+    """A drop mention with no `of|across <Y> draws` denominator asserts no
+    population pair → PASS 'no judge drop-line asserted' (even with a
+    reconcilable artifact tree present)."""
+    _make_drop_population_tree(tmp_path, 999)
+    body = _drop_line_body("1,938 content drops (1.6%), zero transport losses.")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no judge drop-line asserted" in res.detail, res.render()
+
+
+def test_judge_drop_line_unreconcilable_warns(tmp_path):
+    """A claim matching NO candidate on either coordinate → WARN (an
+    unenumerated honest subset is plausible — only the crossed signature
+    FAILs), listing the nearest candidates."""
+    _make_drop_population_tree(tmp_path, 999)
+    body = _drop_line_body("7 content drops of 12,345 draws.")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and res.is_warn, res.render()
+    assert "could not reconcile" in res.detail, res.render()
+    assert "nearest candidates" in res.detail, res.render()
+
+
+def test_judge_drop_line_no_artifacts_graceful_pass(tmp_path):
+    """No leaf-bearing artifact (JSONs without the content_drops/valid_draws
+    schema) → graceful PASS, never a false FAIL on missing data."""
+    eval_dir = tmp_path / "eval_results" / "issue_999"
+    eval_dir.mkdir(parents=True)
+    (eval_dir / "summary.json").write_text(json.dumps({"n_total": 400, "rate": 0.1}))
+    body = _drop_line_body(_CHECK1881_INCIDENT_SENTENCE)
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+    assert "graceful skip" in res.detail, res.render()
+
+
+def test_judge_drop_line_fence_env_skips(tmp_path, monkeypatch):
+    """EPM_VERIFY_BODY_NO_EVAL_SCAN=1 fences the disk read → skip-PASS even
+    on a body+tree pair that would otherwise FAIL crossed."""
+    _make_drop_population_tree(tmp_path, 999)
+    monkeypatch.setenv("EPM_VERIFY_BODY_NO_EVAL_SCAN", "1")
+    body = _drop_line_body(_CHECK1881_INCIDENT_SENTENCE)
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+    assert "EPM_VERIFY_BODY_NO_EVAL_SCAN" in res.detail, res.render()
+
+
+def test_judge_drop_line_legacy_body_skips():
+    """Legacy / v2 bodies PASS vacuously (forward-grandfathering, the #732
+    convention)."""
+    res = verify_task_body.check_judge_drop_line_population(GOOD_BODY, issue=999)
+    assert res.passed and not res.is_warn, res.render()
+    assert "legacy" in res.detail, res.render()
+
+
+def test_judge_drop_line_stdin_issue_unknown_skips(tmp_path):
+    """issue=None (stdin invocation) → skip-PASS before any disk read."""
+    body = _drop_line_body(_CHECK1881_INCIDENT_SENTENCE)
+    res = verify_task_body.check_judge_drop_line_population(body, issue=None)
+    assert res.passed, res.render()
+    assert "issue number unknown" in res.detail, res.render()
+
+
+def test_judge_drop_line_registered_in_verify_text():
+    """Registration-membership pin (the #1016 by-name convention, critic
+    non-blocking item 1): a forgotten verify_text append cannot ship
+    green — the check's result row must appear in every verify_text run."""
+    _ok, results = verify_task_body.verify_text(GOOD_BODY)
+    assert _CHECK1881_NAME in {r.name for r in results}
+
+
+def test_judge_drop_line_multi_claim_worst_verdict_wins(tmp_path):
+    """Multiple drop-line claims are evaluated independently and the WORST
+    verdict wins (ladder step 7): PASS + crossed → FAIL; PASS +
+    unreconcilable → WARN."""
+    _make_drop_population_tree(tmp_path, 999)
+    body_fail = _drop_line_body(
+        "192 content drops of 67,500 draws overall; dose round: 192 content drops of 56,250 draws."
+    )
+    res = verify_task_body.check_judge_drop_line_population(
+        body_fail, issue=999, eval_root=tmp_path
+    )
+    assert not res.passed, res.render()
+    body_warn = _drop_line_body(
+        "192 content drops of 67,500 draws overall; dose round: 7 content drops of 12,345 draws."
+    )
+    res2 = verify_task_body.check_judge_drop_line_population(
+        body_warn, issue=999, eval_root=tmp_path
+    )
+    assert res2.passed and res2.is_warn, res2.render()
+
+
+def test_judge_drop_line_zero_numerator_degraded_fingerprint(tmp_path):
+    """A crossed FAIL whose numerator (0) matches MULTIPLE candidate
+    populations additionally notes the degraded population fingerprint
+    (critic non-blocking item 2)."""
+    eval_dir = tmp_path / "eval_results" / "issue_999"
+    eval_dir.mkdir(parents=True)
+    (eval_dir / "a.json").write_text(json.dumps({"x": {"content_drops": 0, "valid_draws": 26600}}))
+    (eval_dir / "b.json").write_text(json.dumps({"x": {"content_drops": 0, "valid_draws": 12000}}))
+    (eval_dir / "c.json").write_text(json.dumps({"x": {"content_drops": 5, "valid_draws": 9995}}))
+    body = _drop_line_body("0 content drops of 10,000 draws.")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert not res.passed, res.render()
+    assert "population fingerprint degraded" in res.detail, res.render()
+
+
 # ─── Check 35 (#1256): cross-issue reuse pins declared in the body ─────────
 #
 # Signal (two tiers over committed `eval_results/issue_<N>/**/*.json`
@@ -14193,6 +14517,66 @@ def test_footer_reuse_bullet_fenced_skeleton_ignored():
     )
     res = verify_task_body.check_footer_reuse_bullets_pinned(body)
     assert res.passed and not res.is_warn, res.render()
+
+
+def test_footer_reuse_bullet_bare_issue_token_form_warns():
+    """#1739 incident shape (widened match set, #1907): a bare `#M` issue
+    token + bare rev pin, NO `from [#M](...)` link -> WARN via the FORM
+    arm only (the letter-bearing `037fcbb` rev satisfies the pin arm;
+    the missing canonical link form is the defect)."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused direction bank #779 rev 037fcbb — fit: same extraction recipe.\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "non-canonical form" in res.detail, res.render()
+    assert "unpinned" not in res.detail, res.render()
+    assert "from [#M](...)" in res.detail, res.render()
+
+
+def test_footer_reuse_bullet_linkful_noncanonical_unpinned_warns_both():
+    """#1900 incident shape (widened match set, #1907): `from the <line>
+    ([#M](...), [#K](...))` — links present but an intervening noun
+    phrase after `from`, and NO pin -> WARN naming BOTH classes (the pin
+    arm now runs over the widened set; the form arm also fires)."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused behavior read-out directions from the fleet extraction line "
+        "([#1112](https://eps.superkaiba.com/tasks/1112), "
+        "[#1439](https://eps.superkaiba.com/tasks/1439)) — fit: same behavior panel.\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "unpinned" in res.detail, res.render()
+    assert "non-canonical form" in res.detail, res.render()
+
+
+def test_footer_reuse_bullet_issue_path_token_pinned_form_warns():
+    """#1639 shape (widened match set, #1907): cross-issue reuse cited by
+    an `issue<M>_` artifact-path token with an `@ <rev>` pin but no
+    `from [#M](...)` link -> WARN via the FORM arm only."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused artifacts: the parent store "
+        "`issue1310_char_map/analysis_tensors/store.pt` @ `deadbee12` — fit: same char map.\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "non-canonical form" in res.detail, res.render()
+    assert "unpinned" not in res.detail, res.render()
+
+
+def test_footer_reuse_bullet_same_task_no_issue_token_stays_clean():
+    """Same-task exclusion pin (#1907 §Grounding): a round-reuse bullet
+    with paths/prose but NO issue token (no `#M`, no `[#M](`, no
+    `/tasks/M`, no `issue<M>_`) stays OUT of the widened match set ->
+    clean PASS (the rejected naive ANY-`- Reused` widening measured 14
+    form + 8 pin firings on the live corpus, dominated by this class)."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused round-1 aligned-position store (this task, HF mirror) as the "
+        "round-5 input — fit: same seeds.\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "pinned" in res.detail, res.render()
 
 
 # ─── Check 44: footer HF artifact paths carry an adjacent pinned link ───────
@@ -16827,3 +17211,487 @@ def test_check48_issue1769_result5_incident_fixture_warns():
     assert "'Evil and sycophancy decode-driven timing at" in res.detail
     assert "GFM table" in res.detail
     assert "no inline figure" in res.detail
+
+
+# ─── Check 49: multi-figure result sections without pair evidence (v4 WARN, #1879) ─
+#
+# Lens 9's one-result-one-figure rule allows a second inline figure ONLY as
+# the sanctioned raw+processed / aggregate+per-unit pair (SPEC.md § Low-level
+# data plot behind every aggregate). Check 49 WARNs a `### <result>` embedding
+# >1 inline figure whose pair evidence is in NEITHER the figure basenames
+# (`_PER_UNIT_FIG_RE`) nor the figures' alt text / blockquote caption lines
+# (`_DECLARED_PAIR_RE`) — general section prose deliberately does NOT count
+# (the origin #1769 what-is-plotted beat says "per-question" as routine
+# SPEC-mandated disclosure prose). WARN, never FAIL; vacuous PASS on non-v4
+# bodies.
+
+_CHECK49_NAME = "One inline figure per result, or a declared pair (v4)"
+
+# Verbatim incident fixture: task #1769's fu1 re-gate dose-ladder section —
+# BOTH figure blocks (alt + blockquote caption verbatim from the #1769 body)
+# under one H3, plus the real what-is-plotted prose whose "per-question"
+# sentence must NOT silence the WARN (the caption/alt scoping is the round-1
+# plan-critic Must-Fix). Two distinct analyses (dose ladder + alpha-3 lattice)
+# shipped under one `### <result>`; the verifier read PASS and only the LM
+# clean-result-critic caught it.
+_ISSUE1769_FU1_DOSE_LADDER_BLOCK = """\
+### The dose ladder places the CJK collapse between α=2 and 3
+
+The figure plots Δ_both (raw scoring, mean graded score minus the neither arm) against α ∈ {1, 1.5, 2, 3, 4} per behavior, with the interpretable window (α ≤ 2) and the CJK-affected region shaded; the per-question data behind the ladder points appear in the α=1.5, α=2, and α=3 sections.
+
+![Dose ladder of both-arm effect versus alpha with interpretable-window and CJK-affected shading](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c66bd5b6d9672983b29f7341f96f4451aeee6eb6/figures/issue_1769/fig_dose_ladder.png)
+
+> **Figure.** *Installed effect rises through α=3 for hallucination and sycophancy while evil peaks at α=2; the α=3–4 points sit in the CJK-affected region.* Δ_both (raw) per behavior at five doses, 200 draws per arm-dose (evil: 5.8, 61.6, 86.0, 72.4, 31.6 across the ladder); evil labeled scheming.
+
+![Decode fraction at alpha 3 under three CJK-intrusion treatments with degenerate cells marked](https://raw.githubusercontent.com/superkaiba/explore-persona-space/46f3eb7d42d7e45f30d414d893c181fcf0c860e0/figures/issue_1769/fig_alpha3_lattice.png)
+
+> **Figure.** *Only sycophancy keeps a computable three-treatment read at α=3.* f_d with 95% CIs per treatment; evil and hallucination exclusion cells are drawn as N/A notes (84.5% and 92% decode-arm intrusion; 30 and 13 of 200 draws remain); evil labeled scheming.
+
+Installed effect rises through α=3 for hallucination (67.4) and sycophancy (47.4) while evil peaks at 86.0 at α=2, and all three fall back at α=4.
+"""
+
+
+def test_check49_verbatim_1769_fu1_dose_ladder_warns():
+    """Row 1 (kill-criterion arbiter): the verbatim #1769 fu1 dose-ladder
+    section — two figures, no alt/caption idiom hit ("per behavior" /
+    "per arm-dose" / "per treatment" are not in the alternation; "(raw)"
+    has no alongside/counterpart/version/view/scatter within reach), no
+    per-unit basename — WARNs naming the H3 + both basenames, and the
+    prose-level "per-question" sentence does not silence it."""
+    body = _v4_minimal_results_body(_ISSUE1769_FU1_DOSE_LADDER_BLOCK)
+    res = verify_task_body.check_v4_result_figure_cardinality(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "'The dose ladder places the CJK collapse" in res.detail
+    assert "2 figures" in res.detail
+    assert "fig_dose_ladder.png" in res.detail
+    assert "fig_alpha3_lattice.png" in res.detail
+
+
+def test_check49_per_unit_companion_stem_passes():
+    """Row 2 — pair evidence (a): a second figure whose basename matches
+    the `_PER_UNIT_FIG_RE` companion naming convention
+    (`..._percontext_delta.png`) silences the WARN; alts + captions stay
+    idiom-free so the stem is the only evidence."""
+    body = _v4_minimal_results_body(
+        "### Lift by seed\n\n"
+        "Aggregate lift across seeds.\n\n"
+        "![Aggregate lift bars](https://x/figures/issue_9/lift_summary.png)\n\n"
+        "> **Figure.** *Lead.* Aggregate bars.\n\n"
+        "![Delta grid](https://x/figures/issue_9/lift_percontext_delta.png)\n\n"
+        "> **Figure.** *Lead.* Same data at finer grain.\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check49_declared_pair_in_caption_or_alt_passes():
+    """Row 3 — pair evidence (b): a declared-pair idiom in the second
+    figure's CAPTION ("per-question companion ...") or ALT ("raw scatter
+    alongside ...") silences the WARN; the basenames carry no per-unit
+    stem, so the alt/caption declaration is the only evidence."""
+    caption_declared = _v4_minimal_results_body(
+        "### Effect by question\n\n"
+        "Forest plot plus the underlying data.\n\n"
+        "![Forest plot of effects](https://x/figures/issue_9/forest.png)\n\n"
+        "> **Figure.** *Lead.* Pooled effects.\n\n"
+        "![Scatter of effects](https://x/figures/issue_9/scatter_all.png)\n\n"
+        "> **Figure.** *Lead.* per-question companion of the forest plot above.\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(caption_declared)
+    assert res.passed is True
+    assert res.is_warn is False
+    alt_declared = _v4_minimal_results_body(
+        "### Residualized effect\n\n"
+        "Residualized read plus its pre-processing twin.\n\n"
+        "![Residualized effect](https://x/figures/issue_9/effect_resid.png)\n\n"
+        "> **Figure.** *Lead.* Residualized.\n\n"
+        "![raw scatter alongside the residualized view](https://x/figures/issue_9/effect_all.png)\n\n"
+        "> **Figure.** *Lead.* Pre-processing twin.\n"
+    )
+    res2 = verify_task_body.check_v4_result_figure_cardinality(alt_declared)
+    assert res2.passed is True
+    assert res2.is_warn is False
+
+
+def test_check49_one_figure_per_section_passes():
+    """Row 4: the conforming one-figure-per-result shape draws no WARN."""
+    body = _v4_minimal_results_body(
+        "### Lift by seed\n\n"
+        "Aggregate lift across seeds.\n\n"
+        "![Aggregate lift bars](https://x/figures/issue_9/lift_summary.png)\n\n"
+        "> **Figure.** *Lead.* Aggregate bars.\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(body)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "no unpaired multi-figure section" in res.detail
+
+
+def test_check49_three_figures_no_evidence_warns():
+    """Row 5: three inline figures with no pair evidence WARN with
+    count=3."""
+    body = _v4_minimal_results_body(
+        "### Three analyses in one\n\n"
+        "Three separate reads bundled into one section.\n\n"
+        "![First read](https://x/figures/issue_9/read_one.png)\n\n"
+        "![Second read](https://x/figures/issue_9/read_two.png)\n\n"
+        "![Third read](https://x/figures/issue_9/read_three.png)\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "3 figures" in res.detail
+    assert "read_one.png" in res.detail
+    assert "read_three.png" in res.detail
+
+
+def test_check49_fenced_and_details_figures_not_counted():
+    """Row 6: figures living only inside a fenced code block or a
+    `<details>` example block are NOT counted (`_prose_layer`
+    convention) — one real figure + two quoted embeds stay conforming."""
+    fenced = _v4_minimal_results_body(
+        "### Skeleton example\n\n"
+        "Real figure plus a quoted skeleton.\n\n"
+        "![Real figure](https://x/figures/issue_9/real.png)\n\n"
+        "```markdown\n"
+        "![Quoted embed](https://x/figures/issue_9/quoted_a.png)\n"
+        "![Quoted embed](https://x/figures/issue_9/quoted_b.png)\n"
+        "```\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(fenced)
+    assert res.passed is True
+    assert res.is_warn is False
+    collapsed = _v4_minimal_results_body(
+        "### Collapsed views\n\n"
+        "Real figure plus collapsed extras.\n\n"
+        "![Real figure](https://x/figures/issue_9/real.png)\n\n"
+        "<details>\n<summary>extra views</summary>\n\n"
+        "![Extra view](https://x/figures/issue_9/extra_a.png)\n\n"
+        "![Extra view](https://x/figures/issue_9/extra_b.png)\n\n"
+        "</details>\n"
+    )
+    res2 = verify_task_body.check_v4_result_figure_cardinality(collapsed)
+    assert res2.passed is True
+    assert res2.is_warn is False
+
+
+def test_check49_skips_non_v4_and_missing_results():
+    """Row 7 (forward-only): a v3-sentinel body with two figures under one
+    `###` PASSes vacuously, as do legacy bodies and a v4 body with no
+    `## Results` H2."""
+    v3_two_figs = (
+        "# T (LOW confidence)\n\n<!-- clean-result-v3 -->\n\n## Findings\n\n"
+        "### R\n\n![a](https://x/figures/issue_9/a.png)\n\n"
+        "![b](https://x/figures/issue_9/b.png)\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(v3_two_figs)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "skipped — not a v4 body" in res.detail
+    res_legacy = verify_task_body.check_v4_result_figure_cardinality(GOOD_BODY)
+    assert res_legacy.passed is True
+    assert res_legacy.is_warn is False
+    no_results = "# T (LOW confidence)\n\n<!-- clean-result-v4 -->\n\n## Takeaways\n\n- x\n"
+    res_nores = verify_task_body.check_v4_result_figure_cardinality(no_results)
+    assert res_nores.passed is True
+    assert res_nores.is_warn is False
+    assert "## Results missing" in res_nores.detail
+
+
+def test_check49_warn_never_flips_verdict_and_rides_checks():
+    """Row 8 + registration: the WARN rides the body-only CHECKS dispatch
+    (`verify_text` emits it) with `passed=True`, so the aggregate verdict
+    (`ok == all(r.passed)`) can never flip on this check."""
+    assert verify_task_body.check_v4_result_figure_cardinality in verify_task_body.CHECKS
+    body = _v4_minimal_results_body(_ISSUE1769_FU1_DOSE_LADDER_BLOCK)
+    ok, results = verify_task_body.verify_text(body)
+    r49 = next(r for r in results if r.name == _CHECK49_NAME)
+    assert r49.is_warn is True
+    assert r49.passed is True
+    assert ok == all(r.passed for r in results)
+    assert ok == all(r.passed for r in results if r.name != _CHECK49_NAME)
+
+
+def test_check49_one_figure_each_across_sections_passes():
+    """Row 9: cardinality is per-SECTION, not per-body — two `###`
+    sections with one figure each draw no WARN."""
+    body = _v4_minimal_results_body(
+        "### First result\n\n"
+        "First read.\n\n"
+        "![First figure](https://x/figures/issue_9/first.png)\n\n"
+        "### Second result\n\n"
+        "Second read.\n\n"
+        "![Second figure](https://x/figures/issue_9/second.png)\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(body)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "all 2" in res.detail
+
+
+def test_check49_prose_only_pair_vocab_still_warns():
+    """Row 10 (pins the round-1 Must-Fix scoping): declared-pair vocabulary
+    living ONLY in general section prose — the verbatim real-body line
+    "the per-question companion below is the per-unit data behind these
+    aggregates" — does NOT silence two unpaired figures; only alt text +
+    blockquote caption lines count."""
+    body = _v4_minimal_results_body(
+        "### Aggregates and extras\n\n"
+        "the per-question companion below is the per-unit data behind these aggregates\n\n"
+        "![Aggregate bars](https://x/figures/issue_9/agg_bars.png)\n\n"
+        "> **Figure.** *Lead.* Pooled bars.\n\n"
+        "![Second analysis](https://x/figures/issue_9/extra_analysis.png)\n\n"
+        "> **Figure.** *Lead.* A different read entirely.\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "'Aggregates and extras'" in res.detail
+    assert "agg_bars.png" in res.detail
+    assert "extra_analysis.png" in res.detail
+
+
+# ─── Check 50: repro-named result dirs clean in working tree (#1989) ─────────
+
+_REPRO_CLEAN_CHECK = "repro-named result dirs clean in working tree"
+
+
+def _make_repo_with_issue_dir(tmp_path, *, gitignore=None):
+    """git-init tmp repo with a committed `eval_results/issue_999/...` tree
+    (the check-50 fixture; mirrors the check-29 git-init pattern)."""
+    repo = tmp_path / "repo50"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    d = repo / "eval_results" / "issue_999" / "map_augmentation" / "operator_kv"
+    d.mkdir(parents=True)
+    (d / "tracked.json").write_text("{}\n")
+    if gitignore is not None:
+        (repo / ".gitignore").write_text(gitignore)
+        git("add", ".gitignore")
+    git("add", "eval_results")
+    git("commit", "-q", "-m", "seed eval results")
+    return repo
+
+
+def _repro_clean_body_v4(footer_line: str) -> str:
+    """Minimal v4-sentinel body whose `**Repro:**` footer carries
+    ``footer_line`` (check 50 is called directly, so the body only needs
+    the sentinel + footer shape `_repro_section_text` reads)."""
+    filler = (
+        "- The measured effect held across the panel at matched dose; the "
+        "companion continuous read kept dynamic range where the rate floored.\n"
+        "- Coverage matched the plan denominator; no planned condition was "
+        "silently dropped, and the per-unit artifacts back each aggregate.\n"
+        "- The control arm stayed at baseline across every probe, so the "
+        "contrast is attributable to the manipulated variable alone.\n"
+    )
+    return (
+        "# Title claim (LOW confidence)\n"
+        "<!-- clean-result-v4 -->\n\n"
+        f"## Takeaways\n\n{filler}\n"
+        "---\n\n"
+        f"**Repro:** {footer_line}\n\n"
+        '**Context:** created 2026-08-01 from the user prompt "x".\n'
+    )
+
+
+def _repro_clean_body_v3(repro_line: str) -> str:
+    """Minimal non-v4 body with a `## Reproducibility` H2 carrying
+    ``repro_line`` (the v3/v2 branch of `_repro_section_text`)."""
+    return (
+        "# Title claim (LOW confidence)\n\n"
+        "<!-- clean-result-v3 -->\n\n"
+        "## Takeaways\n\n- x\n\n"
+        "## Reproducibility\n\n"
+        f"- **Artifacts:** {repro_line}\n"
+    )
+
+
+def test_check50_registered():
+    """House CHECKS-membership pin: the check dispatches via verify_text."""
+    assert verify_task_body.check_repro_artifacts_clean in verify_task_body.CHECKS
+
+
+def test_check50_extraction_reduces_and_collapses():
+    """`_repro_eval_results_dirs` unit test: trailing-slash strip, child-file
+    extension drop, glob + brace truncation, `ood_` root, mid-word lookbehind
+    rejection, and parent-subsumes-child collapse."""
+    text = (
+        "Per-cell artifacts: `eval_results/issue_999/fits/` (216 JSONs), "
+        "`eval_results/issue_999/fits/summary.json`, "
+        "`eval_results/issue_999/ckpt/{summary,curves}.json`, "
+        "`eval_results/issue_999/percell/*.json`, "
+        "plus `ood_eval_results/issue_42/probe/` and my_eval_results/issue_7/x. "
+        "A bare eval_results mention with no issue dir never enters."
+    )
+    dirs = verify_task_body._repro_eval_results_dirs(text)
+    assert dirs == {
+        "eval_results/issue_999/fits",
+        "eval_results/issue_999/ckpt",
+        "eval_results/issue_999/percell",
+        "ood_eval_results/issue_42/probe",
+    }
+    # Parent-subsumes-child: a referenced ancestor absorbs its children.
+    collapsed = verify_task_body._repro_eval_results_dirs(
+        "`eval_results/issue_999/` and `eval_results/issue_999/fits/deep/`"
+    )
+    assert collapsed == {"eval_results/issue_999"}
+
+
+def test_check50_untracked_file_warns(tmp_path, monkeypatch):
+    """Criterion (a): an untracked file under a footer-named dir — in a NEW
+    subdir, pinning the path-scoped `-u` (default untracked-files=normal
+    would collapse it to one `?? dir/` entry) — draws the WARN naming the
+    entry; verify_text dispatches the same result."""
+    repo = _make_repo_with_issue_dir(tmp_path)
+    stray = repo / "eval_results" / "issue_999" / "map_augmentation" / "fresh" / "new_cell.json"
+    stray.parent.mkdir()
+    stray.write_text("{}\n")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _repro_clean_body_v4(
+        "results in `eval_results/issue_999/map_augmentation/` (24 cell JSONs)."
+    )
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "untracked" in r.detail
+    assert "new_cell.json" in r.detail  # the -u pin: file named, not `fresh/`
+    assert "#1768" in r.detail  # the recovery line names the incident class
+    _ok, results = verify_task_body.verify_text(body)
+    r2 = _results_by_name(results)[_REPRO_CLEAN_CHECK]
+    assert r2.is_warn is True
+    assert r2.passed is True  # WARN never flips this check's own verdict
+
+
+def test_check50_modified_tracked_file_warns(tmp_path, monkeypatch):
+    """Criterion (b): a modified (non-`??` porcelain XY) tracked file under
+    the named dir draws the WARN with the modified classification."""
+    repo = _make_repo_with_issue_dir(tmp_path)
+    (
+        repo / "eval_results" / "issue_999" / "map_augmentation" / "operator_kv" / "tracked.json"
+    ).write_text('{"v": 2}\n')
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _repro_clean_body_v4("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "modified" in r.detail
+    assert "tracked.json" in r.detail
+
+
+def test_check50_clean_dir_passes(tmp_path, monkeypatch):
+    """Criterion (c): a fully-committed named dir → clean PASS, no WARN."""
+    repo = _make_repo_with_issue_dir(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _repro_clean_body_v4("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "clean in working tree" in r.detail
+
+
+def test_check50_gitignored_untracked_passes(tmp_path, monkeypatch):
+    """Criterion (d): a gitignored untracked file (the repo-wide `*.npz`
+    convention) is EXCLUDED by default porcelain (no `--ignored`) → PASS."""
+    repo = _make_repo_with_issue_dir(tmp_path, gitignore="*.npz\n")
+    (
+        repo / "eval_results" / "issue_999" / "map_augmentation" / "operator_kv" / "cells.npz"
+    ).write_bytes(b"\x00fake npz")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _repro_clean_body_v4("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "clean in working tree" in r.detail
+
+
+def test_check50_fenced_only_path_vacuous(tmp_path, monkeypatch):
+    """Criterion (e): a path living ONLY inside a fenced block of the footer
+    is illustrative — vacuous PASS even with dirt present in the repo."""
+    repo = _make_repo_with_issue_dir(tmp_path)
+    (repo / "eval_results" / "issue_999" / "map_augmentation" / "stray.json").write_text("{}\n")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _repro_clean_body_v4(
+        "rerun via:\n\n```\nls eval_results/issue_999/map_augmentation/\n```\n"
+    )
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no repro-named eval_results dirs" in r.detail
+
+
+def test_check50_no_eval_results_tokens_vacuous():
+    """Criterion (f): a footer naming only HF URLs (the deliberate scope-out)
+    → vacuous PASS, no git probes needed."""
+    body = _repro_clean_body_v4(
+        "stores at [x @ abc](https://huggingface.co/datasets/o/r/tree/abc123/prefix)."
+    )
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no repro-named eval_results dirs" in r.detail
+
+
+def test_check50_probe_failure_skips_never_warns(tmp_path, monkeypatch):
+    """Criterion (g): a raising git runner degrades the dir to the per-dir
+    'probe failure; not assessed' skip note — never a WARN, even with dirt
+    present that WOULD warn on a healthy probe."""
+    repo = _make_repo_with_issue_dir(tmp_path)
+    (repo / "eval_results" / "issue_999" / "map_augmentation" / "stray.json").write_text("{}\n")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+
+    def raising_run(cmd, *args, **kwargs):
+        raise OSError("git unavailable")
+
+    monkeypatch.setattr(verify_task_body.subprocess, "run", raising_run)
+    body = _repro_clean_body_v4("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "probe failure; not assessed" in r.detail
+
+
+def test_check50_non_git_dir_degrades_to_skip(tmp_path, monkeypatch):
+    """Criterion (g) sibling (check-29 house variant): repo root pointed at
+    a plain non-git dir (`git status` rc != 0) → skip note, no WARN, and no
+    exception."""
+    plain = tmp_path / "notarepo"
+    plain.mkdir()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: plain)
+    body = _repro_clean_body_v4("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "probe failure; not assessed" in r.detail
+
+
+def test_check50_repo_unresolved_skips(monkeypatch):
+    """`_resolve_repo_root` → None (running outside the repo): skip-PASS."""
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    body = _repro_clean_body_v4("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert r.detail.startswith("skipped")
+
+
+def test_check50_v3_reproducibility_h2_same_behavior(tmp_path, monkeypatch):
+    """Criterion (h): a v3 `## Reproducibility` H2 body routes through the
+    same `_repro_section_text` branch — untracked dirt WARNs identically."""
+    repo = _make_repo_with_issue_dir(tmp_path)
+    (repo / "eval_results" / "issue_999" / "map_augmentation" / "stray.json").write_text("{}\n")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _repro_clean_body_v3("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "untracked" in r.detail
+    assert "stray.json" in r.detail

@@ -415,7 +415,8 @@ def test_step10d_head_sync_pre_check_and_shape3_present():
 
     region = _automerge_region(text)
     pre = region.find("headRefOid")
-    ready = region.find("gh pr ready <PR>")
+    # "$PR" is the #1897 probe-rebound PR number (was the <PR> placeholder).
+    ready = region.find('gh pr ready "$PR"')
     assert pre != -1, "head-sync pre-check (headRefOid poll) missing from the auto-merge block"
     assert ready != -1, "gh pr ready call missing from the auto-merge block"
     assert pre < ready, "head-sync pre-check must precede gh pr ready / the first merge attempt"

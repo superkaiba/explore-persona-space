@@ -4682,37 +4682,76 @@ while True:
     # paragraph in Step 6b for the full rationale + the failure mode
     # the unconditional invocation would trigger (FALSE-POSITIVE
     # `epm:failure v1 missing_handle_sidecar`).
-    # ADAPTIVE POLL INTERVAL (anti-stall redesign §7) — HARD-CLAMPED AT
-    # 540s PER CALL (#1818). Every tick's JSON line still carries a
-    # recommended `next_interval` (seconds): 1800 ONLY on a healthy,
-    # quiet, post-early-run `running` tick far from any phase boundary;
-    # 540 otherwise — gate-adjacent, anomalous, early-run (first ~30 min
-    # after launch), and recent-phase-change ticks never emit the long
-    # value, so gates are never delayed. But the recommendation is
-    # TELEMETRY, not a sleep value: the Bash tool kills ANY call at its
-    # 600000 ms (10-minute) ceiling — background calls included — so a
-    # composed `sleep 1800` dies mid-sleep, the poll never runs, and the
-    # dead call reads as a stale/absent poll on the next wake (#1768,
-    # 2026-07-28). NEVER compose a sleep longer than 540s into a single
-    # background Bash call, here or anywhere in this loop: a longer
-    # cadence is realized only as consecutive ≤540s ticks (or a Monitor
-    # until-loop, the sanctioned long-wait shape — § Long-phase
-    # heartbeat duty). A quiet-tick 1800 recommendation
-    # (POLL_INTERVAL_QUIET_SEC telemetry) is honored AS 540; §7's
-    # turn-savings intent is deferred until a Monitor-based quiet wait
-    # exists.
+    # ADAPTIVE POLL INTERVAL (anti-stall redesign §7) — bg-Bash sleeps
+    # HARD-CLAMPED AT 540s PER CALL (#1818). Every tick's JSON line
+    # carries a recommended `next_interval` (seconds): 1800 ONLY on a
+    # healthy, quiet, post-early-run `running` tick far from any phase
+    # boundary; 540 otherwise — gate-adjacent, anomalous, early-run
+    # (first ~30 min after launch), and recent-phase-change ticks never
+    # emit the long value, so gates are never delayed. The
+    # recommendation is NEVER a bg-Bash sleep value: the Bash tool
+    # kills ANY call at its 600000 ms (10-minute) ceiling — background
+    # calls included — so a composed `sleep 1800` dies mid-sleep, the
+    # poll never runs, and the dead call reads as a stale/absent poll
+    # on the next wake (#1768, 2026-07-28).
+    # NEVER compose a sleep longer than 540s into a single background
+    # Bash call, here or anywhere in this loop. A quiet-tick 1800 recommendation
+    # (POLL_INTERVAL_QUIET_SEC) is instead REALIZED as the one-wake
+    # Monitor QUIET-WAIT branch below (#1924) — the sanctioned
+    # long-wait shape (§ Long-phase heartbeat duty) running
+    # wait-then-poll in ONE unit; a missing, unparseable, or non-1800
+    # `next_interval` falls to the fixed 540s chain (fail toward
+    # coverage).
     #
     # `result` below = the parsed JSON line from the PREVIOUS tick's
     # bg-Bash output (the same `result` the status branch below reads);
-    # its `next_interval` field is read as telemetry only — it never
-    # sets the sleep.
-    interval = 540  # fixed: both the default AND the per-call MAX (#1818)
-    Bash(
-        run_in_background=True,
-        command=(
-            f"sleep {interval} && uv run python scripts/backend_poll.py --issue {N}"
-        ),
+    # its `next_interval` field is the quiet-wait branch key — it never
+    # sets a bg-Bash sleep.
+    quiet_wait = (
+        result is not None
+        and result.get("status") == "running"
+        and result.get("next_interval") == 1800
     )
+    if quiet_wait:
+        # §7 quiet cadence, realized as the sanctioned Monitor long wait
+        # (#1924): the Monitor runs wait-then-poll in ONE unit, so its
+        # terminal stdout line IS the tick JSON and the quiet cycle
+        # costs ONE notification wake (vs ~3.3 fixed-540s wakes).
+        # Hard-bounded — a timeout kill is itself reported — and the
+        # */45 issue-tick cron + the watcher's 10-min passes stay the
+        # independent external bounds (§7 risk paragraph). The terminal
+        # JSON line doubles as the #1850 emission: the wait never
+        # exceeds ~40 min, so no mid-wait heartbeat wake is burned.
+        # 60s-chunk wait loop — never a bare long leading sleep. The
+        # top-of-tick set_title refresh stays unconditional (it runs at
+        # the resume that reads each tick, quiet-wait resumes included).
+        Monitor(
+            description=f"quiet-wait issue {N} (§7 quiet cadence, ~29 min + poll)",
+            timeout_ms=2400000,
+            persistent=False,
+            command=(
+                f"for i in $(seq 1 29); do sleep 60; done; "
+                f"uv run python scripts/backend_poll.py --issue {N}"
+            ),
+        )
+        # End the turn. The notification carries the tick JSON (the
+        # LAST stdout line) — parse it per § Tick-parse
+        # field-preservation below and route exactly as below (re-arm
+        # the quiet wait or the 540s chain per the fresh tick's
+        # fields). A Monitor exit with NO parseable JSON line (poll
+        # crash; the reported nonzero exit is the signal) -> run an
+        # IMMEDIATE fresh 540s-chain tick — never re-arm the quiet
+        # wait blind. A vanished Monitor (no notification AND no poll
+        # for >~40 min) surfaces at the next */45 tick-cron wake:
+        # kill-before-relaunch probe, then resume the 540s chain.
+    else:
+        interval = 540  # fixed: both the default AND the per-call MAX (#1818)
+        Bash(
+            run_in_background=True,
+            command=(
+                f"sleep {interval} && uv run python scripts/backend_poll.py --issue {N}"
+            ),
+        )
     # Harness re-invokes orchestrator on bg-Bash exit. To WAIT on bg
     # work, simply END THE TURN with a one-sentence status — NEVER emit
     # no-op Bash calls to idle (`sleep 1` "yield turn", `true` no-ops):
@@ -4745,11 +4784,13 @@ while True:
     #                                   signal; see Step 7); run CRON-TEARDOWN
     #                                   (see below); set status:blocked; exit.
     #   status == "running"        -> milestone-already-posted by the poller
-    #                                  if new_milestone was true; loop again
-    #                                  with the fixed 540s sleep
-    #                                  (next_interval is telemetry only —
-    #                                  see ADAPTIVE POLL INTERVAL above;
-    #                                  never sleep >540s in one call).
+    #                                  if new_milestone was true; loop again:
+    #                                  the next tick routes via the
+    #                                  QUIET-WAIT Monitor branch when this
+    #                                  tick's next_interval is 1800, else
+    #                                  the fixed 540s sleep (see ADAPTIVE
+    #                                  POLL INTERVAL above; never sleep
+    #                                  >540s in one call).
     #                                  If the JSON also has
     #                                  gpu_idle_advisory_posted == true, act
     #                                  per "GPU-idle advisory handling" below
@@ -4761,7 +4802,7 @@ while True:
 **Tick-parse field-preservation (REQUIRED — #1841; incident #1768).** Any
 compacted/filtered parse of a tick's JSON line MUST print, at minimum, the
 full decision field set: `status`, `current_phase`, `gate`, `stall_reason`,
-`new_milestone`, `next_interval` (telemetry only), `gpu_idle_advisory_posted`,
+`new_milestone`, `next_interval` (the quiet-wait branch key), `gpu_idle_advisory_posted`,
 `gpu_idle_escalation_posted`, `gpu_width_advisory_posted`,
 `eta_deviation_posted`. A status-only parse is BANNED — it structurally
 discards the very fields the handling sections below branch on (#1768,
@@ -4786,11 +4827,12 @@ milestone marker like `phase: post_eval`, update the local
 `current_phase` from the milestone before the next tick so the title
 reflects the latest phase.)
 
-The top-of-tick `set_title` refresh plus the fixed 540s tick interval
-discharge the § Long-phase heartbeat duty (below) for this loop by
-construction; any wait run OUTSIDE this loop shape — a `Monitor`
-until-loop on a VM phase, an ad-hoc bg poll chain, an off-pod Batch-API
-poll — carries that duty explicitly.
+The top-of-tick `set_title` refresh plus the bounded tick cadence (the
+fixed 540s chain; ≤ ~40-min Monitor quiet-wait cycles) discharge the
+§ Long-phase heartbeat duty (below) for this loop by construction; any
+wait run OUTSIDE this loop shape — a `Monitor` until-loop on a VM
+phase, an ad-hoc bg poll chain, an off-pod Batch-API poll — carries
+that duty explicitly.
 
 The `poll_pipeline.py` helper posts `epm:progress` events itself when it
 sees a phase transition, AND drains pod-side sentinel files (posting
@@ -5276,8 +5318,9 @@ deadline-bounded Batch-API poll, a detached VM phase (§ "Detached
 VM-side long compute phases", Step 9 entry guard), or any
 follow-up-round wait at `followups_running` — the orchestrator carries
 BOTH duties below. (The Step 6d.2 polling loop above discharges them by
-construction: the top-of-tick `set_title` refresh + the fixed 540s
-tick interval. The duty is for every wait that is NOT that loop. A long
+construction: the top-of-tick `set_title` refresh + the bounded tick
+cadence — the fixed 540s chain, ≤ ~40-min Monitor quiet-wait cycles.
+The duty is for every wait that is NOT that loop. A long
 FOREGROUND subagent wait is a named out-of-scope shape — no resumable
 orchestrator turn exists there to discharge the duty; the watcher's K=2
 live-escalation debounce covers it.)
@@ -5364,7 +5407,11 @@ Monitor died — re-arm it after the kill-before-relaunch probe
 (`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch), never
 assume it is still watching (#1739: after one healthy Monitor wake the
 session idled ~58 min with no wake on a 3-lane GCP run; the watcher
-stall-alert was the only recovery). The `[watch-heartbeat]` line is
+stall-alert was the only recovery). Carve-out: the Step 6d.2 QUIET-WAIT
+Monitor (#1924) — a single-shot bounded (≤ ~40 min) wait-then-poll
+whose terminal tick-JSON line IS its emission — owes no mid-wait
+heartbeat: the 15-30-min cadence targets cycling long-interval /
+indefinite watches, which it is not. The `[watch-heartbeat]` line is
 Monitor stdout only — NEVER a task marker; the `[long-phase-heartbeat]`
 `epm:progress` marker convention (item 2) is separate shared machinery
 and is untouched.

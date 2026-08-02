@@ -1,0 +1,17 @@
+{
+ "arm_id": "imp-pers-ft-con-s42",
+ "layer": 19,
+ "n_test_rows": 1000,
+ "n_rows_text_changed": 915,
+ "frac_rows_text_changed": 0.915,
+ "m0_refit_heldout_r2": 0.501281158602011,
+ "m0_refit_selected_lambda": 3162.2776601683795,
+ "round1_committed_m0_heldout_r2": 0.5012811586020105,
+ "mean_shift_cos": 0.029961615308765947,
+ "mean_shift_rel_err": 4.39028825055499,
+ "mean_shift_norm_measured": 3.172417697094027,
+ "mean_shift_norm_attributed": 13.657100653046063,
+ "per_row_cos_median": 0.007918664874287266,
+ "per_row_cos_mean": 0.010907223435036546,
+ "per_row_rel_err_median": 1.269189092274638
+}

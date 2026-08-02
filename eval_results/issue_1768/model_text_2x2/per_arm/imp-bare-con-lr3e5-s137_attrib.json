@@ -1,0 +1,17 @@
+{
+ "arm_id": "imp-bare-con-lr3e5-s137",
+ "layer": 19,
+ "n_test_rows": 1000,
+ "n_rows_text_changed": 927,
+ "frac_rows_text_changed": 0.927,
+ "m0_refit_heldout_r2": 0.501281158602011,
+ "m0_refit_selected_lambda": 3162.2776601683795,
+ "round1_committed_m0_heldout_r2": 0.5012811586020105,
+ "mean_shift_cos": 0.2856282134798767,
+ "mean_shift_rel_err": 3.247693478294703,
+ "mean_shift_norm_measured": 4.624184366421172,
+ "mean_shift_norm_attributed": 15.67000477683997,
+ "per_row_cos_median": 0.07562748249231092,
+ "per_row_cos_mean": 0.07981096210025228,
+ "per_row_rel_err_median": 1.2643365104450144
+}

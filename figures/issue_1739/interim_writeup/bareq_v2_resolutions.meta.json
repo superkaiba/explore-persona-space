@@ -1,0 +1,1227 @@
+{
+  "commit": "ff548adcf6",
+  "created": "2026-08-01T18:52:14Z",
+  "figsize": [
+    16.5,
+    6.4
+  ],
+  "points": [
+    {
+      "Spearman $\\rho$": -0.033584,
+      "y": -0.06716815220224041,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$": -0.040655,
+      "y": -0.08131075469567142,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$": 0.077885,
+      "y": 0.15576916013499797,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$": 0.034045,
+      "y": 0.0680898245982501,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$": -0.024575,
+      "y": -0.04915030133665676,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$": -0.036957,
+      "y": -0.07391344196781906,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$": 0.085495,
+      "y": 0.17099019350259484,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$": 0.027198,
+      "y": 0.054396518896862554,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$": -0.044796,
+      "y": -0.08959234127187081,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$": -0.048286,
+      "y": -0.09657269341999075,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$": 0.075825,
+      "y": 0.15165080183941831,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$": 0.044072,
+      "y": 0.08814311307435953,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$": -0.10903614932294317,
+      "y": 0.26,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$": -0.12763355542395038,
+      "y": 1.26,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$": 0.11243916030370091,
+      "y": 2.26,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$": 0.025120386840124215,
+      "y": 3.26,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$": -0.019244494713839287,
+      "y": 0.26,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$": -0.028425430884178135,
+      "y": 1.26,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$": 0.19564193377328382,
+      "y": 2.26,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$": 0.1065242288034844,
+      "y": 3.26,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$": -0.11380634391459268,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$": -0.12986126075404938,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$": 0.10321029710703385,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$": -0.0024837683791445603,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$": 0.01494337899388714,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$": -0.013280949705543048,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$": 0.22262329767138495,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$": 0.1084595516884205,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$": -0.14129359588782797,
+      "y": -0.26,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$": -0.15029773927151568,
+      "y": 0.74,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$": 0.10334792984137227,
+      "y": 1.74,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$": 0.025313707337257574,
+      "y": 2.74,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$": -0.025963522697722827,
+      "y": -0.26,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$": -0.027445063849366028,
+      "y": 0.74,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$": 0.1918984866653095,
+      "y": 1.74,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$": 0.14213216041943874,
+      "y": 2.74,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "shuffle seed": 0.0,
+      "shuffled-map control $\\rho$": 0.0680898245982501,
+      "series": "individual shuffle draws",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "shuffle seed": 1.0,
+      "shuffled-map control $\\rho$": 0.04292516336855372,
+      "series": "individual shuffle draws",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "shuffle seed": 2.0,
+      "shuffled-map control $\\rho$": -0.009633071925137434,
+      "series": "individual shuffle draws",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "shuffle seed": 3.0,
+      "shuffled-map control $\\rho$": -0.028396056344463006,
+      "series": "individual shuffle draws",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "shuffle seed": 4.0,
+      "shuffled-map control $\\rho$": -0.0025615642481874824,
+      "series": "individual shuffle draws",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "shuffle seed": 5.0,
+      "shuffled-map control $\\rho$": 0.0037784486623956563,
+      "series": "individual shuffle draws",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "shuffle seed": 6.0,
+      "shuffled-map control $\\rho$": 0.02644531412510676,
+      "series": "individual shuffle draws",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "shuffle seed": 7.0,
+      "shuffled-map control $\\rho$": -0.07674430980127694,
+      "series": "individual shuffle draws",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "shuffle seed": 0.0,
+      "shuffled-map control $\\rho$": 0.0680898245982501,
+      "series": "committed row (seed 0) +0.068",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "shuffle seed": 0.0,
+      "shuffled-map control $\\rho$": 0.002987968554405169,
+      "series": "8-draw mean +0.003",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "shuffle seed": 1.0,
+      "shuffled-map control $\\rho$": 0.002987968554405169,
+      "series": "8-draw mean +0.003",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 0.0,
+      "held-out $R^2$": 0.008263865245457103,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 1.0,
+      "held-out $R^2$": 0.01652505287526802,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 2.0,
+      "held-out $R^2$": 0.03148510477730959,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 3.0,
+      "held-out $R^2$": 0.049596474958559414,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 4.0,
+      "held-out $R^2$": 0.06727374049230875,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 5.0,
+      "held-out $R^2$": 0.06522600687041553,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 6.0,
+      "held-out $R^2$": 0.07529217696670154,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 7.0,
+      "held-out $R^2$": 0.09790634452887945,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 8.0,
+      "held-out $R^2$": 0.10632231727355548,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 9.0,
+      "held-out $R^2$": 0.11144261146812004,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 10.0,
+      "held-out $R^2$": 0.13648860950599,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 11.0,
+      "held-out $R^2$": 0.137089862377176,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 12.0,
+      "held-out $R^2$": 0.13978797169516302,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 13.0,
+      "held-out $R^2$": 0.1580059523870221,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 14.0,
+      "held-out $R^2$": 0.1494264914033534,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 15.0,
+      "held-out $R^2$": 0.13666882979599923,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 16.0,
+      "held-out $R^2$": 0.13275774536901983,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 17.0,
+      "held-out $R^2$": 0.11983544396496366,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 18.0,
+      "held-out $R^2$": 0.12111049326959514,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.11787046781840053,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 20.0,
+      "held-out $R^2$": 0.12449481555665469,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 21.0,
+      "held-out $R^2$": 0.13764479062206256,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 22.0,
+      "held-out $R^2$": 0.1519091352646737,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 23.0,
+      "held-out $R^2$": 0.14791968193647348,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 24.0,
+      "held-out $R^2$": 0.14094196617614954,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 25.0,
+      "held-out $R^2$": 0.13044197064837865,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 26.0,
+      "held-out $R^2$": 0.12293086423987472,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 27.0,
+      "held-out $R^2$": 0.1719815799871611,
+      "series": "fitted map, held-out $R^2$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 0.0,
+      "held-out $R^2$": -0.02604594000735618,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 1.0,
+      "held-out $R^2$": -0.03203525171808321,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 2.0,
+      "held-out $R^2$": -0.031718246339016876,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 3.0,
+      "held-out $R^2$": -0.03306883717498179,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 4.0,
+      "held-out $R^2$": -0.04747301071132961,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 5.0,
+      "held-out $R^2$": -0.08084302792468634,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 6.0,
+      "held-out $R^2$": -0.0874340625267902,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 7.0,
+      "held-out $R^2$": -0.09031774316747745,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 8.0,
+      "held-out $R^2$": -0.13936169594966227,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 9.0,
+      "held-out $R^2$": -0.08712646702724643,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 10.0,
+      "held-out $R^2$": -0.10724009305128854,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 11.0,
+      "held-out $R^2$": -0.1337728483001388,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 12.0,
+      "held-out $R^2$": -0.13453718768669595,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 13.0,
+      "held-out $R^2$": -0.13950779245258443,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 14.0,
+      "held-out $R^2$": -0.17766613782815338,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 15.0,
+      "held-out $R^2$": -0.21573006900430233,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 16.0,
+      "held-out $R^2$": -0.2621243680169198,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 17.0,
+      "held-out $R^2$": -0.3228777716175588,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 18.0,
+      "held-out $R^2$": -0.4612688406624679,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": -0.5620385079610182,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 20.0,
+      "held-out $R^2$": -0.734726160064572,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 21.0,
+      "held-out $R^2$": -0.8627052385598706,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 22.0,
+      "held-out $R^2$": -1.0957002971666046,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 23.0,
+      "held-out $R^2$": -1.1194300143211238,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 24.0,
+      "held-out $R^2$": -1.2346795625925069,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 25.0,
+      "held-out $R^2$": -1.3993472972203918,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 26.0,
+      "held-out $R^2$": -1.4384507599630454,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 27.0,
+      "held-out $R^2$": -0.8677668788362398,
+      "series": "identity+learned-bias $R^2$",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "acc@1": 0.017581545539713105,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "acc@1": 0.01663990443396265,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "acc@1": 0.017826737925984857,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "acc@1": 0.01921194423952035,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "acc@1": 0.022344917058174398,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.0,
+      "acc@1": 0.02346382576539454,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 6.0,
+      "acc@1": 0.02531338412512526,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 7.0,
+      "acc@1": 0.02950257029703466,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 8.0,
+      "acc@1": 0.030549451060058887,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 9.0,
+      "acc@1": 0.029041074599316735,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 10.0,
+      "acc@1": 0.03283237339347293,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 11.0,
+      "acc@1": 0.035332508892456024,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 12.0,
+      "acc@1": 0.033047690564808115,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 13.0,
+      "acc@1": 0.03645212343822383,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 14.0,
+      "acc@1": 0.03727546110553698,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 15.0,
+      "acc@1": 0.0348521470854081,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 16.0,
+      "acc@1": 0.033213179344745235,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 17.0,
+      "acc@1": 0.03222343374663937,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 18.0,
+      "acc@1": 0.03171317203328331,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 19.0,
+      "acc@1": 0.03100162032723174,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 20.0,
+      "acc@1": 0.03064405360535713,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 21.0,
+      "acc@1": 0.035375053195765005,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 22.0,
+      "acc@1": 0.0371267641789543,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 23.0,
+      "acc@1": 0.037860817318861574,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 24.0,
+      "acc@1": 0.039224927683916576,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 25.0,
+      "acc@1": 0.03764097655523677,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 26.0,
+      "acc@1": 0.037348879096994504,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 27.0,
+      "acc@1": 0.03949868766523231,
+      "series": "kNN retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 6.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 7.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 8.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 9.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 10.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 11.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 12.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 13.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 14.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 15.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 16.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 17.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 18.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 19.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 20.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 21.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 22.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 23.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 24.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 25.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 26.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 27.0,
+      "acc@1": 0.0007761554056563665,
+      "series": "retrieval chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 159,
+  "text": {
+    "suptitle": "Bare-query round v2: what the added diagnostics settle",
+    "fig_texts": [
+      "(a) the conversation-turn split the previous cut could not compute; (b) the shuffled-map control re-run across 8 shuffle draws;\n(c) the standing identity+learned-bias and kNN-retrieval baselines for the bare-rep -> answer map, pooled over the five by-query folds."
+    ],
+    "axes": [
+      {
+        "title_left": "(a) evil dedicated bare fit, by conversation-turn subset",
+        "xlabel": "Spearman $\\rho$",
+        "legend_labels": [
+          "pooled (all 1,987)",
+          "multi-turn only (1,009)",
+          "single-turn only (978)"
+        ],
+        "xticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ],
+        "yticklabels": [
+          "map -> PV proj.",
+          "direct ridge: context -> expression",
+          "oracle: PV proj. on TRUE answer",
+          "control: shuffled map -> PV proj."
+        ]
+      },
+      {
+        "title_left": "(b) the nonsense-map control across shuffle draws",
+        "xlabel": "shuffle seed",
+        "ylabel": "shuffled-map control $\\rho$",
+        "legend_labels": [
+          "2.5-97.5 pct of the 8 draws",
+          "8-draw mean +0.003",
+          "individual shuffle draws",
+          "committed row (seed 0) +0.068"
+        ],
+        "xticklabels": [
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.08",
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08"
+        ]
+      },
+      {
+        "title_left": "(c) standing-rule map baselines (5 by-query folds)",
+        "xlabel": "layer",
+        "ylabel": "held-out $R^2$",
+        "legend_labels": [
+          "fitted map, held-out $R^2$",
+          "identity+learned-bias $R^2$",
+          "kNN retrieval acc@1 (cosine)",
+          "retrieval chance = 1/n_pool"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22121.6",
+          "\u22121.4",
+          "\u22121.2",
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4"
+        ]
+      },
+      {
+        "ylabel": "acc@1",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.005",
+          "0.000",
+          "0.005",
+          "0.010",
+          "0.015",
+          "0.020",
+          "0.025",
+          "0.030",
+          "0.035",
+          "0.040",
+          "0.045"
+        ]
+      }
+    ],
+    "series": [
+      "pooled (all 1,987)",
+      "multi-turn only (1,009)",
+      "single-turn only (978)",
+      "8-draw mean +0.003",
+      "individual shuffle draws",
+      "committed row (seed 0) +0.068",
+      "fitted map, held-out $R^2$",
+      "identity+learned-bias $R^2$",
+      "kNN retrieval acc@1 (cosine)",
+      "retrieval chance = 1/n_pool"
+    ]
+  }
+}

@@ -202,6 +202,88 @@ def test_condition_codes_outside_data_still_flagged():
     assert any("C1" in s for s in findings["condition_labels"]), findings
 
 
+# ─── H1c-form sub-tag widening (#1914) ────────────────────────────────────
+
+
+def test_sub_tag_condition_codes_in_prose_are_flagged():
+    """`H<digit><lowercase>` hypothesis/plan sub-tags (`H1c`, `H4b`,
+    `P4a`) in reader-facing prose trip `condition_labels`, and the
+    matched token carries the sub-letter (#1914)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "Under H1c the lift holds; H4b and P4a show the same pattern.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "condition_labels" in findings, findings
+    matched = findings["condition_labels"]
+    assert any("H1c" in s for s in matched), matched
+    assert any("H4b" in s for s in matched), matched
+    assert any("P4a" in s for s in matched), matched
+
+
+def test_plural_heading_h2s_prose_not_flagged():
+    """Plural markdown-heading prose ("the five flat H2s", "three H2s
+    total") must NOT trip `condition_labels` — the sub-tag letter class
+    deliberately excludes `s` (measured false-positive class, #1914)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The five flat H2s follow the legacy H2s ordering; three H2s total.",
+    )
+    findings = audit.audit_body(body)
+    assert "condition_labels" not in findings, findings
+
+
+def test_gpu_name_prose_not_flagged():
+    """GPU names (`H100`/`H200`) stay unmatched after the sub-tag
+    widening — `[1-9]` + the trailing lookahead still exclude them
+    (regression pin for the #1826 known-good class)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "Training ran on a single H100 pod; the H200 fallback was unused.",
+    )
+    findings = audit.audit_body(body)
+    assert "condition_labels" not in findings, findings
+
+
+def test_prime_condition_label_still_flagged():
+    """The primed form (`C1` + U+2032 PRIME) is still matched after the
+    sub-tag widening (existing-behavior regression pin)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The C1′ variant shows the same lift.",  # noqa: RUF001
+    )
+    findings = audit.audit_body(leaky)
+    assert "condition_labels" in findings, findings
+    assert any("C1′" in s for s in findings["condition_labels"]), findings  # noqa: RUF001
+
+
+def test_condition_labels_regex_in_sync_with_verify_task_body():
+    """The audit's `condition_labels` regex literal must equal the
+    condition_labels portion of `verify_task_body._DATA_CONDITION_CODE_RE`
+    (the prefix before its `|\\bBS_E` cell_tags branch) — makes the
+    KEPT-IN-SYNC comment in verify_task_body.py self-enforcing (#1914)."""
+    import sys
+
+    if "verify_task_body" in sys.modules:
+        vtb = sys.modules["verify_task_body"]
+    else:
+        vtb_script = REPO_ROOT / "scripts" / "verify_task_body.py"
+        vtb_spec = importlib.util.spec_from_file_location("verify_task_body", vtb_script)
+        assert vtb_spec is not None and vtb_spec.loader is not None
+        vtb = importlib.util.module_from_spec(vtb_spec)
+        sys.modules["verify_task_body"] = vtb
+        vtb_spec.loader.exec_module(vtb)
+
+    audit_pattern = audit.PATTERNS["condition_labels"][0]
+    full = vtb._DATA_CONDITION_CODE_RE.pattern
+    prefix = full.split(r"|\bBS_E", 1)[0]
+    assert prefix == audit_pattern, (
+        "condition_labels regex drifted between the audit and check 19b:\n"
+        f"audit:    {audit_pattern!r}\n"
+        f"check19b: {prefix!r}"
+    )
+
+
 def test_strip_data_example_blocks_only_drops_inside_data():
     """`strip_data_example_blocks` drops `<details>` blocks under
     `## Data` but leaves a `<details>` block under any other H2
@@ -2495,3 +2577,115 @@ def test_snake_slug_regression_issue_1315_shape():
     assert "opaque_snake_slugs" in findings, findings
     assert "`neg_reph_curious`" in findings["opaque_snake_slugs"], findings
     assert not any("span_seam" in s for s in findings["opaque_snake_slugs"]), findings
+
+
+# ─── #1987: `pm_inline` — inline `value ± err` / bare `±<num>` in prose ───
+#
+# Lens 7 names `value ± err` the same banned construct as the bracketed CI,
+# but no live rule matched the ± char until #1987 (the only two ± occurrences
+# in the audit were comments). Incident #1768: `median ±0.16 displacement,
+# ±0.06 read-out` sat in `## Results` prose through a full clean-result gate
+# + its Codex twin and was caught only by a fresh LM read. `pm_inline`
+# reuses `interval_inline`'s scan-source chain verbatim, so the exemption
+# surface (tables, caption blockquotes, fenced code, Why-this-test lines,
+# Data/Methodology example blocks, Context blockquotes) is identical and
+# inline backticks are KEPT (#667 parity).
+
+
+def test_pm_inline_fires_on_incident_1768_results_prose():
+    """The frozen #1768 incident form — `median ±0.16 displacement, ±0.06
+    read-out` in finding read prose — trips `pm_inline` (acceptance
+    criterion 5, frozen so the test never depends on #1768's live body)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The operator read gives median ±0.16 displacement, ±0.06 read-out.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "pm_inline" in findings, findings
+    assert any("±0.16" in s for s in findings["pm_inline"]), findings
+
+
+def test_pm_inline_fires_on_value_pm_err_prose():
+    """The spaced `8 ± 2` form in a `## Takeaways` bullet trips
+    `pm_inline` (acceptance criterion 1, first alternative)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline finding: the lift is 8 ± 2 points over baseline.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "pm_inline" in findings, findings
+    assert any("8 ± 2" in s for s in findings["pm_inline"]), findings
+
+
+def test_pm_inline_fires_on_bare_pm_number():
+    """A bare `±0.06` (no preceding value token) in finding prose trips
+    `pm_inline` (acceptance criterion 1, second alternative)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The read-out is stable to within ±0.06 across seeds.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "pm_inline" in findings, findings
+    assert any("±0.06" in s for s in findings["pm_inline"]), findings
+
+
+def test_pm_inline_inline_backtick_still_fires():
+    """An inline-backtick-wrapped `` `±0.1` `` in prose STILL fires — the
+    interval chain uses `strip_fenced_code_only`, which keeps inline
+    backticks (#667 parity; acceptance criterion 3)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift holds at every seed, `±0.1` around the mean.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "pm_inline" in findings, findings
+    assert any("±0.1" in s for s in findings["pm_inline"]), findings
+
+
+def test_pm_inline_exempt_table_row():
+    """A `value ± err` form inside the `## Reproducibility` Parameters
+    table is a spec-compliant interval form (table-cell exemption via
+    `_blank_table_rows`) and must NOT trip `pm_inline`."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "| Base model | Qwen-2.5-7B-Instruct |",
+        "| Base model | Qwen-2.5-7B-Instruct |\n| Lift | 3.1 ± 0.2 |",
+    )
+    findings = audit.audit_body(body)
+    assert "pm_inline" not in findings, findings
+
+
+def test_pm_inline_exempt_caption_blockquote():
+    """A `±<num>` inside a figure-caption blockquote (`> **Figure.** ...`)
+    is the chart-annotation carve-out and must NOT trip `pm_inline`."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "> **Figure.** *The treatment lifts alignment over baseline at every seed.*",
+        "> **Figure.** *The treatment lifts alignment by 0.3 ±0.16 at every seed.*",
+    )
+    findings = audit.audit_body(body)
+    assert "pm_inline" not in findings, findings
+
+
+def test_pm_inline_exempt_fenced_code():
+    """A `±<num>` inside a fenced code block is stripped before the scan
+    (`strip_fenced_code_only` still strips FENCED blocks) and must NOT
+    trip `pm_inline`."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift holds at every seed in the held-out evaluation.\n\n```\nmargin = 0.5 ±0.06\n```",
+    )
+    findings = audit.audit_body(body)
+    assert "pm_inline" not in findings, findings
+
+
+def test_pm_inline_exempt_why_this_test_line():
+    """A `±<num>` in the finding-internal 'Why this test' definition line
+    is the named Lens 7 exception (`_strip_interval_inline_exempt_lines`
+    parity) and must NOT trip `pm_inline`."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift holds at every seed in the held-out evaluation.\n\n"
+        "**Why this test:** the ±0.16 margin is the registered interval "
+        "defining the test.",
+    )
+    findings = audit.audit_body(body)
+    assert "pm_inline" not in findings, findings

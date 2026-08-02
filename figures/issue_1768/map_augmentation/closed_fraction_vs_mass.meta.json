@@ -1,0 +1,459 @@
+{
+  "commit": "uncommitted",
+  "created": "2026-08-02T04:40:58Z",
+  "figsize": [
+    7.2,
+    4.6
+  ],
+  "points": [
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.001,
+      "fraction of realized map change closed": -0.0009758584751267119,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.0013315579227696406,
+      "fraction of realized map change closed": -0.0009385324484800783,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.01,
+      "fraction of realized map change closed": -0.002651823732678693,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.05,
+      "fraction of realized map change closed": -0.005816389817746792,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.1,
+      "fraction of realized map change closed": -0.006798207238847054,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.25,
+      "fraction of realized map change closed": -0.011689842979015763,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.5,
+      "fraction of realized map change closed": -0.022718766752291675,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.001,
+      "fraction of realized map change closed": 0.0005896755535543807,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.0013315579227696406,
+      "fraction of realized map change closed": 0.0011440652813479169,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.01,
+      "fraction of realized map change closed": -0.001689511939590993,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.05,
+      "fraction of realized map change closed": -0.0031039513004762487,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.1,
+      "fraction of realized map change closed": -0.004646479063167952,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.25,
+      "fraction of realized map change closed": -0.0072502591833478736,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.5,
+      "fraction of realized map change closed": -0.01828190267885077,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.001,
+      "fraction of realized map change closed": 0.001956423181140421,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.0013315579227696406,
+      "fraction of realized map change closed": 0.0021699917129925916,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.01,
+      "fraction of realized map change closed": 0.001399849128848718,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.05,
+      "fraction of realized map change closed": 0.001295881449273728,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.1,
+      "fraction of realized map change closed": 0.0006671842681423845,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.25,
+      "fraction of realized map change closed": -9.940409474840095e-05,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.5,
+      "fraction of realized map change closed": -0.005581657355889114,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.001,
+      "fraction of realized map change closed": 0.002165533292910582,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.0013315579227696406,
+      "fraction of realized map change closed": 0.0019401357722076407,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.01,
+      "fraction of realized map change closed": -0.0020639688346246743,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.05,
+      "fraction of realized map change closed": -0.006234359970104464,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.1,
+      "fraction of realized map change closed": -0.007477716577456661,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.25,
+      "fraction of realized map change closed": -0.00904581830241491,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.5,
+      "fraction of realized map change closed": -0.038763121658908384,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.001,
+      "fraction of realized map change closed": -0.0011795888901506846,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.01,
+      "fraction of realized map change closed": -0.023348637258891358,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.013157894736842105,
+      "fraction of realized map change closed": -0.02838804041570553,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.05,
+      "fraction of realized map change closed": -0.04623614049661384,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.1,
+      "fraction of realized map change closed": -0.05151818461504476,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.25,
+      "fraction of realized map change closed": -0.06264849730806366,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.5,
+      "fraction of realized map change closed": -0.08570987671175723,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.001,
+      "fraction of realized map change closed": 0.00017589988460942063,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.0013315579227696406,
+      "fraction of realized map change closed": 0.00010363773194421722,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.01,
+      "fraction of realized map change closed": -0.000231525911764896,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.05,
+      "fraction of realized map change closed": -0.0034867967049356796,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.1,
+      "fraction of realized map change closed": -0.0046718410924972975,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.25,
+      "fraction of realized map change closed": -0.008402968947223366,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.5,
+      "fraction of realized map change closed": -0.02178080908831026,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.001,
+      "fraction of realized map change closed": -0.002172962023247793,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.0013315579227696406,
+      "fraction of realized map change closed": -0.00297766976942504,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.01,
+      "fraction of realized map change closed": -0.023455972637824063,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.05,
+      "fraction of realized map change closed": -0.06988947324493266,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.1,
+      "fraction of realized map change closed": -0.09675550562884006,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.25,
+      "fraction of realized map change closed": -0.13474533545485556,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.5,
+      "fraction of realized map change closed": -0.1935944481866303,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.001,
+      "fraction of realized map change closed": 0.00014234979947336246,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.0013315579227696406,
+      "fraction of realized map change closed": 2.8049322883250127e-05,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.01,
+      "fraction of realized map change closed": 0.00044578339755851903,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.05,
+      "fraction of realized map change closed": -2.3486034488318097e-05,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.1,
+      "fraction of realized map change closed": -0.001101475636523963,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.25,
+      "fraction of realized map change closed": -0.006401364272410115,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.5,
+      "fraction of realized map change closed": -0.015674272428167324,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 56,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Data-augmented refit vs the realized post-FT map (L19, last-token)",
+        "xlabel": "effective loss mass of the training pairs, $m$ (log)",
+        "ylabel": "fraction of realized map change closed",
+        "legend_labels": [
+          "cas-pers-con lr1e5 s137",
+          "imp-pers-con lr3e5 s42",
+          "imp-pers-ft-con s137",
+          "imp-pers-po lr1e5 s137",
+          "mk-pers-po lr5e6 s137",
+          "syc-bare-con lr1e5 s42",
+          "syc-conv-po lr1e5 s137",
+          "syc-pers-ft-con s137"
+        ],
+        "annotations": [
+          "star = natural union (w=1); dotted = per-arm refit-noise ceiling\n0 = no better than the base map M0"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ],
+        "yticklabels": [
+          "\u22121.50",
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75"
+        ]
+      }
+    ],
+    "series": [
+      "cas-pers-con lr1e5 s137",
+      "imp-pers-con lr3e5 s42",
+      "imp-pers-ft-con s137",
+      "imp-pers-po lr1e5 s137",
+      "mk-pers-po lr5e6 s137",
+      "syc-bare-con lr1e5 s42",
+      "syc-conv-po lr1e5 s137",
+      "syc-pers-ft-con s137"
+    ]
+  }
+}

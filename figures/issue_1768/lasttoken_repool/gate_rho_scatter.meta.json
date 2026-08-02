@@ -1,0 +1,1570 @@
+{
+  "commit": "239b4a7547",
+  "created": "2026-08-01T09:44:03Z",
+  "figsize": [
+    4.2,
+    4.0
+  ],
+  "points": [
+    {
+      "span-mean $\\rho$ (round 1)": 0.39168543495094366,
+      "last-token $\\rho$": 0.06016993914963032,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.4401983705487514,
+      "last-token $\\rho$": 0.08258525101919564,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.32316678758474326,
+      "last-token $\\rho$": 0.08074341195785145,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.3763400176397638,
+      "last-token $\\rho$": 0.06332051207013027,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.42345189514466036,
+      "last-token $\\rho$": 0.08445713866219402,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.3139354601650995,
+      "last-token $\\rho$": 0.08314635785343628,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.3962661436817153,
+      "last-token $\\rho$": 0.06742273318935564,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.45636720996962,
+      "last-token $\\rho$": 0.08680319341841955,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.3366528366669999,
+      "last-token $\\rho$": 0.08602491322153595,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.40764979409355306,
+      "last-token $\\rho$": 0.07088850321823616,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.44696486930123824,
+      "last-token $\\rho$": 0.08294179747667602,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.3384594677095798,
+      "last-token $\\rho$": 0.08266215616839882,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.04588169005451389,
+      "last-token $\\rho$": 0.016858600032190408,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.02973329531184804,
+      "last-token $\\rho$": 0.016731867563577734,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.0043695377322916775,
+      "last-token $\\rho$": 0.009671367367101894,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.05046424712025836,
+      "last-token $\\rho$": 0.018258321698240793,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.024156506917473355,
+      "last-token $\\rho$": 0.017879712231413228,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.007853984661308381,
+      "last-token $\\rho$": 0.004207287518015025,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.07743996812970362,
+      "last-token $\\rho$": 0.022858305867696965,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.041993298918349624,
+      "last-token $\\rho$": 0.03669379653504704,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.0026632768039534117,
+      "last-token $\\rho$": 0.023046681064025354,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.17039750947269736,
+      "last-token $\\rho$": 0.022924164997646344,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.15812557814451544,
+      "last-token $\\rho$": 0.03809938437400432,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.07436551267395086,
+      "last-token $\\rho$": 0.055960504961861994,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.17652272025861662,
+      "last-token $\\rho$": 0.03080163179582772,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.14321834745233178,
+      "last-token $\\rho$": 0.037171303205544966,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.06478569060801641,
+      "last-token $\\rho$": 0.04870059738629801,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.23443812580325613,
+      "last-token $\\rho$": 0.024640804335760436,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.2529525003174354,
+      "last-token $\\rho$": 0.04463819264362761,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.12189183487712212,
+      "last-token $\\rho$": 0.06510480426716811,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.23574260834656313,
+      "last-token $\\rho$": 0.02947522517261911,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.22031460329574568,
+      "last-token $\\rho$": 0.04670783884721803,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.09521256697599838,
+      "last-token $\\rho$": 0.06179361339796819,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.22956562039873765,
+      "last-token $\\rho$": 0.04032661904006762,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.24670153641925688,
+      "last-token $\\rho$": 0.052679516952857296,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.12537239602021097,
+      "last-token $\\rho$": 0.07071126612893303,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.22840203278778137,
+      "last-token $\\rho$": 0.03935844722178919,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.2567446885181144,
+      "last-token $\\rho$": 0.052781786272815545,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.12863917945068284,
+      "last-token $\\rho$": 0.07465972333030037,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.16692092312233459,
+      "last-token $\\rho$": 0.03118718915911941,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.17155188147123748,
+      "last-token $\\rho$": 0.042353853745042455,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.09371442129614699,
+      "last-token $\\rho$": 0.05450651605330601,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.1565029654036539,
+      "last-token $\\rho$": 0.027894842346112354,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.16416328243822256,
+      "last-token $\\rho$": 0.035507933701664746,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.08657209647695921,
+      "last-token $\\rho$": 0.05507720816505301,
+      "series": "cas",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.39612249797626753,
+      "last-token $\\rho$": 0.07938108522884624,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.44355832215478025,
+      "last-token $\\rho$": 0.07860239735596108,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.29252113869574065,
+      "last-token $\\rho$": 0.06966791911768187,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.4313635394202905,
+      "last-token $\\rho$": 0.06803011919092926,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.47266734010788997,
+      "last-token $\\rho$": 0.06928343352497583,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.31779675501827714,
+      "last-token $\\rho$": 0.05787105921664013,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.4544864548247258,
+      "last-token $\\rho$": 0.07808933789015876,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.48603966280558625,
+      "last-token $\\rho$": 0.07722138069015445,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.3345284111808471,
+      "last-token $\\rho$": 0.052179356667459514,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.4551409896156516,
+      "last-token $\\rho$": 0.08150658319563679,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.4900193484136152,
+      "last-token $\\rho$": 0.07543214014823683,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.3391577625145507,
+      "last-token $\\rho$": 0.05655177632844758,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.08780445118180467,
+      "last-token $\\rho$": 0.025947652278871924,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.0081378807255143,
+      "last-token $\\rho$": 0.02650601836508058,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.008927238933443262,
+      "last-token $\\rho$": 0.01921845273426131,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.10273544422843127,
+      "last-token $\\rho$": 0.03524550400445034,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.015185440301476316,
+      "last-token $\\rho$": 0.023865829280385126,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.011313944275414914,
+      "last-token $\\rho$": 0.02096690632234371,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.0368957868551297,
+      "last-token $\\rho$": 0.028522437751079675,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.0019313745859050907,
+      "last-token $\\rho$": 0.01588134257639559,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.007126974103674618,
+      "last-token $\\rho$": 0.020819145616086433,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.09842281564252883,
+      "last-token $\\rho$": 0.031270967092973376,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.018456070047413155,
+      "last-token $\\rho$": 0.0183437374883115,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.00043078486049840623,
+      "last-token $\\rho$": 0.02235112124505449,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.16037494135827832,
+      "last-token $\\rho$": 0.07350739759171389,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.16355789356154182,
+      "last-token $\\rho$": 0.07586334395715384,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.14791296925831454,
+      "last-token $\\rho$": 0.05689890479506255,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.2084206209363163,
+      "last-token $\\rho$": 0.05232612648921872,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.24398940076750253,
+      "last-token $\\rho$": 0.0655519095226929,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.1380984269380608,
+      "last-token $\\rho$": 0.061581277705935855,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.20657439434746339,
+      "last-token $\\rho$": 0.046781842578019095,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.240896725825268,
+      "last-token $\\rho$": 0.057509131279782286,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.1322054831220668,
+      "last-token $\\rho$": 0.059337587824725056,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.09250902223228395,
+      "last-token $\\rho$": 0.03444946985545016,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.13948314084239904,
+      "last-token $\\rho$": 0.05223287966655063,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.06266042354282138,
+      "last-token $\\rho$": 0.05131746192895844,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.07842879583811742,
+      "last-token $\\rho$": 0.03153532007238344,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.1387647525411971,
+      "last-token $\\rho$": 0.0492218646584704,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.06122656034945024,
+      "last-token $\\rho$": 0.0505854917349843,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.08375026462559537,
+      "last-token $\\rho$": 0.03485276020663836,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.14889765027746363,
+      "last-token $\\rho$": 0.055234778371569655,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.06010569813726563,
+      "last-token $\\rho$": 0.04819305472056739,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.08885924775722263,
+      "last-token $\\rho$": 0.036311724285624604,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.1533546530319326,
+      "last-token $\\rho$": 0.05641696499593252,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.06217558266943324,
+      "last-token $\\rho$": 0.04992311273060906,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.07859765507037532,
+      "last-token $\\rho$": 0.029458586649770177,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.14048033048201536,
+      "last-token $\\rho$": 0.046456260081764546,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.06667873186998456,
+      "last-token $\\rho$": 0.03814104175920926,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.08564234698125447,
+      "last-token $\\rho$": 0.031465727581022354,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.14327130691626627,
+      "last-token $\\rho$": 0.04673851640444299,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.07061552123961992,
+      "last-token $\\rho$": 0.04025372612047507,
+      "series": "imp",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.38146102865258447,
+      "last-token $\\rho$": 0.0740964826915798,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.3819723104267959,
+      "last-token $\\rho$": 0.05183804627112272,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.2592044776721511,
+      "last-token $\\rho$": 0.0298780174440276,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.37421387494567215,
+      "last-token $\\rho$": 0.07607818030575302,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.38059565024752334,
+      "last-token $\\rho$": 0.05120074706299925,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.2637665944478691,
+      "last-token $\\rho$": 0.033242488749273685,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.31463539710836375,
+      "last-token $\\rho$": 0.08369314524393527,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.3512244938096946,
+      "last-token $\\rho$": 0.05303203141897067,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.2592523705498489,
+      "last-token $\\rho$": 0.028464196140246926,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.3289397342305582,
+      "last-token $\\rho$": 0.08279691096743674,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.3606452557404152,
+      "last-token $\\rho$": 0.05323981631232027,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.2607736120873523,
+      "last-token $\\rho$": 0.026829926483684163,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.0072256375913859056,
+      "last-token $\\rho$": -0.008824742179174531,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.016949919927184656,
+      "last-token $\\rho$": -0.00031939163910538963,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.012280651896903133,
+      "last-token $\\rho$": 0.021810764966400185,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.0034410290879873383,
+      "last-token $\\rho$": 0.0030249908110930746,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.009859008090713476,
+      "last-token $\\rho$": 0.00118997887342518,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.007560619716449866,
+      "last-token $\\rho$": 0.027822985253778763,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.009524846845721018,
+      "last-token $\\rho$": 0.0054120039987344505,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.004826615104968101,
+      "last-token $\\rho$": 0.003420455554373085,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.008050801370444137,
+      "last-token $\\rho$": 0.013476560268455848,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.01567819316020178,
+      "last-token $\\rho$": -0.010846344027287158,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.0020815396604963354,
+      "last-token $\\rho$": -0.001802586886469859,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.005418328774156952,
+      "last-token $\\rho$": 0.02275669526524249,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.07329913468095686,
+      "last-token $\\rho$": 0.021660206516147744,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.11250396586071792,
+      "last-token $\\rho$": 0.01967056644560856,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.11081543254455614,
+      "last-token $\\rho$": 0.04667999550509311,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.08388268082589469,
+      "last-token $\\rho$": 0.02670820525805246,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.139511120079245,
+      "last-token $\\rho$": 0.022927099943565718,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.11590171769526997,
+      "last-token $\\rho$": 0.048814547293081136,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.07341901402465612,
+      "last-token $\\rho$": 0.0317875011130005,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.14416645213880383,
+      "last-token $\\rho$": 0.027945347982911848,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.11597610008787497,
+      "last-token $\\rho$": 0.05391880233064272,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.08802797255435255,
+      "last-token $\\rho$": 0.03017547676281838,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.17024775108248316,
+      "last-token $\\rho$": 0.035968282799872964,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.12152506286830278,
+      "last-token $\\rho$": 0.05707617012185884,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.12002877316940667,
+      "last-token $\\rho$": 0.05042614247934423,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.16075874875465684,
+      "last-token $\\rho$": 0.02367900625657341,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.07483960324981946,
+      "last-token $\\rho$": 0.01973794083352726,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.11323729461559044,
+      "last-token $\\rho$": 0.048754621605993136,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.1570628653397706,
+      "last-token $\\rho$": 0.02694930244805782,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.07538486355630908,
+      "last-token $\\rho$": 0.01662067089058938,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.2270331801713,
+      "last-token $\\rho$": 0.06135701439560242,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.266457957401838,
+      "last-token $\\rho$": 0.051798832976361404,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.1482305175695385,
+      "last-token $\\rho$": 0.05149028015324299,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.1773205951455764,
+      "last-token $\\rho$": 0.0534686864528802,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.20762645612731673,
+      "last-token $\\rho$": 0.04067818794259413,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.09963905047949274,
+      "last-token $\\rho$": 0.027821048641103196,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.12067764620217364,
+      "last-token $\\rho$": 0.046460850738582235,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.15608506881024983,
+      "last-token $\\rho$": 0.03628550338396857,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.07989183571133947,
+      "last-token $\\rho$": 0.024276396997649965,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.11620361842663396,
+      "last-token $\\rho$": 0.052171912519395784,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.15590697789010521,
+      "last-token $\\rho$": 0.03558087429404606,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.08499320575963532,
+      "last-token $\\rho$": 0.02878674363172777,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.09229161336222864,
+      "last-token $\\rho$": 0.047398273651642564,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.1499425021271457,
+      "last-token $\\rho$": 0.03558634636219611,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.06848455149713371,
+      "last-token $\\rho$": 0.024590665361972675,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.06217292847158252,
+      "last-token $\\rho$": 0.03590616125356076,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.10034181523378567,
+      "last-token $\\rho$": 0.022687200259136966,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.04869516114313262,
+      "last-token $\\rho$": 0.01752511900073923,
+      "series": "syc",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.0752330910149956,
+      "last-token $\\rho$": 0.009083812297399008,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.1333485147090393,
+      "last-token $\\rho$": 0.014233942649875812,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.09482663431047574,
+      "last-token $\\rho$": 0.010922296793769213,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.06470297863400713,
+      "last-token $\\rho$": -0.001387081842351377,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.11241274141684984,
+      "last-token $\\rho$": 0.011308703901695619,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.0903328374360103,
+      "last-token $\\rho$": 0.0016317908429117,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.07754684590951326,
+      "last-token $\\rho$": -0.00011534740628340723,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.14025617507409105,
+      "last-token $\\rho$": 0.019859841593180754,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.09822485491129641,
+      "last-token $\\rho$": 0.005419361178927088,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.0680607183216072,
+      "last-token $\\rho$": -0.001061212467373199,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.1272774652754697,
+      "last-token $\\rho$": 0.013690319987412707,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.0899956665753731,
+      "last-token $\\rho$": 0.00953520205485864,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.04354588153697562,
+      "last-token $\\rho$": 0.014634257500553308,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.08023433302503914,
+      "last-token $\\rho$": 0.004933728993296317,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.022286360754390368,
+      "last-token $\\rho$": 0.006458170754603835,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.058406932281151805,
+      "last-token $\\rho$": 0.009624526600088716,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.09921488043948841,
+      "last-token $\\rho$": -0.0009996795324837104,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.025189398223500886,
+      "last-token $\\rho$": 0.0035531456184399414,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.060944748967229755,
+      "last-token $\\rho$": 0.006362138710431828,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.10635151283621141,
+      "last-token $\\rho$": 0.0018584720329688203,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.021668252544533254,
+      "last-token $\\rho$": 0.011021801515016746,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.039883484131283814,
+      "last-token $\\rho$": 0.009616523959326554,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.0837373758197773,
+      "last-token $\\rho$": 0.0019967100333578417,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.022741484265014517,
+      "last-token $\\rho$": 0.0033360481606415407,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.005521823350120455,
+      "last-token $\\rho$": 0.0024470201783730002,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.014630751168096742,
+      "last-token $\\rho$": 0.009016862039103929,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.0003398799705433735,
+      "last-token $\\rho$": 0.005436016513143227,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.008987084024024795,
+      "last-token $\\rho$": 0.0017489959372679928,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.016429292810223532,
+      "last-token $\\rho$": 0.0017586660523968515,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.0019938267253649215,
+      "last-token $\\rho$": 0.008632264972306462,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.005106735340575168,
+      "last-token $\\rho$": 0.0046274100117533225,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.010757605978100817,
+      "last-token $\\rho$": -2.5939028657665268e-05,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.0021061739860796635,
+      "last-token $\\rho$": -0.0030452484095609186,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.006283643588641211,
+      "last-token $\\rho$": 0.009940356147238956,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.005525814241441378,
+      "last-token $\\rho$": 0.01723224498451713,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.012669376339883558,
+      "last-token $\\rho$": 0.007635169229615144,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.01372102021869528,
+      "last-token $\\rho$": 0.018047173150430695,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.023738234238181,
+      "last-token $\\rho$": 0.018702383068941945,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.026774309460258425,
+      "last-token $\\rho$": -0.0037179803543223706,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.015053131532346933,
+      "last-token $\\rho$": 0.006577981604118823,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.016147995008907314,
+      "last-token $\\rho$": 0.00907322731823446,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.015645385489957666,
+      "last-token $\\rho$": -0.003791348026713776,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.004001363671135087,
+      "last-token $\\rho$": 0.00614152249426522,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.02079252812821846,
+      "last-token $\\rho$": 0.008470742030929955,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.0013857809262569326,
+      "last-token $\\rho$": -0.0007762898678017662,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.0047742444088032104,
+      "last-token $\\rho$": 0.011972872384243128,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.029164086962275303,
+      "last-token $\\rho$": 0.01835420527456236,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.0015651225025028925,
+      "last-token $\\rho$": 0.002983125773687079,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.013534615442775007,
+      "last-token $\\rho$": 0.010618595132256372,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.029401458000206097,
+      "last-token $\\rho$": 0.016624153100035705,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.004339549498190406,
+      "last-token $\\rho$": -0.0018966702021617381,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.0031497000038943545,
+      "last-token $\\rho$": 0.0174622181556342,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.023358674056494718,
+      "last-token $\\rho$": 0.027046220094043616,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": 0.0015160605389963676,
+      "last-token $\\rho$": -0.0018659045576700911,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.023332029411528527,
+      "last-token $\\rho$": 0.004713891394138838,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.03512154307940161,
+      "last-token $\\rho$": 0.010528935456040583,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.018788507907238187,
+      "last-token $\\rho$": -0.007621656422735502,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.015623099951372869,
+      "last-token $\\rho$": -0.00279612702966863,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.03386412355471187,
+      "last-token $\\rho$": -0.0001568471572023228,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "span-mean $\\rho$ (round 1)": -0.01846995129076071,
+      "last-token $\\rho$": 0.0023692539808269747,
+      "series": "mk",
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 216,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "span-mean $\\rho$ (round 1)",
+        "ylabel": "last-token $\\rho$",
+        "legend_labels": [
+          "cas",
+          "imp",
+          "syc",
+          "mk"
+        ],
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "cas",
+      "imp",
+      "syc",
+      "mk"
+    ]
+  }
+}

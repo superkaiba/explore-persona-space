@@ -361,6 +361,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_sparse_worktree.py",
     # NEW (#1623) — CLAUDE.md ad-hoc-summaries disclosure-clause pins (#1458/#1539/#1623)
     "tests/test_adhoc_summary_disclosure_pins.py",
+    # NEW (#1910) — adversarial-planner SKILL.md Phase 1.5 fact-checker realized-grain
+    # duty + planner.md §10 counted-grain clause pin
+    "tests/test_adversarial_planner_factchecker_grain_pin.py",
     # NEW (#1734) — adversarial-planner SKILL.md Phase 1.5.0 per-WARN disposition pin
     "tests/test_adversarial_planner_warn_disposition.py",
     "tests/test_autonomous_plan_gate.py",
@@ -378,6 +381,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_implementer_spec_names_invariant_local_union.py",
     # NEW (#1699) — implementer spec pin: ruff-policy pin invocation in lint step (#1672)
     "tests/test_implementer_spec_names_ruff_policy_pin.py",
+    # NEW (#1876) — SKILL.md Bare-push-snippets commit form (5) + guard hook
+    # block-message compliant-forms lead pin
+    "tests/test_issue_skill_bare_push_snippets_pin.py",
     # NEW (#1659) — SKILL.md 9a-ter + CLAUDE.md measured 1-cell pilot +
     # >=2x pilot-extrapolated fence-sizing pin
     "tests/test_issue_skill_compute_pilot_fence_pin.py",
@@ -424,6 +430,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_merged_note_compose.py",
     # NEW (#1563) — SKILL.md orchestrator-turn discipline pointer pin
     "tests/test_issue_skill_orchestrator_turn_discipline_pointer.py",
+    # NEW (#1897) — SKILL.md Step 10d PR-state probe + landing verification pin
+    "tests/test_issue_skill_pr_state_probe.py",
     # NEW (#1810) — SKILL.md Step 4b pre-split multi-deliverable dispatch pin
     "tests/test_issue_skill_presplit_dispatch_pin.py",
     # NEW (#1850) — SKILL.md remote-landing producer-fence deadline + Monitor heartbeat pin

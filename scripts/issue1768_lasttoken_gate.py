@@ -324,6 +324,78 @@ def _stage_round1_panel(out_root: Path, unit: str, subdir: str = "panel_capture"
     return dest
 
 
+CORPUS_SAMPLE_REV = "c07267285d2cdbf3e0401ddc3e3accae50e496a7"  # round-1 pinned revision
+
+
+def _stage_lasttoken_panel(out_root: Path, unit: str) -> Path:
+    """Stage a LAST-TOKEN panel store (this round's own `--phase panel` output).
+
+    ``lt_panel_c_src`` reads it locally, so a VM-side gate run after the GPU pod
+    is gone streams it back from the Hub.
+    """
+    from explore_persona_space.orchestrate import hub
+
+    dest = out_root / "lasttoken_panel" / unit / "lasttoken_panel.pt"
+    if dest.exists():
+        return dest
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    hub.stage_hub_file(
+        X.HF_DATA_REPO,
+        f"{X.HF_PREFIX}/{PANEL_HF_SUBDIR}/{unit}/lasttoken_panel.pt",
+        dest,
+        repo_type="dataset",
+        overwrite=True,
+    )
+    return dest
+
+
+def _stage_corpus_sample(out_root: Path) -> Path:
+    """Stage the p0 corpus sample at round 1's PINNED revision.
+
+    ``X.load_corpus_sample`` reads it from ``<out_root>/inputs/``; pinning the
+    revision keeps the train/val/test split byte-identical to the fits this
+    re-read is compared against.
+    """
+    from explore_persona_space.orchestrate import hub
+
+    dest = out_root / "inputs" / "corpus_sample.json"
+    if dest.exists():
+        return dest
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    hub.stage_hub_file(
+        X.HF_DATA_REPO,
+        f"{X.HF_PREFIX}/inputs/corpus_sample.json",
+        dest,
+        repo_type="dataset",
+        revision=CORPUS_SAMPLE_REV,
+        overwrite=True,
+    )
+    return dest
+
+
+def _stage_lasttoken(out_root: Path, unit: str) -> Path:
+    """Stage a round-1 LAST-TOKEN context store where ``load_lasttoken`` reads it.
+
+    Round 1's stores live only on the Hub (its pod is long gone), so every
+    consumer on this leg streams them: base units are kept for the whole run,
+    per-arm units are deleted by the caller once consumed.
+    """
+    from explore_persona_space.orchestrate import hub
+
+    dest = out_root / "lasttoken" / unit / "lasttoken.pt"
+    if dest.exists():
+        return dest
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    hub.stage_hub_file(
+        X.HF_DATA_REPO,
+        f"{X.HF_PREFIX}/lasttoken_ctx/{unit}/lasttoken.pt",
+        dest,
+        repo_type="dataset",
+        overwrite=True,
+    )
+    return dest
+
+
 def run_gate(
     out_root: Path, results_dir: Path, layers: list[int], position: str, arms_filter: str
 ) -> None:
@@ -338,11 +410,16 @@ def run_gate(
         arms = [a for a in arms if a.arm_id in want]
     sig: dict[int, dict] = {}
     reads: dict[str, dict] = {}
+    _stage_corpus_sample(out_root)
     for beh in {a.beh_key for a in arms}:
         _stage_round1_panel(out_root, f"base_{beh}")
+        _stage_lasttoken_panel(out_root, f"base_{beh}")
+    for base_unit in {X.base_unit_for(a.arm_id) for a in arms}:
+        _stage_lasttoken(out_root, base_unit)  # kept: shared by every arm
     for k, arm in enumerate(arms):
         arm_pool = _stage_round1_panel(out_root, arm.arm_id)
         tf_pool = _stage_round1_panel(out_root, arm.arm_id, "panel_capture_tf")
+        arm_lt = _stage_lasttoken(out_root, arm.arm_id)
         try:
             for layer in layers:
                 if layer not in sig:
@@ -379,8 +456,8 @@ def run_gate(
                     layer,
                     reads[key]["on_policy"]["spearman_rho"],
                 )
-        finally:  # stream: per-arm panel stores are consumed once
-            for p in (arm_pool, tf_pool):
+        finally:  # stream: per-arm panel + last-token stores are consumed once
+            for p in (arm_pool, tf_pool, arm_lt):
                 if p is not None:
                     p.unlink(missing_ok=True)
         logger.info("[phase=lt_gate arm=%s %d/%d done]", arm.arm_id, k + 1, len(arms))
@@ -441,8 +518,12 @@ def run_dmprobe(out_root: Path, results_dir: Path, position: str, arms_filter: s
     cache = out_root / "lt_answer_cache"
     cache.mkdir(parents=True, exist_ok=True)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
+    _stage_corpus_sample(out_root)
+    for base_unit in {X.base_unit_for(a) for a in arm_ids}:
+        _stage_lasttoken(out_root, base_unit)  # kept: shared by every arm
     cells: dict[str, dict] = {}
     for k, arm_id in enumerate(arm_ids):
+        _stage_lasttoken(out_root, arm_id)
         cell = LTF.build_cell(out_root, cache, arm_id, layer, position)
         tr, val, te = F._split_idx(cell["split"])
         for tree, target in (

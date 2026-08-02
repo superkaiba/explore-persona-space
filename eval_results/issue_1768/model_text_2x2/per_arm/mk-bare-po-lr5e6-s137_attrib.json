@@ -1,0 +1,17 @@
+{
+ "arm_id": "mk-bare-po-lr5e6-s137",
+ "layer": 19,
+ "n_test_rows": 1000,
+ "n_rows_text_changed": 839,
+ "frac_rows_text_changed": 0.839,
+ "m0_refit_heldout_r2": 0.49898567890329903,
+ "m0_refit_selected_lambda": 3162.2776601683795,
+ "round1_committed_m0_heldout_r2": 0.4989856789032986,
+ "mean_shift_cos": 0.22166513267388435,
+ "mean_shift_rel_err": 3.2968988730038142,
+ "mean_shift_norm_measured": 1.1634456940649898,
+ "mean_shift_norm_attributed": 3.9220433166730326,
+ "per_row_cos_median": 0.02429156088349011,
+ "per_row_cos_mean": 0.024087866129111058,
+ "per_row_rel_err_median": 1.0596987820659023
+}

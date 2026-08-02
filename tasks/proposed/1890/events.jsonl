@@ -1,2 +1,0 @@
-{"ts": "2026-07-30T19:02:47Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
-{"ts": "2026-07-30T19:47:34Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Scope narrowed at filing-followup: credential-resolution half REFUTED by the emitting agent (operator error: sudo bash -c strips env; GCE ambient creds present by design — pvscore instance log 19:45:29Z + epm:progress v122 on #1739). Remaining scope: crash-persist upload set omits analysis_tensors staging dirs only."}

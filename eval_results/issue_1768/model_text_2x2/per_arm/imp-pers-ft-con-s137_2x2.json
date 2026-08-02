@@ -8,23 +8,23 @@
    "identity_residual": 2.2180911076562684e-16,
    "norms": {
     "text": 2.1573374760243857,
-    "function": 2.9867046961484482,
+    "function": 2.986704696148449,
     "interaction": 0.617370597411015
    },
    "norm_ratio": {
     "text": 0.4875151710226102,
-    "function": 0.6749355939526566,
+    "function": 0.6749355939526568,
     "interaction": 0.13951342139376985
    },
    "proj_share": {
-    "text": 0.32366449190021784,
-    "function": 0.5929439948772488,
-    "interaction": 0.08339151322253326
+    "text": 0.3236644919002179,
+    "function": 0.592943994877249,
+    "interaction": 0.08339151322253324
    },
    "cos_with_shift": {
-    "text": 0.6639065020711054,
+    "text": 0.6639065020711056,
     "function": 0.8785193730927175,
-    "interaction": 0.5977311171171465
+    "interaction": 0.5977311171171464
    },
    "cos_text_function": 0.24232801508802493,
    "per_row_mean_norm": {
@@ -41,7 +41,7 @@
    "context_identity_cos": {
     "min": 0.9999999999999989,
     "median": 0.9999999999999999,
-    "mean_vector_cos": 1.0000000000000002,
+    "mean_vector_cos": 0.9999999999999998,
     "gate_min": 0.999,
     "pass": true
    },
@@ -49,9 +49,9 @@
     "delta_arm": "imp-pers-con-lr3e5-s137",
     "n_mix_rows": 20,
     "cos_text_delta": 0.49587687787121637,
-    "cos_function_delta": 0.007020443843644758,
-    "cos_interaction_delta": -0.10440267109946172,
-    "cos_shift_delta": 0.23192027450923128,
+    "cos_function_delta": 0.007020443843644767,
+    "cos_interaction_delta": -0.10440267109946177,
+    "cos_shift_delta": 0.23192027450923122,
     "src_ctx": "persona_software_engineer",
     "cos_text_panel_write": null
    }
@@ -95,24 +95,24 @@
    "context_identity_cos": {
     "min": 0.9999999999999987,
     "median": 0.9999999999999999,
-    "mean_vector_cos": 0.9999999999999999,
+    "mean_vector_cos": 1.0,
     "gate_min": 0.999,
     "pass": true
    },
    "delta_reads": {
     "delta_arm": "imp-pers-con-lr3e5-s137",
     "n_mix_rows": 20,
-    "cos_text_delta": 0.4656732430099077,
-    "cos_function_delta": 0.06668208308929006,
-    "cos_interaction_delta": 0.15074280180491192,
-    "cos_shift_delta": 0.22053116674004708,
+    "cos_text_delta": 0.4656732430099076,
+    "cos_function_delta": 0.06668208308929004,
+    "cos_interaction_delta": 0.1507428018049119,
+    "cos_shift_delta": 0.22053116674004705,
     "src_ctx": "persona_software_engineer",
     "cos_text_panel_write": null
    }
   },
   "25": {
    "n_rows": 16400,
-   "norm_shift": 29.990066336395067,
+   "norm_shift": 29.99006633639507,
    "identity_residual": 1.7071823033014352e-15,
    "norms": {
     "text": 8.480933268171004,
@@ -120,19 +120,19 @@
     "interaction": 5.616903495414621
    },
    "norm_ratio": {
-    "text": 0.28279141409830066,
+    "text": 0.2827914140983006,
     "function": 0.8290397336943192,
-    "interaction": 0.18729213308201695
+    "interaction": 0.18729213308201692
    },
    "proj_share": {
-    "text": 0.17934470275933653,
-    "function": 0.7712973789037368,
-    "interaction": 0.049357918336926515
+    "text": 0.1793447027593365,
+    "function": 0.7712973789037366,
+    "interaction": 0.049357918336926494
    },
    "cos_with_shift": {
-    "text": 0.634194299466938,
+    "text": 0.6341942994669378,
     "function": 0.9303503168258604,
-    "interaction": 0.26353439156631436
+    "interaction": 0.2635343915663143
    },
    "cos_text_function": 0.36060571286575344,
    "per_row_mean_norm": {
@@ -149,17 +149,17 @@
    "context_identity_cos": {
     "min": 0.9999999999999993,
     "median": 1.0,
-    "mean_vector_cos": 1.0000000000000002,
+    "mean_vector_cos": 1.0,
     "gate_min": 0.999,
     "pass": true
    },
    "delta_reads": {
     "delta_arm": "imp-pers-con-lr3e5-s137",
     "n_mix_rows": 20,
-    "cos_text_delta": 0.3943179571712405,
-    "cos_function_delta": 0.16152425003909227,
-    "cos_interaction_delta": 0.09333001280209553,
-    "cos_shift_delta": 0.2628997311286683,
+    "cos_text_delta": 0.3943179571712404,
+    "cos_function_delta": 0.16152425003909224,
+    "cos_interaction_delta": 0.09333001280209546,
+    "cos_shift_delta": 0.26289973112866816,
     "src_ctx": "persona_software_engineer",
     "cos_text_panel_write": null
    }

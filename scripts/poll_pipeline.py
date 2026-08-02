@@ -503,7 +503,11 @@ _READER_COMMS = frozenset({"tail", "grep", "less", "more", "cat", "vi", "vim", "
 # quiet ``running`` tick far from any phase boundary recommends the long
 # QUIET interval; anything gate-adjacent, anomalous, recently-changed, or
 # early-run stays on the short DEFAULT — the long interval must never delay
-# a gate or mask a fresh failure.
+# a gate or mask a fresh failure. A 1800 recommendation is honored
+# orchestrator-side via the SKILL.md Step 6d.2 Monitor QUIET-WAIT branch —
+# ONE wait-then-poll wake per quiet cycle, ~2/3 fewer full-context turns on
+# quiet stretches (#1924); per-call bg-Bash sleeps stay clamped at 540s
+# (#1818).
 #
 # Risk bound: with the quiet interval an in-session stall can be noticed up
 # to 30 min later than the fixed 540s chain. Acceptable because
@@ -1489,9 +1493,10 @@ class PollResult:
     # interval, anti-stall redesign §7 — see ``recommend_next_interval``).
     # ``POLL_INTERVAL_QUIET_SEC`` only on a healthy, quiet, post-early-run
     # ``running`` tick far from any phase boundary; the short
-    # ``POLL_INTERVAL_DEFAULT_SEC`` otherwise. The orchestrator's
-    # sleep-chain reads this from the tick JSON (540s fallback when
-    # absent/unparseable — SKILL.md Step 6d.2).
+    # ``POLL_INTERVAL_DEFAULT_SEC`` otherwise. The orchestrator BRANCHES
+    # on this from the tick JSON: a Monitor wait-then-poll quiet cycle at
+    # 1800 (#1924), the fixed 540s bg-Bash chain otherwise (540s fallback
+    # when absent/unparseable — SKILL.md Step 6d.2).
     next_interval: int = POLL_INTERVAL_DEFAULT_SEC
     # Machine-readable reason a non-``running`` verdict landed, surfaced in
     # the JSON line so the orchestrator can route differently per cause.

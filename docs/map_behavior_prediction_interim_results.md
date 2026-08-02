@@ -1,27 +1,42 @@
 # Interim results — Behavior prediction through the context→answer map (#1739)
 
-> **Status (2026-07-31): INTERIM.** All three behavior lanes (evil, sycophancy, hallucination)
-> now have committed arm results. Figures and numbers below are computed directly from the
-> committed per-cell results (`eval_results/issue_1739/`) plus the HF-resident WildChat-rung
-> results, before the analyzer/critic pass — treat them as provisional.
+> **Status (2026-08-01): INTERIM.** All three behavior lanes (evil, sycophancy, hallucination)
+> have committed main-lane arm results, and the report grid is now filled: the arm roster is
+> wide (10 arms) on both the random-WildChat and persona-vectors-synthetic rungs, the OOD rungs
+> carry the added arms, and the naturalistic-PV reads have been recomputed in the space the map
+> actually lives in. Numbers below are computed directly from the committed artifacts
+> (`eval_results/issue_1739/`, branch `issue-1739`) plus the HF-resident WildChat-rung results,
+> before the analyzer/critic pass — treat them as provisional.
 > Task: <https://eps.superkaiba.com/tasks/1739>. Full pre-registered plan:
 > [`docs/map_behavior_prediction_plan.md`](map_behavior_prediction_plan.md).
 >
-> **New in this update (2026-07-31)** — five result families, all in
-> [§ New in this update](#new-in-this-update-2026-07-31):
-> (1) the **bare-query round** — stripping the prefix and showing the predictor only the user
-> query *raises* sycophancy prediction, *flips the sign* on hallucination, and *destroys* evil,
-> which localizes each behavior's predictive variance (it also carries an **unresolved
-> null-arm anomaly** — read that flag before using its numbers); (2) a **fourth evaluation
-> column**, random held-out WildChat, where the map arm is the best feasible method on evil and
-> hallucination; (3) **nonlinear maps (MLP, kernel ridge) lose to the linear map** on every
-> behavior — the round-B question answered negatively; (4) the **evil composition-factor gain
-> does not replicate** on sycophancy or hallucination for the projection arm — it reverses, which
-> corrects takeaway 7 below; (5) the **naturalistic persona-vector regime ladder** extended to
-> sycophancy (E2p on top, as for evil) and hallucination (sign-unstable — construct failure).
-> Everything in `## Results` below is unchanged and is **context, previously reported**. The
-> sycophancy main lane's own full fold is still pending; its numbers appear here only where they
-> serve these families.
+> **New in this update (2026-08-02)** — [§ New in this update](#new-in-this-update-2026-08-02):
+> the gap-fill and partial-item rounds landed. (1) Hallucination's **maximum-budget OOD cells
+> now exist**, and they **reverse a headline**: the map-side readout's +0.220 NQ-Open advantage
+> was measured at a fallback slice where direct ridge was data-starved, and it collapses to
+> +0.018 once both arms get the full label budget. (2) The **leg-1 prefix null probe is
+> diagnosed** — the mechanism ladder ran and returned `unexplained` on all three behaviors, with
+> three candidate mechanisms each positively ruled out. (3) **R5** (swapping half the generic map
+> pool for unlabeled trait-eliciting contexts) helps **evil only**, and there it is large.
+> (4) **OOD scatters** and (5) **map reconstruction measured on each evaluation distribution**
+> are available for the first time; the latter shows retrieval holding 69–721× above chance
+> exactly where reconstruction R² is strongly negative.
+>
+> **Previously new (2026-08-01)** — [§ New in this update](#new-in-this-update-2026-08-01):
+> (1) the **wide arm roster** adds four arms to every rung, and the strongest result in the
+> writeup falls out of it — **mapping into answer space and running the labeled readout there
+> beats the same readout on the context, on all three behaviors** on ordinary user traffic;
+> (2) the **persona-vectors synthetic suite decomposes**: scoring within each instruction
+> polarity collapses every arm's correlation, and evil's negative half has *zero* DV variance —
+> the suite's ρ ≈ 0.8 is the pos-vs-neg instruction contrast, not method quality;
+> (3) the **whitened naturalistic-PV reads supersede the raw ones**, moving the regime ladder's
+> top sycophancy read from 0.577 to **0.486** and removing "E2p is top for every read";
+> (4) the **bare-query round's two open anomalies are half-settled** — the shuffled-map control
+> is draw variance, the turn-subset split is now computable — while the prefix null probe stays
+> unexplained; (5) a **spread grid per evaluation setting** shows the pre-registered gate passes
+> for all three behaviors *pooled* but fails on three of evil's five individual settings;
+> (6) two **corrections to numbers already published here**, one of which reverses a headline.
+> Everything below `## Previously reported (2026-07-31)` and `## Results` is unchanged context.
 
 ## Motivation
 
@@ -59,15 +74,660 @@
 
 ### What actually ran (deltas from the original sketch)
 
-- **Behaviors so far:** evil + hallucination complete; **sycophancy still running** (results to be appended).
+- **Behaviors:** all three main lanes are committed — evil (826 design cells), **sycophancy (810 cells, committed 2026-07-30)**, hallucination (270 cells). *(Corrected 2026-08-01: an earlier cut of this section said sycophancy was "still running".)*
 - **Unlabeled map pool:** 18,793 real WildChat context→answer pairs (the #1092 activation store), swept 250 → 5,000 → 18,793 ("full") — not 50k; the map never sees behavior-eliciting data or any eval set.
-- **Labeled behavior data is real, per behavior** (not WildChat): evil trains on in-the-wild jailbreak prompts (1,405 DAN-style prefixes × 390 forbidden questions) and evaluates OOD on hh-rlhf red-team dialogues and ToxicChat jailbreaks; hallucination trains on TriviaQA and evaluates OOD on NQ-Open and SimpleQA. The synthetic persona-vectors elicitation suite was deliberately **dropped** as an eval setting (it conflates natural elicitation with artificial prompting — exactly the concern in the Motivation); the three settings per behavior are held-out-train + two real OOD sets.
-- **Nonlinear-map arms were not run as separate arms**; nonlinearity enters via the direct MLP arm and a map-pretrain→fine-tune arm. Extra arms beyond the sketch: identity+bias projection, a stacked combiner, shuffled-map / shuffled-pretrain controls, and text-embedding / surface-feature baselines (16 arms total).
-- **DV:** on-policy expression per context from K=5 sampled answers, graded by `claude-sonnet-4-5-20250929` (3 draws @ temp 1.0). Evil: mean 0–100 trait score (persona-vectors rubric). Hallucination: fabrication rate 0–1 under a three-way fabricated/abstained/correct rubric.
+- **Labeled behavior data is real, per behavior** (not WildChat): evil trains on in-the-wild jailbreak prompts (1,405 DAN-style prefixes × 390 forbidden questions) and evaluates OOD on hh-rlhf red-team dialogues and ToxicChat jailbreaks; hallucination trains on TriviaQA and evaluates OOD on NQ-Open and SimpleQA.
+- **The synthetic persona-vectors elicitation suite WAS run and scored, for all three behaviors** — 200 contexts each, `eval_results/issue_1739/wide/pvsynth/`. *(Corrected 2026-08-01: an earlier cut of this section said it was "deliberately dropped". It was dropped as a **headline** evaluation column, for the stated reason that it conflates natural elicitation with artificial prompting, but it was run as a **diagnostic** — and that diagnostic is now load-bearing evidence, see § The synthetic suite decomposes below.)* The four evaluation settings that carry headline reads are held-out-train + two real OOD sets + random held-out WildChat.
+- **Nonlinear-map arms were not run as separate arms** in the main lane; nonlinearity enters via the direct MLP arm and a map-pretrain→fine-tune arm (round B later ran MLP and kernel-ridge maps as dedicated replacement lanes — see § Nonlinear maps). Extra arms beyond the sketch: identity+bias projection, a stacked combiner, shuffled-map / shuffled-pretrain controls, and text-embedding / surface-feature baselines (16 arms total).
+- **`arm2_ctx_native` is NOT the persona-vectors method.** The pre-registered headline contrast (`arms.HEADLINE_PAIR`) is `arm6_map_proj_e1` vs `arm2_ctx_native`, and `arm2_ctx_native` is a **label-supervised diff-of-means direction** — it splits the training rows at their DV midpoint and takes the mean difference of context activations, per fold (`arms.py:658-668`). It therefore uses the behavior labels. The paper's own label-free method is `arm1_ctx_e1` (project the extracted persona vector on the context state). So the pre-registered headline is **label-free map projection vs a label-supervised context direction**, not map vs the paper's method; where this writeup compares against Persona Vectors it uses `arm1_ctx_e1`.
+- **DV:** on-policy expression per context from K=5 sampled answers, graded by `claude-sonnet-4-5-20250929` (3 draws @ temp 1.0). Evil and sycophancy: mean 0–100 trait score (persona-vectors rubric). Hallucination: fabrication rate 0–1 under a three-way fabricated/abstained/correct rubric **on its own rungs only** — on the WildChat and synthetic-suite rungs the queries carry no reference answers, so hallucination is scored with the 0–100 trait rubric there instead. **Those two hallucination constructs are not cross-comparable**, and no figure or claim in this writeup places a hallucination fabrication-rate number and a hallucination trait-score number on one axis without saying so.
 - **Persona-vector extraction regimes (evil only):** E1 paper-faithful synthetic; E2 matched-pair natural; E2p pooled natural.
 - Spearman ρ is computed at each arm's frozen selected layer; error bars are SD over 3 seeds × 5 label draws. Selection-corrected max-over-arms permutation nulls are significant (p < 0.05) in 100% of cells for both behaviors, and the evil split-half reliability ceiling averages ≈ 0.89.
 
-## New in this update (2026-07-31)
+## New in this update (2026-08-02)
+
+Five result families landed: the two gaps the previous cut flagged as open are both closed, and
+three new measurements (R5, OOD scatters, map reconstruction on the evaluation distributions)
+are reported here for the first time. One of the closures reverses a number published below.
+
+### Hallucination's maximum-budget OOD cells exist now — and the map's advantage there collapses
+
+The previous cut recorded a hole: arms 7/8/12 had been run on hallucination only at U = 250 and
+L ∈ {250, 2,500}, so they were missing from its two maximum-budget OOD panels. Those cells have
+now been run at the operating slice and merged into the panel.
+
+What is plotted: the same OOD figure as § Out-of-distribution transfer above, re-rendered with
+the hallucination cells filled. Operating slice — E1 persona vector, U = 18,793 unlabeled map
+pairs, maximum label budget, context end state. Bars are the mean over (seed, draw) replicates;
+error bars are the SD across replicates, drawn as non-negative offsets. **All arms in a panel are
+scored against the same judged DV on the same evaluation contexts** (n = 3,167 NQ-Open /
+4,021 SimpleQA), so the within-panel ordering is a like-for-like comparison. The newly filled
+arms carry a single (seed 0, draw 0) replicate; the comparison arms carry 15 and their replicate
+SD is ≈ 0.003, so the replicate noise on the comparison side is negligible.
+
+![wide OOD arms](../figures/issue_1739/interim_writeup/wide_ood_arms.png)
+
+> **The cells are real and they are strong in absolute terms.** On NQ-Open the labeled map
+> readout (map → ridge on predicted answers) reads **+0.413** [+0.386, +0.442], the
+> real-answer-trained variant +0.307 [+0.274, +0.338], and the oracle ridge +0.496
+> [+0.469, +0.525]. On SimpleQA: **+0.400** [+0.375, +0.428], −0.156 [−0.187, −0.125], and
+> +0.536 [+0.514, +0.563].
+>
+> **But the map-minus-direct delta collapses at matched maximum budget, and this corrects a
+> number in the re-cut figure set.** `recuts/recut_numbers.json` reports hallucination NQ-Open
+> map − direct = **+0.220** [+0.194, +0.246] — measured, as that file's own
+> `_coverage_gaps` records, at the *fallback* slice U = 250 / L = 2,500 with
+> `is_operating_slice: false`, because the operating-slice cells did not exist when it was
+> computed. At that fallback slice direct ridge is data-starved (+0.147 over 26 replicates)
+> while the map arm already reads +0.371. At the operating slice direct ridge recovers to
+> **+0.395** and the paired delta at the same (seed 0, draw 0) replicate is **+0.018** on
+> NQ-Open and **−0.003** on SimpleQA — within the map arm's own replicate spread (SD ≈ 0.013 at
+> the slice where it has replicates). So the hallucination OOD entry in the map-minus-direct
+> forest is a low-label-budget effect, not a maximum-budget one.
+>
+> **This is the same pattern the previous cut already found once.** Correction 1 below records
+> that the *label-free* map arm's OOD advantage is label-budget-dependent — winning 2 of 3
+> settings at L = 250 and 1 of 3 at maximum L. The labeled map readout now shows the same
+> shape on hallucination: it leads where the labeled readout on the context has too few labels
+> to fit, and ties once it does not. The sycophancy WildChat delta (+0.141 [+0.094, +0.190],
+> paired bootstrap over 1,982 contexts) and the evil ToxicChat delta (+0.048 [+0.009, +0.087])
+> are unaffected — both were computed at their operating slices.
+>
+> Caveats. The filled cells are one (seed, draw) replicate each, so they carry a per-context
+> bootstrap CI but no replicate SD. Hallucination's OOD rungs use the 0–1 fabrication-rate DV,
+> not the graded trait score used on its WildChat rung — the two are not cross-comparable.
+
+### The leg-1 prefix null probe is diagnosed: three mechanisms ruled out, verdict `unexplained`
+
+The previous cut reported that the scorer's mechanism-diagnosis ladder ran in code but its output
+never reached the committed summary (`nulls` was `[]`), leaving the anomaly undiagnosed. The
+ladder's output has now landed. It is carried at `meta.leg1_null_probe.<variant>.
+anomaly_diagnostic`, not in the `nulls` array — which is why the previous cut read it as absent.
+
+The ladder's verdict vocabulary is ordered `degenerate-no-variance` → `shuffle-band-consistent` →
+`capture-source-split-structure` → `batch-order-structure` → `unexplained`, and its own note is
+explicit that a genuine indexing defect stays `unexplained`: no benign label is ever forced.
+
+> **The verdict is `unexplained` on all three behaviors, in both input-state variants.** The
+> ladder did not fail to run — it ran and positively excluded each candidate:
+>
+> | behavior | observed max \|ρ\| | shuffle band p97.5 / max | inside band? | source-split collapses? | batch-order structure? |
+> |---|---|---|---|---|---|
+> | evil | 0.055 | 0.051 / 0.068 | no | no | no |
+> | sycophancy | 0.093 | 0.047 / 0.052 | no | no | no |
+> | hallucination | 0.120 | 0.049 / 0.054 | no | no | no |
+>
+> **What each column rules out, in plain terms.** The *shuffle band* is what \|ρ\| this same
+> probe produces when the DV is randomly permuted — 8 seeds × 28 layers = 224 draws, i.e. the
+> no-association reference. Sycophancy's and hallucination's observed reads sit clearly outside
+> it (0.093 and 0.120 against band maxima of 0.052 and 0.054), so "a bootstrap CI excluding zero
+> at this n is just miscalibration" does **not** explain them. The *capture-source split* tests
+> whether the effect is an offset between rows whose prefix reps came from the fresh bare capture
+> and rows that reused the committed WildChat-rung capture: within-group \|ρ\| stays comparable
+> to pooled (e.g. hallucination 0.073 substituted / 0.097 reused against 0.120 pooled), so the
+> two-source mixture does not carry it. *Batch order* tests whether the residual tracks position
+> in the capture stream: ρ(deviation, store row index) ≈ −0.042 on all three, too small to
+> account for the read.
+>
+> **Evil is the one marginal case.** Its observed 0.055 sits between the band's p97.5 (0.051) and
+> its maximum (0.068), so for evil alone "draw variance" remains live; the ladder still returns
+> `unexplained` because the automated criterion is band membership, and 0.055 is outside. Read
+> evil's row as borderline and sycophancy's and hallucination's as genuinely outside the band.
+>
+> **What this changes and what it does not.** It converts "the diagnosis never landed" into a
+> real negative result: the three cheap explanations are excluded, so a capture/indexing defect
+> — the scorer's own stated default reading for a non-chance read on a by-construction null —
+> is now the leading hypothesis, and it is not yet localized. The scope bound is unchanged: the
+> probe reads the *prefix* position while every headline number in this writeup is on
+> `bare_context_end`, which legitimately varies with the query. The directional-asymmetry
+> argument below is also unchanged — the anomaly cuts against positive leg-2 claims and leaves
+> evil's negative conclusion conservative.
+>
+> Caveats. The `context_end` and `prefix_end` variants report identical diagnostics (both read
+> the same constant prefix position), so they are one measurement, not two. Constancy still
+> passes on its own bars (per-layer cosine ≥ 0.9999 early / 0.9991 flat over 1,967–1,987 rows,
+> `max_abs_dev_from_row0 = 2.375` — a bf16 padded-batch tolerance, not bit-identity), so
+> residual structure at that tolerance remains the mechanism to chase.
+
+### R5: seeding the map pool with unlabeled trait-eliciting contexts helps evil, and only evil
+
+The map is trained on unlabeled context→answer pairs, so its training pool is free to change
+without touching any labels. R5 asks whether *what* those pairs are about matters: it replaces
+half the generic WildChat map pool with **unlabeled** contexts chosen to elicit the target trait
+(no behavior labels are added — only the map's input distribution changes), and sweeps that
+against the matched all-generic pool across behavior × map-pool size U × label budget L.
+
+What is plotted: Spearman ρ on the held-out train rung, context end state, E1, each behavior at
+its **maximum** label budget (evil L = 8,000; sycophancy and hallucination L = 16,000). Blue is
+the all-generic pool; orange is the same pool size with 50% of the pairs replaced by unlabeled
+trait-eliciting contexts. Error bars are the 95% bootstrap CI over contexts from each row's
+`ci_frozen`. Both arms in a pair are scored against the same judged DV on the same held-out
+contexts. The bottom row is a **built-in control**: direct ridge on the context never reads the
+unlabeled map pool at all, so anything it moves by is labeled-draw resampling rather than a pool
+effect. (Sanity check that the composition machinery is inert at zero: the composed pool at
+f_u = 0.0 and U = 18,793 reproduces the un-composed pool's ρ exactly — 0.4297 / 0.5065 / 0.5249
+across the three evil label budgets.)
+
+![R5 trait-augmented vs generic map pool](../figures/issue_1739/gapfold/r5_trait_pool.png)
+
+> **On evil the label-free map arm gains a lot, and the control stays quiet.** map → PV
+> projection at U = 250 goes **+0.209 → +0.504** (Δ **+0.295**) and at U = 2,500
+> **+0.387 → +0.598** (Δ **+0.211**), while the direct-ridge control moves −0.031 and −0.082 at
+> the same cells. The control being an order of magnitude smaller than the effect is what makes
+> this attributable to the map pool rather than to the labeled draw.
+>
+> **The gain buys roughly a 75× reduction in unlabeled data on evil.** The trait-augmented pool
+> at U = 250 reads +0.504 against the all-generic pool at U = 18,793 reading +0.525 — a rough
+> tie with 75× fewer pairs — and at the lowest label budget the augmented small pool is ahead
+> outright (+0.544 vs +0.430 at L = 250). What the map needs is apparently coverage of the
+> region the behavior lives in, not raw pair count.
+>
+> **Sycophancy and hallucination do not benefit; they lose slightly.** At matched U and maximum
+> L the map → PV deltas are −0.007 / −0.123 / −0.059 (sycophancy at U = 250 / 2,500 / 18,793)
+> and −0.070 / −0.102 / −0.086 (hallucination), against control deltas of −0.012 to −0.036. The
+> hallucination losses exceed their control and are consistent in sign across every cell, so
+> that is a real small degradation, not noise.
+>
+> **The labeled map readout is indifferent to the pool composition.** map → ridge on predicted
+> answers moves by |Δ| ≤ 0.013 at maximum label budget in every behavior × U cell. Read together
+> with the row above: pool composition is a lever on the *label-free projection* arm, which has
+> no labels to compensate with, and not on the arm that fits a labeled readout downstream of the
+> map.
+>
+> Caveats. R5 reports the held-out **train rung only** — there are no OOD cells, so none of this
+> is a transfer claim. Evil has no augmented cell at U = 18,793 (that pool size was run generic
+> only), which is why its top-right group has a single bar. The f_u = 0.5 arm shown is the
+> variant with full label-budget coverage; a second augmented variant exists at L ∈ {250, 2,500}
+> only and is not plotted. The direct-ridge control's own deltas are large at L = 250 (up to
+> −0.35), so only the maximum-budget cells plotted here support attribution.
+
+### Out-of-distribution scatters, available for the first time
+
+Every OOD number in this writeup so far has been a single correlation coefficient. Per-context
+predictions are now persisted on the OOD rungs, so the underlying point clouds behind those
+coefficients can be shown.
+
+What is plotted: one point per evaluation context — predicted score on x (arm-native units, which
+differ per arm and are not comparable across panels), judged expression on y. A random
+1,500-point subsample is drawn for legibility; **the annotated Spearman ρ and n are computed on
+all points**. Rows are (behavior, OOD rung), columns are the three feasible arms. U = 18,793,
+E1, context end state, at the largest label budget the persisted predictions cover for that rung
+— L = 8,000 for evil, L = 16,000 for sycophancy, **L = 2,500 for hallucination** (its
+maximum-budget per-context predictions were not persisted). Arm colours match the OOD bar figure
+above. DV construct: graded 0–100 trait score for evil and sycophancy, 0–1 fabrication rate for
+hallucination's own rungs.
+
+![OOD scatters](../figures/issue_1739/gapfold/ood_scatters.png)
+
+> **The recomputed coefficients reproduce the committed ones**, which is the first independent
+> check of those numbers: sycophancy AITA map → ridge +0.7289 (committed +0.729), direct ridge
+> +0.7245 (+0.725), evil ToxicChat map → PV +0.3190 (+0.319). The persisted predictions and the
+> summary rows agree.
+>
+> **Sycophancy AITA is the only cell with a genuine monotone cloud.** Its two labeled readouts
+> show a broad rising band across the full DV range; the label-free projection (+0.351) shows a
+> horizontal core with a weak upward drift, which is what a correlation of that size looks like
+> and is worth seeing before quoting it as a working predictor.
+>
+> **The evil panels are floor-dominated, exactly as the spread gate says.** Almost every point
+> sits at DV ≈ 0 with a thin scatter above it, so the ToxicChat ρ ≈ 0.26–0.34 is ranking a small
+> upper tail rather than ordering a spread-out population. On hh-rlhf all three arms are ≈ 0
+> (+0.021 to +0.070) and the cloud is a flat line. The figure makes the floor-censoring caveat
+> visible instead of asserted.
+>
+> **Hallucination's panels are banded because its DV takes six discrete values** (0, 0.2, …,
+> 1.0 — a fabrication rate over five rollouts), so ties dominate and the scatter reads as
+> horizontal stripes. At this L = 2,500 slice the map → ridge arm reads −0.049 on SimpleQA; at
+> maximum budget the same arm reads +0.400 (previous section). Do not read the SimpleQA panel as
+> the maximum-budget result.
+
+### Map reconstruction measured on the evaluation distributions, not just on WildChat
+
+A caveat repeated in several sections is that this map "extrapolates with strongly negative
+reconstruction R² onto the behavior eval distributions". That was inherited from the 963k-map
+round rather than measured here. It has now been measured directly, together with the standing
+kNN-retrieval companion.
+
+What is plotted: the map (fit on 15,034 WildChat context→answer pairs, refit at U = 18,793,
+context end state) evaluated three ways. Left: reconstruction R² per layer on the WildChat
+holdout (in-distribution) against each behavior evaluation rung, with the standing
+identity+learned-bias baseline for reference. Middle and right: kNN retrieval of the true target
+answer state among that rung's **own** held-out candidate pool, best layer, cosine metric — the
+black dash is the chance rate k/n_pool and the annotation is the multiple of chance. Pool sizes
+differ per rung (3,759 in-distribution; 1,868 hh-rlhf; 519 ToxicChat; 1,304 AITA), so raw
+accuracies are not directly comparable across bars and each is read against its own chance rate.
+
+![map reconstruction on eval distributions](../figures/issue_1739/gapfold/map_recon_evaldist.png)
+
+> **The negative-R² caveat is confirmed, and it is severe.** Best-layer R² on the evaluation
+> distributions is **−0.298** (evil / hh-rlhf, layer 13), **−0.280** (evil / ToxicChat, layer
+> 27) and **−0.805** (sycophancy / AITA, layer 16); layer-mean R² is −0.943, −0.699 and −3.088,
+> with AITA reaching −13.80 at layer 0. In-distribution the same map reads **+0.785** at its
+> best layer. Negative R² means the map's prediction is worse than predicting the mean of the
+> target — as a reconstruction it genuinely fails off-distribution.
+>
+> **Retrieval says the map is still highly discriminative there.** kNN acc@1 is **0.386**
+> (721× chance) on hh-rlhf, **0.380** (197×) on ToxicChat and **0.312** (407×) on AITA, against
+> 0.322 (1210×) in-distribution; acc@5 is 0.625 / 0.667 / 0.512 (233× / 69× / 133×). Raw
+> accuracy is *barely lower off-distribution than on it*. In plain terms: the predicted answer
+> state lands in the wrong place on an absolute scale but stays closest to the right target
+> among the candidates — the map keeps the ranking information the projection and readout arms
+> actually consume, while losing the scale that R² measures.
+>
+> **This is the R²-versus-retrieval dissociation the standing rule exists for**, in the same
+> direction as #779 and the bare-query leg-2 fit reported below, and opposite to #722 where
+> identity+bias scored strongly negative R² yet beat the fitted map on retrieval. Here
+> identity+learned-bias is negative at every layer in-distribution (best −0.004), so it is not a
+> competitive alternative on either read. The practical consequence: quoting the negative R² as
+> "the map does not transfer" overstates it — quote both reads.
+>
+> Caveats. Only evil and sycophancy were run (no hallucination rungs). The retrieval pools are
+> each rung's own contexts, so a smaller pool makes acc@1 easier and the ×chance multiples
+> across bars are not a ranking. This measures the map's reconstruction, not any arm's
+> behavioral prediction.
+
+### The publishable re-cut figure set, and how the gap-fill changes one of its entries
+
+Nine re-cut figures were rendered on 2026-08-01 (commit `104155031c`) with their verified numbers
+in `eval_results/issue_1739/recuts/recut_numbers.json`. They were not referenced from this
+writeup; they are, with the one correction the gap-fill forces:
+
+| figure | what it shows |
+|---|---|
+| [`delta_map_minus_direct.png`](../figures/issue_1739/recuts/delta_map_minus_direct.png) | paired map − direct delta per setting (forest) |
+| [`sample_efficiency_labels.png`](../figures/issue_1739/recuts/sample_efficiency_labels.png) | ρ vs label budget L per arm |
+| [`sign_consistency_across_settings.png`](../figures/issue_1739/recuts/sign_consistency_across_settings.png) | per-arm sign stability across settings, within DV construct |
+| [`mapping_baselines_identity_knn.png`](../figures/issue_1739/recuts/mapping_baselines_identity_knn.png) | the standing identity+bias / kNN-retrieval pair |
+| [`headroom_to_oracle.png`](../figures/issue_1739/recuts/headroom_to_oracle.png) | feasible arm vs its oracle ceiling, per family |
+| [`nulls_and_controls.png`](../figures/issue_1739/recuts/nulls_and_controls.png) | shuffled-map / shuffled-pretrain controls |
+| [`arms_with_reliability_ceiling.png`](../figures/issue_1739/recuts/arms_with_reliability_ceiling.png) | train-rung arms against the split-half reliability ceiling |
+| [`per_layer_rho.png`](../figures/issue_1739/recuts/per_layer_rho.png) | ρ by layer per arm |
+| [`spread_by_setting.png`](../figures/issue_1739/recuts/spread_by_setting.png) | the spread-gate decomposition |
+
+> **The delta forest: the labeled map readout beats direct context ridge in most settings, but
+> the effect sizes split sharply.** Across the 11 (behavior, setting) cells the paired
+> map → ridge minus direct-ridge delta is positive in all 11 and its CI excludes zero in 8. Both
+> arms consume the same labels and the same context activations and are scored against the same
+> judged DV on the same contexts, so the pairing is like-for-like. The two large entries are
+> **sycophancy WildChat +0.141** [+0.094, +0.190] (paired bootstrap over 1,982 contexts) and
+> **evil ToxicChat +0.048** [+0.009, +0.087]; the train-rung entries are real but tiny
+> (+0.008 to +0.017). **The third large entry — hallucination NQ-Open +0.220 — does not survive
+> the gap-fill**: it was computed at a fallback slice, and at matched maximum budget it is
+> +0.018 (§ above). Read the forest as "consistently positive, occasionally material", not as a
+> uniform effect.
+>
+> **Sign consistency is where hallucination's map arms break.** Within a matched DV construct,
+> 8 of 9 arms hold one sign across settings for evil and for sycophancy — the sole exception in
+> each is the shuffled-map control, which is exactly what a null should do. For hallucination
+> only 6 of 9 hold, and the three that flip are `arm7_map_ridge_pred`, `arm8_map_ridge_true` and
+> `arm12_oracle_reg` — the labeled-readout family. The maximum-budget cells confirm the flip
+> rather than dissolving it: `arm8_map_ridge_true` reads +0.307 on NQ-Open and **−0.156** on
+> SimpleQA at the operating slice. A readout whose correlation changes sign between two
+> question-answering OOD sets is not measuring a stable direction on this behavior.
+>
+> Caveats. These figures were rendered before the gap-fill, so the hallucination NQ-Open and
+> SimpleQA entries in the delta forest and in the sample-efficiency ladder sit at the fallback
+> slice their own `_coverage_gaps` records (`fig2` likewise shows those ladders at U = 250).
+> They are not regenerated here; the corrected numbers are in the section above.
+
+## New in this update (2026-08-01)
+
+Four arms joined the roster on every rung this round, and one of them carries the strongest
+positive result in the writeup. Arm vocabulary is unchanged from the block below, plus:
+**map → ridge (pred. answers)** applies the map to the input state and then fits and applies a
+*labeled* ridge readout entirely on the **predicted** answer state (`arms.py`: design matrix
+`mp`, trained and evaluated on `mp`); **map → ridge (real answers)** fits that readout on
+**true** answer states and applies it to predicted ones (design matrix `za` at train,
+evaluated against `mp`) — deployable at prediction time, but it needs true answer states while
+training, a heavier requirement than the others here; **direct MLP** is the nonlinear sibling
+of direct ridge, straight off the context; and **oracle ridge** fits *and* evaluates on the
+model's **true** answer state — a strict upper bound, not a deployable method.
+
+### Mapping into answer space before the labeled readout beats reading the context directly
+
+The previous cut's fourth-column section compared the *label-free* map arm (map → PV
+projection) against direct ridge and concluded sycophancy was a counterexample where direct
+ridge wins. That comparison was incomplete: it omitted the map-family arms that use labels.
+With the roster widened, the like-for-like comparison is **map → ridge on predicted answers**
+against **direct ridge on the context** — both need the same labels, neither needs the answer
+to exist at prediction time — and the map side wins on all three behaviors.
+
+What is plotted: Spearman ρ between each arm's prediction and the judged expression on the
+random held-out WildChat rung, one bar per arm, one panel per (behavior, input state); error
+bars are the 95% bootstrap CI over contexts carried in each row's `ci_frozen`, drawn as
+non-negative offsets. Each arm's layer is frozen from the modal frozen layer of that arm's
+committed main-lane train cells, so no layer is selected on this rung. Bars outlined in black
+are the four arms added this round. Provenance is the same shared on-policy rollout pool the
+previous cut describes (5 rollouts per context, 10,000 total, one pool judged under all three
+trait rubrics) — unchanged, re-scored with the wider roster.
+
+![wide arm roster on the WildChat rung](../figures/issue_1739/interim_writeup/wide_roster_arms.png)
+
+> **The labeled readout is better computed on the predicted answer state than on the context,
+> on every behavior.** map → ridge (pred. answers) vs direct ridge: sycophancy **+0.332**
+> [+0.290, +0.375] vs +0.190 [+0.145, +0.235]; hallucination **+0.080** [+0.039, +0.123] vs
+> −0.013 [−0.057, +0.034]; evil **+0.127** [+0.078, +0.174] vs +0.081 [+0.031, +0.123]. The
+> first two pairs have non-overlapping bootstrap CIs; evil's overlap, so evil is directionally
+> consistent rather than separated. Both arms consume the same labels and the same context
+> activations — the only difference is that one passes the state through the map first — so
+> this is the cleanest evidence in the writeup that the map carries information the context
+> representation does not surface to a linear readout. Read the CI comparison conservatively:
+> these are per-arm bootstraps over contexts, not a paired test of the difference, so
+> non-overlap is sufficient for a difference and overlap is not sufficient for its absence.
+>
+> **This changes the sycophancy story.** The previous cut recorded sycophancy as the behavior
+> where "direct ridge wins" and the map arm trails. That holds for the *label-free* projection
+> arm (map → PV proj. +0.122 vs direct ridge +0.190) and is unchanged. But the map family's
+> labeled arms lead comfortably — map → ridge (real answers) +0.337 [+0.298, +0.379] and
+> map → ridge (pred. answers) +0.332 — so sycophancy is no longer a counterexample to "the map
+> helps"; it is a counterexample to "the map's *persona-vector projection* helps". The
+> bottleneck on sycophancy is the direction, not the map.
+>
+> **The oracle ridge is the true ceiling, and it is far above everything feasible.** Adding a
+> labeled readout on the model's TRUE answer state gives +0.468 [+0.432, +0.501] on sycophancy,
+> +0.275 [+0.230, +0.313] on hallucination, +0.169 [+0.126, +0.206] on evil — in each case the
+> top bar. The gap between it and the best feasible arm (0.468 vs 0.332 sycophancy, 0.275 vs
+> 0.080 hallucination) is the headroom a better map would compete for. Note that on
+> hallucination the oracle *projection* (+0.178) beats every feasible arm too, while on
+> sycophancy the oracle projection (+0.084) is beaten by both map-side labeled arms — the
+> persona vector is a weaker instrument than a labeled readout for sycophancy even when handed
+> the true answer state. (map → ridge on real answers is deployable at prediction time but needs
+> true answer states during training, so of the two only map → ridge on predicted answers is
+> feasible under the same data budget as direct ridge.)
+>
+> **Direct MLP does not rescue the context side.** The nonlinear direct arm reads +0.088 (evil),
+> +0.160 (sycophancy), +0.030 (hallucination) — within noise of direct ridge on evil and
+> hallucination and below it on sycophancy. Consistent with round B's finding that
+> nonlinearity is not the missing ingredient, now measured on the direct arm as well as the map.
+>
+> Caveats. (a) All the disclosures bounding this column in the previous cut still apply
+> unchanged: **evil's DV is floored on this rung** (mean 0.42, sd 4.43 on 0–100), so the evil
+> panel ranks a thin upper tail and is not a ranking read; **hallucination is scored with the
+> trait rubric here**, not its fabrication-rate construct, and carries a 36.6% judge
+> content-drop rate; 987 of 2,000 contexts are single-turn, which thins the prefix panels; there
+> is no permutation null on this rung. (b) The prefix panels reproduce the previous cut's
+> oddities — sycophancy's map → PV proj. sits at frozen layer 0 and reads −0.085, the degenerate
+> layer-0 selection flagged before, not a negative finding.
+
+### The persona-vectors synthetic suite decomposes into its instruction contrast
+
+The previous cut reported that the suite inflates every method by +0.26–0.57 ρ over real data
+and inferred that it measures instructed-behavior separability. The suite was re-scored this
+round **within each instruction polarity separately**, which turns that inference into a direct
+measurement: if the pooled ρ is the pos-vs-neg contrast, it must collapse when you score inside
+one polarity at a time.
+
+What is plotted: Spearman ρ on the SAME 200 suite contexts per behavior, three ways — pooled
+over both instruction polarities, then within the 100 positive-instruction contexts alone, then
+within the 100 negative-instruction contexts alone. Context end state, frozen layers from the
+main lane, one panel per behavior. Colour encodes the polarity subset only, and is deliberately
+a different palette from the arm and regime figures elsewhere here.
+
+![pvsynth polarity decomposition](../figures/issue_1739/interim_writeup/pvsynth_polarity.png)
+
+> **Evil's suite score is a two-group separation with one group degenerate.** All 100
+> negative-instruction contexts score exactly 0 on the judged DV (mean 0.0, sd 0.0, one distinct
+> value), so within-half ρ is undefined for every arm — the pooled ρ ≈ 0.80 that every evil arm
+> reaches is arithmetically the separation between "instructed to be evil" and "instructed not
+> to be", and nothing else. That is the sharpest possible statement of what the suite measures.
+>
+> **Sycophancy and hallucination collapse but do not vanish.** Sycophancy: the paper method
+> reads +0.786 pooled, +0.430 within the positive half, +0.110 within the negative half; the
+> shuffled-map control reads +0.539 pooled, +0.288, +0.047. Hallucination: +0.653 pooled,
+> +0.048 within positive, +0.492 within negative. So roughly half to nearly all of each pooled
+> value is the polarity contrast, and the residual within-polarity signal is small and
+> arm-dependent. The **nonsense-map control losing two-thirds of its ρ** the same way is the
+> tell: a control with no method content tracks the polarity split almost as well as the methods
+> do.
+>
+> **Read against the real rungs, the gap is what matters.** The same arms on ordinary WildChat
+> traffic read +0.012 to +0.332; on the suite they read +0.60 to +0.85. A benchmark on which a
+> shuffled map scores 0.54 and the negative half has no variance cannot rank methods.
+>
+> Caveats. n=200 per behavior and n=100 per polarity half, so the within-half estimates are
+> noisy — evil's within-positive shuffled-map read of −0.600 is a 100-point correlation on a
+> nonsense direction and should be read as noise, not as a negative effect. The suite has only
+> 10 distinct prefix states, so its prefix-arm rows are rank-tie-dominated (unchanged from the
+> previous cut). DV construct is the PV per-trait rubric for all three behaviors.
+
+### The naturalistic-PV reads move when computed in the space the map lives in
+
+The previous cut's regime ladder applied a **whitened-fit** map to **raw** activations — an
+input-space mismatch. The reads have been recomputed with the whitening folded into the
+direction (`score = x · (W r_B) + const`, so no whitened activation grid is materialized and
+the values are numerically comparable to the committed main-grid columns). **The whitened reads
+are primary; the raw ones are deprecated** and shown only so the size of the correction is
+visible.
+
+What is plotted: Spearman ρ at each read's frozen layer, filled bars = whitened (primary),
+dotted outlines = the superseded raw values, one panel per (behavior, out-of-sample evaluation
+rung), colour = extraction regime. Only out-of-sample rungs are panelled — the train rung is
+omitted entirely because E2 and E2p are extracted from its labels and so are in-sample there by
+construction. The frozen
+layer is chosen by max |ρ| on the train rung, so the sign is not pinned by the selection.
+
+![natpv whitened vs raw](../figures/issue_1739/interim_writeup/natpv_whitened_vs_raw.png)
+
+> **The regime ladder's top sycophancy read drops from 0.577 to 0.486.** On the out-of-sample
+> AITA rung,
+> map(context) → PV proj. at pooled-natural E2p reads **0.486** whitened against 0.577 raw. It
+> is still the top read in this ladder and still beats the true-answer projection at the same
+> regime (0.454), so the qualitative claim survives — but the number published in the previous
+> cut was ~19% too high and should not be quoted again. Scope note: "top read in the regime
+> ladder" is NOT "the best sycophancy predictor" — this ladder covers only the projection-family
+> reads at their frozen layers. On the same AITA rung the labeled readouts are far higher
+> (map → ridge on predicted answers +0.729, direct ridge +0.725, oracle ridge +0.750; § OOD
+> transfer above). The previous cut's phrase "the best sycophancy predictor measured" was wrong
+> on both counts.
+>
+> **"E2p is top for every read" does not survive whitening.** For the map read, E2p still leads
+> (0.486 vs 0.401 E2, 0.370 E1) and for the true-answer projection it still leads (0.454 vs
+> 0.271 E2, 0.325 E1). But for the plain **context projection**, whitening reverses the order: E1
+> paper-faithful synthetic is top at 0.332, ahead of E2p 0.310 and E2 0.290 — where the raw
+> reads had E2p on top at 0.416. So the robust statement is narrower than the previous cut's:
+> **extraction from natural data helps the reads that go through the map or the true answer
+> state, and does not help the plain context projection.**
+>
+> **Hallucination's sign instability is confirmed, at slightly lower severity.** Counting
+> (read × regime) combinations that hold one sign across all three of its evaluation rungs:
+> whitened gives **3 of 15 sign-consistent** (12 inconsistent) — context projection at E2 and
+> E2p, and the true-answer projection at E2. Raw gave 2 of 15 (13 inconsistent). Either way a
+> direction whose correlation flips sign between two OOD sets is not measuring a stable trait.
+> All 15 sycophancy combinations are sign-consistent in both spaces, though across only 2 rungs.
+> *(Bookkeeping note: the previous cut's prose said "thirteen of fifteen" and its takeaway said
+> "12 of 15"; the two referred to the same raw-space count, and 13 was correct there. The
+> whitened count is 12.)*
+>
+> Caveats. The whitened path runs the E1 anchor through the identical transform, so the
+> E1/E2/E2p comparison is internally matched. The map reads inherit the #963k round's finding
+> that this map extrapolates with strongly negative reconstruction R² onto the behavior eval
+> distributions — a distribution-coverage caveat on the map(context) rows. Sycophancy's prefix
+> reads remain degenerate (every regime at frozen layer 0, |ρ| ≈ 0.031) and are excluded from
+> the panels. E2p's recipe is a pooled global-midpoint split over all kept per-rollout scores,
+> not a top-K/bottom-K context split.
+
+### Out-of-distribution transfer with the added arms
+
+The OOD rungs were re-run with arms 7/8/12 added to the core roster, across the full
+rung × regime × label-budget grid. The direct-MLP arm was **omitted** from the OOD grid as
+redundant with round B's committed negative result on nonlinearity.
+
+What is plotted: mean Spearman ρ over (seed, draw) replicates at the operating slice — E1
+persona vector, U = 18,793 unlabeled pairs, maximum label budget, context end state — one panel
+per (behavior, OOD rung); error bars are the SD across replicates, drawn as non-negative
+offsets. Cells the grid did not cover are marked in place rather than dropped.
+
+![wide OOD arms](../figures/issue_1739/interim_writeup/wide_ood_arms.png)
+
+> **On ToxicChat the whole map family clusters at the oracle projection.** map → PV proj.
+> +0.319, map → ridge (real answers) +0.299, map → ridge (pred. answers) +0.298, oracle
+> projection +0.302, against direct ridge +0.250 and the paper's context projection +0.137. The
+> three map arms agreeing this closely, with a shuffled-map control at +0.111, is the
+> best-behaved OOD cell in the experiment.
+>
+> **On sycophancy's AITA rung the map's labeled arm ties direct ridge rather than beating it**
+> — map → ridge (pred. answers) +0.729 vs direct ridge +0.725, with the oracle ridge at +0.750
+> and the label-free map projection far behind at +0.351. So the WildChat-rung advantage of the
+> map-side readout does **not** reproduce on this curated OOD rung; on AITA the two labeled
+> readouts are indistinguishable. Worth stating plainly because it bounds the headline above:
+> the map-side readout's edge is demonstrated on ordinary user traffic, not everywhere.
+>
+> **Coverage gap on hallucination — CLOSED 2026-08-02.** Arms 7/8/12 had been run for
+> hallucination only at U = 250 and L ∈ {250, 2,500}, leaving its two maximum-budget OOD panels
+> empty. Those cells have since been run at the operating slice and the panel above is
+> re-rendered with them: map → ridge (pred. answers) reads +0.413 on NQ-Open and +0.400 on
+> SimpleQA, against direct ridge +0.395 and +0.402 — a tie, not the +0.220 advantage the re-cut
+> forest reports from the fallback slice. See
+> [§ Hallucination's maximum-budget OOD cells](#hallucinations-maximum-budget-ood-cells-exist-now--and-the-maps-advantage-there-collapses).
+> Evil's hh-rlhf panel is shown for
+> completeness but its DV fails the pre-registered spread gate (below), so its ordering is
+> uninformative.
+
+### Spread per evaluation setting, against the pre-registered gate
+
+The pre-registered spread gate is two conditions, both required: **inter-context SD ≥ 10 on
+0–100 AND fewer than 80% of contexts in the bottom [0, 10) bin** (plan § "Pre-registered spread
+floor + fallback"; `gates.gate2_spread_floor`). The shipped gate was evaluated per **behavior**,
+pooling that behavior's rungs. Applying the same two thresholds per **evaluation setting** is a
+decomposition this writeup adds, not a re-run of the shipped verdict.
+
+What is plotted: top row = inter-context SD of the judged DV against the SD ≥ 10 floor; bottom
+row = fraction of contexts in the bottom [0, 10) bin against the 0.80 ceiling; one column per
+behavior, one bar per evaluation setting. Hallucination's own rungs use the 0–1 fabrication rate
+and are rescaled ×100 onto the gate's scale for the comparison — hatched, and a different
+construct from the graded trait score in the solid bars beside them.
+
+![spread grid](../figures/issue_1739/interim_writeup/spread_grid.png)
+
+> **Pooled, all three behaviors pass; per setting, three of evil's five fail.** Pooled over its
+> rungs each behavior clears both conditions (evil SD 23.9 / bottom 0.713; sycophancy SD 13.2 /
+> 0.104; hallucination SD 43.4 / 0.429). Decomposed, evil fails on **hh-rlhf** (SD 0.89, bottom
+> 0.997 — both conditions), **random WildChat** (SD 4.43, bottom 0.989 — both), and — this is
+> the new one — **ToxicChat**, which clears the SD floor at 12.07 but puts **93.4%** of its 519
+> contexts in the bottom bin, failing the second condition. Evil clears the gate only on its own
+> training distribution and on the synthetic suite.
+>
+> **This is the scoped version of "you cannot use generic chat for these behaviors".** That
+> claim is true for evil and only for evil: on random WildChat traffic evil's DV is inert
+> (SD 4.4, 98.9% in the bottom bin), while hallucination clears both gate conditions there with
+> room to spare (SD 32.2, 26.2% bottom bin) and sycophancy's WildChat spread is the *widest* of
+> its four settings (SD 23.3 against 13.1 on AITA and 13.2 on its own train rung; 53% bottom
+> bin). Any general statement that these behaviors do not appear in ordinary user traffic should
+> be narrowed to evil. Note that hallucination's WildChat SD is in fact the smallest of its five
+> settings — but its other rungs are the rescaled fabrication rate, a different construct, so
+> that ordering is not a meaningful comparison; the load-bearing fact is that it passes the gate,
+> not where it ranks.
+>
+> **Consequence for the ToxicChat reads.** The ToxicChat cell is the one the previous cut leans
+> on hardest for the "map is most robust under distribution shift" claim, and it now carries a
+> failed gate condition. Its SD is real (12.07 on 0–100) and its arm ordering is well-behaved
+> (see the OOD panel above), so this is a reason to attach a caveat, not to discard the cell —
+> but the previous cut's sentence that "the evil train/ToxicChat settings have usable spread"
+> was checking only the SD condition and is corrected here.
+
+### The bare-query round's open flags: one settled, one still open
+
+The previous cut flagged two by-construction-null arms reading non-zero, and three limitations.
+The round was re-run with per-context predictions persisted, an 8-seed shuffle band, turn
+subsets, and the standing mapping baselines. **The headline bare-query numbers are unchanged**
+(sycophancy map → PV proj. +0.200 bare vs +0.122 full; hallucination −0.065 vs +0.111; evil's
+dedicated bare fit −0.067 vs +0.157 full; the oracle arm identical across renders at +0.084 /
++0.178 / +0.156). What changed is what we know about them.
+
+What is plotted: (a) evil's dedicated bare fit split by conversation-turn subset, error bars the
+95% bootstrap CI from each row's `ci_frozen` as non-negative offsets; (b) the shuffled-map
+control re-run across 8 shuffle seeds, with the committed row marked; (c) the standing
+identity+learned-bias and kNN-retrieval baselines for the bare-rep → answer map, pooled over the
+five by-query folds.
+
+![bare-query v2 resolutions](../figures/issue_1739/interim_writeup/bareq_v2_resolutions.png)
+
+> **Settled: the shuffled-map control's +0.068 is draw variance.** Re-running the nonsense-map
+> control across 8 shuffle seeds gives mean **+0.003**, range [−0.077, +0.068]. The committed
+> control row *is* the seed-0 draw and sits at the top of that range; the artifact's own note is
+> that "a committed rho inside it is within-draw variance rather than a control failure". So the
+> first of the two anomalies is explained: a single shuffle draw is simply a noisy estimate, and
+> the control is centred on zero as it should be.
+>
+> **Settled: the turn-subset split is now computable, and it does not go the way the previous
+> cut predicted.** Per-context predictions are persisted for evil's leg 2
+> (`bareq_map/evil/preds/bareq_leg2_preds.wildchat_rung.jsonl`, with a `multi_turn` flag), so
+> the subsets are a re-analysis rather than a re-score. map → PV proj. reads **−0.067** pooled,
+> **−0.049** [−0.114, +0.015] on the 1,009 multi-turn contexts, **−0.090** [−0.141, −0.026] on
+> the 978 single-turn ones. The previous cut argued the single-turn half must dilute the
+> contrast because its bare render is byte-identical to its original render, so the multi-turn
+> effect "should exceed" the pooled value. For evil's leg 2 that reasoning does not apply: the
+> leg refits the map on bare reps, so *both* subsets have a changed predictor, and the
+> single-turn half is the more negative one with the multi-turn CI spanning zero. The pooled
+> negative read is carried by the single-turn contexts. **Sycophancy and hallucination emit no
+> subset rows** (they ran leg 1 only, which is a no-op refit for them), so the dilution argument
+> for sycophancy's +0.078 bare-over-full advantage is still untested.
+>
+> **Diagnosed 2026-08-02 — verdict `unexplained`, with three mechanisms positively ruled out.**
+> Its base verdict is `ANOMALY` on all three behaviors — constancy passes (per-layer cosine
+> ≥ 0.9999 early / 0.9991 flat over 1,987 rows) yet all 28 layers return finite ρ with at least
+> one CI excluding zero, |ρ| reaching 0.055 (evil), 0.093 (sycophancy), 0.120 (hallucination).
+> The scorer's mechanism-diagnosis ladder (`anomaly_diagnostic`, verdicts
+> `shuffle-band-consistent` → `capture-source-split-structure` → `batch-order-structure` →
+> `unexplained`) has now landed — carried at `meta.leg1_null_probe.<variant>.anomaly_diagnostic`
+> rather than in the `nulls` array, which is why the previous cut read it as missing. It ran all
+> three checks and excluded all three: the observed |ρ| falls OUTSIDE an 8-seed × 28-layer DV
+> permutation band (so not miscalibration), it does NOT collapse within capture-source groups
+> (so not the two-source capture mixture), and the deviation does not track capture-stream
+> position (ρ ≈ −0.042). A capture/indexing defect — the scorer's own default reading — is now
+> the leading unexcluded hypothesis, and it is not localized. Evil is borderline (0.055 against
+> a band p97.5 of 0.051 and a maximum of 0.068); sycophancy and hallucination are clearly
+> outside. Full table:
+> [§ The leg-1 prefix null probe is diagnosed](#the-leg-1-prefix-null-probe-is-diagnosed-three-mechanisms-ruled-out-verdict-unexplained).
+> Its scope bound is unchanged: the probe reads
+> the *prefix* position while every headline number is on `bare_context_end`, which legitimately
+> varies with the query.
+>
+> **New: the standing mapping baselines, and the fitted map wins both.** Leg 2 fits a
+> bare-rep → answer-activation map, so the standing identity+learned-bias and kNN-retrieval pair
+> binds (leg 1 fits no map — the artifact records it as inapplicable with that reason, and notes
+> that the `arm3_identity_bias` *scoring* arm is a different object from this baseline). Pooled
+> over the five by-query folds: the fitted map's held-out R² peaks at **+0.172** (layer 27,
+> +0.158 at layer 13) and is positive at every layer, while **identity+learned-bias is negative
+> everywhere** and degrades to −1.44 at deep layers. kNN retrieval of the true target among the
+> fold's held-out pool reaches **acc@1 0.039 cosine against a chance rate of 0.00078** (≈50×
+> chance) and acc@5 0.150 against 0.0039 (≈38× chance). So the map is genuinely discriminative
+> even though its R² is modest — R² understates it. This is the same direction as #779, where
+> the fitted ridge dominated identity+bias on retrieval, and the opposite of #722, where
+> identity+bias scored a strongly negative R² yet beat the fitted map on retrieval; the standing
+> rule exists precisely because the two reads dissociate both ways. Estimator validity checks out: n_train
+> 5,160 per fold against d = 3,584, so the fits are not in the under-determined regime, and the
+> folds are by-query with no query straddling a fold.
+>
+> Still-open limitations carried forward: evil's leg 2 scores only on the WildChat rung (its own
+> OOD rungs have no bare reps), and the prefix-variant arm sweep is skipped on all three
+> behaviors as a degenerate null variant.
+
+### Corrections to numbers published in earlier cuts
+
+Two errors in the `## Results` section below, found by re-reading the artifacts this round.
+Both are corrected in place there; recorded here so the change is visible.
+
+1. **A budget-mismatched comparison reversed an OOD headline.** The previous cut wrote
+   "SimpleQA (hallucination): map→PV 0.27 vs direct ridge 0.10" inside a section whose stated
+   slice is the *largest* budgets. At L = 16,000 on SimpleQA, direct ridge is **+0.402**, not
+   0.10 — the 0.10 figure is direct ridge at L = 250 (+0.103), compared against the map arm at
+   maximum L. At matched maximum budget, **direct ridge beats the map arm on SimpleQA**
+   (+0.402 vs +0.270). Consequently the claim that the label-free map arm "is the most robust
+   feasible method on 2 of 3 usable OOD settings" is wrong at maximum label budget: it wins 1 of
+   3 there (ToxicChat +0.319 vs +0.250; NQ-Open +0.200 vs +0.395; SimpleQA +0.270 vs +0.402).
+   The claim is true at **low** label budget — at L = 250 the map arm wins ToxicChat
+   (+0.270 vs +0.099) and SimpleQA (+0.227 vs +0.103) and loses NQ-Open (+0.164 vs +0.231), 2 of
+   3 — which is the honest and more interesting version: **the label-free map arm's OOD
+   advantage is label-budget-dependent, leading where the labeled readout is data-starved and
+   losing once it is not.** Direct ridge's jump at maximum L is partly recovery from the
+   L = 2,500 dip flagged elsewhere in this doc (its L = 250 / 2,500 / max values are
+   0.103 / 0.110 / 0.402 on SimpleQA and 0.231 / 0.127 / 0.395 on NQ-Open), which is itself
+   unexplained.
+2. **"Usable spread" checked only one of the gate's two conditions** — see the spread section
+   above; ToxicChat passes the SD floor and fails the bottom-bin ceiling.
+
+## Previously reported (2026-07-31)
 
 Arm vocabulary, for the sections below: **map → PV proj.** applies our context→answer map to the
 input state and projects the persona vector on the *predicted* answer state (the method this
@@ -80,7 +740,7 @@ the full **context end state** (context = prefix + user query). Every section be
 with one stated exception — the bare-query round, whose prefix variant is a degenerate constant by
 construction and is therefore reported as a null probe rather than an arm sweep.
 
-### Does the bare user query predict the behavior? (new — bare-query round)
+### Does the bare user query predict the behavior? (bare-query round)
 
 If the map arm predicts behavior from the full context, how much of that is the *query* versus
 the *prefix* (the persona, jailbreak framing, or conversation history that precedes it)? This
@@ -154,9 +814,21 @@ reuse-licence gate that passed on all three.
 > context — the topic-and-history framing and the jailbreak prefix respectively — so stripping the
 > prefix removes the signal outright.
 
-**Open flag — the by-construction-null arms do not read zero, and this is unresolved.** Two
-independent null arms in this round return small but CI-significant values where they must read
-chance, so the round's CIs should be treated as provisional until it is explained.
+**Open flag — the by-construction-null arms do not read zero.** Two independent null arms in this
+round return small but CI-significant values where they must read chance.
+
+> **RESOLVED (a) 2026-08-01 / DIAGNOSED (b) 2026-08-02 — see § The bare-query round's open flags
+> above.** Anomaly (a),
+> evil's leg-2 shuffled-map control at +0.068, is explained as single-draw variance: across
+> 8 shuffle seeds the control reads mean +0.003, range [−0.077, +0.068]. Anomaly (b), the leg-1
+> prefix null probe, now has its mechanism ladder's output in hand: the verdict is
+> **`unexplained`** on all three behaviors after the shuffle-band, capture-source-split and
+> batch-order mechanisms were each positively ruled out — so the cheap explanations are gone and
+> a capture/indexing defect is the leading remaining hypothesis. The limitation about the
+> multi-turn subset
+> being uncomputable is also resolved for evil (per-context predictions are now persisted) and
+> the answer went the opposite way from the prediction below. The paragraphs that follow are the
+> 2026-07-31 state; read the newer section for what is settled.
 
 ![bare query null probe](../figures/issue_1739/interim_writeup/bareq_null_probe_layers.png)
 
@@ -216,7 +888,7 @@ One prior-work caveat carried verbatim from the round's own record
 (`bareq_score_done.json`): *"#1092's 0.02 was bare->answer-ACTIVATIONS at SAE grain, so it is an
 analogy, not a numerically comparable floor for bare->judged-DV."*
 
-### A fourth evaluation column: random held-out WildChat (new)
+### A fourth evaluation column: random held-out WildChat
 
 The three existing columns per behavior are a held-out slice of the behavior's own training
 distribution plus two curated real OOD sets. This adds a fourth: **2,000 random WildChat
@@ -302,7 +974,7 @@ marked — shows the frozen-layer choices are not knife-edge picks on this rung:
 > oracle prefix curve rises smoothly with depth, the expected shape for a direction read off a
 > true answer state.
 
-### Nonlinear maps do not beat the linear map (round B, new)
+### Nonlinear maps do not beat the linear map (round B)
 
 The central question of round B: the context→answer map has been a **linear ridge** throughout;
 does a nonlinear map buy transfer? Two replacements were run — an **MLP map** and a
@@ -356,7 +1028,7 @@ on the y, with the y = x line:
 > handful of cells above the diagonal are concentrated at low ρ (near-zero cells where both maps
 > are uninformative), so no subregion of the design favours a nonlinear map.
 
-### Unlabeled behavior-eliciting map data: the evil gain does not replicate (new)
+### Unlabeled behavior-eliciting map data: the evil gain does not replicate
 
 The evil compose cells (context, previously reported below) found that replacing half a
 fixed-size map-training pool with *unlabeled* behavior-eliciting contexts lifted the projection
@@ -393,7 +1065,14 @@ context end state, held-out train distribution.
 > hallucination cells are numerically identical across pool compositions), consistent with the
 > prefix arms carrying little composition-sensitive signal.
 
-### Naturalistic persona-vector extraction regimes: sycophancy replicates, hallucination fails (new)
+### Naturalistic persona-vector extraction regimes: sycophancy replicates, hallucination fails
+
+> **SUPERSEDED 2026-08-01 — read § The naturalistic-PV reads move when computed in the space the
+> map lives in instead.** Every number in this section is a **raw-activation-space** read, which
+> applied a whitened-fit map to un-whitened activations. The whitened recomputation changes the
+> headline (sycophancy map(context) → PV proj. at E2p: 0.577 → **0.486**) and removes the
+> "E2p is top for every read" ordering. The prose below is kept for the record only; do not
+> quote its numbers.
 
 The three extraction regimes — **E1** paper-faithful synthetic, **E2** matched-pair natural,
 **E2p** pooled natural — were previously read on evil only. This extends them to sycophancy and
@@ -449,7 +1128,7 @@ What is plotted: per-context judged expression (evil: mean 0–100 score over 5 
 
 ![spread hallucination](../figures/issue_1739/interim_writeup/spread_hallucination.png)
 
-> All hallucination settings and the evil train/ToxicChat settings have usable spread (SD 0.33–0.42 on 0–1; SD 26.3 and 12.1 on 0–100). **The evil hh-rlhf rung fails the pre-registered spread floor** (mean 0.08, SD 0.89 on 0–100 — Qwen-2.5-7B refuses essentially all 2022-era red-team attempts), so hh-rlhf comparisons below are floor-censored and uninformative. Evil scores are additionally refusal-censored: 1,532 train / 127 hh-rlhf / 152 ToxicChat contexts have no DV because all rollouts refused.
+> All hallucination settings have usable spread (SD 0.33–0.42 on 0–1), as does the evil train setting (SD 26.3 on 0–100). **The evil hh-rlhf rung fails the pre-registered spread floor** (mean 0.08, SD 0.89 on 0–100 — Qwen-2.5-7B refuses essentially all 2022-era red-team attempts), so hh-rlhf comparisons below are floor-censored and uninformative. **CORRECTED 2026-08-01: evil's ToxicChat rung also fails the gate.** The pre-registered gate is two conditions — SD ≥ 10 *and* < 80% of contexts in the bottom [0, 10) bin — and ToxicChat clears the SD condition (12.07) while putting 93.4% of its 519 contexts in the bottom bin. The sentence this replaces checked only the SD condition. ToxicChat's arm ordering remains well-behaved, so the cell is caveated rather than discarded; see § Spread per evaluation setting for the full per-setting decomposition. Evil scores are additionally refusal-censored: 1,532 train / 127 hh-rlhf / 152 ToxicChat contexts have no DV because all rollouts refused.
 
 ### Main comparison: ρ per method, per behavior, per evaluation setting
 
@@ -465,7 +1144,7 @@ What is plotted: Spearman ρ between each method's prediction and judged express
 >
 > **Map→ridge-on-predicted-answers matches or slightly beats direct ridge** (evil 0.714 vs 0.706; hallucination 0.602 vs 0.584) — but the shuffled-pretrain control reaches the same value (0.714 / 0.601), so at large L the labeled readout, not the map, is doing the work.
 >
-> **Under real distribution shift the label-free map arm is the most robust feasible method on 2 of 3 usable OOD settings.** ToxicChat (evil): map→PV 0.32 vs direct ridge 0.25, PV-on-context 0.14, shuffled-map control 0.11 — the map arm matches the oracle projection (0.30). SimpleQA (hallucination): map→PV 0.27 vs direct ridge 0.10. NQ-Open is the exception: direct ridge wins at L=16,000 (0.40 vs 0.20). Where predictions have to transfer, mapping into answer space before projecting helps; in-distribution it costs.
+> **Under real distribution shift the label-free map arm's advantage is label-budget-dependent: it leads at small L and loses at maximum L on 2 of 3 usable OOD settings.** *(CORRECTED 2026-08-01 — the sentence this replaces read "the most robust feasible method on 2 of 3 usable OOD settings" and supported it with "SimpleQA: map→PV 0.27 vs direct ridge 0.10", which compared the map arm at maximum L against direct ridge at L=250. See § Corrections.)* At the **maximum** budget of this section's stated slice: ToxicChat (evil) map→PV **0.319** vs direct ridge 0.250, PV-on-context 0.137, shuffled-map control 0.111, oracle projection 0.302 — the map arm wins and matches the oracle; NQ-Open direct ridge **0.395** vs map→PV 0.200; SimpleQA direct ridge **0.402** vs map→PV 0.270. So 1 of 3 at maximum L. At **L=250** the picture inverts: ToxicChat 0.270 vs 0.099 and SimpleQA 0.227 vs 0.103 both go to the map arm, NQ-Open 0.164 vs 0.231 to direct ridge — 2 of 3. Where predictions have to transfer *and labels are scarce*, mapping into answer space before projecting helps; with abundant labels the direct readout catches up and passes it. Direct ridge's maximum-L values are partly a recovery from the L=2,500 dip flagged below (SimpleQA 0.103 → 0.110 → 0.402; NQ-Open 0.231 → 0.127 → 0.395), which is unexplained and makes its maximum-L level less trustworthy than the map arm's flat curve.
 
 ### Scaling: unlabeled map pairs (U) and labeled examples (L)
 
@@ -531,10 +1210,57 @@ What is plotted (committed by the reuse round): ρ of #779's 963,444-context map
 
 Training the labeled readouts on hh-rlhf red-team dialogues and evaluating on DAN×forbidden (90 cells, the pre-registered secondary) collapses every method to ρ ≤ 0.23, including both oracles (oracle regression 0.19, oracle projection 0.23). With the training side floor-censored (the spread failure above), little transfers in this direction; the A−B mechanism-match comparison the plan wanted is compromised by that censoring.
 
-## Interim takeaways (2026-07-31, pre-analyzer)
+## Interim takeaways (2026-08-01, pre-analyzer)
 
-These fold the four new families in § New in this update. The carried-forward takeaways from the
-previous cut follow in the next block, with corrections marked.
+These fold the grid-fill families in § New in this update (2026-08-01). The 2026-07-31 takeaways
+follow in the next block with corrections marked, and the 2026-07-30 ones after that.
+
+1. **The map's clearest win is as a preprocessing step for a labeled readout, not as a way to
+   use a persona vector.** On ordinary WildChat traffic, running the labeled ridge on the
+   map's *predicted answer state* beats running it on the context for all three behaviors —
+   sycophancy +0.332 vs +0.190 and hallucination +0.080 vs −0.013 with non-overlapping bootstrap
+   CIs, evil +0.127 vs +0.081 directionally. Same labels, same activations, the only difference
+   is passing the state through the map. This supersedes the previous cut's framing that
+   sycophancy is a counterexample: sycophancy is a counterexample to the *projection* arm, not
+   to the map.
+2. **The persona-vectors synthetic suite cannot rank methods, and now we can say exactly why.**
+   Scoring within one instruction polarity collapses every arm: sycophancy's paper method goes
+   +0.786 pooled → +0.430 / +0.110 within halves, and its nonsense-map control +0.539 → +0.288 /
+   +0.047. Evil's negative half has zero DV variance — all 100 contexts score 0 — so its pooled
+   ρ ≈ 0.80 *is* the instructed-vs-not separation with nothing else in it.
+3. **Extraction from natural data helps the map and true-answer reads, not the plain context
+   projection** — and the best sycophancy number is lower than published. In the whitened space
+   the map actually lives in, pooled-natural E2p leads for map(context) → PV proj. (**0.486**,
+   down from the raw 0.577) and for the true-answer projection (0.454), but E1 synthetic leads
+   for the plain context projection (0.332 vs 0.310). "E2p is top for every read" does not
+   survive the correction. Note 0.486 is the top of the *projection* ladder, not of sycophancy
+   overall — the labeled readouts reach ~0.73 on the same rung.
+4. **Evil is the only behavior that cannot be measured on generic chat.** Decomposing the
+   pre-registered spread gate per evaluation setting: all three behaviors pass pooled, but evil
+   fails on hh-rlhf, random WildChat, *and* ToxicChat (93.4% bottom-bin), clearing only its own
+   training distribution and the synthetic suite. On that same random-WildChat rung hallucination
+   clears both conditions comfortably (SD 32.2, 26% bottom-bin) and sycophancy's spread is the
+   widest of its four settings (SD 23.3).
+5. **One of the bare-query round's two null anomalies is draw variance; the other survives three
+   ruled-out mechanisms.** An 8-seed shuffle band centres the leg-2 nonsense-map control on
+   +0.003 (range [−0.077, +0.068]), so the committed +0.068 was one noisy draw. The leg-1 prefix
+   null probe still returns `ANOMALY` on all three behaviors, and its mechanism ladder — which
+   landed on 2026-08-02 — returns `unexplained` after excluding DV-permutation miscalibration,
+   the capture-source split, and batch-order structure. A capture/indexing defect is the leading
+   unexcluded hypothesis; evil's read is borderline against the permutation band, sycophancy's
+   and hallucination's are clearly outside it.
+6. **The map is discriminative even where its R² is modest.** On the bare-rep → answer fit, the
+   standing baselines give held-out R² ≤ +0.172 for the fitted map but kNN retrieval acc@1 of
+   0.039 against 0.00078 chance (≈50×), while identity+learned-bias is negative at every layer.
+   R² understates this map — the same direction as #779, the opposite of #722.
+7. **Two published numbers were wrong and are corrected.** The OOD headline "map arm is most
+   robust on 2 of 3 settings" rested on a budget-mismatched comparison (map at maximum L vs
+   direct ridge at L=250); at matched maximum budget the map arm wins 1 of 3, and the honest
+   claim is that its advantage is **label-budget-dependent** — 2 of 3 at L=250, 1 of 3 at
+   maximum L. And "the evil train/ToxicChat settings have usable spread" checked only the SD
+   half of the two-part gate.
+
+## Carried forward from the 2026-07-31 cut — context, previously reported
 
 1. **Whether the bare user query predicts a behavior localizes that behavior's predictive
    variance.** Stripping the prefix and showing the predictor only the query *raises* sycophancy
@@ -544,7 +1270,11 @@ previous cut follow in the next block, with corrections marked.
    context. **Caveat before use:** this round carries an unresolved anomaly — two
    by-construction-null arms read |ρ| ≈ 0.07–0.12 where they must read chance — and its
    single-turn half (987/2,000 contexts) dilutes the pooled contrast, so the effects above are
-   directional lower bounds, not settled effect sizes.
+   directional lower bounds, not settled effect sizes. **PARTLY RESOLVED 2026-08-01:** the
+   shuffled-map half of the anomaly is draw variance (8-seed band mean +0.003); the prefix
+   null probe is still unexplained; and the turn split, now computable for evil, went the
+   *opposite* way — evil's single-turn subset is the more negative one (−0.090) and its
+   multi-turn CI spans zero. See the 2026-08-01 takeaway 5.
 2. **Nonlinearity in the map is not the missing ingredient.** An MLP map and a kernel-ridge map
    both lose to the linear ridge map on all three behaviors (pooled median Δρ −0.015 and −0.038;
    better in only 30% and 24% of matched cells), and lose most exactly where the linear map works
@@ -554,22 +1284,30 @@ previous cut follow in the next block, with corrections marked.
    on evil (+0.157 vs +0.156) and reaches +0.111 on hallucination where Persona Vectors' own
    context projection is significantly *negative* (−0.107) — the strongest evidence yet that
    mapping into answer space before projecting recovers signal the context-side projection
-   cannot. Sycophancy is the counterexample (direct ridge +0.190 leads).
+   cannot. Sycophancy is the counterexample (direct ridge +0.190 leads). **SUPERSEDED
+   2026-08-01:** the roster was widened and the map family's *labeled* arms lead on sycophancy
+   too (map → ridge on predicted answers +0.332 vs direct ridge +0.190), so sycophancy is a
+   counterexample to the projection arm, not to the map — see the 2026-08-01 takeaway 1.
 4. **Extracting the persona vector from natural data is the robust half of the regime result.**
    Pooled-natural E2p is top for every sycophancy read (map(context) → PV proj. 0.577 on
-   out-of-sample AITA, the best sycophancy predictor measured), replicating evil's E2p-on-top
+   out-of-sample AITA, described there as the best sycophancy predictor measured — it is not;
+   see the 2026-08-01 correction), replicating evil's E2p-on-top
    ordering; the E1-vs-E2 order does not replicate, so "natural beats synthetic" is what carries,
-   not the full ladder.
+   not the full ladder. **SUPERSEDED 2026-08-01:** these are raw-space reads. Whitened, the
+   headline is **0.486** (not 0.577) and E2p is top for the map and true-answer reads but NOT
+   for the plain context projection, where E1 leads — see the 2026-08-01 takeaway 3.
 5. **For hallucination the persona vector fails as a construct in a newly explicit way:** its
-   correlation flips *sign* across evaluation rungs for the same read and regime (12 of 15
-   read × regime combinations sign-inconsistent). Any hallucination conclusion about "the map"
-   remains bottlenecked by the direction.
+   correlation flips *sign* across evaluation rungs for the same read and regime (13 of 15
+   read × regime combinations sign-inconsistent in raw space — this takeaway previously said 12,
+   which was a transcription slip from the section prose; the **whitened** count, now primary,
+   is 12 of 15). Any hallucination conclusion about "the map" remains bottlenecked by the
+   direction.
 6. **Eliciting map data is a per-arm lever, not a map-quality lever.** Replacing half a fixed map
    pool with unlabeled behavior-eliciting contexts *hurt* the projection arm in 6 of 6 new cells
    (sycophancy and hallucination) while *helping* the real-answer-trained readout in 6 of 6 — the
-   opposite direction from the evil projection result, which this corrects (see takeaway 7 below).
+   opposite direction from the evil projection result, which this corrects (see the 2026-07-30 block's takeaway 7 below).
 
-### Carried forward from the 2026-07-30 cut (2 of 3 behaviors) — context, previously reported
+## Carried forward from the 2026-07-30 cut (2 of 3 behaviors) — context, previously reported
 
 1. The datatype-mismatch intuition is half-right: answer-space PVs are indeed a poor fit for context states (context-native directions beat them: 0.66 vs 0.54 evil, 0.52 vs 0.08 hallucination) — but the fix that works in-distribution is extracting a **context-native direction**, not mapping the context into answer space (map→PV trails both).
 2. The map demonstrably learns real structure from unlabeled WildChat pairs — performance rises with U while shuffled-map controls stay flat — but that structure is **redundant with the context representation in-distribution**: no map arm beats direct ridge at any label budget, and map-pretraining gives fine-tuning no head start over shuffled pretraining.
@@ -579,7 +1317,120 @@ previous cut follow in the next block, with corrections marked.
 6. **The persona-vectors synthetic suite inflates projection performance by +0.26–0.57 ρ over real distributions** (all three behaviors ≈0.65–0.80 on the suite; a shuffled-map control alone reaches 0.54 on sycophancy) — the suite measures instructed-behavior separability, not natural elicitation.
 7. Map *training data* matters more than map size in-distribution but less under scale: 2,500 unlabeled eliciting contexts beat 18,793 generic pairs for the projection read (evil compose cells), while the frozen 963k generic map beats the 18.8k map on evil and mostly on hallucination — and loses on sycophancy. **CORRECTED 2026-07-31:** the first clause is evil-specific. On sycophancy and hallucination the same substitution *lowered* the projection read in 6 of 6 cells (while raising the real-answer-trained readout in 6 of 6) — see new takeaway 6 and § Unlabeled behavior-eliciting map data above.
 
+## Standing caveats (apply to every section above)
+
+- **Evil's DV is floored wherever the prompts are not jailbreaks.** SD 4.43 on random WildChat
+  (98.9% of contexts in the bottom bin) and 0.89 on hh-rlhf; ToxicChat clears the SD floor at
+  12.07 but is 93.4% bottom-bin. Evil's rankings outside its own training distribution rank a
+  thin upper tail. Evil is additionally refusal-censored: 1,532 train / 127 hh-rlhf / 152
+  ToxicChat contexts have no DV at all because every rollout refused.
+- **Hallucination carries two different DV constructs.** Fabrication rate 0–1 on TriviaQA /
+  NQ-Open / SimpleQA; graded 0–100 trait score on WildChat and the synthetic suite (those
+  queries have no reference answers). Never compare a number from one group against the other.
+- **Hallucination's WildChat column has a 36.6% judge content-drop rate** (10,967 of 30,000
+  draws; 1,354 recovered by the 800-token re-judge), against 8.7% for sycophancy and 1.9% for
+  evil. Transport losses were zero for all three. That column is provisional.
+- **The bare-query leg-1 prefix null probe is an unexplained `ANOMALY` on all three behaviors** —
+  a by-construction-null arm reading |ρ| up to 0.120 with CIs excluding zero. As of 2026-08-02
+  the mechanism ladder has run and `unexplained` is a *positive* verdict: DV-permutation
+  miscalibration, the capture-source split and batch-order structure are each excluded, leaving
+  a capture/indexing defect as the leading hypothesis. Scope bound unchanged: it
+  reads the prefix position, not the `bare_context_end` position every headline uses.
+- **Single-turn dilution.** 987 of the 2,000 WildChat-rung contexts (49.4%) are single-turn, so
+  on half that rung the "prefix" is the bare chat-template head and the prefix panels average a
+  genuine prefix over half the contexts with an empty one over the other half. Evil's leg-2 turn
+  subsets are the only place this is decomposed; sycophancy and hallucination emit no subset rows.
+- **Layer-0 degenerate selections.** Sycophancy's prefix-state map arm freezes at layer 0 on the
+  WildChat rung (−0.085) and on every natural-PV prefix read (|ρ| ≈ 0.031). These are broken
+  reads, not negative findings, and are excluded or flagged wherever they appear.
+- **The 963k-map comparison and the whitened natural-PV map reads** both inherit that this
+  experiment's map extrapolates with strongly negative reconstruction R² onto the behavior eval
+  distributions — a distribution-coverage caveat, not a serialization bug. Measured directly on
+  2026-08-02: best-layer R² is −0.298 (hh-rlhf), −0.280 (ToxicChat) and −0.805 (AITA) against
+  +0.785 in-distribution — **but** kNN retrieval on those same distributions holds 69–721× above
+  chance, so the map keeps its ranking information and loses its scale. Quote both reads, never
+  the R² alone.
+- **The L = 2,500 non-monotonicity is unexplained.** Several labeled arms dip at mid budget in
+  every behavior (e.g. hallucination SimpleQA direct ridge 0.103 → 0.110 → 0.402). Any
+  single-budget comparison involving a labeled readout inherits this.
+- **No permutation null on the WildChat or synthetic-suite rungs** — the `nulls` array is empty
+  on both — so the shuffled-map arm is the only null reference there, and on the WildChat rung it
+  is a single draw (the 8-seed band exists only for the bare-query leg-2 control).
+
 ## Provenance
+
+**2026-08-01 report grid-fill.** Numbers + figures by `scripts/issue1739_final_fold.py`
+(aggregation + rendering only; no fits, no GPU, no judge calls), from artifacts committed on
+branch `issue-1739` at commit `96785126d2`:
+
+- *Wide arm roster:* `eval_results/issue_1739/wide/{wildchat_rung,pvsynth}/{evil,sycophancy,hallucination}/all_arms_spearman.json`
+  — `transfer_rows` (20 rows = 10 arms × 2 input states) for the WildChat rung, and
+  `transfer_polarity_rows` (60 rows = 10 arms × 2 input states × 3 polarity subsets) for the
+  synthetic suite. Frozen layers come from each file's
+  `meta.frozen_layer_source` (modal committed train cells). Per-context predictions with the
+  judged DV and the polarity label are in the sibling `preds/` dirs.
+- *Wide OOD grid:* `eval_results/issue_1739/wide_ood/{evil,sycophancy,hallucination}_transfer.jsonl`
+  — raw per-cell rows (34,722 / 19,926 / 5,562 arm-rows), no regenerated summary; the operating
+  slice is filtered in-process to E1 / U=full / max L / context_end and averaged over
+  (seed, draw). `arm5_mlp_ctx` is absent from this grid by design.
+- *Whitened naturalistic PV:* `eval_results/issue_1739/nat_pv_regimes/{sycophancy,hallucination}/regime_comparison_whitened.json`
+  (primary) against `regime_comparison.json` (raw, deprecated).
+- *Bare-query v2:* `eval_results/issue_1739/bareq_map/{evil,sycophancy,hallucination}/all_arms_spearman.json`
+  — `meta.leg2_shuffled_map_seed_bands`, `meta.mapping_baselines.leg2`, `meta.leg1_null_probe`,
+  and evil's 24 `transfer_rows` carrying the `pooled` / `multi_turn_only` / `single_turn_only`
+  subsets.
+- *Spread grid:* `eval_results/issue_1739/dv_dataset/{behavior}/labeling.json` (per-rung, from
+  the raw `rows`) plus `eval_results/issue_1739/{wildchat_rung,pvsynth}/spread/{behavior}.json`
+  (from the committed `spread` block + its histogram). Gate thresholds from
+  `docs/map_behavior_prediction_plan.md` § "Pre-registered spread floor + fallback" and
+  `experiments/issue_1739/gates.py::gate2_spread_floor`.
+- *Main-lane corrections:* re-read from
+  `eval_results/issue_1739/{evil,sycophancy,hallucination}/arm_results/all_arms_spearman.json`
+  (`transfer_rows`, filtered to E1 / U=full / context_end and averaged over seed × draw).
+- Prose-ready aggregates dumped to `/tmp/i1739_final_stats.json`. Figures:
+  `figures/issue_1739/interim_writeup/{wide_roster_arms,pvsynth_polarity,wide_ood_arms,natpv_whitened_vs_raw,spread_grid,bareq_v2_resolutions}.png`.
+- Gaps this round did not close, **both since CLOSED by the 2026-08-02 fold**: the leg-1 prefix
+  null-probe mechanism diagnosis (now landed — verdict `unexplained`, three mechanisms ruled
+  out) and hallucination's missing maximum-budget OOD cells for arms 7/8/12 (now run). Still
+  open from this round: sycophancy and hallucination emit no bare-query turn-subset rows.
+
+**2026-08-02 gap-fill + partial-item fold.** Numbers + figures by
+`scripts/issue1739_gap_fold.py` (gaps 1–2; re-renders `wide_ood_arms.png` with the hallucination
+maximum-budget cells merged in) and `scripts/issue1739_gapfold_extras.py` (R5, OOD scatters,
+map reconstruction on the evaluation distributions). Both are aggregation + rendering only: no
+fits, no GPU, no judge calls. Sources, all read from the HF data repo
+`superkaiba1/explore-persona-space-data` under `issue1739_maxood/`:
+
+- `hallucination/arm_results/percell/transfer.jsonl` — the maximum-budget OOD cells for arms
+  7/8/12 (U = full, L = 16,000, E1, both variants, nqopen + simpleqa + train). Merged on top of
+  `eval_results/issue_1739/wide_ood/hallucination_transfer.jsonl`, which carries the comparison
+  arms at the same slice. Those three `wide_ood/*.jsonl` files are ~45 MB and are **not**
+  committed to git; the per-cell aggregates every number above is read from are committed in
+  `eval_results/issue_1739/gapfold/gap_stats.json` (`wide_ood.<behavior>.<rung>.<arm>` carries
+  `mean_rho`, `sd`, `n_reps`, `layers` and a `source` field marking each cell `committed` or
+  `gap2`).
+- `bareq_null_diag/{evil,sycophancy,hallucination}/all_arms_spearman.json` — the leg-1 null
+  probe's mechanism ladder at `meta.leg1_null_probe.<variant>.anomaly_diagnostic`.
+- `r5_unjudged_trait_pool/{behavior}/arm_results/percell/cells.jsonl` — the R5 pool sweep; the
+  augmented arm is `f_u = 0.5` and its matched control is `f_u = 0.0` at the same U and L.
+- `ood_scatter_preds/{behavior}/arm_results/percell/transfer_preds/*.jsonl` — per-context
+  (prediction, judged DV) pairs on the OOD rungs.
+- `map_recon_evaldist/{evil,sycophancy}/map_diagnostics.json` — reconstruction R² + kNN
+  retrieval on each evaluation rung (`context_end|full` → `eval_rung.per_rung`).
+- The fallback-slice provenance of the corrected +0.220 delta is
+  `eval_results/issue_1739/recuts/recut_numbers.json` — its own `_coverage_gaps` array records
+  the fallback, and its `fig1_delta_map_minus_direct.results.hallucination.{nqopen,simpleqa}`
+  entries carry `is_operating_slice: false`.
+- Prose-ready aggregates committed to
+  `eval_results/issue_1739/gapfold/{gap_stats,extras_stats}.json` (the scripts write them to
+  `/tmp/i1739_gap_stats.json` + `/tmp/i1739_gapfold_extras.json`; those are the committed
+  copies). Figures:
+  `figures/issue_1739/interim_writeup/wide_ood_arms.png` (re-rendered) and
+  `figures/issue_1739/gapfold/{r5_trait_pool,ood_scatters,map_recon_evaldist}.png`.
+- **Not available:** `issue1739_maxood/r275_query_scaling` uploaded logs only (its box exited
+  1), so the query-map L-ladder scaling is deferred, not measured. Hallucination's
+  maximum-budget per-context OOD predictions were not persisted, so its scatter panels are the
+  L = 2,500 slice. The map-reconstruction round covers evil and sycophancy only.
 
 **2026-07-31 bare-query round.** Numbers + figures by
 `scripts/issue1739_bareq_fold.py` (aggregation + rendering only; no fits, no GPU, no judge calls),

@@ -892,6 +892,11 @@ def _real_slurm_backend(tmp_path, *, job_id: str = "7777"):
         src_root=tmp_path,
         submitter=lambda *, robot_alias, sbatch_script: job_id,
         rsyncer=lambda **_kw: None,
+        # #1913: prepare now materializes a snapshot via git_cloner and verifies
+        # the sync — fake both (returning src_root keeps the launch-side
+        # sentinel-path assertions on tmp_path unchanged).
+        rsync_verifier=lambda **_kw: None,
+        git_cloner=lambda *, src_root, branch, issue: src_root,
         marker_poster=lambda **_kw: None,
         secrets_pusher=lambda **_kw: None,
         runtime_clearer=lambda **_kw: None,

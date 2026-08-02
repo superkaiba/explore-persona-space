@@ -1,0 +1,713 @@
+{
+  "wide_ood": {
+    "evil": {
+      "toxicchat": {
+        "arm1_ctx_e1": {
+          "mean_rho": 0.13697842432781154,
+          "sd": 0.0,
+          "n_reps": 30,
+          "layers": [
+            15
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm3_identity_bias": {
+          "mean_rho": 0.13697842432781154,
+          "sd": 0.0,
+          "n_reps": 30,
+          "layers": [
+            15
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm4_ridge_ctx": {
+          "mean_rho": 0.250288068837429,
+          "sd": 0.033011029757702176,
+          "n_reps": 30,
+          "layers": [
+            17,
+            18,
+            19,
+            20
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm6_map_proj_e1": {
+          "mean_rho": 0.31903456696369037,
+          "sd": 0.0,
+          "n_reps": 30,
+          "layers": [
+            22
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm7_map_ridge_pred": {
+          "mean_rho": 0.298347012532634,
+          "sd": 0.07640342233987052,
+          "n_reps": 15,
+          "layers": [
+            18,
+            19,
+            20
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm8_map_ridge_true": {
+          "mean_rho": 0.29924047595190995,
+          "sd": 0.0,
+          "n_reps": 15,
+          "layers": [
+            21
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm11_oracle_proj": {
+          "mean_rho": 0.3019717246893707,
+          "sd": 0.0,
+          "n_reps": 30,
+          "layers": [
+            22
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm12_oracle_reg": {
+          "mean_rho": 0.24159082192580222,
+          "sd": 0.0,
+          "n_reps": 15,
+          "layers": [
+            17
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm13_shuffled_map": {
+          "mean_rho": 0.11077697864257613,
+          "sd": 0.11421632166303358,
+          "n_reps": 30,
+          "layers": [
+            14,
+            15,
+            19
+          ],
+          "source": [
+            "committed"
+          ]
+        }
+      },
+      "hhrt": {
+        "arm1_ctx_e1": {
+          "mean_rho": 0.009677524369666568,
+          "sd": 0.0,
+          "n_reps": 30,
+          "layers": [
+            15
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm3_identity_bias": {
+          "mean_rho": 0.009677524374120618,
+          "sd": 0.0,
+          "n_reps": 30,
+          "layers": [
+            15
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm4_ridge_ctx": {
+          "mean_rho": 0.05866141491288571,
+          "sd": 0.0035787143777097504,
+          "n_reps": 30,
+          "layers": [
+            17,
+            18,
+            19,
+            20
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm6_map_proj_e1": {
+          "mean_rho": 0.02079514178647852,
+          "sd": 0.0,
+          "n_reps": 30,
+          "layers": [
+            22
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm7_map_ridge_pred": {
+          "mean_rho": 0.0608009794756476,
+          "sd": 0.016029325025790422,
+          "n_reps": 15,
+          "layers": [
+            18,
+            19,
+            20
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm8_map_ridge_true": {
+          "mean_rho": 0.06819860764241738,
+          "sd": 0.0,
+          "n_reps": 15,
+          "layers": [
+            21
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm11_oracle_proj": {
+          "mean_rho": 0.082067332501752,
+          "sd": 0.0,
+          "n_reps": 30,
+          "layers": [
+            22
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm12_oracle_reg": {
+          "mean_rho": 0.11335132980448896,
+          "sd": 0.0,
+          "n_reps": 15,
+          "layers": [
+            17
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm13_shuffled_map": {
+          "mean_rho": 0.04072248696587899,
+          "sd": 0.012727134582355417,
+          "n_reps": 30,
+          "layers": [
+            14,
+            15,
+            19
+          ],
+          "source": [
+            "committed"
+          ]
+        }
+      }
+    },
+    "sycophancy": {
+      "aita": {
+        "arm1_ctx_e1": {
+          "mean_rho": 0.30957839802259535,
+          "sd": 0.0,
+          "n_reps": 30,
+          "layers": [
+            16
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm3_identity_bias": {
+          "mean_rho": 0.30957839802259535,
+          "sd": 0.0,
+          "n_reps": 30,
+          "layers": [
+            16
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm4_ridge_ctx": {
+          "mean_rho": 0.7252840517086198,
+          "sd": 0.003035924293358656,
+          "n_reps": 30,
+          "layers": [
+            20,
+            21
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm6_map_proj_e1": {
+          "mean_rho": 0.3506325410996856,
+          "sd": 0.0,
+          "n_reps": 30,
+          "layers": [
+            11
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm7_map_ridge_pred": {
+          "mean_rho": 0.7288840789065855,
+          "sd": 0.0,
+          "n_reps": 15,
+          "layers": [
+            19
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm8_map_ridge_true": {
+          "mean_rho": 0.43921159410960403,
+          "sd": 0.0,
+          "n_reps": 15,
+          "layers": [
+            17
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm11_oracle_proj": {
+          "mean_rho": 0.2518199112786278,
+          "sd": 0.0,
+          "n_reps": 30,
+          "layers": [
+            11
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm12_oracle_reg": {
+          "mean_rho": 0.7501503690444367,
+          "sd": 0.0,
+          "n_reps": 15,
+          "layers": [
+            19
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm13_shuffled_map": {
+          "mean_rho": 0.17557545653178977,
+          "sd": 0.0576792690220641,
+          "n_reps": 30,
+          "layers": [
+            5,
+            11,
+            24
+          ],
+          "source": [
+            "committed"
+          ]
+        }
+      }
+    },
+    "hallucination": {
+      "nqopen": {
+        "arm1_ctx_e1": {
+          "mean_rho": 0.18786469940667935,
+          "sd": 0.0,
+          "n_reps": 15,
+          "layers": [
+            24
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm3_identity_bias": {
+          "mean_rho": 0.18786469940667935,
+          "sd": 0.0,
+          "n_reps": 15,
+          "layers": [
+            24
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm4_ridge_ctx": {
+          "mean_rho": 0.3946929373667987,
+          "sd": 0.002761346129819558,
+          "n_reps": 15,
+          "layers": [
+            19,
+            20,
+            21
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm6_map_proj_e1": {
+          "mean_rho": 0.20037684151671314,
+          "sd": 0.0,
+          "n_reps": 15,
+          "layers": [
+            23
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm7_map_ridge_pred": {
+          "mean_rho": 0.41314830955985776,
+          "sd": 0.0,
+          "n_reps": 1,
+          "layers": [
+            20
+          ],
+          "source": [
+            "gap2"
+          ]
+        },
+        "arm8_map_ridge_true": {
+          "mean_rho": 0.3065959285569551,
+          "sd": 0.0,
+          "n_reps": 1,
+          "layers": [
+            16
+          ],
+          "source": [
+            "gap2"
+          ]
+        },
+        "arm11_oracle_proj": {
+          "mean_rho": 0.1172617475003523,
+          "sd": 0.0,
+          "n_reps": 15,
+          "layers": [
+            27
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm12_oracle_reg": {
+          "mean_rho": 0.49624754933173976,
+          "sd": 0.0,
+          "n_reps": 1,
+          "layers": [
+            18
+          ],
+          "source": [
+            "gap2"
+          ]
+        },
+        "arm13_shuffled_map": {
+          "mean_rho": 0.07018188005872845,
+          "sd": 0.08210800925375587,
+          "n_reps": 15,
+          "layers": [
+            15,
+            17,
+            25
+          ],
+          "source": [
+            "committed"
+          ]
+        }
+      },
+      "simpleqa": {
+        "arm1_ctx_e1": {
+          "mean_rho": 0.3313621567244776,
+          "sd": 0.0,
+          "n_reps": 15,
+          "layers": [
+            24
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm3_identity_bias": {
+          "mean_rho": 0.3313621567244776,
+          "sd": 0.0,
+          "n_reps": 15,
+          "layers": [
+            24
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm4_ridge_ctx": {
+          "mean_rho": 0.4015969606201843,
+          "sd": 0.002504421149804033,
+          "n_reps": 15,
+          "layers": [
+            19,
+            20,
+            21
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm6_map_proj_e1": {
+          "mean_rho": 0.26977515883308295,
+          "sd": 0.0,
+          "n_reps": 15,
+          "layers": [
+            23
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm7_map_ridge_pred": {
+          "mean_rho": 0.3998423153573778,
+          "sd": 0.0,
+          "n_reps": 1,
+          "layers": [
+            20
+          ],
+          "source": [
+            "gap2"
+          ]
+        },
+        "arm8_map_ridge_true": {
+          "mean_rho": -0.15615910571398792,
+          "sd": 0.0,
+          "n_reps": 1,
+          "layers": [
+            16
+          ],
+          "source": [
+            "gap2"
+          ]
+        },
+        "arm11_oracle_proj": {
+          "mean_rho": 0.5833743626146888,
+          "sd": 0.0,
+          "n_reps": 15,
+          "layers": [
+            27
+          ],
+          "source": [
+            "committed"
+          ]
+        },
+        "arm12_oracle_reg": {
+          "mean_rho": 0.5363634929706043,
+          "sd": 0.0,
+          "n_reps": 1,
+          "layers": [
+            18
+          ],
+          "source": [
+            "gap2"
+          ]
+        },
+        "arm13_shuffled_map": {
+          "mean_rho": 0.06169811922102282,
+          "sd": 0.16208997579848328,
+          "n_reps": 15,
+          "layers": [
+            15,
+            17,
+            25
+          ],
+          "source": [
+            "committed"
+          ]
+        }
+      }
+    }
+  },
+  "null_diag": {
+    "evil": {
+      "path": "evil/all_arms_spearman.json",
+      "variants": {
+        "context_end": {
+          "base_verdict": "ANOMALY",
+          "any_ci_excludes_zero": true,
+          "n_finite_rho": 28,
+          "constant": true,
+          "diagnostic_present": true,
+          "verdict": "unexplained",
+          "observed_max_abs_rho": 0.05453783071190818,
+          "inside_shuffle_band": false,
+          "shuffle_band_p97_5": 0.051179948912698836,
+          "shuffle_band_ran": true,
+          "shuffle_band_n_seeds": 8,
+          "capture_source_split": {
+            "ran": true,
+            "rho_dv_vs_multi_turn_indicator": 0.03229558039238473,
+            "rho_dv_vs_substituted_indicator": 0.03229558039238473,
+            "max_abs_null_rho_pooled": 0.05453783071190818,
+            "max_abs_null_rho_within_group": {
+              "substituted": 0.05775662643267499,
+              "reused": 0.013986695120196626
+            },
+            "collapses_within_group": false,
+            "semantics": "substituted rows' prefix reps come from the bareq capture, reused rows' from the wcrung capture \u2014 a two-source offset at bf16 jitter scale, aligned with the multi/single-turn split"
+          },
+          "batch_order_structured": false
+        },
+        "prefix_end": {
+          "base_verdict": "ANOMALY",
+          "any_ci_excludes_zero": true,
+          "n_finite_rho": 28,
+          "constant": true,
+          "diagnostic_present": true,
+          "verdict": "unexplained",
+          "observed_max_abs_rho": 0.05453783071190818,
+          "inside_shuffle_band": false,
+          "shuffle_band_p97_5": 0.051179948912698836,
+          "shuffle_band_ran": true,
+          "shuffle_band_n_seeds": 8,
+          "capture_source_split": {
+            "ran": true,
+            "rho_dv_vs_multi_turn_indicator": 0.03229558039238473,
+            "rho_dv_vs_substituted_indicator": 0.03229558039238473,
+            "max_abs_null_rho_pooled": 0.05453783071190818,
+            "max_abs_null_rho_within_group": {
+              "substituted": 0.05775662643267499,
+              "reused": 0.013986695120196626
+            },
+            "collapses_within_group": false,
+            "semantics": "substituted rows' prefix reps come from the bareq capture, reused rows' from the wcrung capture \u2014 a two-source offset at bf16 jitter scale, aligned with the multi/single-turn split"
+          },
+          "batch_order_structured": false
+        }
+      }
+    },
+    "hallucination": {
+      "path": "hallucination/all_arms_spearman.json",
+      "variants": {
+        "context_end": {
+          "base_verdict": "ANOMALY",
+          "any_ci_excludes_zero": true,
+          "n_finite_rho": 28,
+          "constant": true,
+          "diagnostic_present": true,
+          "verdict": "unexplained",
+          "observed_max_abs_rho": 0.11959738728733339,
+          "inside_shuffle_band": false,
+          "shuffle_band_p97_5": 0.04920324256925074,
+          "shuffle_band_ran": true,
+          "shuffle_band_n_seeds": 8,
+          "capture_source_split": {
+            "ran": true,
+            "rho_dv_vs_multi_turn_indicator": 0.19320642886642053,
+            "rho_dv_vs_substituted_indicator": 0.19320642886642053,
+            "max_abs_null_rho_pooled": 0.11959738728733339,
+            "max_abs_null_rho_within_group": {
+              "substituted": 0.07280793519780432,
+              "reused": 0.09717733057024604
+            },
+            "collapses_within_group": false,
+            "semantics": "substituted rows' prefix reps come from the bareq capture, reused rows' from the wcrung capture \u2014 a two-source offset at bf16 jitter scale, aligned with the multi/single-turn split"
+          },
+          "batch_order_structured": false
+        },
+        "prefix_end": {
+          "base_verdict": "ANOMALY",
+          "any_ci_excludes_zero": true,
+          "n_finite_rho": 28,
+          "constant": true,
+          "diagnostic_present": true,
+          "verdict": "unexplained",
+          "observed_max_abs_rho": 0.11959738728733339,
+          "inside_shuffle_band": false,
+          "shuffle_band_p97_5": 0.04920324256925074,
+          "shuffle_band_ran": true,
+          "shuffle_band_n_seeds": 8,
+          "capture_source_split": {
+            "ran": true,
+            "rho_dv_vs_multi_turn_indicator": 0.19320642886642053,
+            "rho_dv_vs_substituted_indicator": 0.19320642886642053,
+            "max_abs_null_rho_pooled": 0.11959738728733339,
+            "max_abs_null_rho_within_group": {
+              "substituted": 0.07280793519780432,
+              "reused": 0.09717733057024604
+            },
+            "collapses_within_group": false,
+            "semantics": "substituted rows' prefix reps come from the bareq capture, reused rows' from the wcrung capture \u2014 a two-source offset at bf16 jitter scale, aligned with the multi/single-turn split"
+          },
+          "batch_order_structured": false
+        }
+      }
+    },
+    "sycophancy": {
+      "path": "sycophancy/all_arms_spearman.json",
+      "variants": {
+        "context_end": {
+          "base_verdict": "ANOMALY",
+          "any_ci_excludes_zero": true,
+          "n_finite_rho": 28,
+          "constant": true,
+          "diagnostic_present": true,
+          "verdict": "unexplained",
+          "observed_max_abs_rho": 0.09270052314948038,
+          "inside_shuffle_band": false,
+          "shuffle_band_p97_5": 0.04709716768353769,
+          "shuffle_band_ran": true,
+          "shuffle_band_n_seeds": 8,
+          "capture_source_split": {
+            "ran": true,
+            "rho_dv_vs_multi_turn_indicator": 0.14123641903858242,
+            "rho_dv_vs_substituted_indicator": 0.14123641903858242,
+            "max_abs_null_rho_pooled": 0.09270052314948038,
+            "max_abs_null_rho_within_group": {
+              "substituted": 0.07388218841032125,
+              "reused": 0.08104246060543498
+            },
+            "collapses_within_group": false,
+            "semantics": "substituted rows' prefix reps come from the bareq capture, reused rows' from the wcrung capture \u2014 a two-source offset at bf16 jitter scale, aligned with the multi/single-turn split"
+          },
+          "batch_order_structured": false
+        },
+        "prefix_end": {
+          "base_verdict": "ANOMALY",
+          "any_ci_excludes_zero": true,
+          "n_finite_rho": 28,
+          "constant": true,
+          "diagnostic_present": true,
+          "verdict": "unexplained",
+          "observed_max_abs_rho": 0.09270052314948038,
+          "inside_shuffle_band": false,
+          "shuffle_band_p97_5": 0.04709716768353769,
+          "shuffle_band_ran": true,
+          "shuffle_band_n_seeds": 8,
+          "capture_source_split": {
+            "ran": true,
+            "rho_dv_vs_multi_turn_indicator": 0.14123641903858242,
+            "rho_dv_vs_substituted_indicator": 0.14123641903858242,
+            "max_abs_null_rho_pooled": 0.09270052314948038,
+            "max_abs_null_rho_within_group": {
+              "substituted": 0.07388218841032125,
+              "reused": 0.08104246060543498
+            },
+            "collapses_within_group": false,
+            "semantics": "substituted rows' prefix reps come from the bareq capture, reused rows' from the wcrung capture \u2014 a two-source offset at bf16 jitter scale, aligned with the multi/single-turn split"
+          },
+          "batch_order_structured": false
+        }
+      }
+    }
+  }
+}

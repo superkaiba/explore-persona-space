@@ -1,0 +1,432 @@
+{
+  "commit": "c64ce78055",
+  "created": "2026-08-01T09:17:38Z",
+  "figsize": [
+    10.5,
+    4.4
+  ],
+  "points": [
+    {
+      "unadjusted SAE-space category \u0394": 0.09754837809225281,
+      "exact floor-adjusted \u0394": 0.11045153925684226,
+      "label": "English",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.04215657810824813,
+      "exact floor-adjusted \u0394": -0.04294314925023057,
+      "label": "prose answers",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.021897475451197357,
+      "exact floor-adjusted \u0394": -0.030272475041820734,
+      "label": "depth \u22655",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.04239457816691561,
+      "exact floor-adjusted \u0394": 0.04431949758052145,
+      "label": "coding",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.04067167033867103,
+      "exact floor-adjusted \u0394": -0.033298301551695886,
+      "label": "factual Q&A",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.039532453984407745,
+      "exact floor-adjusted \u0394": 0.07679495247601564,
+      "label": "chitchat",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.1364963673144609,
+      "exact floor-adjusted \u0394": 0.15079352801008716,
+      "label": "translation",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.005056959466225419,
+      "exact floor-adjusted \u0394": 0.020104259345673392,
+      "label": "summarization",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.013756155021259042,
+      "exact floor-adjusted \u0394": -0.0007547033569322847,
+      "label": "roleplay",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.07220203516795809,
+      "exact floor-adjusted \u0394": 0.09157922033258559,
+      "label": "math",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.06987075185759828,
+      "exact floor-adjusted \u0394": 0.0719756116612269,
+      "label": "code answers",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.001510154631737537,
+      "exact floor-adjusted \u0394": 0.034289103262227116,
+      "label": "summarization",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.04599740950799225,
+      "exact floor-adjusted \u0394": -0.055226230417841804,
+      "label": "prose answers",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.026294886660810812,
+      "exact floor-adjusted \u0394": 0.03643207272430715,
+      "label": "depth 2",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.0056284260793241225,
+      "exact floor-adjusted \u0394": -0.006420946089030655,
+      "label": "depth 3\u20134",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.027431324366522625,
+      "exact floor-adjusted \u0394": -0.03960606392028143,
+      "label": "depth \u22655",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.10427278945245078,
+      "exact floor-adjusted \u0394": -0.11095304249430388,
+      "label": "WildChat",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.0013674572963744414,
+      "exact floor-adjusted \u0394": -0.05952967329650782,
+      "label": "refusal-adjacent",
+      "series": "refusal categories",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.016311175702155012,
+      "exact floor-adjusted \u0394": -0.09118264337350346,
+      "label": "answer is refusal",
+      "series": "refusal categories",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.15082170185092908,
+      "exact floor-adjusted \u0394": 0.15684532751467106,
+      "label": "English",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.05886448953465684,
+      "exact floor-adjusted \u0394": -0.034872692170361985,
+      "label": "factual Q&A",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.017233214236610395,
+      "exact floor-adjusted \u0394": -0.017144570480412846,
+      "label": "creative writing",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.12616875969665786,
+      "exact floor-adjusted \u0394": 0.08339210714492434,
+      "label": "coding",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.07721910688879463,
+      "exact floor-adjusted \u0394": -0.07347281449807674,
+      "label": "prose answers",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.1524847208553819,
+      "exact floor-adjusted \u0394": -0.14958926616269153,
+      "label": "chitchat",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.11376255233348675,
+      "exact floor-adjusted \u0394": 0.16362688362003014,
+      "label": "translation",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.003837017926751063,
+      "exact floor-adjusted \u0394": 0.0019270585449696065,
+      "label": "summarization",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.12536945151346268,
+      "exact floor-adjusted \u0394": 0.18784499492869583,
+      "label": "roleplay",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.059546753237447514,
+      "exact floor-adjusted \u0394": 0.03136651327779383,
+      "label": "math",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.13604228777528637,
+      "exact floor-adjusted \u0394": 0.10631209128805336,
+      "label": "code answers",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.018267907670206918,
+      "exact floor-adjusted \u0394": 0.002934636148379577,
+      "label": "list answers",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.081478892772051,
+      "exact floor-adjusted \u0394": -0.07700572824261476,
+      "label": "prose answers",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.024783136290052465,
+      "exact floor-adjusted \u0394": -0.021975745001889868,
+      "label": "depth 2",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.011632829785544696,
+      "exact floor-adjusted \u0394": -0.013351969011656362,
+      "label": "creative writing",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.045860718877325235,
+      "exact floor-adjusted \u0394": 0.044236680076619184,
+      "label": "depth \u22655",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "unadjusted SAE-space category \u0394": -0.040645326736887255,
+      "exact floor-adjusted \u0394": -0.03959214592165017,
+      "label": "WildChat",
+      "series": "other categories",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.10129290896257237,
+      "exact floor-adjusted \u0394": 0.009299884576500994,
+      "label": "refusal-adjacent",
+      "series": "refusal categories",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "unadjusted SAE-space category \u0394": 0.050825113553262136,
+      "exact floor-adjusted \u0394": -0.16901790144306988,
+      "label": "answer is refusal",
+      "series": "refusal categories",
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 38,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "history-only (prefix) arm (19 floor-covered contrasts)",
+        "xlabel": "unadjusted SAE-space category \u0394",
+        "ylabel": "exact floor-adjusted \u0394",
+        "legend_labels": [
+          "other categories",
+          "refusal categories"
+        ],
+        "annotations": [
+          "English",
+          "factual Q&A",
+          "creative writing",
+          "coding",
+          "advice / how-to",
+          "chitchat",
+          "translation",
+          "summarization",
+          "roleplay",
+          "math",
+          "code answers",
+          "list answers",
+          "prose answers",
+          "depth 2",
+          "depth 3\u20134",
+          "depth \u22655",
+          "WildChat",
+          "refusal-adjacent",
+          "answer is refusal"
+        ],
+        "xticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ],
+        "yticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      },
+      {
+        "title_left": "bare-query arm (19 floor-covered contrasts)",
+        "xlabel": "unadjusted SAE-space category \u0394",
+        "ylabel": "exact floor-adjusted \u0394",
+        "legend_labels": [
+          "other categories",
+          "refusal categories"
+        ],
+        "annotations": [
+          "English",
+          "factual Q&A",
+          "creative writing",
+          "coding",
+          "advice / how-to",
+          "chitchat",
+          "translation",
+          "summarization",
+          "roleplay",
+          "math",
+          "code answers",
+          "list answers",
+          "prose answers",
+          "depth 2",
+          "depth 3\u20134",
+          "depth \u22655",
+          "WildChat",
+          "refusal-adjacent",
+          "answer is refusal"
+        ],
+        "xticklabels": [
+          "\u22120.25",
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ],
+        "yticklabels": [
+          "\u22120.25",
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ]
+      }
+    ],
+    "series": [
+      "other categories",
+      "refusal categories"
+    ]
+  }
+}

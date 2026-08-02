@@ -2375,40 +2375,45 @@ def assert_vectorized_equivalence(*, seed: int = 0, tol: float = 5e-6) -> dict:
     saved_frozen = FROZEN_LAYERS
     rng = np.random.default_rng(seed)
     n, dim, n_layers, n_groups = 72, 12, 5, 24
-    FROZEN_LAYERS = (1, 3)  # within the synthetic layer count so preds_frozen is populated
-    # grouped folds: 3 rows per group.
-    groups = np.repeat(np.arange(n_groups), n // n_groups)[:n].astype(str)
-    worst_null = 0.0
-    worst_obs = 0.0
-    worst_boot = 0.0
-    for _cell in range(2):
-        X = rng.standard_normal((n, n_layers, dim)).astype(np.float32)
-        W = (rng.standard_normal((n_layers, dim, dim)) * 0.4).astype(np.float32)
-        noise = (rng.standard_normal((n, n_layers, dim)) * 0.25).astype(np.float32)
-        Y = np.einsum("nld,lde->nle", X, W).astype(np.float32) + noise
-        sweep_b = heldout_r2_sweep(
-            X, Y, groups, n_folds=3, seed=seed, null_draws=8, _null_impl="batched"
-        )
-        sweep_s = heldout_r2_sweep(
-            X, Y, groups, n_folds=3, seed=seed, null_draws=8, _null_impl="serial"
-        )
-        d_null = float(np.nanmax(np.abs(sweep_b["r2_null"] - sweep_s["r2_null"])))
-        d_obs = float(np.nanmax(np.abs(sweep_b["r2_obs"] - sweep_s["r2_obs"])))
-        worst_null = max(worst_null, d_null)
-        worst_obs = max(worst_obs, d_obs)
-        li = next(iter(sweep_b["preds_frozen"]))
-        mask = sweep_b["fitted_mask"]
-        pred = sweep_b["preds_frozen"][li][mask]
-        true = Y[mask, li, :].astype(np.float64)
-        bb = bootstrap_r2_ci(pred, true, n_boot=200, seed=seed + 3)
-        bs = _bootstrap_r2_ci_serial_reference(pred, true, n_boot=200, seed=seed + 3)
-        d_boot = max(
-            abs(bb["r2"] - bs["r2"]),
-            abs(bb["ci_lo"] - bs["ci_lo"]),
-            abs(bb["ci_hi"] - bs["ci_hi"]),
-        )
-        worst_boot = max(worst_boot, d_boot)
-    FROZEN_LAYERS = saved_frozen
+    try:
+        FROZEN_LAYERS = (1, 3)  # within the synthetic layer count so preds_frozen is populated
+        # grouped folds: 3 rows per group.
+        groups = np.repeat(np.arange(n_groups), n // n_groups)[:n].astype(str)
+        worst_null = 0.0
+        worst_obs = 0.0
+        worst_boot = 0.0
+        for _cell in range(2):
+            X = rng.standard_normal((n, n_layers, dim)).astype(np.float32)
+            W = (rng.standard_normal((n_layers, dim, dim)) * 0.4).astype(np.float32)
+            noise = (rng.standard_normal((n, n_layers, dim)) * 0.25).astype(np.float32)
+            Y = np.einsum("nld,lde->nle", X, W).astype(np.float32) + noise
+            sweep_b = heldout_r2_sweep(
+                X, Y, groups, n_folds=3, seed=seed, null_draws=8, _null_impl="batched"
+            )
+            sweep_s = heldout_r2_sweep(
+                X, Y, groups, n_folds=3, seed=seed, null_draws=8, _null_impl="serial"
+            )
+            d_null = float(np.nanmax(np.abs(sweep_b["r2_null"] - sweep_s["r2_null"])))
+            d_obs = float(np.nanmax(np.abs(sweep_b["r2_obs"] - sweep_s["r2_obs"])))
+            worst_null = max(worst_null, d_null)
+            worst_obs = max(worst_obs, d_obs)
+            li = next(iter(sweep_b["preds_frozen"]))
+            mask = sweep_b["fitted_mask"]
+            pred = sweep_b["preds_frozen"][li][mask]
+            true = Y[mask, li, :].astype(np.float64)
+            bb = bootstrap_r2_ci(pred, true, n_boot=200, seed=seed + 3)
+            bs = _bootstrap_r2_ci_serial_reference(pred, true, n_boot=200, seed=seed + 3)
+            d_boot = max(
+                abs(bb["r2"] - bs["r2"]),
+                abs(bb["ci_lo"] - bs["ci_lo"]),
+                abs(bb["ci_hi"] - bs["ci_hi"]),
+            )
+            worst_boot = max(worst_boot, d_boot)
+    finally:
+        # Exception-path hardening (task #1908): a mid-gate raise must not leak
+        # FROZEN_LAYERS=(1, 3) into the process (same bug class as the
+        # issue1335_fit patch-style leak). Happy path unchanged.
+        FROZEN_LAYERS = saved_frozen
     result = {
         "max_abs_null_delta": worst_null,
         "max_abs_obs_delta": worst_obs,

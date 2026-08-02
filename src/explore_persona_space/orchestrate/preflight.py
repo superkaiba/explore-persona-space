@@ -575,9 +575,11 @@ def _probe_writable_bytes(check_path: str, probe_bytes: int) -> tuple[bool, str 
         except OSError as e:
             if e.errno in (errno.ENOSPC, errno.EDQUOT):
                 return False, None
-            if e.errno in (errno.EOPNOTSUPP, errno.ENOSYS, errno.EINVAL):
+            if e.errno in (errno.EOPNOTSUPP, errno.ENOSYS, errno.EINVAL, errno.EBADF):
                 # Filesystem doesn't support fallocate (tmpfs, some overlay FS,
-                # macOS). Caller falls back to shutil.disk_usage.
+                # macOS). VAST/NFS-class mounts surface EBADF from fallocate on
+                # a just-opened valid fd (fellows /workspace, #1902 job 16139).
+                # Caller falls back to shutil.disk_usage.
                 return True, f"posix_fallocate unsupported (errno={e.errno})"
             raise
         return True, None

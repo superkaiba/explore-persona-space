@@ -465,10 +465,18 @@ def _procrustes_cosine_null(Xb, Xi, Yb, Yi, *, n_draws, seed):
     cosine of M_inst vs Q1^T M_base Q2 over random orthogonal Q1, Q2. Full data."""
     beta_i, _ = fit_primal_beta(Xi.cpu().numpy(), Yi.cpu().numpy())
     beta_b, _ = fit_primal_beta(Xb.cpu().numpy(), Yb.cpu().numpy())
+    # Placement anchor: the CALLER's input device, total-at-entry. fit_primal_beta
+    # returns on the module-global _fit_device() (bare `cuda` == cuda:0), which
+    # collides with worker-pinned caller tensors on a multi-GPU fan-out (#1902
+    # crash-fix 6: R_in/R_out on cuda:3 vs beta_b on cuda:0). Single-device
+    # callers (the parent #825 driver) have Xb.device == _fit_device(), so this
+    # is a no-op there.
+    dev = Xb.device if isinstance(Xb, torch.Tensor) else _fit_device()
+    beta_i = beta_i.to(dev)
+    beta_b = beta_b.to(dev)
     vi = beta_i.reshape(-1)
     vi_n = vi / (vi.norm() + 1e-12)
     # recompute the parent's fitted-Procrustes aligned cosine as a self-check
-    dev = _fit_device()
 
     def _orth(A, B):
         M = A.T @ B

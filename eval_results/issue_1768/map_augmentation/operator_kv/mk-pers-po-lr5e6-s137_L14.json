@@ -1,0 +1,293 @@
+{
+ "arm_id": "mk-pers-po-lr5e6-s137",
+ "layer": 14,
+ "pooling": "last_prompt",
+ "method": "lora",
+ "K_train_pairs": 200,
+ "operator_shape": [
+  3584,
+  3584
+ ],
+ "kv_orientation_check_rel_err": 6.770502791879303e-16,
+ "keys_side_established_by_assert": "LEFT singular vectors of the raw row-vector operator A (v = c @ A) are the context-side KEYS; RIGHT singular vectors are the answer-side VALUES. Equivalently, in the COLUMN convention M = A^T (v = M c) the KEYS are M's RIGHT singular vectors -- the two phrasings agree once the operator orientation is fixed. This assignment is VERIFIED per arm by key @ A ~= sigma * value, not assumed from a convention.",
+ "value_target_provenance": {
+  "rB_behavior_readout": "banked rb[mk][14] shape (28, 3584)",
+  "wu_marker_unembedding_row": "safetensors slice of base lm_head"
+ },
+ "refit_reproduction": {
+  "m0_r2_refit": 0.6038829713313822,
+  "m0_r2_committed": 0.6038829715841432,
+  "m0_r2_absdiff": 2.527609233027306e-10
+ },
+ "spectrum_real": {
+  "svals": [
+   3.106224710966995,
+   2.530153435343164,
+   1.7336330886443025,
+   1.4111415083333956,
+   1.3408321061619903,
+   1.3040489013454328,
+   1.1785348802114717,
+   1.1392362259238389,
+   1.1051168535103455,
+   1.047801855515887,
+   0.9824861971468647,
+   0.9520144400893696,
+   0.9457966613540573,
+   0.9148996338422585,
+   0.894577671170588,
+   0.8617552163421912,
+   0.8480418937405694,
+   0.8237152673574919,
+   0.8020612917277278,
+   0.7879680924705753,
+   0.7727896118937078,
+   0.7586268270765273,
+   0.7505368449497783,
+   0.7366097276644771,
+   0.7319282333624384,
+   0.7131137566570607,
+   0.6993852158805418,
+   0.6873565021592808,
+   0.6827293064433008,
+   0.6781075335460718,
+   0.6510460280379831,
+   0.6458733316482209
+  ],
+  "fro2_exact": 105.80608205977882,
+  "sum_s4_exact": 177.11416694990947,
+  "participation_ratio_exact": 63.20740567301283,
+  "top1_share": 0.09119165710692002,
+  "top5_share": 0.2159133264947132,
+  "top32_share": 0.41028684803202214,
+  "svd_q": 32
+ },
+ "spectrum_predicted": {
+  "svals": [
+   0.5747220248622488,
+   0.5207381187998897,
+   0.41306846056696084,
+   0.33685204314855693,
+   0.2868750160714422,
+   0.26148639849139155,
+   0.24473749340640005,
+   0.22233998176774675,
+   0.19878973130426927,
+   0.1854370650327879,
+   0.00397294016093761,
+   0.0034334129001617687,
+   0.0029122656443551533,
+   0.0026373897575490655,
+   0.0024962304038534376,
+   0.002431913614708117,
+   0.002289313756508765,
+   0.0022285241282083246,
+   0.0021394682304819736,
+   0.0021097112159518213,
+   0.002085043218369012,
+   0.001988123029936837,
+   0.0019659306737360564,
+   0.0019117532459652972,
+   0.0018723923215293687,
+   0.0018300113088255308,
+   0.0018216022304640255,
+   0.001795218603684149,
+   0.0017582066849796494,
+   0.0017149508298290276,
+   0.001680610963346518,
+   0.0016427064634626498
+  ],
+  "fro2_exact": 1.219770788726879,
+  "sum_s4_exact": 0.2448457007313069,
+  "participation_ratio_exact": 6.076646527129122,
+  "top1_share": 0.2707930120268871,
+  "top5_share": 0.7934816361504409,
+  "top32_share": 0.9998532519051788,
+  "svd_q": 32
+ },
+ "lora_rank_note": "LoRA WEIGHT updates are rank-32 per adapted layer by construction; this spectrum is of the fitted context->answer OPERATOR update, a different object, so the two ranks are not required to agree — reported split by method",
+ "key_alignment": {
+  "null_abscos_mean": 0.012938631230533248,
+  "null_abscos_p95": 0.03045096067660841,
+  "null_abscos_analytic_sd": 0.016703827619526525,
+  "n_null_draws": 200,
+  "targets": {
+   "training_context_centroid": {
+    "computed": true,
+    "abscos_per_component": [
+     0.0009119111917709269,
+     0.0022530851820351753,
+     0.0038495625481220867,
+     0.0022632958572384914,
+     0.009480096348575766
+    ],
+    "abscos_top1": 0.0009119111917709269,
+    "abscos_max_over_topk": 0.009480096348575766,
+    "topk_subspace_projection": 0.010757408683635705
+   },
+   "whitened_gate_Sigma_inv_c_src": {
+    "computed": true,
+    "abscos_per_component": [
+     0.024430020686148107,
+     0.0064384652862666605,
+     0.01686893763972255,
+     0.041813967229814765,
+     0.005266284755464545
+    ],
+    "abscos_top1": 0.024430020686148107,
+    "abscos_max_over_topk": 0.041813967229814765,
+    "topk_subspace_projection": 0.05195173157540175
+   },
+   "ridge_natural_key_from_augmentation": {
+    "computed": true,
+    "abscos_per_component": [
+     0.016016284365978024,
+     0.0005755824681586404,
+     0.014663161689680322,
+     0.04055604637135015,
+     0.013009235779449022
+    ],
+    "abscos_top1": 0.016016284365978024,
+    "abscos_max_over_topk": 0.04055604637135015,
+    "topk_subspace_projection": 0.04781102470819502
+   }
+  }
+ },
+ "value_alignment": {
+  "null_abscos_mean": 0.013614068510889159,
+  "null_abscos_p95": 0.029849700275432954,
+  "null_abscos_analytic_sd": 0.016703827619526525,
+  "n_null_draws": 200,
+  "targets": {
+   "delta_eq_mean_map_residual": {
+    "computed": true,
+    "abscos_per_component": [
+     0.16567072896627552,
+     0.05844841400293515,
+     0.0843226717757626,
+     0.035546523842999264,
+     0.23567320492037946
+    ],
+    "abscos_top1": 0.16567072896627552,
+    "abscos_max_over_topk": 0.23567320492037946,
+    "topk_subspace_projection": 0.3078615523020739
+   },
+   "map_residual_pc1": {
+    "computed": true,
+    "abscos_per_component": [
+     0.0540793287311234,
+     0.1019805186554858,
+     0.06698750375615188,
+     0.14044127835743853,
+     0.030425849786993843
+    ],
+    "abscos_top1": 0.0540793287311234,
+    "abscos_max_over_topk": 0.14044127835743853,
+    "topk_subspace_projection": 0.19611580926244426
+   },
+   "mean_measured_write_wtf": {
+    "computed": true,
+    "abscos_per_component": [
+     0.07762310745961092,
+     0.038680631413504966,
+     0.052325220782244324,
+     0.06076312520807203,
+     0.12390266911211167
+    ],
+    "abscos_top1": 0.07762310745961092,
+    "abscos_max_over_topk": 0.12390266911211167,
+    "topk_subspace_projection": 0.17118263809832365
+   },
+   "rB_behavior_readout": {
+    "computed": true,
+    "abscos_per_component": [
+     0.016416867877411,
+     0.03671006343119599,
+     0.004653458587664148,
+     0.033517543467148525,
+     0.015576008672516376
+    ],
+    "abscos_top1": 0.016416867877411,
+    "abscos_max_over_topk": 0.03671006343119599,
+    "topk_subspace_projection": 0.054816373020224525
+   },
+   "wu_marker_unembedding_row": {
+    "computed": true,
+    "abscos_per_component": [
+     0.016416867877411,
+     0.03671006343119599,
+     0.004653458587664148,
+     0.033517543467148525,
+     0.015576008672516376
+    ],
+    "abscos_top1": 0.016416867877411,
+    "abscos_max_over_topk": 0.03671006343119599,
+    "topk_subspace_projection": 0.054816373020224525
+   }
+  }
+ },
+ "match_read": {
+  "k_effective_of_predicted_update": 10,
+  "k_used": 10,
+  "key_subspace_principal_angles": {
+   "cosines": [
+    0.1059674256741436,
+    0.09273782256907222,
+    0.07461934246328292,
+    0.059043539541275,
+    0.046218946031653496,
+    0.0452106482932886,
+    0.03508532698691844,
+    0.02731823761160756,
+    0.01827378194973271,
+    0.0006943183473243689
+   ],
+   "mean_cos": 0.05051693894682989,
+   "max_cos": 0.1059674256741436,
+   "min_cos": 0.0006943183473243689,
+   "k": 10
+  },
+  "value_subspace_principal_angles": {
+   "cosines": [
+    0.6095794027479631,
+    0.42343450323407744,
+    0.3856432734000837,
+    0.33999066789680293,
+    0.23464850351886657,
+    0.19168935048757377,
+    0.15281193123220185,
+    0.11963707428088734,
+    0.06339024475179672,
+    0.012262408157269896
+   ],
+   "mean_cos": 0.2533087359707523,
+   "max_cos": 0.6095794027479631,
+   "min_cos": 0.012262408157269896,
+   "k": 10
+  },
+  "at_mass": 0.001,
+  "at_weight": 0.07507507507507508,
+  "random_subspace_null": {
+   "k": 10,
+   "ambient_dim": 3584,
+   "n_draws": 200,
+   "mean_cos_null_mean": 0.04389754223632955,
+   "mean_cos_null_p95": 0.04939304982122502,
+   "max_cos_null_mean": 0.09392266601246532,
+   "max_cos_null_p95": 0.11176057963860553,
+   "analytic_scale_sqrt_k_over_n": 0.052822140920532286
+  },
+  "key_match_vs_null_ratio": 1.1507919663215709,
+  "key_match_exceeds_null_p95": true,
+  "value_match_vs_null_ratio": 5.770453721691834,
+  "value_match_exceeds_null_p95": true
+ },
+ "ts": "2026-08-02T05:56:14Z",
+ "git_commit": "67dc130a0e6af5ed20a4cff2235bcfc7bab7ea75",
+ "torch": "2.8.0+cu128",
+ "transformers": "4.57.6",
+ "issue": 1768,
+ "position": "last_prompt",
+ "round": "inline-map-augmentation",
+ "code_tree_source": "git-checkout"
+}
