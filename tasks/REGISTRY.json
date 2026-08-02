@@ -7297,8 +7297,8 @@
     "1942": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1942",
-      "status": "approved",
+      "path": "tasks/running/1942",
+      "status": "running",
       "title": "Hoist shared-node vLLM util resolver into a shared module (dedupe #1902 + #1345 copies)"
     },
     "1943": {
