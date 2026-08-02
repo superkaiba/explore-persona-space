@@ -3,7 +3,8 @@ title: Pushing a prefix's context vector through the base context-to-answer map 
   predicts where fine-tuning delivers behavior change, while base propensity keeps
   the level read (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-08-01T07:47:20Z'
 has_clean_result: true
 parent_id: 1900
