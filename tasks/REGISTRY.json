@@ -6986,7 +6986,7 @@
     },
     "1902": {
       "goal": "Characterize how each open post-training stage (SFT \u2192 DPO \u2192 RLVR; the OLMo-2-1124-7B base/SFT/DPO/Instruct chain) changes the context\u2192answer activation mapping: (1) within-stage fit quality (ridge + MLP, prefix AND context arms, identity+learned-bias baseline + kNN retrieval) on ~10k diverse real-world contexts under a 4x4 activation-checkpoint \u00d7 answer-text-source grid separating representation change from answer-distribution change; (2) which context classes each stage makes more or less predictable; (3) cross-stage transferability of the map (direct and Procrustes-aligned), characterized on context and answer sides; (4) the per-stage operator change (delta-W rank/spectrum/subspace, direction-aware vs spectrum-only reads against matched nulls), with SAE/crosscoder feature readout as a stretch goal.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/1902",
       "status": "interpreting",

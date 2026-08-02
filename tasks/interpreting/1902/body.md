@@ -4,7 +4,7 @@ title: SFT rewrites the OLMo-2 context→answer activation map; DPO mostly prese
 kind: experiment
 tags: []
 created_at: '2026-07-30T23:52:28Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: 'Devise a plan for this: ## Motivation - We have found that our context
   -> answer map is present in the base model and the instruct model - We want to see
   how each phase of post training affects the mapping - By phases of post training
