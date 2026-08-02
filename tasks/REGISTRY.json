@@ -7638,8 +7638,8 @@
     "1987": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1987",
-      "status": "reviewing",
+      "path": "tasks/completed/1987",
+      "status": "completed",
       "title": "workflow-fix: pm_inline rule for value-plus-minus-err in body audit"
     },
     "1988": {
