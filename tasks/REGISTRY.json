@@ -7617,8 +7617,8 @@
     "1984": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1984",
-      "status": "reviewing",
+      "path": "tasks/completed/1984",
+      "status": "completed",
       "title": "workflow-fix: widen the leading version-stamp stripper to also accept the "
     },
     "199": {
