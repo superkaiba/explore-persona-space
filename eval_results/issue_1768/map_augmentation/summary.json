@@ -8412,5 +8412,333 @@
  "round": "inline-map-augmentation",
  "code_tree_source": "vm-rsync",
  "driver_sha256": "931207941ca9dc83036fa87413375153fdeb37fca84008aca208c86146a7e7ce",
- "driver_committed_at_run_time": false
+ "driver_committed_at_run_time": false,
+ "operator_kv": {
+  "question": "Is the realized post-FT operator update a low-rank key-value write, and are its keys/values the ones the data-augmented refit predicts?",
+  "layer": 19,
+  "pooling": "last_prompt",
+  "poolings_covered": [
+   "last_prompt (last-token, the round's PRIMARY pooling)"
+  ],
+  "poolings_not_covered": [
+   "span-mean — a second ~30 min VM-side refit pass; NOT run in this round"
+  ],
+  "object": "dM_real = M+ - M0, the fitted ridge OPERATORS (not the data-space shift)",
+  "kv_convention": "raw operator A acts on ROW vectors (v = c @ A), so in A = P S Q^T the LEFT vectors P are the context-side KEYS and the RIGHT vectors Q the answer-side VALUES; verified per arm by key @ A ~= sigma * value (rel err ~1e-15)",
+  "n_arms": 8,
+  "per_arm": {
+   "cas-pers-con-lr1e5-s137": {
+    "method": "lora",
+    "K_train_pairs": 20,
+    "kv_orientation_check_rel_err": 1.0857035200978992e-15,
+    "refit_reproduction_m0_r2_absdiff": 1.3335421655824575e-10,
+    "spectrum": {
+     "top1_share": 0.06683021751064865,
+     "top5_share": 0.18827757528086578,
+     "participation_ratio_exact": 83.91940013800301
+    },
+    "key_alignment": {
+     "training_context_centroid": 0.0305940125679242,
+     "whitened_gate_Sigma_inv_c_src": 0.02510109192301623,
+     "ridge_natural_key_from_augmentation": 0.019081806783940884
+    },
+    "key_alignment_null_p95": 0.03048000666229417,
+    "value_alignment": {
+     "delta_eq_mean_map_residual": 0.5785317816963107,
+     "map_residual_pc1": 0.3315710138011805,
+     "mean_measured_write_wtf": 0.2812606731386086
+    },
+    "value_alignment_null_p95": 0.032753284876705056,
+    "value_alignment_not_computed": [
+     "rB_marker_unembedding_row"
+    ],
+    "match_read": {
+     "k_used": 11,
+     "key_mean_cos": 0.049005356857849965,
+     "value_mean_cos": 0.2906020542915869,
+     "random_subspace_null_mean_cos": 0.04630248515761302,
+     "random_subspace_null_p95": 0.05161427482010167,
+     "key_vs_null_ratio": 1.058374225293446,
+     "value_vs_null_ratio": 6.276165378648286,
+     "key_exceeds_null_p95": false,
+     "value_exceeds_null_p95": true,
+     "at_mass": 0.0013315579227696406
+    }
+   },
+   "imp-pers-con-lr3e5-s42": {
+    "method": "lora",
+    "K_train_pairs": 20,
+    "kv_orientation_check_rel_err": 2.4678108873032317e-15,
+    "refit_reproduction_m0_r2_absdiff": 1.3335421655824575e-10,
+    "spectrum": {
+     "top1_share": 0.056964565625280184,
+     "top5_share": 0.17030610041420324,
+     "participation_ratio_exact": 98.55730732714638
+    },
+    "key_alignment": {
+     "training_context_centroid": 0.03388896429819382,
+     "whitened_gate_Sigma_inv_c_src": 0.03313579984136911,
+     "ridge_natural_key_from_augmentation": 0.03902870614138501
+    },
+    "key_alignment_null_p95": 0.03544158549115096,
+    "value_alignment": {
+     "delta_eq_mean_map_residual": 0.6777028374853045,
+     "map_residual_pc1": 0.6736934314369635,
+     "mean_measured_write_wtf": 0.5186746964304598
+    },
+    "value_alignment_null_p95": 0.033336521813188434,
+    "value_alignment_not_computed": [
+     "rB_marker_unembedding_row"
+    ],
+    "match_read": {
+     "k_used": 11,
+     "key_mean_cos": 0.052909176599823686,
+     "value_mean_cos": 0.42345947016485225,
+     "random_subspace_null_mean_cos": 0.04630248515761302,
+     "random_subspace_null_p95": 0.05161427482010167,
+     "key_vs_null_ratio": 1.1426854610442956,
+     "value_vs_null_ratio": 9.14550199030143,
+     "key_exceeds_null_p95": true,
+     "value_exceeds_null_p95": true,
+     "at_mass": 0.0013315579227696406
+    }
+   },
+   "imp-pers-ft-con-s137": {
+    "method": "ft",
+    "K_train_pairs": 20,
+    "kv_orientation_check_rel_err": 6.363842830806686e-16,
+    "refit_reproduction_m0_r2_absdiff": 1.3335421655824575e-10,
+    "spectrum": {
+     "top1_share": 0.07228925156188722,
+     "top5_share": 0.19425980593315015,
+     "participation_ratio_exact": 78.61384544288983
+    },
+    "key_alignment": {
+     "training_context_centroid": 0.04381065530654807,
+     "whitened_gate_Sigma_inv_c_src": 0.017616629482260674,
+     "ridge_natural_key_from_augmentation": 0.02057993397500862
+    },
+    "key_alignment_null_p95": 0.027173388087302672,
+    "value_alignment": {
+     "delta_eq_mean_map_residual": 0.6818915934005805,
+     "map_residual_pc1": 0.6384919401916882,
+     "mean_measured_write_wtf": 0.2437076327324757
+    },
+    "value_alignment_null_p95": 0.03281290402873353,
+    "value_alignment_not_computed": [
+     "rB_marker_unembedding_row"
+    ],
+    "match_read": {
+     "k_used": 11,
+     "key_mean_cos": 0.05019628810712513,
+     "value_mean_cos": 0.41647832356295067,
+     "random_subspace_null_mean_cos": 0.04630248515761302,
+     "random_subspace_null_p95": 0.05161427482010167,
+     "key_vs_null_ratio": 1.084094901953052,
+     "value_vs_null_ratio": 8.994729378893254,
+     "key_exceeds_null_p95": false,
+     "value_exceeds_null_p95": true,
+     "at_mass": 0.0013315579227696406
+    }
+   },
+   "imp-pers-po-lr1e5-s137": {
+    "method": "lora",
+    "K_train_pairs": 20,
+    "kv_orientation_check_rel_err": 2.179340565069169e-15,
+    "refit_reproduction_m0_r2_absdiff": 1.3335421655824575e-10,
+    "spectrum": {
+     "top1_share": 0.06623084916655467,
+     "top5_share": 0.1940310529702323,
+     "participation_ratio_exact": 80.89522865893095
+    },
+    "key_alignment": {
+     "training_context_centroid": 0.031047541588406426,
+     "whitened_gate_Sigma_inv_c_src": 0.02634251970098102,
+     "ridge_natural_key_from_augmentation": 0.029718535534222597
+    },
+    "key_alignment_null_p95": 0.03187730210548204,
+    "value_alignment": {
+     "delta_eq_mean_map_residual": 0.7010774701713905,
+     "map_residual_pc1": 0.6567697536004122,
+     "mean_measured_write_wtf": 0.21281035498324127
+    },
+    "value_alignment_null_p95": 0.0333140394226424,
+    "value_alignment_not_computed": [
+     "rB_marker_unembedding_row"
+    ],
+    "match_read": {
+     "k_used": 11,
+     "key_mean_cos": 0.052842718454717885,
+     "value_mean_cos": 0.4179178582210788,
+     "random_subspace_null_mean_cos": 0.04630248515761302,
+     "random_subspace_null_p95": 0.05161427482010167,
+     "key_vs_null_ratio": 1.1412501569806028,
+     "value_vs_null_ratio": 9.02581917144387,
+     "key_exceeds_null_p95": true,
+     "value_exceeds_null_p95": true,
+     "at_mass": 0.001
+    }
+   },
+   "mk-pers-po-lr5e6-s137": {
+    "method": "lora",
+    "K_train_pairs": 200,
+    "kv_orientation_check_rel_err": 1.8625231294738688e-15,
+    "refit_reproduction_m0_r2_absdiff": 1.5127898933542383e-11,
+    "spectrum": {
+     "top1_share": 0.10742968610210683,
+     "top5_share": 0.24000106027194937,
+     "participation_ratio_exact": 50.84118021192836
+    },
+    "key_alignment": {
+     "training_context_centroid": 0.016044144335516784,
+     "whitened_gate_Sigma_inv_c_src": 0.03134744851217311,
+     "ridge_natural_key_from_augmentation": 0.03800041526439174
+    },
+    "key_alignment_null_p95": 0.03212739993751654,
+    "value_alignment": {
+     "delta_eq_mean_map_residual": 0.30402781532443746,
+     "map_residual_pc1": 0.22600782279073584,
+     "mean_measured_write_wtf": 0.36377132299741183
+    },
+    "value_alignment_null_p95": 0.030747773607986768,
+    "value_alignment_not_computed": [
+     "rB_marker_unembedding_row"
+    ],
+    "match_read": {
+     "k_used": 10,
+     "key_mean_cos": 0.05060374461355821,
+     "value_mean_cos": 0.2588478663318068,
+     "random_subspace_null_mean_cos": 0.044320151700233526,
+     "random_subspace_null_p95": 0.049740121566548286,
+     "key_vs_null_ratio": 1.1417773331604273,
+     "value_vs_null_ratio": 5.84041020623228,
+     "key_exceeds_null_p95": true,
+     "value_exceeds_null_p95": true,
+     "at_mass": 0.001
+    }
+   },
+   "syc-bare-con-lr1e5-s42": {
+    "method": "lora",
+    "K_train_pairs": 20,
+    "kv_orientation_check_rel_err": 2.3828120152498025e-15,
+    "refit_reproduction_m0_r2_absdiff": 1.3335421655824575e-10,
+    "spectrum": {
+     "top1_share": 0.07701856759734213,
+     "top5_share": 0.2016516625249857,
+     "participation_ratio_exact": 73.58906762341151
+    },
+    "key_alignment": {
+     "training_context_centroid": 0.040375741251265335,
+     "whitened_gate_Sigma_inv_c_src": 0.025842747756354888,
+     "ridge_natural_key_from_augmentation": 0.019351358964618676
+    },
+    "key_alignment_null_p95": 0.03397729935280029,
+    "value_alignment": {
+     "delta_eq_mean_map_residual": 0.6614134837594,
+     "map_residual_pc1": 0.22778921551782685,
+     "mean_measured_write_wtf": 0.2695414312851097
+    },
+    "value_alignment_null_p95": 0.03363587352554007,
+    "value_alignment_not_computed": [
+     "rB_marker_unembedding_row"
+    ],
+    "match_read": {
+     "k_used": 5,
+     "key_mean_cos": 0.02694471815445871,
+     "value_mean_cos": 0.2686643269378195,
+     "random_subspace_null_mean_cos": 0.030792023652122812,
+     "random_subspace_null_p95": 0.0380291002222442,
+     "key_vs_null_ratio": 0.8750551265766234,
+     "value_vs_null_ratio": 8.725127324306198,
+     "key_exceeds_null_p95": false,
+     "value_exceeds_null_p95": true,
+     "at_mass": 0.001
+    }
+   },
+   "syc-conv-po-lr1e5-s137": {
+    "method": "lora",
+    "K_train_pairs": 20,
+    "kv_orientation_check_rel_err": 1.8544249637423527e-15,
+    "refit_reproduction_m0_r2_absdiff": 1.3335421655824575e-10,
+    "spectrum": {
+     "top1_share": 0.08432458388432006,
+     "top5_share": 0.21710678246883033,
+     "participation_ratio_exact": 64.31582218202546
+    },
+    "key_alignment": {
+     "training_context_centroid": 0.0092366249144883,
+     "whitened_gate_Sigma_inv_c_src": 0.03957069122674226,
+     "ridge_natural_key_from_augmentation": 0.0400156041324895
+    },
+    "key_alignment_null_p95": 0.03286709913777345,
+    "value_alignment": {
+     "delta_eq_mean_map_residual": 0.47421431050017143,
+     "map_residual_pc1": 0.3278956791480258,
+     "mean_measured_write_wtf": 0.21834357504110086
+    },
+    "value_alignment_null_p95": 0.03279034669692468,
+    "value_alignment_not_computed": [
+     "rB_marker_unembedding_row"
+    ],
+    "match_read": {
+     "k_used": 11,
+     "key_mean_cos": 0.04857427917730453,
+     "value_mean_cos": 0.3198307302112881,
+     "random_subspace_null_mean_cos": 0.04630248515761302,
+     "random_subspace_null_p95": 0.05161427482010167,
+     "key_vs_null_ratio": 1.049064191953377,
+     "value_vs_null_ratio": 6.9074203927195,
+     "key_exceeds_null_p95": false,
+     "value_exceeds_null_p95": true,
+     "at_mass": 0.001
+    }
+   },
+   "syc-pers-ft-con-s137": {
+    "method": "ft",
+    "K_train_pairs": 20,
+    "kv_orientation_check_rel_err": 8.604394533781571e-16,
+    "refit_reproduction_m0_r2_absdiff": 1.3335421655824575e-10,
+    "spectrum": {
+     "top1_share": 0.05753975816790857,
+     "top5_share": 0.17471763867478893,
+     "participation_ratio_exact": 94.79282727447774
+    },
+    "key_alignment": {
+     "training_context_centroid": 0.056732303528430054,
+     "whitened_gate_Sigma_inv_c_src": 0.02141663171659884,
+     "ridge_natural_key_from_augmentation": 0.027708819367539068
+    },
+    "key_alignment_null_p95": 0.03057121764387973,
+    "value_alignment": {
+     "delta_eq_mean_map_residual": 0.6541476879322765,
+     "map_residual_pc1": 0.21594074425010834,
+     "mean_measured_write_wtf": 0.23867091185850461
+    },
+    "value_alignment_null_p95": 0.03328088680835071,
+    "value_alignment_not_computed": [
+     "rB_marker_unembedding_row"
+    ],
+    "match_read": {
+     "k_used": 10,
+     "key_mean_cos": 0.041156015782285386,
+     "value_mean_cos": 0.2854303956373462,
+     "random_subspace_null_mean_cos": 0.044320151700233526,
+     "random_subspace_null_p95": 0.049740121566548286,
+     "key_vs_null_ratio": 0.9286072859283225,
+     "value_vs_null_ratio": 6.44019446431277,
+     "key_exceeds_null_p95": false,
+     "value_exceeds_null_p95": true,
+     "at_mass": 0.01
+    }
+   }
+  },
+  "ts": "2026-08-02T05:20:02Z",
+  "git_commit": "32344cb732af9ac72ab60d982de302d9ae447724",
+  "torch": "2.8.0+cu128",
+  "transformers": "4.57.6",
+  "issue": 1768,
+  "position": "last_prompt",
+  "round": "inline-map-augmentation",
+  "code_tree_source": "git-checkout"
+ }
 }
