@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1997,
+  "highest_id": 1998,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7718,6 +7718,13 @@
       "path": "tasks/proposed/1997",
       "status": "proposed",
       "title": "daily-fix: RunPod fallback rung pod lifecycle: orphans + sto"
+    },
+    "1998": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1998",
+      "status": "proposed",
+      "title": "daily-fix: fail loud when --min-ram-gb is inert on a GPU dis"
     },
     "2": {
       "has_clean_result": false,
