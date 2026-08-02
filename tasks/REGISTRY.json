@@ -7129,8 +7129,8 @@
     "1920": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1920",
-      "status": "planning",
+      "path": "tasks/approved/1920",
+      "status": "approved",
       "title": "daily-fix: living_docs.py bounded index.lock retry"
     },
     "1921": {
