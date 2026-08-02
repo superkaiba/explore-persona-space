@@ -2054,3 +2054,73 @@ def test_v1_family_cannot_reach_the_companion_n_band(monkeypatch):
     d_model = 3584
     assert cap.V1_KEPT_ROWS == 2164
     assert d_model > cap.V1_KEPT_ROWS, "V1 cannot supply an n>d companion cell"
+
+
+# ---------------------------------------------------------------------------
+# 3n. --no-arms companion lattice (the Option-A fits blocker)
+# ---------------------------------------------------------------------------
+def test_no_arms_runs_a_zero_arm_companion_lattice(monkeypatch):
+    """The fulln turnstore deliberately has no v2-v5 stores, so the default
+    --arms demanded sidecars that do not exist and `assert arms and ...` refused
+    an empty --arms outright. --no-arms runs the comparator / V1-grid / on-policy
+    paired cells with zero ablation arms."""
+    fits = _fits_module(monkeypatch)
+    import inspect
+
+    src = inspect.getsource(fits.main)
+    assert "args.no_arms" in src
+    # The non-empty requirement survives for the ORDINARY path...
+    assert "assert args.no_arms or arms" in src
+    # ...and the subset check is now unconditional rather than fused to it.
+    assert "assert set(arms) <= set(bg.GEN_ARMS), arms" in src
+
+
+def test_accidentally_empty_arms_still_fails_loud(monkeypatch):
+    """Relaxing the assert outright would make a typo'd or unset --arms silently
+    produce an arms-free lattice. The empty case must be EXPLICIT."""
+    fits = _fits_module(monkeypatch)
+    import inspect
+
+    src = inspect.getsource(fits.main)
+    i_parse = src.index("arms = [] if args.no_arms else")
+    i_assert = src.index("assert args.no_arms or arms")
+    assert i_parse < i_assert
+    assert "pass --no-arms to run the companion" in src, "the refusal must name the remedy"
+
+
+def test_every_arms_keyed_consumer_is_empty_safe(monkeypatch):
+    """With zero arms each arms-keyed consumer must yield empty rather than
+    raise: arm_convs, the per-arm cell loop, paired_by_arm, reparam_by_arm and
+    the verdict comprehension are all `for arm in arms`, and reparam's subset
+    assert is empty-subset-empty."""
+    fits = _fits_module(monkeypatch)
+    import inspect
+
+    src = inspect.getsource(fits.main)
+    for frag in (
+        "for arm in arms\n",
+        "for arm in arms:",
+        "assert set(reparam_arms) <= set(arms)",
+    ):
+        assert frag in src, frag
+    # Behavioural check of the same shape the driver relies on.
+    arms: list[str] = []
+    assert {a: object() for a in arms} == {}
+    assert [a for a in arms if a in ("v2",)] == []
+    assert set([]) <= set(arms)
+
+
+def test_empty_lattice_fails_loud_instead_of_reporting_success(monkeypatch):
+    """Observed: --no-arms against a turnstore with no stores wrote an empty
+    cell_summary + xy_grid and printed its normal done line having fit NOTHING.
+    The arms-free lattice removed the incidental non-emptiness arm cells used to
+    provide, and the companion run is exactly where a mis-pointed turnstore is
+    plausible."""
+    fits = _fits_module(monkeypatch)
+    import inspect
+
+    src = inspect.getsource(fits.main)
+    assert "enumeration produced ZERO cells" in src
+    i_guard = src.index("enumeration produced ZERO cells")
+    i_bundles = src.index("bundles: dict[tuple[str, str], dict] = {}")
+    assert i_guard < i_bundles, "the empty-lattice guard must precede bundle loading"

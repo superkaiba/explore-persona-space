@@ -1426,6 +1426,13 @@ def main() -> None:
     )
     ap.add_argument("--arms", default=",".join(bg.ARM_SLUG[a] for a in bg.GEN_ARMS))
     ap.add_argument(
+        "--no-arms",
+        action="store_true",
+        help="COMPANION lattice: run the comparator / V1-grid / on-policy paired cells "
+        "with ZERO ablation arms. Required when the turnstore has no v2-v5 stores — the "
+        "default --arms would demand their sidecars. Ignores --arms entirely.",
+    )
+    ap.add_argument(
         "--reparam-arms",
         default=None,
         help="arms whose story<->chat reparam ladder runs (default: every --arms "
@@ -1489,8 +1496,23 @@ def main() -> None:
     )
 
     bg.assert_round_env()
-    arms = [bg.SLUG_ARM.get(a, a) for a in args.arms.split(",") if a]
-    assert arms and set(arms) <= set(bg.GEN_ARMS), arms
+    # --no-arms runs a COMPANION lattice: comparator + V1-grid + on-policy paired
+    # cells only, with ZERO ablation arms. Those cells come from the comparator /
+    # op stores and never touch `arms`, so every arms-keyed consumer below
+    # (arm_convs, the per-arm cell loop, paired_by_arm, reparam_by_arm, verdicts)
+    # is a comprehension or loop that yields empty — but the non-empty assert
+    # fired first, and with the DEFAULT --arms the enumeration also demanded
+    # v2/v3/v4/v5 sidecars a companion turnstore deliberately does not have.
+    #
+    # Kept as an EXPLICIT flag rather than just relaxing the assert to accept an
+    # empty --arms: an empty string from a typo or an unset env var would then
+    # silently produce an arms-free lattice instead of failing loudly.
+    arms = [] if args.no_arms else [bg.SLUG_ARM.get(a, a) for a in args.arms.split(",") if a]
+    assert args.no_arms or arms, (
+        "--arms parsed empty; pass --no-arms to run the companion (comparator + "
+        "on-policy paired) lattice deliberately"
+    )
+    assert set(arms) <= set(bg.GEN_ARMS), arms
     if args.reparam_arms is None:
         # Default INTERSECTS --arms, so narrowing --arms never trips the guard.
         reparam_arms = [a for a in arms if a in DEFAULT_REPARAM_ARMS]
@@ -1603,6 +1625,19 @@ def main() -> None:
             + (f"; absent (skipped): {missing}" if missing else ""),
             flush=True,
         )
+
+    # An EMPTY lattice is a configuration error, not a valid run. Without this the
+    # driver writes an empty cell_summary.json / xy_grid.json and prints its normal
+    # done line having fit nothing — observed with --no-arms against a turnstore
+    # path that had no stores. The companion run is exactly where that is
+    # plausible (fresh _fulln dirs, stores staged separately), and the arms-free
+    # lattice removed the incidental non-emptiness the arm cells used to provide.
+    assert cells, (
+        f"enumeration produced ZERO cells from turnstore {args.turnstore_dir} — nothing "
+        "to fit. With --no-arms the lattice is comparator + V1-grid + on-policy paired "
+        "cells only, so an unstaged or mis-pointed turnstore yields an empty run that "
+        "would otherwise report success."
+    )
 
     # Shard AFTER full enumeration (so every process partitions the same registry)
     # and BEFORE bundle loading (so a shard pays only for the stores its own cells
