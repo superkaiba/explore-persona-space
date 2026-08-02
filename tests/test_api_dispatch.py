@@ -110,6 +110,7 @@ class FakeAsyncClient:
         remaining: int | None = None,
         limit: int | None = None,
         delay: float = 0.0,
+        stop_reason: str | None = None,
     ):
         self.text = text
         self.text_for = text_for
@@ -117,6 +118,7 @@ class FakeAsyncClient:
         self.remaining = remaining
         self.limit = limit
         self.delay = delay
+        self.stop_reason = stop_reason  # #2021: attached to the parsed message when set
         self.calls = 0
         self.in_flight = 0
         self.max_in_flight = 0
@@ -140,7 +142,10 @@ class FakeAsyncClient:
                     if client.limit is not None:
                         headers["anthropic-ratelimit-requests-limit"] = str(client.limit)
                     text = client.text if client.text_for is None else client.text_for(content)
-                    return _FakeRawResponse(_msg(text), headers)
+                    msg = _msg(text)
+                    if client.stop_reason is not None:
+                        msg.stop_reason = client.stop_reason
+                    return _FakeRawResponse(msg, headers)
                 finally:
                     client.in_flight -= 1
 
@@ -190,10 +195,18 @@ class FakeBatchClient:
     test can assert a sub-batch is only ever polled on its OWN org.
     """
 
-    def __init__(self, label: str, *, text: str = JUDGE_TEXT, end_after: int = 0):
+    def __init__(
+        self,
+        label: str,
+        *,
+        text: str = JUDGE_TEXT,
+        end_after: int = 0,
+        stop_reason: str | None = None,
+    ):
         self.label = label
         self.text = text
         self.end_after = end_after  # # of retrieves before processing_status flips to ended
+        self.stop_reason = stop_reason  # #2021: attached to succeeded-row messages when set
         self.submitted: dict[str, list[dict]] = {}
         self.retrieve_counts: dict[str, int] = {}
         self.create_calls = 0
@@ -225,9 +238,12 @@ class FakeBatchClient:
             def results(_self, batch_id):
                 client.results_calls += 1
                 for req in client.submitted[batch_id]:
+                    msg = _msg(client.text)
+                    if client.stop_reason is not None:
+                        msg.stop_reason = client.stop_reason
                     yield SimpleNamespace(
                         custom_id=req["custom_id"],
-                        result=SimpleNamespace(type="succeeded", message=_msg(client.text)),
+                        result=SimpleNamespace(type="succeeded", message=msg),
                     )
 
         self.messages = SimpleNamespace(batches=_Batches())
@@ -1982,3 +1998,107 @@ def test_response_valid_batch_checkpoint_record_heal(tmp_path):
         assert r.reason == "invalid_response (batch checkpoint record)"
     assert client2.create_calls == 0  # resume: no new batches submitted
     assert list(cache_dir.glob("*.json")) == []  # never persisted to the JudgeCache
+
+
+# ── parse_response_meta threading (#2021) ─────────────────────────────────────
+
+
+def _meta_parse(text: str, stop_reason):
+    out = {"parsed": json.loads(text)}
+    if isinstance(stop_reason, str):
+        out["stop_reason"] = stop_reason
+    return out
+
+
+def test_parse_response_meta_preferred_on_sync_path():
+    """#2021: on the sync path the meta parser is PREFERRED over
+    parse_response and receives the message's stop_reason (None when the
+    message lacks the attribute — the legacy-fake shape)."""
+    items = make_items(2)
+    clients = {"a": FakeAsyncClient(stop_reason="max_tokens")}
+    res = _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_request,
+            parse_response=lambda t: {"via": "plain"},  # must NOT be used
+            parse_response_meta=_meta_parse,
+            async_clients=clients,
+            sync_clients={"a": object()},
+            force_path="sync",
+        )
+    )
+    assert all(not r.error for r in res.values())
+    for r in res.values():
+        assert r.result == {"parsed": {"label": "ok"}, "stop_reason": "max_tokens"}
+
+    # An attribute-less message threads stop_reason=None (no key attached).
+    res_none = _run(
+        dispatch_calls(
+            make_items(1, prefix="none"),
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_request,
+            parse_response=lambda t: {"via": "plain"},
+            parse_response_meta=_meta_parse,
+            async_clients={"a": FakeAsyncClient()},
+            sync_clients={"a": object()},
+            force_path="sync",
+        )
+    )
+    assert res_none["none_000"].result == {"parsed": {"label": "ok"}}
+
+
+def test_parse_response_meta_threaded_on_batch_harvest(tmp_path):
+    """#2021: the batch harvest threads (text, stop_reason) into the meta
+    parser for succeeded rows."""
+    items = make_items(3)
+    res = _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_request,
+            parse_response=lambda t: {"via": "plain"},  # must NOT be used
+            parse_response_meta=_meta_parse,
+            async_clients={"a": object()},
+            sync_clients={"a": FakeBatchClient("a", stop_reason="end_turn")},
+            checkpoint_dir=tmp_path / "ckpt",
+            force_path="batch",
+            poll_interval=0.0,
+        )
+    )
+    assert set(res) == {it.item_id for it in items}
+    for r in res.values():
+        assert not r.error
+        assert r.result == {"parsed": {"label": "ok"}, "stop_reason": "end_turn"}
+
+
+def test_parse_response_fallback_when_meta_absent(tmp_path):
+    """#2021 backcompat: with NO parse_response_meta, both paths use
+    parse_response exactly as before — existing callers byte-identical."""
+    sync_res = _run(
+        dispatch_calls(
+            make_items(2),
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_request,
+            parse_response=lambda t: {"via": "plain"},
+            async_clients={"a": FakeAsyncClient(stop_reason="max_tokens")},
+            sync_clients={"a": object()},
+            force_path="sync",
+        )
+    )
+    assert all(r.result == {"via": "plain"} for r in sync_res.values())
+
+    batch_res = _run(
+        dispatch_calls(
+            make_items(2, prefix="b"),
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_request,
+            parse_response=lambda t: {"via": "plain"},
+            async_clients={"a": object()},
+            sync_clients={"a": FakeBatchClient("a", stop_reason="end_turn")},
+            checkpoint_dir=tmp_path / "ckpt",
+            force_path="batch",
+            poll_interval=0.0,
+        )
+    )
+    assert all(r.result == {"via": "plain"} for r in batch_res.values())
