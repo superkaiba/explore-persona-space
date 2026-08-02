@@ -2637,6 +2637,145 @@ def test_hf_count_shard_claims_one_sided(monkeypatch):
     assert "10" in r2.detail and "9 file(s)" in r2.detail
 
 
+# The verbatim claim-bearing span of #1901's footer (body.md L218, trimmed to
+# the pinned link + the three backtick-token parens — the #1936 incident
+# fixture): "3 activation chunks" (widened noun) and "3 chunk files"
+# (modifier-separated; its post-noun paren tail runs 220 chars, over the old
+# 200-char Pattern-D qualifier bound) are TRUE count claims check 30 reported
+# invisible pre-#1936 ("no file-count claims adjacent"); the mid-paren
+# "1 over-length-skip sidecar" continuation is a NAMED recall sacrifice.
+_I1901_SHA = "0da2b0bcefa6e05e85a775b240e501b501acd344"
+_I1901_FOOTER_SPAN = (
+    "[issue1901_wildchat](https://huggingface.co/datasets/superkaiba1/explore-persona"
+    "-space-data/tree/0da2b0bcefa6e05e85a775b240e501b501acd344/issue1901_wildchat): `"
+    "manifest/` (pinned-revision stream + screen record), `final_token_capture/` (3 a"
+    "ctivation chunks, ~112 MB), `raw_completions/` (3 chunk files plus 1 over-length"
+    "-skip sidecar; the round plan's section 6.5 labeled the raw-completion home `fin"
+    "al_token_capture/`, the realized home is the Upload-Policy-canonical `raw_comple"
+    "tions/` — both populated, upload-verified)"
+)
+
+
+def test_hf_count_1901_footer_extracts_both_paren_opening_claims(monkeypatch):
+    """T0, the #1936 incident fixture: the VERBATIM #1901 footer span yields
+    EXACTLY the two paren-OPENING Pattern-D claims — "3 activation chunks"
+    (widened noun) and "3 chunk files" (modifier-separated; its 220-char
+    post-noun tail needs the widened 400-char qualifier bound) — each
+    scoped to <link-prefix>/<sub>; the mid-paren "1 over-length-skip
+    sidecar" continuation does NOT extract (the count-opens-the-paren
+    anchor; exact-list assert ⇒ claim count == 2). One-sided: with >= 3
+    files under each joined sub-prefix the check PASSes with no WARN."""
+    body = "Footer: " + _I1901_FOOTER_SPAN + "\n"
+    claims = verify_task_body._gather_hf_count_claims(body)
+    repo = "superkaiba1/explore-persona-space-data"
+    assert claims == [
+        (
+            3,
+            "activation chunks",
+            repo,
+            "dataset",
+            _I1901_SHA,
+            "issue1901_wildchat/final_token_capture",
+        ),
+        (3, "chunk files", repo, "dataset", _I1901_SHA, "issue1901_wildchat/raw_completions"),
+    ]
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    entries = [
+        {"path": f"issue1901_wildchat/final_token_capture/c{i}.pt", "type": "file"}
+        for i in range(3)
+    ] + [
+        {"path": f"issue1901_wildchat/raw_completions/r{i}.jsonl", "type": "file"}
+        for i in range(4)  # 3 claimed <= 4 files: the one-sided pass for a modifier claim
+    ]
+    _stub_tree(monkeypatch, status="ok", entries=entries)
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and not r.is_warn
+
+
+def test_hf_count_widened_noun_one_sided_pattern_e(monkeypatch):
+    """T1: a widened-noun Pattern-E claim ("3 activation chunks" in the paren
+    right after the pinned link) compares ONE-SIDED — claimed <= files is a
+    clean PASS (the modifier restricts the counted class to a subset of the
+    prefix's files); claimed > files — the folder-inflation signature —
+    WARNs naming the composed modifier+noun label."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    entries4 = [{"path": f"p/f{i}.pt", "type": "file"} for i in range(4)]
+    _stub_tree(monkeypatch, status="ok", entries=entries4)
+    body = "[x](https://huggingface.co/datasets/o/r/tree/abc1234def/p) (3 activation chunks)\n"
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and not r.is_warn
+
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    entries2 = [{"path": f"p/f{i}.pt", "type": "file"} for i in range(2)]
+    _stub_tree(monkeypatch, status="ok", entries=entries2)
+    r2 = verify_task_body.check_hf_file_count_claims(body)
+    assert r2.passed and r2.is_warn
+    assert "3 activation chunks" in r2.detail and "2 file(s)" in r2.detail
+
+
+def test_hf_count_modifier_separated_and_hyphenated_pattern_e(monkeypatch):
+    """T2: a modifier-separated paren-OPENING claim ("3 chunk files ...")
+    extracts while the MID-PAREN continuation claim ("... plus 1
+    over-length-skip sidecar") does NOT (Pattern E keeps .match() — a
+    mid-paren clause count would extract as a wrongly-scoped whole-prefix
+    claim, the #1072 false-WARN class); a paren-OPENING hyphenated-modifier
+    claim extracts; the over-claim variant WARNs one-sided."""
+    url = "https://huggingface.co/datasets/o/r/tree/abc1234def/p"
+    body = f"[x]({url}) (3 chunk files plus 1 over-length-skip sidecar)\n"
+    claims = verify_task_body._gather_hf_count_claims(body)
+    assert [(c[0], c[1]) for c in claims] == [(3, "chunk files")]
+    hyph = verify_task_body._gather_hf_count_claims(f"[x]({url}) (1 over-length-skip sidecar)\n")
+    assert [(c[0], c[1]) for c in hyph] == [(1, "over-length-skip sidecar")]
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    entries2 = [{"path": f"p/f{i}.jsonl", "type": "file"} for i in range(2)]
+    _stub_tree(monkeypatch, status="ok", entries=entries2)
+    r = verify_task_body.check_hf_file_count_claims(f"[x]({url}) (5 chunk files)\n")
+    assert r.passed and r.is_warn
+    assert "5 chunk files" in r.detail and "2 file(s)" in r.detail
+
+
+def test_hf_count_modifier_claims_one_sided_bare_files_two_sided(monkeypatch):
+    """T3 precision guard: an inverted-semantics modifier claim ("2 missing
+    files") beside a 5-file tree does NOT WARN (modifier-qualified claims
+    are one-sided — at worst a real undercount goes un-WARNed, never a
+    wrong WARN); a bare "5 files" claim against a 9-file tree still WARNs
+    two-sided with the subset hedge (pre-#1936 behavior unchanged)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    entries5 = [{"path": f"p/f{i}.json", "type": "file"} for i in range(5)]
+    _stub_tree(monkeypatch, status="ok", entries=entries5)
+    body = "Data: [p, 2 missing files](https://huggingface.co/datasets/o/r/tree/abc1234def/p)\n"
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and not r.is_warn
+
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    entries9 = [{"path": f"p/f{i}.json", "type": "file"} for i in range(9)]
+    _stub_tree(monkeypatch, status="ok", entries=entries9)
+    bare = "Data: [p, 5 files](https://huggingface.co/datasets/o/r/tree/abc1234def/p)\n"
+    r2 = verify_task_body.check_hf_file_count_claims(bare)
+    assert r2.passed and r2.is_warn
+    assert "5" in r2.detail and "9 file(s)" in r2.detail
+    assert "subset of the prefix" in r2.detail
+
+
+def test_hf_count_per_namespace_lookahead_survives_modifier():
+    """T4: a modifier-qualified per-namespace count in A/B position ("891
+    json files per namespace") stays INVISIBLE to the whole-prefix patterns
+    — the narrow lookahead still declines through the modifier, and no noun
+    in the alternation can absorb "json", so there is no backtrack escape —
+    and to the per-namespace gatherer (its phrase regex is count-adjacent
+    files-only). Zero claims, vacuous behavior as today."""
+    body = (
+        "- [ns1, 891 json files per namespace]"
+        "(https://huggingface.co/datasets/o/r/tree/abc1234def/p)\n"
+    )
+    assert verify_task_body._gather_hf_count_claims(body) == []
+    assert verify_task_body._gather_hf_per_namespace_claims(body) == []
+
+
 def test_hf_count_network_error_skips(monkeypatch):
     """A transient probe failure (429) and a `not_found` BOTH degrade to an
     `unverified` note on a PASS line — never a FAIL, never a WARN (the
@@ -4422,6 +4561,25 @@ def test_hf_unpinned_probe_failure_keeps_missing_pin_warn(monkeypatch):
     r2 = verify_task_body.check_hf_unpinned_count_claims(body)
     assert r2.passed and r2.is_warn
     assert "count not confirmed at main" in r2.detail and "HTTP 429" in r2.detail
+
+
+def test_hf_unpinned_widened_noun_one_sided_check40_parity(monkeypatch):
+    """T5, check-40 parity (#1936): a SLASHLESS issue-prefixed token with a
+    widened-noun claim (`issue1901_wildchat` (3 chunks ...), unpinned)
+    extracts and compares ONE-SIDED against `main` — claimed 3 < 5 files
+    reads count-consistent (still a missing-pin WARN), where the old
+    two-sided compare would have escalated a mismatch (and the old
+    files/shards vocabulary would not have extracted the claim at all)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    entries = [{"path": f"issue1901_wildchat/c{i}.pt", "type": "file"} for i in range(5)]
+    _stub_tree(monkeypatch, status="ok", entries=entries)
+    body = "Uploaded: `issue1901_wildchat` (3 chunks, sharded) on the data repo.\n"
+    r = verify_task_body.check_hf_unpinned_count_claims(body)
+    assert r.passed and r.is_warn
+    assert "3 chunks" in r.detail
+    assert "no adjacent" in r.detail and "pinned /tree/<sha> link" in r.detail
+    assert "count consistent" in r.detail
 
 
 def test_hf_unpinned_claim_extractor_shapes():
