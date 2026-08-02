@@ -1,0 +1,254 @@
+{
+ "evil": {
+  "n_complete_3_draws": 37351,
+  "corpus_marginal_icc_1_1": 0.9686111253399273,
+  "corpus_marginal_icc_1_3": 0.9893134151994091,
+  "within_dv_quintile": [
+   {
+    "bin": 1,
+    "range": [
+     0.0,
+     0.0
+    ],
+    "n": 0,
+    "icc_1_1": null,
+    "note": "degenerate/too few (no within-bin score variance)"
+   },
+   {
+    "bin": 2,
+    "range": [
+     0.0,
+     0.0
+    ],
+    "n": 0,
+    "icc_1_1": null,
+    "note": "degenerate/too few (no within-bin score variance)"
+   },
+   {
+    "bin": 3,
+    "range": [
+     0.0,
+     0.0
+    ],
+    "n": 0,
+    "icc_1_1": null,
+    "note": "degenerate/too few (no within-bin score variance)"
+   },
+   {
+    "bin": 4,
+    "range": [
+     0.0,
+     15.0
+    ],
+    "n": 28559,
+    "icc_1_1": 0.4615303699547775,
+    "icc_1_3": 0.7199934360520782,
+    "alpha": 0.4615245684989413,
+    "within_item_sd_mean": 0.3196689441179817
+   },
+   {
+    "bin": 5,
+    "range": [
+     15.0,
+     100.0
+    ],
+    "n": 8792,
+    "icc_1_1": 0.9031907984678199,
+    "icc_1_3": 0.9655039066540743,
+    "alpha": 0.9031841677061992,
+    "within_item_sd_mean": 5.425293486809919
+   }
+  ],
+  "dv_stratified_subsample_3000": {
+   "n": 1200,
+   "per_bin_target": 600,
+   "seed": 1739,
+   "icc_1_1": 0.961577927054614,
+   "icc_1_3": 0.9868559615487577,
+   "alpha": 0.9615573849206219,
+   "note": "equal allocation across DV quintiles \u2014 the design the re-judge proposed, computed on EXISTING draws"
+  },
+  "per_rung": {
+   "hhrt": {
+    "n": 8418,
+    "icc_1_1": 0.61224297810223
+   },
+   "toxicchat": {
+    "n": 2091,
+    "icc_1_1": 0.9443322255468178
+   },
+   "train": {
+    "n": 26842,
+    "icc_1_1": 0.9665619370112953
+   }
+  }
+ },
+ "sycophancy": {
+  "n_complete_3_draws": 82464,
+  "corpus_marginal_icc_1_1": 0.867717260121023,
+  "corpus_marginal_icc_1_3": 0.9516410504802463,
+  "within_dv_quintile": [
+   {
+    "bin": 1,
+    "range": [
+     0.0,
+     14.0
+    ],
+    "n": 15715,
+    "icc_1_1": 0.38989064480881414,
+    "icc_1_3": 0.657199815083873,
+    "alpha": 0.3898805531804188,
+    "within_item_sd_mean": 3.9744482216561647
+   },
+   {
+    "bin": 2,
+    "range": [
+     14.0,
+     15.0
+    ],
+    "n": 3056,
+    "icc_1_1": -0.49997406773507597,
+    "icc_1_3": -28919.999999999884,
+    "alpha": -0.49981046648281025,
+    "within_item_sd_mean": 1.7472726849676319
+   },
+   {
+    "bin": 3,
+    "range": [
+     15.0,
+     15.0
+    ],
+    "n": 0,
+    "icc_1_1": null,
+    "note": "degenerate/too few (no within-bin score variance)"
+   },
+   {
+    "bin": 4,
+    "range": [
+     15.0,
+     25.0
+    ],
+    "n": 46041,
+    "icc_1_1": 0.12292091283349173,
+    "icc_1_3": 0.2959948292818404,
+    "alpha": 0.12291935172731139,
+    "within_item_sd_mean": 1.5005220280419946
+   },
+   {
+    "bin": 5,
+    "range": [
+     25.0,
+     95.0
+    ],
+    "n": 17652,
+    "icc_1_1": 0.7022089745034223,
+    "icc_1_3": 0.8761483935770894,
+    "alpha": 0.702201076587206,
+    "within_item_sd_mean": 6.852080180380293
+   }
+  ],
+  "dv_stratified_subsample_3000": {
+   "n": 2400,
+   "per_bin_target": 600,
+   "seed": 1739,
+   "icc_1_1": 0.8757377210656798,
+   "icc_1_3": 0.9548379472949018,
+   "alpha": 0.8757074814082337,
+   "note": "equal allocation across DV quintiles \u2014 the design the re-judge proposed, computed on EXISTING draws"
+  },
+  "per_rung": {
+   "aita": {
+    "n": 6335,
+    "icc_1_1": 0.8945190740786114
+   },
+   "train": {
+    "n": 76129,
+    "icc_1_1": 0.8653629881773343
+   }
+  }
+ },
+ "hallucination": {
+  "n_complete_3_draws": 57784,
+  "corpus_marginal_icc_1_1": 0.9553542918831345,
+  "corpus_marginal_icc_1_3": 0.9846615671641381,
+  "within_dv_quintile": [
+   {
+    "bin": 1,
+    "range": [
+     0.0,
+     73.33333333333333
+    ],
+    "n": 11505,
+    "icc_1_1": 0.8126247810010222,
+    "icc_1_3": 0.928625749829253,
+    "alpha": 0.8126159571662438,
+    "within_item_sd_mean": 7.201062364559705
+   },
+   {
+    "bin": 2,
+    "range": [
+     73.33333333333333,
+     100.0
+    ],
+    "n": 10615,
+    "icc_1_1": 0.38077585121170343,
+    "icc_1_3": 0.6484780163213967,
+    "alpha": 0.3807610420645291,
+    "within_item_sd_mean": 6.140080397062316
+   },
+   {
+    "bin": 3,
+    "range": [
+     100.0,
+     100.0
+    ],
+    "n": 0,
+    "icc_1_1": null,
+    "note": "degenerate/too few (no within-bin score variance)"
+   },
+   {
+    "bin": 4,
+    "range": [
+     100.0,
+     100.0
+    ],
+    "n": 0,
+    "icc_1_1": null,
+    "note": "degenerate/too few (no within-bin score variance)"
+   },
+   {
+    "bin": 5,
+    "range": [
+     100.0,
+     100.0
+    ],
+    "n": 35664,
+    "icc_1_1": null,
+    "note": "degenerate/too few (no within-bin score variance)"
+   }
+  ],
+  "dv_stratified_subsample_3000": {
+   "n": 1800,
+   "per_bin_target": 600,
+   "seed": 1739,
+   "icc_1_1": 0.9501804764195562,
+   "icc_1_3": 0.9828229918997922,
+   "alpha": 0.9501629345760414,
+   "note": "equal allocation across DV quintiles \u2014 the design the re-judge proposed, computed on EXISTING draws"
+  },
+  "per_rung": {
+   "nqopen": {
+    "n": 10339,
+    "icc_1_1": 0.9398659546692822
+   },
+   "simpleqa": {
+    "n": 19360,
+    "icc_1_1": 0.979054516890427
+   },
+   "train": {
+    "n": 28085,
+    "icc_1_1": 0.9260326989474819
+   }
+  }
+ }
+}
