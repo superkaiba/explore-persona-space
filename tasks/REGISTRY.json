@@ -7946,8 +7946,8 @@
     "2025": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2025",
-      "status": "proposed",
+      "path": "tasks/archived/2025",
+      "status": "archived",
       "title": "workflow-fix: add eval_results/issue_1481 cone to tests/sparse_cones.txt"
     },
     "203": {
