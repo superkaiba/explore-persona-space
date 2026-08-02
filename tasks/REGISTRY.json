@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2003,
+  "highest_id": 2004,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7781,6 +7781,13 @@
       "path": "tasks/proposed/2003",
       "status": "proposed",
       "title": "daily-fix: trigger-dense first-spawn pre-qualification by ta"
+    },
+    "2004": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2004",
+      "status": "proposed",
+      "title": "daily-fix: teammate report channel + deliverable content pro"
     },
     "201": {
       "has_clean_result": false,
