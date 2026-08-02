@@ -7883,8 +7883,8 @@
     "2017": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2017",
-      "status": "proposed",
+      "path": "tasks/planning/2017",
+      "status": "planning",
       "title": "workflow-fix: dropped-at-gate condition placement check (Takeaways + result) in verify_task_body"
     },
     "202": {
