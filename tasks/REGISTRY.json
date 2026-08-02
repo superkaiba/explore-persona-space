@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2023,
+  "highest_id": 2024,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7935,6 +7935,13 @@
       "path": "tasks/reviewing/2023",
       "status": "reviewing",
       "title": "workflow-fix: inline_lint_gate false-blocks payload on PASSING-test captured tracebacks"
+    },
+    "2024": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2024",
+      "status": "proposed",
+      "title": "workflow-fix: step9c compare \u2014 branch-untouched-file NEW failures classify ordering-suspect, not blocking NEW"
     },
     "203": {
       "has_clean_result": false,
