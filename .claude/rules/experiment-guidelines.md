@@ -104,10 +104,11 @@ Full recipe: `.claude/rules/contrastive-negatives.md`.
 
 Elicit the POSITIVE completions on-policy from the BASE model (the #612
 elicitation ladder: bare context → instruct-and-strip → minimal prefill),
-judge-filter, pre-register an 80% yield floor with equalize-down. Canned /
-templated / third-party-LLM-written completions are allowed ONLY as a
-labeled anchor/control or a recorded yield failure — never a silent
-backfill. Name the completion provenance per training-row type in the plan.
+judge-filter, pre-register an 80% yield floor with equalize-down (a
+≥ 90%-of-floor close-miss gets ONE recorded same-construct escalation
+tranche before the drop). Canned / templated / third-party-LLM-written
+completions are allowed ONLY as a labeled anchor/control or a recorded
+yield failure — never a silent backfill. Name the completion provenance per training-row type in the plan.
 Full recipe: `.claude/rules/on-policy-completions.md`.
 **Owner:** `methodology-baselines-critic`.
 
