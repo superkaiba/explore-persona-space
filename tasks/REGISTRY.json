@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2008,
+  "highest_id": 2009,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7816,6 +7816,13 @@
       "path": "tasks/proposed/2008",
       "status": "proposed",
       "title": "daily-fix: capture plans name pooling convention per vector"
+    },
+    "2009": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2009",
+      "status": "proposed",
+      "title": "daily-fix: python-pipe guard exempts ssh-quoted remote argv"
     },
     "201": {
       "has_clean_result": false,
