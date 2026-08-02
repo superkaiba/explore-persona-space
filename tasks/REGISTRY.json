@@ -7157,8 +7157,8 @@
     "1924": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1924",
-      "status": "planning",
+      "path": "tasks/approved/1924",
+      "status": "approved",
       "title": "daily-fix: Monitor quiet-wait branch for Step 6d.2 poll"
     },
     "1925": {
