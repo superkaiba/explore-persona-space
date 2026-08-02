@@ -7248,8 +7248,8 @@
     "1936": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1936",
-      "status": "approved",
+      "path": "tasks/running/1936",
+      "status": "running",
       "title": "workflow-fix: widen check-30 count-noun vocabulary (chunks/sidecars + modifier-separated)"
     },
     "1937": {
