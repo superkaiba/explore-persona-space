@@ -18,6 +18,8 @@ import contextlib
 import json
 from pathlib import Path
 
+import numpy as np
+
 from explore_persona_space.experiments.issue_825.common import (
     FIT_SEED,
     GEN_SEED,
@@ -32,8 +34,11 @@ from explore_persona_space.experiments.issue_825.common import (
 
 __all__ = [
     "ADJACENT_PAIRS",
+    "BAND_V2_COEF",
+    "BAR_V2_COEF",
     "BASE_ANCHORED_PAIRS",
     "CELLS",
+    "CELLS_V2",
     "CORPORA",
     "DELTA_ELICIT_BAND",
     "DELTA_PRACTICAL_SCALE",
@@ -51,24 +56,33 @@ __all__ = [
     "GSM8K_DATASET",
     "GSM8K_REV",
     "GSM8K_SPLIT_SIZES",
+    "HEALTH_V2_COEF",
     "HF_DATA_REPO",
     "HF_PREFIX_1336",
     "KEEP_RATE_FLOOR",
+    "LAMBDAS_23",
     "MATCHED_N",
+    "MATCHED_N_V2",
+    "MATCHED_N_V2_CORPORA",
+    "MATCHED_N_V2_SEED",
     "MAX_CONV_TOKENS",
+    "MAX_EDGE_EXTENSIONS",
     "MAX_MODEL_LEN",
     "MIN_TURN_CONTENT_TOKENS",
     "MODELS",
     "N_BOOTSTRAP",
     "N_FOLDS",
+    "N_INNER_LAMBDA_FOLDS_V2",
     "N_NULL_DRAWS",
     "PAIRS",
+    "PRACTICAL_V2_COEF",
     "PREDS_EXTRA_LAYERS",
     "PRIMARY_LADDER",
     "PROMPT_TOKEN_BUDGET",
     "ROLE_HEADER_TRUNCATE",
     "SAMPLING",
     "SMOKE_CORPORA",
+    "SMOKE_CORPORA_V2",
     "SMOKE_FROZEN_LAYERS",
     "SMOKE_MODELS",
     "SMOKE_N",
@@ -81,13 +95,18 @@ __all__ = [
     "TULU_ASSISTANT_HEADER",
     "TULU_TURN_SEP",
     "TULU_USER_HEADER",
+    "V2_CORPORA",
+    "V2_PREFIX_ARM",
     "Rendered",
     "cell_id",
     "cells_for",
+    "cells_v2_for",
     "fc_expected_layers",
     "load_qwen_recal_cal",
     "preds_layers",
     "tulu_prompt",
+    "v2_bars",
+    "v2_cell_id",
 ]
 
 
@@ -270,8 +289,17 @@ def cells_for(
     return out
 
 
+def _assert_registry(cells: list[dict], expected: int, name: str) -> None:
+    """Registry-size + unique-id pin, parametrized per registry (plan §12
+    assumption-12 must-fix: the v1 registry keeps its assert while CELLS_V2
+    below carries its own expected count)."""
+    assert len(cells) == expected, f"{name} cell registry drifted: {len(cells)} != {expected}"
+    ids = [c["cell_id"] for c in cells]
+    assert len(set(ids)) == len(ids), f"{name} cell registry has duplicate cell ids"
+
+
 CELLS = cells_for()
-assert len(CELLS) == 20, f"cell registry drifted: {len(CELLS)} != 20"
+_assert_registry(CELLS, 20, "v1")
 
 # Smoke subset (PASS_UNIFIED: smoke IS the sweep with this subset). Three
 # models so the align/decision phases see BOTH headline base-anchored pairs
@@ -328,6 +356,141 @@ DELTA_PRACTICAL_SCALE = 0.05
 # Matched-n subsample size for cross-corpus comparability (the GSM8K test
 # split size; #825 matched-n convention).
 MATCHED_N = 1319
+
+# ---------------------------------------------------------------------------
+# v2 registries + estimator constants (plan v13, same-issue follow-up round
+# `full-corpora-stage-evals-metric-ladder`)
+# ---------------------------------------------------------------------------
+# v2 corpus registry (plan §4 corpora table). Canonical home is HERE so the
+# v2 cell registry below derives formats without importing scripts/;
+# `scripts/issue1336_stage_corpora.py` re-exports it for its established
+# consumers, and that module's `load_v2_corpus_rows` / `read_corpus_rows_local`
+# stay the ONLY corpus readers (sharded corpora: manifest + shards on HF).
+V2_CORPORA: dict[str, dict] = {
+    "lmsys23k": {"formats": ("chat", "naturalistic"), "n_target": 23_000},
+    "gsm8k_train_full": {"formats": ("chat",), "n_target": 7473},
+    "gsm8k_test1319": {"formats": ("chat",), "n_target": 1319},
+    "math7500": {"formats": ("chat",), "n_target": 7500},
+    "if11k": {"formats": ("chat",), "n_target": 11_000},
+    "uf11k": {"formats": ("chat",), "n_target": 11_000},
+    "sft11k": {"formats": ("chat",), "n_target": 11_000},
+}
+
+# Naturalistic prefix-arm cells (plan §4 divergence 7: the prefix slot is NOT
+# row-constant under the naturalistic render — measured max pairwise cosine
+# distance 0.63-0.76 — so the prefix arm is FIT there, closing the parent
+# caveat). Same turnstore bundle as the context arm; only X = prefix slot.
+V2_PREFIX_ARM = (("lmsys23k", "naturalistic"),)
+
+# v2 estimator constants (plan §11):
+# - LAMBDAS_23: Source #779 LAMBDAS_N1M (issue779_ffc_n1m_fits.py:112) — the
+#   Qwen-line standard at n > d; spans both observed v8 edge regimes (floor
+#   1e-2 hits AND ceiling 1e4 hits) with >= 1 decade margin each side.
+# - N_INNER_LAMBDA_FOLDS_V2: n_inner 4 -> 2 (cost-grounded — halves inner
+#   eighs; strictly upgrades #779's single 75/25 val split).
+# - MAX_EDGE_EXTENSIONS: adaptive edge rule — <= 2 one-decade extensions per
+#   side, then the `estimator-limited: lambda-edge` label (user directive;
+#   operationalizes the v8 lambda-audit record).
+LAMBDAS_23 = np.logspace(-3, 8, 23)
+N_INNER_LAMBDA_FOLDS_V2 = 2
+MAX_EDGE_EXTENSIONS = 2
+
+# Matched-n companions (plan §4 Phase FIT): headline-layer-set-only refits at
+# n=7,350 (seed-1336 subsample) for the four above-size corpora, for
+# cross-corpus tier-profile comparisons.
+MATCHED_N_V2 = 7350
+MATCHED_N_V2_SEED = 1336
+MATCHED_N_V2_CORPORA = ("lmsys23k", "if11k", "uf11k", "sft11k")
+
+# v2 smoke corpus subset (PASS_UNIFIED: the v2 smoke IS the v2 sweep at
+# SMOKE_MODELS x this subset — both lmsys23k formats + the prefix arm, so
+# every v2 arm class gets a smoke cell).
+SMOKE_CORPORA_V2 = ("lmsys23k",)
+
+
+def v2_cell_id(model: str, fmt: str, corpus: str, x_slot: str = "context") -> str:
+    """v2 cell id / output stem: context arm keeps ``cell_id``; prefix-arm
+    cells get the ``_xprefix`` suffix (same turnstore stem, distinct outputs)."""
+    assert x_slot in ("context", "prefix"), f"unknown x_slot {x_slot!r}"
+    base = cell_id(model, fmt, corpus)
+    return base if x_slot == "context" else f"{base}_xprefix"
+
+
+def cells_v2_for(
+    models: tuple[str, ...] | list[str] | None = None,
+    corpora: tuple[str, ...] | list[str] | None = None,
+) -> list[dict]:
+    """v2 cell dicts for a model/corpus subset (the smoke/production seam).
+
+    Full grid: 40 context-arm cells (5 models x 8 corpus-format surfaces) +
+    5 naturalistic prefix-arm cells. Every v2 phase derives its work list
+    from THIS function so a smoke subset threads through the whole
+    dispatcher (PASS_UNIFIED contract). Each dict carries
+    ``x_slot: "context" | "prefix"``.
+    """
+    models = tuple(models) if models is not None else tuple(MODELS)
+    corpora = tuple(corpora) if corpora is not None else tuple(V2_CORPORA)
+    for m in models:
+        assert m in MODELS, f"unknown model slug {m!r}"
+    for c in corpora:
+        assert c in V2_CORPORA, f"unknown v2 corpus {c!r}"
+    out = []
+    for m in models:
+        for c in corpora:
+            for f in V2_CORPORA[c]["formats"]:
+                out.append(
+                    {
+                        "cell_id": v2_cell_id(m, f, c),
+                        "model": m,
+                        "hf_id": MODELS[m]["hf_id"],
+                        "format": f,
+                        "corpus": c,
+                        "x_slot": "context",
+                    }
+                )
+    for m in models:
+        for c, f in V2_PREFIX_ARM:
+            if c in corpora:
+                out.append(
+                    {
+                        "cell_id": v2_cell_id(m, f, c, "prefix"),
+                        "model": m,
+                        "hf_id": MODELS[m]["hf_id"],
+                        "format": f,
+                        "corpus": c,
+                        "x_slot": "prefix",
+                    }
+                )
+    return out
+
+
+CELLS_V2 = cells_v2_for()
+_assert_registry(CELLS_V2, 45, "v2")
+
+# G0'(c) exchange-rate-scaled v2 bands/bars (plan §7 / §3 / §11): ex_v2 =
+# S_qwen_v2 / 0.6731 (the committed Qwen anchor, G0["committed_r2"]),
+# computed BEFORE any Llama verdict read. The kill bar is EXACTLY
+# bar_v2 = 0.20 * ex_v2 (the §7 form; §6's `0.2012*ex_v2/1.0062` rendering
+# is the same number). Band / practical / health coefficients per §3 / §11.
+BAR_V2_COEF = 0.20
+BAND_V2_COEF = 0.0201  # §3: U = C_v2 - 0.0201*ex_v2, L = C_v2 + 0.0201*ex_v2
+PRACTICAL_V2_COEF = 0.0503
+HEALTH_V2_COEF = 0.05  # health gate H: |R2_recal - R2_raw| <= 0.05*ex_v2
+
+
+def v2_bars(s_qwen_v2: float) -> dict:
+    """Exchange-rate-scaled v2 quantities from the G0'(c) Qwen v2-recipe read."""
+    anchor = float(G0["committed_r2"])
+    ex_v2 = float(s_qwen_v2) / anchor
+    return {
+        "s_qwen_v2": float(s_qwen_v2),
+        "committed_anchor": anchor,
+        "ex_v2": ex_v2,
+        "bar_v2": BAR_V2_COEF * ex_v2,
+        "elicit_band_v2": BAND_V2_COEF * ex_v2,
+        "practical_scale_v2": PRACTICAL_V2_COEF * ex_v2,
+        "health_gate_v2": HEALTH_V2_COEF * ex_v2,
+    }
 
 
 def load_qwen_recal_cal(out_dir: str | Path) -> dict:

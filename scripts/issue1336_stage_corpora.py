@@ -149,17 +149,12 @@ SMOKE_SFT_QUOTAS = {
     "ai2-adapt-dev/evol_codealpaca_heval_decontaminated": 2,
 }
 
-# v2 corpus registry (consumed by issue1336_gen_answers for prep/format
-# resolution; Unit B folds this into the dispatcher cell registry).
-V2_CORPORA: dict[str, dict] = {
-    "lmsys23k": {"formats": ("chat", "naturalistic"), "n_target": 23_000},
-    "gsm8k_train_full": {"formats": ("chat",), "n_target": 7473},
-    "gsm8k_test1319": {"formats": ("chat",), "n_target": 1319},
-    "math7500": {"formats": ("chat",), "n_target": 7500},
-    "if11k": {"formats": ("chat",), "n_target": 11_000},
-    "uf11k": {"formats": ("chat",), "n_target": 11_000},
-    "sft11k": {"formats": ("chat",), "n_target": 11_000},
-}
+# v2 corpus registry — canonical copy now lives in the shared cell-registry
+# module (experiments/issue_1336/common.py; Unit B folded it there so
+# CELLS_V2 derives formats without importing scripts/). Re-exported here for
+# the established `from issue1336_stage_corpora import V2_CORPORA` consumers
+# (issue1336_gen_answers prep/format resolution).
+V2_CORPORA: dict[str, dict] = cm.V2_CORPORA
 # Build order: cheap pinned corpora first (checkpoint-per-phase — each
 # persists the moment it completes), the long lmsys stream last.
 BUILD_ORDER = (

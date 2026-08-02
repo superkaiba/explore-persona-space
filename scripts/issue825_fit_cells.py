@@ -106,6 +106,21 @@ LAMBDA_SELECTION: str = "inner-group-cv"
 # deliberately-unguarded audit arms only — restore in a finally block).
 LEGACY_UNGUARDED_GCV: bool = False
 
+# #1336 full-corpora round: primal (d-space) fold path — the artifact-reuse
+# check-(i) SOURCE-module fix for the n_train > d regime, where the Gram
+# route's n x n eigh is ruinously mis-regimed (#779 n1m precedent: streaming
+# X^T X, ONE (d, d) eigh, "numerically identical to the n50k primal").
+# The switch is AUTOMATIC at n_train > d and BYTE-PRESERVING at n_train <= d
+# (existing callers unchanged). FORCE_GRAM = True pins the legacy Gram route
+# at any n/d (module-global patch style, like FROZEN_LAYERS) — used by the
+# G0' legacy-parity leg and the Gram-vs-primal equality gate G0'(b).
+FORCE_GRAM: bool = False
+
+# Row-chunk for the streaming fp64 X^T X accumulation + the Xn @ U pass in
+# the primal route: one chunk at this round's realized n (<= ~15k rows);
+# genuinely streaming at #779-scale n.
+PRIMAL_CHUNK_ROWS = int(os.environ.get("EPM_FIT825_PRIMAL_CHUNK_ROWS", "65536"))
+
 # Compact selector telemetry (mirrors ma.SELECTOR_LOG; ON by default as of
 # #1887): every serial/batched lambda selection counts into
 # {selector: {lambda_str: count}}. Set to None to disable.
@@ -288,15 +303,85 @@ def _eigh_robust(G: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         return w.to(G.device), V.to(G.device)
 
 
+def _primal_eig(X_train, dev: torch.device) -> dict:
+    """Y-independent primal (d-space) eigenpieces: standardize on train,
+    stream C = Xn^T Xn in fp64 row chunks, ONE (d, d) eigh, TU = Xn @ U.
+
+    Returns {"xmu", "xsd", "s", "U", "TU"} with near-null components DROPPED
+    (s <= s_max * 1e-12; their TU columns are numerically zero, and keeping
+    them would amplify fp noise through the 1/sqrt(s) whitening below).
+    Accepts a numpy array or a device tensor; chunks convert fp64 on `dev`.
+    The standardization matches the Gram route exactly: train-column mean,
+    UNBIASED std (n-1 denominator) + 1e-9.
+    """
+    n, d = int(X_train.shape[0]), int(X_train.shape[1])
+    step = max(1, PRIMAL_CHUNK_ROWS)
+    ssum = torch.zeros(d, dtype=torch.float64, device=dev)
+    for s0 in range(0, n, step):
+        ssum += _as_f64_on(X_train[s0 : s0 + step], dev).sum(0)
+    xmu = ssum / n
+    Cc = torch.zeros((d, d), dtype=torch.float64, device=dev)
+    for s0 in range(0, n, step):
+        c = _as_f64_on(X_train[s0 : s0 + step], dev) - xmu
+        Cc += c.T @ c
+    xsd = torch.sqrt(torch.clamp(torch.diagonal(Cc), min=0.0) / max(n - 1, 1)) + 1e-9
+    Cn = Cc / (xsd.unsqueeze(1) * xsd.unsqueeze(0))
+    s, U = _eigh_robust(Cn)
+    s = torch.clamp(s, min=0.0)
+    smax = float(s.max()) if s.numel() else 0.0
+    keep = s > smax * 1e-12
+    s, U = s[keep], U[:, keep]
+    TU = torch.empty((n, int(s.shape[0])), dtype=torch.float64, device=dev)
+    for s0 in range(0, n, step):
+        c = (_as_f64_on(X_train[s0 : s0 + step], dev) - xmu) / xsd
+        TU[s0 : s0 + step] = c @ U
+    return {"xmu": xmu, "xsd": xsd, "s": s, "U": U, "TU": TU}
+
+
+def _primal_cache_pieces(pe: dict, X_eval, dev: torch.device) -> tuple[torch.Tensor, torch.Tensor]:
+    """(Q, PE) from a `_primal_eig` result — the primal drop-ins for (V, KevV).
+
+    Q = Xn_tr @ U / sqrt(s) has orthonormal columns (the hat-matrix
+    eigenbasis: H = Q diag(s/(s+lam)) Q^T); PE = Xn_ev @ U * sqrt(s) is the
+    primal analogue of Kev @ V. With cache fields {w: s, V: Q, KevV/P: PE}
+    the ENTIRE downstream Gram-cache algebra is unchanged and exact:
+    pred = (PE * 1/(s+lam)) @ (Q^T Yc) + ymu; GCV dof = sum(s/(s+lam)) (the
+    nonzero spectra of X^T X and X X^T coincide); train RSS(lam) =
+    tot - sum((2f - f^2) * (Q^T Yc)^2) with f = s/(s+lam). Equality with the
+    Gram route at matched (lambda, fold) is pinned by
+    tests/test_issue825_primal_fold_path.py (the plan G0'(b) gate form).
+    """
+    sqrt_s = torch.sqrt(pe["s"])
+    Q = pe["TU"] / sqrt_s
+    Xev_n = (_as_f64_on(X_eval, dev) - pe["xmu"]) / pe["xsd"]
+    PE = (Xev_n @ pe["U"]) * sqrt_s
+    return Q, PE
+
+
 def _prep_fold(X_train: np.ndarray, X_eval: np.ndarray) -> dict:
-    """Compute the Y-independent pieces of the Gram-space ridge for one fold.
+    """Compute the Y-independent pieces of the ridge for one fold.
 
     Returns a cache dict reused across the observed fit and every permuted-Y
-    null draw (the eigh(G) is the expensive step and depends only on X).
-    Tensors live on _fit_device(); peak VRAM is one fold-layer cache (~300 MB
-    fp64 at n=5000), built and discarded inside the sweep loop.
+    null draw (the eigendecomposition is the expensive step and depends only
+    on X). Two regimes, IDENTICAL cache field contract (consumers unchanged):
+
+    - n_train <= d (or FORCE_GRAM): the legacy Gram route — n x n eigh —
+      byte-preserved.
+    - n_train > d (#1336 source fix): the primal (d-space) route — streamed
+      fp64 C = Xn^T Xn, ONE (d, d) eigh — numerically identical at matched
+      (lambda, fold) (assumption 9: a mathematical identity; gate G0'(b)).
+      Cache memory is O(n_tr x k + n_ev x k) fp64 with k <= d.
+
+    Tensors live on _fit_device(); peak VRAM is one fold-layer cache, built
+    and discarded inside the sweep loop.
     """
     dev = _fit_device()
+    n_tr, d = int(X_train.shape[0]), int(X_train.shape[1])
+    if not FORCE_GRAM and n_tr > d:
+        pe = _primal_eig(X_train, dev)
+        Q, PE = _primal_cache_pieces(pe, X_eval, dev)
+        assert Q.shape[0] == n_tr and PE.shape[0] == int(X_eval.shape[0]), (Q.shape, PE.shape)
+        return {"w": pe["s"], "V": Q, "KevV": PE, "ntr": n_tr, "d": d, "route": "primal"}
     Xtr = _as_f64_on(X_train, dev)
     Xev = _as_f64_on(X_eval, dev)
     xmu = Xtr.mean(0)
@@ -310,7 +395,7 @@ def _prep_fold(X_train: np.ndarray, X_eval: np.ndarray) -> dict:
     KevV = Kev @ V
     # "d" (#1887): the ambient feature dimension, consumed by the pure-GCV
     # n_train < d refusal guard + the degeneracy tripwire. Pure addition.
-    return {"w": w, "V": V, "KevV": KevV, "ntr": int(Xtr.shape[0]), "d": int(Xtr.shape[1])}
+    return {"w": w, "V": V, "KevV": KevV, "ntr": n_tr, "d": d, "route": "gram"}
 
 
 def _train_pca_basis(X_train: np.ndarray, k: int) -> tuple[np.ndarray, np.ndarray]:
@@ -349,6 +434,11 @@ def _prep_inner_lambda(
     when fewer than 2 usable inner folds exist (caller falls back to GCV with
     a loud warning). fi_idx/va_idx are POSITIONS within the outer-train block,
     so the batched null path's positionally-permuted Y slices line up.
+
+    Inner folds with n_fi > d take the primal (d-space) route (#1336, same
+    regime switch + identical field contract as ``_prep_fold``): ONE (d, d)
+    eigh per inner fold with V := Q, P := (Xv_n U) sqrt(s), M := P^T P —
+    the RSS(lambda) reduced form is unchanged and exact.
     """
     groups = np.asarray(train_groups)
     uniq = np.unique(groups)
@@ -368,6 +458,16 @@ def _prep_inner_lambda(
         va_idx = torch.as_tensor(np.flatnonzero(va), dtype=torch.long, device=dev)
         Xf = Xtr_all.index_select(0, fi_idx)
         Xv = Xtr_all.index_select(0, va_idx)
+        if not FORCE_GRAM and int(Xf.shape[0]) > int(Xf.shape[1]):
+            # Primal (d-space) inner route (#1336): same regime switch as
+            # _prep_fold; the inner-CV RSS reduced form is generic in the
+            # eigen-axis, so only the cache CONSTRUCTION changes.
+            pe = _primal_eig(Xf, dev)
+            Q, PE = _primal_cache_pieces(pe, Xv, dev)
+            caches.append(
+                {"w": pe["s"], "V": Q, "P": PE, "M": PE.T @ PE, "fi_idx": fi_idx, "va_idx": va_idx}
+            )
+            continue
         xmu = Xf.mean(0)
         xsd = Xf.std(0) + 1e-9
         Xf_n = (Xf - xmu) / xsd
@@ -937,6 +1037,10 @@ def heldout_r2_sweep(
             if lam_obs is not None
             else []
         ),
+        # #1336: the tripwire's edge predicate must read the REALIZED grid —
+        # a caller-supplied grid otherwise gets judged against the module
+        # LAMBDAS edges. None keeps the default byte-for-byte.
+        grid=(None if lambdas is None else np.asarray(lambdas, dtype=np.float64)),
     )
     return {
         "r2_obs": r2_obs,

@@ -236,6 +236,24 @@ def cmd_stores(args) -> None:
         _write_store(out_dir, cell["cell_id"], n=40, layers=4, dim=32, seed=100 + k)
 
 
+def cmd_stores_v2(args) -> None:
+    """v2 smoke-cell noise stores (Unit B; plan v13).
+
+    One store per CONTEXT-arm smoke cell (cm.cells_v2_for over SMOKE_MODELS x
+    SMOKE_CORPORA_V2); the prefix-arm `*_xprefix` cells read the SAME bundle
+    (only X's slot index differs), so no extra stems. n=60 rows at dim=16
+    puts fold-train (~48) ABOVE d, so the fit smoke exercises the PRIMAL
+    (d-space) fold path; noise Y drives lambda selection to the grid's high
+    edge, so the adaptive edge rule's extension loop + cap + label are
+    exercised too.
+    """
+    out_dir = Path(args.turnstore_dir)
+    cells = cm.cells_v2_for(cm.SMOKE_MODELS, cm.SMOKE_CORPORA_V2)
+    stems = sorted({c["cell_id"] for c in cells if c["x_slot"] == "context"})
+    for k, stem in enumerate(stems):
+        _write_store(out_dir, stem, n=60, layers=4, dim=16, seed=200 + k)
+
+
 # ---------------------------------------------------------------------------
 # g0-fixture — calibrated so the gate's PASS verdict is exercisable on CPU
 # ---------------------------------------------------------------------------
@@ -511,6 +529,8 @@ def main() -> None:
     sub.add_parser("gen")
     p = sub.add_parser("stores")
     p.add_argument("--turnstore-dir", default="data/issue_1336/turnstore_smoke")
+    p = sub.add_parser("stores-v2")
+    p.add_argument("--turnstore-dir", default="data/issue_1336/turnstore_v2_smoke")
     p = sub.add_parser("g0-fixture")
     p.add_argument("--out", required=True)
     p = sub.add_parser("recal-cal")
@@ -528,6 +548,7 @@ def main() -> None:
         "tiny-model": cmd_tiny_model,
         "gen": cmd_gen,
         "stores": cmd_stores,
+        "stores-v2": cmd_stores_v2,
         "g0-fixture": cmd_g0_fixture,
         "recal-cal": cmd_recal_cal,
         "diag": cmd_diag,

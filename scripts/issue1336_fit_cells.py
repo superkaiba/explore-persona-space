@@ -30,6 +30,19 @@ Modes (one per invocation):
         bar = persisted bar_r, marginal = 0.3 x the same exchange rate) from
         the After-RLVR lmsys5k-chat cell JSON (+ naturalistic when the chat
         read is marginal/below). Exit 0 pass / 3 KILL / 4 need-nat.
+
+v2 mode (plan v13, `full-corpora-stage-evals-metric-ladder` round): pass
+``--v2`` with ``--cells``. Default-preserving: v1 invocations are unchanged.
+Under --v2: cells resolve against the CELLS_V2 registry (incl. the
+``*_xprefix`` naturalistic prefix-arm cells, x_slot from the registry or
+``--x-slot``); the sweep runs on the 23-point grid cm.LAMBDAS_23 under the
+adaptive edge rule (<=2 one-decade extensions/side, whole-cell
+selection-symmetric re-runs, `estimator-limited: lambda-edge` label);
+``fc.N_INNER_LAMBDA_FOLDS`` is patched to 2 (module-global patch style);
+outputs land under ``cells_v2/`` with preds staged to
+``data/issue_1336/preds_v2`` (manifest ``preds_manifest_v2.json``);
+``--matched-n`` companions become persist-layer-subset refits at n=7,350
+(seed-1336 subsample) on the four above-size corpora (plan §4 Phase FIT).
 """
 
 from __future__ import annotations
@@ -58,7 +71,10 @@ import torch  # noqa: E402
 from explore_persona_space.experiments.issue_1336 import common as cm  # noqa: E402
 from explore_persona_space.experiments.issue_1336 import recal as rc  # noqa: E402
 
-CELL_BY_ID = {c["cell_id"]: c for c in cm.CELLS}
+# Merged v1 + v2 registry lookup: ids are disjoint except the 5 shared
+# gsm8k_test1319 cells (fully-reused wave-1 cells — the v2 dict is the same
+# cell plus the x_slot field, so v2-wins merge order is behavior-identical).
+CELL_BY_ID = {c["cell_id"]: c for c in [*cm.CELLS, *cm.CELLS_V2]}
 
 
 def parse_args() -> argparse.Namespace:
@@ -80,7 +96,30 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument(
         "--matched-n", action="store_true", help="also refit at the matched-n subsample"
     )
-    ap.add_argument("--matched-n-size", type=int, default=cm.MATCHED_N)
+    ap.add_argument(
+        "--matched-n-size",
+        type=int,
+        default=None,
+        help="subsample size (default: cm.MATCHED_N; under --v2: cm.MATCHED_N_V2)",
+    )
+    ap.add_argument(
+        "--matched-n-seed",
+        type=int,
+        default=None,
+        help="subsample seed (default: --seed; under --v2: cm.MATCHED_N_V2_SEED)",
+    )
+    ap.add_argument(
+        "--v2",
+        action="store_true",
+        help="v2 full-corpora recipe: CELLS_V2 registry, 23-pt grid + adaptive "
+        "edge rule, n_inner=2, cells_v2/ outputs, preds_v2 staging",
+    )
+    ap.add_argument(
+        "--x-slot",
+        choices=("context", "prefix"),
+        default=None,
+        help="X-slot override (default: the cell registry's x_slot, else context)",
+    )
     ap.add_argument("--smoke", action="store_true")
     return ap.parse_args()
 
@@ -238,8 +277,13 @@ def _bundle_n_layers(bundle: dict) -> int:
     return int(np.asarray(bundle["arrays"]["slots"]).shape[2])
 
 
-def _cell_xy_1336(bundle: dict, expected_layers: int) -> dict:
-    """(X, Y, conv_ids, nll) for the context arm: a1-header slot -> a1 profile.
+def _cell_xy_1336(bundle: dict, expected_layers: int, x_slot: str = "context") -> dict:
+    """(X, Y, conv_ids, nll) for one fit arm of a bundle.
+
+    ``x_slot="context"`` (default, byte-preserving): X = a1-header slot
+    (index 1) — the end-of-context activation. ``x_slot="prefix"``: X =
+    prefix-header slot (index 0) — the naturalistic prefix-arm cells (plan
+    v13 §4 divergence 7). Y is the a1 answer profile either way.
 
     The #1336 extractor writes slots ordered by position (prefix=0, a1=1) and
     turns by span start (u1=0, a1=1) — asserted here against the bundle shape.
@@ -251,8 +295,9 @@ def _cell_xy_1336(bundle: dict, expected_layers: int) -> dict:
     arrays = bundle["arrays"]
     assert arrays["slots"].shape[1] == 2, f"n_slots {arrays['slots'].shape[1]} != 2"
     assert arrays["profiles"].shape[1] == 2, f"n_turns {arrays['profiles'].shape[1]} != 2"
+    si = {"context": 1, "prefix": 0}[x_slot]
     with cm.fc_expected_layers(fc, expected_layers):
-        return fc._cell_xy(bundle, {"slot_index": 1, "target_turn_index": 1})
+        return fc._cell_xy(bundle, {"slot_index": si, "target_turn_index": 1})
 
 
 def _prefix_degeneracy(bundle: dict, frozen_layers: tuple[int, ...]) -> dict:
@@ -321,31 +366,146 @@ def _recal_block(
     }
 
 
-def _lambda_audit(sweep: dict, frozen_layers: tuple[int, ...]) -> dict:
-    """Selected-lambda audit (plan v9 route 1 fix list): histogram of the
-    observed-fit GCV selections over the COMMITTED grid (the v7-R1 widened
-    grid is deliberately dropped — v1 A_v = 0.000), edge counts, per-frozen-
+def _lambda_audit(
+    sweep: dict,
+    frozen_layers: tuple[int, ...],
+    grid: np.ndarray | list[float] | None = None,
+) -> dict:
+    """Selected-lambda audit: histogram of the observed-fit selections over
+    the REALIZED grid, edge counts + fractions, within-one-grid-step counts
+    + fractions (plan v13 §4 per-cell edge-fraction reporting), per-frozen-
     layer rows, and the full (layer x fold) matrix (E1 lambda-join shape).
+
+    ``grid=None`` (default, byte-preserving) audits against the module
+    COMMITTED grid ``fc.LAMBDAS``; the v2 path passes the realized (possibly
+    edge-extended) grid — the plan §10 named must-fix for the L332 hardcode.
     """
     lam = sweep.get("gcv_lambda")
     assert lam is not None, "lambda audit requires heldout_r2_sweep(collect_lambdas=True)"
-    grid = [float(v) for v in fc.LAMBDAS]
+    grid = [float(v) for v in (fc.LAMBDAS if grid is None else np.asarray(grid, dtype=np.float64))]
     lamf = np.asarray(lam, dtype=np.float64)
     finite = lamf[np.isfinite(lamf)]
     matrix = [[None if not np.isfinite(v) else float(v) for v in row] for row in lamf]
+    n_sel = int(finite.size)
+    n_low = int(np.sum(finite == grid[0]))
+    n_high = int(np.sum(finite == grid[-1]))
+    # "Within one step" INCLUDES the exact-edge selections (min(selected) <=
+    # grid[1] — the #1887 tripwire arm-(a) convention).
+    n_low1 = int(np.sum(finite <= grid[1])) if len(grid) > 1 else n_low
+    n_high1 = int(np.sum(finite >= grid[-2])) if len(grid) > 1 else n_high
     return {
         "grid": grid,
         "selected_hist": {f"{g:g}": int(np.sum(finite == g)) for g in grid},
-        "n_selected": int(finite.size),
-        "n_at_low_edge": int(np.sum(finite == grid[0])),
-        "n_at_high_edge": int(np.sum(finite == grid[-1])),
+        "n_selected": n_sel,
+        "n_at_low_edge": n_low,
+        "n_at_high_edge": n_high,
+        "frac_at_low_edge": (n_low / n_sel) if n_sel else None,
+        "frac_at_high_edge": (n_high / n_sel) if n_sel else None,
+        "n_within_one_step_low": n_low1,
+        "n_within_one_step_high": n_high1,
+        "frac_within_one_step_low": (n_low1 / n_sel) if n_sel else None,
+        "frac_within_one_step_high": (n_high1 / n_sel) if n_sel else None,
         "frozen_layer_rows": {str(li): matrix[li] for li in frozen_layers if li < lamf.shape[0]},
         "gcv_lambda_layer_x_fold": matrix,
     }
 
 
-def _persist_preds(preds_dir: Path, cell_id: str, sweep: dict, conv_ids, tag: str = "") -> None:
-    """fp16 held-out prediction matrices + manifest (round-5 preds pattern)."""
+def _edge_extend_grid(grid: np.ndarray, low: bool, high: bool) -> np.ndarray:
+    """One-DECADE extension (2 points, half-decade spacing preserved) on each
+    flagged side of a strictly-ascending log-spaced grid (plan §4 edge rule)."""
+    grid = np.asarray(grid, dtype=np.float64)
+    lg0, lg1 = float(np.log10(grid[0])), float(np.log10(grid[-1]))
+    pre = np.power(10.0, [lg0 - 1.0, lg0 - 0.5]) if low else np.empty(0)
+    post = np.power(10.0, [lg1 + 0.5, lg1 + 1.0]) if high else np.empty(0)
+    out = np.concatenate([pre, grid, post])
+    fc._validate_lambda_grid(out)
+    return out
+
+
+def _run_sweep_edge(
+    X: np.ndarray,
+    Y: np.ndarray,
+    conv_ids: np.ndarray,
+    *,
+    base_grid: np.ndarray | None,
+    sweep_kwargs: dict,
+    sweep_fn=None,
+) -> tuple[dict, dict | None, np.ndarray | None]:
+    """Adaptive edge rule around one full-cell sweep (plan v13 §4 Phase FIT).
+
+    ``base_grid=None`` runs exactly ONE sweep on the module default grid and
+    returns ``(sweep, None, None)`` — the byte-identical v1 path. With a
+    grid: after each sweep, if ANY observed (layer, fold) selection sits AT
+    the grid min (max), extend that side one decade (2 points, half-decade
+    spacing) and RE-RUN the FULL cell — observed + every null draw
+    (selection stays symmetric: the ``lambdas=`` grid threads into the null
+    scans inside ``heldout_r2_sweep``). At most ``cm.MAX_EDGE_EXTENSIONS``
+    extensions per side; a cell still at an edge afterwards is labeled
+    ``estimator-limited: lambda-edge`` in the returned edge block.
+    """
+    sweep_fn = sweep_fn or fc.heldout_r2_sweep
+    if base_grid is None:
+        return sweep_fn(X, Y, conv_ids, **sweep_kwargs), None, None
+    base_grid = np.asarray(base_grid, dtype=np.float64)
+    grid = base_grid
+    ext_low = ext_high = 0
+    history: list[dict] = []
+    while True:
+        sweep = sweep_fn(X, Y, conv_ids, lambdas=grid, **sweep_kwargs)
+        lam = np.asarray(sweep["gcv_lambda"], dtype=np.float64)
+        finite = lam[np.isfinite(lam)]
+        n_low = int(np.sum(finite == grid[0]))
+        n_high = int(np.sum(finite == grid[-1]))
+        history.append(
+            {
+                "grid_min": float(grid[0]),
+                "grid_max": float(grid[-1]),
+                "grid_len": int(len(grid)),
+                "n_at_low_edge": n_low,
+                "n_at_high_edge": n_high,
+            }
+        )
+        want_low = n_low > 0 and ext_low < cm.MAX_EDGE_EXTENSIONS
+        want_high = n_high > 0 and ext_high < cm.MAX_EDGE_EXTENSIONS
+        if not (want_low or want_high):
+            limited = bool(n_low or n_high)
+            edge_block = {
+                "rule": (
+                    "one-decade (2-pt half-decade) extension per flagged side; "
+                    "full-cell selection-symmetric re-run; <=2 extensions/side"
+                ),
+                "base_grid_min": float(base_grid[0]),
+                "base_grid_max": float(base_grid[-1]),
+                "realized_grid": [float(v) for v in grid],
+                "extensions_low": ext_low,
+                "extensions_high": ext_high,
+                "estimator_limited": "lambda-edge" if limited else None,
+                "history": history,
+            }
+            return sweep, edge_block, grid
+        ext_low += int(want_low)
+        ext_high += int(want_high)
+        grid = _edge_extend_grid(grid, want_low, want_high)
+        print(
+            f"[fit1336] edge rule: extend(low={want_low}, high={want_high}) -> "
+            f"[{grid[0]:g}, {grid[-1]:g}] (ext {ext_low}/{ext_high})",
+            flush=True,
+        )
+
+
+def _persist_preds(
+    preds_dir: Path,
+    cell_id: str,
+    sweep: dict,
+    conv_ids,
+    tag: str = "",
+    manifest_name: str = "preds_manifest.json",
+) -> None:
+    """fp16 held-out prediction matrices + manifest (round-5 preds pattern).
+
+    ``manifest_name`` default preserves the v1 manifest; the v2 path writes
+    ``preds_manifest_v2.json`` (plan §3 row-coverage contract).
+    """
     preds_dir.mkdir(parents=True, exist_ok=True)
     fname = f"preds_{cell_id}{tag}.npz"
     arrays = {f"preds_l{li}": p.astype(np.float16) for li, p in sweep["preds_frozen"].items()}
@@ -355,7 +515,7 @@ def _persist_preds(preds_dir: Path, cell_id: str, sweep: dict, conv_ids, tag: st
     path = preds_dir / fname
     np.savez(path, **arrays)  # plain savez: client compression OFF for Xet (#813)
     sha = hashlib.sha256(path.read_bytes()).hexdigest()
-    manifest_path = preds_dir / "preds_manifest.json"
+    manifest_path = preds_dir / manifest_name
     manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
     manifest[fname] = {
         "sha256": sha,
@@ -380,28 +540,43 @@ def run_one_cell(
     matched_n: int | None,
     expected_layers: int | None,
     qwen_cal: dict,
+    x_slot: str = "context",
+    lambda_grid: np.ndarray | None = None,
+    v2: bool = False,
+    matched_n_seed: int | None = None,
 ) -> dict:
+    """One cell's full fit battery. All new kwargs are default-preserving:
+    the v1 call shape (no ``v2``/``lambda_grid``/``x_slot``) is byte-identical
+    to the committed behavior. Under ``v2``: the adaptive edge rule wraps the
+    sweep on ``lambda_grid``, outputs land under ``cells_v2/``, the manifest
+    is ``preds_manifest_v2.json``, and matched-n companions refit the
+    persist-layer subset only at the seed-1336 subsample (plan v13 §4)."""
     cell_id = cell["cell_id"]
     bundle = fc._load_bundle_any(ts_dir, cell["model"], cell["format"], cell["corpus"])
     exp = expected_layers if expected_layers is not None else _bundle_n_layers(bundle)
-    xy = _cell_xy_1336(bundle, exp)
+    xy = _cell_xy_1336(bundle, exp, x_slot=x_slot)
     X, Y, conv_ids = xy["X"], xy["Y"], xy["conv_ids"]
-    print(f"[fit1336] cell={cell_id} n={len(conv_ids)}", flush=True)
+    cells_subdir = "cells_v2" if v2 else "cells"
+    manifest_name = "preds_manifest_v2.json" if v2 else "preds_manifest.json"
+    print(f"[fit1336] cell={cell_id} n={len(conv_ids)} x_slot={x_slot}", flush=True)
 
     # Preds/cosine capture + the recal primary run at frozen + the E1 verdict
     # layer (cm.preds_layers); every REGISTERED statistic below (selection-
     # symmetric frozen table, headline-rule domain, cosine/CI reads) stays on
     # the frozen set — the L29 extension is capture-only (plan v9 route 1).
     persist_layers = cm.preds_layers(frozen_layers)
-    sweep = fc.heldout_r2_sweep(
+    sweep, edge_block, realized_grid = _run_sweep_edge(
         X,
         Y,
         conv_ids,
-        n_folds=n_folds,
-        seed=seed,
-        null_draws=null_draws,
-        frozen_layers=persist_layers,
-        collect_lambdas=True,
+        base_grid=lambda_grid,
+        sweep_kwargs=dict(
+            n_folds=n_folds,
+            seed=seed,
+            null_draws=null_draws,
+            frozen_layers=persist_layers,
+            collect_lambdas=True,
+        ),
     )
     r2_obs, r2_null = sweep["r2_obs"], sweep["r2_null"]
     summary = fc.selection_symmetric_summary(r2_obs, r2_null, frozen_layers=frozen_layers)
@@ -440,7 +615,7 @@ def run_one_cell(
         "preds_layers": list(persist_layers),
         "r2_per_layer_obs": [float(v) for v in r2_obs],
         "recal": _recal_block(sweep, Y, persist_layers, qwen_cal),
-        "lambda_audit": _lambda_audit(sweep, frozen_layers),
+        "lambda_audit": _lambda_audit(sweep, frozen_layers, grid=realized_grid),
         "selection_symmetric": summary,
         "random_projection_control_r2": rp,
         "mean_baseline_r2": mb,
@@ -452,9 +627,14 @@ def run_one_cell(
         "n_folds": n_folds,
         "null_draws": null_draws,
     }
-    _write_json(out_dir / "cells" / f"cells_{cell_id}.json", payload)
+    if v2:
+        payload["x_slot"] = x_slot
+        payload["lambda_edge_rule"] = edge_block
+        if edge_block is not None and edge_block["estimator_limited"]:
+            payload["estimator_limited"] = edge_block["estimator_limited"]
+    _write_json(out_dir / cells_subdir / f"cells_{cell_id}.json", payload)
     _write_json(
-        out_dir / "cells" / f"nulls_{cell_id}.json",
+        out_dir / cells_subdir / f"nulls_{cell_id}.json",
         {
             "metadata": _metadata(seed, len(conv_ids)),
             "cell_id": cell_id,
@@ -464,9 +644,72 @@ def run_one_cell(
             "null_layer_max_per_draw": summary["null_layer_max_r2_per_draw"],
         },
     )
-    _persist_preds(preds_dir, cell_id, sweep, conv_ids)
+    _persist_preds(preds_dir, cell_id, sweep, conv_ids, manifest_name=manifest_name)
 
-    if matched_n is not None and len(conv_ids) > matched_n:
+    if v2 and matched_n is not None and len(conv_ids) > matched_n:
+        # v2 matched-n companion (plan §4 Phase FIT): persist-LAYER-SUBSET
+        # refit only (headline layer is among the frozen set by the
+        # pre-registered rule — refitting the subset keeps the companion
+        # available whichever frozen layer the rule selects), n=7,350,
+        # seed-1336 subsample, same edge rule + grid as the main sweep.
+        sub_seed = matched_n_seed if matched_n_seed is not None else seed
+        rng = np.random.default_rng(sub_seed)
+        keep = np.sort(rng.choice(len(conv_ids), size=matched_n, replace=False))
+        sub = [li for li in persist_layers if li < X.shape[1]]
+        Xm, Ym = X[keep][:, sub, :], Y[keep][:, sub, :]
+        sweep_m, edge_m, grid_m = _run_sweep_edge(
+            Xm,
+            Ym,
+            conv_ids[keep],
+            base_grid=lambda_grid,
+            sweep_kwargs=dict(
+                n_folds=n_folds,
+                seed=seed,
+                null_draws=null_draws,
+                frozen_layers=tuple(range(len(sub))),
+                collect_lambdas=True,
+            ),
+        )
+        pos2layer = {i: li for i, li in enumerate(sub)}
+        recal_m = _recal_block(sweep_m, Ym, tuple(range(len(sub))), qwen_cal)
+        recal_m["per_layer"] = {str(pos2layer[int(k)]): v for k, v in recal_m["per_layer"].items()}
+        if recal_m["s_recal_argmax_layer"] is not None:
+            recal_m["s_recal_argmax_layer"] = pos2layer[int(recal_m["s_recal_argmax_layer"])]
+        audit_m = _lambda_audit(sweep_m, tuple(range(len(sub))), grid=grid_m)
+        _write_json(
+            out_dir / cells_subdir / f"cells_matchedn_{cell_id}.json",
+            {
+                "metadata": _metadata(seed, matched_n),
+                "cell": dict(cell),
+                "x_slot": x_slot,
+                "matched_n": matched_n,
+                "subsample_seed": int(sub_seed),
+                "layers_fit": [int(li) for li in sub],
+                "r2_obs_by_layer": {
+                    str(pos2layer[i]): float(v) for i, v in enumerate(sweep_m["r2_obs"])
+                },
+                "recal": recal_m,
+                "lambda_audit": audit_m,
+                "lambda_edge_rule": edge_m,
+                "n_folds": n_folds,
+                "null_draws": null_draws,
+            },
+        )
+        # Remap position-keyed preds back to true layer ids so the persisted
+        # npz keys stay layer-true (preds_l16, ... not preds_l0).
+        sweep_m_named = dict(sweep_m)
+        sweep_m_named["preds_frozen"] = {
+            pos2layer[i]: p for i, p in sweep_m["preds_frozen"].items()
+        }
+        _persist_preds(
+            preds_dir,
+            cell_id,
+            sweep_m_named,
+            conv_ids[keep],
+            tag="_matchedn",
+            manifest_name=manifest_name,
+        )
+    elif matched_n is not None and len(conv_ids) > matched_n:
         rng = np.random.default_rng(seed)
         keep = np.sort(rng.choice(len(conv_ids), size=matched_n, replace=False))
         sweep_m = fc.heldout_r2_sweep(
@@ -588,10 +831,18 @@ def main() -> int:
         return run_g1_check(args.out_dir)
     assert args.cells, "--cells is required (or --g0 / --g1-check)"
     smoke = args.smoke
-    ts_dir = args.turnstore_dir or Path(
-        "data/issue_1336/" + ("turnstore_smoke" if smoke else "turnstore")
-    )
-    preds_dir = args.preds_dir or Path("data/issue_1336/" + ("preds_smoke" if smoke else "preds"))
+    v2 = args.v2
+    if v2:
+        # v2 estimator defaults (plan v13 §4 Phase FIT): inner-group-CV with
+        # n_inner=2 — module-global patch style, the documented convention
+        # (issue825_fit_cells.py L78 comment). Selection stays the module
+        # default "inner-group-cv"; the 23-pt grid threads per sweep below.
+        fc.N_INNER_LAMBDA_FOLDS = cm.N_INNER_LAMBDA_FOLDS_V2
+    lambda_grid = np.asarray(cm.LAMBDAS_23, dtype=np.float64) if v2 else None
+    ts_base = ("turnstore_v2" if v2 else "turnstore") + ("_smoke" if smoke else "")
+    preds_base = ("preds_v2" if v2 else "preds") + ("_smoke" if smoke else "")
+    ts_dir = args.turnstore_dir or Path(f"data/issue_1336/{ts_base}")
+    preds_dir = args.preds_dir or Path(f"data/issue_1336/{preds_base}")
     if args.frozen_layers:
         frozen = tuple(int(x) for x in args.frozen_layers.split(",") if x.strip())
     else:
@@ -605,9 +856,13 @@ def main() -> int:
         args.n_boot if args.n_boot is not None else (cm.SMOKE_N_BOOT if smoke else cm.N_BOOTSTRAP)
     )
     if args.cells == "all":
-        cells = cm.CELLS
+        cells = cm.CELLS_V2 if v2 else cm.CELLS
     elif args.cells == "smoke":
-        cells = cm.cells_for(cm.SMOKE_MODELS, cm.SMOKE_CORPORA)
+        cells = (
+            cm.cells_v2_for(cm.SMOKE_MODELS, cm.SMOKE_CORPORA_V2)
+            if v2
+            else cm.cells_for(cm.SMOKE_MODELS, cm.SMOKE_CORPORA)
+        )
     else:
         cells = [CELL_BY_ID[c.strip()] for c in args.cells.split(",") if c.strip()]
     # Persisted E1.d exchange-rate calibration (plan v9 route 1) — fail-loud
@@ -616,10 +871,24 @@ def main() -> int:
     qwen_cal = cm.load_qwen_recal_cal(args.out_dir)
     matched = None
     if args.matched_n:
-        matched = int(args.matched_n_size)
+        matched = int(
+            args.matched_n_size
+            if args.matched_n_size is not None
+            else (cm.MATCHED_N_V2 if v2 else cm.MATCHED_N)
+        )
+    matched_seed = (
+        args.matched_n_seed
+        if args.matched_n_seed is not None
+        else (cm.MATCHED_N_V2_SEED if v2 else args.seed)
+    )
     for cell in cells:
         cell_matched = matched
-        if matched is not None and cm.CORPORA[cell["corpus"]]["n"] <= matched and not smoke:
+        if v2:
+            # Matched-n v2 companions run only on the four above-size corpora
+            # (plan §4 Phase FIT); realized-n gating stays inside run_one_cell.
+            if matched is not None and cell["corpus"] not in cm.MATCHED_N_V2_CORPORA:
+                cell_matched = None
+        elif matched is not None and cm.CORPORA[cell["corpus"]]["n"] <= matched and not smoke:
             cell_matched = None  # gsm8k_test1319 is already at matched size
         run_one_cell(
             cell,
@@ -636,6 +905,10 @@ def main() -> int:
             # asserts its own realized count (tiny-model rebinding pattern).
             expected_layers=None if smoke else cm.EXPECTED_LAYERS,
             qwen_cal=qwen_cal,
+            x_slot=(args.x_slot or cell.get("x_slot", "context")),
+            lambda_grid=lambda_grid,
+            v2=v2,
+            matched_n_seed=matched_seed,
         )
     return 0
 
