@@ -66,7 +66,7 @@ def test_extract_resume_reattempts_failed_upload(tmp_path, monkeypatch):
 
     done = _write_done(tmp_path, uploaded=False)
     calls: list[str] = []
-    monkeypatch.setattr(ext, "_upload_cell", lambda out_dir, stem: calls.append(stem))
+    monkeypatch.setattr(ext, "_upload_cell", lambda out_dir, stem, v2=False: calls.append(stem))
     _no_extract(monkeypatch, ext)
     monkeypatch.setattr(sys, "argv", _argv(tmp_path))
     ext.main()
@@ -80,7 +80,7 @@ def test_extract_legacy_done_without_flag_retries_upload(tmp_path, monkeypatch):
 
     done = _write_done(tmp_path, uploaded=None)
     calls: list[str] = []
-    monkeypatch.setattr(ext, "_upload_cell", lambda out_dir, stem: calls.append(stem))
+    monkeypatch.setattr(ext, "_upload_cell", lambda out_dir, stem, v2=False: calls.append(stem))
     _no_extract(monkeypatch, ext)
     monkeypatch.setattr(sys, "argv", _argv(tmp_path))
     ext.main()
@@ -119,7 +119,7 @@ def test_extract_upload_failure_keeps_uploaded_false(tmp_path, monkeypatch):
 
     done = _write_done(tmp_path, uploaded=False)
 
-    def _fail(out_dir, stem):
+    def _fail(out_dir, stem, v2=False):
         raise RuntimeError("simulated transient Hub failure")
 
     monkeypatch.setattr(ext, "_upload_cell", _fail)

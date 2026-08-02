@@ -21,6 +21,21 @@ Runtime cross-model assert (plan section 8 risk row): the CONTEXT render of
 checkpoint's tokenizer — each cell writes a context-token-id hash JSON and
 asserts equality against any sibling model's hash for the same
 (format, corpus).
+
+v2 mode (plan v13, `full-corpora-stage-evals-metric-ladder`): ``--v2`` is
+default-preserving (v1 invocations byte-identical). Under --v2: corpora
+resolve against cm.V2_CORPORA (prompts via the Unit-A reader
+``load_v2_corpus_rows`` — canonical rows, identical across models by
+construction); shards land under ``data/issue_1336/turnstore_v2[_smoke]``
+with Hub prefix ``analysis_tensors/turnstore_v2_{stem}``; for the two
+EXTENDED corpora (lmsys23k, gsm8k_train_full) only the NEW rows
+(prompt_idx >= 5,000 — wave-1 covered 0..4,999) are extracted, and every v2
+shard sidecar records per-row ``prompt_shas`` for the concat join below.
+
+``load_bundle_concat`` (consumed by ``issue1336_fit_cells --v2`` and the
+Phase-LAD battery) concatenates the wave-1 stem + the v2 extension stem by
+prompt_idx with boundary/disjointness asserts and the text-sha join
+(>=99% rate, zero mismatches — the #1336 join-fix convention).
 """
 
 from __future__ import annotations
@@ -48,6 +63,12 @@ load_dotenv()  # shared-VM thread caps (#847) must bind BEFORE torch import
 
 import torch  # noqa: E402
 
+import numpy as np  # noqa: E402
+
+# The fit-cells cores are imported at module top (never deferred) so a broken
+# import crashes at process start, not at the first concat load (#606 class).
+import issue825_fit_cells as fc  # noqa: E402
+
 # Reused #825 helpers (arg-pure: no dependence on the parent's Qwen globals).
 from issue825_extract_turnstore import (  # noqa: E402
     _finite,
@@ -57,11 +78,19 @@ from issue825_extract_turnstore import (  # noqa: E402
     _turn_nll,
 )
 from issue1336_render import RENDERERS, validate_render  # noqa: E402
+from issue1336_stage_corpora import load_v2_corpus_rows, prompt_sha  # noqa: E402
 
 from explore_persona_space.analysis.extraction import extract_layer_activations  # noqa: E402
 from explore_persona_space.experiments.issue_1336 import common as cm  # noqa: E402
 
 SHARD_SIZE = 500
+
+# v2 EXTENDED corpora: the v2 stem holds only the NEW rows; the fit loader
+# concatenates the wave-1 stem (rows < boundary) with the v2 extension stem
+# (rows >= boundary) — plan v13 §4 Phase EXT.
+CONCAT_SOURCES = {"lmsys23k": "lmsys5k", "gsm8k_train_full": "gsm8k_train5k"}
+CONCAT_BOUNDARY = {"lmsys23k": 5000, "gsm8k_train_full": 5000}
+CONCAT_MIN_JOIN_RATE = 0.99  # index-join floor (parent join-fix convention)
 
 # Architecture invariants; rebound from the tiny model's config in smoke mode
 # (the parent --tiny-model-dir pattern: asserts stay ACTIVE, validating
@@ -73,8 +102,16 @@ _EXPECTED_HIDDEN = cm.EXPECTED_HIDDEN
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--model", choices=tuple(cm.MODELS), required=True)
-    parser.add_argument("--corpus", choices=tuple(cm.CORPORA), required=True)
+    parser.add_argument(
+        "--corpus", choices=sorted(set(cm.CORPORA) | set(cm.V2_CORPORA)), required=True
+    )
     parser.add_argument("--format", choices=("chat", "naturalistic"), required=True)
+    parser.add_argument(
+        "--v2",
+        action="store_true",
+        help="v2 round: V2_CORPORA prompts via the Unit-A reader, turnstore_v2 roots + "
+        "Hub prefix, extension-only rows for the extended corpora, prompt_shas recorded",
+    )
     parser.add_argument("--gen-root", type=Path, default=None, help="generation outputs root")
     parser.add_argument("--prompts-root", type=Path, default=None, help="staged prompts root")
     parser.add_argument("--out-dir", type=Path, default=None, help="turnstore output dir")
@@ -211,6 +248,176 @@ def _read_jsonl(path: Path) -> list[dict]:
     return rows
 
 
+# ---------------------------------------------------------------------------
+# Concat loader (plan v13 §4 Phase EXT): wave-1 stem + v2 extension stem,
+# joined by prompt_idx with disjointness + text-sha join asserts.
+# ---------------------------------------------------------------------------
+def _conv_idx(conv_id) -> int:
+    """prompt_idx from the canonical ``s<idx>`` conv_id (fail-loud)."""
+    cid = str(conv_id)
+    assert cid.startswith("s") and cid[1:].isdigit(), f"non-canonical conv_id {cid!r}"
+    return int(cid[1:])
+
+
+def _stem_prompt_shas(ts_dir: Path, stem: str) -> dict[str, str]:
+    """conv_id -> prompt_sha from one stem's shard SIDECARS.
+
+    v2 extension shards record ``prompt_shas`` (this round's write_shards
+    extension); wave-1 sidecars predate the field and contribute nothing.
+    """
+    out: dict[str, str] = {}
+    for sp in sorted(ts_dir.glob(f"{stem}_shard*.json")):
+        side = json.loads(sp.read_text())
+        shas = side.get("prompt_shas")
+        if shas:
+            for cid, sha in zip(side["conv_ids"], shas, strict=True):
+                out[str(cid)] = str(sha)
+    return out
+
+
+def _gen_prompt_shas(gen_root: Path, slug: str, corpus: str) -> dict[str, str]:
+    """conv_id -> prompt_sha over the KEPT rows of one cell's gen answers."""
+    path = Path(gen_root) / slug / corpus / "answers.jsonl"
+    assert path.exists(), (
+        f"gen answers missing at {path} — the concat text-sha join needs this cell's "
+        "generation outputs staged locally (plan §9 cross-phase reads)"
+    )
+    return {
+        f"s{r['prompt_idx']}": prompt_sha(r["prompt"]) for r in _read_jsonl(path) if r.get("kept")
+    }
+
+
+def _side_join_stats(ids: list[str], sha_by_idx: dict[int, str], own_shas: dict[str, str]) -> dict:
+    """Index-join + text-sha comparison stats for ONE side of the concat."""
+    n = len(ids)
+    idx_joined = sha_checked = sha_mismatch = 0
+    mismatches: list[str] = []
+    for cid in ids:
+        corp = sha_by_idx.get(_conv_idx(cid))
+        if corp is None:
+            continue
+        idx_joined += 1
+        own = own_shas.get(cid)
+        if own is None:
+            continue
+        sha_checked += 1
+        if own != corp:
+            sha_mismatch += 1
+            if len(mismatches) < 5:
+                mismatches.append(cid)
+    return {
+        "n_rows": n,
+        "n_idx_joined": idx_joined,
+        "idx_join_rate": idx_joined / max(n, 1),
+        "n_sha_checked": sha_checked,
+        "sha_check_rate": sha_checked / max(n, 1),
+        "n_sha_mismatch": sha_mismatch,
+        "mismatch_examples": mismatches,
+    }
+
+
+def load_bundle_concat(
+    ts_dir: Path,
+    model: str,
+    fmt: str,
+    corpus: str,
+    *,
+    wave1_dir: Path | None = None,
+    gen_root: Path | None = None,
+    corpus_rows: list[dict] | None = None,
+    min_join_rate: float = CONCAT_MIN_JOIN_RATE,
+    allow_wave1_index_join: bool = False,
+) -> dict:
+    """Concatenated (wave-1 stem + v2 extension stem) bundle for one cell.
+
+    For the two EXTENDED corpora (``CONCAT_SOURCES``) the v2 turnstore holds
+    only the NEW rows (prompt_idx >= boundary); the wave-1 stem carries rows
+    below the boundary. This loader returns the SAME ``{"arrays", "sidecar"}``
+    contract as ``fc._load_bundle_any`` with the two parts concatenated,
+    after (plan v13 §4 Phase EXT, the #1336 join-fix convention):
+
+    - boundary asserts: every wave-1 row < boundary <= every extension row
+      (which makes conv_id disjointness structural; both asserted);
+    - index-join >= ``min_join_rate``: each side's conv_ids resolve rows of
+      the v2 corpus by prompt_idx;
+    - text-sha join: per-row prompt sha256 (extension side: shard sidecars'
+      ``prompt_shas``; wave-1 side: the cell's gen answers under
+      ``gen_root``) equals the corpus row's sha — ZERO mismatches tolerated
+      (a mismatch is corruption, not coverage), sha coverage >=
+      ``min_join_rate`` per side. ``allow_wave1_index_join=True`` relaxes the
+      wave-1 COVERAGE floor only (exceptional resumes without staged wave-1
+      generations; Phase C's byte-equality assert on the corpus prefix is
+      then the sole wave-1 text guarantee) — mismatch tolerance stays zero.
+    """
+    assert corpus in CONCAT_SOURCES, f"{corpus!r} is not an extended corpus ({CONCAT_SOURCES})"
+    src = CONCAT_SOURCES[corpus]
+    boundary = CONCAT_BOUNDARY[corpus]
+    w_dir = Path(wave1_dir) if wave1_dir is not None else Path(ts_dir)
+    b1 = fc._load_bundle_any(w_dir, model, fmt, src)
+    b2 = fc._load_bundle_any(Path(ts_dir), model, fmt, corpus)
+    ids1 = [str(c) for c in b1["sidecar"]["conv_ids"]]
+    ids2 = [str(c) for c in b2["sidecar"]["conv_ids"]]
+    assert ids1 and ids2, (len(ids1), len(ids2))
+    bad1 = [c for c in ids1 if _conv_idx(c) >= boundary]
+    bad2 = [c for c in ids2 if _conv_idx(c) < boundary]
+    assert not bad1, f"wave-1 stem {model}_{fmt}_{src} has rows >= {boundary}: {bad1[:5]}"
+    assert not bad2, f"extension stem {model}_{fmt}_{corpus} has rows < {boundary}: {bad2[:5]}"
+    overlap = set(ids1) & set(ids2)
+    assert not overlap, (
+        f"concat parts overlap on {len(overlap)} conv_ids (e.g. {sorted(overlap)[:5]})"
+    )
+
+    rows = corpus_rows if corpus_rows is not None else load_v2_corpus_rows(corpus)
+    sha_by_idx = {int(r["prompt_idx"]): prompt_sha(r["prompt"]) for r in rows}
+    ext_shas = _stem_prompt_shas(Path(ts_dir), cm.cell_id(model, fmt, corpus))
+    wave1_shas = _gen_prompt_shas(gen_root, model, src) if gen_root is not None else {}
+    stats = {
+        "wave1": _side_join_stats(ids1, sha_by_idx, wave1_shas),
+        "extension": _side_join_stats(ids2, sha_by_idx, ext_shas),
+        "boundary": boundary,
+        "min_join_rate": min_join_rate,
+    }
+    for side, st in (("wave1", stats["wave1"]), ("extension", stats["extension"])):
+        assert st["n_sha_mismatch"] == 0, (
+            f"concat {model}_{fmt}_{corpus} {side}: {st['n_sha_mismatch']} prompt-sha "
+            f"MISMATCHES vs the v2 corpus (e.g. {st['mismatch_examples']}) — text drift, "
+            "never resume past this"
+        )
+        assert st["idx_join_rate"] >= min_join_rate, (
+            f"concat {model}_{fmt}_{corpus} {side}: index-join rate "
+            f"{st['idx_join_rate']:.4f} < {min_join_rate} ({st['n_idx_joined']}/{st['n_rows']})"
+        )
+        if side == "extension" or not allow_wave1_index_join:
+            assert st["sha_check_rate"] >= min_join_rate, (
+                f"concat {model}_{fmt}_{corpus} {side}: text-sha coverage "
+                f"{st['sha_check_rate']:.4f} < {min_join_rate} "
+                f"({st['n_sha_checked']}/{st['n_rows']}) — stage the {side} text records "
+                "(extension: v2 shard sidecars; wave-1: gen answers via gen_root)"
+            )
+        elif st["sha_check_rate"] < min_join_rate:
+            print(
+                f"[concat] WARN {model}_{fmt}_{corpus} wave-1 text-sha coverage "
+                f"{st['sha_check_rate']:.4f} — index-join only (allow_wave1_index_join)"
+            )
+
+    arrays: dict[str, np.ndarray] = {}
+    for k in ("slots", "profiles", "nll"):
+        if k in b1["arrays"] and k in b2["arrays"]:
+            a1 = np.asarray(b1["arrays"][k], dtype=np.float32)
+            a2 = np.asarray(b2["arrays"][k], dtype=np.float32)
+            assert a1.shape[1:] == a2.shape[1:], (k, a1.shape, a2.shape)
+            arrays[k] = np.concatenate([a1, a2], axis=0)
+    assert "slots" in arrays and "profiles" in arrays, sorted(arrays)
+    print(
+        f"[concat] {model}_{fmt}_{corpus}: wave1 {len(ids1)} + extension {len(ids2)} rows "
+        f"(sha-checked {stats['wave1']['n_sha_checked']}/{stats['extension']['n_sha_checked']})"
+    )
+    return {
+        "arrays": arrays,
+        "sidecar": {"conv_ids": ids1 + ids2, "source": "concat", "concat": stats},
+    }
+
+
 def load_model(slug: str, tiny_model_dir: str | None = None):
     """Load one ladder checkpoint (bf16, all weights pinned to GPU) or the tiny smoke model."""
     global _EXPECTED_LAYERS, _EXPECTED_HIDDEN
@@ -261,7 +468,6 @@ def _context_text(fmt: str, question: str) -> str:
 
 def ctx_tokenid_hash(tokenizer, prompts: list[dict], fmt: str, n_sample: int) -> dict:
     """sha256 over the BOS-prepended context token ids of n_sample prompts."""
-    import numpy as np
 
     idx = np.random.default_rng(0).choice(
         len(prompts), size=min(n_sample, len(prompts)), replace=False
@@ -444,7 +650,11 @@ def write_shards(
     """Write records as bf16 .pt shard(s) + JSON sidecars (parent contract, no perpos).
 
     ``issue825_fit_cells._load_bundle_pt`` tolerates the absent perpos keys
-    (its key loop is presence-gated), so the fit loader is unchanged.
+    (its key loop is presence-gated), so the fit loader is unchanged. Records
+    carrying a ``prompt_sha`` (the v2 path) additionally persist an aligned
+    ``prompt_shas`` list in BOTH the payload and the sidecar — the concat
+    loader's text-sha join reads the sidecar copy (default-preserving: v1
+    records carry no sha and the field is absent).
     """
     out_dir.mkdir(parents=True, exist_ok=True)
     paths: list[Path] = []
@@ -458,6 +668,9 @@ def write_shards(
             "nll": [r["nll"] for r in shard],
             "spans_meta": [r["spans_meta"] for r in shard],
         }
+        with_shas = all("prompt_sha" in r for r in shard)
+        if with_shas:
+            payload["prompt_shas"] = [r["prompt_sha"] for r in shard]
         pt_path = out_dir / f"{stem}_shard{shard_idx:03d}.pt"
         torch.save(payload, pt_path)
         sidecar = dict(sidecar_base)
@@ -473,6 +686,8 @@ def write_shards(
                 },
             }
         )
+        if with_shas:
+            sidecar["prompt_shas"] = payload["prompt_shas"]
         json_path = out_dir / f"{stem}_shard{shard_idx:03d}.json"
         json_path.write_text(json.dumps(sidecar, indent=2))
         paths.append(pt_path)
@@ -480,7 +695,14 @@ def write_shards(
     return paths
 
 
-def _upload_cell(out_dir: Path, stem: str) -> None:
+def _hub_ts_prefix(stem: str, v2: bool) -> str:
+    """Hub turnstore prefix: v1 ``turnstore_{stem}``, v2 ``turnstore_v2_{stem}``
+    (plan v13 phase_outputs: ``analysis_tensors/turnstore_v2_<slug>_<fmt>_<corpus>``)."""
+    tag = "turnstore_v2" if v2 else "turnstore"
+    return f"{cm.HF_PREFIX_1336}/analysis_tensors/{tag}_{stem}"
+
+
+def _upload_cell(out_dir: Path, stem: str, v2: bool = False) -> None:
     """Per-cell incremental upload: ONE folder commit for this stem's files (#664).
 
     The ``{stem}.done.json`` marker is deliberately NOT uploaded: it is the
@@ -491,7 +713,7 @@ def _upload_cell(out_dir: Path, stem: str) -> None:
 
     from explore_persona_space.orchestrate import hub
 
-    prefix = f"{cm.HF_PREFIX_1336}/analysis_tensors/turnstore_{stem}"
+    prefix = _hub_ts_prefix(stem, v2)
     # Dir-filecount guard (#1190) OUTSIDE the retry wrapper (a guard raise is
     # deterministic; retrying it burns the budget for nothing).
     hub.assert_hub_dir_filecounts(out_dir, prefix, allow_patterns=[f"{stem}_shard*"])
@@ -516,7 +738,7 @@ def _write_done(done_path: Path, done: dict) -> None:
     tmp.replace(done_path)
 
 
-def _hf_turnstore_listing(stem: str) -> list[str] | None:
+def _hf_turnstore_listing(stem: str, v2: bool = False) -> list[str] | None:
     """File names under the cell's Hub turnstore prefix, or None when absent.
 
     Scoped ``list_repo_tree`` (never a full-repo listing — gotchas.md #833),
@@ -529,7 +751,7 @@ def _hf_turnstore_listing(stem: str) -> list[str] | None:
 
     from explore_persona_space.orchestrate import hub
 
-    prefix = f"{cm.HF_PREFIX_1336}/analysis_tensors/turnstore_{stem}"
+    prefix = _hub_ts_prefix(stem, v2)
     api = HfApi()
     try:
         entries = hub.retry_transient(
@@ -550,7 +772,7 @@ def _hf_turnstore_listing(stem: str) -> list[str] | None:
     return [Path(e.path).name for e in entries]
 
 
-def _try_hf_resume(out_dir: Path, stem: str) -> dict | None:
+def _try_hf_resume(out_dir: Path, stem: str, v2: bool = False) -> dict | None:
     """Fetch a COMPLETE turnstore cell from HF into ``out_dir`` (resume path).
 
     Plan v9 route 1 resume: Phase E has cells already uploaded by the
@@ -567,7 +789,7 @@ def _try_hf_resume(out_dir: Path, stem: str) -> dict | None:
 
     from explore_persona_space.orchestrate import hub
 
-    names = _hf_turnstore_listing(stem)
+    names = _hf_turnstore_listing(stem, v2)
     if not names:
         return None
     shard_re = re.compile(rf"^{re.escape(stem)}_shard(\d{{3}})\.(pt|json)$")
@@ -587,7 +809,7 @@ def _try_hf_resume(out_dir: Path, stem: str) -> dict | None:
         f"HF turnstore for {stem} is INCOMPLETE (shard indices {idxs}, exts {ext_map}) — a "
         "half-done cell must be re-extracted or repaired explicitly, never silently resumed"
     )
-    prefix = f"{cm.HF_PREFIX_1336}/analysis_tensors/turnstore_{stem}"
+    prefix = _hub_ts_prefix(stem, v2)
     out_dir.mkdir(parents=True, exist_ok=True)
     n_files = 0
     for i in idxs:
@@ -618,13 +840,21 @@ def _try_hf_resume(out_dir: Path, stem: str) -> dict | None:
 def main() -> None:
     args = parse_args()
     slug, fmt, corpus = args.model, args.format, args.corpus
-    assert fmt in cm.FORMATS_BY_CORPUS[corpus], f"format {fmt} not registered for {corpus}"
+    v2 = args.v2
+    if v2:
+        assert corpus in cm.V2_CORPORA, f"--v2 requires a V2_CORPORA corpus, got {corpus!r}"
+        fmts = cm.V2_CORPORA[corpus]["formats"]
+    else:
+        assert corpus in cm.CORPORA, f"corpus {corpus!r} is v2-only — pass --v2"
+        fmts = cm.FORMATS_BY_CORPUS[corpus]
+    assert fmt in fmts, f"format {fmt} not registered for {corpus}"
     override = resolve_convention(args.convention, args.offset_override, args.out_dir)
     smoke = args.smoke
     data_root = Path("data/issue_1336")
     gen_root = args.gen_root or (data_root / ("gen_smoke" if smoke else "gen"))
     prompts_root = args.prompts_root or (data_root / ("prompts_smoke" if smoke else "prompts"))
-    out_dir = args.out_dir or (data_root / ("turnstore_smoke" if smoke else "turnstore"))
+    ts_base = ("turnstore_v2" if v2 else "turnstore") + ("_smoke" if smoke else "")
+    out_dir = args.out_dir or (data_root / ts_base)
     stem = cm.cell_id(slug, fmt, corpus)
     done_path = out_dir / f"{stem}.done.json"
     if done_path.exists():
@@ -635,7 +865,7 @@ def main() -> None:
             # prior no-upload run) — re-attempt ONLY the upload, never the
             # extraction, and flip the flag only after it succeeds.
             print(f"[extract] {stem}: done marker exists, upload incomplete — re-uploading")
-            _upload_cell(out_dir, stem)
+            _upload_cell(out_dir, stem, v2)
             done["uploaded"] = True
             _write_done(done_path, done)
         print(f"[extract] skip {stem} (done marker exists)")
@@ -644,16 +874,31 @@ def main() -> None:
     # Resume (plan v9 route 1): a cell the ORIGINAL run already extracted +
     # uploaded (done == uploaded, #664) is fetched from the Hub instead of
     # re-extracted on GPU. Smoke never touches the Hub (gen-script parity).
-    if not smoke and _try_hf_resume(out_dir, stem) is not None:
+    if not smoke and _try_hf_resume(out_dir, stem, v2) is not None:
         return
 
     rows = _read_jsonl(gen_root / slug / corpus / "answers.jsonl")
     kept = [r for r in rows if r.get("kept")]
     assert kept, f"no kept rows for {slug}/{corpus} under {gen_root}"
+    if v2 and corpus in CONCAT_SOURCES:
+        # Extension-only rows (plan §4 Phase GEN/EXT: wave-1 covered rows
+        # below the boundary; the v2 stem holds ONLY the new rows so the
+        # concat loader's disjointness holds by construction).
+        boundary = CONCAT_BOUNDARY[corpus]
+        n_all = len(kept)
+        kept = [r for r in kept if int(r["prompt_idx"]) >= boundary]
+        print(f"[extract] {corpus}: extension rows (idx >= {boundary}): {len(kept)}/{n_all}")
+        assert kept, f"no extension rows (prompt_idx >= {boundary}) for {slug}/{corpus}"
     if args.row_allowlist is not None:
         kept = filter_row_allowlist(kept, args.row_allowlist)
         print(f"[extract] row allowlist: {len(kept)} rows from {args.row_allowlist}")
-    prompts = _read_jsonl(prompts_root / f"{corpus}.jsonl")
+    if v2:
+        # Canonical corpus rows via the Unit-A reader — identical across
+        # models by construction (the ctx-hash parity sample must never
+        # depend on per-model staging state).
+        prompts = load_v2_corpus_rows(corpus, smoke=smoke)
+    else:
+        prompts = _read_jsonl(prompts_root / f"{corpus}.jsonl")
     assert prompts, f"no staged prompts for {corpus} under {prompts_root} — run gen --prep first"
 
     model, tokenizer, model_id = load_model(slug, tiny_model_dir=args.tiny_model_dir)
@@ -700,9 +945,13 @@ def main() -> None:
         "causal_check_max_abs_diff": causal_max_diff,
         "ctx_tokenid_sha256": hash_payload["sha256"],
         "smoke": bool(smoke),
+        "v2": bool(v2),
         "convention": args.convention,
         "offset_override": override,
     }
+    # v2: per-row prompt sha256 rides the shards (the concat loader's
+    # text-sha join reads the sidecar copy).
+    sha_by_conv = {f"s{r['prompt_idx']}": prompt_sha(r["prompt"]) for r in kept} if v2 else {}
     # Block-wise extract -> flush (parent run-4/run-5 RSS lessons): one block
     # == one shard file, written the moment its block completes.
     paths: list[Path] = []
@@ -711,6 +960,9 @@ def main() -> None:
         block = rendered[block_start : block_start + shard_size]
         records = run_extraction(model, block, pad_id, bs)
         assert len(records) == len(block), (block_idx, len(records), len(block))
+        if v2:
+            for rec in records:
+                rec["prompt_sha"] = sha_by_conv[rec["conv_id"]]
         paths += write_shards(
             records, out_dir, stem, sidecar_base, shard_offset=block_idx, shard_size=shard_size
         )
@@ -727,7 +979,7 @@ def main() -> None:
     done = {"stem": stem, "n_rows": n_done, "n_shards": len(paths), "uploaded": False}
     _write_done(done_path, done)
     if args.upload:
-        _upload_cell(out_dir, stem)
+        _upload_cell(out_dir, stem, v2)
         done["uploaded"] = True
         _write_done(done_path, done)
     print(f"[done-cell] {stem}: {n_done} rows -> {len(paths)} shard(s) in {out_dir}")

@@ -107,6 +107,8 @@ __all__ = [
     "tulu_prompt",
     "v2_bars",
     "v2_cell_id",
+    "v2_surface_index",
+    "v2_surfaces",
 ]
 
 
@@ -406,6 +408,25 @@ MATCHED_N_V2_CORPORA = ("lmsys23k", "if11k", "uf11k", "sft11k")
 # SMOKE_MODELS x this subset — both lmsys23k formats + the prefix arm, so
 # every v2 arm class gets a smoke cell).
 SMOKE_CORPORA_V2 = ("lmsys23k",)
+
+
+def v2_surfaces() -> tuple[tuple[str, str], ...]:
+    """The 8 registered v2 eval SURFACES (corpus, format) in registry order.
+
+    Context-arm only (prefix-arm cells are NOT ladder surfaces — plan §4
+    Phase LAD). The ORDER is load-bearing: the paired-bootstrap seed is
+    ``5000 + v2_surface_index(...)`` (plan §3), shared between the Phase-LAD
+    battery and the Phase-P decision writer.
+    """
+    return tuple((c, f) for c in V2_CORPORA for f in V2_CORPORA[c]["formats"])
+
+
+def v2_surface_index(corpus: str, fmt: str) -> int:
+    """Registered surface index (the §3 bootstrap-seed offset)."""
+    surfaces = v2_surfaces()
+    key = (corpus, fmt)
+    assert key in surfaces, f"unknown v2 surface {key!r} (known: {surfaces})"
+    return surfaces.index(key)
 
 
 def v2_cell_id(model: str, fmt: str, corpus: str, x_slot: str = "context") -> str:

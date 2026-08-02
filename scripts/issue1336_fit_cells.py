@@ -65,6 +65,7 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 load_dotenv()  # shared-VM thread caps (#847) must bind BEFORE torch/numpy import
 
 import issue825_fit_cells as fc  # noqa: E402
+import issue1336_extract_turnstore as et  # noqa: E402
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
@@ -86,6 +87,19 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--g1-check", action="store_true", help="evaluate the G1 kill gate")
     ap.add_argument("--cells", default=None, help="comma cell ids | all | smoke")
     ap.add_argument("--turnstore-dir", type=Path, default=None)
+    ap.add_argument(
+        "--wave1-turnstore-dir",
+        type=Path,
+        default=None,
+        help="v2 concat loader: wave-1 stem dir (default: --turnstore-dir)",
+    )
+    ap.add_argument(
+        "--gen-root",
+        type=Path,
+        default=None,
+        help="v2 concat loader: gen answers root for the wave-1 text-sha join "
+        "(default: data/issue_1336/gen in production; None under --smoke)",
+    )
     ap.add_argument("--out-dir", type=Path, default=Path("eval_results/issue_1336"))
     ap.add_argument("--preds-dir", type=Path, default=None)
     ap.add_argument("--folds", type=int, default=cm.N_FOLDS)
@@ -544,15 +558,31 @@ def run_one_cell(
     lambda_grid: np.ndarray | None = None,
     v2: bool = False,
     matched_n_seed: int | None = None,
+    use_concat: bool = False,
+    wave1_dir: Path | None = None,
+    gen_root: Path | None = None,
 ) -> dict:
     """One cell's full fit battery. All new kwargs are default-preserving:
     the v1 call shape (no ``v2``/``lambda_grid``/``x_slot``) is byte-identical
     to the committed behavior. Under ``v2``: the adaptive edge rule wraps the
     sweep on ``lambda_grid``, outputs land under ``cells_v2/``, the manifest
     is ``preds_manifest_v2.json``, and matched-n companions refit the
-    persist-layer subset only at the seed-1336 subsample (plan v13 §4)."""
+    persist-layer subset only at the seed-1336 subsample (plan v13 §4).
+    ``use_concat`` (v2 production) routes the two EXTENDED corpora through the
+    wave-1 + extension concat loader (boundary/disjointness + sha-join
+    asserts, plan v13 §4 Phase EXT)."""
     cell_id = cell["cell_id"]
-    bundle = fc._load_bundle_any(ts_dir, cell["model"], cell["format"], cell["corpus"])
+    if use_concat and cell["corpus"] in et.CONCAT_SOURCES:
+        bundle = et.load_bundle_concat(
+            ts_dir,
+            cell["model"],
+            cell["format"],
+            cell["corpus"],
+            wave1_dir=wave1_dir,
+            gen_root=gen_root,
+        )
+    else:
+        bundle = fc._load_bundle_any(ts_dir, cell["model"], cell["format"], cell["corpus"])
     exp = expected_layers if expected_layers is not None else _bundle_n_layers(bundle)
     xy = _cell_xy_1336(bundle, exp, x_slot=x_slot)
     X, Y, conv_ids = xy["X"], xy["Y"], xy["conv_ids"]
@@ -909,6 +939,12 @@ def main() -> int:
             lambda_grid=lambda_grid,
             v2=v2,
             matched_n_seed=matched_seed,
+            # v2 PRODUCTION routes the two extended corpora through the
+            # concat loader; smoke fixtures are single complete stems (the
+            # concat seam is pinned by its own tests). v1 is byte-unchanged.
+            use_concat=(v2 and not smoke),
+            wave1_dir=(args.wave1_turnstore_dir or ts_dir),
+            gen_root=(args.gen_root or (None if smoke else Path("data/issue_1336/gen"))),
         )
     return 0
 
