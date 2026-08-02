@@ -13,6 +13,13 @@ counts extracted from the pod's gen JSONLs (id + n_tokens ONLY — no text):
    Recompute the key contrasts (B->S text vs representation decomposition;
    per-column fixed-text decay) with cluster-grouped bootstrap CIs.
 
+   The marginal matched design's cross-column text_delta compares per-column
+   row subsets that are largely disjoint (conditioning on a post-source
+   variable), so a PAIRED same-rows read is reported alongside it as the
+   primary length-control: rows where BOTH columns' answers are in the
+   realized band (optionally |len_b - len_a| <= eps), text_delta on the
+   SHARED mask, same cluster-bootstrap draws.
+
 2. **Per-transition retention CIs**: cluster-bootstrap CIs (1000 draws) for
    each of the 6 adjacent-stage retention values rho(i->j) = R2_gl(i->j) /
    Q(j,j) at layer* (the exact ``issue1902_fits.finalize`` ratio), from the
@@ -53,6 +60,8 @@ MATCH_SEED = 20260801
 N_BINS = 5
 MIN_MATCHED_N = 500
 BAND_LADDER = (("iqr", 0.25), ("p10", 0.10), ("p5", 0.05))
+PAIRED_EPS = (8, 16, 32)
+PAIRED_VARIANTS = ("eps8", "eps16", "eps32", "band")
 
 
 def _metadata() -> dict:
@@ -234,6 +243,81 @@ def equalize_bins(
     return masks, {"bin_detail": per_bin, "matched_n_per_column": sizes}
 
 
+def paired_same_rows(
+    gid: np.ndarray,
+    n_groups: int,
+    counts: np.ndarray,
+    ntok: dict[str, np.ndarray],
+    ss: dict[tuple[str, str], tuple[np.ndarray, np.ndarray]],
+    lo: float,
+    hi: float,
+) -> dict:
+    """Paired same-rows text-axis read (the primary length-control design).
+
+    Per adjacent pair (a, b): keep rows where BOTH columns' answers fall in the
+    realized band ('band' variant), optionally also |len_b - len_a| <= eps
+    ('eps<k>'); text_delta = R2(reader a, text b) - R2(reader a, text a) on
+    that SHARED row mask, cluster-bootstrapped with the SAME counts draws as
+    the marginal design. Returns per (pair, variant): delta, CI, n, mean lens.
+    """
+    out: dict[str, dict] = {}
+    for a, b in ADJACENT:
+        in_band = (ntok[a] >= lo) & (ntok[a] <= hi) & (ntok[b] >= lo) & (ntok[b] <= hi)
+        variants: dict[str, np.ndarray] = {"band": in_band}
+        for eps in PAIRED_EPS:
+            variants[f"eps{eps}"] = in_band & (np.abs(ntok[a] - ntok[b]) <= eps)
+        entry: dict[str, dict] = {}
+        for vname, mask in variants.items():
+            w = mask.astype(np.float64)
+            point: dict[str, float] = {}
+            draws: dict[str, np.ndarray] = {}
+            for col in (b, a):
+                res, tot = ss[(a, col)]
+                point[col] = _pooled_r2(float(np.nansum(res * w)), float(np.nansum(tot * w)))
+                draws[col] = boot_r2(
+                    counts, group_sums(res * w, gid, n_groups), group_sums(tot * w, gid, n_groups)
+                )
+            entry[vname] = {
+                "text_delta": float(point[b] - point[a]),
+                "text_ci": ci(draws[b] - draws[a]),
+                "n": int(mask.sum()),
+                "mean_len": {
+                    s: (float(ntok[s][mask].mean()) if mask.any() else float("nan")) for s in (a, b)
+                },
+            }
+        out[f"{a}->{b}"] = entry
+    return out
+
+
+def derive_conclusion(paired: dict, overlap_frac: dict[str, float]) -> str:
+    """Data-driven summary: paired same-rows text deltas + the marginal caveat."""
+    frags = []
+    for pair, entry in paired.items():
+        excl = [
+            v for v in PAIRED_VARIANTS if entry[v]["text_ci"][0] > 0 or entry[v]["text_ci"][1] < 0
+        ]
+        v = entry["eps16"]
+        if len(excl) == len(PAIRED_VARIANTS):
+            verdict = "robust to paired per-row length control (CI excludes 0 at every variant)"
+        elif not excl:
+            verdict = "indistinguishable from 0 under paired per-row length control"
+        else:
+            verdict = f"mixed (CI excludes 0 only at {', '.join(excl)})"
+        frags.append(
+            f"{pair}: paired text_delta {v['text_delta']:+.4f} "
+            f"[{v['text_ci'][0]:+.4f}, {v['text_ci'][1]:+.4f}] at eps=16 (n={v['n']}) -- {verdict}"
+        )
+    ov = "; ".join(f"{p}: {f:.1%}" for p, f in overlap_frac.items())
+    return (
+        "Paired same-rows design (primary length-control read). "
+        + ". ".join(frags)
+        + ". The marginal matched design's cross-column text_delta compares per-column row "
+        + f"subsets that are largely disjoint (mask overlap of matched_n -- {ov}), i.e. it "
+        + "conditions on a post-source variable (answer length); marginal-vs-paired sign/size "
+        + "differences are row-composition shifts, not text effects."
+    )
+
+
 def analysis1(
     gid: np.ndarray,
     n_groups: int,
@@ -322,6 +406,19 @@ def analysis1(
         }
         for s in CKPTS
     }
+
+    # marginal-design contrasts + per-pair mask-overlap diagnostic (the two
+    # per-column matched subsets a cross-column text_delta implicitly compares)
+    matched = _contrasts(q_m, draws_m)
+    overlap_frac: dict[str, float] = {}
+    for a, b in ADJACENT:
+        ov = int((masks[a] & masks[b]).sum())
+        overlap_frac[f"{a}->{b}"] = ov / matched_n
+        matched["adjacent_decomposition"][f"{a}->{b}"]["mask_overlap"] = {
+            "n_intersection": ov,
+            "frac_of_matched_n": ov / matched_n,
+        }
+    paired = paired_same_rows(gid, n_groups, counts, ntok, ss, lo, hi)
     return {
         "metadata": _metadata(),
         "design": {
@@ -343,8 +440,25 @@ def analysis1(
         "under_matched": under_matched,
         "length_stats_per_source": len_stats,
         "cells": grid,
-        "matched": _contrasts(q_m, draws_m),
+        "design_note": (
+            "The 'matched' (marginal length-matched) design equalizes each grid COLUMN's "
+            "answer-length histogram independently, so its cross-column text_delta compares "
+            "per-column row subsets that are largely disjoint (see mask_overlap) -- it "
+            "conditions on a post-source variable (answer length). 'paired_same_rows' is the "
+            "primary length-control read: both columns' answers in the realized band on the "
+            "SAME rows, optionally |len_b - len_a| <= eps, same cluster-bootstrap draws."
+        ),
+        "matched": matched,
         "unmatched": _contrasts(q_u, draws_u),
+        "paired_same_rows": {
+            "design": {
+                "eps_grid": list(PAIRED_EPS),
+                "variants": "band (both-in-band, no eps) + eps8/eps16/eps32 "
+                "(both-in-band AND |len_b - len_a| <= eps)",
+            },
+            "pairs": paired,
+        },
+        "conclusion": derive_conclusion(paired, overlap_frac),
     }
 
 

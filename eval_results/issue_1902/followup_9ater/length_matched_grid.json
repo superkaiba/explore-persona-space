@@ -161,6 +161,7 @@
    "under_matched": false
   }
  },
+ "conclusion": "Paired same-rows design (primary length-control read). B->S: paired text_delta +0.0500 [+0.0076, +0.0950] at eps=16 (n=801) -- mixed (CI excludes 0 only at eps16, eps32, band). S->B: paired text_delta -0.0532 [-0.0873, -0.0245] at eps=16 (n=801) -- robust to paired per-row length control (CI excludes 0 at every variant). S->D: paired text_delta +0.0094 [-0.0020, +0.0204] at eps=16 (n=820) -- mixed (CI excludes 0 only at eps32, band). D->S: paired text_delta +0.0009 [-0.0073, +0.0091] at eps=16 (n=820) -- mixed (CI excludes 0 only at band). D->R: paired text_delta +0.0051 [+0.0006, +0.0101] at eps=16 (n=1919) -- mixed (CI excludes 0 only at eps8, eps16, eps32). R->D: paired text_delta -0.0050 [-0.0100, -0.0005] at eps=16 (n=1919) -- mixed (CI excludes 0 only at eps8, eps16). The marginal matched design's cross-column text_delta compares per-column row subsets that are largely disjoint (mask overlap of matched_n -- B->S: 30.6%; S->B: 30.6%; S->D: 35.4%; D->S: 35.4%; D->R: 75.9%; R->D: 75.9%), i.e. it conditions on a post-source variable (answer length); marginal-vs-paired sign/size differences are row-composition shifts, not text effects.",
  "design": {
   "arm": "ctx",
   "band_ladder": [
@@ -178,6 +179,7 @@
   "n_boot": 1000,
   "n_rows_total": 16391
  },
+ "design_note": "The 'matched' (marginal length-matched) design equalizes each grid COLUMN's answer-length histogram independently, so its cross-column text_delta compares per-column row subsets that are largely disjoint (see mask_overlap) -- it conditions on a post-source variable (answer length). 'paired_same_rows' is the primary length-control read: both columns' answers in the realized band on the SAME rows, optionally |len_b - len_a| <= eps, same cluster-bootstrap draws.",
  "equalization": {
   "bin_detail": [
    {
@@ -326,6 +328,10 @@
  "matched": {
   "adjacent_decomposition": {
    "B->S": {
+    "mask_overlap": {
+     "frac_of_matched_n": 0.30623066725585507,
+     "n_intersection": 1386
+    },
     "repr_ci": [
      -0.03448157296971748,
      0.00999110853625654
@@ -338,6 +344,10 @@
     "text_delta": -0.016971933661265703
    },
    "D->R": {
+    "mask_overlap": {
+     "frac_of_matched_n": 0.759169244365886,
+     "n_intersection": 3436
+    },
     "repr_ci": [
      -0.0021481689576402147,
      0.00016451181096670812
@@ -350,6 +360,10 @@
     "text_delta": -0.001838951966023794
    },
    "D->S": {
+    "mask_overlap": {
+     "frac_of_matched_n": 0.3537339814405656,
+     "n_intersection": 1601
+    },
     "repr_ci": [
      0.008180108212959933,
      0.02235074312373354
@@ -362,6 +376,10 @@
     "text_delta": -0.06145103867831314
    },
    "R->D": {
+    "mask_overlap": {
+     "frac_of_matched_n": 0.759169244365886,
+     "n_intersection": 3436
+    },
     "repr_ci": [
      0.0004844396345865948,
      0.00275916429598588
@@ -374,6 +392,10 @@
     "text_delta": 0.0024273978696022214
    },
    "S->B": {
+    "mask_overlap": {
+     "frac_of_matched_n": 0.30623066725585507,
+     "n_intersection": 1386
+    },
     "repr_ci": [
      -0.0291612324638922,
      0.01587241073528606
@@ -386,6 +408,10 @@
     "text_delta": -0.003181027778185297
    },
    "S->D": {
+    "mask_overlap": {
+     "frac_of_matched_n": 0.3537339814405656,
+     "n_intersection": 1601
+    },
     "repr_ci": [
      -0.018434397371345192,
      0.003031566061929721
@@ -495,11 +521,323 @@
  },
  "matched_n": 4526,
  "metadata": {
-  "git_commit": "9fab63fa7ed941aaf8c8eb7d7676cede37b01e2f",
+  "git_commit": "0a0a07778cd16fb6e572562b5299f6ace0f4dc73",
   "numpy": "2.2.6",
   "python": "3.11.15",
   "script": "scripts/issue1902_followup_9ater.py",
-  "timestamp_utc": "2026-08-02T01:13:19Z"
+  "timestamp_utc": "2026-08-02T01:38:57Z"
+ },
+ "paired_same_rows": {
+  "design": {
+   "eps_grid": [
+    8,
+    16,
+    32
+   ],
+   "variants": "band (both-in-band, no eps) + eps8/eps16/eps32 (both-in-band AND |len_b - len_a| <= eps)"
+  },
+  "pairs": {
+   "B->S": {
+    "band": {
+     "mean_len": {
+      "B": 100.92869465209891,
+      "S": 129.2771707878091
+     },
+     "n": 3478,
+     "text_ci": [
+      0.004919336145616299,
+      0.05247620126044045
+     ],
+     "text_delta": 0.02737777499368399
+    },
+    "eps16": {
+     "mean_len": {
+      "B": 88.270911360799,
+      "S": 89.1023720349563
+     },
+     "n": 801,
+     "text_ci": [
+      0.007604568838915066,
+      0.09500827779097011
+     ],
+     "text_delta": 0.050018050615970644
+    },
+    "eps32": {
+     "mean_len": {
+      "B": 93.47292418772564,
+      "S": 95.35234657039712
+     },
+     "n": 1385,
+     "text_ci": [
+      0.004308536425666341,
+      0.08178650284008732
+     ],
+     "text_delta": 0.04263547129851464
+    },
+    "eps8": {
+     "mean_len": {
+      "B": 85.47084233261339,
+      "S": 85.8768898488121
+     },
+     "n": 463,
+     "text_ci": [
+      -0.003422714592856162,
+      0.09509107945352116
+     ],
+     "text_delta": 0.0428475973954584
+    }
+   },
+   "D->R": {
+    "band": {
+     "mean_len": {
+      "D": 123.16175298804781,
+      "R": 112.94661354581673
+     },
+     "n": 3765,
+     "text_ci": [
+      -0.0002712995417169711,
+      0.009724549763399783
+     ],
+     "text_delta": 0.004785663965548248
+    },
+    "eps16": {
+     "mean_len": {
+      "D": 102.67430953621678,
+      "R": 101.56539864512767
+     },
+     "n": 1919,
+     "text_ci": [
+      0.0005712402764377706,
+      0.01011967633759488
+     ],
+     "text_delta": 0.005109234451086686
+    },
+    "eps32": {
+     "mean_len": {
+      "D": 108.44272445820434,
+      "R": 105.7279411764706
+     },
+     "n": 2584,
+     "text_ci": [
+      0.00010731149200805836,
+      0.009584026927426985
+     ],
+     "text_delta": 0.004717098081747029
+    },
+    "eps8": {
+     "mean_len": {
+      "D": 98.55711127487103,
+      "R": 98.2011790714812
+     },
+     "n": 1357,
+     "text_ci": [
+      0.0016396372645843455,
+      0.010867726411717142
+     ],
+     "text_delta": 0.006007791758735892
+    }
+   },
+   "D->S": {
+    "band": {
+     "mean_len": {
+      "D": 134.37021572720946,
+      "S": 88.04175365344467
+     },
+     "n": 2874,
+     "text_ci": [
+      -0.024741204312157816,
+      -0.004538118552194629
+     ],
+     "text_delta": -0.015111105884139553
+    },
+    "eps16": {
+     "mean_len": {
+      "D": 92.25731707317073,
+      "S": 89.50121951219512
+     },
+     "n": 820,
+     "text_ci": [
+      -0.007340834913428304,
+      0.009147103384723774
+     ],
+     "text_delta": 0.0008777904668278991
+    },
+    "eps32": {
+     "mean_len": {
+      "D": 97.9903201787044,
+      "S": 89.91288160833953
+     },
+     "n": 1343,
+     "text_ci": [
+      -0.00927360241610485,
+      0.005372544482782168
+     ],
+     "text_delta": -0.0015125279933627667
+    },
+    "eps8": {
+     "mean_len": {
+      "D": 88.93386773547094,
+      "S": 88.09619238476954
+     },
+     "n": 499,
+     "text_ci": [
+      -0.011117097666503572,
+      0.010490621227124656
+     ],
+     "text_delta": 0.00025955046963854755
+    }
+   },
+   "R->D": {
+    "band": {
+     "mean_len": {
+      "D": 123.16175298804781,
+      "R": 112.94661354581673
+     },
+     "n": 3765,
+     "text_ci": [
+      -0.009466123141971105,
+      0.0005666019968882352
+     ],
+     "text_delta": -0.00456795914850372
+    },
+    "eps16": {
+     "mean_len": {
+      "D": 102.67430953621678,
+      "R": 101.56539864512767
+     },
+     "n": 1919,
+     "text_ci": [
+      -0.010011271448860461,
+      -0.00046579930682318104
+     ],
+     "text_delta": -0.005025992571951909
+    },
+    "eps32": {
+     "mean_len": {
+      "D": 108.44272445820434,
+      "R": 105.7279411764706
+     },
+     "n": 2584,
+     "text_ci": [
+      -0.009382799462858318,
+      5.637339231301299e-05
+     ],
+     "text_delta": -0.004564832288342258
+    },
+    "eps8": {
+     "mean_len": {
+      "D": 98.55711127487103,
+      "R": 98.2011790714812
+     },
+     "n": 1357,
+     "text_ci": [
+      -0.010886198427221539,
+      -0.001588352083871356
+     ],
+     "text_delta": -0.006004404626428039
+    }
+   },
+   "S->B": {
+    "band": {
+     "mean_len": {
+      "B": 100.92869465209891,
+      "S": 129.2771707878091
+     },
+     "n": 3478,
+     "text_ci": [
+      -0.05273202672809009,
+      -0.01719728071137783
+     ],
+     "text_delta": -0.03288851581912866
+    },
+    "eps16": {
+     "mean_len": {
+      "B": 88.270911360799,
+      "S": 89.1023720349563
+     },
+     "n": 801,
+     "text_ci": [
+      -0.08733448414527416,
+      -0.024520961174124726
+     ],
+     "text_delta": -0.053245846265011054
+    },
+    "eps32": {
+     "mean_len": {
+      "B": 93.47292418772564,
+      "S": 95.35234657039712
+     },
+     "n": 1385,
+     "text_ci": [
+      -0.07610808805430477,
+      -0.022518076844934357
+     ],
+     "text_delta": -0.04631723682925415
+    },
+    "eps8": {
+     "mean_len": {
+      "B": 85.47084233261339,
+      "S": 85.8768898488121
+     },
+     "n": 463,
+     "text_ci": [
+      -0.09039546812196578,
+      -0.020178977544194746
+     ],
+     "text_delta": -0.05260352584612027
+    }
+   },
+   "S->D": {
+    "band": {
+     "mean_len": {
+      "D": 134.37021572720946,
+      "S": 88.04175365344467
+     },
+     "n": 2874,
+     "text_ci": [
+      0.01515093604317295,
+      0.03559789859119039
+     ],
+     "text_delta": 0.025584799016383997
+    },
+    "eps16": {
+     "mean_len": {
+      "D": 92.25731707317073,
+      "S": 89.50121951219512
+     },
+     "n": 820,
+     "text_ci": [
+      -0.0020402048067603012,
+      0.02038209435232186
+     ],
+     "text_delta": 0.009437871073702753
+    },
+    "eps32": {
+     "mean_len": {
+      "D": 97.9903201787044,
+      "S": 89.91288160833953
+     },
+     "n": 1343,
+     "text_ci": [
+      0.004832402994082197,
+      0.026898308107014206
+     ],
+     "text_delta": 0.015210220565289756
+    },
+    "eps8": {
+     "mean_len": {
+      "D": 88.93386773547094,
+      "S": 88.09619238476954
+     },
+     "n": 499,
+     "text_ci": [
+      -0.006397348742396306,
+      0.022088363998371278
+     ],
+     "text_delta": 0.007617452649488765
+    }
+   }
+  }
  },
  "realized_band": {
   "hi": 254.0,

@@ -6,11 +6,11 @@
   "n_boot": 1000
  },
  "metadata": {
-  "git_commit": "9fab63fa7ed941aaf8c8eb7d7676cede37b01e2f",
+  "git_commit": "0a0a07778cd16fb6e572562b5299f6ace0f4dc73",
   "numpy": "2.2.6",
   "python": "3.11.15",
   "script": "scripts/issue1902_followup_9ater.py",
-  "timestamp_utc": "2026-08-02T01:13:19Z"
+  "timestamp_utc": "2026-08-02T01:38:58Z"
  },
  "transitions": {
   "B->S": {
