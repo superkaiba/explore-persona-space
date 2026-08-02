@@ -71,23 +71,51 @@ def _present_stages(grid: dict) -> list[str]:
 # ── hero 1: diagonal Q vs stage ──────────────────────────────────────────────
 
 
+def _prefix_diag_folds(eval_dir: Path, stages: list[str], layer: int) -> dict[str, dict]:
+    """Per-fold prefix-arm diagonal reads (ridge r2 + identity) from sweep units."""
+    units = eval_dir / "fits" / "units"
+    out: dict[str, dict] = {}
+    for m in stages:
+        r2s, idents = [], []
+        for p in sorted(units.glob(f"sweep_{m}_multi_f*.json")):
+            with open(p, encoding="utf-8") as f:
+                rec = json.load(f)["arms"].get("pre", {}).get(str(layer))
+            if rec:
+                r2s.append(rec["r2"])
+                idents.append(rec.get("identity_r2", np.nan))
+        out[m] = {"r2": r2s, "identity": idents}
+    return out
+
+
 def fig_hero_diag(eval_dir: Path, fig_dir: Path) -> None:
     grid = _load(eval_dir, "fits/grid_cells.json")
-    op = _load(eval_dir, "operator/operator_battery.json")
     stages = _present_stages(grid)
-    fig, axes = plt.subplots(1, 2, figsize=(9, 3.6), sharey=True)
-    for ax, corpus in zip(axes, ("single", "multi")):
+    panels = [("single", "ctx"), ("multi", "ctx"), ("multi", "pre")]
+    fig, axes = plt.subplots(1, 3, figsize=(12.6, 3.6), sharey=True)
+    pre_folds = _prefix_diag_folds(eval_dir, stages, int(grid.get("layer_star_p", 31)))
+    for ax, (corpus, arm) in zip(axes, panels):
         xs = np.arange(len(stages))
         ridge, ci_lo, ci_hi, ident, nulls = [], [], [], [], []
         for m in stages:
-            cell = grid["cells"].get(f"diag_{m}_{corpus}_ctx", {})
-            ridge.append(cell.get("r2_at_star", np.nan))
-            lo, hi = cell.get("ci_frozen_at_star", [np.nan, np.nan])
-            ci_lo.append(lo)
-            ci_hi.append(hi)
-            ib = cell.get("baselines_at_star", {}).get("identity_r2") or []
-            ident.append(np.nanmean([v for v in ib if v is not None]) if ib else np.nan)
-            nulls.extend(cell.get("shuffle_null_r2", []))
+            if arm == "pre":
+                fr = pre_folds.get(m, {})
+                r2s = fr.get("r2", [])
+                ridge.append(float(np.mean(r2s)) if r2s else np.nan)
+                # fold min/max spread (no cluster-bootstrap CI persisted for the pre arm)
+                ci_lo.append(float(np.min(r2s)) if r2s else np.nan)
+                ci_hi.append(float(np.max(r2s)) if r2s else np.nan)
+                ident.append(
+                    float(np.mean(fr.get("identity", []))) if fr.get("identity") else np.nan
+                )
+            else:
+                cell = grid["cells"].get(f"diag_{m}_{corpus}_{arm}", {})
+                ridge.append(cell.get("r2_at_star", np.nan))
+                lo, hi = cell.get("ci_frozen_at_star", [np.nan, np.nan])
+                ci_lo.append(lo)
+                ci_hi.append(hi)
+                ib = cell.get("baselines_at_star", {}).get("identity_r2") or []
+                ident.append(np.nanmean([v for v in ib if v is not None]) if ib else np.nan)
+                nulls.extend(cell.get("shuffle_null_r2", []))
         ridge = np.asarray(ridge, float)
         # non-negative offsets from the value (mpl xerr/yerr contract)
         yerr = np.stack(
@@ -96,6 +124,11 @@ def fig_hero_diag(eval_dir: Path, fig_dir: Path) -> None:
                 np.maximum(0, np.asarray(ci_hi, float) - ridge),
             ]
         )
+        err_label = (
+            "ridge (OOF R², layer*; 95% cluster CI)"
+            if arm == "ctx"
+            else "ridge (OOF R², layer*; fold min–max)"
+        )
         ax.errorbar(
             xs,
             ridge,
@@ -103,16 +136,20 @@ def fig_hero_diag(eval_dir: Path, fig_dir: Path) -> None:
             fmt="o-",
             color=paper_palette(3)[0],
             capsize=3,
-            label="ridge (OOF R², layer*)",
+            label=err_label,
         )
-        mlp_star = grid.get("mlp_layer_star", {}).get("ctx" if corpus == "single" else "pre")
-        mlp_vals = []
-        for m in stages:
-            cell = grid.get("mlp", {}).get(
-                f"mlp_{'ctx' if corpus == 'single' else 'pre'}_{m}{m}", {}
-            )
-            mlp_vals.append(cell.get("per_layer", {}).get(str(mlp_star), np.nan))
-        ax.plot(xs, mlp_vals, "s--", color=paper_palette(3)[1], label="MLP (own layer)")
+        # MLP twin exists for (single, ctx) and (multi, pre) only — matched arm/corpus.
+        mlp_key = {"single": "ctx", "multi": "pre"}
+        if mlp_key[corpus] == arm:
+            mlp_star = grid.get("mlp_layer_star", {}).get(arm)
+            mlp_vals = [
+                grid.get("mlp", {})
+                .get(f"mlp_{arm}_{m}{m}", {})
+                .get("per_layer", {})
+                .get(str(mlp_star), np.nan)
+                for m in stages
+            ]
+            ax.plot(xs, mlp_vals, "s--", color=paper_palette(3)[1], label="MLP (own layer)")
         ax.plot(xs, ident, "^:", color=paper_palette(3)[2], label="identity+bias baseline")
         if nulls:
             ax.axhspan(
@@ -122,16 +159,60 @@ def fig_hero_diag(eval_dir: Path, fig_dir: Path) -> None:
                 alpha=0.25,
                 label="shuffled-pairing null band",
             )
-        rel = [op.get("reliability_ceiling", {}).get(m, {}).get("split_half_r") for m in stages]
-        rel = [v for v in rel if isinstance(v, float)]
         ax.set_xticks(xs, [STAGE_LABEL[m] for m in stages])
-        arm = "context arm" if corpus == "single" else "context arm (multi-turn)"
-        ax.set_title(f"{corpus}-turn corpus — {arm}")
+        title = {
+            ("single", "ctx"): "single-turn corpus — context arm",
+            ("multi", "ctx"): "multi-turn corpus — context arm",
+            ("multi", "pre"): "multi-turn corpus — prefix arm",
+        }[(corpus, arm)]
+        ax.set_title(title)
         ax.set_xlabel("post-training stage")
     axes[0].set_ylabel("held-out pooled OOF R² at layer*")
-    axes[0].legend(fontsize=7, loc="lower right")
+    axes[0].legend(fontsize=7, loc="lower left")
+    axes[2].legend(fontsize=7, loc="lower left")
     fig.suptitle("Diagonal context→answer map quality across the OLMo-2 chain", y=1.02)
     savefig_paper(fig, "hero1_diag_q_vs_stage", dir=fig_dir)
+    plt.close(fig)
+
+
+def fig_hero_diag_folds(eval_dir: Path, fig_dir: Path) -> None:
+    """Low-level per-fold view behind hero 1: every fold's diagonal OOF R²."""
+    grid = _load(eval_dir, "fits/grid_cells.json")
+    stages = _present_stages(grid)
+    units = eval_dir / "fits" / "units"
+    layer_p = int(grid.get("layer_star_p", 31))
+    fig, axes = plt.subplots(1, 3, figsize=(12.6, 3.6), sharey=True)
+    panels = [
+        ("single", "ctx", "single-turn corpus — context arm"),
+        ("multi", "ctx", "multi-turn corpus — context arm"),
+        ("multi", "pre", "multi-turn corpus — prefix arm"),
+    ]
+    for ax, (corpus, arm, title) in zip(axes, panels):
+        for xi, m in enumerate(stages):
+            vals = []
+            if arm == "ctx":
+                for p in sorted(units.glob(f"star_{m}_{corpus}_f*.json")):
+                    with open(p, encoding="utf-8") as f:
+                        vals.append(json.load(f)["r2"])
+            else:
+                for p in sorted(units.glob(f"sweep_{m}_multi_f*.json")):
+                    with open(p, encoding="utf-8") as f:
+                        rec = json.load(f)["arms"].get("pre", {}).get(str(layer_p))
+                    if rec:
+                        vals.append(rec["r2"])
+            xjit = xi + np.linspace(-0.15, 0.15, num=len(vals))
+            ax.scatter(xjit, vals, s=18, color=stage_color(m), label=None)
+            for k, v in enumerate(vals):
+                ax.annotate(
+                    f"f{k}", (xjit[k], v), fontsize=5, xytext=(2, 2), textcoords="offset points"
+                )
+            ax.plot([xi - 0.2, xi + 0.2], [np.mean(vals)] * 2, color=stage_color(m), lw=1.6)
+        ax.set_xticks(range(len(stages)), [STAGE_LABEL[m] for m in stages])
+        ax.set_title(title, fontsize=9)
+        ax.set_xlabel("post-training stage")
+    axes[0].set_ylabel("per-fold held-out OOF R² at layer*")
+    fig.suptitle("Per-fold diagonal map quality (6 cluster-grouped folds per cell)", y=1.02)
+    savefig_paper(fig, "hero1b_diag_q_fold_points", dir=fig_dir)
     plt.close(fig)
 
 
@@ -308,7 +389,14 @@ def fig_clusters(eval_dir: Path, fig_dir: Path) -> None:
         )
         ax.bar(xs, deltas, yerr=np.nan_to_num(errs), capsize=3, color=paper_palette(2)[1])
         ax.axhline(0, color="grey", lw=0.6)
-        ax.set_xticks(xs, list(contrasts), rotation=30, ha="right", fontsize=7)
+        contrast_label = {
+            "a_D->R_gsm8k": "DPO\u2192RLVR\nmath (GSM8K)",
+            "a_D->R_mbpp": "DPO\u2192RLVR\ncode (MBPP)",
+            "b_B->S_generic_single": "base\u2192SFT\ngeneric single-turn",
+            "c_S->D_multi": "SFT\u2192DPO\nmulti-turn",
+        }
+        labels = [contrast_label.get(k, k) for k in contrasts]
+        ax.set_xticks(xs, labels, rotation=0, fontsize=7)
         ax.set_ylabel("ΔQ (class-level held-out R² delta)")
         ax.set_title("Registered class contrasts (95% bootstrap CI)")
         savefig_paper(fig, "clusters_registered_contrasts", dir=fig_dir)
@@ -427,6 +515,7 @@ def fig_exploratory(eval_dir: Path, fig_dir: Path) -> None:
                     v[np.isfinite(v)],
                     bins=40,
                     histtype="step",
+                    linewidth=1.5,
                     color=stage_color(m),
                     label=STAGE_LABEL[m],
                 )
@@ -451,6 +540,7 @@ def fig_exploratory(eval_dir: Path, fig_dir: Path) -> None:
                     r2d[np.isfinite(r2d)],
                     bins=50,
                     histtype="step",
+                    linewidth=1.5,
                     color=stage_color(m),
                     label=STAGE_LABEL[m],
                 )
@@ -540,6 +630,7 @@ def main() -> None:
     set_paper_style()
     args.fig_dir.mkdir(parents=True, exist_ok=True)
     fig_hero_diag(args.eval_dir, args.fig_dir)
+    fig_hero_diag_folds(args.eval_dir, args.fig_dir)
     fig_hero_grid(args.eval_dir, args.fig_dir)
     fig_hero_transfer(args.eval_dir, args.fig_dir)
     fig_clusters(args.eval_dir, args.fig_dir)

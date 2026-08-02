@@ -1,0 +1,81 @@
+{
+  "commit": "8f6456d855",
+  "created": "2026-08-02T00:04:42Z",
+  "figsize": [
+    4.6,
+    3.2
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "OOF R\u00b2 at layer* (2k subset)": -1.1687340581347048,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.8,
+      "OOF R\u00b2 at layer* (2k subset)": -0.9885797250143717,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.8,
+      "OOF R\u00b2 at layer* (2k subset)": -0.983226536675013,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "OOF R\u00b2 at layer* (2k subset)": -1.063305901482502,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "OOF R\u00b2 at layer* (2k subset)": -0.8786853012666122,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "OOF R\u00b2 at layer* (2k subset)": -0.8519147263952652,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Serialization robustness: native vs canonical plain render",
+        "ylabel": "OOF R\u00b2 at layer* (2k subset)",
+        "legend_labels": [
+          "plain render",
+          "native render"
+        ],
+        "xticklabels": [
+          "SFT",
+          "DPO",
+          "RLVR"
+        ],
+        "yticklabels": [
+          "\u22121.4",
+          "\u22121.2",
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0"
+        ]
+      }
+    ],
+    "series": [
+      "plain render",
+      "native render"
+    ]
+  }
+}

@@ -1,0 +1,528 @@
+{
+  "commit": "8f6456d855",
+  "created": "2026-08-02T00:04:12Z",
+  "figsize": [
+    12.6,
+    3.6
+  ],
+  "points": [
+    {
+      "post-training stage": 0.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.3285527356235166,
+      "error": 0.029933933532503093,
+      "series": "ridge (OOF R\u00b2, layer*; 95% cluster CI)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "post-training stage": 1.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.36614485215737846,
+      "error": 0.030645953767177353,
+      "series": "ridge (OOF R\u00b2, layer*; 95% cluster CI)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "post-training stage": 2.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.37953080378148185,
+      "error": 0.029152674327858064,
+      "series": "ridge (OOF R\u00b2, layer*; 95% cluster CI)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "post-training stage": 3.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.37507118398242656,
+      "error": 0.031071831904605718,
+      "series": "ridge (OOF R\u00b2, layer*; 95% cluster CI)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "post-training stage": 0.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.3285527356235166,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "post-training stage": 1.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.36614485215737846,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "post-training stage": 2.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.37953080378148185,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "post-training stage": 3.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.37507118398242656,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "post-training stage": 0.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.2962963237205691,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "post-training stage": 1.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.33446118633223326,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "post-training stage": 2.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.350100165296193,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "post-training stage": 3.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.3427234051273047,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "post-training stage": 0.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.35616419078557526,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "post-training stage": 1.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.39575309386658797,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "post-training stage": 2.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.4084055139519091,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "post-training stage": 3.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.40486706893651614,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "post-training stage": 0.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.26525442995743387,
+      "series": "MLP (own layer)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "post-training stage": 1.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.29374677584322295,
+      "series": "MLP (own layer)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "post-training stage": 2.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.3030521836012199,
+      "series": "MLP (own layer)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "post-training stage": 3.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.29871180746601966,
+      "series": "MLP (own layer)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "post-training stage": 0.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.04226706911010788,
+      "series": "identity+bias baseline",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "post-training stage": 1.0,
+      "held-out pooled OOF R\u00b2 at layer*": 0.0037129118014548137,
+      "series": "identity+bias baseline",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "post-training stage": 2.0,
+      "held-out pooled OOF R\u00b2 at layer*": -0.12213425710130406,
+      "series": "identity+bias baseline",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "post-training stage": 3.0,
+      "held-out pooled OOF R\u00b2 at layer*": -0.1190507166111322,
+      "series": "identity+bias baseline",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "post-training stage": 0.0,
+      "y": 0.35968417446357914,
+      "error": 0.027922205707686942,
+      "series": "ridge (OOF R\u00b2, layer*; 95% cluster CI)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "post-training stage": 1.0,
+      "y": 0.32278299183599946,
+      "error": 0.027665263073481744,
+      "series": "ridge (OOF R\u00b2, layer*; 95% cluster CI)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "post-training stage": 2.0,
+      "y": 0.31767430513073824,
+      "error": 0.02555527737800234,
+      "series": "ridge (OOF R\u00b2, layer*; 95% cluster CI)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "post-training stage": 3.0,
+      "y": 0.3127553583965207,
+      "error": 0.025490422248148986,
+      "series": "ridge (OOF R\u00b2, layer*; 95% cluster CI)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "post-training stage": 0.0,
+      "y": 0.35968417446357914,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "post-training stage": 1.0,
+      "y": 0.32278299183599946,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "post-training stage": 2.0,
+      "y": 0.31767430513073824,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "post-training stage": 3.0,
+      "y": 0.3127553583965207,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "post-training stage": 0.0,
+      "y": 0.3352223551423335,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "post-training stage": 1.0,
+      "y": 0.29936664755474496,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "post-training stage": 2.0,
+      "y": 0.29506674019899726,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "post-training stage": 3.0,
+      "y": 0.29018856219787076,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "post-training stage": 0.0,
+      "y": 0.3910667665577074,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "post-training stage": 1.0,
+      "y": 0.35469717370170845,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "post-training stage": 2.0,
+      "y": 0.34617729495500194,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "post-training stage": 3.0,
+      "y": 0.34116940669416873,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "post-training stage": 0.0,
+      "y": 0.30359938763060557,
+      "series": "identity+bias baseline",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "post-training stage": 1.0,
+      "y": 0.2468571476922313,
+      "series": "identity+bias baseline",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "post-training stage": 2.0,
+      "y": 0.19482728790662077,
+      "series": "identity+bias baseline",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "post-training stage": 3.0,
+      "y": 0.19231275980159182,
+      "series": "identity+bias baseline",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "post-training stage": 0.0,
+      "y": 0.32233458955009675,
+      "error": 0.048613339882004,
+      "series": "ridge (OOF R\u00b2, layer*; fold min\u2013max)",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "post-training stage": 1.0,
+      "y": 0.2784351818940401,
+      "error": 0.04851533277375031,
+      "series": "ridge (OOF R\u00b2, layer*; fold min\u2013max)",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "post-training stage": 2.0,
+      "y": 0.2730589558576422,
+      "error": 0.041206542125211076,
+      "series": "ridge (OOF R\u00b2, layer*; fold min\u2013max)",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "post-training stage": 3.0,
+      "y": 0.2682369708935313,
+      "error": 0.04366910503371413,
+      "series": "ridge (OOF R\u00b2, layer*; fold min\u2013max)",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "post-training stage": 0.0,
+      "y": 0.32233458955009675,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "post-training stage": 1.0,
+      "y": 0.2784351818940401,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "post-training stage": 2.0,
+      "y": 0.2730589558576422,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "post-training stage": 3.0,
+      "y": 0.2682369708935313,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "post-training stage": 0.0,
+      "y": 0.2923140985958682,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "post-training stage": 1.0,
+      "y": 0.25256294191867923,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "post-training stage": 2.0,
+      "y": 0.24485510375715613,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "post-training stage": 3.0,
+      "y": 0.23806572109455337,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "post-training stage": 0.0,
+      "y": 0.3895407783598762,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "post-training stage": 1.0,
+      "y": 0.34959360746617985,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "post-training stage": 2.0,
+      "y": 0.3272681880075783,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "post-training stage": 3.0,
+      "y": 0.32540393116198163,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "post-training stage": 0.0,
+      "y": 0.26889565454991926,
+      "series": "MLP (own layer)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "post-training stage": 1.0,
+      "y": 0.22011235832788278,
+      "series": "MLP (own layer)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "post-training stage": 2.0,
+      "y": 0.2103718480895802,
+      "series": "MLP (own layer)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "post-training stage": 3.0,
+      "y": 0.20719988201222272,
+      "series": "MLP (own layer)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "post-training stage": 0.0,
+      "y": 0.25631473101973296,
+      "series": "identity+bias baseline",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "post-training stage": 1.0,
+      "y": 0.18704744760331957,
+      "series": "identity+bias baseline",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "post-training stage": 2.0,
+      "y": 0.12076853790824622,
+      "series": "identity+bias baseline",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "post-training stage": 3.0,
+      "y": 0.11891597198174403,
+      "series": "identity+bias baseline",
+      "_kind": "line",
+      "_group": 16
+    }
+  ],
+  "n_series": 17,
+  "total_points": 68,
+  "text": {
+    "suptitle": "Diagonal context\u2192answer map quality across the OLMo-2 chain",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "single-turn corpus \u2014 context arm",
+        "xlabel": "post-training stage",
+        "ylabel": "held-out pooled OOF R\u00b2 at layer*",
+        "legend_labels": [
+          "MLP (own layer)",
+          "identity+bias baseline",
+          "shuffled-pairing null band",
+          "ridge (OOF R\u00b2, layer*; 95% cluster CI)"
+        ],
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      },
+      {
+        "title_left": "multi-turn corpus \u2014 context arm",
+        "xlabel": "post-training stage",
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ]
+      },
+      {
+        "title_left": "multi-turn corpus \u2014 prefix arm",
+        "xlabel": "post-training stage",
+        "legend_labels": [
+          "MLP (own layer)",
+          "identity+bias baseline",
+          "ridge (OOF R\u00b2, layer*; fold min\u2013max)"
+        ],
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ]
+      }
+    ],
+    "series": [
+      "MLP (own layer)",
+      "identity+bias baseline",
+      "ridge (OOF R\u00b2, layer*; 95% cluster CI)",
+      "ridge (OOF R\u00b2, layer*; fold min\u2013max)"
+    ]
+  }
+}
