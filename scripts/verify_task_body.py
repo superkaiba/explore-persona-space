@@ -1072,6 +1072,32 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   with zero mechanical signal (check 29 covers figures only; check 15
   reads git TREES, never the working tree).
 
+- **check 51** (`check_v4_dropped_condition_placement`, FAIL/WARN, v4-only,
+  #2017; incident #1947): a `## Methodology` declaration that a planned
+  condition was DROPPED AT A GATE — a sentence matching
+  `was/were dropped|removed|excluded|cut at|by … gate|criterion|floor`
+  on the section's prose layer (fenced code + `<details>` bodies +
+  blockquote lines stripped; the span never crosses `.`/`;`/newline, so
+  judge drop-rate prose with a gate/floor mention in a later sentence
+  never matches) — must name the dropped condition in `## Takeaways` AND
+  in at least one `### <result>` block under `## Results` (CLAUDE.md
+  After-Every-Experiment item 8(a)). The name is extracted best-effort:
+  (1) a parenthetical immediately preceding the verb group
+  (`… (sycophancy) was dropped …`), else (2) the last
+  backtick/bold/italic-wrapped token in the subject clause — colon-ended
+  slot labels (`**Design:**`) and mostly-digit spans (`232 of 240`) are
+  rejected as candidates, falling through to the WARN path rather than a
+  junk-name FAIL (#2017 r2). FAIL when a
+  confidently-extracted name is missing from either placement (detail
+  quotes the declaring sentence, truncated ~120 chars, and names the
+  missing placement(s)); WARN when a declaration is detected but no name
+  is extractable — surface, never block on a failed heuristic
+  extraction. Vacuous PASS on v3/v2/legacy bodies (forward-only) and on
+  v4 bodies with no drop-at-gate language. Incident #1947: the sycophancy
+  yield-gate drop was declared only in Methodology `**Design:**`; every
+  existing check passed and the missing Takeaways/result placements were
+  caught manually by the critic round.
+
 - **judge drop-line population reconciliation**
   (`check_judge_drop_line_population`, FAIL/WARN, v3+v4, #1776 incident /
   task #1881; unnumbered — dispatched outside CHECKS next to the #732
@@ -15377,6 +15403,243 @@ def check_body_params_subset_of_doc(
     )
 
 
+# ─── v4 dropped-at-gate condition placement (check 51, #2017) ────────────────
+
+# A `## Methodology` sentence declaring a planned condition dropped at a
+# gate/criterion/floor — e.g. #1947's "A third planned behavior (sycophancy)
+# was dropped at the datagen yield gate". The `[^.;\n]*?` gap keeps the verb
+# group and the gate noun inside ONE sentence-ish span (a `.`/`;` or a line
+# break ends the candidate), so ordinary judge drop-rate prose ("malformed
+# judge returns were dropped from both arms") with a gate/floor mention in a
+# LATER sentence never matches.
+_DROPPED_AT_GATE_RE = re.compile(
+    r"(?:was|were)\s+(?:dropped|removed|excluded|cut)\s+(?:at|by)\s+"
+    r"(?:the\s+|a\s+|an\s+|its\s+)?[^.;\n]*?\b(?:gate|criterion|floor)\b",
+    re.IGNORECASE,
+)
+
+# Backtick / bold / italic-wrapped tokens (priority-2 name extraction). The
+# italic forms require non-word context so snake_case identifiers
+# (`harmful_compliance`) never read as underscore-italics.
+_C51_WRAPPED_TOKEN_RE = re.compile(
+    r"`([^`\n]{2,60})`"
+    r"|\*\*([^*\n]{2,60})\*\*"
+    r"|(?<!\w)\*([^*\n]{2,60})\*(?!\w)"
+    r"|(?<![\w_])_([^_\n]{2,60})_(?![\w_])"
+)
+
+
+def _strip_blockquote_lines(text: str) -> str:
+    """Drop blockquote (`>`-prefixed) lines — figure-caption chrome the
+    dropped-at-gate scan must not read as Methodology prose. Companion to
+    `_prose_layer`, which strips fenced code + `<details>` bodies but NOT
+    blockquote lines (#2017)."""
+    return "\n".join(ln for ln in text.splitlines() if not ln.lstrip().startswith(">"))
+
+
+def _c51_clean_condition_name(raw: str) -> str | None:
+    """Normalize an extracted condition-name candidate; None when the
+    candidate is not plausibly a NAME (no alphabetic content, an
+    `n=16`-style stat parenthetical, a colon-ended v4 slot label like
+    `Design:`, or a mostly-digit stat span like `232 of 240`) — a rejected
+    candidate falls through to the caller's next extraction priority, and
+    with none surviving the check WARNs, never FAILs on a guess (#2017 r2).
+    Formatting wrappers are stripped at the EDGES only — an interior `_`
+    is part of a snake_case name (`harmful_compliance`), never chrome."""
+    name = re.sub(r"\s+", " ", raw).strip()
+    name = name.strip("`*_\"' \u2018\u2019\u201c\u201d")
+    if not name or len(name) > 60 or not re.search(r"[A-Za-z]", name):
+        return None
+    if name.endswith(":"):
+        # A bold token ending in a colon is a v4 slot label / heading
+        # (`**Design:**`, `**Data extraction:**` -- format-mandated chrome on
+        # every v4 Methodology bullet), never a condition name (#2017 r2).
+        return None
+    if re.fullmatch(r"[a-zA-Z]\s*[=≈<>≤≥]\s*[\d,.\s%]+", name):
+        return None
+    if sum(c.isdigit() for c in name) > sum(c.isalpha() for c in name):
+        # Mostly-digit spans (`232 of 240`) are stat parentheticals whose
+        # "of"/"vs" connective supplies the alphabetic chars, not names
+        # (#2017 r2).
+        return None
+    return name
+
+
+def _c51_subject_clause(prose: str, match_start: int) -> str:
+    """The subject clause preceding a dropped-at-gate verb group: text from
+    the previous sentence terminator (`.`/`;`/newline) to the match start.
+    The detection regex cannot cross those terminators, so the clause and
+    the verb group always share one sentence."""
+    seg_start = max(
+        prose.rfind(".", 0, match_start),
+        prose.rfind(";", 0, match_start),
+        prose.rfind("\n", 0, match_start),
+    )
+    return prose[seg_start + 1 : match_start]
+
+
+def _c51_declaring_sentence(prose: str, m: re.Match) -> str:
+    """The full declaring sentence around a dropped-at-gate match, whitespace-
+    normalized, list-marker-stripped, truncated to ~120 chars for the check
+    detail."""
+    seg_start = (
+        max(
+            prose.rfind(".", 0, m.start()),
+            prose.rfind(";", 0, m.start()),
+            prose.rfind("\n", 0, m.start()),
+        )
+        + 1
+    )
+    ends = [i for i in (prose.find(t, m.end()) for t in (".", ";", "\n")) if i != -1]
+    seg_end = min(ends) + 1 if ends else len(prose)
+    sentence = re.sub(r"\s+", " ", prose[seg_start:seg_end]).strip()
+    sentence = re.sub(r"^[-*+]\s+", "", sentence)
+    if len(sentence) > 120:
+        sentence = sentence[:117].rstrip() + "…"
+    return sentence
+
+
+def _extract_dropped_condition_name(subject: str) -> str | None:
+    """Best-effort extraction of the dropped condition's NAME from the
+    subject clause preceding a dropped-at-gate verb group.
+
+    Priority: (1) a parenthetical immediately preceding the verb group —
+    `A third planned behavior (sycophancy) was dropped …` → `sycophancy`
+    (the #1947 shape); (2) the LAST backtick/bold/italic-wrapped token in
+    the subject clause — "The `harmful_compliance` behavior was dropped …"
+    → `harmful_compliance`. None when neither form yields a plausible name
+    (the caller's WARN path — surface, never block on a failed heuristic).
+    """
+    m = re.search(r"\(([^()]{2,60})\)\s*$", subject.rstrip())
+    if m:
+        name = _c51_clean_condition_name(m.group(1))
+        if name is not None:
+            return name
+    wrapped = _C51_WRAPPED_TOKEN_RE.findall(subject)
+    for groups in reversed(wrapped):
+        for g in groups:
+            if g and g.strip():
+                name = _c51_clean_condition_name(g)
+                if name is not None:
+                    return name
+    return None
+
+
+def _c51_name_in_text(name: str, text: str | None) -> bool:
+    """Case-insensitive token-bounded match of `name` in `text`: single-token
+    names match on the whole token (never inside a longer word); multi-token
+    names match the full token sequence under flexible separators — `[\\W_]+`
+    so a space-separated extraction still matches a snake_case placement
+    mention ("casual writing style" ↔ `casual_writing_style`)."""
+    if not text:
+        return False
+    tokens = [re.escape(t) for t in re.split(r"[\W_]+", name) if t]
+    if not tokens:
+        return False
+    pat = r"(?<![0-9a-zA-Z])" + r"[\W_]+".join(tokens) + r"(?![0-9a-zA-Z])"
+    return re.search(pat, text, flags=re.IGNORECASE) is not None
+
+
+def _v4_result_block_texts(body: str) -> list[str]:
+    """Text (heading + prose) of each `### <result>` block under the
+    footer-truncated `## Results` section. Empty when `## Results` is absent
+    or carries no `### ` headings."""
+    results = _v4_results_body(body)
+    if results is None:
+        return []
+    rlines = results.splitlines()
+    h3s = _collect_tldr_h3_names(results)
+    out: list[str] = []
+    for idx, (_name, line_no) in enumerate(h3s):
+        end_line = h3s[idx + 1][1] if idx + 1 < len(h3s) else len(rlines)
+        out.append("\n".join(rlines[line_no:end_line]))
+    return out
+
+
+def check_v4_dropped_condition_placement(body: str) -> CheckResult:
+    """Check 51 (v4 only, #2017; incident #1947): a `## Methodology`
+    declaration that a planned condition was DROPPED AT A GATE (yield gate /
+    kill criterion / floor) must name the dropped condition in `## Takeaways`
+    AND in at least one `### <result>` block under `## Results` — CLAUDE.md
+    After-Every-Experiment item 8(a).
+
+    Detection runs on the `## Methodology` prose layer ONLY (fenced code +
+    `<details>` bodies + blockquote lines stripped): sentences matching
+    `was/were dropped|removed|excluded|cut at|by … gate|criterion|floor`
+    within one sentence (the span never crosses `.`/`;`/newline, so judge
+    drop-rate prose with a gate/floor mention in a later sentence never
+    matches). The dropped condition's name is extracted best-effort —
+    (1) a parenthetical immediately preceding the verb group, else (2) the
+    last backtick/bold/italic-wrapped token in the subject clause; a
+    colon-ended candidate (a bold slot label such as `**Design:**` leading
+    the bullet) or a mostly-digit candidate (`232 of 240`) is REJECTED —
+    extraction falls through to the next priority, and to the WARN path
+    when none survives (#2017 r2). FAIL when
+    a confidently-extracted name is missing from `## Takeaways` or from
+    every `### <result>` block (detail quotes the declaring sentence and
+    names the missing placement(s)); WARN when a drop-at-gate declaration is
+    detected but no name is extractable (surface, never block on a failed
+    heuristic extraction). Vacuous PASS on v3/v2/legacy bodies (forward-only)
+    and on v4 bodies with no drop-at-gate language. Incident #1947: the
+    sycophancy yield-gate drop was declared only in Methodology
+    `**Design:**`; every existing check passed and the missing
+    Takeaways/result placements were caught manually by the critic round.
+    """
+    label = "dropped-at-gate condition placement (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    methodology = section_text(body, "Methodology")
+    if methodology is None:
+        return CheckResult(label, True, "## Methodology missing — check 2 will report")
+    prose = _strip_blockquote_lines(_prose_layer(methodology))
+    matches = list(_DROPPED_AT_GATE_RE.finditer(prose))
+    if not matches:
+        return CheckResult(label, True, "no dropped-at-gate declaration in ## Methodology")
+    takeaways = section_text(body, "Takeaways")
+    result_blocks = _v4_result_block_texts(body)
+    failures: list[str] = []
+    unextracted: list[str] = []
+    for m in matches:
+        sentence = _c51_declaring_sentence(prose, m)
+        name = _extract_dropped_condition_name(_c51_subject_clause(prose, m.start()))
+        if name is None:
+            unextracted.append(sentence)
+            continue
+        missing: list[str] = []
+        if not _c51_name_in_text(name, takeaways):
+            missing.append("## Takeaways")
+        if not any(_c51_name_in_text(name, blk) for blk in result_blocks):
+            missing.append("every `### <result>` block under ## Results")
+        if missing:
+            failures.append(
+                f'dropped condition `{name}` (declared: "{sentence}") is absent from '
+                + " AND from ".join(missing)
+            )
+    if failures:
+        return CheckResult(
+            label,
+            False,
+            "; ".join(failures)
+            + " — CLAUDE.md After-Every-Experiment item 8(a): name the dropped condition in "
+            "## Takeaways and in the relevant `### <result>` prose",
+        )
+    if unextracted:
+        preview = "; ".join(f'"{s}"' for s in unextracted[:2])
+        return CheckResult(
+            label,
+            True,
+            f"{len(unextracted)} dropped-at-gate declaration(s) with no extractable condition "
+            f"name — verify the 8(a) Takeaways/result placement manually: {preview}",
+            is_warn=True,
+        )
+    return CheckResult(
+        label,
+        True,
+        f"{len(matches)} dropped-at-gate declaration(s); every extracted condition name "
+        "appears in ## Takeaways and ≥1 `### <result>` block",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 
@@ -15435,6 +15698,10 @@ CHECKS = [
     # check 39 (v4) — `Disclosure: N of M` count claim in the Sample slot
     # reconciles with the example items actually shown (#1421; incident #1005):
     check_v4_sample_disclosure_count,
+    # check 51 (v4) — a ## Methodology dropped-at-gate condition declaration
+    # names the dropped condition in ## Takeaways AND >=1 `### <result>` block
+    # (CLAUDE.md After-Every-Experiment item 8(a); #2017; incident #1947):
+    check_v4_dropped_condition_placement,
     # generation-agnostic checks (v2 AND v3 AND v4):
     check_figure_url_sha_matches_repro,  # check 22
     check_hf_url_resolves,  # check 23
