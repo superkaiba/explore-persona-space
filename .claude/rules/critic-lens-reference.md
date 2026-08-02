@@ -446,8 +446,9 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     plan's §4 must name each training-row type's completion provenance (`on-policy (tier 1/2/3)` |
     `canned/template` | `third-party-LLM-written` | `published-corpus-verbatim`) with on-policy
     positives as the DEFAULT — behavior instruction in the system prompt, judge-filtered,
-    elicitation instruction stripped before training, pre-registered per-source yield quota + drop
-    rule — per `.claude/rules/on-policy-completions.md` and planner.md §4 "Completion provenance".
+    elicitation instruction stripped before training, pre-registered per-source yield quota +
+    close-miss escalation (≥ 90% of floor → ONE recorded same-construct tranche before the drop) +
+    drop rule — per `.claude/rules/on-policy-completions.md` and planner.md §4 "Completion provenance".
     REVISE when (i) the positive completions are canned/templated or third-party-LLM-written WITHOUT
     either an explicit anchor/control role (the data construction IS the manipulated variable,
     stated as such) or a recorded on-policy yield failure for that source/behavior, or (ii) the plan
