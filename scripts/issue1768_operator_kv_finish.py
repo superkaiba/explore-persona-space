@@ -68,14 +68,32 @@ def subspace_null(k: int, n: int, draws: int, rng) -> dict:
 
 def build(figs_dir: Path) -> dict:
     recs = {}
-    for p in sorted(OPKV_DIR.glob("*.json")):
-        d = json.loads(p.read_text())
-        recs[d["arm_id"]] = d
+    for q in sorted(OPKV_DIR.glob("*.json")):
+        d = json.loads(q.read_text())
+        recs[(d["arm_id"], int(d["layer"]))] = d  # CELL-keyed: arm alone collides
     assert recs, f"no operator_kv records under {OPKV_DIR}"
+    layers_present = sorted({li for _a, li in recs})
+
+    # SCHEMA COMPLETENESS GATE. A cell written by an EARLIER schema version can
+    # survive a re-run when the per-arm pass skips it as "present", and would
+    # then ride silently into the summary with targets missing.
+    required_top = ("keys_side_established_by_assert", "value_target_provenance")
+    required_vtargets = ("rB_behavior_readout", "wu_marker_unembedding_row")
+    stale = []
+    for (arm_, li_), d_ in sorted(recs.items()):
+        missing = [k for k in required_top if k not in d_]
+        vt_ = d_.get("value_alignment", {}).get("targets", {})
+        missing += [f"value_target:{t}" for t in required_vtargets if t not in vt_]
+        if missing:
+            stale.append(f"{arm_}_L{li_}.json missing {missing}")
+    assert not stale, (
+        "operator_kv records are SCHEMA-STALE (delete these and regenerate; the "
+        "per-arm pass skips existing files):\n  " + "\n  ".join(stale)
+    )
 
     rng = np.random.default_rng(NULL_SEED)
     null_cache: dict[tuple[int, int], dict] = {}
-    for arm, d in recs.items():
+    for (arm, _li), d in recs.items():
         k = d["match_read"]["k_used"]
         n = d["operator_shape"][0]
         if (k, n) not in null_cache:
@@ -90,11 +108,13 @@ def build(figs_dir: Path) -> dict:
             d["match_read"][f"{side}_match_exceeds_null_p95"] = bool(obs > nul["mean_cos_null_p95"])
         MA._atomic_json(OPKV_DIR / f"{arm}_L{d['layer']}.json", d)
 
-    per_arm = {}
-    for arm, d in sorted(recs.items()):
+    per_cell = {}
+    for (arm, li), d in sorted(recs.items()):
         sr = d["spectrum_real"]
         mr = d["match_read"]
-        per_arm[arm] = {
+        per_cell[f"{arm}|L{li}"] = {
+            "arm_id": arm,
+            "layer": li,
             "method": d["method"],
             "K_train_pairs": d["K_train_pairs"],
             "kv_orientation_check_rel_err": d["kv_orientation_check_rel_err"],
@@ -138,7 +158,6 @@ def build(figs_dir: Path) -> dict:
             "Is the realized post-FT operator update a low-rank key-value write, and "
             "are its keys/values the ones the data-augmented refit predicts?"
         ),
-        "layer": next(iter(recs.values()))["layer"],
         "pooling": next(iter(recs.values()))["pooling"],
         "poolings_covered": ["last_prompt (last-token, the round's PRIMARY pooling)"],
         "poolings_not_covered": [
@@ -150,8 +169,13 @@ def build(figs_dir: Path) -> dict:
             "vectors P are the context-side KEYS and the RIGHT vectors Q the answer-side "
             "VALUES; verified per arm by key @ A ~= sigma * value (rel err ~1e-15)"
         ),
-        "n_arms": len(per_arm),
-        "per_arm": per_arm,
+        "layers_covered": layers_present,
+        "headline_layer": MA.HEADLINE_LAYER,
+        "n_cells": len(per_cell),
+        "per_arm_headline_layer": {
+            v["arm_id"]: v for v in per_cell.values() if v["layer"] == MA.HEADLINE_LAYER
+        },
+        "per_cell": per_cell,
         **MA._meta(),
     }
     summ_path = RESULTS_DIR / "summary.json"
@@ -172,6 +196,8 @@ def build(figs_dir: Path) -> dict:
     )
 
     set_paper_style("blog")
+    per_arm = {v["arm_id"]: v for v in per_cell.values() if v["layer"] == MA.HEADLINE_LAYER}
+    assert per_arm, f"no cells at the headline layer L{MA.HEADLINE_LAYER}"
     arms = sorted(per_arm)
     beh = {a: a.split("-")[0] for a in arms}
     pal = paper_palette(len(sorted(set(beh.values()))))
@@ -224,7 +250,12 @@ def build(figs_dir: Path) -> dict:
         "whitened_gate_Sigma_inv_c_src",
         "ridge_natural_key_from_augmentation",
     ]
-    vtargs = ["delta_eq_mean_map_residual", "map_residual_pc1", "mean_measured_write_wtf"]
+    vtargs = [
+        "delta_eq_mean_map_residual",
+        "map_residual_pc1",
+        "mean_measured_write_wtf",
+        "rB_behavior_readout",
+    ]
     labels = [
         "key: train-ctx centroid",
         "key: whitened gate",
@@ -232,14 +263,16 @@ def build(figs_dir: Path) -> dict:
         "value: $\\delta$ = mean map residual",
         "value: residual PC1",
         "value: mean measured write",
+        "value: $r_B$ behaviour read-out",
     ]
     vals = [np.mean([per_arm[a]["key_alignment"].get(t, np.nan) for a in arms]) for t in ktargs]
     vals += [np.mean([per_arm[a]["value_alignment"].get(t, np.nan) for a in arms]) for t in vtargs]
     errs = [np.std([per_arm[a]["key_alignment"].get(t, np.nan) for a in arms]) for t in ktargs]
     errs += [np.std([per_arm[a]["value_alignment"].get(t, np.nan) for a in arms]) for t in vtargs]
-    cols = ["#b0b0b0"] * 3 + [bcol[sorted(bcol)[0]]] * 3
+    n_bars = len(labels)
+    cols = ["#b0b0b0"] * 3 + [bcol[sorted(bcol)[0]]] * (n_bars - 3)
     ax.barh(
-        np.arange(6),
+        np.arange(n_bars),
         vals,
         xerr=[np.maximum(0, errs), np.maximum(0, errs)],
         color=cols,
@@ -254,7 +287,7 @@ def build(figs_dir: Path) -> dict:
         lw=1.2,
         label=f"random-direction null p95 = {nullp95:.3f}",
     )
-    ax.set_yticks(np.arange(6))
+    ax.set_yticks(np.arange(n_bars))
     ax.set_yticklabels(labels, fontsize=6.4)
     ax.invert_yaxis()
     ax.set_xlabel("projection of target onto the top-5 singular subspace")
@@ -277,7 +310,7 @@ def build(figs_dir: Path) -> dict:
 
     fig.suptitle(
         f"Operator-SVD key-value read of the realized map update "
-        f"(L{block['layer']}, last-token pooling)",
+        f"(L{MA.HEADLINE_LAYER}, last-token pooling)",
         fontsize=10.5,
     )
     fig.tight_layout()
@@ -305,7 +338,7 @@ def main(argv: list[str] | None = None) -> int:
         print("import-check ok")
         return 0
     b = build(args.figs_dir)
-    print(f"[operator_kv] merged block for {b['n_arms']} arms")
+    print(f"[operator_kv] merged block for {b['n_cells']} cells, layers {b['layers_covered']}")
     print("[phase=done]", flush=True)
     sys.stdout.flush()
     sys.stderr.flush()

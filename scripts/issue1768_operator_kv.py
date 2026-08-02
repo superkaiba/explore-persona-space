@@ -54,6 +54,7 @@ import numpy as np  # noqa: E402
 import issue1768_cells as X  # noqa: E402
 import issue1768_fit as F  # noqa: E402
 import issue1768_lasttoken_fit as LTF  # noqa: E402
+import issue1768_directions as DIR  # noqa: E402
 import issue1768_map_augmentation as MA  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -71,6 +72,37 @@ def _phase(name: str) -> None:
 
 
 # ── operator construction at the COMMITTED lambda ───────────────────────────
+
+
+_RB_CACHE: dict | None = None
+_WU_CACHE: dict = {}
+
+
+def _rb_stacks(out_root: Path) -> dict:
+    """The four fleet r_B stacks, via round 1's OWN resolver.
+
+    r_B is a BANKED tensor line (#1112/#1315/#1434 analysis_tensors), shape
+    (n_layers, hidden) indexed rb[layer] -- NOT weight-derived, so no model
+    download.
+    """
+    global _RB_CACHE
+    if _RB_CACHE is None:
+        _RB_CACHE = DIR.load_rb_tensors(out_root)
+        logger.info("[opkv] r_B stacks loaded: %s", {k: v.shape for k, v in _RB_CACHE.items()})
+    return _RB_CACHE
+
+
+def _wu_marker_row() -> tuple[np.ndarray | None, str]:
+    """Base lm_head row for the marker token, via a safetensors SLICE (fail-soft)."""
+    if "row" in _WU_CACHE:
+        return _WU_CACHE["row"], _WU_CACHE["note"]
+    try:
+        row = np.asarray(DIR.load_wu_row(X.BASE_MODEL), dtype=np.float64)
+        _WU_CACHE.update(row=row, note="safetensors slice of base lm_head")
+    except Exception as exc:  # noqa: BLE001 -- optional target, never fatal
+        _WU_CACHE.update(row=None, note=f"unavailable: {type(exc).__name__}: {exc}")
+        logger.warning("[opkv] W_U marker row unavailable: %s", exc)
+    return _WU_CACHE["row"], _WU_CACHE["note"]
 
 
 def _fit_operator_at_lambda(Xd, Yd, tr, lam, dev, block):
@@ -335,15 +367,33 @@ def run_arm(out_root: Path, arm_id: str, layer: int, pos_path: str, block: int) 
         "whitened_gate_Sigma_inv_c_src": gate,
         "ridge_natural_key_from_augmentation": spec_hat["keys"][:, 0],
     }
+    # r_B: the BANKED fleet read-out direction for this behavior at this layer
+    arm = {a.arm_id: a for a in X.all_arms()}[arm_id]
+    rb_stack = _rb_stacks(out_root).get(arm.beh_key)
+    rb_vec = None
+    rb_note = f"no r_B stack for beh_key={arm.beh_key}"
+    if rb_stack is not None:
+        if layer < rb_stack.shape[0]:
+            rb_vec = rb_stack[layer]
+            rb_note = f"banked rb[{arm.beh_key}][{layer}], stack shape {rb_stack.shape}"
+        else:
+            rb_note = f"layer {layer} >= r_B stack depth {rb_stack.shape[0]}"
+    wu_vec, wu_note = (None, "not a marker arm")
+    if arm.kind == "marker":
+        wu_vec, wu_note = _wu_marker_row()
+
     value_targets = {
         # delta IS the mean training-pair map residual in this construction --
         # the brief's (a) and (c) are the same object, reported once
         "delta_eq_mean_map_residual": delta_vec,
         "map_residual_pc1": resid_pc1,
         "mean_measured_write_wtf": w_mean,
-        # r_B / marker unembedding row lives in the model weights (a ~15 GB
-        # download); NOT computed rather than substituted
-        "rB_marker_unembedding_row": None,
+        "rB_behavior_readout": rb_vec,
+        "wu_marker_unembedding_row": wu_vec,
+    }
+    target_provenance = {
+        "rB_behavior_readout": rb_note,
+        "wu_marker_unembedding_row": wu_note,
     }
 
     k_eff = _effective_rank(spec_hat["svals"], spec_hat["fro2_exact"])
@@ -369,6 +419,14 @@ def run_arm(out_root: Path, arm_id: str, layer: int, pos_path: str, block: int) 
         "K_train_pairs": int(T.shape[0]),
         "operator_shape": list(dA_real.shape),
         "kv_orientation_check_rel_err": orient_rel,
+        "keys_side_established_by_assert": (
+            "LEFT singular vectors of the raw row-vector operator A (v = c @ A) are the "
+            "context-side KEYS; RIGHT singular vectors are the answer-side VALUES. "
+            "Equivalently, in the COLUMN convention M = A^T (v = M c) the KEYS are M's "
+            "RIGHT singular vectors -- the two phrasings agree once the operator "
+            "orientation is fixed. VERIFIED per cell by key @ A ~= sigma * value."
+        ),
+        "value_target_provenance": target_provenance,
         "refit_reproduction": repro,
         "spectrum_real": _jsonable_spectrum(spec_real),
         "spectrum_predicted": _jsonable_spectrum(spec_hat),
@@ -391,7 +449,11 @@ def run_arm(out_root: Path, arm_id: str, layer: int, pos_path: str, block: int) 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out-root", type=Path, default=None)
-    ap.add_argument("--layer", type=int, default=MA.HEADLINE_LAYER)
+    ap.add_argument(
+        "--layers",
+        default=",".join(str(x) for x in X.LAYERS),
+        help="comma-separated layers; the headline layer carries the figure",
+    )
     ap.add_argument("--arms", default="")
     ap.add_argument("--block", type=int, default=50_000)
     ap.add_argument("--phase", default="all")
@@ -452,31 +514,41 @@ def main(argv: list[str] | None = None) -> int:
         dest_dir.mkdir(parents=True, exist_ok=True)
         cache = out_root / "lt_answer_cache"
         cache.mkdir(parents=True, exist_ok=True)
-        for i, arm_id in enumerate(arms, start=1):
-            dest = dest_dir / f"{arm_id}_L{args.layer}.json"
-            if dest.exists():
-                logger.info("[opkv] unit %d/%d %s: present, skip", i, len(arms), arm_id)
-                continue
-            t0 = time.time()
-            MA._prewarm_arm_cache(cache, arm_id)
-            rec = run_arm(out_root, arm_id, args.layer, srcs[arm_id]["pos_path"], args.block)
-            MA._atomic_json(dest, rec)
+        layers = [int(x) for x in args.layers.split(",")]
+        todo = [(a, li) for a in arms for li in layers]
+        k = 0
+        # ARM-OUTER so one download of each arm's answer stores serves every layer
+        for arm_id in arms:
+            if any(not (dest_dir / f"{arm_id}_L{li}.json").exists() for li in layers):
+                MA._prewarm_arm_cache(cache, arm_id)
+            for layer in layers:
+                k += 1
+                dest = dest_dir / f"{arm_id}_L{layer}.json"
+                if dest.exists():
+                    logger.info(
+                        "[opkv] unit %d/%d %s L%d: present, skip", k, len(todo), arm_id, layer
+                    )
+                    continue
+                t0 = time.time()
+                rec = run_arm(out_root, arm_id, layer, srcs[arm_id]["pos_path"], args.block)
+                MA._atomic_json(dest, rec)
+                logger.info(
+                    "[opkv] unit %d/%d %s L%d: top1=%.3f top5=%.3f PR=%.1f "
+                    "key_match=%.3f val_match=%.3f rB=%s elapsed=%.0fs",
+                    k,
+                    len(todo),
+                    arm_id,
+                    layer,
+                    rec["spectrum_real"]["top1_share"],
+                    rec["spectrum_real"]["top5_share"],
+                    rec["spectrum_real"]["participation_ratio_exact"],
+                    rec["match_read"]["key_subspace_principal_angles"]["mean_cos"],
+                    rec["match_read"]["value_subspace_principal_angles"]["mean_cos"],
+                    rec["value_alignment"]["targets"]["rB_behavior_readout"].get("computed"),
+                    time.time() - t0,
+                )
             MA._drop_arm_cache(cache, arm_id)
-            logger.info(
-                "[opkv] unit %d/%d %s L%d: top1=%.3f top5=%.3f PR=%.1f "
-                "key_match=%.3f val_match=%.3f elapsed=%.0fs",
-                i,
-                len(arms),
-                arm_id,
-                args.layer,
-                rec["spectrum_real"]["top1_share"],
-                rec["spectrum_real"]["top5_share"],
-                rec["spectrum_real"]["participation_ratio_exact"],
-                rec["match_read"]["key_subspace_principal_angles"]["mean_cos"],
-                rec["match_read"]["value_subspace_principal_angles"]["mean_cos"],
-                time.time() - t0,
-            )
-        logger.info("[opkv] all %d arms complete", len(arms))
+        logger.info("[opkv] all %d units complete", len(todo))
 
     print("[phase=done]", flush=True)
     sys.stdout.flush()
