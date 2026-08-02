@@ -1,6 +1,6 @@
 {
-  "commit": "02aaaa3720",
-  "created": "2026-08-02T01:09:54Z",
+  "commit": "deaa8e00b2",
+  "created": "2026-08-02T02:07:12Z",
   "figsize": [
     7.0,
     6.0
@@ -266,28 +266,28 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "content arms: rho(p3b_tc, dv_change)",
+        "title_left": "content arms: through-map predicted-answer similarity vs leakage change",
         "legend_labels": [
           "raw Spearman",
           "length-partialled"
         ],
         "yticklabels": [
-          "cas-bare-con-lr1e5-s42",
-          "cas-pers-con-lr1e5-s42",
-          "cas-pers-ft-con-s42",
-          "cas-pers-po-lr1e5-s42",
-          "imp-pers-con-lr3e5-s137",
-          "imp-pers-con-lr3e5-s42",
-          "imp-pers-ft-con-s42",
-          "imp-pers-po-lr1e5-s42",
-          "syc-bare-con-lr1e5-s42",
-          "syc-conv-con-lr1e5-s42",
-          "syc-pers-ft-con-s42",
-          "syc-pers-po-lr1e5-s42"
+          "casual bare-context contrastive",
+          "casual persona contrastive",
+          "casual persona full fine-tune",
+          "casual persona positive-only",
+          "impolite persona contrastive (seed 137)",
+          "impolite persona contrastive (seed 42)",
+          "impolite persona full fine-tune",
+          "impolite persona positive-only",
+          "sycophancy bare-context contrastive",
+          "sycophancy conversation contrastive",
+          "sycophancy persona full fine-tune",
+          "sycophancy persona positive-only"
         ]
       },
       {
-        "title_left": "marker arms: rho(p9_k8, dv_dlogp)",
+        "title_left": "marker arms: nearest-training-rows context similarity vs marker log-prob change",
         "xlabel": "Spearman rho (raw vs content-token-length-partialled)",
         "xticklabels": [
           "\u22120.4",
@@ -300,12 +300,12 @@
           "1.0"
         ],
         "yticklabels": [
-          "mk-bare-con-lr5e6-s42",
-          "mk-conv-con-lr5e6-s42",
-          "mk-icl-con-lr5e6-s42",
-          "mk-pers-con-lr5e6-s42",
-          "mk-pers-ft-con-s42",
-          "mk-pers-po-lr5e6-s42"
+          "marker bare-context contrastive",
+          "marker conversation contrastive",
+          "marker ICL contrastive",
+          "marker persona contrastive",
+          "marker persona full fine-tune",
+          "marker persona positive-only"
         ]
       }
     ],
