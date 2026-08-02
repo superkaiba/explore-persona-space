@@ -19,7 +19,7 @@ goal: Test whether a context->dialogue linear map focused on a SINGLE fixed fict
   and instruct — the fiction-character analog of the assistant-persona context->answer
   map — across a 4-persona panel, each persona its own map.
 ---
-# A fixed-label fiction character supports a character-specific context→dialogue map in both base and instruct models once each scene is aggregated to one point (MODERATE confidence)
+# A fixed-label fiction character supports a character-specific context→dialogue map in both base and instruct models (MODERATE confidence)
 
 <!-- clean-result-v4 -->
 
@@ -29,10 +29,10 @@ goal: Test whether a context->dialogue linear map focused on a SINGLE fixed fict
 
 - Scene-aggregated prefill fits (one point per scene, n=300 per persona): all four personas clear the shuffle null at layer 19 in both models — base 0.13–0.22, instruct 0.23–0.40.
 - Character-specific in both models on matched contexts: the correct pairing beats the cross-character swap by pooled R² +0.295 (base) and +0.381 (instruct), n=1200 scene points.
-- Round 1's per-turn instruct anti-prediction (−0.10 to −0.19, swap inverted) was a within-scene near-duplicate-context fold artifact — real at the per-turn grain, not a property of the character map.
+- Round 1's per-turn instruct anti-prediction (−0.10 to −0.19) was a λ-selection artifact conditioned by within-scene near-duplicate contexts — inner-group-CV reads all four cells positive (+0.24 to +0.31); the swap inversion is not re-audited.
 - Script-format scenes agree at layer 19: base 0.106–0.148 and instruct 0.166–0.253, all eight cells clearing their shuffle nulls; the completed instruct swap control reads character-specific (+0.226).
 - The four character maps are dominantly one shared operator: a single pooled map with one global offset recovers 81–98% of each persona's own-map ceiling (per-persona offsets add ~0; per-character slope residual +0.007–0.025, every CI above zero, Vex largest); data-paired Procrustes-aligned operator cosine 0.52 base / 0.59 instruct — the round-1 spectrum-cosine 0.99 read is quasi-mechanical (shuffle-fit null ≈ 0.99) and demoted to descriptive.
-- Method caveats: aggregated R² is not comparable to the per-turn assistant-map ceiling (0.588 base / 0.673 instruct — averaging ~5–6 completions per scene mechanically raises attainable R²); uncapped GCV ridge was numerically degenerate at prefill row counts (R² to −11), so all prefill, aggregated, and completion-round script fits use a selection-symmetric degrees-of-freedom cap (run-2 script cells ran uncapped).
+- Method caveats: aggregated R² is not comparable to the per-turn assistant-map ceiling (0.588 base / 0.673 instruct — averaging ~5–6 completions per scene mechanically raises attainable R²); uncapped GCV ridge was numerically degenerate at prefill row counts (R² to −11), so all prefill, aggregated, and completion-round script fits use a selection-symmetric degrees-of-freedom cap (run-2 script cells ran uncapped); a later selector audit shows the capped selector itself deflates per-turn cells — inner-group-CV selects λ 3,162–10,000 vs the published λ=100.
 
 ## Goal
 
