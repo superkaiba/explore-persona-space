@@ -992,7 +992,10 @@ def _load_preds(preds_dir: Path, cell_id: str) -> tuple[np.ndarray, np.ndarray, 
 def _t(a: np.ndarray):
     import torch
 
-    return torch.as_tensor(np.asarray(a), dtype=torch.float64)
+    # On the fit device: keeps the grid/ladder ridge batteries on GPU when one
+    # is visible (the 17912 crash class is separately closed source-side —
+    # ma._ridge_prep now pins its inner caches to the caller's device).
+    return torch.as_tensor(np.asarray(a), dtype=torch.float64, device=fc._fit_device())
 
 
 def xy_grid(
