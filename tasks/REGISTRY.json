@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1988,
+  "highest_id": 1989,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7648,6 +7648,13 @@
       "path": "tasks/proposed/1988",
       "status": "proposed",
       "title": "workflow-fix: widen check-28 figure token pattern to arm slugs"
+    },
+    "1989": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1989",
+      "status": "proposed",
+      "title": "workflow-fix: repro-artifacts-clean gate vs working-tree git status"
     },
     "199": {
       "has_clean_result": true,
