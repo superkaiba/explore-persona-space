@@ -7093,8 +7093,8 @@
     "1916": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1916",
-      "status": "planning",
+      "path": "tasks/approved/1916",
+      "status": "approved",
       "title": "daily-fix: judge max_tokens floor 600 for JSON rubrics"
     },
     "1917": {
