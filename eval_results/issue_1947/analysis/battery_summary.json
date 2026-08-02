@@ -1,5 +1,5 @@
 {
- "n_arms": 38,
+ "n_arms": 56,
  "layers": [
   14,
   19,
@@ -8,8 +8,8 @@
  "context_summary_primary": "last_prompt",
  "context_summary_secondary": "context",
  "coverage": {
-  "n_content": 34,
-  "n_in_band": 18
+  "n_content": 52,
+  "n_in_band": 36
  },
  "d_forest": [
   {
@@ -222,6 +222,114 @@
   {
    "file": "fits/lasttoken/imp-pers-con-sv-s42_L25_lasttoken.json",
    "arm": "imp-pers-con-sv-s42",
+   "layer": 25,
+   "D": null,
+   "D_ci95": null,
+   "floor_p95": null,
+   "verdict": null
+  },
+  {
+   "file": "fits/lasttoken/syc-bare-con-sv-s42_L14_lasttoken.json",
+   "arm": "syc-bare-con-sv-s42",
+   "layer": 14,
+   "D": null,
+   "D_ci95": null,
+   "floor_p95": null,
+   "verdict": null
+  },
+  {
+   "file": "fits/lasttoken/syc-bare-con-sv-s42_L19_lasttoken.json",
+   "arm": "syc-bare-con-sv-s42",
+   "layer": 19,
+   "D": null,
+   "D_ci95": null,
+   "floor_p95": null,
+   "verdict": null
+  },
+  {
+   "file": "fits/lasttoken/syc-bare-con-sv-s42_L25_lasttoken.json",
+   "arm": "syc-bare-con-sv-s42",
+   "layer": 25,
+   "D": null,
+   "D_ci95": null,
+   "floor_p95": null,
+   "verdict": null
+  },
+  {
+   "file": "fits/lasttoken/syc-conv-con-sv-s42_L14_lasttoken.json",
+   "arm": "syc-conv-con-sv-s42",
+   "layer": 14,
+   "D": null,
+   "D_ci95": null,
+   "floor_p95": null,
+   "verdict": null
+  },
+  {
+   "file": "fits/lasttoken/syc-conv-con-sv-s42_L19_lasttoken.json",
+   "arm": "syc-conv-con-sv-s42",
+   "layer": 19,
+   "D": null,
+   "D_ci95": null,
+   "floor_p95": null,
+   "verdict": null
+  },
+  {
+   "file": "fits/lasttoken/syc-conv-con-sv-s42_L25_lasttoken.json",
+   "arm": "syc-conv-con-sv-s42",
+   "layer": 25,
+   "D": null,
+   "D_ci95": null,
+   "floor_p95": null,
+   "verdict": null
+  },
+  {
+   "file": "fits/lasttoken/syc-icl-con-sv-s42_L14_lasttoken.json",
+   "arm": "syc-icl-con-sv-s42",
+   "layer": 14,
+   "D": null,
+   "D_ci95": null,
+   "floor_p95": null,
+   "verdict": null
+  },
+  {
+   "file": "fits/lasttoken/syc-icl-con-sv-s42_L19_lasttoken.json",
+   "arm": "syc-icl-con-sv-s42",
+   "layer": 19,
+   "D": null,
+   "D_ci95": null,
+   "floor_p95": null,
+   "verdict": null
+  },
+  {
+   "file": "fits/lasttoken/syc-icl-con-sv-s42_L25_lasttoken.json",
+   "arm": "syc-icl-con-sv-s42",
+   "layer": 25,
+   "D": null,
+   "D_ci95": null,
+   "floor_p95": null,
+   "verdict": null
+  },
+  {
+   "file": "fits/lasttoken/syc-pers-con-sv-s42_L14_lasttoken.json",
+   "arm": "syc-pers-con-sv-s42",
+   "layer": 14,
+   "D": null,
+   "D_ci95": null,
+   "floor_p95": null,
+   "verdict": null
+  },
+  {
+   "file": "fits/lasttoken/syc-pers-con-sv-s42_L19_lasttoken.json",
+   "arm": "syc-pers-con-sv-s42",
+   "layer": 19,
+   "D": null,
+   "D_ci95": null,
+   "floor_p95": null,
+   "verdict": null
+  },
+  {
+   "file": "fits/lasttoken/syc-pers-con-sv-s42_L25_lasttoken.json",
+   "arm": "syc-pers-con-sv-s42",
    "layer": 25,
    "D": null,
    "D_ci95": null,
@@ -515,6 +623,150 @@
    ],
    "floor_p95": 25.14447784423828,
    "verdict": "Changed"
+  },
+  {
+   "file": "fits/on_target/fits_bare_n/syc-bare-con-sv-s42_L14.json",
+   "arm": "syc-bare-con-sv-s42",
+   "layer": 14,
+   "D": -0.12113842550924936,
+   "D_ci95": [
+    -0.3091399589655243,
+    0.06237576426312094
+   ],
+   "floor_p95": 5.246503829956055,
+   "verdict": "Unresolved"
+  },
+  {
+   "file": "fits/on_target/fits_bare_n/syc-bare-con-sv-s42_L19.json",
+   "arm": "syc-bare-con-sv-s42",
+   "layer": 19,
+   "D": 2.5242099437860297,
+   "D_ci95": [
+    2.1764612977785753,
+    2.846461745004185
+   ],
+   "floor_p95": 8.519064903259277,
+   "verdict": "Changed"
+  },
+  {
+   "file": "fits/on_target/fits_bare_n/syc-bare-con-sv-s42_L25.json",
+   "arm": "syc-bare-con-sv-s42",
+   "layer": 25,
+   "D": 1.646016184521926,
+   "D_ci95": [
+    0.7864360624824293,
+    2.361684700209842
+   ],
+   "floor_p95": 25.14447784423828,
+   "verdict": "Changed"
+  },
+  {
+   "file": "fits/on_target/fits_bare_n/syc-conv-con-sv-s42_L14.json",
+   "arm": "syc-conv-con-sv-s42",
+   "layer": 14,
+   "D": -3.3104893313701695,
+   "D_ci95": [
+    -3.4245626507868265,
+    -3.2142241868941555
+   ],
+   "floor_p95": 5.246503829956055,
+   "verdict": "Unchanged"
+  },
+  {
+   "file": "fits/on_target/fits_bare_n/syc-conv-con-sv-s42_L19.json",
+   "arm": "syc-conv-con-sv-s42",
+   "layer": 19,
+   "D": -5.341231865779873,
+   "D_ci95": [
+    -5.5492923076435146,
+    -5.210786255419422
+   ],
+   "floor_p95": 8.519064903259277,
+   "verdict": "Unchanged"
+  },
+  {
+   "file": "fits/on_target/fits_bare_n/syc-conv-con-sv-s42_L25.json",
+   "arm": "syc-conv-con-sv-s42",
+   "layer": 25,
+   "D": -16.58499757324108,
+   "D_ci95": [
+    -17.28204803998902,
+    -16.07119313630061
+   ],
+   "floor_p95": 25.14447784423828,
+   "verdict": "Unchanged"
+  },
+  {
+   "file": "fits/on_target/fits_bare_n/syc-icl-con-sv-s42_L14.json",
+   "arm": "syc-icl-con-sv-s42",
+   "layer": 14,
+   "D": -1.2803393350527186,
+   "D_ci95": [
+    -1.4576112206754939,
+    -1.1158107326038835
+   ],
+   "floor_p95": 5.246503829956055,
+   "verdict": "Unchanged"
+  },
+  {
+   "file": "fits/on_target/fits_bare_n/syc-icl-con-sv-s42_L19.json",
+   "arm": "syc-icl-con-sv-s42",
+   "layer": 19,
+   "D": -1.9031384870286994,
+   "D_ci95": [
+    -2.158901882516755,
+    -1.6886677492574562
+   ],
+   "floor_p95": 8.519064903259277,
+   "verdict": "Unchanged"
+  },
+  {
+   "file": "fits/on_target/fits_bare_n/syc-icl-con-sv-s42_L25.json",
+   "arm": "syc-icl-con-sv-s42",
+   "layer": 25,
+   "D": -10.230214186525785,
+   "D_ci95": [
+    -10.935263716782657,
+    -9.727031031625337
+   ],
+   "floor_p95": 25.14447784423828,
+   "verdict": "Unchanged"
+  },
+  {
+   "file": "fits/on_target/fits_bare_n/syc-pers-con-sv-s42_L14.json",
+   "arm": "syc-pers-con-sv-s42",
+   "layer": 14,
+   "D": -0.1454094480463093,
+   "D_ci95": [
+    -0.33376241936433637,
+    0.05241009269783065
+   ],
+   "floor_p95": 5.246503829956055,
+   "verdict": "Unresolved"
+  },
+  {
+   "file": "fits/on_target/fits_bare_n/syc-pers-con-sv-s42_L19.json",
+   "arm": "syc-pers-con-sv-s42",
+   "layer": 19,
+   "D": 1.083158165805635,
+   "D_ci95": [
+    0.7836738062094615,
+    1.3682226614075705
+   ],
+   "floor_p95": 8.519064903259277,
+   "verdict": "Changed"
+  },
+  {
+   "file": "fits/on_target/fits_bare_n/syc-pers-con-sv-s42_L25.json",
+   "arm": "syc-pers-con-sv-s42",
+   "layer": 25,
+   "D": -4.679122101277514,
+   "D_ci95": [
+    -5.526143035915727,
+    -4.07318728311167
+   ],
+   "floor_p95": 25.14447784423828,
+   "verdict": "Unchanged"
   }
  ],
  "frames_run": [
@@ -523,5 +775,5 @@
   "consumed-reliability"
  ],
  "issue": 1947,
- "ts": "2026-08-02T07:05:20Z"
+ "ts": "2026-08-02T20:11:07Z"
 }
