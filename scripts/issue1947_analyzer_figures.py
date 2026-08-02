@@ -10,13 +10,17 @@ Run from the issue-1947 worktree root:
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
+from explore_persona_space.orchestrate.env import load_dotenv
 
-import matplotlib.pyplot as plt
-import numpy as np
+load_dotenv()  # VM thread-cap setdefaults BEFORE the heavy imports (#847)
 
-from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style
+import json  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style  # noqa: E402
 
 ROOT = Path(".")
 AN = ROOT / "eval_results/issue_1947/analysis"
