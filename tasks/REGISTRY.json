@@ -7072,8 +7072,8 @@
     "1913": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1913",
-      "status": "reviewing",
+      "path": "tasks/completed/1913",
+      "status": "completed",
       "title": "workflow-fix: SLURM rsync races the live shared tree \u2014 partial sync shipped 3/4 committed entrypoints; verify post-sync or archive-snapshot the source"
     },
     "1914": {
