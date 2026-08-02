@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2010,
+  "highest_id": 2011,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7837,6 +7837,13 @@
       "path": "tasks/proposed/2010",
       "status": "proposed",
       "title": "daily-fix: corpus-replay gate test reds stale branches on fl"
+    },
+    "2011": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2011",
+      "status": "proposed",
+      "title": "daily-fix: provisioner avoids a known-bad RunPod host on ret"
     },
     "202": {
       "has_clean_result": false,
