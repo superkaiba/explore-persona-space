@@ -7107,8 +7107,8 @@
     "1918": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1918",
-      "status": "reviewing",
+      "path": "tasks/completed/1918",
+      "status": "completed",
       "title": "daily-fix: route-1 fix closes the open task it credits"
     },
     "1919": {
