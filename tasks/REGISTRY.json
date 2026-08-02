@@ -7918,8 +7918,8 @@
     "2021": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2021",
-      "status": "planning",
+      "path": "tasks/approved/2021",
+      "status": "approved",
       "title": "Persist stop_reason per judge draw + truncation-vs-content drop split + rule-26 pilot-gate helper"
     },
     "203": {
