@@ -17438,3 +17438,247 @@ def test_check49_prose_only_pair_vocab_still_warns():
     assert "'Aggregates and extras'" in res.detail
     assert "agg_bars.png" in res.detail
     assert "extra_analysis.png" in res.detail
+
+
+# ─── Check 50: repro-named result dirs clean in working tree (#1989) ─────────
+
+_REPRO_CLEAN_CHECK = "repro-named result dirs clean in working tree"
+
+
+def _make_repo_with_issue_dir(tmp_path, *, gitignore=None):
+    """git-init tmp repo with a committed `eval_results/issue_999/...` tree
+    (the check-50 fixture; mirrors the check-29 git-init pattern)."""
+    repo = tmp_path / "repo50"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    d = repo / "eval_results" / "issue_999" / "map_augmentation" / "operator_kv"
+    d.mkdir(parents=True)
+    (d / "tracked.json").write_text("{}\n")
+    if gitignore is not None:
+        (repo / ".gitignore").write_text(gitignore)
+        git("add", ".gitignore")
+    git("add", "eval_results")
+    git("commit", "-q", "-m", "seed eval results")
+    return repo
+
+
+def _repro_clean_body_v4(footer_line: str) -> str:
+    """Minimal v4-sentinel body whose `**Repro:**` footer carries
+    ``footer_line`` (check 50 is called directly, so the body only needs
+    the sentinel + footer shape `_repro_section_text` reads)."""
+    filler = (
+        "- The measured effect held across the panel at matched dose; the "
+        "companion continuous read kept dynamic range where the rate floored.\n"
+        "- Coverage matched the plan denominator; no planned condition was "
+        "silently dropped, and the per-unit artifacts back each aggregate.\n"
+        "- The control arm stayed at baseline across every probe, so the "
+        "contrast is attributable to the manipulated variable alone.\n"
+    )
+    return (
+        "# Title claim (LOW confidence)\n"
+        "<!-- clean-result-v4 -->\n\n"
+        f"## Takeaways\n\n{filler}\n"
+        "---\n\n"
+        f"**Repro:** {footer_line}\n\n"
+        '**Context:** created 2026-08-01 from the user prompt "x".\n'
+    )
+
+
+def _repro_clean_body_v3(repro_line: str) -> str:
+    """Minimal non-v4 body with a `## Reproducibility` H2 carrying
+    ``repro_line`` (the v3/v2 branch of `_repro_section_text`)."""
+    return (
+        "# Title claim (LOW confidence)\n\n"
+        "<!-- clean-result-v3 -->\n\n"
+        "## Takeaways\n\n- x\n\n"
+        "## Reproducibility\n\n"
+        f"- **Artifacts:** {repro_line}\n"
+    )
+
+
+def test_check50_registered():
+    """House CHECKS-membership pin: the check dispatches via verify_text."""
+    assert verify_task_body.check_repro_artifacts_clean in verify_task_body.CHECKS
+
+
+def test_check50_extraction_reduces_and_collapses():
+    """`_repro_eval_results_dirs` unit test: trailing-slash strip, child-file
+    extension drop, glob + brace truncation, `ood_` root, mid-word lookbehind
+    rejection, and parent-subsumes-child collapse."""
+    text = (
+        "Per-cell artifacts: `eval_results/issue_999/fits/` (216 JSONs), "
+        "`eval_results/issue_999/fits/summary.json`, "
+        "`eval_results/issue_999/ckpt/{summary,curves}.json`, "
+        "`eval_results/issue_999/percell/*.json`, "
+        "plus `ood_eval_results/issue_42/probe/` and my_eval_results/issue_7/x. "
+        "A bare eval_results mention with no issue dir never enters."
+    )
+    dirs = verify_task_body._repro_eval_results_dirs(text)
+    assert dirs == {
+        "eval_results/issue_999/fits",
+        "eval_results/issue_999/ckpt",
+        "eval_results/issue_999/percell",
+        "ood_eval_results/issue_42/probe",
+    }
+    # Parent-subsumes-child: a referenced ancestor absorbs its children.
+    collapsed = verify_task_body._repro_eval_results_dirs(
+        "`eval_results/issue_999/` and `eval_results/issue_999/fits/deep/`"
+    )
+    assert collapsed == {"eval_results/issue_999"}
+
+
+def test_check50_untracked_file_warns(tmp_path, monkeypatch):
+    """Criterion (a): an untracked file under a footer-named dir — in a NEW
+    subdir, pinning the path-scoped `-u` (default untracked-files=normal
+    would collapse it to one `?? dir/` entry) — draws the WARN naming the
+    entry; verify_text dispatches the same result."""
+    repo = _make_repo_with_issue_dir(tmp_path)
+    stray = repo / "eval_results" / "issue_999" / "map_augmentation" / "fresh" / "new_cell.json"
+    stray.parent.mkdir()
+    stray.write_text("{}\n")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _repro_clean_body_v4(
+        "results in `eval_results/issue_999/map_augmentation/` (24 cell JSONs)."
+    )
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "untracked" in r.detail
+    assert "new_cell.json" in r.detail  # the -u pin: file named, not `fresh/`
+    assert "#1768" in r.detail  # the recovery line names the incident class
+    _ok, results = verify_task_body.verify_text(body)
+    r2 = _results_by_name(results)[_REPRO_CLEAN_CHECK]
+    assert r2.is_warn is True
+    assert r2.passed is True  # WARN never flips this check's own verdict
+
+
+def test_check50_modified_tracked_file_warns(tmp_path, monkeypatch):
+    """Criterion (b): a modified (non-`??` porcelain XY) tracked file under
+    the named dir draws the WARN with the modified classification."""
+    repo = _make_repo_with_issue_dir(tmp_path)
+    (
+        repo / "eval_results" / "issue_999" / "map_augmentation" / "operator_kv" / "tracked.json"
+    ).write_text('{"v": 2}\n')
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _repro_clean_body_v4("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "modified" in r.detail
+    assert "tracked.json" in r.detail
+
+
+def test_check50_clean_dir_passes(tmp_path, monkeypatch):
+    """Criterion (c): a fully-committed named dir → clean PASS, no WARN."""
+    repo = _make_repo_with_issue_dir(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _repro_clean_body_v4("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "clean in working tree" in r.detail
+
+
+def test_check50_gitignored_untracked_passes(tmp_path, monkeypatch):
+    """Criterion (d): a gitignored untracked file (the repo-wide `*.npz`
+    convention) is EXCLUDED by default porcelain (no `--ignored`) → PASS."""
+    repo = _make_repo_with_issue_dir(tmp_path, gitignore="*.npz\n")
+    (
+        repo / "eval_results" / "issue_999" / "map_augmentation" / "operator_kv" / "cells.npz"
+    ).write_bytes(b"\x00fake npz")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _repro_clean_body_v4("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "clean in working tree" in r.detail
+
+
+def test_check50_fenced_only_path_vacuous(tmp_path, monkeypatch):
+    """Criterion (e): a path living ONLY inside a fenced block of the footer
+    is illustrative — vacuous PASS even with dirt present in the repo."""
+    repo = _make_repo_with_issue_dir(tmp_path)
+    (repo / "eval_results" / "issue_999" / "map_augmentation" / "stray.json").write_text("{}\n")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _repro_clean_body_v4(
+        "rerun via:\n\n```\nls eval_results/issue_999/map_augmentation/\n```\n"
+    )
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no repro-named eval_results dirs" in r.detail
+
+
+def test_check50_no_eval_results_tokens_vacuous():
+    """Criterion (f): a footer naming only HF URLs (the deliberate scope-out)
+    → vacuous PASS, no git probes needed."""
+    body = _repro_clean_body_v4(
+        "stores at [x @ abc](https://huggingface.co/datasets/o/r/tree/abc123/prefix)."
+    )
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no repro-named eval_results dirs" in r.detail
+
+
+def test_check50_probe_failure_skips_never_warns(tmp_path, monkeypatch):
+    """Criterion (g): a raising git runner degrades the dir to the per-dir
+    'probe failure; not assessed' skip note — never a WARN, even with dirt
+    present that WOULD warn on a healthy probe."""
+    repo = _make_repo_with_issue_dir(tmp_path)
+    (repo / "eval_results" / "issue_999" / "map_augmentation" / "stray.json").write_text("{}\n")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+
+    def raising_run(cmd, *args, **kwargs):
+        raise OSError("git unavailable")
+
+    monkeypatch.setattr(verify_task_body.subprocess, "run", raising_run)
+    body = _repro_clean_body_v4("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "probe failure; not assessed" in r.detail
+
+
+def test_check50_non_git_dir_degrades_to_skip(tmp_path, monkeypatch):
+    """Criterion (g) sibling (check-29 house variant): repo root pointed at
+    a plain non-git dir (`git status` rc != 0) → skip note, no WARN, and no
+    exception."""
+    plain = tmp_path / "notarepo"
+    plain.mkdir()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: plain)
+    body = _repro_clean_body_v4("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "probe failure; not assessed" in r.detail
+
+
+def test_check50_repo_unresolved_skips(monkeypatch):
+    """`_resolve_repo_root` → None (running outside the repo): skip-PASS."""
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    body = _repro_clean_body_v4("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert r.detail.startswith("skipped")
+
+
+def test_check50_v3_reproducibility_h2_same_behavior(tmp_path, monkeypatch):
+    """Criterion (h): a v3 `## Reproducibility` H2 body routes through the
+    same `_repro_section_text` branch — untracked dirt WARNs identically."""
+    repo = _make_repo_with_issue_dir(tmp_path)
+    (repo / "eval_results" / "issue_999" / "map_augmentation" / "stray.json").write_text("{}\n")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _repro_clean_body_v3("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "untracked" in r.detail
+    assert "stray.json" in r.detail

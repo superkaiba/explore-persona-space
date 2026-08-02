@@ -1048,6 +1048,30 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   `fig_alpha3_lattice.png` — two distinct analyses — under one
   `### <result>`; the verifier read PASS and only the LM critic caught it.
 
+- **check 50** (`check_repro_artifacts_clean`, WARN, generation-agnostic,
+  #1989; incident #1768): `(ood_)eval_results/issue_<K>/...`-rooted
+  directory references parsed out of the fence-stripped repro region (v4
+  `**Repro:**` footer / v3+v2 `## Reproducibility` H2) are each probed
+  with a path-scoped `git status --porcelain -u -- <dir>` at the resolved
+  (main-pinned) repo root; untracked (`??`) or modified-class entries
+  draw ONE WARN naming per-dir entry counts + up to 10 entry names each
+  with their porcelain status. WARN-only by design — it can NEVER FAIL
+  (gate-time `--file` invocations run on staged candidates with no status
+  context, and the user-chat inline free-analysis carve-out legitimately
+  dirties `eval_results/issue_<N>/` mid-round until the same-turn
+  commit); default porcelain excludes gitignored files, which IS the
+  required npz-convention tolerance (no `--ignored`). Fail-soft per dir:
+  a git probe failure degrades to a "probe failure; not assessed" skip
+  note, never a WARN. Two deliberate scope-outs: (a) only the resolved
+  repo root is probed — worktree copies of the same dirs are invisible;
+  (b) a footer naming only HF URLs (no in-repo `eval_results/...` token)
+  is a vacuous PASS — the natural future widening is `--issue`-mode
+  probing of the top-level `eval_results/issue_<N>/` dir. Incident:
+  #1768's parked body sat beside 16 untracked + 4 modified
+  `eval_results/issue_1768/map_augmentation/operator_kv/` result files
+  with zero mechanical signal (check 29 covers figures only; check 15
+  reads git TREES, never the working tree).
+
 - **judge drop-line population reconciliation**
   (`check_judge_drop_line_population`, FAIL/WARN, v3+v4, #1776 incident /
   task #1881; unnumbered — dispatched outside CHECKS next to the #732
@@ -7318,6 +7342,183 @@ def check_repro_artifact_urls_exist(body: str) -> CheckResult:
             unverified
         )
     return CheckResult(name, True, detail)
+
+
+# ─── Check 50: repro-named result dirs clean in working tree (#1989) ────────
+# A path token rooted at `(ood_)eval_results/issue_<K>` (underscore after
+# `issue` optional), backticked or bare. The continuation char class is an
+# explicit allowlist of path-component chars PLUS the glob/brace chars
+# (`*` / `{` / `}`) so a globbed / brace-expanded token is captured whole and
+# then truncated at the first glob/brace char by the reducer. The lookbehind
+# blocks mid-word matches (`my_eval_results/...`, `eval_results` inside
+# `ood_eval_results` — the `ood_` form is matched by its own alternation)
+# while still matching after a backtick, `(`, `/` (URL paths), or line start.
+_REPRO_EVAL_RESULTS_PATH_RE = re.compile(
+    r"(?<![A-Za-z0-9_])(?:\./)?"
+    r"(?P<path>(?:ood_)?eval_results/issue_?\d+(?:/[A-Za-z0-9_.*{}/-]*)?)"
+)
+
+# WARN-note cap: entry names shown per (dir, class) pair before `+K more`.
+_REPRO_CLEAN_MAX_NAMED_ENTRIES = 10
+
+
+def _repro_eval_results_dirs(text: str) -> set[str]:
+    """Deduped `(ood_)eval_results/issue_<K>[/...]` DIRECTORY prefixes
+    referenced by ``text`` (check 50 input; callers pass the FENCE-STRIPPED
+    repro region so illustrative paths never fire).
+
+    Per-token reduction: truncate at the first glob/brace char (`*` / `{`),
+    strip trailing `/` + sentence dots, drop a trailing component carrying a
+    file extension (`.../summary.json` probes its parent dir), then
+    re-verify the survivor is still rooted at `(ood_)eval_results/issue_<K>`
+    (a bare `eval_results` with no issue dir never enters). Parent-subsumes-
+    child collapse: a dir whose referenced ancestor is also in the set is
+    dropped — one path-scoped `git status` on the parent already covers it.
+    """
+    raw: set[str] = set()
+    for m in _REPRO_EVAL_RESULTS_PATH_RE.finditer(text):
+        tok = m.group("path")
+        for ch in ("*", "{"):
+            i = tok.find(ch)
+            if i != -1:
+                tok = tok[:i]
+        tok = tok.rstrip("/.")
+        parts = [p for p in tok.split("/") if p]
+        if len(parts) < 2:
+            continue
+        if len(parts) > 2 and re.search(r"\.[A-Za-z0-9]{1,8}$", parts[-1]):
+            parts = parts[:-1]
+        if not re.fullmatch(r"(?:ood_)?eval_results", parts[0]):
+            continue
+        if not re.fullmatch(r"issue_?\d+", parts[1]):
+            continue
+        raw.add("/".join(parts))
+    collapsed: set[str] = set()
+    for d in sorted(raw, key=lambda s: (s.count("/"), s)):
+        if not any(d == p or d.startswith(p + "/") for p in collapsed):
+            collapsed.add(d)
+    return collapsed
+
+
+def _git_status_porcelain_under(repo: Path, dir_path: str) -> list[str] | None:
+    """Porcelain-v1 status lines for the working tree under ``dir_path`` —
+    ONE `git status --porcelain -u -- <dir>` per call (check 50). The
+    path-scoped `-u` is deliberate: default untracked-files=normal collapses
+    a fully-untracked subdir to one `?? dir/` entry and under-counts; scoped
+    to one dir it is cheap (NOT the repo-wide `-uall` memory caveat). NO
+    `--ignored` — default porcelain excludes gitignored files, which IS the
+    required tolerance for convention-ignored artifacts (the repo-wide
+    `*.npz` rule). None on any git error (fail-soft: the caller degrades
+    that dir to a skip note — never a WARN from a failed probe)."""
+    try:
+        r = subprocess.run(
+            ["git", "-c", "core.quotePath=off", "status", "--porcelain", "-u", "--", dir_path],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if r.returncode != 0:
+        return None
+    return [line for line in r.stdout.splitlines() if line.strip()]
+
+
+def check_repro_artifacts_clean(body: str) -> CheckResult:
+    """Check 50 (WARN, generation-agnostic; #1989, incident #1768): result
+    dirs the repro region names should be CLEAN in the resolved repo root's
+    working tree.
+
+    Parses `(ood_)eval_results/issue_<K>/...`-rooted directory references
+    out of the FENCE-STRIPPED repro region (v4 `**Repro:**` footer / v3+v2
+    `## Reproducibility` H2 via `_repro_section_text`), probes each deduped
+    dir with a path-scoped `git status --porcelain -u -- <dir>` at the
+    resolved repo root, and WARNs naming untracked (`??`) / modified-class
+    entries. Check 15 (`check_repro_committed_claims_exist`) reads git
+    TREES and check 29 covers figures only — neither sees the working tree,
+    so #1768's 16 untracked + 4 modified `map_augmentation/operator_kv/`
+    result files sat beside the parked body with zero mechanical signal.
+
+    Severity: WARN only (`passed=True, is_warn=True`) — this check can
+    NEVER FAIL. Gate-time `--file` invocations run on staged candidates
+    with no status context, the user-chat inline free-analysis carve-out
+    legitimately dirties `eval_results/issue_<N>/` mid-round until its
+    same-turn commit, and a new FAIL class would newly hard-FAIL
+    grandfathered parked bodies (forward-only doctrine). A named entry is
+    NOT necessarily a staleness hazard — a body may legitimately disclose
+    held-locally files (the #1768 `noise_floor_percontext/` case); the WARN
+    is the missing signal, the critic keeps the judgment.
+
+    Fail-soft everywhere (check 29 conventions): a git probe failure for a
+    dir degrades to a per-dir "probe failure; not assessed" skip note,
+    NEVER a WARN; per-dir continue; repo root unresolved → skipped PASS;
+    no network; never raises. Default porcelain excludes gitignored files —
+    the required npz-convention tolerance (no `--ignored`).
+
+    Two deliberate scope-outs: (a) only the resolved (main-pinned) repo
+    root is probed — worktree copies of the same dirs are invisible; (b) a
+    footer naming only HF URLs (no in-repo `eval_results/...` token) gets a
+    vacuous PASS. The natural future widening is `--issue`-mode probing of
+    the top-level `eval_results/issue_<N>/` dir.
+    """
+    name = "repro-named result dirs clean in working tree"
+    repro = _repro_section_text(body)
+    if repro is None:
+        # check_repro_subgroups already FAILs on a missing repro region —
+        # don't double-report.
+        return CheckResult(name, True, "no Reproducibility/Repro region — other checks report")
+    dirs = _repro_eval_results_dirs(_strip_fenced_blocks(repro))
+    if not dirs:
+        return CheckResult(name, True, "no repro-named eval_results dirs to check")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(name, True, "skipped — repo root unresolved (running outside the repo)")
+    findings: list[str] = []
+    skipped: list[str] = []
+    n_clean = 0
+    for d in sorted(dirs):
+        lines = _git_status_porcelain_under(repo, d)
+        if lines is None:
+            # CONSERVATIVE: a failed probe for this dir can never WARN —
+            # skip note, continue to the next dir.
+            skipped.append(f"`{d}` — probe failure; not assessed")
+            continue
+        untracked: list[tuple[str, str]] = []
+        modified: list[tuple[str, str]] = []
+        for line in lines:
+            xy, path = line[:2], line[3:]
+            if xy == "??":
+                untracked.append((xy, path))
+            else:
+                modified.append((xy.strip() or xy, path))
+        if not untracked and not modified:
+            n_clean += 1
+            continue
+        parts: list[str] = []
+        for label, entries in (("untracked", untracked), ("modified", modified)):
+            if not entries:
+                continue
+            shown = ", ".join(f"`{p}` ({xy})" for xy, p in entries[:_REPRO_CLEAN_MAX_NAMED_ENTRIES])
+            extra = (
+                f" +{len(entries) - _REPRO_CLEAN_MAX_NAMED_ENTRIES} more"
+                if len(entries) > _REPRO_CLEAN_MAX_NAMED_ENTRIES
+                else ""
+            )
+            noun = "entry" if len(entries) == 1 else "entries"
+            parts.append(f"{len(entries)} {label} {noun}: {shown}{extra}")
+        findings.append(f"`{d}` — " + "; ".join(parts))
+    suffix = "; skipped: " + "; ".join(skipped) if skipped else ""
+    if findings:
+        note = (
+            "; ".join(findings)
+            + ". Not every named entry is necessarily stale — a body may legitimately "
+            "disclose held-locally files — but post-park analysis output must be folded "
+            "via a new round + committed by explicit path, or reverted: an uncommitted "
+            "result file contradicting a parked body is the #1768 staleness hazard" + suffix
+        )
+        return CheckResult(name, True, note, is_warn=True)
+    return CheckResult(name, True, f"{n_clean} repro-named dir(s) clean in working tree" + suffix)
 
 
 # ─── Check 42: body-wide same-repo artifact-URL existence (#1507) ──────────
@@ -15274,6 +15475,10 @@ CHECKS = [
     # adjacent to a pinned /tree/<sha> link resolve at that revision
     # (#1520; incident #1426):
     check_hf_brace_expanded_path_claims,
+    # check 50 (WARN, generation-agnostic) — repro-named eval_results dirs are
+    # clean in the resolved repo root's WORKING TREE (untracked/modified
+    # entries under a footer-named result dir; #1989; incident #1768):
+    check_repro_artifacts_clean,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`
