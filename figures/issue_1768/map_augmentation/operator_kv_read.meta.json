@@ -1,6 +1,6 @@
 {
-  "commit": "1767798990",
-  "created": "2026-08-02T06:05:48Z",
+  "commit": "9a04470377",
+  "created": "2026-08-02T07:16:20Z",
   "figsize": [
     15.0,
     4.8
@@ -8,31 +8,31 @@
   "points": [
     {
       "x": -0.2,
-      "share of squared singular mass": 0.06683021751064856,
+      "share of squared singular mass": 0.0668302175106487,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.8,
-      "share of squared singular mass": 0.056964565625280204,
+      "share of squared singular mass": 0.05696456562528016,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 1.8,
-      "share of squared singular mass": 0.07228925156188705,
+      "share of squared singular mass": 0.07228925156188717,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 2.8,
-      "share of squared singular mass": 0.06623084916655451,
+      "share of squared singular mass": 0.06623084916655446,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 3.8,
-      "share of squared singular mass": 0.10742968610210722,
+      "share of squared singular mass": 0.10742968610210725,
       "_kind": "bar",
       "_group": 0
     },
@@ -56,31 +56,31 @@
     },
     {
       "x": 0.2,
-      "share of squared singular mass": 0.18827757528020045,
+      "share of squared singular mass": 0.18827757528031616,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 1.2,
-      "share of squared singular mass": 0.17030610041754246,
+      "share of squared singular mass": 0.17030610040789135,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 2.2,
-      "share of squared singular mass": 0.19425980593215275,
+      "share of squared singular mass": 0.1942598059306372,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 3.2,
-      "share of squared singular mass": 0.19403105296984496,
+      "share of squared singular mass": 0.19403105297039253,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 4.2,
-      "share of squared singular mass": 0.24000106027152265,
+      "share of squared singular mass": 0.24000106027185772,
       "_kind": "bar",
       "_group": 1
     },
@@ -104,139 +104,139 @@
     },
     {
       "projection of target onto the top-5 singular subspace": 0.016358,
-      "y": 0.0327162757843456,
+      "y": 0.03271632031064079,
       "_kind": "bar",
       "_group": 2
     },
     {
       "projection of target onto the top-5 singular subspace": 0.013773,
-      "y": 0.027546673935439643,
+      "y": 0.027546665068080487,
       "_kind": "bar",
       "_group": 2
     },
     {
       "projection of target onto the top-5 singular subspace": 0.014593,
-      "y": 0.029185640193048434,
+      "y": 0.02918563846813028,
       "_kind": "bar",
       "_group": 2
     },
     {
       "projection of target onto the top-5 singular subspace": 0.295813,
-      "y": 0.5916258164764656,
+      "y": 0.5916257581195643,
       "_kind": "bar",
       "_group": 2
     },
     {
       "projection of target onto the top-5 singular subspace": 0.206135,
-      "y": 0.4122699857907791,
+      "y": 0.41226998496205747,
       "_kind": "bar",
       "_group": 2
     },
     {
       "projection of target onto the top-5 singular subspace": 0.146674,
-      "y": 0.2933476458046792,
+      "y": 0.2933476964606354,
       "_kind": "bar",
       "_group": 2
     },
     {
       "projection of target onto the top-5 singular subspace": 0.212405,
-      "y": 0.4248104165952479,
+      "y": 0.4248103459693602,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "projection of target onto the top-5 singular subspace": 0.018589797170777633,
+      "projection of target onto the top-5 singular subspace": 0.01858982627241565,
       "y": 0.0,
       "_kind": "line",
       "_group": 3
     },
     {
-      "projection of target onto the top-5 singular subspace": 0.02105845805667206,
+      "projection of target onto the top-5 singular subspace": 0.02105841630190515,
       "y": 1.0,
       "_kind": "line",
       "_group": 3
     },
     {
-      "projection of target onto the top-5 singular subspace": 0.020765492023921993,
+      "projection of target onto the top-5 singular subspace": 0.02076542183179341,
       "y": 2.0,
       "_kind": "line",
       "_group": 3
     },
     {
-      "projection of target onto the top-5 singular subspace": 0.4626947936895882,
+      "projection of target onto the top-5 singular subspace": 0.46269482736011125,
       "y": 3.0,
       "_kind": "line",
       "_group": 3
     },
     {
-      "projection of target onto the top-5 singular subspace": 0.2185556636224923,
+      "projection of target onto the top-5 singular subspace": 0.2185556764081285,
       "y": 4.0,
       "_kind": "line",
       "_group": 3
     },
     {
-      "projection of target onto the top-5 singular subspace": 0.19716423794477603,
+      "projection of target onto the top-5 singular subspace": 0.19716410560643713,
       "y": 5.0,
       "_kind": "line",
       "_group": 3
     },
     {
-      "projection of target onto the top-5 singular subspace": 0.2601289272915285,
+      "projection of target onto the top-5 singular subspace": 0.2601289081821743,
       "y": 6.0,
       "_kind": "line",
       "_group": 3
     },
     {
-      "projection of target onto the top-5 singular subspace": 0.046842754397913564,
+      "projection of target onto the top-5 singular subspace": 0.04684281434886593,
       "y": 0.0,
       "_kind": "line",
       "_group": 4
     },
     {
-      "projection of target onto the top-5 singular subspace": 0.03403488981420723,
+      "projection of target onto the top-5 singular subspace": 0.034034913834255824,
       "y": 1.0,
       "_kind": "line",
       "_group": 4
     },
     {
-      "projection of target onto the top-5 singular subspace": 0.037605788362174875,
+      "projection of target onto the top-5 singular subspace": 0.03760585510446715,
       "y": 2.0,
       "_kind": "line",
       "_group": 4
     },
     {
-      "projection of target onto the top-5 singular subspace": 0.720556839263343,
+      "projection of target onto the top-5 singular subspace": 0.7205566888790174,
       "y": 3.0,
       "_kind": "line",
       "_group": 4
     },
     {
-      "projection of target onto the top-5 singular subspace": 0.6059843079590659,
+      "projection of target onto the top-5 singular subspace": 0.6059842935159865,
       "y": 4.0,
       "_kind": "line",
       "_group": 4
     },
     {
-      "projection of target onto the top-5 singular subspace": 0.3895310536645824,
+      "projection of target onto the top-5 singular subspace": 0.38953128731483366,
       "y": 5.0,
       "_kind": "line",
       "_group": 4
     },
     {
-      "projection of target onto the top-5 singular subspace": 0.5894919058989673,
+      "projection of target onto the top-5 singular subspace": 0.5894917837565461,
       "y": 6.0,
       "_kind": "line",
       "_group": 4
     },
     {
-      "projection of target onto the top-5 singular subspace": 0.03181441230474885,
+      "projection of target onto the top-5 singular subspace": 0.03181441230478449,
       "y": 0.0,
       "series": "random-direction null p95 = 0.032",
       "_kind": "line",
       "_group": 5
     },
     {
-      "projection of target onto the top-5 singular subspace": 0.03181441230474885,
+      "projection of target onto the top-5 singular subspace": 0.03181441230478449,
       "y": 1.0,
       "series": "random-direction null p95 = 0.032",
       "_kind": "line",
@@ -244,31 +244,31 @@
     },
     {
       "x": -0.2,
-      "mean principal-angle cosine": 0.04900422836188975,
+      "mean principal-angle cosine": 0.049004423227508115,
       "_kind": "bar",
       "_group": 6
     },
     {
       "x": 0.8,
-      "mean principal-angle cosine": 0.052914418709850274,
+      "mean principal-angle cosine": 0.05291233816743781,
       "_kind": "bar",
       "_group": 6
     },
     {
       "x": 1.8,
-      "mean principal-angle cosine": 0.050198704093227416,
+      "mean principal-angle cosine": 0.05019808003692378,
       "_kind": "bar",
       "_group": 6
     },
     {
       "x": 2.8,
-      "mean principal-angle cosine": 0.052843944950790804,
+      "mean principal-angle cosine": 0.052844498255329005,
       "_kind": "bar",
       "_group": 6
     },
     {
       "x": 3.8,
-      "mean principal-angle cosine": 0.05060035133187246,
+      "mean principal-angle cosine": 0.05060114731108839,
       "_kind": "bar",
       "_group": 6
     },
@@ -292,31 +292,31 @@
     },
     {
       "x": 0.2,
-      "mean principal-angle cosine": 0.29060421834098915,
+      "mean principal-angle cosine": 0.2906036722572987,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 1.2,
-      "mean principal-angle cosine": 0.4234513034951366,
+      "mean principal-angle cosine": 0.4234578910594269,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 2.2,
-      "mean principal-angle cosine": 0.41647675866561235,
+      "mean principal-angle cosine": 0.41648159585651817,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 3.2,
-      "mean principal-angle cosine": 0.4179196943682575,
+      "mean principal-angle cosine": 0.41791365521998236,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 4.2,
-      "mean principal-angle cosine": 0.25885409331913495,
+      "mean principal-angle cosine": 0.25885168050423596,
       "_kind": "bar",
       "_group": 7
     },
