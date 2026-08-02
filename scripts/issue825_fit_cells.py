@@ -338,7 +338,11 @@ def _train_pca_basis(X_train: np.ndarray, k: int) -> tuple[np.ndarray, np.ndarra
 
 
 def _prep_inner_lambda(
-    X_train: np.ndarray, train_groups: np.ndarray, n_inner: int, seed: int
+    X_train: np.ndarray,
+    train_groups: np.ndarray,
+    n_inner: int,
+    seed: int,
+    device: torch.device | None = None,
 ) -> list[dict] | None:
     """Y-independent inner-fold caches for the inner-group-CV lambda scan (#1335 r8).
 
@@ -355,7 +359,10 @@ def _prep_inner_lambda(
     k_in = int(min(n_inner, len(uniq)))
     if k_in < 2:
         return None
-    dev = _fit_device()
+    # device=None keeps the committed behavior (_fit_device()); a caller
+    # passes its X device so the returned caches can never sit on a
+    # different device than the rest of its prep (job 17912 crash class).
+    dev = _fit_device() if device is None else device
     ifolds = _cv_folds(groups, k_in, seed)
     Xtr_all = _as_f64_on(X_train, dev)
     caches: list[dict] = []
