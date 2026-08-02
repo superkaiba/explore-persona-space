@@ -990,8 +990,10 @@ authoritative recipe is agent memory
 
    (The generic contract binding ALL launcher authors — including
    orchestrator / watch-session relaunches outside this agent — is
-   `.claude/rules/pod-side-reporting.md` § Pid-file launch contract;
-   this section is the agent-specific recipe.)
+   `.claude/rules/pod-side-reporting.md` § Pid-file launch contract,
+   incl. 1g (relaunch = re-run the launcher FILE, #1768) + 1h
+   (breadcrumbs/watches key on the identity-verified WORKER pid, never
+   the wrapper, #1769); this section is the agent-specific recipe.)
 
 2. **Confirm the launch survived disconnect — the probe MUST be a
    SEPARATE SSH invocation, issued AFTER the launching session has
