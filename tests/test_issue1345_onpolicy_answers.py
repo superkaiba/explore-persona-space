@@ -1990,8 +1990,13 @@ def test_capture_records_which_row_pool_a_store_came_from(monkeypatch):
     import inspect
 
     src = inspect.getsource(cap.main)
-    assert '"row_pool": "full" if args.full_pool else "arm_matched"' in src
+    # Three distinguishable pools, because the companion introduced a third:
+    # arm-matched (the headline), full (the n>d companion), and matched-to-file
+    # (the companion's injected twin, pinned to its partner's conv_ids).
+    for token in ('"row_pool"', '"arm_matched"', '"full"', '"matched_to_file"'):
+        assert token in src, token
     assert '"full_pool": bool(args.full_pool)' in src
+    assert '"keep_ids_source"' in src
 
 
 def test_persist_store_threads_the_prefix_suffix(monkeypatch):
@@ -2020,3 +2025,32 @@ def test_grid_and_paired_cells_take_no_fits_side_allowlist(monkeypatch):
     # ...and neither assignment sits in the grid / on-policy block.
     blk = src[src.index("cells += grid_cells(key)") : src.index("cells += op_cells")]
     assert "allow[" not in blk
+
+
+def test_keep_ids_jsonl_matches_a_pair_at_identical_n(monkeypatch):
+    """The companion's injected pool is 5,000 while its on-policy twins are
+    4,267-4,618. At n/d 1.19-1.40 held-out R^2 moves with n/d, so an unmatched
+    pair would vary the very quantity the companion exists to hold fixed —
+    --keep-ids-jsonl pins the injected capture to its partner's conv_ids."""
+    cap = _cap_module(monkeypatch)
+    import inspect
+
+    src = inspect.getsource(cap.main)
+    # Precedence: an explicit id file beats --full-pool, never the other way.
+    i_ids = src.index("if args.keep_ids_jsonl is not None:")
+    i_full = src.index("elif args.full_pool:")
+    assert i_ids < i_full, "--keep-ids-jsonl must take precedence over --full-pool"
+    assert 'r["conv_id"]' in src and "--keep-ids-jsonl missing" in src
+    # The pool provenance must be distinguishable in the manifest.
+    assert '"matched_to_file"' in src and '"keep_ids_source"' in src
+
+
+def test_v1_family_cannot_reach_the_companion_n_band(monkeypatch):
+    """Scope correction worth pinning: the V1 arm's pool is the PINNED parent
+    bundle (2,164 rows) and its on-policy slot twin is 2,089 — both BELOW
+    d=3,584, i.e. still in the n<d regime the companion exists to escape. Only
+    the chat / no_template families reach n>d."""
+    cap = _cap_module(monkeypatch)
+    d_model = 3584
+    assert cap.V1_KEPT_ROWS == 2164
+    assert d_model > cap.V1_KEPT_ROWS, "V1 cannot supply an n>d companion cell"

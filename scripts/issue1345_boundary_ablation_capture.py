@@ -1020,6 +1020,15 @@ def main() -> None:
         "full-pool stores never collide with the matched ones.",
     )
     ap.add_argument(
+        "--keep-ids-jsonl",
+        type=Path,
+        default=None,
+        help="match this capture's row set to the conv_ids in another rows JSONL "
+        "(the companion's injected twin uses its on-policy partner's file, so the "
+        "pair is contrasted at IDENTICAL n rather than 5,000-vs-4,472). Overrides "
+        "--full-pool.",
+    )
+    ap.add_argument(
         "--hf-prefix-suffix",
         default="",
         help="suffix the HF tensor prefix (analysis_tensors_<suffix>) so a companion "
@@ -1133,11 +1142,23 @@ def main() -> None:
         # arm-matched subset. The filter below is what took the comparator stores to
         # 2,936 of 4,472; None keeps the full pool (load_comparator_convs already has
         # the branch), which is the whole point of the n>d regime check.
-        keep_ids = (
-            None
-            if args.full_pool
-            else arm_kept_conv_ids(args.stories_dir, bg.GEN_ARMS, v1_dl_dir=args.dl_dir)
-        )
+        if args.keep_ids_jsonl is not None:
+            # Match this capture's row set to ANOTHER capture's conv_ids. The
+            # companion's op-vs-injected contrast needs it: the injected pool is
+            # 5,000 conversations while its on-policy twins are 4,267-4,618, and
+            # at n/d 1.19-1.40 held-out R^2 moves with n/d — so an unmatched pair
+            # would vary the very quantity the companion exists to hold fixed.
+            assert args.keep_ids_jsonl.exists(), f"--keep-ids-jsonl missing: {args.keep_ids_jsonl}"
+            keep_ids = {str(r["conv_id"]) for r in c.read_jsonl(args.keep_ids_jsonl)}
+            assert keep_ids, f"--keep-ids-jsonl {args.keep_ids_jsonl} yielded no conv_ids"
+            print(
+                f"[capture] row set matched to {args.keep_ids_jsonl} ({len(keep_ids)} conv_ids)",
+                flush=True,
+            )
+        elif args.full_pool:
+            keep_ids = None
+        else:
+            keep_ids = arm_kept_conv_ids(args.stories_dir, bg.GEN_ARMS, v1_dl_dir=args.dl_dir)
         convs = load_comparator_convs(args.dl_dir, keep_ids, convs_jsonl=args.convs_jsonl)
         if args.smoke:
             convs = convs[:8]
@@ -1315,8 +1336,15 @@ def main() -> None:
                 # a matched store share stem/model/provenance, so without this the
                 # only difference between them lives in the directory they happen
                 # to sit in — and a mis-staged store would read as the other one.
-                "row_pool": "full" if args.full_pool else "arm_matched",
+                "row_pool": (
+                    "matched_to_file"
+                    if args.keep_ids_jsonl is not None
+                    else ("full" if args.full_pool else "arm_matched")
+                ),
                 "full_pool": bool(args.full_pool),
+                "keep_ids_source": (
+                    str(args.keep_ids_jsonl) if args.keep_ids_jsonl is not None else None
+                ),
             },
             provenance=args.provenance,
             model_key=args.model,
