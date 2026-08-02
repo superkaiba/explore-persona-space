@@ -468,7 +468,10 @@ this section.
 
 Pre-fill the card with all KNOWN values (TBD only for execution-dependent
 ones). Rows: cited HF reuse artifacts (Hub-verified via
-`huggingface_hub.list_repo_files`, never the `hf` CLI) · reused code/helper
+`huggingface_hub.list_repo_files`, never the `hf` CLI) · counted realized grain
+for any reuse row whose row/line count feeds a plan floor, sizing arithmetic,
+per-mix quota, or subset draw (count at the pin — never an assumed range;
+uncounted → mark `ungrounded — needs grain count`; #1900) · reused code/helper
 throughput inspection when code reuse is present (the item-(i) record:
 helper/function name, batched-or-serial verdict, device handling, plus the
 Hub-call-scoping verdict when the helper touches the Hub — "N/A — no
