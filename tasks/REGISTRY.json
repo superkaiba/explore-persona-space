@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1999,
+  "highest_id": 2000,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7753,6 +7753,13 @@
       "path": "tasks/archived/200",
       "status": "archived",
       "title": "[Aim 5] Does EM-induced persona-discrimination collapse generalize when EM is trained under non-default personas?"
+    },
+    "2000": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2000",
+      "status": "proposed",
+      "title": "daily-fix: sizing duty binds teammate-dispatched box sweeps"
     },
     "201": {
       "has_clean_result": false,
