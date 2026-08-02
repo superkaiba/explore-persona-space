@@ -28,7 +28,7 @@ relates_to:
 
 ## Takeaways
 
-- **Retrained 38 organisms so every training row is consumed exactly once (1,200 unique rows, 75 steps); the parent battery's assumption failures largely survive on exactly the trained rows.**
+- **Retrained 38 of the 56 planned organisms (sycophancy dropped at the datagen yield gate) so every training row is consumed exactly once (1,200 unique rows, 75 steps); the parent battery's assumption failures largely survive on exactly the trained rows.**
 - Weight writes stay high-rank: top-1 singular-share medians 0.17–0.20 (on-policy tree) and 0.38–0.57 (fixed-text tree), below the 0.6 criterion on both trees at all three layers (34 cells).
 - The base-geometry gate stays weak on-policy (median rank correlation at most +0.14; 2–5 of the 34 cells in the 0.3–0.7 band), but the plan's falsifier fires as worded on the fixed-text tree (+0.48/+0.54 at layers 19/25), and the fixed-text prefix-summary gate is negative — gate verdicts are measurement-convention-dependent.
 - Fixed-text write–displacement alignment cleared the covariance null in 16 of 16 casual cells vs 1 of 18 impolite at layer 19 — a behavior-specific, mid/late-layer rescue, stable at 20-row estimation precision.
@@ -68,7 +68,7 @@ relates_to:
 - **Data extraction:** per behavior, the question banks were extended to 340+ questions with the parent generation template and standardized trait definitions; 300 positives per cell are Claude-written behavior-expressing completions (instruct-and-strip), judge-filtered at 50, equalized down to exactly 300 — third-party-LLM provenance held fixed deliberately so the visit regime is the only variable (standing data-realism caveat). Contrastive cells add 300 base-model greedy on-policy negatives under the 5-member factory panel (panel disjoint from sources, asserted) and 600 generic rows; positive-only cells replace negatives with generic rows (900). Marker cells use 1,280 programmatic positives (greedy base response + appended marker token) against 5,120 panel negatives (1:4), on a question bank rebuilt from a 232-question union after the eval-overlap filter (recorded salvage). Mixes, manifests, ladders, captures, and fits are on the HF data repo under [issue1947_singlevisit](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/005c0142efd6d6db39dd7c4453792dc3f5d5972e/issue1947_singlevisit); adapters under [issue1947 on the overflow model repo](https://huggingface.co/superkaiba1/explore-persona-space-overflow/tree/0ab87b678442890e89a8194938193f0f6ecaa2df/issue1947).
 - **Sample training/evaluation data + completions:**
 
-Randomly sampled (seed 42, not cherry-picked) from the 100-completion verdict-rung pool of the in-band impolite persona contrastive seed-42 cell (rung 20, judged rate 0.62): 3 judge-firing and 3 non-firing rows. All rows: [ladder rollouts on HF](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/005c0142efd6d6db39dd7c4453792dc3f5d5972e/issue1947_singlevisit/raw_completions/ladders/imp-pers-con-sv-s42) with per-draw scores in [judge_raw (git)](https://github.com/superkaiba/explore-persona-space/blob/64d35d72021d3deedeeb650ff488a027c0ce3ece/eval_results/issue_1947/analysis/judge/imp/registered_graded_r23/judge_raw_imp-pers-con-sv-s42-r20.json).
+Randomly sampled (seed 42, not cherry-picked) from the 100-completion verdict-rung pool of the in-band impolite persona contrastive seed-42 cell (rung 20, judged rate 0.62): 3 judge-firing and 3 non-firing rows. All rows: [ladder rollouts on HF](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/005c0142efd6d6db39dd7c4453792dc3f5d5972e/issue1947_singlevisit/raw_completions/ladders/imp-pers-con-sv-s42) with per-draw scores in [judge_raw (git)](https://github.com/superkaiba/explore-persona-space/blob/36781cd4a0635d69d32fb58dfa7033292b8eb5a9/eval_results/issue_1947/analysis/judge/imp/registered_graded_r23/judge_raw_imp-pers-con-sv-s42-r20.json).
 
 <details>
 <summary>Impolite eval samples (3 firing + 3 non-firing, verbatim, truncated at 500 chars)</summary>
@@ -162,7 +162,7 @@ New functionality? Would make the work easier to redesign: say why you're consid
 
 </details>
 
-Randomly sampled (seed 42, not cherry-picked) from the verdict-rung pool of the in-band casual bare contrastive seed-42 cell (rung 50, judged rate 0.79): 3 firing + 3 non-firing. All rows: [ladder rollouts on HF](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/005c0142efd6d6db39dd7c4453792dc3f5d5972e/issue1947_singlevisit/raw_completions/ladders/cas-bare-con-sv-s42) with per-draw scores in [judge_raw (git)](https://github.com/superkaiba/explore-persona-space/blob/64d35d72021d3deedeeb650ff488a027c0ce3ece/eval_results/issue_1947/analysis/judge/cas/pv_trait_score/judge_raw_cas-bare-con-sv-s42-r50.json).
+Randomly sampled (seed 42, not cherry-picked) from the verdict-rung pool of the in-band casual bare contrastive seed-42 cell (rung 50, judged rate 0.79): 3 firing + 3 non-firing. All rows: [ladder rollouts on HF](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/005c0142efd6d6db39dd7c4453792dc3f5d5972e/issue1947_singlevisit/raw_completions/ladders/cas-bare-con-sv-s42) with per-draw scores in [judge_raw (git)](https://github.com/superkaiba/explore-persona-space/blob/36781cd4a0635d69d32fb58dfa7033292b8eb5a9/eval_results/issue_1947/analysis/judge/cas/pv_trait_score/judge_raw_cas-bare-con-sv-s42-r50.json).
 
 <details>
 <summary>Casual writing-style eval samples (3 firing + 3 non-firing, verbatim, truncated at 500 chars)</summary>
@@ -298,7 +298,7 @@ Random logo near the bottom of the screen. A bump appears on the top ...
 
 </details>
 
-Conciseness note: I acknowledge the check-20 WARNs this body carries — the total Takeaways-plus-Goal-plus-Results prose budget, some per-Takeaways-bullet lengths, and some per-result prose lengths exceed the WARN caps (the caveat ledger of this 38-arm fleet does not compress further without dropping planned-vs-actual disclosures); no hard cap is exceeded. I also acknowledge the figure-text WARN: the paired gate-reads figure's rendered panel titles carry two internal hypothesis-code tokens (produced by the follow-up round's driver; the sidecar and this body use plain-English names).
+Conciseness note: I acknowledge the check-20 WARNs this body carries — the total Takeaways-plus-Goal-plus-Results prose budget, some per-Takeaways-bullet lengths, and some per-result prose lengths exceed the WARN caps (the caveat ledger of this 38-arm fleet does not compress further without dropping planned-vs-actual disclosures); no hard cap is exceeded.
 
 ## Results
 
@@ -306,17 +306,17 @@ Conciseness note: I acknowledge the check-20 WARNs this body carries — the tot
 
 Each panel plots one cell's judged rate (fraction of 100 completions with 3-draw mean score at least 50) against optimizer step across 15 rungs; the shaded band is the 0.60–0.85 target, the dot marks the verdict rung (filled = in-band, open = closest-approach).
 
-![Per-cell judged install ladders over 15 rungs with the target band and verdict rung marked](https://raw.githubusercontent.com/superkaiba/explore-persona-space/64d35d72021d3deedeeb650ff488a027c0ce3ece/figures/issue_1947/install_ladders_per_cell.png)
+![Per-cell judged install ladders over 15 rungs with the target band and verdict rung marked](https://raw.githubusercontent.com/superkaiba/explore-persona-space/36781cd4a0635d69d32fb58dfa7033292b8eb5a9/figures/issue_1947/install_ladders_per_cell.png)
 
 > **Figure.** *Single-visit installs, but band placement is coarse.* 34 content cells at parent verdict learning rates; 18 in-band, 11 overshoot (all 8 in-context-learning cells sit at 0.90–1.00 from the earliest rungs), 5 undershoot (impolite bare positive-only both seeds; both repeat-regime controls).
 
-Install without repetition works — but the band is missed in nearly half the fleet, in a structured way: in-context-learning prefixes overshoot even at step 5–10 (80–160 unique rows), and the judged instrument is ceiling-saturated there, so those cells carry no dose resolution and are excluded from in-band aggregates. All 4 marker cells selected in-window (log-probability gains 5.25–6.66 nats at steps 20–100).
+Install without repetition works — but the band is missed in nearly half the fleet, in a structured way: in-context-learning prefixes overshoot even at step 5–10 (80–160 unique rows), and the judged instrument is ceiling-saturated there, so those cells carry no dose resolution and are excluded from in-band aggregates. No sycophancy cell appears — that behavior was dropped at the datagen yield gate (232 accepted positives vs the 240 floor), so every denominator here is the realized 34. All 4 marker cells selected in-window (log-probability gains 5.25–6.66 nats at steps 20–100).
 
 ### Verdict-band membership tolerates intrusion exclusion but not zeroing
 
 For each cell at its fixed verdict rung: the as-scored judged rate, the rate with intruded completions excluded, and the rate with them zeroed; the shaded band is 0.60–0.85.
 
-![Per-cell verdict rung rates under three intrusion conventions with the target band shaded](https://raw.githubusercontent.com/superkaiba/explore-persona-space/64d35d72021d3deedeeb650ff488a027c0ce3ece/figures/issue_1947/intrusion_recount_verdict_rungs.png)
+![Per-cell verdict rung rates under three intrusion conventions with the target band shaded](https://raw.githubusercontent.com/superkaiba/explore-persona-space/36781cd4a0635d69d32fb58dfa7033292b8eb5a9/figures/issue_1947/intrusion_recount_verdict_rungs.png)
 
 > **Figure.** *Exclusion barely moves rates; zeroing reshuffles the band.* 6.7% of the 51,000 judged ladder completions carry Chinese/Japanese/Korean script; most intruded rows are judged behavior-positive, so zeroing is the adversarial bound.
 
@@ -326,7 +326,7 @@ At fixed verdict rungs, in-band membership goes 18 as-scored, 16 excluded, 13 ze
 
 Left panel: per-cell top-1 singular share of the per-row answer-shift stack, per tree and layer (34 content cells; black median markers; the 0.6 criterion and the parent corpus medians are marked (the parent values come from a different eval surface — not directly comparable)). Middle and right panels show the alignment and gate reads detailed in the next two results.
 
-![Battery summary with per-cell points for write rank plus alignment and gate panels](https://raw.githubusercontent.com/superkaiba/explore-persona-space/64d35d72021d3deedeeb650ff488a027c0ce3ece/figures/issue_1947/battery_assumptions_trained_rows.png)
+![Battery summary with per-cell points for write rank plus alignment and gate panels](https://raw.githubusercontent.com/superkaiba/explore-persona-space/36781cd4a0635d69d32fb58dfa7033292b8eb5a9/figures/issue_1947/battery_assumptions_trained_rows.png)
 
 > **Figure.** *Write rank medians stay below 0.6 on both trees at all layers.* On-policy medians 0.171/0.203/0.183 and fixed-text 0.375/0.567/0.548 at layers 14/19/25; 14 of the 34 cells cross 0.6 at layer 19 fixed-text.
 
@@ -336,7 +336,7 @@ The rank-one write assumption stays refuted on-distribution, though the fixed-te
 
 Per-cell fixed-text cosine between the write direction and the displacement unit at layers 19 and 25 (filled = full-row read; open = mean of twenty 20-row-precision draws), colored by behavior; grey dashes are each cell's corpus-covariance null p95.
 
-![Per-cell fixed-text write displacement cosine by behavior with per-cell null bands and 20-row means](https://raw.githubusercontent.com/superkaiba/explore-persona-space/64d35d72021d3deedeeb650ff488a027c0ce3ece/figures/issue_1947/h3_fixed_text_behavior_split.png)
+![Per-cell fixed-text write displacement cosine by behavior with per-cell null bands and 20-row means](https://raw.githubusercontent.com/superkaiba/explore-persona-space/36781cd4a0635d69d32fb58dfa7033292b8eb5a9/figures/issue_1947/h3_fixed_text_behavior_split.png)
 
 > **Figure.** *All 16 casual cells clear the covariance null at layer 19; 1 of 18 impolite does.* The 20-row-precision means (open) track the full reads, so the parent's 20-row displacement precision would have seen this.
 
@@ -346,17 +346,19 @@ The parent's finding that alignment vanishes at fixed text survives as worded (n
 
 Top row: per-cell fixed-text gate rank correlation paired between the prefix-token summary (left of each panel) and the last-prompt-token summary (right), per layer; bottom row: the write–displacement cosine, which is summary-invariant.
 
-![Paired per-cell gate reads under prefix and context summaries at three layers](https://raw.githubusercontent.com/superkaiba/explore-persona-space/64d35d72021d3deedeeb650ff488a027c0ce3ece/figures/issue_1947/prefix_vs_lastprompt_reads.png)
+![Paired per-cell gate reads under prefix and context summaries at three layers](https://raw.githubusercontent.com/superkaiba/explore-persona-space/36781cd4a0635d69d32fb58dfa7033292b8eb5a9/figures/issue_1947/prefix_vs_lastprompt_reads.png)
 
 > **Figure.** *The same cells flip from negative (prefix summary) to positive (context summary) at fixed text.* Content-cell medians −0.368/−0.281/−0.290 vs +0.111/+0.476/+0.543 at layers 14/19/25; the on-policy prefix arm is constant-input degenerate in all 102 cells (one training prefix per cell).
 
-The plan's falsifier — gate median in the 0.3–0.7 band on trained rows, no tree named — fires as worded on the fixed-text tree (+0.476/+0.543 at layers 19/25, 25 of the 34 cells in-band). The survives-on-policy reading (medians at most +0.139, 2–5 of the 34 in-band; the fixed-text read shares trained completion text between predictor and outcome) narrows that criterion per tree after seeing the data, and is held at MODERATE confidence. The prefix-summary gate is negative in 26–28 of the 34 cells; the four most extreme values (−0.929 to −0.933, layer 19) are all positive-only impolite cells, whose mixes hold about two prefix kinds — a near-binary group separator, favoring a categorical row-kind reading there (a within-row-kind gate read was not run). Gate verdicts are convention-dependent on tree and summary position.
+The plan's falsifier — gate median in the 0.3–0.7 band on trained rows, no tree named — fires as worded on the fixed-text tree (+0.476/+0.543 at layers 19/25, 25 of the 34 cells in-band). The survives-on-policy reading (medians at most +0.139, 2–5 of the 34 in-band; the fixed-text read shares trained completion text between predictor and outcome) narrows that criterion per tree after seeing the data, and is held at MODERATE confidence.
+
+The prefix-summary gate is negative in 26–28 of the 34 cells; the four most extreme values (−0.929 to −0.933, layer 19) are all positive-only impolite cells, whose mixes hold about two prefix kinds — a near-binary group separator, favoring a categorical row-kind reading there (a within-row-kind gate read was not run). Gate verdicts are convention-dependent on tree and summary position.
 
 ### Map-change verdicts agree in sign with the parent fleet at roughly half the magnitude
 
 Forest of bare-corpus map-change D (excess over the base-map refit-noise p95 floor, span-mean read) with bootstrap 95% CIs, for the 8 contrastive seed-42 arms × 3 layers, next to the parent fleet's committed value for the same arm and learning rate where one exists.
 
-![Forest of map change D for single visit arms beside parent fleet values](https://raw.githubusercontent.com/superkaiba/explore-persona-space/64d35d72021d3deedeeb650ff488a027c0ce3ece/figures/issue_1947/d_forest_single_visit_vs_parent.png)
+![Forest of map change D for single visit arms beside parent fleet values](https://raw.githubusercontent.com/superkaiba/explore-persona-space/36781cd4a0635d69d32fb58dfa7033292b8eb5a9/figures/issue_1947/d_forest_single_visit_vs_parent.png)
 
 > **Figure.** *14 of 18 comparable arm-layers are sign-concordant.* Three of four discordances are near-zero boundary flips; one (impolite conversation, layer 25) is a real magnitude reversal. In-context-learning arms have no parent comparator.
 
@@ -366,7 +368,7 @@ Across the 12 arm-layers positive on both sides, the single-visit D is 28–56% 
 
 For each control pair and layer: the repeat-regime cell's fixed-text top-1 share (diamond) against its single-visit sibling's eight 80-row-subsample draws (grey dots with their mean marked) and full 1,200-row value (open circle).
 
-![Repeat regime top-1 share versus n-matched single-visit subsamples for two pairs at three layers](https://raw.githubusercontent.com/superkaiba/explore-persona-space/64d35d72021d3deedeeb650ff488a027c0ce3ece/figures/issue_1947/h6_n_matched_top1.png)
+![Repeat regime top-1 share versus n-matched single-visit subsamples for two pairs at three layers](https://raw.githubusercontent.com/superkaiba/explore-persona-space/36781cd4a0635d69d32fb58dfa7033292b8eb5a9/figures/issue_1947/h6_n_matched_top1.png)
 
 > **Figure.** *The repeat control sits below the sibling's entire 8-draw subsample range in 6 of 6 reads.* Subsampling to 80 rows moves single-visit shares by only +0.010 (median).
 
@@ -376,13 +378,13 @@ Both controls (80 new-pool rows × 15 epochs) also never entered the judged band
 
 Per arm and layer: split-half reliability of the displacement unit (disjoint even/odd halves over the 300 mix positives; repeat controls use their 20 positives), against the parent's 20-row reference of about 0.55.
 
-![Per arm split half reliability of displacement units at three layers versus the parent reference](https://raw.githubusercontent.com/superkaiba/explore-persona-space/64d35d72021d3deedeeb650ff488a027c0ce3ece/figures/issue_1947/delta_split_half_reliability_per_arm.png)
+![Per arm split half reliability of displacement units at three layers versus the parent reference](https://raw.githubusercontent.com/superkaiba/explore-persona-space/36781cd4a0635d69d32fb58dfa7033292b8eb5a9/figures/issue_1947/delta_split_half_reliability_per_arm.png)
 
 > **Figure.** *Reliability spans 0.732–0.936 (median 0.805) across 102 arm-layer cells.* Values repeat within behavior-context groups because the displacement is a base-model quantity over shared positive banks (about 8 unique panels).
 
 The 300-row displacement units comfortably beat the parent's 20-row precision everywhere. The consumed-subset companion lands the caveat that matters: early-verdict cells consumed few positives (19–35), and their consumed-subset reliability falls to 0.38–0.55 — parent-grade exactly where the visit-regime contrast is thinnest. The consumed-subset rank/alignment/gate reads were not computed; every battery verdict above is the full-mix read (for early-verdict cells only 80–160 of 1,200 rows had produced gradients at the verdict rung) — the standing scope caveat on "exactly the trained rows".
 
 ---
-**Repro:** pod-1947-a (RunPod 8×H100; GPU 6 quarantined mid-run — cells ran 7-wide then 4-wide) + Batch-API judging + VM analysis; ~1 day wall (2026-08-01 → 2026-08-02); 4 crash-fix rounds during execution (marker teardown ordering [31d82d5994](https://github.com/superkaiba/explore-persona-space/commit/31d82d5994), corpus gen_dir mkdir [e866e42ce2](https://github.com/superkaiba/explore-persona-space/commit/e866e42ce2), fit method seam [f07dbb60c8](https://github.com/superkaiba/explore-persona-space/commit/f07dbb60c8), GPU exclusion [0159ac991c](https://github.com/superkaiba/explore-persona-space/commit/0159ac991c)). Code: branch [issue-1947 @ 64d35d72](https://github.com/superkaiba/explore-persona-space/tree/64d35d72021d3deedeeb650ff488a027c0ce3ece) (worker `scripts/issue1947_worker.py`, datagen `scripts/issue1947_datagen.py`, battery `scripts/issue1947_battery.py`, analysis `scripts/issue1947_analysis.py`, figures `scripts/issue1947_analyzer_figures.py` + `_v2.py`); draft PR [#1664](https://github.com/superkaiba/explore-persona-space/pull/1664). Artifacts: battery cells + verdict manifest + judge records + frames + prefix reads + intrusion recounts under [eval_results/issue_1947/analysis @ 64d35d72](https://github.com/superkaiba/explore-persona-space/tree/64d35d72021d3deedeeb650ff488a027c0ce3ece/eval_results/issue_1947/analysis); mixes/ladders/captures/fits/margins on [HF issue1947_singlevisit](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/005c0142efd6d6db39dd7c4453792dc3f5d5972e/issue1947_singlevisit); adapters on [the overflow model repo](https://huggingface.co/superkaiba1/explore-persona-space-overflow/tree/0ab87b678442890e89a8194938193f0f6ecaa2df/issue1947); base-map floors + parent comparators reused from [#1768](https://eps.superkaiba.com/tasks/1768) r3 committed artifacts (`eval_results/issue_1768/`) — fit: same sha-pinned corpus rows, same estimator, same floor recipe. Judge records live in git rather than the planned HF judge prefix (named deviation; permanent either way).
+**Repro:** pod-1947-a (RunPod 8×H100; GPU 6 quarantined mid-run — cells ran 7-wide then 4-wide) + Batch-API judging + VM analysis; ~1 day wall (2026-08-01 → 2026-08-02); 4 crash-fix rounds during execution (marker teardown ordering [31d82d5994](https://github.com/superkaiba/explore-persona-space/commit/31d82d5994), corpus gen_dir mkdir [e866e42ce2](https://github.com/superkaiba/explore-persona-space/commit/e866e42ce2), fit method seam [f07dbb60c8](https://github.com/superkaiba/explore-persona-space/commit/f07dbb60c8), GPU exclusion [0159ac991c](https://github.com/superkaiba/explore-persona-space/commit/0159ac991c)). Code: branch [issue-1947 @ 36781cd4](https://github.com/superkaiba/explore-persona-space/tree/36781cd4a0635d69d32fb58dfa7033292b8eb5a9) (worker `scripts/issue1947_worker.py`, datagen `scripts/issue1947_datagen.py`, battery `scripts/issue1947_battery.py`, analysis `scripts/issue1947_analysis.py`, figures `scripts/issue1947_analyzer_figures.py` + `_v2.py`); draft PR [#1664](https://github.com/superkaiba/explore-persona-space/pull/1664). Artifacts: battery cells + verdict manifest + judge records + frames + prefix reads + intrusion recounts under [eval_results/issue_1947/analysis @ 64d35d72](https://github.com/superkaiba/explore-persona-space/tree/36781cd4a0635d69d32fb58dfa7033292b8eb5a9/eval_results/issue_1947/analysis); mixes/ladders/captures/fits/margins on [HF issue1947_singlevisit](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/005c0142efd6d6db39dd7c4453792dc3f5d5972e/issue1947_singlevisit); adapters on [the overflow model repo](https://huggingface.co/superkaiba1/explore-persona-space-overflow/tree/0ab87b678442890e89a8194938193f0f6ecaa2df/issue1947); base-map floors + parent comparators reused from [#1768](https://eps.superkaiba.com/tasks/1768) r3 committed artifacts (`eval_results/issue_1768/`) — fit: same sha-pinned corpus rows, same estimator, same floor recipe. Judge records live in git rather than the planned HF judge prefix (named deviation; permanent either way).
 
 **Context:** origin prompt (verbatim): > "how long would it take to retrain so we never have to repeat data? (and then compare the assumptions ONLY on the data that was trained on) -> run it and tell it to paralelize/use batch api as much as possible". Lineage: [#1481](https://eps.superkaiba.com/tasks/1481) — the organism factory whose recipe and verdict learning rates this fleet inherits; [#1768](https://eps.superkaiba.com/tasks/1768) — the assumption battery re-run here on-distribution (parent). Created 2026-07-31; trained + evaluated 2026-08-01 to 2026-08-02; interpretation rounds v1–v3 with two critique rounds (final PASS 2026-08-02).
