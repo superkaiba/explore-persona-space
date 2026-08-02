@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2007,
+  "highest_id": 2008,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7809,6 +7809,13 @@
       "path": "tasks/proposed/2007",
       "status": "proposed",
       "title": "daily-fix: worktree_audit gc-wedge tier (git prune + gc.log)"
+    },
+    "2008": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2008",
+      "status": "proposed",
+      "title": "daily-fix: capture plans name pooling convention per vector"
     },
     "201": {
       "has_clean_result": false,
