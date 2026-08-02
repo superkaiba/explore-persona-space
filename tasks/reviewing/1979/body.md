@@ -29,6 +29,8 @@ relates_to:
 # Pushing a prefix's context vector through the base context-to-answer map best predicts where fine-tuning delivers behavior change, while base propensity keeps the level read (MODERATE confidence)
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1979.md](https://github.com/superkaiba/explore-persona-space/blob/f041fe08f75ad317f3b2bdc618cf809769cdb957/docs/methodology/issue_1979.md) · [gist](https://gist.github.com/superkaiba/759f69d552d3eb8140d6f6389b561642)
+
 ## Takeaways
 
 - Change champion at prefix grain: through-map predicted-answer similarity — median within-arm Spearman ρ 0.41 vs 0.30 for raw answer similarity; beats it in 9/12 content arms; winner probability 0.65–0.81.
