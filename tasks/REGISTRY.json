@@ -7241,8 +7241,8 @@
     "1935": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1935",
-      "status": "reviewing",
+      "path": "tasks/completed/1935",
+      "status": "completed",
       "title": "workflow-fix: exclude plan-declared outputs from carry-over bare-name resolution"
     },
     "1936": {
