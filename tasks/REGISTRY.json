@@ -7185,15 +7185,15 @@
     "1928": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1928",
-      "status": "reviewing",
+      "path": "tasks/completed/1928",
+      "status": "completed",
       "title": "daily-fix: git guards cwd/compound awareness (ssh, worktree)"
     },
     "1929": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1929",
-      "status": "reviewing",
+      "path": "tasks/completed/1929",
+      "status": "completed",
       "title": "daily-fix: detached relaunch + worker-pid + named-verify"
     },
     "193": {
@@ -7206,22 +7206,22 @@
     "1930": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1930",
-      "status": "running",
+      "path": "tasks/reviewing/1930",
+      "status": "reviewing",
       "title": "daily-fix: 9a-ter inline routing (50GB->bigmem, fits->GPU)"
     },
     "1931": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1931",
-      "status": "proposed",
+      "path": "tasks/running/1931",
+      "status": "running",
       "title": "daily-fix: pod bootstrap retry + fail-loud provision verdict"
     },
     "1932": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1932",
-      "status": "proposed",
+      "path": "tasks/planning/1932",
+      "status": "planning",
       "title": "correct #1310 Takeaway bullet 3 + title qualifier per nd-estimator/lambda audits (per-turn deflation was a lambda-selection artifact)"
     },
     "1933": {

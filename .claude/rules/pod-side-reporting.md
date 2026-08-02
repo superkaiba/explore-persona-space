@@ -227,9 +227,10 @@ relaunch, a watch-session correction — not just first launches:
    path: relaunch through the launcher script, whose
    `echo $$ > /workspace/logs/issue-<N>.pid` overwrites the file before
    `exec`ing the workload (`.claude/agents/experimenter.md` § During
-   Execution steps 1/1b — the agent-specific recipe). When relaunching
-   WITHOUT the launcher (rare), chain an explicit ATOMIC rewrite into the
-   same command:
+   Execution steps 1/1b — the agent-specific recipe). When no launcher
+   file exists, FIRST materialize one per 1g and relaunch through it —
+   never a hand-typed inline relaunch chain; inside that file the
+   required pid-write form is the explicit ATOMIC rewrite:
    `printf '%s\n' "$CHILD_PID" > /workspace/logs/issue-<N>.pid.tmp && mv /workspace/logs/issue-<N>.pid.tmp /workspace/logs/issue-<N>.pid`
    (tmp+rename — no window where the poller reads a truncated/empty file;
    the launcher-internal `echo $$ >` truncate-write is the accepted
@@ -384,6 +385,38 @@ relaunch, a watch-session correction — not just first launches:
    watcher-respawned successor back-posted `epm:run-launched v4` at
    03:47:35Z after an identity-verified probe — a ~2.7 h window in which
    the healthy run was invisible to the poller's marker-pid probe.
+1g. **A RELAUNCH re-runs the original launcher FILE — never a
+   hand-re-typed / reconstructed inline chain (#1768).** The launcher
+   script is the carrier of every side duty a launch owes — the pid-file
+   rewrite (item 1), log rotation (1b/1c), stdio detach (1f), and the
+   completion-sentinel write the poller's done-verdict keys on — and a
+   from-memory `bash -c` reconstruction silently drops whichever duty the
+   re-typer forgets (#1768 relaunch, 2026-07-30: the rebuilt chain
+   dropped the completion-sentinel write; the finished run's handoff
+   stranded ~5.8 h until a successor session found it). If the original
+   launch has no launcher file (an ad-hoc first launch), FIRST
+   materialize the chain into a file (pod:
+   `/workspace/logs/launch_issue_<N>_<slug>.sh`; VM: alongside the phase
+   log), then relaunch by executing that file — every later relaunch then
+   has a canonical source. Deliberate launcher EDITS before a relaunch
+   are fine — fix the bug in the FILE, then run the file (a
+   recipe-changing edit also carries 1e's descope record); the ban is on
+   bypassing the file.
+1h. **Pid breadcrumbs + completion watches key on the identity-verified
+   WORKER pid — never the setsid/nohup/ssh wrapper pid (#1769).** A
+   wrapper exits within seconds of a healthy launch, so a watch keyed on
+   it false-fires "EXITED" against a live run (#1769, 2026-07-30: a
+   re-judge completion watch keyed on the setsid launcher pid and
+   false-fired ~1 min in, after a wrong-pid breadcrumb at the same
+   phase's first launch). Before writing any `pid=` breadcrumb or arming
+   any liveness/completion watch, identity-verify the pid:
+   `ps -p <pid> -o args=` must show the WORKLOAD's distinctive
+   invocation — args reading as `setsid` / `nohup` / `ssh` / a bare
+   wrapper shell mean you captured the wrapper. Re-derive the worker pid
+   ONLY via item 1d's sanctioned launch-anchored forms (the launcher's
+   pre-exec `echo $$`; `$!` of the setsid-exec'd unit; the parent-scoped
+   child-walk `pgrep -P <captured wrapper pid>`) — 1d's ban on unanchored
+   post-hoc `pgrep` is unchanged.
 2. **The fresh `epm:run-launched` carries the SAME live pid (`pid=`) AND
    `pid_file=`** (SKILL.md § "Any relaunch must re-post `epm:run-launched`").
    `poll_pipeline.py` computes `pid_alive = pidfile_pid_alive OR
@@ -518,6 +551,20 @@ the file and the marker still reads `dead`.
   backstop (below) shares the blindness — it proves commits pushed, NOT
   files committed — so this assert is a driver duty on every lane that
   commits results; no mechanical backstop covers it.
+- **Named expected-path set — an empty-set verify is vacuous (#1482).**
+  The #1325 assert above checks each DECLARED path per-file; this bullet
+  binds the DECLARATION itself. Every push-verify / upload-verify leg
+  NAMES the expected path set it is about to check — print the resolved
+  list (or the manifest path + count) into the phase log BEFORE
+  verifying. An EMPTY resolved set on a round whose plan / output
+  manifest / `primary_deliverable` declares git-destined outputs is a
+  verify FAILURE — exit non-zero naming the empty set — never a pass
+  (#1482, 2026-07-30: a driver's push-verify leg resolved an empty
+  expected set and PASSed while 29 git-bound eval files sat uncommitted;
+  caught one stage later only by the independent upload-verifier). A
+  round with genuinely no git-destined outputs (the #1325 scoping-(b)
+  case) may no-op, but STATES the no-op in the log ("push-verify: no
+  git-destined outputs declared this round"), never silently.
 - **GCE lane:** the startup script configures a `GITHUB_TOKEN` env-reading
   credential helper (workload pushes authenticate; pre-#1205 they failed
   DETERMINISTICALLY — the clone is tokenless) and runs a post-workload
