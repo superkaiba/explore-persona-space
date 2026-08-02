@@ -26,6 +26,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1947.md](https://github.com/superkaiba/explore-persona-space/blob/17ae627a7a0c/docs/methodology/issue_1947.md) | [gist mirror](https://gist.github.com/superkaiba/362629c8eb9f66a25346ea50bf0f3011)
+
 ## Takeaways
 
 - **Retrained 38 of the 56 planned organisms (sycophancy dropped at the datagen yield gate) so every training row is consumed exactly once (1,200 unique rows, 75 steps); the parent battery's assumption failures largely survive on exactly the trained rows.**
