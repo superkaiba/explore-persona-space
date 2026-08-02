@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2013,
+  "highest_id": 2014,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7858,6 +7858,13 @@
       "path": "tasks/proposed/2013",
       "status": "proposed",
       "title": "daily-fix: root-commit block: warn never report as landed"
+    },
+    "2014": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2014",
+      "status": "proposed",
+      "title": "daily-fix: /issue Monitor until-loop composition guidance"
     },
     "202": {
       "has_clean_result": false,
