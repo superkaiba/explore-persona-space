@@ -2577,3 +2577,115 @@ def test_snake_slug_regression_issue_1315_shape():
     assert "opaque_snake_slugs" in findings, findings
     assert "`neg_reph_curious`" in findings["opaque_snake_slugs"], findings
     assert not any("span_seam" in s for s in findings["opaque_snake_slugs"]), findings
+
+
+# ─── #1987: `pm_inline` — inline `value ± err` / bare `±<num>` in prose ───
+#
+# Lens 7 names `value ± err` the same banned construct as the bracketed CI,
+# but no live rule matched the ± char until #1987 (the only two ± occurrences
+# in the audit were comments). Incident #1768: `median ±0.16 displacement,
+# ±0.06 read-out` sat in `## Results` prose through a full clean-result gate
+# + its Codex twin and was caught only by a fresh LM read. `pm_inline`
+# reuses `interval_inline`'s scan-source chain verbatim, so the exemption
+# surface (tables, caption blockquotes, fenced code, Why-this-test lines,
+# Data/Methodology example blocks, Context blockquotes) is identical and
+# inline backticks are KEPT (#667 parity).
+
+
+def test_pm_inline_fires_on_incident_1768_results_prose():
+    """The frozen #1768 incident form — `median ±0.16 displacement, ±0.06
+    read-out` in finding read prose — trips `pm_inline` (acceptance
+    criterion 5, frozen so the test never depends on #1768's live body)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The operator read gives median ±0.16 displacement, ±0.06 read-out.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "pm_inline" in findings, findings
+    assert any("±0.16" in s for s in findings["pm_inline"]), findings
+
+
+def test_pm_inline_fires_on_value_pm_err_prose():
+    """The spaced `8 ± 2` form in a `## Takeaways` bullet trips
+    `pm_inline` (acceptance criterion 1, first alternative)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline finding: the lift is 8 ± 2 points over baseline.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "pm_inline" in findings, findings
+    assert any("8 ± 2" in s for s in findings["pm_inline"]), findings
+
+
+def test_pm_inline_fires_on_bare_pm_number():
+    """A bare `±0.06` (no preceding value token) in finding prose trips
+    `pm_inline` (acceptance criterion 1, second alternative)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The read-out is stable to within ±0.06 across seeds.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "pm_inline" in findings, findings
+    assert any("±0.06" in s for s in findings["pm_inline"]), findings
+
+
+def test_pm_inline_inline_backtick_still_fires():
+    """An inline-backtick-wrapped `` `±0.1` `` in prose STILL fires — the
+    interval chain uses `strip_fenced_code_only`, which keeps inline
+    backticks (#667 parity; acceptance criterion 3)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift holds at every seed, `±0.1` around the mean.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "pm_inline" in findings, findings
+    assert any("±0.1" in s for s in findings["pm_inline"]), findings
+
+
+def test_pm_inline_exempt_table_row():
+    """A `value ± err` form inside the `## Reproducibility` Parameters
+    table is a spec-compliant interval form (table-cell exemption via
+    `_blank_table_rows`) and must NOT trip `pm_inline`."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "| Base model | Qwen-2.5-7B-Instruct |",
+        "| Base model | Qwen-2.5-7B-Instruct |\n| Lift | 3.1 ± 0.2 |",
+    )
+    findings = audit.audit_body(body)
+    assert "pm_inline" not in findings, findings
+
+
+def test_pm_inline_exempt_caption_blockquote():
+    """A `±<num>` inside a figure-caption blockquote (`> **Figure.** ...`)
+    is the chart-annotation carve-out and must NOT trip `pm_inline`."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "> **Figure.** *The treatment lifts alignment over baseline at every seed.*",
+        "> **Figure.** *The treatment lifts alignment by 0.3 ±0.16 at every seed.*",
+    )
+    findings = audit.audit_body(body)
+    assert "pm_inline" not in findings, findings
+
+
+def test_pm_inline_exempt_fenced_code():
+    """A `±<num>` inside a fenced code block is stripped before the scan
+    (`strip_fenced_code_only` still strips FENCED blocks) and must NOT
+    trip `pm_inline`."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift holds at every seed in the held-out evaluation.\n\n```\nmargin = 0.5 ±0.06\n```",
+    )
+    findings = audit.audit_body(body)
+    assert "pm_inline" not in findings, findings
+
+
+def test_pm_inline_exempt_why_this_test_line():
+    """A `±<num>` in the finding-internal 'Why this test' definition line
+    is the named Lens 7 exception (`_strip_interval_inline_exempt_lines`
+    parity) and must NOT trip `pm_inline`."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift holds at every seed in the held-out evaluation.\n\n"
+        "**Why this test:** the ±0.16 margin is the registered interval "
+        "defining the test.",
+    )
+    findings = audit.audit_body(body)
+    assert "pm_inline" not in findings, findings

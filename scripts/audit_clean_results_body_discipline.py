@@ -360,6 +360,34 @@ PATTERNS: dict[str, tuple[str, str]] = {
         "Credence intervals as inline [low, high] or bound-form "
         "'(upper|lower) bound (+x)' / 'bound = x' in prose (banned)",
     ),
+    "pm_inline": (
+        # Inline `value ± err` / bare `±<num>` credence interval in
+        # reader-facing prose — the Lens 7 sub-category the interval_inline
+        # comment (above) names as "the same banned construct"; no live
+        # rule matched the ± char until #1987 (incident #1768:
+        # `median ±0.16` sat in ## Results prose through a full
+        # clean-result gate). Sign class includes the typographic U+2212
+        # minus (the effect_size_pp convention), dash-FIRST so `-` stays a
+        # literal, never a `+`..U+2212 range (the interval_inline
+        # dash-first sign-class ordering). Scan source: the
+        # interval_inline chain (caption
+        # blockquotes, Why-this-test lines, GFM table rows, fenced code,
+        # Data/Methodology example blocks, Context blockquotes all exempt;
+        # inline backticks KEPT per #667). Corpus measurement 2026-08-02
+        # over all 1,921 tasks/*/*/body.md through this exact scan source:
+        # 105 bodies match (plan-time measurement: 106; the live corpus
+        # moved) — overwhelmingly genuine pre-existing Lens 7 violations
+        # in grandfathered bodies (`±0.10` in Takeaways/Results prose;
+        # a 20-body random sample split ~15 genuine statistical CI /
+        # uncertainty-band uses vs ~5 tolerance-style), re-audited only
+        # on a follow-up fold. Named
+        # accepted residual: a tolerance-style `±20%` / `±10 GPU-h` prose
+        # form that is not a credence interval fires too — report-only
+        # severity + the critic's hand-adjudication absorb it (the
+        # pre_reg-residual convention).
+        r"\d\s*±\s*[-+−]?\d|±\s*[-+−]?\d*\.?\d+",  # noqa: RUF001
+        "Inline credence interval as `value ± err` / bare `±<num>` in reader-facing prose (banned)",
+    ),
     "named_tests": (
         r"\bpaired t-test\b|\bFisher(?:'s)? exact\b|\bMann-Whitney\b"
         r"|\bbootstrap test\b|\bWilcoxon\b",
@@ -1106,10 +1134,13 @@ def audit_body(body: str) -> dict[str, list[str]]:
     through `_restrict_pre_reg_to_prose_sections` below — NOT through
     `_TABLE_CELL_EXEMPT_CATEGORIES`, whose membership is unchanged).
 
-    `interval_inline` additionally blanks figure-caption blockquotes and
-    the finding-internal "Why this test" line (Lens 7's two carve-outs)
-    via `_strip_interval_inline_exempt_lines` — bracketed bounds in a
-    chart caption or a CI-as-test-definition sentence are spec-compliant.
+    `interval_inline` and `pm_inline` additionally blank figure-caption
+    blockquotes and the finding-internal "Why this test" line (Lens 7's
+    two carve-outs) via `_strip_interval_inline_exempt_lines` — bracketed
+    bounds or `value ± err` forms in a chart caption or a
+    CI-as-test-definition sentence are spec-compliant. `pm_inline`
+    reuses `interval_inline`'s scan-source chain verbatim (same
+    exemption surface, #1987).
 
     `pre_reg` scans a generation-scoped source via
     `_restrict_pre_reg_to_prose_sections` (three regimes): v4 bodies scan
@@ -1134,11 +1165,12 @@ def audit_body(body: str) -> dict[str, list[str]]:
         strip_data_example_blocks(strip_context_blockquotes(strip_frontmatter(body)))
     )
     cleaned_table_blanked = _blank_table_rows(cleaned)
-    # `interval_inline` uses `strip_fenced_code_only` (NOT `strip_code`) so an
-    # inline-backtick-wrapped bracketed CI in prose (``CI `[-0.295, +0.083]` ``,
-    # the #667 line-166 gap) is still seen — `strip_code` blanks inline-backtick
-    # spans, hiding the CI before the scan. The SAME downstream exemptions still
-    # apply (Data/Methodology `<details>` / Context block stripped by the inner chain; table
+    # `interval_inline` AND `pm_inline` use `strip_fenced_code_only` (NOT
+    # `strip_code`) so an inline-backtick-wrapped bracketed CI / `±<num>` in
+    # prose (``CI `[-0.295, +0.083]` ``, the #667 line-166 gap; `` `±0.1` ``)
+    # is still seen — `strip_code` blanks inline-backtick spans, hiding the CI
+    # before the scan. The SAME downstream exemptions still apply
+    # (Data/Methodology `<details>` / Context block stripped by the inner chain; table
     # rows blanked by `_blank_table_rows`; figure-caption + Why-this-test lines
     # blanked by `_strip_interval_inline_exempt_lines`). Fenced code blocks are
     # still stripped, so verbatim bracketed expressions in fenced examples do
@@ -1156,7 +1188,7 @@ def audit_body(body: str) -> dict[str, list[str]]:
     # restricted to v4 reader-facing prose (#1372).
     snake_slug_scan_source = _restrict_snake_slugs_to_v4_reader_prose(body, interval_table_blanked)
     for name, (pattern, _) in PATTERNS.items():
-        if name == "interval_inline":
+        if name in ("interval_inline", "pm_inline"):
             scan_source = interval_scan_source
         elif name == "pre_reg":
             scan_source = pre_reg_scan_source
