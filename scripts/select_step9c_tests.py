@@ -410,6 +410,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_gate_scope_brief_pin.py",
     # NEW (#1627) — SKILL.md Step 9c/10d gate single-flight probe pin (#1606)
     "tests/test_issue_skill_gate_single_flight.py",
+    # NEW (#1927) — SKILL.md gist-update-recipe pin
+    "tests/test_issue_skill_gist_update_recipe.py",
     # NEW (#1860) — SKILL.md 9a-humanize + 9a-bis strip verify-candidate-first
     # apply-ordering pin (verify --file before set-body; post-apply --issue confirm)
     "tests/test_issue_skill_humanize_verify_first_pin.py",

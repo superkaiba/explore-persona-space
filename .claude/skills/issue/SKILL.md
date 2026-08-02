@@ -8220,8 +8220,13 @@ spawned for v4. After the 9a-bis PASS the orchestrator:
    directly). Capture the commit SHA.
 4. Runs a no-secrets pre-scan (`scripts/check_no_secret_shaped_strings.py`
    / `redact_for_gist.py`) and publishes a **secret** (unlisted) gist
-   mirror via `gh gist create` — FAIL-SOFT (a missing gist never blocks
-   the step; the in-repo doc is the durable artifact).
+   mirror via `gh gist create` — or, when a prior
+   `epm:methodology-doc-generated` marker on this task already recorded a
+   `gist_url` (a follow-up round's re-export), UPDATES that existing gist
+   via the canonical gist-update recipe (procedure step 6 below: `gh api
+   -X PATCH` + API-read verify — NEVER a second `gh gist create`, and
+   NEVER any `gh gist edit` form) — FAIL-SOFT either way (a missing/failed
+   gist never blocks the step; the in-repo doc is the durable artifact).
 5. Appends the one-line `**Methodology:**` pointer at the TOP of the body
    — immediately after the `<!-- clean-result-v4 -->` sentinel, before
    `## Takeaways` — linking the GitHub blob (SHA-pinned to the `main`
@@ -8355,9 +8360,11 @@ late join remains.
     consistent with `.claude/agents/methodology-writer.md` § EXTEND
     mode.
   - Step 6 refreshes the EXISTING gist when a prior marker recorded a
-    `gist_url` (`gh gist edit <gist-id> docs/methodology/issue_<N>.md`,
-    same fail-soft rule); fall back to `gh gist create` only when no
-    prior gist exists.
+    `gist_url` — via the canonical gist-update recipe (procedure step 6:
+    `gh api -X PATCH` + API-read content verify; NEVER any `gh gist edit`
+    form, which can silently no-op with rc=0 — incident #1769), same
+    fail-soft rule; fall back to `gh gist create` only when no prior
+    gist exists.
   - Step 7 UPDATES the existing lines' `<DOC_SHA>` pin in place in
     BOTH locations — the top-of-body `**Methodology:**` line and the
     `## Reproducibility` `**Methodology reference:**` row (never
@@ -8492,6 +8499,51 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    hygiene rule as Step 9c step 1b: never leave a bare conditional or
    informational grep as the last command of a call — if-form it or
    `|| true` it.
+
+   **Canonical gist-update recipe (re-exports / follow-up rounds —
+   incident #1769).** When a prior `epm:methodology-doc-generated` marker
+   on this task already recorded a `gist_url`, UPDATE that gist instead of
+   creating a second one:
+   ```bash
+   GIST_ID=$(basename "<prior gist_url from the latest epm:methodology-doc-generated marker>")
+   DOC=docs/methodology/issue_<N>.md
+   GIST_FILE=issue_<N>.md          # gh gist create used the basename
+   GIST_UPDATED=no; GIST_UPDATE_ERR=""
+   # Capture PATCH stderr for the failure reason (the create-side GIST_RAW /
+   # gist_err pattern): 2>&1 >/dev/null routes stderr into the substitution
+   # while discarding stdout.
+   if PATCH_ERR=$(gh api -X PATCH "gists/$GIST_ID" \
+        -F "files[$GIST_FILE][content]=@$DOC" 2>&1 >/dev/null); then
+     # VERIFY by API read-back — PATCH rc=0 alone is NOT success (#1769:
+     # the EDITOR-override gh gist edit form silently no-opped — rc=0 with
+     # content UNCHANGED). $(...) / $(<file) strip trailing newlines on both sides,
+     # so a trailing-newline-only difference (the #1769 verified-match
+     # shape) reads as a match; any interior difference fails.
+     REMOTE=$(gh api "gists/$GIST_ID" --jq ".files[\"$GIST_FILE\"].content" 2>/dev/null)
+     LOCAL=$(<"$DOC")   # bash builtin read — never `cat` (guard_log_dump argv match on large docs)
+     if [ -n "$REMOTE" ] && [ "$REMOTE" = "$LOCAL" ]; then
+       GIST_UPDATED=yes
+     else
+       GIST_UPDATE_ERR="verify mismatch (API read-back != local doc)"
+     fi
+   else
+     GIST_UPDATE_ERR="PATCH failed: $(printf '%s\n' "$PATCH_ERR" | tail -1)"
+   fi
+   ```
+   BAN — exactly ONE verified update path exists: never
+   `EDITOR=... gh gist edit` (it silently no-ops with rc=0, leaving a
+   stale public mirror — incident #1769) and never the flag form
+   `gh gist edit <id> --filename <name> <local>` either; ALL `gh gist
+   edit` forms are banned for updates. Fail-soft: `GIST_UPDATED=no`
+   never blocks the step — keep linking the existing gist URL and record
+   `gist_update=failed ($GIST_UPDATE_ERR)` in the step-9
+   `epm:methodology-doc-generated` marker note (key=value grammar
+   matching the existing `gist_url=` / `commit=` fields; a stale mirror
+   is thereby VISIBLE instead of silent, and "PATCH failed" is
+   distinguishable from "verify mismatch"). The verify's read-back uses
+   the gist GET `content` field — methodology docs are far below the
+   gist API's ~1 MB truncation threshold; if `truncated: true` ever
+   appears, fetch `raw_url` instead.
 7. **Append the link lines to the clean-result body — TWO locations.**
    Use `task.py set-body <N> --file <new-body.md>` (NO
    `--snapshot` — the previous body is already the canonical
