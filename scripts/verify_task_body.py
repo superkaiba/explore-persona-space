@@ -566,7 +566,9 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   untracked at branch HEAD; the loss was invisible to every check (#964).
 - **check 30** (`check_hf_file_count_claims`, WARN): numeric file-count
   claims adjacent to hex-pinned HF `/tree/<sha>` markdown links ("N files" /
-  "N shards" inside the link text; a parenthetical opening with the
+  "N shards" / "N chunks" / "N sidecars", each with one optional modifier
+  token between count and noun — "3 activation chunks" / "3 chunk files",
+  the #1901 footer shapes, #1936 — inside the link text; a parenthetical opening with the
   count-noun immediately before the link; or, in a parenthetical
   immediately AFTER the link, the two anchored phrases "N files
   (listed )?at the pinned revision" — whole-prefix — and "N files
@@ -594,9 +596,11 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   folder entries excluded. Per-namespace-qualified counts are excluded
   from the link-text / paren-before-link patterns by a negative lookahead
   (wrong whole-prefix semantics). Mismatch → WARN, never FAIL (there is no
-  `passed=False` path); shard claims are one-sided (WARN only when
-  claimed > file count — a shards prefix legitimately also holds a
-  manifest/sidecar). Every non-definitive probe outcome (offline fence /
+  `passed=False` path); subset-noun (shard/chunk/sidecar) and
+  modifier-qualified claims are one-sided (WARN only when claimed > file
+  count — a shards prefix legitimately also holds a manifest/sidecar, and
+  a modifier restricts the counted class to a subset of the prefix's
+  files; #1936). Every non-definitive probe outcome (offline fence /
   missing `huggingface_hub` / 429 / network error / `not_found` /
   page-time cap / the per-body `_HF_COUNT_MAX_PROBES` cap, shared across
   whole-prefix + per-namespace probes) surfaces as an `unverified` note on
@@ -10172,18 +10176,31 @@ def check_audit_availability_claims_match_hf(body: str) -> CheckResult:
 _MD_HF_LINK_RE = re.compile(
     r"\[(?P<text>[^\]]{1,300})\]\((?P<url>https?://huggingface\.co/[^)\s]+)\)"
 )
-# A numeric count claim: "515 files" / "1 file" / "10 shards". Comma-grouped
-# thousands allowed ("1,234 files"); bounded at 6 plain digits. The negative
+# A numeric count claim: "515 files" / "1 file" / "10 shards" / "3 chunks" /
+# "1 sidecar", with ONE optional modifier token between count and noun
+# ("3 activation chunks" / "3 chunk files" — the #1901 footer shapes, #1936).
+# Comma-grouped thousands allowed ("1,234 files"); bounded at 6 plain digits.
+# The modifier starts with a letter (a "3 44 files" typo can never bind 44 as
+# a modifier) and admits hyphens ("over-length-skip"); exactly ONE token —
+# two-modifier claims ("3 large activation chunks") stay unextracted, a
+# documented recall sacrifice. The negative
 # lookahead makes per-namespace-qualified counts ("891 files per namespace")
 # INVISIBLE to the whole-prefix Patterns A/B — such a count has per-namespace
 # semantics (each named sub-namespace holds N files, #833), so reading it as
 # a whole-prefix claim would compare N against the parent's total and
-# manufacture a guaranteed false WARN. Per-namespace claims are extracted
-# ONLY in the observed link-then-paren position
+# manufacture a guaranteed false WARN. Backtracking residual (#1936): on a
+# lookahead decline a distributive claim can backtrack to a bare SUBSET-noun
+# match ("891 chunk files per namespace" → noun="chunk") — harmless, because
+# every such escape is a subset-noun ONE-SIDED claim
+# (`_count_claim_is_one_sided`) and a genuine distributive count is <= the
+# whole-prefix total, so no wrong WARN can fire. Per-namespace claims are
+# extracted ONLY in the observed link-then-paren position
 # (`_gather_hf_per_namespace_claims`); A/B-position per-namespace claims are
 # a documented recall sacrifice, never a wrong comparison.
 _COUNT_NOUN_RE = re.compile(
-    r"\b(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"\b(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+"
+    r"(?:(?P<mod>[A-Za-z][\w-]{0,30})[ \t]+)?"
+    r"(?P<noun>files?|shards?|chunks?|sidecars?)\b"
     r"(?!\s+(?:listed\s+)?per\s+namespace\b)",
     re.IGNORECASE,
 )
@@ -10194,7 +10211,9 @@ _COUNT_NOUN_RE = re.compile(
 # `... (515 files verified via scoped listing): [issue931_story_map @ ...](url)`.
 # Carries the same per-namespace negative lookahead as `_COUNT_NOUN_RE`.
 _COUNT_PAREN_LINK_RE = re.compile(
-    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+"
+    r"(?:(?P<mod>[A-Za-z][\w-]{0,30})[ \t]+)?"
+    r"(?P<noun>files?|shards?|chunks?|sidecars?)\b"
     r"(?!\s+(?:listed\s+)?per\s+namespace\b)"
     r"[^()]{0,80}\)"
     r"\s{0,2}[:\u2013\u2014-]?\s{0,2}"  # ':' / en-dash / em-dash / hyphen separators
@@ -10265,7 +10284,9 @@ _FILES_LISTING_VERIFIED_RE = re.compile(
 # #1005 "(17 files incl. `f2f3/` …)" / "(50 files: 42 updated + 8 verbatim)"
 # shapes).
 _COUNT_OPEN_PAREN_AFTER_LINK_RE = re.compile(
-    r"(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+"
+    r"(?:(?P<mod>[A-Za-z][\w-]{0,30})[ \t]+)?"
+    r"(?P<noun>files?|shards?|chunks?|sidecars?)\b"
     r"(?!\s+(?:listed\s+)?per\s+\w+\b)",
     re.IGNORECASE,
 )
@@ -10294,8 +10315,13 @@ _BACKTICK_DIR_RE = re.compile(r"`(?P<ns>[A-Za-z0-9_\-./]{1,120}/)`")
 # is check 32's FILE territory) immediately followed by a parenthetical
 # OPENING with the count-noun. The count scopes to <link-prefix>/<sub> at
 # the sha of the nearest preceding pinned /tree link on the same line
-# (binder below). The paren qualifier bound is 200 (Pattern B uses 80; the
-# live #1112 qualifier is ~85 chars). The count-noun lookahead is WIDER
+# (binder below). The post-noun paren qualifier bound is 400 (Pattern B
+# uses 80; originally 200, sized on the ~85-char live #1112 qualifier —
+# widened 200 → 400 for #1901's realized 220-char `raw_completions/` tail,
+# ~1.8x margin per the #1505 widen-with-margin precedent; still bounded,
+# the _SUBPATH_CLAIM_MAX_GAP runaway-scan rationale. The count-OPENS-the-
+# paren position, not the tail bound, is the precision anchor, so the
+# widen adds no false-positive surface). The count-noun lookahead is WIDER
 # than _COUNT_NOUN_RE's per-namespace decline: ANY distributive
 # "per <word>" qualifier declines (e.g. the #460 "(11 files per adapter,
 # 176 files total)" shape — per-adapter semantics, the join would target a
@@ -10310,9 +10336,11 @@ _BACKTICK_DIR_RE = re.compile(r"`(?P<ns>[A-Za-z0-9_\-./]{1,120}/)`")
 _BACKTICK_SUBPATH_COUNT_PAREN_RE = re.compile(
     r"`(?P<sub>(?!\.\.?/)[A-Za-z0-9_\-./]{1,120}/)`"
     r"[ \t]{0,2}"
-    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+"
+    r"(?:(?P<mod>[A-Za-z][\w-]{0,30})[ \t]+)?"
+    r"(?P<noun>files?|shards?|chunks?|sidecars?)\b"
     r"(?!\s+(?:listed\s+)?per\s+\w+\b)"
-    r"[^()]{0,200}\)"
+    r"[^()]{0,400}\)"
     r"(?!\s{0,2}[:\u2013\u2014-]?\s{0,2}\[[^\]]{1,300}\]\(https?://huggingface\.co)",
     re.IGNORECASE,
 )
@@ -10336,6 +10364,33 @@ _HF_COUNT_MAX_PROBES = 8
 # same convention as _HF_EXISTENCE_CACHE (#733) — so a transient throttle
 # that has since cleared is re-probed on the next verify_text invocation.
 _HF_TREE_FILE_COUNT_CACHE: dict[tuple[str, str, str, str], tuple[int, int]] = {}
+
+# The count-noun vocabulary's SUBSET nouns (#1936): a shard/chunk/sidecar
+# count names a subset of a prefix's files (shards ride beside a manifest,
+# chunks beside a sidecar), so it can never support a two-sided exact
+# compare against the prefix's files-only total.
+_SUBSET_COUNT_NOUNS = ("shard", "chunk", "sidecar")
+
+
+def _count_noun_label(m: re.Match) -> str:
+    """Reported noun label for a count-claim regex match: ``"<mod> <noun>"``
+    when the single optional modifier token matched ("3 activation chunks" /
+    "3 chunk files", #1936), else the bare noun. The label flows through the
+    claim tuple into WARN messages and :func:`_count_claim_is_one_sided`."""
+    mod = m.group("mod")
+    return f"{mod} {m.group('noun')}" if mod else m.group("noun")
+
+
+def _count_claim_is_one_sided(noun_label: str) -> bool:
+    """True when the claim counts a SUBSET of the prefix's files: a
+    modifier-qualified claim ("chunk files", "activation chunks" — the
+    modifier restricts the counted class to a subset of the prefix's files)
+    or a bare subset noun (shard/chunk/sidecar) — compare ONE-SIDED: WARN
+    only when claimed > files-only count, the #931 folder-inflation
+    signature. A bare "N file(s)" claim stays two-sided (exact compare),
+    byte-identical behavior to the pre-#1936 check."""
+    words = noun_label.lower().split()
+    return len(words) > 1 or words[-1].rstrip("s").startswith(_SUBSET_COUNT_NOUNS)
 
 
 def _nearest_preceding_pinned_tree_link(
@@ -10405,12 +10460,15 @@ def _scan_paren_after_link_patterns(stripped: str, add) -> None:
             # footer) fires E AND F and collapses the same way.
             em = _COUNT_OPEN_PAREN_AFTER_LINK_RE.match(lm.group("paren"))
             if em is not None:
-                add(em.group("count"), em.group("noun"), lm.group("url"))
+                add(em.group("count"), _count_noun_label(em), lm.group("url"))
 
 
 def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, str]]:
     """Extract ``(claimed_count, noun, repo_id, repo_type, sha, path_prefix)``
-    tuples for numeric file/shard-count claims ADJACENT to hex-pinned HF
+    tuples for numeric file/shard/chunk/sidecar-count claims — with one
+    optional modifier token between count and noun ("3 activation chunks" /
+    "3 chunk files", the #1901 footer shapes, #1936; ``noun`` then carries
+    the composed ``"<mod> <noun>"`` label — ADJACENT to hex-pinned HF
     ``/tree`` markdown links (check 30). Fence-stripped; deduplicated;
     ``/blob/`` links and moving refs (``/tree/main``) are out of scope (the
     shared URL regex only matches 7-40-char hex revisions, mirroring
@@ -10487,8 +10545,16 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     by Patterns D and E, whose counts must OPEN the paren (a leading
     space, "( 52 files)", deliberately does not match — B/D anchor
     parity); compound claims ("8 eval JSONs + 2 npz"); nouns other
-    than file(s) / shard(s) ("rows" / "completions" are RECORD counts, not
-    file counts); per-namespace-qualified counts in A/B positions (see the
+    than file(s) / shard(s) / chunk(s) / sidecar(s) ("rows" /
+    "completions" are RECORD counts, not file counts); claims with MORE
+    than one modifier token between count and noun ("3 large activation
+    chunks" — one-modifier-max, #1936); MID-PAREN continuation claims
+    after a conjunction ("… plus 1 over-length-skip sidecar", the #1901
+    footer's second clause — the E/D count-OPENS-the-paren anchor
+    excludes sub-scoped clause counts by design, the #1072 false-WARN
+    class — reaching them would take mid-paren finditer semantics, which
+    would extract sub-scoped clause counts as wrongly-scoped whole-prefix
+    claims); per-namespace-qualified counts in A/B positions (see the
     lookahead note above). Pattern-D-specific sacrifices: a claim whose
     nearest preceding HF link is unpinned / ``/blob/`` / ``/tree/main``
     (declined, never re-bound to an earlier link); a bracketed, multi-line,
@@ -10528,6 +10594,20 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     while A/B keep the narrow #833 per-namespace-only lookahead — a "per
     adapter"-style count in A/B position is a PRE-EXISTING hole outside
     #1143's / #1422's scope, left unchanged by design.
+
+    Modifier residuals (#1936 — all WARN-only by construction, each named
+    rather than guarded): (1) BACKTRACKING — on a ``per``-lookahead
+    decline a distributive claim can backtrack to a bare SUBSET-noun
+    match ("3 chunk files per namespace" → noun="chunk"); harmless: every
+    such escape is a subset-noun ONE-SIDED claim
+    (``_count_claim_is_one_sided``) and a genuine distributive count is
+    <= the whole-prefix total, so no wrong WARN can fire. (2) GREEDY-MOD
+    REBIND — "9 file shards" flips from noun="file" (two-sided) to
+    mod="file" + noun="shards" (one-sided); unattested phrasing, an
+    undercount-detection loss only. (3) INVERTED-SEMANTICS modifiers
+    ("2 missing files", "8 tensor chunks in one npz") — rare accepted
+    residuals of the no-stopword design: they compare one-sided, so at
+    worst a real undercount goes un-WARNed, never a wrong WARN.
     """
     kind_to_type = {"datasets": "dataset", "spaces": "space", None: "model"}
     stripped = _strip_fenced_blocks(body)
@@ -10570,15 +10650,15 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     link_matches = list(_MD_HF_LINK_RE.finditer(stripped))
     for lm in link_matches:  # Pattern A: count in link TEXT
         for cm in _COUNT_NOUN_RE.finditer(lm.group("text")):
-            _add(cm.group("count"), cm.group("noun"), lm.group("url"))
+            _add(cm.group("count"), _count_noun_label(cm), lm.group("url"))
     for pm in _COUNT_PAREN_LINK_RE.finditer(stripped):  # Pattern B: paren before link
-        _add(pm.group("count"), pm.group("noun"), pm.group("url"))
+        _add(pm.group("count"), _count_noun_label(pm), pm.group("url"))
     _scan_paren_after_link_patterns(stripped, _add)  # Patterns C + E + F: paren after link
     for dm in _BACKTICK_SUBPATH_COUNT_PAREN_RE.finditer(stripped):  # Pattern D (#1143)
         lm = _nearest_preceding_pinned_tree_link(stripped, dm.start(), link_matches)
         if lm is None:
             continue
-        _add(dm.group("count"), dm.group("noun"), lm.group("url"), sub_path=dm.group("sub"))
+        _add(dm.group("count"), _count_noun_label(dm), lm.group("url"), sub_path=dm.group("sub"))
     return out
 
 
@@ -10704,8 +10784,9 @@ def _verify_hf_whole_prefix_claims(
     compare each ``_gather_hf_count_claims`` tuple against the files-only
     count from the caller's shared memoized/capped ``probed`` closure,
     appending mismatch messages / unverified notes to the caller's lists.
-    Files claims are two-sided; shard claims are one-sided (folder-inflation
-    only)."""
+    Bare files claims are two-sided; subset-noun (shard/chunk/sidecar) and
+    modifier-qualified claims are one-sided (folder-inflation only;
+    :func:`_count_claim_is_one_sided`, #1936)."""
     for count, noun, repo_id, repo_type, sha, prefix in claims:
         result = probed((repo_id, repo_type, sha, prefix))
         if result is None:
@@ -10716,8 +10797,8 @@ def _verify_hf_whole_prefix_claims(
             if skip_note not in unverified:
                 unverified.append(skip_note)
             continue
-        if noun.lower().startswith("shard") and count <= n_files:
-            continue  # shard claims are one-sided: only folder-inflation WARNs
+        if _count_claim_is_one_sided(noun) and count <= n_files:
+            continue  # subset-noun / modifier claims are one-sided: only folder-inflation WARNs
         if count == n_files:
             continue
         msg = (
@@ -10828,11 +10909,16 @@ def check_hf_file_count_claims(body: str) -> CheckResult:
     - **WARN, never FAIL.** A mismatch returns ``CheckResult(name, True,
       detail, is_warn=True)`` — ``passed`` stays True so overall ``ok``
       never flips. There is NO code path returning ``passed=False``.
-    - **Files claims are two-sided; shard claims are one-sided.** A hex
-      pin is immutable so a "N files" claim admits exact comparison; a
+    - **Bare files claims are two-sided; subset-noun (shard/chunk/sidecar)
+      and modifier-qualified claims are one-sided.** A hex pin is
+      immutable so a bare "N files" claim admits exact comparison; a
       legitimate "9 shards" prefix can also hold a manifest/sidecar
-      (10 files), so shard claims WARN only when claimed > file count —
-      the folder-inflation signature (#931's "10 shards" vs 9 files).
+      (10 files), and a modifier restricts the counted class to a subset
+      of the prefix's files ("chunk files" / "activation chunks" count
+      only those files), so subset-noun and modifier-qualified claims
+      WARN only when claimed > file count — the folder-inflation
+      signature (#931's "10 shards" vs 9 files;
+      ``_count_claim_is_one_sided``, #1936).
     - **Descriptive diagnostics.** When the claimed count equals
       files+folders, the WARN notes the claim is *consistent with*
       files+folders (folder entries are not files) — a diagnosis hint,
@@ -11416,7 +11502,10 @@ _UNPINNED_CUE_WINDOW = 250  # chars of same-line look-back for the cue
 _BACKTICK_ISSUE_PARENT_RE = re.compile(r"`(?P<parent>issue\d+_[A-Za-z0-9_\-./]{0,118}/)`")
 # Slashless sibling of _BACKTICK_SUBPATH_COUNT_PAREN_RE (#1487, the #1345
 # `analysis_tensors/turnstore` (10 files) footer shape): same paren/count/
-# noun/lookahead shape VERBATIM, but the token does NOT end in "/". A
+# noun/lookahead shape VERBATIM (incl. the widened noun set + single
+# optional modifier token and the post-noun qualifier bound 400 — #1936
+# parity with Pattern D, which keeps the "same shape" claim true), but
+# the token does NOT end in "/". A
 # slashless token has no intrinsic directory signature, so the gatherer
 # admits it ONLY under the strong G4 arms (own issue<N>_ prefix, or a
 # binding backtick parent anchor) — never the weak same-line HF cue — and
@@ -11427,9 +11516,11 @@ _BACKTICK_ISSUE_PARENT_RE = re.compile(r"`(?P<parent>issue\d+_[A-Za-z0-9_\-./]{0
 _BACKTICK_SLASHLESS_SUBPATH_COUNT_PAREN_RE = re.compile(
     r"`(?P<sub>(?!\.\.?/)[A-Za-z0-9_\-./]{0,119}[A-Za-z0-9_\-])`"
     r"[ \t]{0,2}"
-    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+"
+    r"(?:(?P<mod>[A-Za-z][\w-]{0,30})[ \t]+)?"
+    r"(?P<noun>files?|shards?|chunks?|sidecars?)\b"
     r"(?!\s+(?:listed\s+)?per\s+\w+\b)"
-    r"[^()]{0,200}\)"
+    r"[^()]{0,400}\)"
     r"(?!\s{0,2}[:\u2013\u2014-]?\s{0,2}\[[^\]]{1,300}\]\(https?://huggingface\.co)",
     re.IGNORECASE,
 )
@@ -11575,7 +11666,7 @@ def _gather_hf_unpinned_count_claims(body: str) -> list[tuple[int, str, str, str
             if _HF_CUE_RE.search(window) is None:
                 continue  # G4: no HF context — stay silent (precision first)
         count = int(dm.group("count").replace(",", ""))
-        noun = dm.group("noun")
+        noun = _count_noun_label(dm)
         key = (count, noun.lower().rstrip("s"), token)
         if key in seen:
             continue
@@ -11629,8 +11720,10 @@ def check_hf_unpinned_count_claims(body: str) -> CheckResult:
       per-process only — acceptable staleness for the short-lived verifier
       CLI — and mismatch WARNs carry a may-have-moved hedge.
     - **Probe budget.** Own memo + cap ``_HF_UNPINNED_MAX_PROBES`` (the
-      check-30 ``_probed`` closure shape); shard claims are one-sided
-      (claimed <= files is count-consistent), matching check 30.
+      check-30 ``_probed`` closure shape); subset-noun (shard/chunk/
+      sidecar) and modifier-qualified claims are one-sided (claimed <=
+      files is count-consistent; :func:`_count_claim_is_one_sided`),
+      matching check 30.
 
     Vacuous PASS — with ZERO Hub probes — when no unpinned backtick
     HF-path count claim extracts (see ``_gather_hf_unpinned_count_claims``
@@ -11679,7 +11772,7 @@ def check_hf_unpinned_count_claims(body: str) -> CheckResult:
         status, n_files, n_dirs, note = result
         if status != "ok":
             warn_lines.append(base + f" (count not confirmed at main: {note})")
-        elif count == n_files or (noun.lower().startswith("shard") and count <= n_files):
+        elif count == n_files or (_count_claim_is_one_sided(noun) and count <= n_files):
             warn_lines.append(
                 base + f" — `{resolved}` at `{_HF_DATA_REPO_ID}@main` holds {n_files} "
                 "file(s) (count consistent; add a pinned /tree/<sha> link)"
