@@ -1,0 +1,2 @@
+{"ts": "2026-08-02T22:09:10Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-08-02T22:09:47Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "archived", "note": "Duplicate of open #2022 (same bug, same target tests/sparse_cones.txt — the exact-(target_file,fingerprint) dedup missed it on wording; open-sibling advisory remedy applied, .claude/rules/workflow-fix-on-bug.md § Open-sibling arm). No session was spawned (infra cap full at filing)."}

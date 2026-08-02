@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2024,
+  "highest_id": 2026,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7269,8 +7269,8 @@
     "1939": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1939",
-      "status": "reviewing",
+      "path": "tasks/completed/1939",
+      "status": "completed",
       "title": "workflow-fix: gotchas.md entry \u2014 SLURM git-less scratch crashes metadata git shellouts"
     },
     "194": {
@@ -7283,8 +7283,8 @@
     "1940": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1940",
-      "status": "reviewing",
+      "path": "tasks/completed/1940",
+      "status": "completed",
       "title": "workflow-fix: figure-sidecar opaque-code check misses bare P/M candidate codes"
     },
     "1941": {
@@ -7297,15 +7297,15 @@
     "1942": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1942",
-      "status": "running",
+      "path": "tasks/reviewing/1942",
+      "status": "reviewing",
       "title": "Hoist shared-node vLLM util resolver into a shared module (dedupe #1902 + #1345 copies)"
     },
     "1943": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1943",
-      "status": "proposed",
+      "path": "tasks/running/1943",
+      "status": "running",
       "title": "workflow-fix: judge instruments round-trip the parse contract before dry-run counts"
     },
     "1944": {
@@ -7942,6 +7942,20 @@
       "path": "tasks/proposed/2024",
       "status": "proposed",
       "title": "workflow-fix: step9c compare \u2014 branch-untouched-file NEW failures classify ordering-suspect, not blocking NEW"
+    },
+    "2025": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/2025",
+      "status": "archived",
+      "title": "workflow-fix: add eval_results/issue_1481 cone to tests/sparse_cones.txt"
+    },
+    "2026": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2026",
+      "status": "running",
+      "title": "workflow-fix: export EPS_GIT_SHA in SLURM sbatch env for rsync-lane provenance"
     },
     "203": {
       "has_clean_result": false,

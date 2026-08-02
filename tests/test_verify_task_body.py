@@ -12288,7 +12288,9 @@ def test_check26_repo_unresolved_is_noop_pass(monkeypatch):
 # fixture is check 24's (`_CHECK24_BODY`) — check 28 keys only off the
 # inline figure URL, not the caption.
 
-_CHECK28_NAME = "figure text opaque config codes (slug / @L-pin / H-code / slot-family tokens)"
+_CHECK28_NAME = (
+    "figure text opaque config codes (slug / @L-pin / H-code / slot-family / P-M candidate tokens)"
+)
 
 
 def test_check28_slug_and_pin_in_description_warns(tmp_path, monkeypatch):
@@ -12448,6 +12450,21 @@ def test_check28_opaque_code_tokens_classifier():
     assert fn("c1_evil_wrong_em") == ["c1_evil_wrong_em"]
     slash_label = fn("ctx_blk_max / ans_uhdr_max")
     assert "ctx_blk_max" in slash_label and "ans_uhdr_max" in slash_label
+    # Candidate/panel-code class (#1900): bare P/M candidate ids — single
+    # digit + optional single lowercase letter, same shape discipline as
+    # the H-code class.
+    assert fn("P1") == ["P1"]
+    assert fn("P7") == ["P7"]
+    assert fn("M4") == ["M4"]
+    assert fn("P3b") == ["P3b"]
+    assert fn("mediation forest (P1 | P7)") == ["P1", "P7"]
+    assert "P1" in fn("sw_eng_expB-P1")  # candidate id riding a slug label
+    # Candidate-code path exemption: the raw regex genuinely matches inside
+    # the path word (non-vacuity assert), so the `[]` result is produced by
+    # the per-word path exemption, not the regex boundary.
+    assert fn("figures/issue_1900/P7.png") == []  # whole-string path skip
+    assert fn("source: figures/issue_1900/P7.png") == []  # path word in prose
+    assert verify_task_body._CANDIDATE_CODE_RE.search("figures/issue_1900/P7.png")
     # Known-good: none of these yield any token.
     for good in (
         "house: librarian",
@@ -12457,6 +12474,11 @@ def test_check28_opaque_code_tokens_classifier():
         "judge_rate",
         "helpful_assistant",
         "r_B",
+        "p97.5 latency by arm",  # lowercase percentile shorthand (case pin)
+        "p50",  # lowercase percentile shorthand
+        "P100",  # GPU name — multi-digit, no boundary between digits
+        "M40",  # GPU name — multi-digit
+        "P1C",  # uppercase suffix is not the candidate-tag convention
         "figures/issue_920/winning_cell_scatter.png",  # path-SHAPED whole string
         "source: figures/issue_920/winning_cell_scatter.png",  # path-shaped word in prose
     ):
@@ -12649,6 +12671,50 @@ def test_check28_hypothesis_and_slot_family_classifier():
     assert verify_task_body._HYPOTHESIS_CODE_RE.search("figures/a/H3.png")
     assert verify_task_body._HYPOTHESIS_CODE_RE.search("figures/a/H1c.png")
     assert verify_task_body._SLOT_FAMILY_RE.search("figures/a/f16.png")
+
+
+def test_check28_candidate_code_in_text_block_warns(tmp_path, monkeypatch):
+    """The #1900 live repro shape: a sidecar title carrying bare candidate
+    codes (`mediation forest (P1 | P7)` — the pre-fix
+    `mediation_forest.meta.json` legend/title strings at `0e5e6c3e7d`)
+    WARNs through the `meta["text"]` walk, naming the tokens."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-02T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [{"title_left": "mediation forest (P1 | P7)"}],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "P1" in res.detail and "P7" in res.detail
+
+
+def test_check28_percentile_title_passes_clean(tmp_path, monkeypatch):
+    """Lowercase percentile shorthand rendered as a title (`p97.5 latency by
+    arm`) stays clean — the candidate-code class is uppercase-only, so no
+    new false positive on percentile text."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-02T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [{"title_left": "p97.5 latency by arm"}],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and not res.is_warn, res.render()
 
 
 # ─── Check 41: sidecar-less embedded figures (coverage WARN, #1478) ────────
