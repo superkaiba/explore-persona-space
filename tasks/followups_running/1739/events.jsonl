@@ -828,3 +828,4 @@
 {"ts": "2026-08-02T21:36:12Z", "kind": "epm:progress", "version": 335, "by": "unknown", "note": "[long-phase-heartbeat] wave-2: last leg newarma5syc alive in workload (~18.5h elapsed, healthy every sweep). 13/14 boxes done+finalized."}
 {"ts": "2026-08-02T22:14:48Z", "kind": "epm:progress", "version": 336, "by": "unknown", "note": "[long-phase-heartbeat] wave-2: last leg newarma5syc alive in workload (~19.2h elapsed, healthy every sweep). 13/14 boxes done+finalized."}
 {"ts": "2026-08-02T22:45:33Z", "kind": "epm:progress", "version": 337, "by": "unknown", "note": "[long-phase-heartbeat] wave-2: last leg newarma5syc alive in workload (~19.9h elapsed, healthy every sweep). 13/14 boxes done+finalized."}
+{"ts": "2026-08-02T23:16:38Z", "kind": "epm:progress", "version": 338, "by": "unknown", "note": "[long-phase-heartbeat] wave-2: last leg newarma5syc alive in workload (~20.5h elapsed, healthy every sweep). 13/14 boxes done+finalized."}
