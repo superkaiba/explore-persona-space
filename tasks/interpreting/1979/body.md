@@ -112,7 +112,7 @@ relates_to:
 
 All three blocks are sanitized for context hygiene; labels, prefix ids, and query shas are verbatim from the judge tables. The marker family generates text only as a carrier for the slot read (its DV is a log-probability, not judged text), so no marker completion sample is shown.
 
-I acknowledge the conciseness WARNs this body fires — the total-prose budget (nine results in one round) and per-result 120-word overruns — accepted to carry the full verdict lattice with its binding caveats; likewise the figure-text WARN on the three per-unit scatters, whose point labels are prefix ids (verbatim unit identifiers from the frozen panel, not condition codes).
+I acknowledge the conciseness WARNs this body fires — the total-prose budget (nine results in one round) and per-result 120-word overruns — accepted to carry the full verdict lattice with its binding caveats; likewise the figure-text WARN on the three per-unit scatters, whose point labels are prefix ids (verbatim unit identifiers from the frozen panel, not condition codes). The learning-rate reconciliation WARN is also acknowledged: the rates above are reused-checkpoint recipe values re-read from each adapter's config — this task trained no model, so the plan carries no training learning rate of its own.
 
 ## Results
 
