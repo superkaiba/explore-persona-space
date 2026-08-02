@@ -54,6 +54,7 @@ from explore_persona_space.backends.slurm import (
     parse_job_id,
     pending_transfers_from_itemize,
     render_secrets_env,
+    resolve_branch_tip_sha,
     time_budget_hours,
     validate_extra_sync_paths,
     verify_rsync_complete,
@@ -3848,3 +3849,140 @@ def test_render_no_override_fellows_unchanged() -> None:
     # The ladder is ROUTER-consumed only — never rendered.
     assert "normal-eur" not in script_a
     assert "low-eur" not in script_a
+
+
+# ---------------------------------------------------------------------------
+# issue #2026 — EPS_GIT_SHA export in the custom-stage env block
+# ---------------------------------------------------------------------------
+
+
+def _git_sha_line(sha: str) -> str:
+    """The #2026 rendered export (``:-`` preserves an ambient override)."""
+    return f'export EPS_GIT_SHA="${{EPS_GIT_SHA:-{sha}}}"'
+
+
+def test_custom_stage_exports_eps_git_sha() -> None:
+    """#2026: a resolvable sha renders the ``:-``-defaulted EPS_GIT_SHA
+    export, ordered AFTER the EPS_ATTEMPT_ID export (adjacent to the #588
+    env contract) and BEFORE the workload command."""
+    spec = _custom_spec()
+    sha = "a" * 40
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=stages_for_spec(spec),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+        code_sha=sha,
+    )
+    lines = script.splitlines()
+    line = _git_sha_line(sha)
+    assert line in lines
+    assert lines.index('export EPS_ATTEMPT_ID="slurm-${SLURM_JOB_ID}"') < lines.index(line)
+    assert lines.index(line) < lines.index(_wrapped("bash scripts/issue588_smoke.sh --flag 'v 1'"))
+
+
+def test_no_eps_git_sha_line_when_code_sha_none() -> None:
+    """#2026 fail-soft: the default render (no sha threaded) carries NO
+    EPS_GIT_SHA line anywhere — consumers keep the degraded git-less
+    literal, strictly no worse than pre-#2026 behavior."""
+    spec = _custom_spec()
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=stages_for_spec(spec),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+    )
+    assert "EPS_GIT_SHA" not in script
+
+
+def test_render_script_for_threads_resolved_sha(tmp_path) -> None:
+    """#2026: ``_render_script_for`` resolves the requested branch through
+    the ``sha_resolver`` seam — default branch ``main`` for an extra-less
+    spec, ``spec.extra['repo_branch']`` when set — and threads the sha
+    into the rendered script."""
+    calls: list[tuple[_P, str]] = []
+    sha = "b" * 40
+
+    def stub(src_root, branch, timeout=15):
+        calls.append((src_root, branch))
+        return sha
+
+    (tmp_path / "pyproject.toml").write_text("")
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        submitter=lambda **_: "0",
+        rsyncer=lambda **_: None,
+        marker_poster=lambda **_: None,
+        sha_resolver=stub,
+    )
+    script = backend._render_script_for(_custom_spec(), _nibi())
+    assert _git_sha_line(sha) in script.splitlines()
+    assert calls == [(tmp_path, "main")]
+
+    calls.clear()
+    spec_branch = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="cluster",
+        cluster="nibi",
+        workload_cmd="bash scripts/issue2026_smoke.sh",
+        extra={"repo_branch": "issue-2026"},
+    )
+    script2 = backend._render_script_for(spec_branch, _nibi())
+    assert _git_sha_line(sha) in script2.splitlines()
+    assert calls == [(tmp_path, "issue-2026")]
+
+
+def test_render_script_for_omits_export_when_resolver_returns_none(tmp_path, caplog) -> None:
+    """#2026 fail-soft pin: an unresolvable sha renders successfully with
+    NO EPS_GIT_SHA line (plus one warning) — a launch/render never dies on
+    best-effort provenance metadata."""
+    import logging
+
+    (tmp_path / "pyproject.toml").write_text("")
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        submitter=lambda **_: "0",
+        rsyncer=lambda **_: None,
+        marker_poster=lambda **_: None,
+        sha_resolver=lambda *_a, **_k: None,
+    )
+    with caplog.at_level(logging.WARNING):
+        script = backend._render_script_for(_custom_spec(), _nibi())
+    assert "EPS_GIT_SHA" not in script
+    assert any("EPS_GIT_SHA unresolved" in rec.getMessage() for rec in caplog.records)
+
+
+@pytest.mark.skipif(not _git_available(), reason="git not available")
+def test_resolve_branch_tip_sha(tmp_path) -> None:
+    """#2026: local ref first, ``origin/<branch>`` fallback, ``None`` on an
+    unresolvable branch and on a non-repo dir (fail-soft, never raises) —
+    the same resolution order as ``materialize_branch_src`` step 3."""
+    repo = tmp_path / "repo"
+    _init_branch_repo(repo)
+
+    # Local branch resolves to a 40-hex sha.
+    sha = resolve_branch_tip_sha(repo, "issue-X")
+    assert sha is not None and re.fullmatch(r"[0-9a-f]{40}", sha)
+
+    # origin/<branch> fallback: a clone materializes issue-X ONLY as the
+    # remote-tracking ref (its default HEAD is main), so the local-ref
+    # attempt misses and the origin/<branch> fallback must resolve it.
+    clone = tmp_path / "clone"
+    subprocess.run(
+        ["git", "clone", "-q", str(repo), str(clone)],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    fallback = resolve_branch_tip_sha(clone, "issue-X")
+    assert fallback == sha
+
+    # Unresolvable branch -> None (no raise).
+    assert resolve_branch_tip_sha(repo, "no-such-branch") is None
+
+    # Non-repo dir -> None (no raise).
+    nonrepo = tmp_path / "nonrepo"
+    nonrepo.mkdir()
+    assert resolve_branch_tip_sha(nonrepo, "main") is None
