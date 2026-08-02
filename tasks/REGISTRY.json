@@ -7136,8 +7136,8 @@
     "1921": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1921",
-      "status": "running",
+      "path": "tasks/reviewing/1921",
+      "status": "reviewing",
       "title": "daily-fix: four CLAUDE.md discipline clauses"
     },
     "1922": {
