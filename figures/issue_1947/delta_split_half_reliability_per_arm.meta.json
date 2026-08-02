@@ -1,6 +1,6 @@
 {
-  "commit": "c91570c52c",
-  "created": "2026-08-02T06:11:05Z",
+  "commit": "aacc010021",
+  "created": "2026-08-02T08:14:18Z",
   "figsize": [
     12.5,
     4.6
@@ -9,183 +9,638 @@
     {
       "x": 0.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7617,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 1.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7617,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 2.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7617,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 3.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7617,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 4.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7361,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 5.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7361,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 6.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7361,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 7.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7361,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 8.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.8478,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 9.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.8478,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 10.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.8478,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 11.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.8478,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 12.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7486,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 13.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7486,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 14.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7486,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 15.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7486,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 16.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7637,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 17.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7637,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 18.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7637,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 19.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7637,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 20.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7637,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 21.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.842,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 22.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.842,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 23.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.842,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 24.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.842,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 25.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.8374,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 26.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.8374,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 27.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.8374,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 28.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.8374,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 29.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7999,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 30.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7999,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 31.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7999,
-      "_kind": "scatter"
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 32.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7999,
-      "_kind": "scatter"
+      "label": "#1768 20-row reference \u2248 0.55",
+      "_kind": "scatter",
+      "_group": 0
     },
     {
       "x": 33.0,
       "\u03b4 split-half reliability (disjoint halves)": 0.7999,
-      "_kind": "scatter"
+      "label": "#1768 20-row reference \u2248 0.55",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8787,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8787,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8787,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8787,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8402,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8402,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8402,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8402,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.9364,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.9364,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.9364,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.9364,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8555,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 13.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8555,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 14.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8555,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 15.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8555,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8053,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 17.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8053,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 18.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8053,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 19.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8053,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 20.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8053,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 21.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8647,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 22.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8647,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 23.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8647,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 24.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8647,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 25.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8744,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 26.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8744,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 27.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8744,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 28.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8744,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 29.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8281,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 30.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8281,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 31.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8281,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 32.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8281,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 33.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8281,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7804,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7804,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7804,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7804,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7322,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7322,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7322,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7322,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8879,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8879,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8879,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 11.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8879,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 12.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7505,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 13.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7505,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 14.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7505,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 15.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7505,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 16.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7414,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 17.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7414,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 18.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7414,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 19.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7414,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 20.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7414,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 21.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8046,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 22.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8046,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 23.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8046,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 24.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8046,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 25.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8029,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 26.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8029,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 27.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8029,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 28.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8029,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 29.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7526,
+      "label": "#1768 20-row reference \u2248 0.55",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 30.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7526,
+      "label": "#1768 20-row reference \u2248 0.55",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 31.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7526,
+      "label": "#1768 20-row reference \u2248 0.55",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 32.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7526,
+      "label": "#1768 20-row reference \u2248 0.55",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 33.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7526,
+      "label": "#1768 20-row reference \u2248 0.55",
+      "_kind": "scatter",
+      "_group": 2
     }
   ],
-  "n_series": 1,
-  "total_points": 34,
+  "n_series": 3,
+  "total_points": 102,
   "text": {
     "suptitle": null,
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Displacement-unit reliability at n=300 trained positives, per arm (REP arms: 20 positives)",
+        "title_left": "Displacement-unit reliability at n=300 trained positives, per arm x layer (REP arms: 20 positives)",
         "ylabel": "\u03b4 split-half reliability (disjoint halves)",
+        "legend_labels": [
+          "layer 14",
+          "layer 19",
+          "layer 25",
+          "repeat-regime arm (20 positives)"
+        ],
         "annotations": [
           "#1768 20-row reference \u2248 0.55"
         ],
@@ -226,6 +681,7 @@
           "imp-pers-po\u00b7s42"
         ],
         "yticklabels": [
+          "0.3",
           "0.4",
           "0.5",
           "0.6",

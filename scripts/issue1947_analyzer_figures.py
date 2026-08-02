@@ -265,17 +265,22 @@ def fig_ladders(mani: dict, ladders: dict) -> None:
 
 
 def fig_reliability(digest: list[dict]) -> None:
+    # All three layers plotted per arm. The v1 render silently kept only the
+    # first layer encountered per arm (L14) while the prose claimed the
+    # all-layer range 0.732-0.936 (interp-critique v1 finding 6).
     rows = content_rows(digest)
-    per_arm: dict[str, float] = {}
+    per_arm_layer: dict[tuple[str, int], float] = {}
     for r in rows:
         if r.get("shr") is not None:
-            per_arm.setdefault(r["slug"], r["shr"])
-    arms = sorted(per_arm)
-    vals = [per_arm[a] for a in arms]
+            per_arm_layer.setdefault((r["slug"], r["L"]), r["shr"])
+    arms = sorted({a for a, _ in per_arm_layer})
     fig, ax = plt.subplots(figsize=(12.5, 4.6))
     xs = np.arange(len(arms))
-    colors = [C_MT if "-rep-" in a else C_OP for a in arms]
-    ax.scatter(xs, vals, s=30, c=colors, zorder=3)
+    layer_markers = {14: "o", 19: "^", 25: "s"}
+    for layer, mk in layer_markers.items():
+        colors = [C_MT if "-rep-" in a else C_OP for a in arms]
+        vals = [per_arm_layer.get((a, layer), np.nan) for a in arms]
+        ax.scatter(xs, vals, s=26, c=colors, marker=mk, zorder=3, alpha=0.85)
     ax.axhline(0.55, color=C_1768, linestyle=":", linewidth=1.6)
     ax.text(
         len(arms) - 0.5,
@@ -290,9 +295,18 @@ def fig_reliability(digest: list[dict]) -> None:
         [a.replace("-sv-", "·").replace("-rep-", "·REP·") for a in arms], rotation=75, fontsize=7.5
     )
     ax.set_ylabel("δ split-half reliability (disjoint halves)")
-    ax.set_ylim(0.4, 1.0)
+    ax.set_ylim(0.3, 1.0)
+    handles = [
+        plt.Line2D([], [], marker="o", color="grey", linestyle="", label="layer 14"),
+        plt.Line2D([], [], marker="^", color="grey", linestyle="", label="layer 19"),
+        plt.Line2D([], [], marker="s", color="grey", linestyle="", label="layer 25"),
+        plt.Line2D(
+            [], [], marker="o", color=C_MT, linestyle="", label="repeat-regime arm (20 positives)"
+        ),
+    ]
+    ax.legend(handles=handles, fontsize=8, loc="lower right", ncol=2)
     ax.set_title(
-        "Displacement-unit reliability at n=300 trained positives, per arm (REP arms: 20 positives)",
+        "Displacement-unit reliability at n=300 trained positives, per arm x layer (REP arms: 20 positives)",
         fontsize=11,
     )
     fig.tight_layout()
