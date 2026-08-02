@@ -1,7 +1,6 @@
 ---
 title: A fixed-label fiction character supports a character-specific context→dialogue
-  map in both base and instruct models once each scene is aggregated to one point
-  (MODERATE confidence)
+  map in both base and instruct models (MODERATE confidence)
 kind: experiment
 tags:
 - followup-auto
