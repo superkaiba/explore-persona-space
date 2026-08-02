@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2021,
+  "highest_id": 2022,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7921,6 +7921,13 @@
       "path": "tasks/running/2021",
       "status": "running",
       "title": "Persist stop_reason per judge draw + truncation-vs-content drop split + rule-26 pilot-gate helper"
+    },
+    "2022": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2022",
+      "status": "proposed",
+      "title": "workflow-fix: add eval_results/issue_1481 to tests/sparse_cones.txt (issue-1947 tests collect in sparse worktrees)"
     },
     "203": {
       "has_clean_result": false,
