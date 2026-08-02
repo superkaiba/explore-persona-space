@@ -126,3 +126,12 @@ scripts/.i1768_verdict_manifest.json
 # phase-1 pull dest at the repo root, merged into the live eval_results/ +
 # figures/ trees then removed; kept on failure for resume) — never committed.
 .slurm-results-staging/
+
+# Generated SAE-feature browsing pages served out of dashboard/public/. These
+# are regenerated from committed eval_results/ artifacts by their build scripts,
+# so the repo gains nothing by tracking them — and they are the surface most at
+# risk of carrying corpus-derived text into a PUBLIC repo, so an accidental
+# `git add -A` must never sweep them in. annotate-1773.html was previously kept
+# untracked by convention only; this makes it mechanical.
+dashboard/public/annotate-1773.html
+dashboard/public/sae-features-1482.html
