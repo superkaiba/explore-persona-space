@@ -7178,8 +7178,8 @@
     "1927": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1927",
-      "status": "planning",
+      "path": "tasks/approved/1927",
+      "status": "approved",
       "title": "daily-fix: canonical gist-update recipe (gh api PATCH)"
     },
     "1928": {
