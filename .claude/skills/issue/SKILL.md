@@ -6889,6 +6889,16 @@ RESULTS. Every detached launch declares its harvest path at launch time:
 
 The contract costs one token + a path choice at launch — never a new gate.
 
+**Relaunch + verify discipline (pointer — #1768/#1769/#1482).** Relaunches of a
+detached phase follow the pid-file launch contract items 1g/1h
+(`.claude/rules/pod-side-reporting.md`): re-run the launcher FILE — for an
+ad-hoc first launch, materialize one first — never a hand-re-typed inline
+chain (#1768), and key every `pid=` breadcrumb / completion watch on the
+identity-verified WORKER pid, never the setsid/nohup/ssh wrapper pid (#1769).
+A phase's harvest/commit leg names its expected path set per that rule's
+§ Result-push verification contract — an empty-set verify on an
+output-declaring round FAILS, never passes vacuously (#1482).
+
 **Monitor-filter hygiene (async-dispatch chains).** A crash-pattern
 Monitor/until-loop over a detached phase's log should EXCLUDE known
 benign teardown lines (`aclose()`, `Event loop is closed` — vLLM/httpx
