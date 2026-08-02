@@ -15441,7 +15441,7 @@ def _c51_clean_condition_name(raw: str) -> str | None:
     Formatting wrappers are stripped at the EDGES only — an interior `_`
     is part of a snake_case name (`harmful_compliance`), never chrome."""
     name = re.sub(r"\s+", " ", raw).strip()
-    name = name.strip("`*_\"'“”‘’ ")
+    name = name.strip("`*_\"' \u2018\u2019\u201c\u201d")
     if not name or len(name) > 60 or not re.search(r"[A-Za-z]", name):
         return None
     if re.fullmatch(r"[a-zA-Z]\s*[=≈<>≤≥]\s*[\d,.\s%]+", name):
