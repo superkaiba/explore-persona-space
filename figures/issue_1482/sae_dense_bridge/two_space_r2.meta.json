@@ -1,0 +1,152 @@
+{
+  "commit": "b8efc9b0bc",
+  "created": "2026-08-02T05:09:58Z",
+  "figsize": [
+    8.2,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "held-out pooled $R^2$": null,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "held-out pooled $R^2$": 0.6901407426514781,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "held-out pooled $R^2$": 0.7216031048274669,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "held-out pooled $R^2$": null,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "held-out pooled $R^2$": 0.6605856908933668,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "held-out pooled $R^2$": 0.47650768374651953,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "held-out pooled $R^2$": 0.5008487010145839,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "held-out pooled $R^2$": 0.7166207983746851,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out pooled $R^2$": 0.8958612867166412,
+      "series": "SAE reconstruction ceiling, full 131,072-atom dict (0.896)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out pooled $R^2$": 0.8958612867166412,
+      "series": "SAE reconstruction ceiling, full 131,072-atom dict (0.896)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "held-out pooled $R^2$": 0.6497478012738498,
+      "series": "SAE reconstruction ceiling, retained 16,384 cols (0.650)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out pooled $R^2$": 0.6497478012738498,
+      "series": "SAE reconstruction ceiling, retained 16,384 cols (0.650)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "held-out pooled $R^2$": 0.7242755664709597,
+      "series": "banked dense\u2192dense ridge, n=943k (0.724)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "held-out pooled $R^2$": 0.7242755664709597,
+      "series": "banked dense\u2192dense ridge, n=943k (0.724)",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 14,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Feature-space and dense-space $R^2$ are different currencies\nQwen-2.5-7B L19, mean pooling, 20,000-context holdout; all maps fit on 120,000 rows",
+        "ylabel": "held-out pooled $R^2$",
+        "legend_labels": [
+          "SAE reconstruction ceiling, full 131,072-atom dict (0.896)",
+          "SAE reconstruction ceiling, retained 16,384 cols (0.650)",
+          "banked dense\u2192dense ridge, n=943k (0.724)",
+          "feature-space $R^2$ (SAE targets)",
+          "dense-space $R^2$ (residual stream)"
+        ],
+        "annotations": [
+          "n/a",
+          "0.690",
+          "0.722",
+          "n/a",
+          "0.661",
+          "0.477",
+          "0.501",
+          "0.717"
+        ],
+        "xticklabels": [
+          "SAE ctx\n-> dense\n[NEW]",
+          "SAE ctx\n-> SAE",
+          "dense ctx\n-> SAE",
+          "dense ctx\n-> dense\n(n=120k)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4"
+        ]
+      }
+    ],
+    "series": [
+      "SAE reconstruction ceiling, full 131,072-atom dict (0.896)",
+      "SAE reconstruction ceiling, retained 16,384 cols (0.650)",
+      "banked dense\u2192dense ridge, n=943k (0.724)",
+      "feature-space $R^2$ (SAE targets)",
+      "dense-space $R^2$ (residual stream)"
+    ]
+  }
+}
