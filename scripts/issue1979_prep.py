@@ -227,6 +227,7 @@ def stage_inputs(cfg: Cfg) -> dict[str, Path]:
     api = HfApi()
     tree = hub.retry_transient(
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient at this call site (scoped listing)
             api.list_repo_tree(
                 X.HF_DATA_REPO,
                 path_in_repo="issue1900_leakrace/maps",
@@ -919,6 +920,7 @@ def mix_byte_asserts(cfg: Cfg, staged: dict[str, Path]) -> dict:
                 c
                 for c in cands
                 if hub.retry_transient(
+                    # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient at this call site (probe loop)
                     lambda c=c: api.file_exists(X.HF_DATA_REPO, c, repo_type="dataset"),
                     what=f"train_mix probe {c}",
                 )
@@ -1285,6 +1287,7 @@ def write_outputs(
     }
 
 
+# UPLOAD_PREFIX_EXEMPT: run complete 2026-08-01; single-issue prep, dest pinned in #1979 footer
 def upload_config(cfg: Cfg, outs: dict[str, Path], dest: str = f"{HF_PREFIX_1979}/config") -> None:
     """One upload_folder commit to the canonical lane-safe read path + exact-set
     verify (the #1900 MF1 lesson: every lane stages config from the Hub).
