@@ -1822,3 +1822,123 @@ def test_ai_word_pattern_covers_the_rubrics_excluded_self_reference(monkeypatch)
     for s in ("I am an AI", "as a language model", "artificial intelligence", "your assistant"):
         assert axis.AI_WORD_RE.search(s), s
     assert not axis.AI_WORD_RE.search("the aircraft banked left")
+
+
+# ---------------------------------------------------------------------------
+# 3l. Cell sharding — parallelize the fits across instances
+# ---------------------------------------------------------------------------
+def _fits_module(monkeypatch):
+    monkeypatch.setenv("EPM_I1345_VARIANT", "story_boundary_ablation")
+    monkeypatch.setenv("EPM_STORY_CHARACTER_NAME", "Assistant")
+    import issue1345_boundary_ablation_fits as fits
+
+    return fits
+
+
+def _cell_ids(n_arms: int = 10) -> list[dict]:
+    arms = ["v1", "v2", "v3", "v4", "v5", "chat", "ntpl", "chat_op", "ntpl_op", "v1_op"][:n_arms]
+    return [
+        {"cell_id": f"R_instruct_bnd_{a}_{s}__{y}"}
+        for a in arms
+        for s in ("prefix", "ctx_qend", "context", "ctx_preans", "ctx_straddle")
+        for y in ("ymean", "ybound")
+    ]
+
+
+def test_cell_shard_spec_parsing(monkeypatch):
+    fits = _fits_module(monkeypatch)
+    assert fits.parse_cell_shard(None) is None
+    assert fits.parse_cell_shard("") is None
+    assert fits.parse_cell_shard("  ") is None, "an env var set to blank is unsharded"
+    assert fits.parse_cell_shard("0/4") == (0, 4)
+    assert fits.parse_cell_shard(" 3/4 ") == (3, 4)
+    for bad in ("4/4", "-1/4", "1/0", "a/4", "1/2/3", "4"):
+        with pytest.raises(AssertionError):
+            fits.parse_cell_shard(bad)
+
+
+def test_cell_shard_partition_is_exhaustive_and_disjoint(monkeypatch):
+    """Every cell must be fit exactly once across the fleet — a partition that
+    double-covers wastes an instance, and one that under-covers silently ships a
+    lattice with holes."""
+    fits = _fits_module(monkeypatch)
+    cells = _cell_ids()
+    for n in (2, 3, 4, 8):
+        parts = [fits.apply_cell_shard(cells, (i, n)) for i in range(n)]
+        ids = [{cl["cell_id"] for cl in p} for p in parts]
+        assert set().union(*ids) == {cl["cell_id"] for cl in cells}, f"n={n} not exhaustive"
+        assert sum(len(x) for x in ids) == len(cells), f"n={n} shards overlap"
+
+
+def test_cell_shard_ownership_is_stable_across_processes_and_set_changes(monkeypatch):
+    """The partition keys on a sha256 of cell_id, NOT the enumeration index and
+    NOT hash(): the op rows are presence-gated, so two instances can enumerate
+    different-sized lists, and hash() is salted per process. Either would
+    reassign cells between shards — fitting some twice and others never."""
+    fits = _fits_module(monkeypatch)
+    cells = _cell_ids()
+    n = 4
+    owner = {cl["cell_id"]: fits.shard_of_cell(cl["cell_id"], n) for cl in cells}
+    # Same answer on a repeat call (and the value is a pure function of the id).
+    for cid, want in owner.items():
+        assert fits.shard_of_cell(cid, n) == want
+    # A SHRUNKEN enumeration (op arm absent) must not move anyone's owner.
+    shrunk = [cl for cl in cells if "_op" not in cl["cell_id"]]
+    for i in range(n):
+        got = {cl["cell_id"] for cl in fits.apply_cell_shard(shrunk, (i, n))}
+        assert got == {cid for cid, o in owner.items() if o == i and "_op" not in cid}
+
+
+def test_unsharded_path_is_byte_identical(monkeypatch):
+    """The running instance's semantics must not move: no shard => same list."""
+    fits = _fits_module(monkeypatch)
+    cells = _cell_ids()
+    assert fits.apply_cell_shard(cells, None) is cells
+
+
+def test_whole_lattice_phases_refuse_to_run_sharded(monkeypatch):
+    """grid/reparam/verdict consume EVERY cell's output; under a shard they would
+    compute over a fraction and report it complete. The guard is checked before
+    any store access so it fails fast and on a box with nothing staged."""
+    fits = _fits_module(monkeypatch)
+    import inspect
+
+    assert set(fits.WHOLE_LATTICE_PHASES) == {"all", "grid", "reparam", "verdict"}
+    src = inspect.getsource(fits.main)
+    guard = src.index("consumes EVERY cell")
+    stores = src.index("bg.assert_round_env()")
+    assert guard < stores, "the shard/phase guard must precede any store access"
+
+
+def test_shard_writes_a_scoped_summary_name(monkeypatch):
+    """A shard holds a slice, so it must not write the filename the whole-lattice
+    phases read — a partial cell_summary.json staged onto the union box would
+    satisfy grid's existence assert and silently supply a fraction of the grid."""
+    fits = _fits_module(monkeypatch)
+    import inspect
+
+    src = inspect.getsource(fits.main)
+    assert 'f"cell_summary.shard{shard[0]}of{shard[1]}.json"' in src
+    assert '"cell_summary.json"\n            if shard is None' in src
+
+
+def test_union_stage_pulls_preds_and_refuses_a_half_staged_union(monkeypatch):
+    """The resume predicate needs the cell JSON AND its preds npz, and the preds
+    live OUTSIDE the mirrored eval tree — so `mirror` uploads them under their own
+    prefix and `stage-cells` pulls both back. Staging JSONs without preds would
+    refit every cell while looking healthy, so it fails loud instead."""
+    monkeypatch.setenv("EPM_I1345_VARIANT", "story_boundary_ablation")
+    monkeypatch.setenv("EPM_STORY_CHARACTER_NAME", "Assistant")
+    import inspect
+
+    import issue1345_boundary_ablation_stage_and_mirror as sm
+
+    assert sm.HF_PREDS_MIRROR_PREFIX != sm.HF_EVAL_MIRROR_PREFIX
+    assert "preds_cache" in str(sm.PREDS_OUT_DIR)
+    # preds are NOT inside the eval mirror tree — the asymmetry this closes.
+    assert not str(sm.PREDS_OUT_DIR.resolve()).startswith(str(sm.EVAL_OUT_DIR.resolve()) + "/")
+    mirror_src = inspect.getsource(sm.cmd_mirror)
+    assert "HF_PREDS_MIRROR_PREFIX" in mirror_src, "mirror must upload preds too"
+    stage_src = inspect.getsource(sm.cmd_stage_cells)
+    assert "would REFIT" in stage_src, "a JSONs-without-preds union must fail loud"
+    assert "stage-cells" in inspect.getsource(sm.main)

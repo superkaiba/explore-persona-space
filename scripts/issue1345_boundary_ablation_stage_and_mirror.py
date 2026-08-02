@@ -58,6 +58,11 @@ from explore_persona_space.orchestrate import hub  # noqa: E402
 
 EVAL_OUT_DIR = Path("eval_results/issue_1345/story_boundary_ablation")
 HF_EVAL_MIRROR_PREFIX = f"{c.HF_ISSUE_PREFIX}/eval_mirror"
+# The fits' OOF preds live under data/, NOT under EVAL_OUT_DIR, so the eval
+# mirror never carried them. They get their own prefix rather than being moved
+# into eval_results/, which is JSON/text-only by Upload Policy.
+HF_PREDS_MIRROR_PREFIX = f"{c.HF_ISSUE_PREFIX}/eval_mirror_preds"
+PREDS_OUT_DIR = c.PREDS_CACHE_DIR / "boundary_ablation"
 # Store stem families the fits enumerate — pinned against the live HF listing.
 # A family listed here MUST be present after staging or the stage FAILS LOUD.
 #
@@ -179,16 +184,102 @@ def cmd_mirror() -> int:
     n_remote = len(listed)
     print(f"[mirror] local={n_local} remote={n_remote}", flush=True)
     assert n_remote >= n_local, f"mirror verify FAILED: {n_remote} remote < {n_local} local"
+
+    # The OOF preds are the OTHER half of a resumable cell and live outside
+    # EVAL_OUT_DIR, so they need their own upload — without them a union instance
+    # re-fits every cell it thinks it is resuming (see cmd_stage_cells).
+    if PREDS_OUT_DIR.exists() and any(PREDS_OUT_DIR.rglob("*.npz")):
+        n_preds = sum(1 for p in PREDS_OUT_DIR.rglob("*") if p.is_file())
+        hub.assert_hub_dir_filecounts(
+            folder_path=str(PREDS_OUT_DIR), path_in_repo=HF_PREDS_MIRROR_PREFIX
+        )
+        hub.retry_transient(
+            lambda: api.upload_folder(
+                folder_path=str(PREDS_OUT_DIR),
+                repo_id=c.HF_DATA_REPO,
+                repo_type="dataset",
+                path_in_repo=HF_PREDS_MIRROR_PREFIX,
+            ),
+            what=f"upload_folder({HF_PREDS_MIRROR_PREFIX})",
+        )
+        n_preds_remote = len(
+            hub.retry_transient(
+                lambda: hub.list_hf_files_under_path(
+                    api, c.HF_DATA_REPO, HF_PREDS_MIRROR_PREFIX, repo_type="dataset"
+                ),
+                what=f"verify({HF_PREDS_MIRROR_PREFIX})",
+            )
+        )
+        print(f"[mirror] preds local={n_preds} remote={n_preds_remote}", flush=True)
+        assert n_preds_remote >= n_preds, (
+            f"preds mirror verify FAILED: {n_preds_remote} remote < {n_preds} local"
+        )
+    else:
+        print(f"[mirror] no preds npz under {PREDS_OUT_DIR} — nothing to mirror", flush=True)
     print("[mirror] verify PASS", flush=True)
     return 0
 
 
+def cmd_stage_cells() -> int:
+    """Pull mirrored CELL outputs back down — the union half of cell sharding.
+
+    `stage` pulls the tensor stores only, and `mirror` uploads EVAL_OUT_DIR only.
+    Neither moves the fits' per-cell results, and the fits' OOF preds live under
+    `data/` — OUTSIDE the mirrored tree entirely. That asymmetry matters because
+    the fits' resume predicate (`_resume_cell`) requires BOTH `cells_<id>.json`
+    AND `preds/<id>_L<layer>.npz`: a union instance holding only the JSONs finds
+    half a cell, returns None, and silently REFITS every sharded cell — the whole
+    parallel run redone serially, with no error to notice. So the preds are
+    mirrored under their own prefix and pulled back here alongside the JSONs.
+    """
+    api = HfApi()
+    total = 0
+    for prefix, dest in (
+        (HF_EVAL_MIRROR_PREFIX, EVAL_OUT_DIR),
+        (HF_PREDS_MIRROR_PREFIX, PREDS_OUT_DIR),
+    ):
+        names = hub.retry_transient(
+            lambda p=prefix: hub.list_hf_files_under_path(
+                api, c.HF_DATA_REPO, p, repo_type="dataset"
+            ),
+            what=f"list({prefix})",
+        )
+        dest.mkdir(parents=True, exist_ok=True)
+        scratch = dest / ".stage_scratch"
+        staged = skipped = 0
+        for remote in sorted(names):
+            rel = remote[len(prefix) :].lstrip("/")
+            out = dest / rel
+            if out.exists() and out.stat().st_size > 0:
+                skipped += 1
+                continue
+            out.parent.mkdir(parents=True, exist_ok=True)
+            Path(c.stage_pinned_file(remote, scratch, revision="main")).replace(out)
+            staged += 1
+        total += staged
+        print(f"[stage-cells] {prefix}: staged={staged} skipped={skipped} -> {dest}", flush=True)
+    # A union run that staged cell JSONs but NO preds would refit everything while
+    # looking healthy; surface the pairing so that is visible before the fits start.
+    n_cells = len(list(EVAL_OUT_DIR.glob("cells_*.json")))
+    n_preds = len(list(PREDS_OUT_DIR.rglob("*.npz")))
+    print(f"[stage-cells] cell JSONs={n_cells} preds npz={n_preds} (resume needs BOTH)", flush=True)
+    assert not (n_cells and not n_preds), (
+        f"{n_cells} cell JSONs staged but 0 preds npz — every cell would REFIT. The shard "
+        "instances must run `mirror` (which now uploads preds) before the union stages."
+    )
+    return 0
+
+
 def main() -> int:
-    """CLI: `stage` before the fits, `mirror` after."""
+    """CLI: `stage` before the fits, `mirror` after, `stage-cells` for the union."""
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("cmd", choices=["stage", "mirror"])
+    ap.add_argument("cmd", choices=["stage", "mirror", "stage-cells"])
     args = ap.parse_args()
-    return cmd_stage() if args.cmd == "stage" else cmd_mirror()
+    if args.cmd == "stage":
+        return cmd_stage()
+    if args.cmd == "mirror":
+        return cmd_mirror()
+    return cmd_stage_cells()
 
 
 if __name__ == "__main__":

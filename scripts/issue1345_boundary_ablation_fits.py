@@ -52,6 +52,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -251,6 +252,48 @@ def grid_cells(
 def arm_cells(arm: str) -> list[dict]:
     """The ablation arm's own X x Y grid cells."""
     return grid_cells(arm)
+
+
+CELL_SHARD_ENV = "EPM_I1345_CELL_SHARD"
+# Phases that consume EVERY cell's output. A sharded process holds only its own
+# slice, so running these under a shard would compute the grid/verdict over a
+# fraction of the lattice and report it as complete.
+WHOLE_LATTICE_PHASES = ("all", "grid", "reparam", "verdict")
+
+
+def parse_cell_shard(spec: str | None) -> tuple[int, int] | None:
+    """``"i/N"`` -> (i, N); None/empty -> None (the unsharded default path)."""
+    if spec is None or not str(spec).strip():
+        return None
+    raw = str(spec).strip()
+    assert raw.count("/") == 1, f"--cell-shard must look like i/N, got {raw!r}"
+    i_s, n_s = raw.split("/")
+    assert i_s.strip().isdigit() and n_s.strip().isdigit(), f"non-integer shard spec {raw!r}"
+    i, n = int(i_s), int(n_s)
+    assert n >= 1, f"shard count must be >= 1, got {n}"
+    assert 0 <= i < n, f"shard index {i} out of range for {n} shards"
+    return i, n
+
+
+def shard_of_cell(cell_id: str, n: int) -> int:
+    """Which shard owns ``cell_id`` — a CONTENT hash, stable across processes.
+
+    Deliberately NOT the enumeration index: the op paired rows are
+    presence-gated, so two instances can enumerate different-sized cell lists and
+    an index-modulo partition would then assign the SAME cell to different shards
+    (some cells fit twice, others never). A sha256 of the cell_id is immune to
+    that, and to PYTHONHASHSEED — `hash()` is salted per process and would
+    silently repartition on every run.
+    """
+    return int(hashlib.sha256(cell_id.encode()).hexdigest()[:8], 16) % n
+
+
+def apply_cell_shard(cells: list[dict], shard: tuple[int, int] | None) -> list[dict]:
+    """The subset of ``cells`` this shard owns (identity when unsharded)."""
+    if shard is None:
+        return cells
+    i, n = shard
+    return [cl for cl in cells if shard_of_cell(cl["cell_id"], n) == i]
 
 
 def onpolicy_paired_cells(
@@ -1409,6 +1452,17 @@ def main() -> None:
         "(default: resume, so a mid-phase kill never forfeits completed cells)",
     )
     ap.add_argument(
+        "--cell-shard",
+        default=os.environ.get(CELL_SHARD_ENV, ""),
+        help=(
+            f"'i/N' — fit only this shard's cells (env {CELL_SHARD_ENV}). Cells are "
+            "embarrassingly parallel ACROSS instances; the partition is a sha256 of "
+            "cell_id, so every process agrees on ownership even when presence-gating "
+            "makes their enumerated lists differ. --phase cells ONLY: the whole-lattice "
+            "phases need every cell's output. Unset = the unsharded default path."
+        ),
+    )
+    ap.add_argument(
         "--import-check",
         action="store_true",
         help="resolve every deferred import on the real code path and exit 0",
@@ -1418,6 +1472,18 @@ def main() -> None:
     if args.import_check:
         _import_check()
         return
+
+    # Validate the shard/phase pairing BEFORE any store access: a sharded process
+    # holds one slice, so a whole-lattice phase would compute the grid/verdict over
+    # a fraction and report it complete. Checked here rather than after enumeration
+    # so it costs nothing and fails on a box with no stores staged.
+    shard = parse_cell_shard(args.cell_shard)
+    assert not (shard is not None and args.phase in WHOLE_LATTICE_PHASES), (
+        f"--phase {args.phase} consumes EVERY cell's output, but --cell-shard "
+        f"{args.cell_shard} holds only this shard's slice — it would compute the lattice "
+        "over a fraction and report it complete. Run the sharded instances with "
+        "--phase cells, then ONE UNSHARDED --phase all over the staged union."
+    )
 
     bg.assert_round_env()
     arms = [bg.SLUG_ARM.get(a, a) for a in args.arms.split(",") if a]
@@ -1535,6 +1601,23 @@ def main() -> None:
             flush=True,
         )
 
+    # Shard AFTER full enumeration (so every process partitions the same registry)
+    # and BEFORE bundle loading (so a shard pays only for the stores its own cells
+    # read — loading all bundles per shard would spend the wall-clock the shard
+    # exists to save).
+    if shard is not None:
+        before = len(cells)
+        cells = apply_cell_shard(cells, shard)
+        print(
+            f"[fits] cell shard {shard[0]}/{shard[1]}: {len(cells)}/{before} cells "
+            f"-> {sorted(cl['cell_id'] for cl in cells)}",
+            flush=True,
+        )
+        assert cells, (
+            f"shard {shard[0]}/{shard[1]} selected 0 of {before} cells — more shards than "
+            "cells, or an enumeration that produced nothing"
+        )
+
     bundles: dict[tuple[str, str], dict] = {}
     for cell in cells:
         key = (cell["model_key"], cell["format_key"])
@@ -1558,8 +1641,17 @@ def main() -> None:
             smoke=args.smoke,
             resume=not args.no_resume,
         )
+        # A shard holds a SLICE, so it must not write the filename the whole-lattice
+        # phases read: a partial cell_summary.json staged onto the union box would
+        # satisfy `--phase grid`'s existence assert and silently supply a quarter
+        # of the lattice. Shard-scoped name => that path fails loud instead.
+        summary_name = (
+            "cell_summary.json"
+            if shard is None
+            else f"cell_summary.shard{shard[0]}of{shard[1]}.json"
+        )
         c.write_json(
-            args.out_dir / "cell_summary.json",
+            args.out_dir / summary_name,
             {
                 "metadata": c.metadata(
                     args.seed, len(cell_summary), "scripts/issue1345_boundary_ablation_fits.py"
