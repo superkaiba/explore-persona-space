@@ -1,152 +1,152 @@
 {
-  "commit": "8c840dbe9d",
-  "created": "2026-08-01T20:42:37Z",
+  "commit": "0a6f324d02",
+  "created": "2026-08-02T00:31:34Z",
   "figsize": [
-    10.2,
-    3.4
+    12.0,
+    4.0
   ],
   "points": [
     {
       "x": -0.2,
-      "pooled LOFO R2": 0.5589962877822106,
+      "held-out R2 (symlog axis)": 0.5589962877822106,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.8,
-      "pooled LOFO R2": 0.5386826472379755,
+      "held-out R2 (symlog axis)": 0.5386826472379755,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 1.8,
-      "pooled LOFO R2": 0.5402181242731556,
+      "held-out R2 (symlog axis)": 0.5402181242731556,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 2.8,
-      "pooled LOFO R2": 0.5106249611363249,
+      "held-out R2 (symlog axis)": 0.5106249611363249,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 3.8,
-      "pooled LOFO R2": 0.22137985519103154,
+      "held-out R2 (symlog axis)": 0.22137985519103154,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 4.8,
-      "pooled LOFO R2": 0.290272983401589,
+      "held-out R2 (symlog axis)": 0.290272983401589,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 5.8,
-      "pooled LOFO R2": 0.5556546454341127,
+      "held-out R2 (symlog axis)": 0.5556546454341127,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 6.8,
-      "pooled LOFO R2": 0.5378222059751347,
+      "held-out R2 (symlog axis)": 0.5378222059751347,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 7.8,
-      "pooled LOFO R2": 0.5378685546123512,
+      "held-out R2 (symlog axis)": 0.5378685546123512,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 8.8,
-      "pooled LOFO R2": 0.5070620933085511,
+      "held-out R2 (symlog axis)": 0.5070620933085511,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 9.8,
-      "pooled LOFO R2": 0.21946775348856495,
+      "held-out R2 (symlog axis)": 0.21946775348856495,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 10.8,
-      "pooled LOFO R2": 0.2852306267386391,
+      "held-out R2 (symlog axis)": 0.2852306267386391,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.2,
-      "pooled LOFO R2": -47.09498999819187,
+      "held-out R2 (symlog axis)": -47.09498999819187,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 1.2,
-      "pooled LOFO R2": -4616.229398968863,
+      "held-out R2 (symlog axis)": -4616.229398968863,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 2.2,
-      "pooled LOFO R2": -35.7076993795925,
+      "held-out R2 (symlog axis)": -35.7076993795925,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 3.2,
-      "pooled LOFO R2": -1397.5280792482504,
+      "held-out R2 (symlog axis)": -1397.5280792482504,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 4.2,
-      "pooled LOFO R2": -81.23893290352524,
+      "held-out R2 (symlog axis)": -81.23893290352524,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 5.2,
-      "pooled LOFO R2": -315.4860602536559,
+      "held-out R2 (symlog axis)": -315.4860602536559,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 6.2,
-      "pooled LOFO R2": -47.29140867016462,
+      "held-out R2 (symlog axis)": -47.29140867016462,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 7.2,
-      "pooled LOFO R2": -4635.35045730935,
+      "held-out R2 (symlog axis)": -4635.35045730935,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 8.2,
-      "pooled LOFO R2": -35.76055906091995,
+      "held-out R2 (symlog axis)": -35.76055906091995,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 9.2,
-      "pooled LOFO R2": -1399.4765600824937,
+      "held-out R2 (symlog axis)": -1399.4765600824937,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 10.2,
-      "pooled LOFO R2": -81.36510918488281,
+      "held-out R2 (symlog axis)": -81.36510918488281,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 11.2,
-      "pooled LOFO R2": -316.0045127907586,
+      "held-out R2 (symlog axis)": -316.0045127907586,
       "_kind": "bar",
       "_group": 1
     }
@@ -158,11 +158,11 @@
     "fig_texts": [],
     "axes": [
       {
-        "title": "prefix-based v_P->v_A mapping arm (EXPLORATORY; n<d reg-limit regime)",
-        "ylabel": "pooled LOFO R2",
+        "title": "prefix-to-answer mapping fits (exploratory; n=50 < d=3584 regularization-limit regime)",
+        "ylabel": "held-out R2 (symlog axis)",
         "legend_labels": [
-          "LOFO ridge R2",
-          "identity+bias R2"
+          "leave-one-family-out ridge R2",
+          "identity + learned-bias baseline R2"
         ],
         "annotations": [
           "acc@1=0.06",
@@ -179,33 +179,31 @@
           "acc@1=0.08"
         ],
         "xticklabels": [
-          "content/L14/last_prefix",
-          "content/L14/prefix_span",
-          "content/L19/last_prefix",
-          "content/L19/prefix_span",
-          "content/L25/last_prefix",
-          "content/L25/prefix_span",
-          "marker/L14/last_prefix",
-          "marker/L14/prefix_span",
-          "marker/L19/last_prefix",
-          "marker/L19/prefix_span",
-          "marker/L25/last_prefix",
-          "marker/L25/prefix_span"
+          "content \u00b7 layer 14 \u00b7 last prefix token",
+          "content \u00b7 layer 14 \u00b7 prefix span mean",
+          "content \u00b7 layer 19 \u00b7 last prefix token",
+          "content \u00b7 layer 19 \u00b7 prefix span mean",
+          "content \u00b7 layer 25 \u00b7 last prefix token",
+          "content \u00b7 layer 25 \u00b7 prefix span mean",
+          "marker \u00b7 layer 14 \u00b7 last prefix token",
+          "marker \u00b7 layer 14 \u00b7 prefix span mean",
+          "marker \u00b7 layer 19 \u00b7 last prefix token",
+          "marker \u00b7 layer 19 \u00b7 prefix span mean",
+          "marker \u00b7 layer 25 \u00b7 last prefix token",
+          "marker \u00b7 layer 25 \u00b7 prefix span mean"
         ],
         "yticklabels": [
-          "\u22125000",
-          "\u22124000",
-          "\u22123000",
-          "\u22122000",
-          "\u22121000",
-          "0",
-          "1000"
+          "$\\mathdefault{-10^{3}}$",
+          "$\\mathdefault{-10^{2}}$",
+          "$\\mathdefault{-10^{1}}$",
+          "$\\mathdefault{-10^{0}}$",
+          "$\\mathdefault{0}$"
         ]
       }
     ],
     "series": [
-      "LOFO ridge R2",
-      "identity+bias R2"
+      "leave-one-family-out ridge R2",
+      "identity + learned-bias baseline R2"
     ]
   }
 }

@@ -1,9 +1,9 @@
 {
-  "commit": "8c840dbe9d",
-  "created": "2026-08-01T20:41:48Z",
+  "commit": "0a6f324d02",
+  "created": "2026-08-02T00:32:58Z",
   "figsize": [
-    11.0,
-    6.84
+    12.6,
+    7.24
   ],
   "points": [
     {
@@ -70,11 +70,11 @@
   "n_series": 1,
   "total_points": 12,
   "text": {
-    "suptitle": "content race \u2014 gray left marks = per-query #1900 medians (span-mean cross-grain)",
+    "suptitle": "content race \u2014 gray left marks = per-query-grain medians (parent run, span-mean position)",
     "fig_texts": [],
     "axes": [
       {
-        "title": "dv_level (within-arm Spearman rho)",
+        "title": "leakage LEVEL (judge score) \u2014 within-arm Spearman rho",
         "annotations": [
           "med +0.00",
           "-0.01",
@@ -101,36 +101,36 @@
           "-0.01"
         ],
         "xticklabels": [
-          "cas-bare-con-lr1e5-s42",
-          "cas-pers-con-lr1e5-s42",
-          "cas-pers-ft-con-s42",
-          "cas-pers-po-lr1e5-s42",
-          "imp-pers-con-lr3e5-s137",
-          "imp-pers-con-lr3e5-s42",
-          "imp-pers-ft-con-s42",
-          "imp-pers-po-lr1e5-s42",
-          "syc-bare-con-lr1e5-s42",
-          "syc-conv-con-lr1e5-s42",
-          "syc-pers-ft-con-s42",
-          "syc-pers-po-lr1e5-s42"
+          "casual bare-context contrastive",
+          "casual persona contrastive",
+          "casual persona full fine-tune",
+          "casual persona positive-only",
+          "impolite persona contrastive (seed 137)",
+          "impolite persona contrastive (seed 42)",
+          "impolite persona full fine-tune",
+          "impolite persona positive-only",
+          "sycophancy bare-context contrastive",
+          "sycophancy conversation contrastive",
+          "sycophancy persona full fine-tune",
+          "sycophancy persona positive-only"
         ],
         "yticklabels": [
-          "p1",
-          "p10",
-          "p2",
-          "p3a",
-          "p3b",
-          "p4",
-          "p5",
-          "p6",
-          "p7",
-          "p8a",
-          "p8b",
-          "p9"
+          "context similarity",
+          "nearest training rows (answer)",
+          "answer similarity",
+          "through-map context sim",
+          "through-map predicted-answer sim",
+          "whitened gate",
+          "read-out projection (direct)",
+          "read-out projection (through map)",
+          "base propensity",
+          "write forecast (size)",
+          "write forecast (alignment)",
+          "nearest training rows (context)"
         ]
       },
       {
-        "title": "dv_change (within-arm Spearman rho)",
+        "title": "leakage CHANGE (trained \u2212 base) \u2014 within-arm Spearman rho",
         "annotations": [
           "med +0.25",
           "-0.01",
@@ -157,36 +157,22 @@
           "-0.01"
         ],
         "xticklabels": [
-          "cas-bare-con-lr1e5-s42",
-          "cas-pers-con-lr1e5-s42",
-          "cas-pers-ft-con-s42",
-          "cas-pers-po-lr1e5-s42",
-          "imp-pers-con-lr3e5-s137",
-          "imp-pers-con-lr3e5-s42",
-          "imp-pers-ft-con-s42",
-          "imp-pers-po-lr1e5-s42",
-          "syc-bare-con-lr1e5-s42",
-          "syc-conv-con-lr1e5-s42",
-          "syc-pers-ft-con-s42",
-          "syc-pers-po-lr1e5-s42"
-        ],
-        "yticklabels": [
-          "p1",
-          "p10",
-          "p2",
-          "p3a",
-          "p3b",
-          "p4",
-          "p5",
-          "p6",
-          "p7",
-          "p8a",
-          "p8b",
-          "p9"
+          "casual bare-context contrastive",
+          "casual persona contrastive",
+          "casual persona full fine-tune",
+          "casual persona positive-only",
+          "impolite persona contrastive (seed 137)",
+          "impolite persona contrastive (seed 42)",
+          "impolite persona full fine-tune",
+          "impolite persona positive-only",
+          "sycophancy bare-context contrastive",
+          "sycophancy conversation contrastive",
+          "sycophancy persona full fine-tune",
+          "sycophancy persona positive-only"
         ]
       },
       {
-        "title": "winner=p6\nsel-inherited CI [+0.46,+0.68]",
+        "title": "winner probability (rows as left panel)\nselection-inherited CI on max median [+0.46,+0.68]",
         "xlabel": "P(winner) per draw",
         "xticklabels": [
           "0.0",
