@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2020,
+  "highest_id": 2021,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7914,6 +7914,13 @@
       "path": "tasks/reviewing/2020",
       "status": "reviewing",
       "title": "workflow-fix: close-miss escalation clause for the on-policy yield floor"
+    },
+    "2021": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2021",
+      "status": "proposed",
+      "title": "Persist stop_reason per judge draw + truncation-vs-content drop split + rule-26 pilot-gate helper"
     },
     "203": {
       "has_clean_result": false,
