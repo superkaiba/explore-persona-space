@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2016,
+  "highest_id": 2017,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7879,6 +7879,13 @@
       "path": "tasks/proposed/2016",
       "status": "proposed",
       "title": "workflow-fix: figure-PNG-vs-own-sidecar render consistency check"
+    },
+    "2017": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2017",
+      "status": "proposed",
+      "title": "workflow-fix: dropped-at-gate condition placement check (Takeaways + result) in verify_task_body"
     },
     "202": {
       "has_clean_result": false,
