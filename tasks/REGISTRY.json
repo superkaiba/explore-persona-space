@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1986,
+  "highest_id": 1987,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7634,6 +7634,13 @@
       "path": "tasks/proposed/1986",
       "status": "proposed",
       "title": "workflow-fix: letter-arrow transition token class for figure opaque-code check"
+    },
+    "1987": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1987",
+      "status": "proposed",
+      "title": "workflow-fix: pm_inline rule for value-plus-minus-err in body audit"
     },
     "199": {
       "has_clean_result": true,
