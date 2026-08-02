@@ -224,10 +224,16 @@ def fit_whitening(
     ``x_u`` is (Ly, n, d). ``Σ_γ = (1-γ)Σ + γ(trΣ/d)I`` shares eigenvectors
     with Σ, so the per-γ held-out Gaussian NLL reduces to eigenvalue algebra —
     the whole grid is evaluated with ONE batched eigh per layer chunk.
+
+    Memory (crash-fix r3, the 2026-08-02 newarm rc=137 kills): the fp64 cast
+    happens PER LAYER CHUNK (index-then-cast — bit-identical to the old
+    upfront whole-array cast, fp16/fp32 -> fp64 is exact), so the peak extra
+    footprint is ~2 chunk tensors (~2 x chunk x n x d x 8 B) instead of a
+    full (Ly, n, d) fp64 copy (~15 GiB at the production full-U shape).
     """
     import torch
 
-    x = np.asarray(x_u, dtype=np.float64)
+    x = np.asarray(x_u)  # shape/dtype read only — NO whole-array fp64 copy
     n_layers, n, d = x.shape
     rng = np.random.default_rng([1739, 3, int(seed)])
     perm = rng.permutation(n)
@@ -240,17 +246,21 @@ def fit_whitening(
     gamma_out = np.empty(n_layers)
     for lo in range(0, n_layers, layer_chunk):
         sl = slice(lo, min(lo + layer_chunk, n_layers))
-        xt = torch.as_tensor(x[sl][:, tr], device=dev)  # (c, n_tr, d)
+        # index-then-cast == the old cast-then-index bitwise (exact widening)
+        xt = torch.as_tensor(np.asarray(x[sl][:, tr], dtype=np.float64), device=dev)
         m = xt.mean(dim=1, keepdim=True)  # (c, 1, d)
         xc = xt - m
         cov = xc.transpose(1, 2) @ xc / max(len(tr), 1)  # (c, d, d)
+        del xt, xc  # explicit chunk frees — bound the eigh-stage peak
         evals, evecs = _eigh_robust(cov)
+        del cov
         evals = torch.clamp(evals, min=0.0)  # (c, d)
         tr_mean = evals.mean(dim=1, keepdim=True)  # trΣ/d
         if n_hold:
-            xh = torch.as_tensor(x[sl][:, hold], device=dev) - m
+            xh = torch.as_tensor(np.asarray(x[sl][:, hold], dtype=np.float64), device=dev) - m
             eh = xh @ evecs  # (c, n_hold, d) holdout in eigenbasis
             diag_hold = (eh**2).mean(dim=1)  # (c, d)
+            del xh, eh
         else:
             diag_hold = evals  # degenerate: NLL over train evals (γ pick still defined)
         nlls = []
@@ -271,9 +281,23 @@ def fit_whitening(
 
 
 def apply_whitening(x: np.ndarray, wh: Whitening) -> np.ndarray:
-    """Apply the frozen transform to (Ly, n, d) activations (batched matmul)."""
-    x = np.asarray(x, dtype=np.float64)
-    return (x - wh.mu[:, None, :]) @ wh.w
+    """Apply the frozen transform to (Ly, n, d) activations -> fp64 output.
+
+    Chunked PER LAYER into a preallocated output (crash-fix r3): numpy's
+    batched ``(x - mu) @ w`` materialized a whole-array fp64 cast copy PLUS a
+    whole-array ``(x - mu)`` temporary (~45 GiB transient at the production
+    full-U shape, the 85 GB-box rc=137 kill site). Each layer is an
+    independent GEMM in the batched op, so the per-layer loop is
+    bit-identical (pinned by ``test_apply_whitening_chunked_matches_dense``).
+    """
+    x = np.asarray(x)  # shape read only — the fp64 cast happens per layer
+    out = np.empty(x.shape, dtype=np.float64)
+    for li in range(x.shape[0]):
+        # exact widening cast + centering: temporaries are ONE layer, never (Ly, n, d)
+        xl = np.asarray(x[li], dtype=np.float64) - wh.mu[li][None, :]
+        np.matmul(xl, wh.w[li], out=out[li])
+        del xl
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -888,6 +912,9 @@ def fit_linear_map(
     preds_hold = ridge_layer_batched_auto(x_tr, y_tr, x_ho, lambdas=lambdas, device=device)
     diagnostics = map_diagnostics(preds_hold, x_ho, y_ho, x_tr, y_tr, knn_ks=knn_ks)
     diagnostics["n_train"], diagnostics["n_holdout"] = len(tr), int(n_hold)
+    # Crash-fix r3 memory scoping: the 80/20 split copies (~30 GiB fp64 at the
+    # production full-U shape) are dead weight during the full-pool refit.
+    del x_tr, y_tr, x_ho, y_ho, preds_hold
     # Frozen-map refit on the FULL U rung (diagnostics stay honest held-out
     # reads from the split fit above; the weights consume the whole budget).
     _preds_dummy, w = ridge_layer_batched_auto(
@@ -1109,9 +1136,20 @@ def apply_map(x: np.ndarray, m: MapFit, *, w: np.ndarray | None = None) -> np.nd
                 f"apply_map(w=...) is linear-only; MapFit kind={m.kind!r} has no weight tensor"
             )
         return apply_nl_map(x, m)
-    x = np.asarray(x, dtype=np.float64)
+    # Chunked PER LAYER (crash-fix r3): the batched expression materialized a
+    # whole-array fp64 cast + standardized temporary (~2 x 18.6 GiB transient
+    # at the hall transfer-comb shape). Per-layer GEMMs are bit-identical to
+    # the batched matmul (pinned by ``test_apply_map_chunked_matches_dense``).
+    x = np.asarray(x)  # shape read only — the fp64 cast happens per layer
     weights = m.w if w is None else w
-    return ((x - m.x_mu) / m.x_sd) @ weights + m.y_mu
+    n_layers = x.shape[0]
+    out = np.empty((n_layers, x.shape[1], weights.shape[2]), dtype=np.float64)
+    for li in range(n_layers):
+        xl = (np.asarray(x[li], dtype=np.float64) - m.x_mu[li]) / m.x_sd[li]
+        np.matmul(xl, weights[li], out=out[li])
+        out[li] += m.y_mu[li]
+        del xl
+    return out
 
 
 def _n1m():

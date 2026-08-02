@@ -453,6 +453,12 @@ if want_phase pilot; then
           "see $NL_ROOT/$b/$kind/pilot_report.json." >&2
         exit 7
       fi
+      if [ "$prc" -eq 9 ]; then
+        echo "[nlmap] RSS-GUARD REFUSED (rc=9) at $b/$kind: projected peak host RAM" \
+          "exceeds this box — see $NL_ROOT/$b/$kind/rss_guard_report.json (designed" \
+          "halt; relaunch on a 170 GB a2-ultragpu-1g box: --min-gpu-mem-gb > 38)" >&2
+        exit 9
+      fi
       [ "$prc" -eq 0 ] || { echo "[nlmap] FATAL: pilot $b/$kind exited rc=$prc" >&2; exit "$prc"; }
       echo "[nlmap] phase=pilot $b/$kind: PASS ($(date -u +%FT%TZ))"
     done
@@ -503,6 +509,11 @@ if want_phase compose; then
         "${PILOT_ABORT_MULT}x${_cpw}h — see" \
         "$NL_ROOT/$b/compose_$COMPOSE_MAP_KIND/pilot_report.json" >&2
       exit 7
+    fi
+    if [ "$prc" -eq 9 ]; then
+      echo "[nlmap] RSS-GUARD REFUSED (rc=9) at $b compose: projected peak host RAM" \
+        "exceeds this box — designed halt; relaunch on a 170 GB a2-ultragpu-1g box" >&2
+      exit 9
     fi
     [ "$prc" -eq 0 ] || { echo "[nlmap] FATAL: compose pilot $b rc=$prc" >&2; exit "$prc"; }
     uv run python scripts/issue1739_fits.py "${_ca[@]}"

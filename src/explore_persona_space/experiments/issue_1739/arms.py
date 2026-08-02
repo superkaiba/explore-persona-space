@@ -366,6 +366,37 @@ def _proj(z: np.ndarray, rb: np.ndarray) -> np.ndarray:
     return np.einsum("lnd,ld->ln", z, rb, optimize=True)
 
 
+def _is_arange(rows: np.ndarray, n: int | None = None) -> bool:
+    """True iff ``rows`` is exactly 0..len-1 (optionally == n, the full axis)."""
+    rows = np.asarray(rows)
+    if n is not None and rows.size != n:
+        return False
+    return (
+        rows.ndim == 1
+        and rows.size > 0
+        and int(rows[0]) == 0
+        and bool(np.array_equal(rows, np.arange(rows.size)))
+    )
+
+
+def _take_rows(arr: np.ndarray, rows: np.ndarray) -> np.ndarray:
+    """``arr[:, rows]`` without the fancy-index copy when rows are contiguous.
+
+    Crash-fix r3 memory scoping: the transfer leg's two folds are contiguous
+    blocks (train = ``arange(n_tr)``, eval = ``arange(n_tr, n)``), so basic
+    slicing returns a VIEW of the (Ly, n, d) fp64 array instead of a
+    multi-GiB copy; values are identical either way (pinned by
+    ``test_take_rows_view_and_copy``). Non-contiguous row sets keep the
+    fancy-index copy unchanged.
+    """
+    rows = np.asarray(rows)
+    if rows.ndim == 1 and rows.size > 1:
+        a, b = int(rows[0]), int(rows[-1])
+        if b - a == rows.size - 1 and np.array_equal(rows, np.arange(a, b + 1)):
+            return arr[:, a : b + 1]
+    return arr[:, rows]
+
+
 def _fold_masks(fold_ids: np.ndarray, n_folds: int) -> tuple[np.ndarray, np.ndarray]:
     """(F, n) boolean train / eval masks per fold."""
     ev = np.stack([fold_ids == f for f in range(n_folds)])
@@ -440,7 +471,10 @@ def _run_ridge_job(
 
     n_s = job.src.shape[0]
     n_tr = len(job.tr_rows)
-    x_tr = np.ascontiguousarray(job.src[:, job.tr_rows])
+    # Contiguous row blocks (the transfer leg's two folds) slice as VIEWS —
+    # the ridge helper's per-layer-chunk torch copies are the only
+    # materialization then (crash-fix r3; values identical either way).
+    x_tr = _take_rows(job.src, job.tr_rows)
     cols = []
     for _tkey, y_full in job.targets:
         if y_full.ndim == 1:
@@ -448,7 +482,7 @@ def _run_ridge_job(
         else:
             cols.append(y_full[:, job.tr_rows])
     y = np.stack(cols, axis=2)  # (S, ntr, T)
-    ev_mats = [np.ascontiguousarray(esrc[:, rows]) for _name, esrc, rows in job.evals]
+    ev_mats = [_take_rows(esrc, rows) for _name, esrc, rows in job.evals]
     preds = ridge_gcv_predict_per_target(x_tr, y, ev_mats, lambdas=lambdas, device=device)
     return job.key, {name: p for (name, _e, _r), p in zip(job.evals, preds, strict=True)}
 
@@ -593,12 +627,40 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
             f"matched-budget OOF needs >=2 group folds; cell L={cell.budget_l} realized "
             f"{n_folds} fold(s) over {n_l} rows (labeled table too small / one group)"
         )
-    z = np.asarray(base.z_ctx[:, idx], dtype=np.float64)  # (Ly, n_l, d)
+    # Crash-fix r3 memory scoping: the transfer leg passes the IDENTITY row
+    # set over an already-fp64 comb — alias instead of fancy-copying two
+    # (Ly, n, d) fp64 arrays (~37 GiB at the hall L=16000 comb; z/za are
+    # never mutated downstream — reads, torch copies, .astype copies only).
+    _alias = _is_arange(idx, base.z_ctx.shape[1])
+    if _alias and base.z_ctx.dtype == np.float64:
+        z = base.z_ctx  # (Ly, n_l, d)
+    else:
+        z = np.asarray(base.z_ctx[:, idx], dtype=np.float64)  # (Ly, n_l, d)
     dv = np.asarray(base.dv[idx], dtype=np.float64)
     rbs = [np.asarray(d.rb, dtype=np.float64) for d in datas]
     n_layers = z.shape[0]
-    za = np.asarray(base.z_ans[:, idx], dtype=np.float64) if base.z_ans is not None else None
-    mp = apply_map(z, base.mapfit) if base.mapfit is not None else None
+    if base.z_ans is None:
+        za = None
+    elif _alias and base.z_ans.dtype == np.float64:
+        za = base.z_ans
+    else:
+        za = np.asarray(base.z_ans[:, idx], dtype=np.float64)
+    # mp is a whole-array (Ly, n_l, d) fp64 product — build it ONLY when a
+    # map-consuming arm is actually requested (pre-r3 it was unconditional:
+    # +18.6 GiB on the arm-5-only / oracle rosters). The "no mapfit" skips
+    # below stay reachable only for slugs in `want`, which is exactly when
+    # need_mp would have been True — so skip semantics are unchanged.
+    mp_arms = {
+        "arm6_map_proj_e1",
+        "arm7_map_ridge_pred",
+        "arm8_map_ridge_true",
+        "arm9_pretrain_ft",
+        "arm10_stacked",
+        "arm13_shuffled_map",
+        "arm14_shuffled_pt",
+    }
+    need_mp = base.mapfit is not None and bool(mp_arms & set(want))
+    mp = apply_map(z, base.mapfit) if need_mp else None
     tr_masks, ev_masks = _fold_masks(folds, n_folds)  # (F, n_l)
     tr_w = tr_masks.astype(np.float64)
     tr_w /= np.maximum(tr_w.sum(axis=1, keepdims=True), 1.0)
@@ -970,10 +1032,13 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
         else:
             out18 = np.full((n_layers, n_l), np.nan)
             for f in solve_folds:
+                # contiguous fold blocks (the transfer leg) slice as views —
+                # the krr fitter's per-layer-chunk torch copies are the only
+                # materialization (crash-fix r3)
                 out18[:, ev_rows[f]] = krr_scalar_fold_predict(
-                    za[:, tr_rows[f]],
+                    _take_rows(za, tr_rows[f]),
                     dv[tr_rows[f]],
-                    za[:, ev_rows[f]],
+                    _take_rows(za, ev_rows[f]),
                     seed=_rowset_seed(tr_rows[f]),
                     device=device,
                 )
@@ -1020,6 +1085,26 @@ def run_cell(
     )[0]
 
 
+def _concat_train_eval(full: np.ndarray, idx: np.ndarray, ev: np.ndarray) -> np.ndarray:
+    """``np.concatenate([full[:, idx], ev], axis=1)`` without the slice copy.
+
+    Fills a preallocated output per layer, so the transient is ONE layer
+    instead of a whole (Ly, n_tr, d) fancy-index copy (~13 GiB at the hall
+    L=16000 transfer comb — crash-fix r3). Value-identical to the
+    concatenate expression (pinned by
+    ``test_concat_train_eval_matches_concatenate``).
+    """
+    n_tr, n_ev = len(idx), ev.shape[1]
+    out = np.empty(
+        (full.shape[0], n_tr + n_ev, full.shape[2]),
+        dtype=np.result_type(full.dtype, ev.dtype),
+    )
+    for li in range(full.shape[0]):
+        out[li, :n_tr] = full[li][idx]
+        out[li, n_tr:] = ev[li]
+    return out
+
+
 def run_transfer_cell(
     data: CellData,
     cell: BudgetCell,
@@ -1055,9 +1140,9 @@ def run_transfer_cell(
     assert z_ev.shape[0] == data.z_ctx.shape[0], (z_ev.shape, data.z_ctx.shape)
     z_ans_comb = None
     if data.z_ans is not None and za_ev is not None:
-        z_ans_comb = np.concatenate([data.z_ans[:, idx], za_ev], axis=1)
+        z_ans_comb = _concat_train_eval(data.z_ans, idx, za_ev)
     comb = CellData(
-        z_ctx=np.concatenate([data.z_ctx[:, idx], z_ev], axis=1),
+        z_ctx=_concat_train_eval(data.z_ctx, idx, z_ev),
         dv=np.concatenate([np.asarray(data.dv[idx], dtype=np.float64), dv_ev]),
         rb=data.rb,
         z_ans=z_ans_comb,

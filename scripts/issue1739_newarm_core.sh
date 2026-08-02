@@ -80,6 +80,12 @@ if [ "$prc" -eq 7 ]; then
     "see $OUT_ROOT/pilot_report.json (designed halt; re-size, never a blind raise)" >&2
   exit 7
 fi
+if [ "$prc" -eq 9 ]; then
+  echo "[newarm-core] RSS-GUARD REFUSED (rc=9): projected peak host RAM exceeds this" \
+    "box — see $OUT_ROOT/rss_guard_report.json (designed halt; relaunch on a" \
+    "170 GB a2-ultragpu-1g box: --min-gpu-mem-gb > 38 skips the 85 GB rung)" >&2
+  exit 9
+fi
 [ "$prc" -eq 0 ] || { echo "[newarm-core] FATAL: pilot rc=$prc" >&2; exit "$prc"; }
 
 echo "[newarm-core] fc fits grid $(date -u +%FT%TZ)"

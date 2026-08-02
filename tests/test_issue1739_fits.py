@@ -1410,3 +1410,213 @@ def test_rb_point_and_fixed_coordinate_cli_defaults():
     args_fc = cli._parse_args(["--rb-point", "context_end", "--fixed-coordinate", "u=full"])
     assert args_fc.rb_point == "context_end"
     assert args_fc.fixed_coordinate == "u=full"
+
+
+# ---------------------------------------------------------------------------
+# crash-fix r3: chunked/aliased memory paths are BIT-IDENTICAL + the RSS guard
+# ---------------------------------------------------------------------------
+
+
+def _fit_whitening_dense_reference(x_u, *, seed=0, device="cpu", layer_chunk=8):
+    """The PRE-r3 fit_whitening body (upfront whole-array fp64 cast) — the
+    parity oracle for the chunked-cast rewrite."""
+    import torch
+
+    from explore_persona_space.experiments.issue_1739.constants import (
+        WHITEN_HOLDOUT_FRAC,
+        WHITEN_SHRINKAGE_GRID,
+    )
+
+    gammas = WHITEN_SHRINKAGE_GRID
+    x = np.asarray(x_u, dtype=np.float64)
+    n_layers, n, d = x.shape
+    rng = np.random.default_rng([1739, 3, int(seed)])
+    perm = rng.permutation(n)
+    n_hold = round(WHITEN_HOLDOUT_FRAC * n) if n >= 5 else 0
+    hold, tr = perm[:n_hold], perm[n_hold:]
+    dev = torch.device(device)
+    mu = np.empty((n_layers, d))
+    w_out = np.empty((n_layers, d, d))
+    gamma_out = np.empty(n_layers)
+    for lo in range(0, n_layers, layer_chunk):
+        sl = slice(lo, min(lo + layer_chunk, n_layers))
+        xt = torch.as_tensor(x[sl][:, tr], device=dev)
+        m = xt.mean(dim=1, keepdim=True)
+        xc = xt - m
+        cov = xc.transpose(1, 2) @ xc / max(len(tr), 1)
+        evals, evecs = fits._eigh_robust(cov)
+        evals = torch.clamp(evals, min=0.0)
+        tr_mean = evals.mean(dim=1, keepdim=True)
+        if n_hold:
+            xh = torch.as_tensor(x[sl][:, hold], device=dev) - m
+            diag_hold = ((xh @ evecs) ** 2).mean(dim=1)
+        else:
+            diag_hold = evals
+        nlls = []
+        for g in gammas:
+            lam = (1.0 - g) * evals + g * tr_mean
+            nlls.append(torch.log(lam).sum(dim=1) + (diag_hold / lam).sum(dim=1))
+        gi = torch.stack(nlls, dim=1).argmin(dim=1)
+        g_best = torch.as_tensor([float(gammas[int(i)]) for i in gi], device=dev)
+        lam_best = (1.0 - g_best[:, None]) * evals + g_best[:, None] * tr_mean
+        inv_sqrt = evecs @ (lam_best.clamp(min=1e-12).rsqrt()[:, :, None] * evecs.transpose(1, 2))
+        mu[sl] = m.squeeze(1).cpu().numpy()
+        w_out[sl] = inv_sqrt.cpu().numpy()
+        gamma_out[sl] = g_best.cpu().numpy()
+    return fits.Whitening(mu=mu, w=w_out, gamma=gamma_out)
+
+
+@pytest.mark.parametrize("in_dtype", [np.float16, np.float32, np.float64])
+def test_fit_whitening_chunked_matches_dense_reference(in_dtype):
+    """r3 per-chunk fp64 cast == the old upfront whole-array cast, bitwise."""
+    x_u = RNG.normal(size=(3, 40, 6)).astype(in_dtype)
+    got = fits.fit_whitening(x_u, seed=3, layer_chunk=2)
+    ref = _fit_whitening_dense_reference(x_u, seed=3, layer_chunk=2)
+    assert np.array_equal(got.mu, ref.mu)
+    assert np.array_equal(got.w, ref.w)
+    assert np.array_equal(got.gamma, ref.gamma)
+
+
+@pytest.mark.parametrize("in_dtype", [np.float16, np.float32, np.float64])
+def test_apply_whitening_chunked_matches_dense(in_dtype):
+    """r3 per-layer apply == the old batched `(x - mu) @ w` expression, bitwise."""
+    x_u = RNG.normal(size=(3, 25, 6)).astype(np.float64)
+    wh = fits.fit_whitening(x_u, seed=1)
+    x = RNG.normal(size=(3, 11, 6)).astype(in_dtype)
+    got = fits.apply_whitening(x, wh)
+    ref = (np.asarray(x, dtype=np.float64) - wh.mu[:, None, :]) @ wh.w
+    assert got.dtype == np.float64
+    assert np.array_equal(got, ref)
+
+
+def test_apply_map_chunked_matches_dense():
+    """r3 per-layer apply_map == the old batched standardize-matmul, bitwise."""
+    rng = np.random.default_rng(7)
+    x_u = rng.normal(size=(3, 40, 6))
+    y_u = 0.5 * x_u + rng.normal(size=x_u.shape)
+    m = fits.fit_linear_map(x_u, y_u)
+    x = rng.normal(size=(3, 9, 6))
+    got = fits.apply_map(x, m)
+    ref = ((np.asarray(x, dtype=np.float64) - m.x_mu) / m.x_sd) @ m.w + m.y_mu
+    assert np.array_equal(got, ref)
+    # the shuffled-weight override path chunks identically
+    w_shuf = fits.shuffled_map_weights(m.w, seed=0)
+    got_s = fits.apply_map(x, m, w=w_shuf)
+    ref_s = ((np.asarray(x, dtype=np.float64) - m.x_mu) / m.x_sd) @ w_shuf + m.y_mu
+    assert np.array_equal(got_s, ref_s)
+
+
+def test_take_rows_view_and_copy():
+    """_take_rows: contiguous arange -> VIEW; anything else -> the fancy copy."""
+    arr = RNG.normal(size=(2, 10, 3))
+    rows = np.arange(3, 8)
+    view = arms._take_rows(arr, rows)
+    assert view.base is arr and np.array_equal(view, arr[:, rows])
+    scattered = np.array([1, 4, 5])
+    copy = arms._take_rows(arr, scattered)
+    assert copy.base is not arr and np.array_equal(copy, arr[:, scattered])
+    single = arms._take_rows(arr, np.array([4]))
+    assert np.array_equal(single, arr[:, [4]])
+
+
+def test_concat_train_eval_matches_concatenate():
+    full = RNG.normal(size=(2, 12, 4))
+    ev = RNG.normal(size=(2, 5, 4))
+    idx = np.array([7, 2, 9, 0])
+    got = arms._concat_train_eval(full, idx, ev)
+    assert np.array_equal(got, np.concatenate([full[:, idx], ev], axis=1))
+
+
+def test_run_cell_multi_alias_identity_matches_copy_and_never_mutates():
+    """The transfer leg's identity row set: aliased z/za give IDENTICAL scores
+    to an explicit-copy comb, and the shared arrays are never mutated."""
+    data, _groups = _synthetic_cell_data(n=24, seed=5)
+    n = data.z_ctx.shape[1]
+    cell = arms.BudgetCell(
+        row_idx=np.arange(n),
+        fold_ids=np.concatenate([np.ones(16, dtype=np.int64), np.zeros(8, dtype=np.int64)]),
+        n_folds=2,
+        budget_l=16,
+        draw=0,
+        seed=0,
+        fold_scheme="transfer-train-vs-eval",
+    )
+    want = ["arm1_ctx_e1", "arm4_ridge_ctx", "arm6_map_proj_e1", "arm11_oracle_proj"]
+    z_pristine, za_pristine = data.z_ctx.copy(), data.z_ans.copy()
+    scores_alias, _ = arms.run_cell(data, cell, arms=want, ridge_folds=(0,))
+    assert np.array_equal(data.z_ctx, z_pristine), "alias path mutated z_ctx"
+    assert np.array_equal(data.z_ans, za_pristine), "alias path mutated z_ans"
+    data_copy = arms.CellData(
+        z_ctx=data.z_ctx.copy(),
+        z_ans=data.z_ans.copy(),
+        dv=data.dv,
+        rb=data.rb,
+        mapfit=data.mapfit,
+        text_emb=data.text_emb,
+        text_features=data.text_features,
+        layers=data.layers,
+    )
+    scores_copy, _ = arms.run_cell(data_copy, cell, arms=want, ridge_folds=(0,))
+    for slug in want:
+        assert np.array_equal(scores_alias[slug], scores_copy[slug], equal_nan=True) or np.allclose(
+            scores_alias[slug], scores_copy[slug], equal_nan=True, atol=0
+        ), slug
+
+
+def test_run_cell_multi_lazy_mp_skips_apply_map(monkeypatch):
+    """mp is built ONLY when a map-consuming arm is requested (r3 memory fix);
+    a non-map roster never calls apply_map, and skip semantics are unchanged."""
+    data, groups = _synthetic_cell_data(n=24, seed=6)
+    cell = fits.realize_budget_cell(groups, budget_l=18, draw=0, seed=0)
+    calls = {"n": 0}
+    real_apply = arms.apply_map
+
+    def _counting_apply(*a, **kw):
+        calls["n"] += 1
+        return real_apply(*a, **kw)
+
+    monkeypatch.setattr(arms, "apply_map", _counting_apply)
+    scores, _skipped = arms.run_cell(
+        data, cell, arms=["arm1_ctx_e1", "arm11_oracle_proj", "arm4_ridge_ctx"]
+    )
+    assert calls["n"] == 0, "non-map roster must not materialize mp"
+    assert "arm1_ctx_e1" in scores and "arm4_ridge_ctx" in scores
+    scores6, _ = arms.run_cell(data, cell, arms=["arm6_map_proj_e1"])
+    assert calls["n"] == 1 and "arm6_map_proj_e1" in scores6
+    # mapfit=None + map arm requested still records the "no mapfit" skip
+    data_nomap = arms.CellData(
+        z_ctx=data.z_ctx, z_ans=data.z_ans, dv=data.dv, rb=data.rb, layers=data.layers
+    )
+    _, skipped_nomap = arms.run_cell(data_nomap, cell, arms=["arm6_map_proj_e1"])
+    assert skipped_nomap["arm6_map_proj_e1"] == "no mapfit"
+
+
+def test_mem_guard_components_and_refusal(tmp_path, monkeypatch, capsys):
+    from explore_persona_space.experiments.issue_1739 import mem_guard
+
+    # component arithmetic: the documented full-U shape projects ~75 GiB extra
+    comp = mem_guard.whitening_map_components(28, 18793, 3584, n_ctx=8000, n_ev=2666)
+    total_gib = sum(comp.values()) / 2**30
+    assert 60 < total_gib < 110, total_gib
+    tc = mem_guard.transfer_components(
+        28, 16000, 7188, 3584, list(arms.TRANSFER_ARMS_WIDE), has_map=True
+    )
+    assert 50 < sum(tc.values()) / 2**30 < 100
+    # no-map / projection-only roster: no mp, no mlp, no ridge terms
+    tc_min = mem_guard.transfer_components(28, 250, 100, 3584, ["arm1_ctx_e1"], has_map=True)
+    assert set(tc_min) == {"comb_z_za"}
+    # ok verdict on a tiny projection
+    rec = mem_guard.check_phase("unit_ok", {"tiny": 1024}, out_root=tmp_path)
+    assert rec["verdict"] == "ok"
+    # forced refusal: projection larger than any real box
+    with pytest.raises(mem_guard.MemGuardRefusal):
+        mem_guard.check_phase("unit_refuse", {"huge": 10**15}, out_root=tmp_path)
+    report = json.loads((tmp_path / "rss_guard_report.json").read_text())
+    assert report["checks"][-1]["phase"] == "unit_refuse"
+    assert report["checks"][-1]["verdict"] == "REFUSE"
+    out = capsys.readouterr().out
+    assert "[fits][rss-guard] phase=unit_refuse" in out and "verdict=REFUSE" in out
+    # log-only kill switch
+    monkeypatch.setenv("EPM_I1739_RSS_GUARD", "0")
+    rec2 = mem_guard.check_phase("unit_logonly", {"huge": 10**15}, out_root=tmp_path)
+    assert rec2["verdict"] == "over-log-only"

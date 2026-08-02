@@ -1245,7 +1245,7 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
 
     import numpy as np
 
-    from explore_persona_space.experiments.issue_1739 import arms, fits, store_io
+    from explore_persona_space.experiments.issue_1739 import arms, fits, mem_guard, store_io
     from explore_persona_space.experiments.issue_1739.constants import (
         COMPOSITION_F_L,
         COMPOSITION_F_U,
@@ -1355,7 +1355,17 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
         except (ValueError, RuntimeError) as exc:
             _record_compose_skip(spec0, exc, compose_skips)  # re-raises on a plain rung
             print(f"[fits] group {gi + 1}/{len(groups)} SKIP compose: {exc}", flush=True)
+            if gi == len(groups) - 1:
+                u_arrays = None
+                gc.collect()
             continue
+        if gi == len(groups) - 1:
+            # Crash-fix r3 memory scoping: the LAST group's pool is composed —
+            # the staged fp16 u_store summary arrays (~12 GiB at 3 kinds x 28
+            # layers) are dead weight through the fit/transfer phases below.
+            u_arrays = None
+            gc.collect()
+            print("[fits] freed u_store summary arrays after final U-pool compose", flush=True)
         t_map = time.time()
         map_kind = getattr(args, "map_kind", "linear")
         map_seed = int(args.seeds[0])
@@ -1377,18 +1387,44 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
             else None
         )
         map_source = "loaded" if mapfit is not None else "fit"
-        # Held-out probe rows for the round-trip gate, captured BEFORE u_x is
-        # freed (the gate needs whitened inputs, and u_x dies two lines below).
+        # Pre-fit RSS guard (crash-fix r3): project this group's whitening-
+        # apply + map-fit + labeled-whitening peak vs live MemAvailable and
+        # refuse with a DESIGNED rc instead of a kernel OOM-kill (rc=137 on
+        # the 85 GB a2-highgpu-1g boxes, 2026-08-02).
+        mem_guard.check_phase(
+            f"whitening_map[{spec0.variant}|{u_label}]",
+            mem_guard.whitening_map_components(
+                len(layers),
+                n_u,
+                dim,
+                n_ctx=len(tbl.ctx_order),
+                n_ev=len(tbl_ev.ctx_order) if tbl_ev is not None else 0,
+                map_fit=mapfit is None,
+            ),
+            out_root=args.out_root,
+        )
+        # Held-out probe rows for the round-trip gate, captured from the SAME
+        # whitened copy the map fit consumes (identical values to the old
+        # fresh apply_whitening(u_x)[:, :K] slice).
         probe_x = None
-        if map_source == "fit" and spec0.f_u is None and map_kind != "linear":
-            probe_x = np.array(
-                fits.apply_whitening(u_x, wh)[:, : min(MAP_ROUNDTRIP_PROBE_ROWS, n_u)], copy=True
-            )
         if mapfit is None:
-            mapfit = _fit_map(args, fits.apply_whitening(u_x, wh), fits.apply_whitening(u_y, wh))
+            # ONE whitened fp64 copy per pool side; the fp16 stacked pools are
+            # freed the moment their whitened twin exists (crash-fix r3 —
+            # pre-fix BOTH pools + two whole-array fp64 apply transients were
+            # co-resident, the 85 GB-box kill site).
+            x_w = fits.apply_whitening(u_x, wh)
+            u_x = None
+            y_w = fits.apply_whitening(u_y, wh)
+            u_y = None
+            if spec0.f_u is None and map_kind != "linear":
+                probe_x = np.array(x_w[:, : min(MAP_ROUNDTRIP_PROBE_ROWS, n_u)], copy=True)
+            mapfit = _fit_map(args, x_w, y_w)
+            del x_w, y_w
+        else:
+            u_x = u_y = None  # loaded map: the pools carry nothing downstream
+        gc.collect()
         if timings is not None:
             timings.setdefault("map_fit_s", []).append(time.time() - t_map)
-        del u_x, u_y  # the map + whitening carry everything downstream needs
         diag_out[f"{spec0.variant}|{u_label}"] = {**mapfit.diagnostics, "map_source": map_source}
         z_ev_w = za_ev_w = None  # eval-split arrays, whitened per map_key (transfer leg)
         if spec0.f_u is None:
@@ -1480,6 +1516,17 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
             kwargs["n_perm"] = args.n_perm
         mlp_kwargs = {"max_epochs": args.mlp_epochs} if args.mlp_epochs else None
         t_grid = time.time()
+        mem_guard.check_phase(
+            f"grid[{spec0.variant}|{u_label}]",
+            mem_guard.cell_solve_components(
+                len(layers),
+                min(max(int(b) for b in spec0.budgets), len(tbl.ctx_order)),
+                dim,
+                list(args.arms) if args.arms else list(arms.ARM_REGISTRY),
+                has_map=mapfit is not None,
+            ),
+            out_root=args.out_root,
+        )
         recs_by_regime = arms.run_grid_multi(
             datas,
             provs,
@@ -1501,6 +1548,18 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
             all_records += recs
         if tbl_ev is not None and spec0.f_u is None:
             t_tf = time.time()
+            mem_guard.check_phase(
+                f"transfer[{spec0.variant}|{u_label}]",
+                mem_guard.transfer_components(
+                    len(layers),
+                    min(max(int(b) for b in spec0.budgets), len(tbl.ctx_order)),
+                    len(tbl_ev.ctx_order),
+                    dim,
+                    arms.resolve_transfer_roster(getattr(args, "transfer_arms", None)),
+                    has_map=mapfit is not None,
+                ),
+                out_root=args.out_root,
+            )
             rows_g, skips_g = _run_transfer_for_group(
                 args,
                 group,
@@ -1939,15 +1998,26 @@ def main(argv: list[str] | None = None) -> int:
 
     load_dotenv()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
+    from explore_persona_space.experiments.issue_1739.mem_guard import (
+        RSS_GUARD_RC,
+        MemGuardRefusal,
+    )
+
     args = _parse_args(argv)
     args.out_root.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
-    if args.pilot:
-        if args.synthetic:
-            raise SystemExit("--pilot is a real-mode gate (drop --synthetic)")
-        rc = _run_pilot(args)
-    else:
-        rc = _run_synthetic(args) if args.synthetic else _run_real(args)
+    try:
+        if args.pilot:
+            if args.synthetic:
+                raise SystemExit("--pilot is a real-mode gate (drop --synthetic)")
+            rc = _run_pilot(args)
+        else:
+            rc = _run_synthetic(args) if args.synthetic else _run_real(args)
+    except MemGuardRefusal as exc:
+        # Designed halt (crash-fix r3): report artifact + distinct rc — never
+        # a kernel OOM-kill that loses the log tail, never a bare rc=1.
+        print(f"[fits][rss-guard] DESIGNED HALT rc={RSS_GUARD_RC}: {exc}", flush=True)
+        rc = RSS_GUARD_RC
     print(f"[fits] done rc={rc} elapsed={time.time() - t0:.0f}s", flush=True)
     return rc
 
