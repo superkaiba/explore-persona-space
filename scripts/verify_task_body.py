@@ -12835,8 +12835,11 @@ _SUBSET_DISCLOSURE_RE = re.compile(
 # audit (not "any unwrapped table") so a benign composition / row-count
 # summary table never WARNs.
 _DATA_CONDITION_CODE_RE = re.compile(
-    # condition_labels: C1/C2, H1/H2/H3, P1/P2/P3 (optional prime)
-    r"\b[CcHhP][1-9](?:'|′)?(?:\s*(?:condition|control|completion|coefficient|"  # noqa: RUF001
+    # condition_labels: C1/C2, H1/H2/H3, H1c/H4b sub-tags, P1/P2/P3
+    # (optional prime). The optional [a-rt-z] sub-tag letter excludes
+    # plural-s so "the five flat H2s" heading prose stays unmatched;
+    # H100/H200 stay excluded by [1-9] + the trailing lookahead.
+    r"\b[CcHhP][1-9][a-rt-z]?(?:'|′)?(?:\s*(?:condition|control|completion|coefficient|"  # noqa: RUF001
     r"hypothesis|test|sub-?(?:claim|experiment|hypothesis)))?(?![a-zA-Z0-9_])"
     # cell_tags: BS_E*, Z_*, G*, Method A/B, M1-paired
     r"|\bBS_E[0-9A-Za-z_]*|\bZ_[a-zA-Z_]+|\b[Gg][0-9]+[a-c]?\b(?=\s|:|\.|,|$)"
