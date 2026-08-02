@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2012,
+  "highest_id": 2013,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7851,6 +7851,13 @@
       "path": "tasks/proposed/2012",
       "status": "proposed",
       "title": "daily-fix: finally-block raise must never mask in-flight exc"
+    },
+    "2013": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2013",
+      "status": "proposed",
+      "title": "daily-fix: root-commit block: warn never report as landed"
     },
     "202": {
       "has_clean_result": false,
