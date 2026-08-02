@@ -30,7 +30,7 @@ relates_to:
 # Pushing a prefix's context vector through the base context-to-answer map best predicts where fine-tuning delivers behavior change, while base propensity keeps the level read (MODERATE confidence)
 <!-- clean-result-v4 -->
 
-**Methodology:** [docs/methodology/issue_1979.md](https://github.com/superkaiba/explore-persona-space/blob/f041fe08f75ad317f3b2bdc618cf809769cdb957/docs/methodology/issue_1979.md) · [gist](https://gist.github.com/superkaiba/759f69d552d3eb8140d6f6389b561642)
+**Methodology:** [docs/methodology/issue_1979.md](https://github.com/superkaiba/explore-persona-space/blob/b980b88e5136523657287a8064f110952c91c2d6/docs/methodology/issue_1979.md) · [gist](https://gist.github.com/superkaiba/759f69d552d3eb8140d6f6389b561642)
 
 ## Takeaways
 
