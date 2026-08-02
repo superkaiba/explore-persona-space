@@ -27,6 +27,11 @@ work-items, round-robined work-conservingly across every visible GPU
   ``_fit_map`` — same code paths) + the L19 union refit; parity asserts.
 - **f1e** predictor/battery ingredient tables (batched einsums, batched SVD,
   two-GEMM null draws) + **f1f** judge-input extraction.
+- **f1g** (amendment `marker-a5-weights-vs-text`, plan v6): base-model TF
+  span-means over the 6 marker arms' STORED generations — the missing
+  h_base(trained_text) leg (6 ``basetf`` units + 1 ``means`` aggregation
+  unit persisting ``battery/basetf_decomp_inputs.pt``). Excluded from the
+  ``--phase f1`` default tuple; dispatch with ``--phase f1g``.
 
 Per-unit atomic done-sentinels + resume (skip completed units); per-phase
 ``assert_out_root_headroom`` with resume-aware pending-set scaling;
@@ -114,8 +119,17 @@ BINDING_PROMPT_BUDGET = min(
 )
 
 # per-phase disk floors (decimal GB, plan §9 "Disk / out-root" row; f1a scales
-# by the pending fraction — resume-aware pending-set scaling)
-PHASE_HEADROOM_GB = {"f1a": 150.0, "f1b": 40.0, "f1c": 10.0, "f1d": 30.0, "f1e": 10.0, "f1f": 5.0}
+# by the pending fraction — resume-aware pending-set scaling; f1g = the
+# marker-a5-weights-vs-text amendment, plan v6 §9: peak out-root ≈ 24 GB)
+PHASE_HEADROOM_GB = {
+    "f1a": 150.0,
+    "f1b": 40.0,
+    "f1c": 10.0,
+    "f1d": 30.0,
+    "f1e": 10.0,
+    "f1f": 5.0,
+    "f1g": 40.0,
+}
 WORKER_HEADROOM_GB = 5.0
 MAX_HEAVY_MODEL_CONCURRENT = 2  # ≤2 coexisting merged/staged model dirs per node (plan §9)
 # per-unit failure budget (crash-fix r3, job 16717): one bad unit must not kill
@@ -472,6 +486,16 @@ def build_work_items(cfg: Cfg, manifests: dict) -> list[Item]:
     items.append(Item(key="f1e:tables", phase="f1e", deps=f1e_deps))
     judged = ["base_content", *content]  # the 13 judged states (plan §4 F1f)
     items.append(Item(key="f1f:judge_inputs", phase="f1f", deps=tuple(f"f1a:{s}" for s in judged)))
+    # f1g (amendment marker-a5-weights-vs-text, plan v6 §4): base-model TF over
+    # the marker arms' STORED generations + the decomposition-inputs means unit.
+    # Self-contained (inputs Hub-staged) — scheduled only when --phase names
+    # f1g (the parent's `--phase f1` tuple excludes it; main() filters by phase).
+    for arm in marker:
+        items.append(Item(key=f"f1g:basetf:{arm}", phase="f1g"))
+    if marker:
+        items.append(
+            Item(key="f1g:means", phase="f1g", deps=tuple(f"f1g:basetf:{a}" for a in marker))
+        )
     return items
 
 
@@ -1457,28 +1481,36 @@ def run_f1d_fit(cfg: Cfg, kind: str, position: str, layer: int) -> list[str]:
 # ── f1e: predictor/battery ingredient tables ─────────────────────────────────
 
 
-def _prefix_means(store: dict, layer: int, span_or_pos: str, prefix_ids: list[str], row_mask=None):
+def _prefix_means(
+    store: dict, layer: int, span_or_pos: str, prefix_ids: list[str], row_mask=None, dtype=None
+):
     """Per-prefix mean vectors from a 1979 store — one batched index_add pass.
 
     ``row_mask`` (optional bool sequence over store rows) restricts the mean to
     a row subset — used for the even/odd QUERY-half means (plan §6 A5 disjoint
-    legs). Fails loud when any prefix has zero rows in the (masked) selection.
+    legs). ``dtype`` (default fp32 — the parent F1e convention, unchanged)
+    sets the accumulation dtype; the f1g amendment passes ``torch.float64``
+    (plan v6 §8 fp-noise mitigation). Fails loud when any prefix has zero rows
+    in the (masked) selection.
     """
     import torch
 
+    acc = dtype or torch.float32
     if span_or_pos in ("last_prompt", "last_ctx", "last_prefix"):
-        T = store["positions"][span_or_pos][layer].float()
+        T = store["positions"][span_or_pos][layer].to(acc)
     else:
-        T = store["spans"][span_or_pos][layer].float()
+        T = store["spans"][span_or_pos][layer].to(acc)
     pid_ix = {p: i for i, p in enumerate(prefix_ids)}
     idx = torch.tensor([pid_ix[p] for p in store["row_prefix_id"]], dtype=torch.long)
     if row_mask is not None:
         keep = torch.tensor(list(row_mask), dtype=torch.bool)
         assert keep.shape[0] == T.shape[0], (keep.shape, T.shape)
         T, idx = T[keep], idx[keep]
-    sums = torch.zeros(len(prefix_ids), T.shape[1])
+    sums = torch.zeros(len(prefix_ids), T.shape[1], dtype=T.dtype)
     sums.index_add_(0, idx, T)
-    counts = torch.zeros(len(prefix_ids)).index_add_(0, idx, torch.ones(len(idx)))
+    counts = torch.zeros(len(prefix_ids), dtype=T.dtype).index_add_(
+        0, idx, torch.ones(len(idx), dtype=T.dtype)
+    )
     assert (counts > 0).all(), f"empty prefix cell(s) in {store['unit']}: {counts.tolist()}"
     return sums / counts.unsqueeze(1)
 
@@ -1798,6 +1830,245 @@ def run_f1f(cfg: Cfg, manifests: dict) -> list[str]:
     return outputs
 
 
+# ── f1g: base-model TF over the marker arms' stored generations (plan v6) ────
+# Amendment round `marker-a5-weights-vs-text`: capture the missing
+# h_base(trained_text) leg — the BASE model teacher-forced on each marker
+# arm's OWN stored on-policy generations (mirror of run_f1b_writes with the
+# model/text roles inverted) — plus the aggregation unit that persists the F3
+# decomposition inputs (per-prefix all/even/odd query-half means, re-derived
+# parent on-policy means, marker-row-excluded variants).
+
+MARKER_TOKEN_ID = 83399  # " ※" (leading space) — reused ONLY to identify emission rows
+
+
+def _stage_gen_rows(cfg: Cfg, state: str) -> Path:
+    """Stage the parent run's FULL gen_rows shards for ``state`` from the HF
+    data repo into the layout ``_load_unit_rows`` reads (skip-if-present;
+    scoped listing + per-file staging — the #833 pattern)."""
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    dest = cfg.out_root / "gen" / state
+    if list(dest.glob("rows.shard*.jsonl")):
+        return dest
+    listing = hub.retry_transient(
+        lambda: hub.list_hf_files_under_path(
+            HfApi(), X.HF_DATA_REPO, f"{HF_PREFIX_1979}/gen_rows/{state}", repo_type="dataset"
+        ),
+        what=f"gen_rows/{state} scoped listing",
+    )
+    wanted = [p for p in listing if Path(p).name.startswith("rows.shard")]
+    assert wanted, (state, "no gen_rows shards on the HF data repo")
+    for p in wanted:
+        hub.stage_hub_file(X.HF_DATA_REPO, p, dest / Path(p).name, repo_type="dataset")
+    return dest
+
+
+def _stage_parent_onpol_store(cfg: Cfg, state: str) -> Path:
+    """Stage the parent run's on-policy store for ``state`` (skip-if-present)."""
+    from explore_persona_space.orchestrate import hub
+
+    dest = cfg.out_root / "stores" / "onpolicy" / state / "store.pt"
+    if not dest.exists():
+        hub.stage_hub_file(
+            X.HF_DATA_REPO,
+            f"{HF_PREFIX_1979}/stores/onpolicy/{state}/store.pt",
+            dest,
+            repo_type="dataset",
+        )
+    return dest
+
+
+def _f1g_assert_rows(state: str, rows: list[dict]) -> None:
+    """Pre-spend asserts at FULL consumed-corpus grain (plan v6 §12 asm 1-2):
+    non-empty, unique row_sha, every field the TF capture + store need — runs
+    BEFORE any forward pass (kill criterion 1) and before the smoke slice."""
+    assert rows, f"{state}: no gen rows staged"
+    shas = [r["row_sha"] for r in rows]
+    assert len(set(shas)) == len(shas), f"{state}: duplicate row_sha in gen rows"
+    need = (
+        "row_sha",
+        "prefix_id",
+        "query_sha",
+        "persona",
+        "prompt_token_ids",
+        "response_token_ids",
+        "prefix_len",
+        "context_len",
+    )
+    for i, r in enumerate(rows):
+        missing = [k for k in need if k not in r]
+        assert not missing, (state, i, r.get("row_sha"), f"gen row missing fields {missing}")
+
+
+def _f1g_slice_rows(cfg: Cfg, manifests: dict, rows: list[dict]) -> list[dict]:
+    """Restrict full gen rows to the manifests' (possibly --panel/--query
+    limited) grid — the ONE slice path, order-preserving; a no-op filter on
+    the full production grid."""
+    keep_p = {m["prefix_id"] for m in manifests["members"]}
+    keep_q = {q["sha"] for q in manifests["queries"]}
+    kept = [r for r in rows if r["prefix_id"] in keep_p and r["query_sha"] in keep_q]
+    assert kept, "f1g slice selected zero rows (panel/query limits vs gen rows mismatch)"
+    return kept
+
+
+def run_f1g_basetf(cfg: Cfg, manifests: dict, arm_id: str) -> list[str]:
+    """h_base(trained_text): BASE-model TF span-means + last-token positions
+    over ``arm_id``'s stored on-policy generations (plan v6 §4 Diff 1) —
+    ``run_f1b_writes`` with the model/text roles inverted."""
+    import torch
+
+    assert arm_id in {r["arm_id"] for r in manifests["marker_arms"]}, (
+        arm_id,
+        "f1g runs on marker arms only (plan v6 §5)",
+    )
+    _stage_gen_rows(cfg, arm_id)
+    rows = _load_unit_rows(cfg, arm_id)
+    _f1g_assert_rows(arm_id, rows)  # full-grain, BEFORE TF spend
+    rows = _f1g_slice_rows(cfg, manifests, rows)
+    persona_names = [m["prefix_id"] for m in manifests["members"]]
+    spans, positions = _tf_capture_rows(cfg, X.BASE_MODEL, rows, persona_names)
+    if torch.cuda.is_available():  # plan §12 asm 6: report the realized HBM peak
+        logger.info(
+            "[f1g] %s: cuda max_memory_allocated=%.1f GiB",
+            arm_id,
+            torch.cuda.max_memory_allocated() / 2**30,
+        )
+    store = cfg.out_root / "stores" / "basetf_onpolicy" / arm_id / "store.pt"
+    _save_store(store, arm_id, f"basetf_onpolicy(base on {arm_id} text)", rows, spans, positions)
+    _upload_paths(cfg, [store], f"{HF_PREFIX_1979}/stores/basetf_onpolicy/{arm_id}")
+    return [str(store)]
+
+
+def run_f1g_means(cfg: Cfg, manifests: dict) -> list[str]:
+    """Aggregate the f1g stores into the F3 decomposition inputs (plan v6 §4
+    Diff 1 step 2-4): per (marker arm, layer) all/even/odd per-prefix means of
+    h_base(trained_text), the re-derived parent on-policy all-mean (F3 parity
+    input), marker-row-excluded variants of BOTH trained-text stores, per-arm
+    marker-row counts + trained-vs-base text-identity fractions. Fail-loud
+    order-sensitive row-set identity asserts at the consumed grain
+    (kill criterion: halt BEFORE any verdict input is written)."""
+    import torch
+
+    marker = [r["arm_id"] for r in manifests["marker_arms"]]
+    assert marker, "f1g:means — no marker arms in manifests"
+    prefix_ids = [m["prefix_id"] for m in manifests["members"]]
+    queries = manifests["queries"]
+
+    # base_mk gen rows: trained-vs-base text-identity diagnostic (plan v6 §4
+    # analyzer-weigh item (a); token-id equality per (prefix, query) row).
+    _stage_gen_rows(cfg, "base_mk")
+    base_resp = {r["row_sha"]: r["response_token_ids"] for r in _load_unit_rows(cfg, "base_mk")}
+
+    tensors: dict = {}
+    per_arm_meta: dict = {}
+    for k, arm_id in enumerate(marker):
+        rows = _f1g_slice_rows(cfg, manifests, _load_unit_rows(cfg, arm_id))
+        shas = [r["row_sha"] for r in rows]
+        basetf = torch.load(
+            cfg.out_root / "stores" / "basetf_onpolicy" / arm_id / "store.pt",
+            map_location="cpu",
+            weights_only=False,
+        )
+        parent = torch.load(
+            _stage_parent_onpol_store(cfg, arm_id), map_location="cpu", weights_only=False
+        )
+        # row-set identity (order-sensitive; plan §6 criterion 2). Under the
+        # smoke slice the parent store is masked to the sliced grid; in
+        # production the mask keeps every row, so this is full equality.
+        keep = set(shas)
+        parent_mask = [s in keep for s in parent["row_sha"]]
+        parent_sel = [s for s, m in zip(parent["row_sha"], parent_mask) if m]
+        print(
+            f"[f1g-means] arm {k + 1}/{len(marker)} {arm_id}: n_rows={len(shas)} "
+            f"basetf_rows={len(basetf['row_sha'])} parent_sel={len(parent_sel)}",
+            flush=True,
+        )
+        assert basetf["row_sha"] == shas, (
+            arm_id,
+            "basetf store row_sha list != gen_rows (order-sensitive identity)",
+        )
+        assert parent_sel == shas, (
+            arm_id,
+            "parent onpolicy store row_sha list != gen_rows (order-sensitive identity)",
+        )
+        # emission-row mask (id 83399 in the arm's OWN response ids) + text identity
+        is_mk = [MARKER_TOKEN_ID in r["response_token_ids"] for r in rows]
+        mk_shas = {s for s, m in zip(shas, is_mk) if m}
+        not_mk = [not m for m in is_mk]
+        with_base = [r for r in rows if r["row_sha"] in base_resp]
+        n_ident = sum(1 for r in with_base if base_resp[r["row_sha"]] == r["response_token_ids"])
+        even = _query_parity_mask(basetf, queries, 0)
+        odd = _query_parity_mask(basetf, queries, 1)
+        parent_not_mk = [m and (s not in mk_shas) for s, m in zip(parent["row_sha"], parent_mask)]
+        per_arm_meta[arm_id] = {
+            "n_rows": len(rows),
+            "n_marker_rows": int(sum(is_mk)),
+            "n_rows_with_base_counterpart": len(with_base),
+            "n_text_identical_to_base": int(n_ident),
+            "text_identity_frac": (n_ident / len(with_base)) if with_base else None,
+        }
+        print(f"[f1g-means] {arm_id}: {per_arm_meta[arm_id]}", flush=True)
+        f64 = torch.float64
+        for layer in LAYERS_1979:
+            slot = f"{arm_id}/L{layer}"
+            variants = {
+                "Hbar_all": (basetf, None),
+                "Hbar_even": (basetf, even),
+                "Hbar_odd": (basetf, odd),
+                "Obar_all": (parent, parent_mask),
+                "Hbar_all_nomk": (basetf, not_mk),
+                "Hbar_even_nomk": (basetf, [e and m for e, m in zip(even, not_mk)]),
+                "Hbar_odd_nomk": (basetf, [o and m for o, m in zip(odd, not_mk)]),
+                "Obar_all_nomk": (parent, parent_not_mk),
+            }
+            for name, (store, mask) in variants.items():
+                if mask is not None:
+                    covered = {p for p, m in zip(store["row_prefix_id"], mask) if m}
+                    if not set(prefix_ids) <= covered:
+                        # Production grain: an emptied prefix cell is a genuine
+                        # premise violation — halt (kill criterion). Smoke slice
+                        # (1 prefix x 2 queries): a single marker/dropped row can
+                        # legitimately empty a parity(-nomk) cell — skip the
+                        # variant loudly instead of a #1345-class false kill.
+                        assert cfg.limited, (
+                            arm_id,
+                            layer,
+                            name,
+                            "mask empties a prefix cell at production grain",
+                        )
+                        logger.warning(
+                            "[f1g-means] %s L%d %s: empty prefix cell under the "
+                            "smoke slice — variant skipped (smoke-only)",
+                            arm_id,
+                            layer,
+                            name,
+                        )
+                        continue
+                tensors[f"{slot}/{name}"] = _prefix_means(
+                    store, layer, "response", prefix_ids, mask, dtype=f64
+                ).to(torch.float16)
+
+    out = cfg.out_root / "battery" / "basetf_decomp_inputs.pt"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "meta": {
+            **_meta(),
+            "prefix_ids": prefix_ids,
+            "layers": list(LAYERS_1979),
+            "marker_token_id": MARKER_TOKEN_ID,
+            "per_arm": per_arm_meta,
+        },
+        **tensors,
+    }
+    tmp = out.with_suffix(".pt.tmp")
+    torch.save(payload, tmp)
+    os.replace(tmp, out)
+    _upload_paths(cfg, [out], f"{HF_PREFIX_1979}/battery")
+    return [str(out)]
+
+
 # ── worker dispatch ───────────────────────────────────────────────────────────
 
 
@@ -1826,6 +2097,10 @@ def run_unit(cfg: Cfg, manifests: dict, key: str) -> list[str]:
         return run_f1e(cfg, manifests)
     if parts[0] == "f1f":
         return run_f1f(cfg, manifests)
+    if parts[0] == "f1g" and parts[1] == "basetf":
+        return run_f1g_basetf(cfg, manifests, parts[2])
+    if parts[0] == "f1g" and parts[1] == "means":
+        return run_f1g_means(cfg, manifests)
     raise ValueError(f"unknown work-item key: {key}")
 
 
@@ -2065,6 +2340,9 @@ def import_check() -> None:
         (CAP._mix_positive_rows, dict(cfg=None, arm=None)),
         (hub.stage_hub_prefix, dict(repo_id="r", prefix="p", dest_dir=Path("/tmp"))),
         (hub.stage_hub_file, dict(repo_id="r", path_in_repo="p", target=Path("/tmp/x"))),
+        # f1g staging seams (plan v6 §4 Diff 1)
+        (hub.list_hf_files_under_path, dict(api=None, repo_id="r", path="p", repo_type="dataset")),
+        (hub.retry_transient, dict(fn=lambda: None, what="x")),
         (assert_out_root_headroom, dict(out_root=Path("/tmp"), need_gb=1.0)),
         (
             _build_generation_prompts,
@@ -2082,7 +2360,10 @@ def import_check() -> None:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument(
-        "--phase", default="f1", help="f1 (all) or comma list of f1a,f1b,f1c,f1d,f1e,f1f"
+        "--phase",
+        default="f1",
+        help="f1 (all parent phases) or comma list of f1a..f1f,f1g "
+        "(f1g = the marker-a5-weights-vs-text base-TF amendment, plan v6)",
     )
     ap.add_argument("--out-root", type=Path, help="pod-side working root (plan §9)")
     ap.add_argument(
