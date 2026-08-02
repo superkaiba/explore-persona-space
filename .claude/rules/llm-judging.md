@@ -194,10 +194,14 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
 23. **Size the judge response `max_tokens` for the rationale, not the score —
     and be GENEROUS: a cap is not a spend.** The API bills only GENERATED
     tokens; `max_tokens` is a ceiling, so headroom above the typical
-    rationale costs nothing on well-formed responses. The only real costs
+    rationale costs nothing on well-formed responses. The real costs
     of a larger cap are (a) a one-time cold re-judge at the over-keyed
-    `api_dispatch` adapter-cache layer when a budget changes, and (b) rare
-    degenerate long responses — both bounded and both far cheaper than the
+    `api_dispatch` adapter-cache layer when a budget changes, (b) rare
+    degenerate long responses, and (c) a higher per-request OTPM
+    reservation on the SYNC dispatch path (the rate limiter reserves
+    `max_tokens` per in-flight request, cutting effective concurrency —
+    prefer the Batch API, which the large-wave rule already mandates) —
+    all bounded and all far cheaper than the
     re-judge waves an undersized cap forces. A reason-then-score rubric
     (rule 7) emits its justification BEFORE the integer, so the
     response-token budget must cover the full rationale: give a multi-field
