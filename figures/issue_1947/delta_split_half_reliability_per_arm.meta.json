@@ -1,6 +1,6 @@
 {
-"commit": "aacc010021",
-"created": "2026-08-02T08:14:18Z",
+"commit": "64d35d7202",
+"created": "2026-08-02T08:58:23Z",
 "figsize": [
 12.5,
 4.6
@@ -835,7 +835,8 @@
 "text": {
 "suptitle": null,
 "fig_texts": [
-"per-point slug/layer identity added post-hoc (interp-critique v2 note 4)"
+"Key: cas / imp = casual writing style / impolite; bare / pers / conv / icl = bare assistant / software-engineer persona / conversation prefix / in-context-learning prefix; con / po = contrastive / positive-only; s42 / s137 = seed; REP = repeat-regime control (80 rows x 15 epochs)",
+"per-point slug/layer identity (re-applied after key-regen; interp-critique v2 note 4)"
 ],
 "axes": [
 {

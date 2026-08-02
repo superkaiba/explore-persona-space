@@ -12,11 +12,16 @@ Run from the issue-1947 worktree root:
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from issue1947_analyzer_figures import add_slug_key  # noqa: E402
 
 AN = Path("eval_results/issue_1947/analysis")
 A1 = AN / "analyzer_round1"
@@ -94,7 +99,8 @@ def fig_h3_behavior_split() -> None:
         va="top",
         fontsize=12,
     )
-    fig.tight_layout(rect=(0, 0, 1, 0.95))
+    fig.tight_layout(rect=(0, 0.04, 1, 0.95))
+    add_slug_key(fig)
     savefig_paper(fig, "h3_fixed_text_behavior_split", dir=FIGDIR)
     plt.close(fig)
 
@@ -184,11 +190,75 @@ def fig_h6_n_matched() -> None:
     plt.close(fig)
 
 
+def fig_prefix_replot() -> None:
+    """Re-render the prefix-vs-context gate figure with plain-English panel titles.
+
+    Replaces the follow-up-round driver render whose panel titles carried
+    hypothesis-code tokens (clean-result-critic r1 item 2 fold-in); data is
+    read from the committed prefix_reads.json.
+    """
+    d = json.load(open(AN / "prefix_reads.json"))
+    cells = [c for c in d["cells"] if c["kind"] == "content"]
+    fig, axes = plt.subplots(2, 3, figsize=(13.5, 7.2))
+    for col, layer in enumerate((14, 19, 25)):
+        ax = axes[0][col]
+        for c in cells:
+            if c["layer"] != layer:
+                continue
+            g = c["matched_text"]["h4_gate"]
+            a, b = g["prefix_last"]["spearman_rho"], g["last_prompt"]["spearman_rho"]
+            if a is None or b is None:
+                continue
+            ax.plot([0, 1], [a, b], "-", color="#4477AA", alpha=0.45, linewidth=1.0)
+            ax.scatter([0, 1], [a, b], s=18, color="#4477AA", zorder=3)
+        ax.axhline(0, color="grey", linewidth=0.8)
+        ax.axhspan(0.3, 0.7, color="#CCEECC", alpha=0.6, zorder=0)
+        ax.set_xticks([0, 1])
+        ax.set_xticklabels(["prefix-token\nsummary", "last-prompt-token\nsummary"], fontsize=9)
+        ax.set_title(f"Gate rank correlation, fixed text - layer {layer}", fontsize=10)
+        if col == 0:
+            ax.set_ylabel("rank correlation (paired per cell)")
+        ax.set_xlim(-0.35, 1.35)
+    for col, layer in enumerate((14, 19, 25)):
+        ax = axes[1][col]
+        rng = np.random.default_rng(7)
+        for xi, tree in enumerate(("matched_text", "onpolicy")):
+            vals = [c[tree]["h3"]["cos_w_delta"] for c in cells if c["layer"] == layer]
+            ax.scatter(
+                [xi + rng.uniform(-0.12, 0.12) for _ in vals],
+                vals,
+                s=18,
+                color="#EE7733" if tree == "matched_text" else "#4477AA",
+                zorder=3,
+            )
+        ax.axhline(0, color="grey", linewidth=0.8)
+        ax.set_xticks([0, 1])
+        ax.set_xticklabels(["fixed text", "on-policy"], fontsize=9)
+        ax.set_title(f"Write-displacement cosine - layer {layer} (summary-invariant)", fontsize=10)
+        if col == 0:
+            ax.set_ylabel("cos(write, displacement)")
+        ax.set_xlim(-0.5, 1.5)
+    fig.text(
+        0.5,
+        0.99,
+        "Prefix-token vs last-prompt-token reads - same arms, same rows "
+        "(34 content cells; on-policy prefix arm constant-input degenerate by design, not shown)",
+        ha="center",
+        va="top",
+        fontsize=11,
+    )
+    fig.tight_layout(rect=(0, 0.035, 1, 0.96))
+    add_slug_key(fig)
+    savefig_paper(fig, "prefix_vs_lastprompt_reads", dir=FIGDIR)
+    plt.close(fig)
+
+
 def main() -> None:
     set_paper_style("blog")
     FIGDIR.mkdir(parents=True, exist_ok=True)
     fig_h3_behavior_split()
     fig_h6_n_matched()
+    fig_prefix_replot()
     print("v2 figures written to", FIGDIR)
 
 

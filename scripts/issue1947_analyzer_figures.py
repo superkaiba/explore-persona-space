@@ -44,6 +44,18 @@ def content_rows(digest: list[dict]) -> list[dict]:
     return [r for r in digest if not r["slug"].startswith("mk-") and not r.get("missing")]
 
 
+SLUG_KEY = (
+    "Key: cas / imp = casual writing style / impolite; bare / pers / conv / icl = bare assistant / "
+    "software-engineer persona / conversation prefix / in-context-learning prefix; "
+    "con / po = contrastive / positive-only; s42 / s137 = seed; REP = repeat-regime control (80 rows x 15 epochs)"
+)
+
+
+def add_slug_key(fig: plt.Figure, y: float = 0.002) -> None:
+    """Render the in-figure decode key for per-cell config slugs (clean-result-critic r1 item 2)."""
+    fig.text(0.5, y, SLUG_KEY, ha="center", va="bottom", fontsize=7, color="#555555")
+
+
 def fig_hero(digest: list[dict], mani: dict) -> None:
     rows = content_rows(digest)
     inband = {s for s, v in mani["content"].items() if v["selection"]["in_band"]}
@@ -254,12 +266,13 @@ def fig_ladders(mani: dict, ladders: dict) -> None:
     )
     fig.text(
         0.5,
-        0.005,
+        0.024,
         "optimizer step (16 fresh rows per step under single-visit)",
         ha="center",
         fontsize=10,
     )
-    fig.tight_layout(rect=(0, 0.015, 1, 0.97))
+    fig.tight_layout(rect=(0, 0.03, 1, 0.97))
+    add_slug_key(fig)
     savefig_paper(fig, "install_ladders_per_cell", dir=FIGDIR)
     plt.close(fig)
 
@@ -309,7 +322,8 @@ def fig_reliability(digest: list[dict]) -> None:
         "Displacement-unit reliability at n=300 trained positives, per arm x layer (REP arms: 20 positives)",
         fontsize=11,
     )
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0.045, 1, 1))
+    add_slug_key(fig)
     savefig_paper(fig, "delta_split_half_reliability_per_arm", dir=FIGDIR)
     plt.close(fig)
 
@@ -357,7 +371,8 @@ def fig_intrusion() -> None:
     ax.set_title(
         "Language-intrusion sensitivity of verdict-rung rates (green band = 0.60–0.85)", fontsize=11
     )
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0.045, 1, 1))
+    add_slug_key(fig)
     savefig_paper(fig, "intrusion_recount_verdict_rungs", dir=FIGDIR)
     plt.close(fig)
 

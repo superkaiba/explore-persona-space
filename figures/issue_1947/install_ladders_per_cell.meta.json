@@ -1,6 +1,6 @@
 {
-  "commit": "c91570c52c",
-  "created": "2026-08-02T06:11:02Z",
+  "commit": "64d35d7202",
+  "created": "2026-08-02T09:02:02Z",
   "figsize": [
     16.0,
     12.600000000000001
@@ -3277,7 +3277,8 @@
     "suptitle": null,
     "fig_texts": [
       "Judged install ladders (rate vs optimizer step; green band = 0.60\u20130.85; dot = verdict rung, filled green = in-band, open red = closest-approach)",
-      "optimizer step (16 fresh rows per step under single-visit)"
+      "optimizer step (16 fresh rows per step under single-visit)",
+      "Key: cas / imp = casual writing style / impolite; bare / pers / conv / icl = bare assistant / software-engineer persona / conversation prefix / in-context-learning prefix; con / po = contrastive / positive-only; s42 / s137 = seed; REP = repeat-regime control (80 rows x 15 epochs)"
     ],
     "axes": [
       {

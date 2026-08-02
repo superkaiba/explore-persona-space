@@ -1,6 +1,6 @@
 {
-  "commit": "42e5721cf2",
-  "created": "2026-08-02T07:45:29Z",
+  "commit": "64d35d7202",
+  "created": "2026-08-02T08:59:47Z",
   "figsize": [
     14.5,
     5.0
@@ -828,7 +828,8 @@
   "text": {
     "suptitle": null,
     "fig_texts": [
-      "Fixed-text write-displacement alignment is behavior-structured (full 300/1,200-row read filled; 20-row-precision mean open)"
+      "Fixed-text write-displacement alignment is behavior-structured (full 300/1,200-row read filled; 20-row-precision mean open)",
+      "Key: cas / imp = casual writing style / impolite; bare / pers / conv / icl = bare assistant / software-engineer persona / conversation prefix / in-context-learning prefix; con / po = contrastive / positive-only; s42 / s137 = seed; REP = repeat-regime control (80 rows x 15 epochs)"
     ],
     "axes": [
       {

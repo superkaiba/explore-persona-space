@@ -1,6 +1,6 @@
 {
-  "commit": "c91570c52c",
-  "created": "2026-08-02T06:11:08Z",
+  "commit": "64d35d7202",
+  "created": "2026-08-02T08:58:31Z",
   "figsize": [
     12.5,
     5.2
@@ -623,7 +623,9 @@
   "total_points": 102,
   "text": {
     "suptitle": null,
-    "fig_texts": [],
+    "fig_texts": [
+      "Key: cas / imp = casual writing style / impolite; bare / pers / conv / icl = bare assistant / software-engineer persona / conversation prefix / in-context-learning prefix; con / po = contrastive / positive-only; s42 / s137 = seed; REP = repeat-regime control (80 rows x 15 epochs)"
+    ],
     "axes": [
       {
         "title_left": "Language-intrusion sensitivity of verdict-rung rates (green band = 0.60\u20130.85)",
