@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1984,
+  "highest_id": 1986,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6986,11 +6986,11 @@
     },
     "1902": {
       "goal": "Characterize how each open post-training stage (SFT \u2192 DPO \u2192 RLVR; the OLMo-2-1124-7B base/SFT/DPO/Instruct chain) changes the context\u2192answer activation mapping: (1) within-stage fit quality (ridge + MLP, prefix AND context arms, identity+learned-bias baseline + kNN retrieval) on ~10k diverse real-world contexts under a 4x4 activation-checkpoint \u00d7 answer-text-source grid separating representation change from answer-distribution change; (2) which context classes each stage makes more or less predictable; (3) cross-stage transferability of the map (direct and Procrustes-aligned), characterized on context and answer sides; (4) the per-stage operator change (delta-W rank/spectrum/subspace, direction-aware vs spectrum-only reads against matched nulls), with SAE/crosscoder feature readout as a stretch goal.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/1902",
-      "status": "interpreting",
-      "title": "How each post-training stage (SFT \u2192 DPO \u2192 RLVR) reshapes the context\u2192answer activation map (OLMo-2 checkpoint chain)"
+      "path": "tasks/reviewing/1902",
+      "status": "reviewing",
+      "title": "SFT rewrites the OLMo-2 context\u2192answer activation map; DPO mostly preserves it and RLVR leaves it essentially unchanged (MODERATE confidence)"
     },
     "1903": {
       "has_clean_result": false,
@@ -7093,22 +7093,22 @@
     "1916": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1916",
-      "status": "running",
+      "path": "tasks/reviewing/1916",
+      "status": "reviewing",
       "title": "daily-fix: judge max_tokens floor 600 for JSON rubrics"
     },
     "1917": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1917",
-      "status": "approved",
+      "path": "tasks/reviewing/1917",
+      "status": "reviewing",
       "title": "daily-fix: set-status bounded index.lock retry before raise"
     },
     "1918": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1918",
-      "status": "proposed",
+      "path": "tasks/running/1918",
+      "status": "running",
       "title": "daily-fix: route-1 fix closes the open task it credits"
     },
     "1919": {
@@ -7582,8 +7582,8 @@
       "goal": "At per-prefix grain (leakage per (arm, destination prefix), averaged over a fixed shared 60-query set; 50-60 prefix panel including trained prefixes, trained contrastive negatives, bystanders, near-twins, real conversation and ICL prefixes), determine which pre-fine-tuning predictor best predicts per-prefix leakage level and change (full roster: context/answer similarity pre+post, delta similarities, through-map forms, whitened gate, r_B projections, write-map, propensity incumbent, kNN answer-side variant; both anchors), whether context similarity is answer-mediated at this grain, and whether the #1768 assumption refutations (gate A7, write rank A6, write direction A5) survive at the theory's native prefix grain or were per-query grain artifacts.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/1979",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/1979",
+      "status": "awaiting_promotion",
       "title": "Pushing a prefix's context vector through the base context-to-answer map best predicts where fine-tuning delivers behavior change, while base propensity keeps the level read (MODERATE confidence)"
     },
     "1980": {
@@ -7617,9 +7617,23 @@
     "1984": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1984",
-      "status": "reviewing",
+      "path": "tasks/completed/1984",
+      "status": "completed",
       "title": "workflow-fix: widen the leading version-stamp stripper to also accept the "
+    },
+    "1985": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1985",
+      "status": "proposed",
+      "title": "workflow-fix: pre_reg audit synonym classes for plan-verdict framing"
+    },
+    "1986": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1986",
+      "status": "proposed",
+      "title": "workflow-fix: letter-arrow transition token class for figure opaque-code check"
     },
     "199": {
       "has_clean_result": true,

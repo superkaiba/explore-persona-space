@@ -3214,8 +3214,11 @@ def parse_followup_note_field(note: str, field: str) -> str | None:
     like a line-core: a mid-segment mention (``(source: user-chat)``, the
     #685 prose shape) still parses ``None``, and ``word;field: x`` (no
     whitespace after the ``;``) never splits. A leading lowercase version
-    stamp (``v<k>.`` + REQUIRED whitespace, e.g. ``v1. followup_label: x``
-    — the #1092 run-note shape) is stripped as decoration, same class as
+    stamp — ``v<k>.`` + REQUIRED whitespace, e.g. ``v1. followup_label: x``
+    (the #1092 run-note shape), OR the dash-led form ``v<k> — `` /
+    ``v<k> - `` (em dash, en dash U+2013, or ASCII hyphen; whitespace
+    REQUIRED after the dash so ``v2-alpha`` never strips — the #1900 run-note
+    shape, #1984) — is stripped as decoration, same class as
     bullets/bold; parsing stays field-only (#1111 — no label inference).
     The value is the first
     whitespace token of the remainder, stripped of backticks / quotes /
@@ -3267,13 +3270,17 @@ def parse_followup_note_field(note: str, field: str) -> str | None:
             # One regex pass strips any interleaved mix of whitespace, bullet
             # dashes/stars, and bold markers (unchanged from the line-core rule).
             core = re.sub(r"^[\s\-*]+", "", seg)
-            # Leading version stamp (`v1. ` — the #1092 run-note shape, an
-            # emitter echoing the marker's `v<k>` grammar into the note head):
-            # decorative prefix, same class as bullets/bold — strip it so the
-            # field anchor still binds. Lowercase `v` + digits + `.` +
-            # REQUIRED whitespace only; anything else is prose and stays
-            # unparseable (field-only parsing per #1111 — no label inference).
-            core = re.sub(r"^v\d+\.\s+", "", core)
+            # Leading version stamp (`v1. ` — the #1092 run-note shape — or
+            # the dash-led `v1 — ` / `v1 - ` — the #1900 run-note shape,
+            # #1984 — an emitter echoing the marker's `v<k>` grammar
+            # into the note head): decorative prefix, same class as
+            # bullets/bold — strip it so the field anchor still binds.
+            # Lowercase `v` + digits, then either `.` + REQUIRED whitespace
+            # or a dash (em dash, en dash U+2013, or ASCII hyphen) with
+            # REQUIRED whitespace after it (so `v2-alpha` never strips);
+            # anything else is prose and stays unparseable (field-only
+            # parsing per #1111 — no label inference).
+            core = re.sub(r"^v\d+(?:\.\s+|\s*[—\u2013-]\s+)", "", core)
             if core.startswith(f"{field}:") or core.startswith(f"{field}="):
                 rest = core[len(field) + 1 :].lstrip("*").strip()
                 tokens = rest.split()
