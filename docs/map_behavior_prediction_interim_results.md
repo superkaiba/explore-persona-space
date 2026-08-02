@@ -10,7 +10,21 @@
 > Task: <https://eps.superkaiba.com/tasks/1739>. Full pre-registered plan:
 > [`docs/map_behavior_prediction_plan.md`](map_behavior_prediction_plan.md).
 >
-> **New in this update (2026-08-02)** — [§ New in this update](#new-in-this-update-2026-08-02):
+> **Newest (2026-08-02, query-map ladder fold)** —
+> [§ The query-map L-ladder ran](#the-query-map-l-ladder-ran-one-real-label-scaling-curve-and-it-helps-sycophancy-only):
+> the **query-map L-ladder is no longer deferred — it ran and is complete** (9 rungs, 3 per
+> behavior). **It is not, however, a nine-arm scaling curve.** It yields exactly three things: a
+> genuine label-scaling curve for **one** arm family (the label-consuming direct ridge), **reference
+> lines** for the label-free arms (invariant in L *by construction*, not by measurement), and **no
+> scaling at all** for evil's leg 2 (every rung realized the same 6,468 rows). On the one real
+> curve: more labels help **only sycophancy** (+0.051 → +0.193 from L = 250 to L = 16,000, still
+> climbing), do **nothing** for hallucination (every CI brackets zero at every budget), and are
+> **unresolved** for evil — and all three are **non-monotone**, dipping at the middle rung, which is
+> the already-documented unexplained L = 2,500 dip, not a new finding. The one genuinely new result
+> is the **turn-subset split, now available for all three behaviors**: hallucination's pooled −0.065
+> bare read decomposes into two opposite-signed halves (multi-turn −0.168, single-turn +0.154).
+>
+> **Previously new (2026-08-02)** — [§ New in this update](#new-in-this-update-2026-08-02):
 > the gap-fill and partial-item rounds landed. (1) Hallucination's **maximum-budget OOD cells
 > now exist**, and they **reverse a headline**: the map-side readout's +0.220 NQ-Open advantage
 > was measured at a fallback slice where direct ridge was data-starved, and it collapses to
@@ -86,9 +100,11 @@
 
 ## New in this update (2026-08-02)
 
-Five result families landed: the two gaps the previous cut flagged as open are both closed, and
-three new measurements (R5, OOD scatters, map reconstruction on the evaluation distributions)
-are reported here for the first time. One of the closures reverses a number published below.
+Six result families landed: the two gaps the previous cut flagged as open are both closed, three
+new measurements (R5, OOD scatters, map reconstruction on the evaluation distributions) are
+reported here for the first time, and the **query-map L-ladder** — deferred in the earlier
+2026-08-02 fold because its box exited 1 — has since been re-run and is folded in as the last
+subsection below. One of the closures reverses a number published below.
 
 ### Hallucination's maximum-budget OOD cells exist now — and the map's advantage there collapses
 
@@ -369,6 +385,158 @@ writeup; they are, with the one correction the gap-fill forces:
 > SimpleQA entries in the delta forest and in the sample-efficiency ladder sit at the fallback
 > slice their own `_coverage_gaps` records (`fig2` likewise shows those ladders at U = 250).
 > They are not regenerated here; the corrected numbers are in the section above.
+
+### The query-map L-ladder ran: one real label-scaling curve, and it helps sycophancy only
+
+The earlier 2026-08-02 fold recorded this as **deferred, not measured** — the first attempt's box
+exited 1 and uploaded only logs. It was re-run as three per-behavior shards and is now **complete**:
+nine rungs (evil 250 / 2,500 / 8,000; sycophancy and hallucination 250 / 2,500 / 16,000), every
+evil rung recording `rc: 0`. This supersedes that "Not available" note.
+
+The question it answers: the bare-query round above showed *whether* a predictor shown only the
+user's question can rank behavior. This asks *how that changes as you buy more labels* — the
+sample-efficiency curve of the query-side readout.
+
+**Read this section as a decomposition, not as a nine-arm scaling result.** Most of what the figure
+plots cannot move with L, and saying so up front is the difference between a finding and an
+identity:
+
+1. **One genuine L-curve — `arm4_ridge_ctx` (direct ridge, labels → expression).** It is the only
+   arm that consumes the labeled budget, so it is the only arm whose ρ *can* respond to L. Every
+   label-scaling claim below is about this arm alone.
+2. **Reference lines, invariant in L by construction — `arm6_map_proj_e1`, `arm11_oracle_proj`,
+   `arm1_ctx_e1`, `arm3_identity_bias`, `arm13_shuffled_map`.** Leg 1 **fits no map**: it applies
+   committed train-fit maps/ridges to bare reps (`meta.mapping_baselines.leg1` states this), and
+   these five are label-free projections. Their flatness across rungs is an **identity, not a
+   measured saturation** — they are plotted as reference lines so the one real curve can be read
+   against them, and must not be described as "flat scaling curves".
+3. **No scaling at all for evil's leg 2** — see the leg-asymmetry paragraph below.
+
+**What is plotted, exactly.** Spearman ρ between each arm's frozen-layer prediction and the judged
+DV, against the labeled budget L on a log x-axis; one panel per behavior, one line per arm; error
+bars are the 95% bootstrap CI over contexts read from each row's `ci_frozen`, drawn as
+non-negative offsets. **Matched-target disclosure: within a panel every arm and every budget is
+scored against the SAME judged DV on the SAME eval contexts** — the committed WildChat-rung judged
+DV, n = 1,982 (sycophancy) / 1,967 (hallucination) / 1,987 (evil) — so the only things varying are
+the arm and the labeled budget. **Only the orange direct-ridge line is a scaling curve; the other
+five are the by-construction reference lines named above.** Per-arm provenance: the predictor input is the **bare-query render**
+(chat-template head + final user query, prefix stripped) on every arm and every rung; rollouts
+behind the DV are the same on-policy full-context generations as elsewhere in this writeup, and
+this round ran **no new generation and no new judging** (`judge_called: false`), so the DV is
+inherited unchanged. Colour encodes the arm, held across all three panels. **The top rungs are not
+matched across behaviors** (evil tops out at 8,000, the other two at 16,000 — evil's labeled
+context pool ends there), so no cross-behavior "at maximum budget" comparison is drawn.
+
+![query-map L-ladder](../figures/issue_1739/ladder/ladder_rho_vs_l.png)
+
+> **Only sycophancy converts labels into a better bare-query readout, and it has not saturated.**
+> Direct ridge — the arm that actually consumes the label budget — goes +0.051 [+0.001, +0.099] at
+> L = 250 → +0.025 [−0.022, +0.066] at L = 2,500 → **+0.193 [+0.146, +0.239]** at L = 16,000. The
+> first and last CIs are disjoint, and the steepest leg is the last one (2,500 → 16,000), so the
+> curve is still climbing at the largest budget run: this readout is label-limited, not
+> capacity-limited.
+>
+> **Hallucination converts nothing.** Direct ridge reads +0.003 [−0.042, +0.048] → −0.019
+> [−0.061, +0.023] → +0.018 [−0.029, +0.062]. Every CI brackets zero at every budget. Labels do
+> not rescue a bare-query readout for this behavior, which is the same conclusion the bare-query
+> round reached without a ladder — now shown to hold across a 64× range of label budgets rather
+> than at one point.
+>
+> **Evil is unresolved.** Direct ridge reads +0.042 [−0.009, +0.096] → +0.002 [−0.044, +0.048] →
+> **+0.084 [+0.037, +0.128]** at L = 8,000. Only the top rung clears zero, and its CI overlaps the
+> L = 250 CI substantially, so the apparent rise is not separated from noise. Read this as "no
+> resolved label effect", not as a positive trend.
+>
+> **The five reference lines are flat by construction — an identity, not a saturation finding.**
+> Leg 1 **fits no map**: it applies committed train-fit cells to bare-query representations, as the
+> artifacts' own `meta.mapping_baselines.leg1` states, and the map itself is fit on *unlabeled*
+> pairs (U = full, 18,793). A label-free projection's ρ therefore *cannot* depend on the labeled
+> budget. The figure confirms the identity holds numerically: **oracle** is constant across all
+> three rungs in every behavior (+0.084 sycophancy, +0.178 hallucination, +0.156 evil), and
+> **map → PV projection** is constant for hallucination (−0.065, layer 23 at all three budgets) and
+> evil (+0.110, layer 22 at all three). Do **not** read these as "the map has saturated in L" — the
+> map never saw L. Their legitimate uses are as a reference level for the one real curve, and as a
+> sanity check that the DV and eval set were genuinely held fixed across rungs.
+>
+> **Where a nominally label-free arm does move, it is layer selection, not learning.** Sycophancy's
+> map arm steps +0.148 → +0.200 between L = 250 and L = 2,500 and is flat thereafter, despite
+> consuming no labels. The frozen layer is re-selected per cell on the realized pool
+> (`meta.frozen_layer_source: own-train-pool-selection`; reported as invoked with
+> `--force-own-pool-frozen` — the flag name is from the run report, the meta field is what these
+> artifacts record), so changing the budget changes *which* layer is frozen — here layer 19 → layer
+> 11. Attribute the step to frozen-layer reselection, never to a label-driven gain in the map.
+>
+> **The one real curve is non-monotone in all three behaviors — a known open problem, not a new
+> result.** Direct ridge dips at the middle budget everywhere (+0.051 → +0.025, +0.003 → −0.019,
+> +0.042 → +0.002). This is the **already-documented unexplained L = 2,500 dip** for direct ridge
+> (§ Standing caveats), now also visible on the bare-query render. Read it as the same unresolved
+> phenomenon appearing again, not as a clean new replication — and note that every single-budget
+> number on this curve inherits that standing caveat.
+>
+> **Consistency with the committed bare-query round.** At L = 16,000 the ladder reproduces that
+> round's sycophancy and hallucination numbers *exactly* — map → PV +0.200336 / −0.064839, direct
+> ridge +0.193206 / +0.017536, oracle +0.084268 / +0.177625, identical to the committed
+> `bareq_map/<behavior>/all_arms_spearman.json`. Evil's label-free arms match exactly too
+> (+0.110345 map, +0.155769 oracle); its labeled ridge differs (+0.084 here vs +0.055 committed)
+> because the committed round's leg 1 ran at L = 6,468 while this ladder's top rung is L = 8,000 —
+> a different labeled budget, not a discrepancy.
+
+**Leg asymmetry, stated plainly.** Evil ran both legs (`legs_run: ['1','2']`); sycophancy and
+hallucination ran leg 1 only. That is not a coverage gap: their corpora are already bare (constant
+template head on every train row), so a dedicated bare fit would be the identical fit on identical
+inputs — the documented `leg2_noop`. **But evil's leg-2 ladder is DEGENERATE — no scaling was
+measured on it, which is not the same as measuring flatness.** Every leg-2 row carries
+`budget_l: 6468` at all three rungs (`distinct_row_budget_l: [6468]` in the aggregate JSON), so all
+six arms return a single invariant ρ (map → PV −0.067168, direct ridge −0.081311). The budget knob
+did not vary the realized rows, so there is no curve here to interpret in either direction — report
+it as "ladder did not vary realized rows", never as "flat". Mechanism, stated honestly: evil's bare
+pool is ≈6,468 contexts, which explains the **top** rung (a request for 8,000 clamps to the pool)
+but does **not** explain the 250 and 2,500 rungs realizing 6,468 rows — those are consistent with
+the budget setting never reaching leg 2 at all, and these artifacts do not settle which. Either
+way, **evil has no L-ladder on the leg its own section calls "the read that counts"** — the evil
+ladder above is leg 1, which that section flags as render-mismatched by construction. Evil's ladder
+is therefore the weakest of the three on two independent grounds.
+
+**By-product: the turn-subset split now exists for all three behaviors.** The 2026-07-31 round
+emitted subsets for evil only and persisted no per-context predictions; this round emits
+`pooled` / `multi_turn_only` / `single_turn_only` for all three *and* writes
+`preds/bareq_leg1_preds.{context_end,prefix_end}.jsonl`, closing both gaps.
+
+![bare-query readout by turn count](../figures/issue_1739/ladder/ladder_turn_subsets.png)
+
+> What is plotted: the same frozen-layer Spearman ρ against the same judged DV, at each behavior's
+> maximum budget, with the eval contexts split three ways by turn count. **Turn subset is on the
+> x-axis; colour still encodes the arm and matches the ladder figure above exactly** (blue = map →
+> PV projection, orange = direct ridge, green = oracle), so no colour carries two meanings in this
+> section. Error bars are the 95% bootstrap CI. Single-turn contexts are the **by-construction
+> identity cell** — for them the bare render *is* the original render, so those bars are also the
+> full-context numbers for the same rows.
+>
+> **Hallucination's pooled bare read hides a sign flip.** map → PV projection reads
+> **−0.168 [−0.231, −0.096]** on multi-turn rows and **+0.154 [+0.085, +0.217]** on single-turn
+> rows — both CIs excluding zero, in opposite directions — while the pooled read is −0.065. (The
+> pooled value is *not* the average of the two: rank correlation is not additive across subsets,
+> so pooling two oppositely-ranked halves does not interpolate between them.) The earlier "the
+> query alone does not carry the fabrication signal" reading holds only for multi-turn contexts;
+> on single-turn ones the same arm is solidly positive. Practically, this means a pooled statistic
+> was averaging over two populations the arm treats oppositely — the pooled hallucination bare
+> number should not be quoted without the split.
+>
+> **Sycophancy's advantage is where the dilution argument predicted.** map → PV reads **+0.280
+> [+0.222, +0.334]** on multi-turn rows against **+0.064 [−0.002, +0.124]** on single-turn ones.
+> Since single-turn rows contribute zero bare-vs-full contrast by construction, the earlier
+> prediction — that the pooled bare-over-full advantage originates entirely in multi-turn rows —
+> is confirmed in direction. Note this is now a *measurement*, not the inference from dilution:
+> the multi-turn cell is read directly.
+>
+> **Evil splits mildly the other way** (+0.088 [+0.013, +0.166] multi-turn vs +0.147
+> [+0.094, +0.194] single-turn), both positive, on the render-mismatched leg 1 — so it carries the
+> same interpretive discount as evil's ladder above.
+
+**Unchanged by this fold: the prefix null probe stays an `ANOMALY`.** All nine rungs return
+`verdict: ANOMALY` with `constant: true` and at least one CI excluding zero. Budget-invariance is
+mildly informative — it rules out label budget as the mechanism — but the flag is otherwise exactly
+as the diagnosed section above leaves it.
 
 ## New in this update (2026-08-01)
 
@@ -877,6 +1045,11 @@ Three further limitations of this round:
   per-context predictions: each `percell/bareq_leg1_transfer.jsonl` holds two aggregate records
   (coverage, null probe, the same six arm rows as the summary) and there is no `preds/` directory,
   unlike the main lane. Recovering the split needs a re-score, not a re-analysis.
+  **RESOLVED 2026-08-02** — the re-score happened: the query-map ladder emits the subset rows for
+  all three behaviors and persists `preds/`. Measured directly, sycophancy's map arm reads +0.280
+  multi-turn vs +0.064 single-turn, confirming the dilution argument's direction; hallucination
+  splits −0.168 / +0.154, a sign flip the pooled number hid. See § The query-map L-ladder is
+  measured now.
 - **Evil's leg 2 scores only on the WildChat rung.** Its own OOD rungs were skipped because the
   query bank was captured train-only, so none of the 2,387 eval-split contexts has a bare rep
   (`leg2_eval_block_notes`); re-capturing with all rungs would be needed.
@@ -1338,8 +1511,11 @@ follow in the next block with corrections marked, and the 2026-07-30 ones after 
   reads the prefix position, not the `bare_context_end` position every headline uses.
 - **Single-turn dilution.** 987 of the 2,000 WildChat-rung contexts (49.4%) are single-turn, so
   on half that rung the "prefix" is the bare chat-template head and the prefix panels average a
-  genuine prefix over half the contexts with an empty one over the other half. Evil's leg-2 turn
-  subsets are the only place this is decomposed; sycophancy and hallucination emit no subset rows.
+  genuine prefix over half the contexts with an empty one over the other half. **Partly resolved
+  2026-08-02:** the query-map ladder emits `multi_turn_only` / `single_turn_only` rows for all
+  three behaviors (not just evil's leg 2), and the decomposition matters — hallucination's pooled
+  bare read averages two opposite-signed halves (§ The query-map L-ladder is measured now). The
+  dilution still applies to every pooled bare-render statistic published before that fold.
 - **Layer-0 degenerate selections.** Sycophancy's prefix-state map arm freezes at layer 0 on the
   WildChat rung (−0.085) and on every natural-PV prefix read (|ρ| ≈ 0.031). These are broken
   reads, not negative findings, and are excluded or flagged wherever they appear.
@@ -1350,9 +1526,12 @@ follow in the next block with corrections marked, and the 2026-07-30 ones after 
   +0.785 in-distribution — **but** kNN retrieval on those same distributions holds 69–721× above
   chance, so the map keeps its ranking information and loses its scale. Quote both reads, never
   the R² alone.
-- **The L = 2,500 non-monotonicity is unexplained.** Several labeled arms dip at mid budget in
-  every behavior (e.g. hallucination SimpleQA direct ridge 0.103 → 0.110 → 0.402). Any
-  single-budget comparison involving a labeled readout inherits this.
+- **The L = 2,500 non-monotonicity is unexplained, and it recurs on the bare-query render.**
+  Several labeled arms dip at mid budget in every behavior (e.g. hallucination SimpleQA direct
+  ridge 0.103 → 0.110 → 0.402). The 2026-08-02 query-map ladder shows the same mid-budget dip for
+  direct ridge on the **bare-query** render in all three behaviors (+0.051 → +0.025, +0.003 →
+  −0.019, +0.042 → +0.002) — the same unresolved phenomenon on another render, not a diagnosis of
+  it. Any single-budget comparison involving a labeled readout inherits this.
 - **No permutation null on the WildChat or synthetic-suite rungs** — the `nulls` array is empty
   on both — so the shuffled-map arm is the only null reference there, and on the WildChat rung it
   is a single draw (the 8-seed band exists only for the bare-query leg-2 control).
@@ -1391,8 +1570,46 @@ branch `issue-1739` at commit `96785126d2`:
   `figures/issue_1739/interim_writeup/{wide_roster_arms,pvsynth_polarity,wide_ood_arms,natpv_whitened_vs_raw,spread_grid,bareq_v2_resolutions}.png`.
 - Gaps this round did not close, **both since CLOSED by the 2026-08-02 fold**: the leg-1 prefix
   null-probe mechanism diagnosis (now landed — verdict `unexplained`, three mechanisms ruled
-  out) and hallucination's missing maximum-budget OOD cells for arms 7/8/12 (now run). Still
-  open from this round: sycophancy and hallucination emit no bare-query turn-subset rows.
+  out) and hallucination's missing maximum-budget OOD cells for arms 7/8/12 (now run). The third
+  gap — sycophancy and hallucination emitting no bare-query turn-subset rows — is **also now
+  closed** by the 2026-08-02 query-map ladder, which emits all three subsets for all three
+  behaviors and persists per-context predictions.
+
+**2026-08-02 query-map L-ladder fold (R2.75).** Numbers + figures by
+`scripts/issue1739_r275_fold.py` (aggregation + rendering only: no fits, no GPU, no judge calls —
+the round itself recorded `judge_called: false`). Every number in § The query-map L-ladder is
+measured now was re-read in that run from the HF data repo
+`superkaiba1/explore-persona-space-data` under
+`issue1739_maxood/r275_query_scaling/L<budget>/bareq_map/<behavior>/`:
+
+- `all_arms_spearman.json` — `transfer_rows` (36 rows per behavior-rung = 6 arms × 2 input states
+  × 3 turn subsets; 54 for evil, whose leg 2 adds 18), filtered to leg 1 / `context_end` /
+  `subset: pooled` for the ladder figure and to all three subsets at the maximum budget for the
+  turn-subset figure. ρ is `rho_frozen`, CIs are `ci_frozen`, layers are `layer`.
+- Realized rungs: evil L ∈ {250, 2,500, 8,000}; sycophancy and hallucination L ∈ {250, 2,500,
+  16,000} — 9 rungs, run as three per-behavior shards after the first attempt's single box exited
+  1 and uploaded only logs. (The failure mode of that first attempt was reported as an out-root
+  guard rejection; that cause is *unverified here* — this fold read only the successful re-run's
+  artifacts, whose `bareq_ladder_invocations.json` records `rc: 0` for every evil rung.)
+- Design labels read from each summary's `meta`: `legs_run`, `map_source: refit-in-process`,
+  `u_sizes: ['full']`, `frozen_layer_source: own-train-pool-selection`, `subsets_emitted`,
+  `preds_persisted`, `leg1_null_probe.context_end.verdict`, and
+  `mapping_baselines.leg1.reason` (the statement that leg 1 fits no map and therefore has no
+  identity+bias / kNN-retrieval baseline to attach).
+- Evil's leg-2 invariance across rungs (`budget_l: 6468` at every rung, byte-identical ρ) is
+  computed in-run and recorded at `evil_leg2_invariant_across_rungs` in the aggregate JSON.
+- Cross-check against the committed bare-query round read from
+  `.claude/worktrees/issue-1739/eval_results/issue_1739/bareq_map/<behavior>/all_arms_spearman.json`.
+- Run record `bareq_score_done.json`: `git_commit 6717bb6c2e36eb45fea1d381d9166673c88f1917`,
+  `judge_called: false`, python 3.11.15 / numpy 2.2.6 / torch 2.8.0+cu128.
+- Prose-ready aggregates committed to
+  `eval_results/issue_1739/ladder/r275_query_scaling_stats.json`. Figures:
+  `figures/issue_1739/ladder/{ladder_rho_vs_l,ladder_turn_subsets}.png`.
+- Known gaps this fold does NOT close: evil's dedicated bare fit (leg 2) has no ladder — its pool
+  is fixed at 6,468 rows and does not respond to `--budget-l`, so evil's ladder is leg 1 only,
+  which is render-mismatched by construction. The prefix null probe remains `ANOMALY` at all nine
+  rungs. Only `context_end` is folded here; the `prefix_end` rows exist in the artifacts but are
+  the degenerate null variant.
 
 **2026-08-02 gap-fill + partial-item fold.** Numbers + figures by
 `scripts/issue1739_gap_fold.py` (gaps 1–2; re-renders `wide_ood_arms.png` with the hallucination
@@ -1427,10 +1644,13 @@ fits, no GPU, no judge calls. Sources, all read from the HF data repo
   copies). Figures:
   `figures/issue_1739/interim_writeup/wide_ood_arms.png` (re-rendered) and
   `figures/issue_1739/gapfold/{r5_trait_pool,ood_scatters,map_recon_evaldist}.png`.
-- **Not available:** `issue1739_maxood/r275_query_scaling` uploaded logs only (its box exited
-  1), so the query-map L-ladder scaling is deferred, not measured. Hallucination's
-  maximum-budget per-context OOD predictions were not persisted, so its scatter panels are the
-  L = 2,500 slice. The map-reconstruction round covers evil and sycophancy only.
+- **Not available at the time of this round:** `issue1739_maxood/r275_query_scaling` had uploaded
+  logs only (its box exited 1), so the query-map L-ladder scaling was deferred. **SUPERSEDED
+  2026-08-02** — it was re-run as three per-behavior shards, completed, and is folded in at
+  § The query-map L-ladder is measured now (provenance block below). Still not available from this
+  round: hallucination's maximum-budget per-context OOD predictions were not persisted, so its
+  scatter panels are the L = 2,500 slice; the map-reconstruction round covers evil and sycophancy
+  only.
 
 **2026-07-31 bare-query round.** Numbers + figures by
 `scripts/issue1739_bareq_fold.py` (aggregation + rendering only; no fits, no GPU, no judge calls),
