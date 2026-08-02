@@ -7192,8 +7192,8 @@
     "1929": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1929",
-      "status": "approved",
+      "path": "tasks/running/1929",
+      "status": "running",
       "title": "daily-fix: detached relaunch + worker-pid + named-verify"
     },
     "193": {
