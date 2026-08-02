@@ -86,6 +86,10 @@ CLAUDE.md as always-on rules; the rest live here and load when you touch code.)
 - **Env sync after dep changes:** `uv lock && git push`, then `pod.py sync env`.
 - **HF cache** always `/workspace/.cache/huggingface` on pods (symlinks enforce).
 - **Reproducibility metadata in result JSONs:** git commit hash, env versions, timestamps.
+  Lane caveat: on git-less scratch trees (fellows/SLURM `materialize_branch_src` rsync copies) a
+  strict `git rev-parse` shellout kills the workload (git exits 128 → the workload dies rc=1) —
+  degrade `EPS_GIT_SHA` env → `check=False` → `"unavailable-no-git-checkout"` (full entry:
+  `.claude/rules/gotchas.md`; incident #1902).
 - **Supersede → delete the old version.** When an improved version of a script
   / helper supersedes an old one, DELETE the old version after rewiring every
   reference to it — do NOT keep both. Two live scripts that do the same job
