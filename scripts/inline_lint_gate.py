@@ -31,9 +31,24 @@ Verdict semantics (mechanizes SKILL.md Step 9a-ter § Inline payload lint gate):
   ``path: N warnings`` rows inside pytest's equals-fenced "warnings summary"
   section, pytest leg ONLY — are classified as REPORT lines BEFORE per-path
   hit assignment, so they never block on either the NEW or the MODIFIED
-  branch. Every other lineno-less naming hit keeps the conservative block.
+  branch. SECOND EXCEPTION (#2023; the #1345 v242 false-block incident):
+  EVERY pytest-leg line inside pytest's ``-rA`` equals-fenced ``PASSES``
+  section — captured output of tests pytest reports as PASSED,
+  definitionally not red evidence (e.g. a designed-crash test's captured
+  traceback naming a payload path) — is classified as a REPORT line
+  (``[passing-capture]``) BEFORE per-path hit assignment, on the NEW and
+  MODIFIED branches alike and INCLUDING lineno-bearing hits (single
+  predicate: index inside the PASSES fenced window; any other fence title
+  CLOSES it — unlike #1585's in-section AND row-shape double predicate).
+  Accepted residual: a column-0 fence-shaped line embedded in a FAILING
+  test's captured output could re-open/close windows — outside the guard
+  family's anti-forgetting threat model (#1082 parity); the fail direction
+  on nested fences INSIDE the PASSES section is CLOSED (a nested fence
+  closes the window — another false block, never a false pass). Every
+  other lineno-less naming hit keeps the conservative block.
 - PASS (exit 0): repo-wide red naming only non-payload paths, WARN lines,
-  warnings-summary attribution rows (above), and modified-file hits whose
+  warnings-summary attribution rows + PASSES-section captured lines
+  (above), and modified-file hits whose
   linenos all sit outside the round's added lines never block (they are
   REPORTED for the round's ``epm:progress`` note). Per-path certs mean a
   mixed verdict still certifies the clean subset.
@@ -110,6 +125,11 @@ WARNINGS_SUMMARY_TITLE_RE = re.compile(r"^=+ warnings summary\b[^=]*=+$", re.IGN
 # `::`-joined — covers class-based + parametrized ids) or pytest's aggregated
 # `<path>: N warnings` row. FAILED/ERROR rows carry spaces + tokens => never match.
 WS_ATTRIBUTION_ROW_RE = re.compile(r"^(?:\S+(?:::\S+)+|\S+: \d+ warnings?)$")
+# pytest -rA `PASSES` section title (#2023; the #1345 v242 false-block
+# incident). pytest emits the title UPPERCASE — matched case-SENSITIVELY so a
+# lowercase "passes"-titled fence in captured output never opens the
+# report-class window (fail-closed narrowing; the choice is test-pinned).
+PASSES_TITLE_RE = re.compile(r"^=+ PASSES\b[^=]*=+$")
 
 
 class Inconclusive(Exception):
@@ -395,13 +415,33 @@ def warnings_attribution_idxs(pytest_lines: list[str]) -> set[int]:
     return idxs
 
 
+def passes_section_idxs(pytest_lines: list[str]) -> set[int]:
+    """Indices of pytest-leg lines INSIDE the -rA ``PASSES`` fenced section
+    (#2023; the #1345 v242 false-block incident). Every line there is captured
+    output of a test pytest reports as PASSED — definitionally not red
+    evidence — so the WHOLE section is report-class (single predicate,
+    unlike the #1585 warnings-summary double predicate). Any other fence
+    title CLOSES the window."""
+    idxs: set[int] = set()
+    in_section = False
+    for i, line in enumerate(pytest_lines):
+        row = line.rstrip()
+        if SECTION_FENCE_RE.match(row):
+            in_section = bool(PASSES_TITLE_RE.match(row))
+            continue
+        if in_section:
+            idxs.add(i)
+    return idxs
+
+
 def evaluate(payload: list[str], legs: LegResults, repo: Path) -> Verdict:
     """Apply the Step 9a-ter verdict semantics (module docstring) to the leg
     outputs. Raises Inconclusive on instrument-ran completeness failure.
 
-    Warnings-summary attribution rows (pytest leg only, #1585) are reclassified
-    into ``verdict.reported`` BEFORE per-path hit assignment, so both the
-    NEW-on-origin/main and the MODIFIED conservative branches are fixed
+    Warnings-summary attribution rows (#1585) and PASSES-section captured
+    lines (#2023) — pytest leg only — are reclassified into
+    ``verdict.reported`` (labeled) BEFORE per-path hit assignment, so both
+    the NEW-on-origin/main and the MODIFIED conservative branches are fixed
     uniformly with no change to their own logic."""
     if not LINT_TERMINAL_RE.search(legs.lint_output):
         raise Inconclusive(
@@ -414,18 +454,27 @@ def evaluate(payload: list[str], legs: LegResults, repo: Path) -> Verdict:
     lint_lines = legs.lint_output.splitlines()
     pytest_lines = legs.pytest_output.splitlines()
     ws_idxs = warnings_attribution_idxs(pytest_lines)  # pytest leg ONLY
-    combined = [(ln, False) for ln in lint_lines] + [
-        (ln, i in ws_idxs) for i, ln in enumerate(pytest_lines)
+    pass_idxs = passes_section_idxs(pytest_lines)  # pytest leg ONLY (#2023)
+    combined: list[tuple[str, str | None]] = [(ln, None) for ln in lint_lines] + [
+        (
+            ln,
+            "warnings-summary attribution"
+            if i in ws_idxs
+            else "passing-capture"
+            if i in pass_idxs
+            else None,
+        )
+        for i, ln in enumerate(pytest_lines)
     ]
     hits: dict[str, list[str]] = {p: [] for p in payload}
     verdict = Verdict()
-    for line, ws_attr in combined:
+    for line, label in combined:
         stripped = line.strip()
         for p in payload:
             if p not in line:
                 continue
-            if ws_attr:
-                verdict.reported.append(f"[warnings-summary attribution] {line}")
+            if label:
+                verdict.reported.append(f"[{label}] {line}")
             elif stripped.startswith(NON_RED_PREFIXES):
                 verdict.reported.append(line)
             else:
