@@ -7269,8 +7269,8 @@
     "1939": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1939",
-      "status": "planning",
+      "path": "tasks/approved/1939",
+      "status": "approved",
       "title": "workflow-fix: gotchas.md entry \u2014 SLURM git-less scratch crashes metadata git shellouts"
     },
     "194": {
