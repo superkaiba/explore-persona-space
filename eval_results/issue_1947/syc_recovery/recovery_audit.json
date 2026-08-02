@@ -1,0 +1,116 @@
+{
+  "meta": {
+    "emit_target": 300,
+    "git_commit": "30ac82ec4ea8239a56646cad57894256c26a7363",
+    "hard_floor": 240,
+    "judge_max_tokens": 500,
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "n_judge_draws": 3,
+    "python": "3.11.15",
+    "timestamp_utc": "2026-08-02T14:35:23Z"
+  },
+  "passes": [
+    {
+      "error_reason_histogram": {
+        "parse_error": 12
+      },
+      "fully_censored_rids": [
+        "pos-00412",
+        "pos-00603",
+        "pos-00707",
+        "pos-00711"
+      ],
+      "label": "first_sample",
+      "n_content_low": 552,
+      "n_error_draws": 12,
+      "n_error_draws_content_class": 12,
+      "n_error_draws_transport_class": 0,
+      "n_fully_censored_items": 4,
+      "n_items": 751,
+      "n_kept": 195,
+      "n_partial_censored_items": 0,
+      "per_request_accept_rate": 0.2597
+    },
+    {
+      "error_reason_histogram": {
+        "parse_error": 5,
+        "unparseable_record": 1
+      },
+      "fully_censored_rids": [],
+      "label": "topup_tranche",
+      "n_content_low": 421,
+      "n_error_draws": 6,
+      "n_error_draws_content_class": 6,
+      "n_error_draws_transport_class": 0,
+      "n_fully_censored_items": 0,
+      "n_items": 536,
+      "n_kept": 115,
+      "n_partial_censored_items": 6,
+      "per_request_accept_rate": 0.2146
+    }
+  ],
+  "pool": "syc-icl",
+  "question_pool": {
+    "bank_size": 300,
+    "n_attempted": 297,
+    "n_attempted_never_yielded": 114,
+    "n_available_for_recovery": 117,
+    "n_never_attempted": 3,
+    "per_request_accept_rate_overall": 0.2409,
+    "reachable_ceiling_rows": 349,
+    "yield_by_attempt_count": {
+      "1": {
+        "n_questions": 8,
+        "n_yielded": 3
+      },
+      "2": {
+        "n_questions": 37,
+        "n_yielded": 13
+      },
+      "3": {
+        "n_questions": 52,
+        "n_yielded": 30
+      },
+      "4": {
+        "n_questions": 65,
+        "n_yielded": 35
+      },
+      "5": {
+        "n_questions": 61,
+        "n_yielded": 46
+      },
+      "6": {
+        "n_questions": 43,
+        "n_yielded": 30
+      },
+      "7": {
+        "n_questions": 24,
+        "n_yielded": 20
+      },
+      "8": {
+        "n_questions": 5,
+        "n_yielded": 5
+      },
+      "9": {
+        "n_questions": 2,
+        "n_yielded": 1
+      }
+    }
+  },
+  "union": {
+    "kept_pos_first_sample": 195,
+    "kept_pos_union": 232,
+    "shortfall_to_emit_target": 68,
+    "shortfall_to_hard_floor": 8,
+    "tranche_kept": 115,
+    "tranche_merged": 37,
+    "union_distinct_qids": 183,
+    "union_rows": 232
+  },
+  "verdict": {
+    "dominant_reject_class": "content_scored_low",
+    "emit_target_reachable_in_principle": true,
+    "recovery_of_censored_draws_alone_clears_emit_target": false,
+    "recovery_of_censored_draws_alone_clears_hard_floor": false
+  }
+}
