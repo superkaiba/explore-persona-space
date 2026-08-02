@@ -1931,6 +1931,22 @@ def _provision_wait_register_bootstrap(
 
     rc = _bootstrap(name, intent_label=intent_label)
     if rc != 0:
+        # Retry EXACTLY ONCE (#1931): the incident class (pod-1773-regsteer) was a
+        # transient apt/network-class failure whose manual full re-run succeeded
+        # immediately — bootstrap_pod.sh's steps are re-run-safe (the documented
+        # recovery IS a full re-run). Never more than one retry: a second failure
+        # is a persistent fault that must fail loud, not be masked.
+        # Known benign edge: a first-run death between bootstrap_pod.sh's `git init`
+        # and `reset --hard FETCH_HEAD` makes the retry take the existing-repo
+        # branch — correct but slower (full-depth fetch).
+        print(
+            f"\n[bootstrap-retry] bootstrap exited rc={rc} on {name}; retrying once "
+            f"(transient apt/network-class failures recover on re-run — incident "
+            f"pod-1773-regsteer, task #1931)...",
+            file=sys.stderr,
+        )
+        rc = _bootstrap(name, intent_label=intent_label)
+    if rc != 0:
         # Suffixed pods (#1334) get a --name-suffix-scoped terminate hint so the
         # discard recipe can never suggest an issue-wide destroy that would take
         # a healthy sibling pod-<N>'s volume with it.
@@ -1943,8 +1959,19 @@ def _provision_wait_register_bootstrap(
             f"`python scripts/pod.py terminate --issue {args.issue}{suffix_hint}` to discard.",
             file=sys.stderr,
         )
+        # Machine-greppable fail-loud provision verdict (#1931): the last stderr
+        # line before exit, so a caller observing only captured output can tell
+        # a degraded pod from a ready one without reading the exit code.
+        print(f"BOOTSTRAP-FAILED pod={name} rc={rc}", file=sys.stderr)
         sys.exit(rc)
 
+    # Machine-greppable success verdict (#1931). Emitted on BOTH streams via one
+    # token literal (grep contract: the token appears exactly once in this file):
+    # stdout for callers reading captured stdout, stderr so a 2>&1-less stderr
+    # capture sees both outcomes stream-consistently with BOOTSTRAP-FAILED.
+    ok_verdict = f"BOOTSTRAP-OK pod={name}"
+    print(ok_verdict)
+    print(ok_verdict, file=sys.stderr)
     print(f"\nDone. SSH with: ssh {name}")
 
 
