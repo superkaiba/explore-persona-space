@@ -20,8 +20,8 @@ SKILL_MD = Path(__file__).resolve().parent.parent / ".claude" / "skills" / "issu
 _HEADING = "Tick-parse field-preservation (REQUIRED — #1841; incident #1768)."
 
 # Ground truth: scripts/poll_pipeline.py PollResult + its JSON-line
-# serialization dict (the poller's tick output). next_interval is
-# telemetry-only per the ADAPTIVE POLL INTERVAL block.
+# serialization dict (the poller's tick output). next_interval is the
+# quiet-wait branch key per the ADAPTIVE POLL INTERVAL block (#1924).
 _MANDATED_FIELDS = (
     "status",
     "current_phase",
