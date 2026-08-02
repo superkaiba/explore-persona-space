@@ -1287,6 +1287,7 @@ def unit_corpus(cfg: Cfg, slug: str) -> None:
     try:
         if not own_store.exists():
             gen_dir = cfg.out_root / "corpus_gen" / slug
+            gen_dir.mkdir(parents=True, exist_ok=True)  # _append_shard writes here without mkdir
             cap_cfg = CAP.Cfg(out_root=cfg.out_root, phases=(), smoke=cfg.smoke, upload=False)
             CAP._generate_rows_vllm(cap_cfg, slug, str(merged), prompts, 0, gen_dir)
             if cfg.upload:  # rollout TEXT before any reduce
