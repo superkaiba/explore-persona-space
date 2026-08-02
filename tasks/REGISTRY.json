@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2024,
+  "highest_id": 2025,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7942,6 +7942,13 @@
       "path": "tasks/proposed/2024",
       "status": "proposed",
       "title": "workflow-fix: step9c compare \u2014 branch-untouched-file NEW failures classify ordering-suspect, not blocking NEW"
+    },
+    "2025": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2025",
+      "status": "proposed",
+      "title": "workflow-fix: add eval_results/issue_1481 cone to tests/sparse_cones.txt"
     },
     "203": {
       "has_clean_result": false,
