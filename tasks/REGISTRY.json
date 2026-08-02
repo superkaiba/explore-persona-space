@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2015,
+  "highest_id": 2016,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7872,6 +7872,13 @@
       "path": "tasks/proposed/2015",
       "status": "proposed",
       "title": "workflow-fix: shared-root uncommitted-file reversion race (pre-commit stash/restore under concurrency)"
+    },
+    "2016": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2016",
+      "status": "proposed",
+      "title": "workflow-fix: figure-PNG-vs-own-sidecar render consistency check"
     },
     "202": {
       "has_clean_result": false,
