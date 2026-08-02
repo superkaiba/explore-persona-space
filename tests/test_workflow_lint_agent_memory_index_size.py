@@ -24,10 +24,12 @@ failing to guard the documented ~25,000 B truncation).
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
 import pytest
+import yaml
 
 _HERE = Path(__file__).resolve().parent
 _SCRIPTS = _HERE.parent / "scripts"
@@ -177,3 +179,32 @@ def test_threshold_literals_pinned() -> None:
     assert AGENT_MEMORY_INDEX_WARN_BYTES == 20_000
     assert AGENT_MEMORY_INDEX_FAIL_BYTES == 24_000
     assert AGENT_MEMORY_INDEX_WARN_BYTES < AGENT_MEMORY_INDEX_FAIL_BYTES < 25_000
+
+
+# --------------------------------------------------------------------------
+# (h) pre-commit hook coverage (#1925): direct-to-main memory-save commits are
+# the primary regrowth channel (worktree-mediated gates never see them), so a
+# local hook must run --check-agent-memory-index-size when any per-agent
+# MEMORY.md index — or the lint itself — changes. Mirror of
+# test_workflow_lint_agent_spec_size.py::test_precommit_hook_covers_agent_spec_size.
+# --------------------------------------------------------------------------
+
+
+def test_precommit_hook_covers_agent_memory_index_size() -> None:
+    """.pre-commit-config.yaml must carry a local hook running
+    --check-agent-memory-index-size whose files: regex covers the per-agent
+    ``.claude/agent-memory/<agent>/MEMORY.md`` indexes AND the lint itself
+    (threshold edits move the verdict), but NOT per-entry memory files
+    (they load on demand and are out of the check's scope)."""
+    cfg = yaml.safe_load((_HERE.parent / ".pre-commit-config.yaml").read_text(encoding="utf-8"))
+    local_hooks = [h for repo in cfg["repos"] if repo["repo"] == "local" for h in repo["hooks"]]
+    matching = [h for h in local_hooks if "--check-agent-memory-index-size" in h.get("entry", "")]
+    assert matching, "no pre-commit hook runs --check-agent-memory-index-size (#1925)"
+    assert any(
+        re.search(h["files"], ".claude/agent-memory/analyzer/MEMORY.md")
+        and re.search(h["files"], "scripts/workflow_lint.py")
+        and not re.search(h["files"], ".claude/agent-memory/analyzer/feedback_foo.md")
+        and not h.get("pass_filenames", True)
+        for h in matching
+        if "files" in h
+    ), f"no matching hook covers agent-memory MEMORY.md + the lint, filenames off: {matching}"
