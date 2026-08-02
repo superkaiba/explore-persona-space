@@ -1,44 +1,44 @@
 {
-  "commit": "8f6456d855",
-  "created": "2026-08-02T00:04:42Z",
+  "commit": "e7fa88bd12",
+  "created": "2026-08-02T00:38:49Z",
   "figsize": [
-    4.6,
-    3.2
+    5.2,
+    3.4
   ],
   "points": [
     {
       "x": -0.2,
-      "OOF R\u00b2 at layer* (2k subset)": -1.1687340581347048,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.1687340581347048,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.8,
-      "OOF R\u00b2 at layer* (2k subset)": -0.9885797250143717,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.9885797250143717,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 1.8,
-      "OOF R\u00b2 at layer* (2k subset)": -0.983226536675013,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.983226536675013,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.2,
-      "OOF R\u00b2 at layer* (2k subset)": -1.063305901482502,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.063305901482502,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 1.2,
-      "OOF R\u00b2 at layer* (2k subset)": -0.8786853012666122,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.8786853012666122,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 2.2,
-      "OOF R\u00b2 at layer* (2k subset)": -0.8519147263952652,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.8519147263952652,
       "_kind": "bar",
       "_group": 1
     }
@@ -50,8 +50,8 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Serialization robustness: native vs canonical plain render",
-        "ylabel": "OOF R\u00b2 at layer* (2k subset)",
+        "title_left": "Serialization robustness: native vs plain render\n(n_tr < d \u2014 estimator-degenerate scale; read the native\u2212plain delta only)",
+        "ylabel": "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)",
         "legend_labels": [
           "plain render",
           "native render"

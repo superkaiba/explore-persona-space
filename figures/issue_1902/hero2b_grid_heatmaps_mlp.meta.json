@@ -1,6 +1,6 @@
 {
-  "commit": "8f6456d855",
-  "created": "2026-08-02T00:04:20Z",
+  "commit": "e7fa88bd12",
+  "created": "2026-08-02T00:38:39Z",
   "figsize": [
     8.6,
     3.8
@@ -10,7 +10,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "MLP \u00b7 ctx arm (L31)",
+        "title_left": "MLP \u00b7 context arm \u00b7 single-turn corpus (L31)",
         "xlabel": "answer source s",
         "ylabel": "activation checkpoint m",
         "annotations": [
@@ -45,7 +45,7 @@
         ]
       },
       {
-        "title_left": "MLP \u00b7 pre arm (L31)",
+        "title_left": "MLP \u00b7 prefix arm \u00b7 multi-turn corpus (L31)",
         "xlabel": "answer source s",
         "ylabel": "activation checkpoint m",
         "annotations": [

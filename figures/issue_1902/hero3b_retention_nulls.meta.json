@@ -1,79 +1,79 @@
 {
-  "commit": "8f6456d855",
-  "created": "2026-08-02T00:04:25Z",
+  "commit": "e7fa88bd12",
+  "created": "2026-08-02T00:38:45Z",
   "figsize": [
     8.399999999999999,
     3.4
   ],
   "points": [
     {
-      "category": "B->S",
+      "category": "base\u2192SFT",
       "retention / null R\u00b2": 0.4721260011317927,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "B->D",
+      "category": "base\u2192DPO",
       "retention / null R\u00b2": 0.5368435199787899,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "B->R",
+      "category": "base\u2192RLVR",
       "retention / null R\u00b2": 0.5435038880520442,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "S->B",
+      "category": "SFT\u2192base",
       "retention / null R\u00b2": 0.6230883191615664,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "S->D",
+      "category": "SFT\u2192DPO",
       "retention / null R\u00b2": 0.874147662151715,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "S->R",
+      "category": "SFT\u2192RLVR",
       "retention / null R\u00b2": 0.8809039188256912,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "D->B",
+      "category": "DPO\u2192base",
       "retention / null R\u00b2": 0.42284447294921484,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "D->S",
+      "category": "DPO\u2192SFT",
       "retention / null R\u00b2": 0.9118794110559373,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "D->R",
+      "category": "DPO\u2192RLVR",
       "retention / null R\u00b2": 0.9908650366563724,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "R->B",
+      "category": "RLVR\u2192base",
       "retention / null R\u00b2": 0.442373929989957,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "R->S",
+      "category": "RLVR\u2192SFT",
       "retention / null R\u00b2": 0.9188949789090545,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "R->D",
+      "category": "RLVR\u2192DPO",
       "retention / null R\u00b2": 1.0068991553162787,
       "_kind": "bar",
       "_group": 0
@@ -3598,18 +3598,18 @@
           "retention \u03c1 = R\u00b2_gl / Q(j,j)"
         ],
         "xticklabels": [
-          "B->S",
-          "B->D",
-          "B->R",
-          "S->B",
-          "S->D",
-          "S->R",
-          "D->B",
-          "D->S",
-          "D->R",
-          "R->B",
-          "R->S",
-          "R->D"
+          "base\u2192SFT",
+          "base\u2192DPO",
+          "base\u2192RLVR",
+          "SFT\u2192base",
+          "SFT\u2192DPO",
+          "SFT\u2192RLVR",
+          "DPO\u2192base",
+          "DPO\u2192SFT",
+          "DPO\u2192RLVR",
+          "RLVR\u2192base",
+          "RLVR\u2192SFT",
+          "RLVR\u2192DPO"
         ],
         "yticklabels": [
           "\u22120.6",

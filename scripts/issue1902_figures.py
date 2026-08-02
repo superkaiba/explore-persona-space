@@ -59,6 +59,11 @@ def stage_color(m: str) -> str:
     return _PAL[STAGES.index(m)]
 
 
+def pair_label(key: str) -> str:
+    """Plain-English label for a transfer/operator pair key, e.g. 'B->S' -> 'base→SFT'."""
+    return "→".join(STAGE_LABEL.get(p, p) for p in key.split("->"))
+
+
 def _load(eval_dir: Path, rel: str) -> dict:
     with open(eval_dir / rel, encoding="utf-8") as f:
         return json.load(f)
@@ -275,7 +280,17 @@ def fig_hero_grid(eval_dir: Path, fig_dir: Path) -> None:
     fig.suptitle("4×4 activation-checkpoint × answer-source grid (OOF R²)", y=1.04)
     savefig_paper(fig, "hero2_grid_heatmaps", dir=fig_dir)
     plt.close(fig)
-    # MLP grid (own selected layer, per arm)
+
+
+def fig_hero_grid_mlp(eval_dir: Path, fig_dir: Path) -> None:
+    """MLP 4x4 grid (own selected layer per arm); panels are DIFFERENT corpora."""
+    grid = _load(eval_dir, "fits/grid_cells.json")
+    stages = _present_stages(grid)
+    # The MLP grid exists for (ctx arm, single-turn corpus) + (pre arm, multi-turn corpus).
+    arm_title = {
+        "ctx": "MLP · context arm · single-turn corpus (L{star})",
+        "pre": "MLP · prefix arm · multi-turn corpus (L{star})",
+    }
     fig, axes = plt.subplots(1, 2, figsize=(8.6, 3.8))
     for ax, arm in zip(axes, ("ctx", "pre")):
         star_m = grid.get("mlp_layer_star", {}).get(arm)
@@ -284,7 +299,7 @@ def fig_hero_grid(eval_dir: Path, fig_dir: Path) -> None:
             for si, s in enumerate(stages):
                 cell = grid.get("mlp", {}).get(f"mlp_{arm}_{m}{s}", {})
                 Q[mi, si] = cell.get("per_layer", {}).get(str(star_m), np.nan)
-        _heat(ax, Q, stages, f"MLP · {arm} arm (L{star_m})")
+        _heat(ax, Q, stages, arm_title[arm].format(star=star_m))
     savefig_paper(fig, "hero2b_grid_heatmaps_mlp", dir=fig_dir)
     plt.close(fig)
 
@@ -311,10 +326,18 @@ def fig_hero_transfer(eval_dir: Path, fig_dir: Path) -> None:
         ax.set_xlabel("target checkpoint j")
         ax.set_ylabel("source checkpoint i")
     h1 = xf.get("h1", {})
+
+    def _ci_str(ci) -> str:
+        try:
+            lo, hi = ci
+            return f"[{lo:+.3f}, {hi:+.3f}]"
+        except (TypeError, ValueError):
+            return str(ci)
+
     fig.suptitle(
         f"Cross-stage transfer — R_adj={h1.get('r_adj', float('nan')):.3f} "
-        f"({h1.get('verdict', '?')}; CI Δconf {h1.get('ci_delta_conf')}, "
-        f"CI Δkill {h1.get('ci_delta_kill')})",
+        f"({h1.get('verdict', '?')}; 95% CI Δconf {_ci_str(h1.get('ci_delta_conf'))}, "
+        f"Δkill {_ci_str(h1.get('ci_delta_kill'))})",
         y=1.05,
     )
     savefig_paper(fig, "hero3_transfer_matrices", dir=fig_dir)
@@ -341,7 +364,7 @@ def fig_hero_transfer(eval_dir: Path, fig_dir: Path) -> None:
                 )
     ax.axhline(0.8, ls="--", color="grey", lw=0.8)
     ax.axhline(0.5, ls=":", color="grey", lw=0.8)
-    ax.set_xticks(xs, pairs, rotation=45)
+    ax.set_xticks(xs, [pair_label(p) for p in pairs], rotation=45, ha="right")
     ax.set_ylabel("retention / null R²")
     ax.set_title("Per-pair retention with matched nulls (0.8 conf / 0.5 kill bars)")
     ax.legend(fontsize=7)
@@ -413,25 +436,27 @@ def fig_operator(eval_dir: Path, fig_dir: Path) -> None:
         return
     fig, axes = plt.subplots(1, 3, figsize=(12.5, 3.6))
     for key, rec in pairs.items():
-        axes[0].plot(rec["delta_spectrum_top"], label=f"ΔW {key} (ER={rec['er_delta']:.0f})")
+        axes[0].plot(
+            rec["delta_spectrum_top"], label=f"ΔW {pair_label(key)} (ER={rec['er_delta']:.0f})"
+        )
     axes[0].set_yscale("log")
     axes[0].set_xlabel("singular value index")
     axes[0].set_ylabel("σ_k(ΔW)")
     axes[0].set_title("ΔW spectra (top 64)")
     axes[0].legend(fontsize=7)
-    labels, ers, er_shuf, er_spec = [], [], [], []
+    keys, ers, er_shuf, er_spec = [], [], [], []
     for key, rec in pairs.items():
-        labels.append(key)
+        keys.append(key)
         ers.append(rec["er_delta"])
         er_shuf.append(rec["er_delta_null_shuffled_refit"])
         er_spec.append(rec["er_delta_null_spectrum_matched"])
-    xs = np.arange(len(labels))
+    xs = np.arange(len(keys))
     axes[1].bar(xs - 0.25, ers, width=0.25, label="observed ER(ΔW)", color=paper_palette(3)[0])
     axes[1].bar(xs, er_shuf, width=0.25, label="shuffled-refit null", color=paper_palette(3)[1])
     axes[1].bar(
         xs + 0.25, er_spec, width=0.25, label="spectrum-matched null", color=paper_palette(3)[2]
     )
-    axes[1].set_xticks(xs, labels)
+    axes[1].set_xticks(xs, [pair_label(k) for k in keys])
     axes[1].set_ylabel("effective rank (Σσ)²/Σσ²")
     axes[1].set_title("ER(ΔW) vs matched nulls")
     axes[1].legend(fontsize=7)
@@ -440,27 +465,27 @@ def fig_operator(eval_dir: Path, fig_dir: Path) -> None:
         draws = pr.get("draws", [])
         if draws:
             axes[2].scatter(
-                [key] * len(draws),
+                [pair_label(key)] * len(draws),
                 draws,
                 s=6,
                 color="grey",
-                label="rotation null draws" if key == labels[0] else None,
+                label="rotation null draws" if key == keys[0] else None,
             )
         axes[2].scatter(
-            [key],
+            [pair_label(key)],
             [pr["observed_aligned_cosine"]],
             marker="D",
             s=40,
             color=paper_palette(3)[0],
-            label="Procrustes-aligned cos (direction-aware)" if key == labels[0] else None,
+            label="Procrustes-aligned cos (direction-aware)" if key == keys[0] else None,
         )
         axes[2].scatter(
-            [key],
+            [pair_label(key)],
             [rec["spectrum_cosine"]],
             marker="x",
             s=40,
             color=paper_palette(3)[1],
-            label="spectrum cos (rotation-invariant, descriptive)" if key == labels[0] else None,
+            label="spectrum cos (rotation-invariant, descriptive)" if key == keys[0] else None,
         )
     axes[2].set_ylabel("operator cosine")
     axes[2].set_title("Direction-aware vs spectrum-only cosine")
@@ -594,49 +619,74 @@ def fig_exploratory(eval_dir: Path, fig_dir: Path) -> None:
     ax.legend(fontsize=7)
     savefig_paper(fig, "exploratory_retrieval_acc", dir=fig_dir)
     plt.close(fig)
-    # (e) native-vs-plain render deltas
+    # (e) native-vs-plain render deltas (own stem — see fig_render_robustness)
+    fig_render_robustness(eval_dir, fig_dir)
+
+
+def fig_render_robustness(eval_dir: Path, fig_dir: Path) -> None:
+    """Native-vs-plain render deltas on the 2k subset (n_tr < d: degenerate scale)."""
+    op = _load(eval_dir, "operator/operator_battery.json")
     robust = op.get("robust_native_vs_plain", {})
     rows = {m: v for m, v in robust.items() if isinstance(v, dict) and "native_r2_mean" in v}
-    if rows:
-        fig, ax = plt.subplots(figsize=(4.6, 3.2))
-        xs = np.arange(len(rows))
-        ax.bar(
-            xs - 0.2,
-            [v["plain_r2_mean"] for v in rows.values()],
-            width=0.4,
-            label="plain render",
-            color=paper_palette(2)[0],
-        )
-        ax.bar(
-            xs + 0.2,
-            [v["native_r2_mean"] for v in rows.values()],
-            width=0.4,
-            label="native render",
-            color=paper_palette(2)[1],
-        )
-        ax.set_xticks(xs, [STAGE_LABEL.get(m, m) for m in rows])
-        ax.set_ylabel("OOF R² at layer* (2k subset)")
-        ax.set_title("Serialization robustness: native vs canonical plain render")
-        ax.legend(fontsize=7)
-        savefig_paper(fig, "exploratory_render_robustness", dir=fig_dir)
-        plt.close(fig)
+    if not rows:
+        return
+    fig, ax = plt.subplots(figsize=(5.2, 3.4))
+    xs = np.arange(len(rows))
+    ax.bar(
+        xs - 0.2,
+        [v["plain_r2_mean"] for v in rows.values()],
+        width=0.4,
+        label="plain render",
+        color=paper_palette(2)[0],
+    )
+    ax.bar(
+        xs + 0.2,
+        [v["native_r2_mean"] for v in rows.values()],
+        width=0.4,
+        label="native render",
+        color=paper_palette(2)[1],
+    )
+    ax.set_xticks(xs, [STAGE_LABEL.get(m, m) for m in rows])
+    ax.set_ylabel("OOF R² at layer* (2k subset;\nper-fold n_tr ≈ 1.7k < d = 4096)")
+    ax.set_title(
+        "Serialization robustness: native vs plain render\n"
+        "(n_tr < d — estimator-degenerate scale; read the native−plain delta only)"
+    )
+    ax.legend(fontsize=7)
+    savefig_paper(fig, "exploratory_render_robustness", dir=fig_dir)
+    plt.close(fig)
+
+
+FIG_GROUPS = {
+    "hero1": fig_hero_diag,
+    "hero1b": fig_hero_diag_folds,
+    "hero2": fig_hero_grid,
+    "hero2b": fig_hero_grid_mlp,
+    "hero3": fig_hero_transfer,  # renders hero3 + hero3b
+    "clusters": fig_clusters,
+    "operator": fig_operator,
+    "render_robustness": fig_render_robustness,
+    "exploratory": fig_exploratory,  # layer curves, hists, CKA, retrieval + render_robustness
+}
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--eval-dir", type=Path, default=PROJECT_ROOT / "eval_results" / "issue_1902")
     ap.add_argument("--fig-dir", type=Path, default=PROJECT_ROOT / "figures" / "issue_1902")
+    ap.add_argument(
+        "--only",
+        nargs="+",
+        choices=sorted(FIG_GROUPS),
+        help="render only these figure groups (default: all)",
+    )
     args = ap.parse_args()
     set_paper_style()
     args.fig_dir.mkdir(parents=True, exist_ok=True)
-    fig_hero_diag(args.eval_dir, args.fig_dir)
-    fig_hero_diag_folds(args.eval_dir, args.fig_dir)
-    fig_hero_grid(args.eval_dir, args.fig_dir)
-    fig_hero_transfer(args.eval_dir, args.fig_dir)
-    fig_clusters(args.eval_dir, args.fig_dir)
-    fig_operator(args.eval_dir, args.fig_dir)
-    fig_exploratory(args.eval_dir, args.fig_dir)
-    print(f"[figures] done -> {args.fig_dir}", flush=True)
+    groups = args.only or [g for g in FIG_GROUPS if g != "render_robustness"]
+    for g in groups:
+        FIG_GROUPS[g](args.eval_dir, args.fig_dir)
+    print(f"[figures] done ({', '.join(groups)}) -> {args.fig_dir}", flush=True)
     sys.exit(0)
 
 
