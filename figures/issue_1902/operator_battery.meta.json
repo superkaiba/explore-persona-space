@@ -1,0 +1,2493 @@
+{
+  "commit": "e7fa88bd12",
+  "created": "2026-08-02T00:38:47Z",
+  "figsize": [
+    12.5,
+    3.6
+  ],
+  "points": [
+    {
+      "singular value index": 0.0,
+      "\u03c3_k(\u0394W)": 3.306293078712729,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 1.0,
+      "\u03c3_k(\u0394W)": 2.3107787865497027,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 2.0,
+      "\u03c3_k(\u0394W)": 1.9302982879519368,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 3.0,
+      "\u03c3_k(\u0394W)": 1.8089750955786705,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 4.0,
+      "\u03c3_k(\u0394W)": 1.4269136508564901,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 5.0,
+      "\u03c3_k(\u0394W)": 1.2676237107885775,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 6.0,
+      "\u03c3_k(\u0394W)": 1.2121395095333285,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 7.0,
+      "\u03c3_k(\u0394W)": 1.1423789781279825,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 8.0,
+      "\u03c3_k(\u0394W)": 1.0361611191796378,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 9.0,
+      "\u03c3_k(\u0394W)": 0.9886372537885724,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 10.0,
+      "\u03c3_k(\u0394W)": 0.959804262533186,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 11.0,
+      "\u03c3_k(\u0394W)": 0.9238491793077194,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 12.0,
+      "\u03c3_k(\u0394W)": 0.8617039671374295,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 13.0,
+      "\u03c3_k(\u0394W)": 0.8338256392804064,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 14.0,
+      "\u03c3_k(\u0394W)": 0.8178924957768537,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 15.0,
+      "\u03c3_k(\u0394W)": 0.7956608623637748,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 16.0,
+      "\u03c3_k(\u0394W)": 0.7419320414710879,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 17.0,
+      "\u03c3_k(\u0394W)": 0.73268375754118,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 18.0,
+      "\u03c3_k(\u0394W)": 0.7090575365381184,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 19.0,
+      "\u03c3_k(\u0394W)": 0.6983874414562554,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 20.0,
+      "\u03c3_k(\u0394W)": 0.6971181393453104,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 21.0,
+      "\u03c3_k(\u0394W)": 0.6701294645544563,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 22.0,
+      "\u03c3_k(\u0394W)": 0.6623603211895768,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 23.0,
+      "\u03c3_k(\u0394W)": 0.6436867881009917,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 24.0,
+      "\u03c3_k(\u0394W)": 0.6408252502620977,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 25.0,
+      "\u03c3_k(\u0394W)": 0.6300146175996709,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 26.0,
+      "\u03c3_k(\u0394W)": 0.6232852634402269,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 27.0,
+      "\u03c3_k(\u0394W)": 0.6195833787653607,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 28.0,
+      "\u03c3_k(\u0394W)": 0.6055684474503938,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 29.0,
+      "\u03c3_k(\u0394W)": 0.5882819888116384,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 30.0,
+      "\u03c3_k(\u0394W)": 0.5870974354829082,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 31.0,
+      "\u03c3_k(\u0394W)": 0.5720755774693554,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 32.0,
+      "\u03c3_k(\u0394W)": 0.5625738690717379,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 33.0,
+      "\u03c3_k(\u0394W)": 0.5589416371830355,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 34.0,
+      "\u03c3_k(\u0394W)": 0.545461549138254,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 35.0,
+      "\u03c3_k(\u0394W)": 0.5433986407021945,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 36.0,
+      "\u03c3_k(\u0394W)": 0.5322007886139735,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 37.0,
+      "\u03c3_k(\u0394W)": 0.5245695490475767,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 38.0,
+      "\u03c3_k(\u0394W)": 0.5161028478667273,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 39.0,
+      "\u03c3_k(\u0394W)": 0.5059280883223469,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 40.0,
+      "\u03c3_k(\u0394W)": 0.4991223494230517,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 41.0,
+      "\u03c3_k(\u0394W)": 0.4940746103745205,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 42.0,
+      "\u03c3_k(\u0394W)": 0.49317945588244194,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 43.0,
+      "\u03c3_k(\u0394W)": 0.4858458618472302,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 44.0,
+      "\u03c3_k(\u0394W)": 0.48065576932869974,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 45.0,
+      "\u03c3_k(\u0394W)": 0.4731673572877262,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 46.0,
+      "\u03c3_k(\u0394W)": 0.4706317832435347,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 47.0,
+      "\u03c3_k(\u0394W)": 0.4638861649939978,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 48.0,
+      "\u03c3_k(\u0394W)": 0.4535570728609333,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 49.0,
+      "\u03c3_k(\u0394W)": 0.4526483800665418,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 50.0,
+      "\u03c3_k(\u0394W)": 0.44802276727614393,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 51.0,
+      "\u03c3_k(\u0394W)": 0.4454112496201,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 52.0,
+      "\u03c3_k(\u0394W)": 0.4372645879787083,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 53.0,
+      "\u03c3_k(\u0394W)": 0.43344692520611194,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 54.0,
+      "\u03c3_k(\u0394W)": 0.4317288050557489,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 55.0,
+      "\u03c3_k(\u0394W)": 0.43039650313981553,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 56.0,
+      "\u03c3_k(\u0394W)": 0.42615988932738447,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 57.0,
+      "\u03c3_k(\u0394W)": 0.4219681117493567,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 58.0,
+      "\u03c3_k(\u0394W)": 0.417102354190586,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 59.0,
+      "\u03c3_k(\u0394W)": 0.41418734288929027,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 60.0,
+      "\u03c3_k(\u0394W)": 0.40982462423058125,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 61.0,
+      "\u03c3_k(\u0394W)": 0.4030300777548657,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 62.0,
+      "\u03c3_k(\u0394W)": 0.39961865067454894,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 63.0,
+      "\u03c3_k(\u0394W)": 0.3962930314688373,
+      "series": "\u0394W base\u2192SFT (ER=1193)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "singular value index": 0.0,
+      "\u03c3_k(\u0394W)": 1.793135427964919,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 1.0,
+      "\u03c3_k(\u0394W)": 1.102274609071296,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 2.0,
+      "\u03c3_k(\u0394W)": 0.9948390652257837,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 3.0,
+      "\u03c3_k(\u0394W)": 0.8172371329062469,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 4.0,
+      "\u03c3_k(\u0394W)": 0.7362897296706934,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 5.0,
+      "\u03c3_k(\u0394W)": 0.685987926443509,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 6.0,
+      "\u03c3_k(\u0394W)": 0.6063177473387912,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 7.0,
+      "\u03c3_k(\u0394W)": 0.575260433025401,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 8.0,
+      "\u03c3_k(\u0394W)": 0.5566649565876655,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 9.0,
+      "\u03c3_k(\u0394W)": 0.5307842309628149,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 10.0,
+      "\u03c3_k(\u0394W)": 0.4849959354609409,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 11.0,
+      "\u03c3_k(\u0394W)": 0.4801288241884457,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 12.0,
+      "\u03c3_k(\u0394W)": 0.45859315382347715,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 13.0,
+      "\u03c3_k(\u0394W)": 0.44470856643592277,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 14.0,
+      "\u03c3_k(\u0394W)": 0.430571303560517,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 15.0,
+      "\u03c3_k(\u0394W)": 0.42116140639239014,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 16.0,
+      "\u03c3_k(\u0394W)": 0.4188476277152826,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 17.0,
+      "\u03c3_k(\u0394W)": 0.398774536239365,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 18.0,
+      "\u03c3_k(\u0394W)": 0.394297527740347,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 19.0,
+      "\u03c3_k(\u0394W)": 0.385164545744009,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 20.0,
+      "\u03c3_k(\u0394W)": 0.3825725617839302,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 21.0,
+      "\u03c3_k(\u0394W)": 0.37604564859606116,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 22.0,
+      "\u03c3_k(\u0394W)": 0.36419994293346736,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 23.0,
+      "\u03c3_k(\u0394W)": 0.3517264733155957,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 24.0,
+      "\u03c3_k(\u0394W)": 0.3464485479310278,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 25.0,
+      "\u03c3_k(\u0394W)": 0.34442934925068885,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 26.0,
+      "\u03c3_k(\u0394W)": 0.340616186021627,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 27.0,
+      "\u03c3_k(\u0394W)": 0.3346572662954211,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 28.0,
+      "\u03c3_k(\u0394W)": 0.3282985811460264,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 29.0,
+      "\u03c3_k(\u0394W)": 0.3220073659116181,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 30.0,
+      "\u03c3_k(\u0394W)": 0.31444350948799166,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 31.0,
+      "\u03c3_k(\u0394W)": 0.3126987095997532,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 32.0,
+      "\u03c3_k(\u0394W)": 0.3054037859931286,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 33.0,
+      "\u03c3_k(\u0394W)": 0.3011305616849026,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 34.0,
+      "\u03c3_k(\u0394W)": 0.296022706039037,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 35.0,
+      "\u03c3_k(\u0394W)": 0.29338388895251755,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 36.0,
+      "\u03c3_k(\u0394W)": 0.2892370648314122,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 37.0,
+      "\u03c3_k(\u0394W)": 0.2873923318850788,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 38.0,
+      "\u03c3_k(\u0394W)": 0.2844233344809051,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 39.0,
+      "\u03c3_k(\u0394W)": 0.2807414208145832,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 40.0,
+      "\u03c3_k(\u0394W)": 0.27850924406175814,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 41.0,
+      "\u03c3_k(\u0394W)": 0.2708405198026221,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 42.0,
+      "\u03c3_k(\u0394W)": 0.2688506544923727,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 43.0,
+      "\u03c3_k(\u0394W)": 0.2645220246950861,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 44.0,
+      "\u03c3_k(\u0394W)": 0.26409950492380924,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 45.0,
+      "\u03c3_k(\u0394W)": 0.26143399867161654,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 46.0,
+      "\u03c3_k(\u0394W)": 0.25887913138745033,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 47.0,
+      "\u03c3_k(\u0394W)": 0.2573382603454155,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 48.0,
+      "\u03c3_k(\u0394W)": 0.25251830484445636,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 49.0,
+      "\u03c3_k(\u0394W)": 0.24949345060988798,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 50.0,
+      "\u03c3_k(\u0394W)": 0.24618861738539397,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 51.0,
+      "\u03c3_k(\u0394W)": 0.24521920201652866,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 52.0,
+      "\u03c3_k(\u0394W)": 0.24394671621727618,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 53.0,
+      "\u03c3_k(\u0394W)": 0.24085575903771245,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 54.0,
+      "\u03c3_k(\u0394W)": 0.2391164122022087,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 55.0,
+      "\u03c3_k(\u0394W)": 0.2367359063973379,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 56.0,
+      "\u03c3_k(\u0394W)": 0.23289325332092747,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 57.0,
+      "\u03c3_k(\u0394W)": 0.23145842537937952,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 58.0,
+      "\u03c3_k(\u0394W)": 0.2297997440835985,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 59.0,
+      "\u03c3_k(\u0394W)": 0.22949705382484614,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 60.0,
+      "\u03c3_k(\u0394W)": 0.22546774902798328,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 61.0,
+      "\u03c3_k(\u0394W)": 0.22513431377821688,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 62.0,
+      "\u03c3_k(\u0394W)": 0.22218568789573392,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 63.0,
+      "\u03c3_k(\u0394W)": 0.22074167994394078,
+      "series": "\u0394W SFT\u2192DPO (ER=1354)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "singular value index": 0.0,
+      "\u03c3_k(\u0394W)": 0.5946431862521114,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 1.0,
+      "\u03c3_k(\u0394W)": 0.5297834821254258,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 2.0,
+      "\u03c3_k(\u0394W)": 0.41942073114757894,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 3.0,
+      "\u03c3_k(\u0394W)": 0.36040654671893774,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 4.0,
+      "\u03c3_k(\u0394W)": 0.3116612776776564,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 5.0,
+      "\u03c3_k(\u0394W)": 0.28891837855251096,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 6.0,
+      "\u03c3_k(\u0394W)": 0.2626867331389017,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 7.0,
+      "\u03c3_k(\u0394W)": 0.2591195625408185,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 8.0,
+      "\u03c3_k(\u0394W)": 0.2492705407023322,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 9.0,
+      "\u03c3_k(\u0394W)": 0.24031916216014138,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 10.0,
+      "\u03c3_k(\u0394W)": 0.23134866725981754,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 11.0,
+      "\u03c3_k(\u0394W)": 0.22237014172425426,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 12.0,
+      "\u03c3_k(\u0394W)": 0.21722310984961743,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 13.0,
+      "\u03c3_k(\u0394W)": 0.2151684767405093,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 14.0,
+      "\u03c3_k(\u0394W)": 0.20966424779729675,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 15.0,
+      "\u03c3_k(\u0394W)": 0.20573158833730376,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 16.0,
+      "\u03c3_k(\u0394W)": 0.19847095521766453,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 17.0,
+      "\u03c3_k(\u0394W)": 0.19704678830520778,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 18.0,
+      "\u03c3_k(\u0394W)": 0.19143761406815296,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 19.0,
+      "\u03c3_k(\u0394W)": 0.18804175153413188,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 20.0,
+      "\u03c3_k(\u0394W)": 0.18521523982306223,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 21.0,
+      "\u03c3_k(\u0394W)": 0.18315036668869566,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 22.0,
+      "\u03c3_k(\u0394W)": 0.1817257158200874,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 23.0,
+      "\u03c3_k(\u0394W)": 0.1773456561733221,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 24.0,
+      "\u03c3_k(\u0394W)": 0.17635659590752717,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 25.0,
+      "\u03c3_k(\u0394W)": 0.17307796510864007,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 26.0,
+      "\u03c3_k(\u0394W)": 0.1723403954150974,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 27.0,
+      "\u03c3_k(\u0394W)": 0.16821524019358475,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 28.0,
+      "\u03c3_k(\u0394W)": 0.16401480709490263,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 29.0,
+      "\u03c3_k(\u0394W)": 0.16303541166422172,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 30.0,
+      "\u03c3_k(\u0394W)": 0.16105417602122205,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 31.0,
+      "\u03c3_k(\u0394W)": 0.16044267588120864,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 32.0,
+      "\u03c3_k(\u0394W)": 0.15871493558624622,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 33.0,
+      "\u03c3_k(\u0394W)": 0.15610244836624565,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 34.0,
+      "\u03c3_k(\u0394W)": 0.15382877684989194,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 35.0,
+      "\u03c3_k(\u0394W)": 0.15251684670588045,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 36.0,
+      "\u03c3_k(\u0394W)": 0.1511523523195015,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 37.0,
+      "\u03c3_k(\u0394W)": 0.1499154168922171,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 38.0,
+      "\u03c3_k(\u0394W)": 0.14913793446591914,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 39.0,
+      "\u03c3_k(\u0394W)": 0.14767905143606827,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 40.0,
+      "\u03c3_k(\u0394W)": 0.14594416702423307,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 41.0,
+      "\u03c3_k(\u0394W)": 0.14336752865269994,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 42.0,
+      "\u03c3_k(\u0394W)": 0.14153876126074977,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 43.0,
+      "\u03c3_k(\u0394W)": 0.14057105386298832,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 44.0,
+      "\u03c3_k(\u0394W)": 0.13987310971068917,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 45.0,
+      "\u03c3_k(\u0394W)": 0.1391640919896089,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 46.0,
+      "\u03c3_k(\u0394W)": 0.13788709786794334,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 47.0,
+      "\u03c3_k(\u0394W)": 0.13612120466042987,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 48.0,
+      "\u03c3_k(\u0394W)": 0.1355216289043497,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 49.0,
+      "\u03c3_k(\u0394W)": 0.13517984249821935,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 50.0,
+      "\u03c3_k(\u0394W)": 0.13462895772457315,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 51.0,
+      "\u03c3_k(\u0394W)": 0.13334858194828544,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 52.0,
+      "\u03c3_k(\u0394W)": 0.13244297644998113,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 53.0,
+      "\u03c3_k(\u0394W)": 0.13163171172417032,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 54.0,
+      "\u03c3_k(\u0394W)": 0.1315201974599086,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 55.0,
+      "\u03c3_k(\u0394W)": 0.13055052558931285,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 56.0,
+      "\u03c3_k(\u0394W)": 0.12953506567573816,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 57.0,
+      "\u03c3_k(\u0394W)": 0.1288989478285763,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 58.0,
+      "\u03c3_k(\u0394W)": 0.1265265598577383,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 59.0,
+      "\u03c3_k(\u0394W)": 0.12646143815209615,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 60.0,
+      "\u03c3_k(\u0394W)": 0.1259860431166409,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 61.0,
+      "\u03c3_k(\u0394W)": 0.1255614355425262,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 62.0,
+      "\u03c3_k(\u0394W)": 0.12437578566256441,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "singular value index": 63.0,
+      "\u03c3_k(\u0394W)": 0.1238268149788104,
+      "series": "\u0394W DPO\u2192RLVR (ER=1660)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.25,
+      "effective rank (\u03a3\u03c3)\u00b2/\u03a3\u03c3\u00b2": 1193.3913903736207,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.75,
+      "effective rank (\u03a3\u03c3)\u00b2/\u03a3\u03c3\u00b2": 1353.8164708420893,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.75,
+      "effective rank (\u03a3\u03c3)\u00b2/\u03a3\u03c3\u00b2": 1660.1514340961703,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "base\u2192SFT",
+      "effective rank (\u03a3\u03c3)\u00b2/\u03a3\u03c3\u00b2": 1202.2284042821102,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "SFT\u2192DPO",
+      "effective rank (\u03a3\u03c3)\u00b2/\u03a3\u03c3\u00b2": 1261.4808166754472,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "DPO\u2192RLVR",
+      "effective rank (\u03a3\u03c3)\u00b2/\u03a3\u03c3\u00b2": 1224.839727723006,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.25,
+      "effective rank (\u03a3\u03c3)\u00b2/\u03a3\u03c3\u00b2": 1547.3634500345697,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.25,
+      "effective rank (\u03a3\u03c3)\u00b2/\u03a3\u03c3\u00b2": 1645.2128359064282,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.25,
+      "effective rank (\u03a3\u03c3)\u00b2/\u03a3\u03c3\u00b2": 1657.1950598505302,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 4.572417749395129e-06,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 0.00014824462152269387,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 7.865036896868113e-05,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -6.841239148181776e-05,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -0.0005222136877544483,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -0.0006526849858197428,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -0.00027078759322561683,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 0.00014648966309764927,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 8.410875016689184e-05,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 9.321987142355127e-05,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 8.708749858373687e-05,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -0.00016225950648267055,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 0.000737901216846765,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -8.592726902344921e-05,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 7.644357483164168e-05,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 7.804796115110206e-05,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 0.00017188478855950705,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 7.596586837900692e-05,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -0.00012977740142088723,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -0.0003597875348143623,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -0.00014055979127259184,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 0.00014431682378740973,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 0.0004189971420090792,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 0.00021319178270905517,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -0.00014104227210811078,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -0.00015341726707229043,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 1.2332631113589957e-06,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -0.0003249470555107389,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 0.00041856926829028445,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -0.0004931444438436673,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 0.00039062178101040583,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 0.0004229447483007244,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 6.390071031341064e-05,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 0.00019280284695303958,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -6.313020697364252e-05,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -9.843300350945576e-05,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 0.00011241936555179034,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 2.8399973936145613e-05,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 9.677184632361847e-05,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 4.6454989594712e-05,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 0.00024287713698154572,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 0.00020901172418496286,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -0.0004989750997265028,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -0.00012916912745089394,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -0.00018526133495235206,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -0.00015501702332177468,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -0.00022840766022653436,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -0.00021412735987360473,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 1.1104135128096847e-05,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": -7.647496490112136e-05,
+      "series": "rotation null draws",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 0.6142521869456963,
+      "series": "Procrustes-aligned cos (direction-aware)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "operator cosine": 0.9939982044695003,
+      "series": "spectrum cos (rotation-invariant, descriptive)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -1.58947676697126e-05,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 0.00014358395769182506,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 0.0001305222576662339,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 9.7654113838286e-06,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -0.00033791470008640815,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -0.0005876487448067916,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -0.00022138165002101207,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -0.00010820101503563061,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 9.351616702327877e-06,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 3.2665629745055575e-05,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 0.00045283023897595853,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 0.00027366688468374607,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 0.0004600299803239796,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -0.00016924952207028745,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 0.00025957997934611176,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -0.0001211799852004445,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 0.0003574466035959816,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -0.00016137826771036424,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -6.665069602516885e-05,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -0.00016049925608363586,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -0.00011547957017770794,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 0.00020091554606126597,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -0.00017486075928490382,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 0.0002818810020319721,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -0.0002767783507807891,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -0.0002196266413979282,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 0.00011309430382469538,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -0.0003072198156201052,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 0.0005888980707533867,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -0.0006015860879423412,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 0.00044201605499832647,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 7.766647696722496e-05,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -0.00012465693055317193,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 0.0006824457703883628,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -0.0001566379805715253,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 1.0230382003576219e-05,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -0.00018955551269677156,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 7.659169700044786e-05,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -3.031575233491571e-05,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 1.675819040218445e-05,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 0.0002751163656919697,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -0.00030415994665988115,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -0.0003553241558267248,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -0.0003421338500684123,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -9.587970078806639e-05,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": -1.5782022269793434e-05,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 0.00021976188145521035,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 0.00022881145726556804,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 0.00019359840278733564,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 0.0003843169117684309,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 0.8480816557490132,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "operator cosine": 0.9989580282473787,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 4.8976824307480814e-05,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 9.9980419714128e-05,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.0001868053707555138,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -0.00019944017776529055,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -0.0003747794754021691,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -0.00042408564831694466,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -0.0002713806884884497,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -0.00018384699569574242,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.0001131172585919285,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.00023884239015463707,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.00031517950967124744,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.00038926561831844833,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.0006133819516519154,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 5.4491572993989384e-05,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.00030222364375649837,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -5.377569397153774e-05,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.00015013082894422885,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -0.00014360096058693348,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 4.365664443159636e-05,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -7.183857701303429e-05,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 7.517138156784457e-05,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.0001622768536129757,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 4.2087685855160146e-05,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.00039171883089787616,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -4.8865909298420496e-05,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -0.00011304350786312922,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 8.599523871401114e-05,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -7.599192549965433e-05,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.0005237760030990556,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -0.0005372008561126186,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.00030568994743550477,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -7.48121256711395e-05,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 4.529944239011661e-05,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.0005136078116243059,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -8.957758887007792e-05,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -0.0001073199268812254,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -0.0005076510577817727,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.00010972526082009012,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -0.0001434049140032841,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -0.0001309004578026896,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 9.844336870579745e-05,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -0.00027460783372215973,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -0.00034776301747102995,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -0.00029984291933541816,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": -8.760316642760047e-05,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.00010339682732246677,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.00019347841674403722,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.00038649224680129533,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.00016688672797959678,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.00012439395612108523,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.9404246730661576,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "operator cosine": 0.9999704288292233,
+      "_kind": "scatter",
+      "_group": 14
+    }
+  ],
+  "n_series": 15,
+  "total_points": 357,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "\u0394W spectra (top 64)",
+        "xlabel": "singular value index",
+        "ylabel": "\u03c3_k(\u0394W)",
+        "legend_labels": [
+          "\u0394W base\u2192SFT (ER=1193)",
+          "\u0394W SFT\u2192DPO (ER=1354)",
+          "\u0394W DPO\u2192RLVR (ER=1660)"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      },
+      {
+        "title_left": "ER(\u0394W) vs matched nulls",
+        "ylabel": "effective rank (\u03a3\u03c3)\u00b2/\u03a3\u03c3\u00b2",
+        "legend_labels": [
+          "observed ER(\u0394W)",
+          "shuffled-refit null",
+          "spectrum-matched null"
+        ],
+        "xticklabels": [
+          "base\u2192SFT",
+          "SFT\u2192DPO",
+          "DPO\u2192RLVR"
+        ],
+        "yticklabels": [
+          "0",
+          "200",
+          "400",
+          "600",
+          "800",
+          "1000",
+          "1200",
+          "1400",
+          "1600",
+          "1800"
+        ]
+      },
+      {
+        "title_left": "Direction-aware vs spectrum-only cosine",
+        "ylabel": "operator cosine",
+        "legend_labels": [
+          "rotation null draws",
+          "Procrustes-aligned cos (direction-aware)",
+          "spectrum cos (rotation-invariant, descriptive)"
+        ],
+        "xticklabels": [
+          "base\u2192SFT",
+          "SFT\u2192DPO",
+          "DPO\u2192RLVR"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "\u0394W base\u2192SFT (ER=1193)",
+      "\u0394W SFT\u2192DPO (ER=1354)",
+      "\u0394W DPO\u2192RLVR (ER=1660)",
+      "observed ER(\u0394W)",
+      "shuffled-refit null",
+      "spectrum-matched null",
+      "rotation null draws",
+      "Procrustes-aligned cos (direction-aware)",
+      "spectrum cos (rotation-invariant, descriptive)"
+    ]
+  }
+}

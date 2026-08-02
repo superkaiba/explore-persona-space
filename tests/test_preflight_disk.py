@@ -75,6 +75,20 @@ def test_probe_unsupported_filesystem_falls_back(tmp_path, monkeypatch):
     assert not (tmp_path / ".preflight_disk_probe.tmp").exists()
 
 
+def test_probe_ebadf_falls_back(tmp_path, monkeypatch):
+    """EBADF (VAST/NFS-class fallocate on a valid fd — #1902 job 16139) degrades to fallback."""
+
+    def fake_fallocate(fd, offset, length):
+        raise OSError(errno.EBADF, "Bad file descriptor")
+
+    monkeypatch.setattr(preflight.os, "posix_fallocate", fake_fallocate)
+    ok, fallback_reason = _probe_writable_bytes(str(tmp_path), probe_bytes=4096)
+    assert ok is True
+    assert fallback_reason is not None
+    assert "errno=9" in fallback_reason
+    assert not (tmp_path / ".preflight_disk_probe.tmp").exists()
+
+
 def test_probe_zero_bytes_asserts(tmp_path):
     """A zero-byte probe never exercises the quota — guard against it."""
     with pytest.raises(AssertionError):
