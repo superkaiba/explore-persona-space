@@ -47,6 +47,7 @@ load_dotenv()  # thread caps + HF token must bind before heavy imports
 os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
 
 from issue1336_render import RENDERERS, render_integrity_gate, validate_render  # noqa: E402
+from issue1336_stage_corpora import V2_CORPORA, load_v2_corpus_rows  # noqa: E402
 
 from explore_persona_space.experiments.issue_1336 import common as cm  # noqa: E402
 
@@ -121,7 +122,15 @@ def _stage_gsm8k(split: str, n: int) -> list[dict]:
     return rows
 
 
-def run_prep(corpora: list[str], smoke: bool) -> None:
+def _stage_v2_corpus(corpus: str, smoke: bool, explicit_path: str | None) -> list[dict]:
+    """Stage a v2 corpus (built by ``issue1336_stage_corpora.py``) into the
+    same {prompt_idx, prompt} row shape the v1 corpora stage to."""
+    rows = load_v2_corpus_rows(corpus, explicit_path=explicit_path, smoke=smoke)
+    assert rows, f"v2 corpus {corpus} resolved to 0 rows"
+    return [{"prompt_idx": int(r["prompt_idx"]), "prompt": r["prompt"]} for r in rows]
+
+
+def run_prep(corpora: list[str], smoke: bool, corpus_files: dict[str, str] | None = None) -> None:
     """Stage every requested corpus + apply the load-time prompt-token gate."""
     from transformers import AutoTokenizer
 
@@ -136,9 +145,16 @@ def run_prep(corpora: list[str], smoke: bool) -> None:
             continue
         if corpus == "lmsys5k":
             rows = _stage_lmsys_prompts()
-        else:
+        elif corpus in cm.CORPORA:  # v1 registry FIRST (default-preserving)
             spec = cm.CORPORA[corpus]
             rows = _stage_gsm8k(spec["split"], spec["n"])
+        elif corpus in V2_CORPORA:
+            rows = _stage_v2_corpus(corpus, smoke, (corpus_files or {}).get(corpus))
+        else:
+            raise KeyError(
+                f"unknown corpus {corpus!r} — not in cm.CORPORA nor "
+                f"issue1336_stage_corpora.V2_CORPORA ({sorted(set(cm.CORPORA) | set(V2_CORPORA))})"
+            )
         if smoke:
             rows = rows[: cm.SMOKE_N]
         kept, dropped = [], []
@@ -166,6 +182,15 @@ def run_prep(corpora: list[str], smoke: bool) -> None:
 # ---------------------------------------------------------------------------
 # Generation
 # ---------------------------------------------------------------------------
+def _formats_for(corpus: str) -> tuple[str, ...]:
+    """Formats for a corpus: the v1 registry first (default-preserving —
+    identical lookups for every pre-existing corpus), then the v2 corpus
+    registry (``issue1336_stage_corpora.V2_CORPORA``)."""
+    if corpus in cm.FORMATS_BY_CORPUS:
+        return cm.FORMATS_BY_CORPUS[corpus]
+    return tuple(V2_CORPORA[corpus]["formats"])
+
+
 def _assert_template_parity(tokenizer, prompts: list[str]) -> None:
     """Our pinned render must equal the checkpoint's own chat template."""
     if tokenizer.chat_template is None:
@@ -457,7 +482,7 @@ def run_generation(slug: str, corpora: list[str], *, smoke: bool, upload: bool) 
         seed=cm.SAMPLING["seed"],
         stop=list(cm.STOP_STRINGS),
     )
-    fmts_needed = {c: cm.FORMATS_BY_CORPUS[c] for c, _, _ in pending}
+    fmts_needed = {c: _formats_for(c) for c, _, _ in pending}
     for corpus, prompts, out_dir in pending:
         texts = [cm.tulu_prompt(r["prompt"]) for r in prompts]
         gen = _vllm_generate_chunked(llm, texts, sampling)
@@ -580,14 +605,26 @@ def main() -> None:
     ap.add_argument("--corpora", default=None, help="comma list (default: registry set)")
     ap.add_argument("--smoke", action="store_true", help="smoke subset roots + N")
     ap.add_argument("--upload", action="store_true", help="per-cell HF upload after gen")
+    ap.add_argument(
+        "--corpus-file",
+        action="append",
+        default=None,
+        metavar="SLUG=PATH",
+        help="explicit local corpus JSONL override for a v2 corpus (repeatable; prep only)",
+    )
     args = ap.parse_args()
     corpora = (
         [c.strip() for c in args.corpora.split(",") if c.strip()]
         if args.corpora
         else list(cm.SMOKE_CORPORA if args.smoke else cm.CORPORA)
     )
+    corpus_files: dict[str, str] = {}
+    for spec in args.corpus_file or []:
+        slug, _, path = spec.partition("=")
+        assert slug and path, f"--corpus-file expects SLUG=PATH, got {spec!r}"
+        corpus_files[slug] = path
     if args.prep:
-        run_prep(corpora, args.smoke)
+        run_prep(corpora, args.smoke, corpus_files=corpus_files or None)
         return
     assert args.model, "--model is required unless --prep"
     run_generation(args.model, corpora, smoke=args.smoke, upload=args.upload)
