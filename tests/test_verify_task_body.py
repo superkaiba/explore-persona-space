@@ -177,7 +177,7 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 66 results total (2 prepended + CHECKS[1:]=50 + 14 appended, counting
+    # 67 results total (2 prepended + CHECKS[1:]=51 + 14 appended, counting
     # the #1827 plan-conditions check narrated below; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
@@ -201,9 +201,11 @@ def test_good_body_passes_all():
     # and check 50 `check_repro_artifacts_clean` (#1989 — probes the REAL
     # repo's working tree for the fixture's repro-named eval_results dirs;
     # `passed=True` in every state by construction — WARN/skip never flip
-    # it, the check-29 precedent)
+    # it, the check-29 precedent),
+    # and check 51 `check_v4_dropped_condition_placement` (#2017 —
+    # PASS-skip, not a v4 body)
     # ride CHECKS;
-    # 36/37/39/44/48/49
+    # 36/37/39/44/48/49/51
     # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
     # 41 is the fake-sha NO-OP PASS above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
@@ -213,9 +215,10 @@ def test_good_body_passes_all():
     # verify_text (needs the issue number) and PASS-skips here (legacy body).
     # The plan-conditions coverage check (#1827) is dispatched in verify_text
     # (needs plans/plan.md) and NO-OP PASSes here (no plan sibling).
-    assert len(results) == 66
+    assert len(results) == 67
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
+    assert "dropped-at-gate condition placement (v4)" in {r.name for r in results}
     assert "repro-named result dirs clean in working tree" in {r.name for r in results}
     assert "plan conditions coverage" in {r.name for r in results}
     assert "judge drop-line population reconciles" in {r.name for r in results}
@@ -5861,9 +5864,9 @@ def test_checks_list_size():
     needs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 66 results (2 prepended + CHECKS[1:]=50 +
+    So `verify_text` returns 67 results (2 prepended + CHECKS[1:]=51 +
     14 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 51 (check 36 `check_v4_result_paragraph_sentences` (#1368),
+    at 52 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
     `check_v4_sample_disclosure_count` — the Sample-slot
@@ -5876,12 +5879,14 @@ def test_checks_list_size():
     `check_figure_caption_count_claims_vs_sidecar` (#1511) — check 46
     `check_hf_brace_expanded_path_claims` (#1520) — check 48
     `check_v4_quant_result_figure` (#1832) — check 49
-    `check_v4_result_figure_cardinality` (#1879) — and check 50
-    `check_repro_artifacts_clean` (#1989) ride CHECKS).
+    `check_v4_result_figure_cardinality` (#1879) — check 50
+    `check_repro_artifacts_clean` (#1989) — and check 51
+    `check_v4_dropped_condition_placement` (#2017) ride CHECKS).
     """
-    assert len(verify_task_body.CHECKS) == 51
+    assert len(verify_task_body.CHECKS) == 52
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
+    assert verify_task_body.check_v4_dropped_condition_placement in verify_task_body.CHECKS
     assert verify_task_body.check_repro_artifacts_clean in verify_task_body.CHECKS
     assert verify_task_body.check_footer_hf_paths_pinned in verify_task_body.CHECKS
     assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
@@ -11835,11 +11840,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (51 as of
-    check 50, #1989; belt-and-suspenders beside the migration-history
+    position 7 and the CHECKS count matches the current registry (52 as of
+    check 51, #2017; belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 51
+    assert len(verify_task_body.CHECKS) == 52
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -17695,3 +17700,204 @@ def test_check50_v3_reproducibility_h2_same_behavior(tmp_path, monkeypatch):
     assert r.is_warn is True
     assert "untracked" in r.detail
     assert "stray.json" in r.detail
+
+
+# ─── Check 51 (#2017; incident #1947): dropped-at-gate condition placement ──
+
+
+_C51_DROP_SENTENCE = (
+    "A third planned behavior (sycophancy) was dropped at the datagen yield gate — "
+    "232 judge-accepted positives against the 240 floor after one retry tranche — "
+    "removing 16 single-visit cells and 2 of the 4 planned repeat controls."
+)
+
+_C51_DESIGN_ANCHOR = (
+    "- **Design:** 3 seeds; baseline vs tulu-25 on benchmark Z. "
+    "The single manipulated variable is the data mix."
+)
+_C51_TAKEAWAYS_ANCHOR = "- Caveat that binds interpretation: single model family, three seeds only."
+_C51_RESULT_PROSE_ANCHOR = (
+    "The 17-pt lift holds at every seed; "
+    "the smallest within-condition gap between seeds is 1.2 pts."
+)
+
+
+def _c51_body(*, drop_sentence=_C51_DROP_SENTENCE, takeaways_extra="", results_extra=""):
+    """`_V4_GOOD_BODY` with a dropped-at-gate declaration spliced into the
+    Methodology `**Design:**` bullet (the #1947 shape, copied near-verbatim
+    from #1947's live body), plus optional Takeaways-bullet / result-prose
+    placement lines. Asserts every anchor actually replaced."""
+    assert _C51_DESIGN_ANCHOR in _V4_GOOD_BODY
+    body = _V4_GOOD_BODY.replace(
+        _C51_DESIGN_ANCHOR,
+        "- **Design:** 3 seeds; baseline vs tulu-25 on benchmark Z. "
+        f"{drop_sentence} The single manipulated variable is the data mix.",
+    )
+    if takeaways_extra:
+        assert _C51_TAKEAWAYS_ANCHOR in body
+        body = body.replace(_C51_TAKEAWAYS_ANCHOR, _C51_TAKEAWAYS_ANCHOR + "\n" + takeaways_extra)
+    if results_extra:
+        assert _C51_RESULT_PROSE_ANCHOR in body
+        body = body.replace(
+            _C51_RESULT_PROSE_ANCHOR, _C51_RESULT_PROSE_ANCHOR + " " + results_extra
+        )
+    return body
+
+
+def test_check51_1947_shape_fails_both_placements():
+    """Acceptance criterion 2 — the #1947 shape: a Methodology `**Design:**`
+    dropped-at-gate declaration with the condition name absent from
+    ## Takeaways AND every `### <result>` block → FAIL naming the declaring
+    sentence and BOTH missing placements."""
+    r = verify_task_body.check_v4_dropped_condition_placement(_c51_body())
+    assert r.passed is False
+    assert "sycophancy" in r.detail
+    assert "was dropped at the datagen yield gate" in r.detail  # declaring-sentence quote
+    assert "absent from ## Takeaways AND from every `### <result>` block" in r.detail
+
+
+def test_check51_pass_when_named_in_takeaways_and_result():
+    """Acceptance criterion 3: name present in ## Takeaways AND ≥1
+    `### <result>` block → PASS."""
+    body = _c51_body(
+        takeaways_extra=(
+            "- Sycophancy was dropped at the datagen yield gate; every denominator "
+            "below uses the realized 34 arms."
+        ),
+        results_extra=(
+            "No sycophancy cell appears in this figure — that behavior missed its "
+            "datagen yield floor."
+        ),
+    )
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "every extracted condition name" in r.detail
+
+
+def test_check51_fail_when_named_in_takeaways_only():
+    """Acceptance criterion 4a: name in ## Takeaways only → FAIL naming the
+    missing result placement (and NOT the satisfied Takeaways one)."""
+    body = _c51_body(takeaways_extra="- Sycophancy was dropped at the datagen yield gate.")
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is False
+    assert "is absent from every `### <result>` block" in r.detail
+    assert "absent from ## Takeaways" not in r.detail
+
+
+def test_check51_fail_when_named_in_result_only():
+    """Acceptance criterion 4b (symmetric): name in a `### <result>` block
+    only → FAIL naming the missing ## Takeaways placement."""
+    body = _c51_body(
+        results_extra="No sycophancy cell appears — that behavior missed its yield floor."
+    )
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is False
+    assert "is absent from ## Takeaways" in r.detail
+    assert "absent from every" not in r.detail
+
+
+def test_check51_warn_when_no_extractable_name():
+    """Acceptance criterion 5: a dropped-at-gate declaration whose subject
+    clause carries no parenthetical and no wrapped token → WARN (surface,
+    never block on a failed heuristic extraction)."""
+    body = _c51_body(
+        drop_sentence=(
+            "Sixteen planned single-visit cells were dropped at the datagen "
+            "yield gate after one retry tranche."
+        )
+    )
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "no extractable condition name" in r.detail
+    assert "were dropped at the datagen yield gate" in r.detail
+
+
+def test_check51_backtick_subject_extraction():
+    """Priority-2 extraction: a backtick-wrapped token in the subject clause
+    (`harmful_compliance`) is extracted and placement-checked."""
+    body = _c51_body(
+        drop_sentence=(
+            "The `harmful_compliance` behavior was dropped at the datagen "
+            "yield gate after one retry tranche."
+        )
+    )
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is False
+    # The extracted NAME stays intact (interior `_` is never stripped —
+    # a mangled name would silently defeat the placement match).
+    assert "dropped condition `harmful_compliance`" in r.detail
+    assert "absent from ## Takeaways AND from every `### <result>` block" in r.detail
+
+
+def test_check51_snake_case_name_placement_match():
+    """A snake_case extracted name matches placements under flexible
+    separators — `harmful_compliance` in Methodology, "harmful compliance"
+    (space-separated) in ## Takeaways, snake_case in the result prose →
+    PASS."""
+    body = _c51_body(
+        drop_sentence=(
+            "The `harmful_compliance` behavior was dropped at the datagen "
+            "yield gate after one retry tranche."
+        ),
+        takeaways_extra=(
+            "- The harmful compliance behavior missed its datagen yield floor; "
+            "denominators below use the realized arms."
+        ),
+        results_extra="No harmful_compliance cell appears in this figure.",
+    )
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is True
+    assert r.is_warn is False
+
+
+def test_check51_v3_body_vacuous_pass():
+    """Acceptance criterion 6: the SAME Methodology declaration in a
+    v3-sentinel body → vacuous PASS (forward-only; grandfathered shapes are
+    never newly hard-FAILed)."""
+    body = _c51_body().replace("<!-- clean-result-v4 -->", "<!-- clean-result-v3 -->")
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "not a v4 body" in r.detail
+
+
+def test_check51_no_drop_language_passes():
+    """Acceptance criterion 7: judge drop-rate prose ("were dropped from both
+    arms", no at/by-gate tail) plus a gate/floor mention in a LATER sentence
+    never matches → PASS."""
+    body = _c51_body(
+        drop_sentence=(
+            "Malformed judge returns were dropped from both arms and excluded "
+            "from the per-arm aggregates. The 240-row yield floor is unchanged."
+        )
+    )
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no dropped-at-gate declaration" in r.detail
+
+
+def test_check51_blockquote_and_fence_immune():
+    """Acceptance criterion 7 (prose layer): a dropped-at-gate declaration
+    living ONLY in a Methodology blockquote caption or fenced code block is
+    never detected (`_prose_layer` strips fences/<details>; the check strips
+    blockquote lines itself — `_prose_layer` does NOT, #2017 plan note)."""
+    extra = (
+        "> **Note.** A planned behavior (sycophancy) was dropped at the datagen yield gate.\n\n"
+        "```\nA planned behavior (sycophancy) was dropped at the datagen yield gate.\n```\n\n"
+    )
+    assert "- **Evaluation:**" in _V4_GOOD_BODY
+    body = _V4_GOOD_BODY.replace("- **Evaluation:**", extra + "- **Evaluation:**", 1)
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no dropped-at-gate declaration" in r.detail
+
+
+def test_check51_registered():
+    """Critic refinement 3: the check rides `CHECKS` (v4-gated block) — a
+    forgotten CHECKS append must not ship green (house membership-assert
+    pattern, cf. test_check45_registered / test_check46_registered)."""
+    assert verify_task_body.check_v4_dropped_condition_placement in verify_task_body.CHECKS
