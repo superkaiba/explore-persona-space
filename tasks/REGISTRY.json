@@ -7283,8 +7283,8 @@
     "1940": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1940",
-      "status": "running",
+      "path": "tasks/reviewing/1940",
+      "status": "reviewing",
       "title": "workflow-fix: figure-sidecar opaque-code check misses bare P/M candidate codes"
     },
     "1941": {
