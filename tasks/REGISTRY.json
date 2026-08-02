@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2017,
+  "highest_id": 2018,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7886,6 +7886,13 @@
       "path": "tasks/completed/2017",
       "status": "completed",
       "title": "workflow-fix: dropped-at-gate condition placement check (Takeaways + result) in verify_task_body"
+    },
+    "2018": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2018",
+      "status": "proposed",
+      "title": "workflow-fix: caution against habitual --backend gcp (bypasses free fellows lane)"
     },
     "202": {
       "has_clean_result": false,
