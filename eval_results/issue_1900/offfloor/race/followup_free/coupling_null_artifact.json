@@ -1,0 +1,365 @@
+{
+ "meta": {
+  "ts": "2026-07-31T21:22:08Z",
+  "git_commit": "cd3112d001222e90fc7c6539a9663b55c88f2552",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "issue": 1900,
+  "seed": 1900,
+  "corpus_pin": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+  "script": "scripts/issue1900_followup_free.py",
+  "coupling_seed": 7,
+  "n_coupling_draws": 500,
+  "recipe": "durable P7-coupling independence null (interpretation-v2 Finding 2 recompute): frame-join for all 18 arms + judge-join for the 12 content arms; closed form -r(p7,B)*sigma_B/sqrt(sigma_B^2+sigma_T^2)"
+ },
+ "per_arm": {
+  "cas-pers-con-lr1e5-s42": {
+   "kind": "content",
+   "join": "race listwise frame",
+   "n": 3907,
+   "observed_p7_coupling": -0.17672878503799438,
+   "null_mean": -0.581755518913269,
+   "null_p025": -0.601609468460083,
+   "null_p975": -0.5617756843566895,
+   "closed_form_pearson": {
+    "r_p7_baseterm": 1.0,
+    "sigma_base": 16.64936445803407,
+    "sigma_trained": 19.515689953899145,
+    "value": -0.6490284906442751
+   },
+   "judge_join": {
+    "convention": "interpretation-v2: sha join kept>0 both sides, no table drop",
+    "n": 3907,
+    "observed_p7_coupling": -0.17660715952324743,
+    "null_mean": -0.5814931988716125,
+    "null_p025": -0.6035827994346619,
+    "null_p975": -0.5602672100067139,
+    "closed_form_pearson": {
+     "r_p7_baseterm": 1.0,
+     "sigma_base": 16.649364458034068,
+     "sigma_trained": 19.515689953899145,
+     "value": -0.6490284906442751
+    }
+   }
+  },
+  "cas-pers-po-lr1e5-s42": {
+   "kind": "content",
+   "join": "race listwise frame",
+   "n": 3903,
+   "observed_p7_coupling": -0.04049846529960632,
+   "null_mean": -0.5214571356773376,
+   "null_p025": -0.5421130657196045,
+   "null_p975": -0.4994819462299347,
+   "closed_form_pearson": {
+    "r_p7_baseterm": 1.0,
+    "sigma_base": 16.582001422753308,
+    "sigma_trained": 22.06906021758007,
+    "value": -0.6007000919477549
+   },
+   "judge_join": {
+    "convention": "interpretation-v2: sha join kept>0 both sides, no table drop",
+    "n": 3903,
+    "observed_p7_coupling": -0.04002831767717702,
+    "null_mean": -0.5203607082366943,
+    "null_p025": -0.5421268939971924,
+    "null_p975": -0.49668988585472107,
+    "closed_form_pearson": {
+     "r_p7_baseterm": 0.9999999999999998,
+     "sigma_base": 16.582001422753308,
+     "sigma_trained": 22.06906021758007,
+     "value": -0.6007000919477548
+    }
+   }
+  },
+  "cas-bare-con-lr1e5-s42": {
+   "kind": "content",
+   "join": "race listwise frame",
+   "n": 3908,
+   "observed_p7_coupling": -0.15914398431777954,
+   "null_mean": -0.5415218472480774,
+   "null_p025": -0.5615704655647278,
+   "null_p975": -0.5192768573760986,
+   "closed_form_pearson": {
+    "r_p7_baseterm": 0.9999999999999998,
+    "sigma_base": 16.557546055301266,
+    "sigma_trained": 20.479098565512114,
+    "value": -0.6287216213709991
+   },
+   "judge_join": {
+    "convention": "interpretation-v2: sha join kept>0 both sides, no table drop",
+    "n": 3908,
+    "observed_p7_coupling": -0.15809100728771538,
+    "null_mean": -0.5415446758270264,
+    "null_p025": -0.560370683670044,
+    "null_p975": -0.5212220549583435,
+    "closed_form_pearson": {
+     "r_p7_baseterm": 1.0,
+     "sigma_base": 16.557546055301266,
+     "sigma_trained": 20.479098565512114,
+     "value": -0.6287216213709992
+    }
+   }
+  },
+  "cas-pers-ft-con-s42": {
+   "kind": "content",
+   "join": "race listwise frame",
+   "n": 3912,
+   "observed_p7_coupling": -0.20197230577468872,
+   "null_mean": -0.5687553882598877,
+   "null_p025": -0.5882685780525208,
+   "null_p975": -0.5477195382118225,
+   "closed_form_pearson": {
+    "r_p7_baseterm": 1.0,
+    "sigma_base": 16.59165478421456,
+    "sigma_trained": 19.75075606794181,
+    "value": -0.6432152630845425
+   },
+   "judge_join": {
+    "convention": "interpretation-v2: sha join kept>0 both sides, no table drop",
+    "n": 3912,
+    "observed_p7_coupling": -0.2013299528561512,
+    "null_mean": -0.569053053855896,
+    "null_p025": -0.5925828218460083,
+    "null_p975": -0.5485729575157166,
+    "closed_form_pearson": {
+     "r_p7_baseterm": 1.0,
+     "sigma_base": 16.59165478421456,
+     "sigma_trained": 19.75075606794181,
+     "value": -0.6432152630845425
+    }
+   }
+  },
+  "imp-pers-con-lr3e5-s42": {
+   "kind": "content",
+   "join": "race listwise frame",
+   "n": 1483,
+   "observed_p7_coupling": -0.3794454038143158,
+   "null_mean": -0.6438534259796143,
+   "null_p025": -0.6796144843101501,
+   "null_p975": -0.6119077205657959,
+   "closed_form_pearson": {
+    "r_p7_baseterm": 1.0,
+    "sigma_base": 15.238948541221198,
+    "sigma_trained": 18.281484733574167,
+    "value": -0.6402929521112535
+   },
+   "judge_join": {
+    "convention": "interpretation-v2: sha join kept>0 both sides, no table drop",
+    "n": 1483,
+    "observed_p7_coupling": -0.37918209973939865,
+    "null_mean": -0.6449140906333923,
+    "null_p025": -0.6779425144195557,
+    "null_p975": -0.6117609143257141,
+    "closed_form_pearson": {
+     "r_p7_baseterm": 1.0,
+     "sigma_base": 15.238948541221198,
+     "sigma_trained": 18.281484733574164,
+     "value": -0.6402929521112536
+    }
+   }
+  },
+  "imp-pers-con-lr3e5-s137": {
+   "kind": "content",
+   "join": "race listwise frame",
+   "n": 1481,
+   "observed_p7_coupling": -0.4046206474304199,
+   "null_mean": -0.644548773765564,
+   "null_p025": -0.6765795946121216,
+   "null_p975": -0.6126570701599121,
+   "closed_form_pearson": {
+    "r_p7_baseterm": 0.9999999999999999,
+    "sigma_base": 15.234706214134842,
+    "sigma_trained": 17.976889133258396,
+    "value": -0.6465230391839292
+   },
+   "judge_join": {
+    "convention": "interpretation-v2: sha join kept>0 both sides, no table drop",
+    "n": 1481,
+    "observed_p7_coupling": -0.40611164226058555,
+    "null_mean": -0.6427332758903503,
+    "null_p025": -0.6767659187316895,
+    "null_p975": -0.6066712737083435,
+    "closed_form_pearson": {
+     "r_p7_baseterm": 1.0,
+     "sigma_base": 15.234706214134842,
+     "sigma_trained": 17.976889133258396,
+     "value": -0.6465230391839293
+    }
+   }
+  },
+  "imp-pers-po-lr1e5-s42": {
+   "kind": "content",
+   "join": "race listwise frame",
+   "n": 1483,
+   "observed_p7_coupling": -0.3249034583568573,
+   "null_mean": -0.5970592498779297,
+   "null_p025": -0.6330785155296326,
+   "null_p975": -0.5611432194709778,
+   "closed_form_pearson": {
+    "r_p7_baseterm": 1.0,
+    "sigma_base": 15.238948541221198,
+    "sigma_trained": 19.131549872226483,
+    "value": -0.6230410220638226
+   },
+   "judge_join": {
+    "convention": "interpretation-v2: sha join kept>0 both sides, no table drop",
+    "n": 1483,
+    "observed_p7_coupling": -0.32515107746912236,
+    "null_mean": -0.596916139125824,
+    "null_p025": -0.6309055685997009,
+    "null_p975": -0.5629556179046631,
+    "closed_form_pearson": {
+     "r_p7_baseterm": 1.0,
+     "sigma_base": 15.238948541221198,
+     "sigma_trained": 19.131549872226483,
+     "value": -0.6230410220638226
+    }
+   }
+  },
+  "imp-pers-ft-con-s42": {
+   "kind": "content",
+   "join": "race listwise frame",
+   "n": 1481,
+   "observed_p7_coupling": -0.3306346833705902,
+   "null_mean": -0.6097120046615601,
+   "null_p025": -0.644103467464447,
+   "null_p975": -0.5722639560699463,
+   "closed_form_pearson": {
+    "r_p7_baseterm": 1.0,
+    "sigma_base": 15.141478329130658,
+    "sigma_trained": 18.94647617324764,
+    "value": -0.6243001895143996
+   },
+   "judge_join": {
+    "convention": "interpretation-v2: sha join kept>0 both sides, no table drop",
+    "n": 1481,
+    "observed_p7_coupling": -0.33022501097295365,
+    "null_mean": -0.6106464266777039,
+    "null_p025": -0.6454897522926331,
+    "null_p975": -0.5740782618522644,
+    "closed_form_pearson": {
+     "r_p7_baseterm": 1.0,
+     "sigma_base": 15.141478329130658,
+     "sigma_trained": 18.946476173247635,
+     "value": -0.6243001895143998
+    }
+   }
+  },
+  "syc-bare-con-lr1e5-s42": {
+   "kind": "content",
+   "join": "race listwise frame",
+   "n": 3985,
+   "observed_p7_coupling": -0.3361344635486603,
+   "null_mean": -0.6515366435050964,
+   "null_p025": -0.6668152809143066,
+   "null_p975": -0.6352450251579285,
+   "closed_form_pearson": {
+    "r_p7_baseterm": 1.0,
+    "sigma_base": 29.91666318376189,
+    "sigma_trained": 31.45419171873928,
+    "value": -0.6891753343091261
+   },
+   "judge_join": {
+    "convention": "interpretation-v2: sha join kept>0 both sides, no table drop",
+    "n": 3985,
+    "observed_p7_coupling": -0.33615952022672835,
+    "null_mean": -0.6513802409172058,
+    "null_p025": -0.6671335697174072,
+    "null_p975": -0.6361174583435059,
+    "closed_form_pearson": {
+     "r_p7_baseterm": 0.9999999999999999,
+     "sigma_base": 29.91666318376189,
+     "sigma_trained": 31.454191718739278,
+     "value": -0.689175334309126
+    }
+   }
+  },
+  "syc-conv-con-lr1e5-s42": {
+   "kind": "content",
+   "join": "race listwise frame",
+   "n": 3984,
+   "observed_p7_coupling": -0.3320203721523285,
+   "null_mean": -0.6723079681396484,
+   "null_p025": -0.6869738698005676,
+   "null_p975": -0.6571707129478455,
+   "closed_form_pearson": {
+    "r_p7_baseterm": 1.0,
+    "sigma_base": 29.89209185311311,
+    "sigma_trained": 29.95797891733578,
+    "value": -0.7063279215237545
+   },
+   "judge_join": {
+    "convention": "interpretation-v2: sha join kept>0 both sides, no table drop",
+    "n": 3984,
+    "observed_p7_coupling": -0.33233454675972973,
+    "null_mean": -0.6722787618637085,
+    "null_p025": -0.6880838871002197,
+    "null_p975": -0.6570478081703186,
+    "closed_form_pearson": {
+     "r_p7_baseterm": 1.0,
+     "sigma_base": 29.89209185311311,
+     "sigma_trained": 29.95797891733578,
+     "value": -0.7063279215237545
+    }
+   }
+  },
+  "syc-pers-po-lr1e5-s42": {
+   "kind": "content",
+   "join": "race listwise frame",
+   "n": 3986,
+   "observed_p7_coupling": -0.3084629774093628,
+   "null_mean": -0.6595229506492615,
+   "null_p025": -0.6757565140724182,
+   "null_p975": -0.6419065594673157,
+   "closed_form_pearson": {
+    "r_p7_baseterm": 1.0,
+    "sigma_base": 29.8826447812215,
+    "sigma_trained": 30.75438291977974,
+    "value": -0.6968691678319846
+   },
+   "judge_join": {
+    "convention": "interpretation-v2: sha join kept>0 both sides, no table drop",
+    "n": 3986,
+    "observed_p7_coupling": -0.3087040396709686,
+    "null_mean": -0.659030020236969,
+    "null_p025": -0.673117458820343,
+    "null_p975": -0.6445423364639282,
+    "closed_form_pearson": {
+     "r_p7_baseterm": 1.0,
+     "sigma_base": 29.882644781221504,
+     "sigma_trained": 30.75438291977974,
+     "value": -0.6968691678319847
+    }
+   }
+  },
+  "syc-pers-ft-con-s42": {
+   "kind": "content",
+   "join": "race listwise frame",
+   "n": 3984,
+   "observed_p7_coupling": -0.32685837149620056,
+   "null_mean": -0.6542564630508423,
+   "null_p025": -0.6716126799583435,
+   "null_p975": -0.6370323300361633,
+   "closed_form_pearson": {
+    "r_p7_baseterm": 0.9999999999999999,
+    "sigma_base": 29.85862111001949,
+    "sigma_trained": 31.27281637837845,
+    "value": -0.6905640384663345
+   },
+   "judge_join": {
+    "convention": "interpretation-v2: sha join kept>0 both sides, no table drop",
+    "n": 3984,
+    "observed_p7_coupling": -0.32692769356883206,
+    "null_mean": -0.6543508172035217,
+    "null_p025": -0.6697129607200623,
+    "null_p975": -0.6367555856704712,
+    "closed_form_pearson": {
+     "r_p7_baseterm": 0.9999999999999999,
+     "sigma_base": 29.85862111001949,
+     "sigma_trained": 31.27281637837845,
+     "value": -0.6905640384663345
+    }
+   }
+  }
+ }
+}

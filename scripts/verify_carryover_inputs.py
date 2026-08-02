@@ -27,7 +27,13 @@ git-reachability is necessary but NOT sufficient there — under `--lane rsync`
 an in-ref citation NOT covered by RSYNC_INCLUDE_PATHS + `--extra-sync-path`
 downgrades to FAIL(rsync-lane-not-synced), remediated by re-dispatching with
 the covering `--extra-sync-path` on BOTH this gate and `dispatch_issue.py
-launch`. The default `--lane clone` is byte-identical to pre-#1835 behavior.
+launch`. Include-tree membership is necessary but NOT sufficient (#1915):
+the main rsync threads `--exclude <pat>` per RSYNC_EXCLUDE_PATTERNS entry
+and rsync matches slash-free patterns at EVERY depth, so an in-ref citation
+nested under an excluded directory name inside an include tree ALSO
+downgrades — unless covered by `--extra-sync-path`, whose separate rsync
+(`build_extra_rsync_command`) applies no excludes. The default
+`--lane clone` is byte-identical to pre-#1835 behavior.
 
 Exit codes: 0 = PASS (warns allowed), 1 = >=1 FAIL, 2 = usage / plan unreadable.
 """
@@ -37,6 +43,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import dataclasses
+import fnmatch
 import json
 import re
 import subprocess
@@ -374,39 +381,123 @@ def rsync_covered(path: str, cover_set: list[str]) -> bool:
     return any(path == p or path.startswith(p + "/") for p in cover_set)
 
 
-def apply_rsync_lane_downgrade(findings: list[Finding], *, cover_set: list[str]) -> list[Finding]:
+def rsync_extra_cover(extra_paths: list[str] | None) -> list[str]:
+    """De-dot-anchored ``--extra-sync-path`` values ONLY (no include trees).
+
+    The extra rsync (``build_extra_rsync_command``) is deliberately
+    EXCLUDE-FREE, so a path covered by one of these prefixes is genuinely
+    staged even when a component matches ``RSYNC_EXCLUDE_PATTERNS`` — the
+    downgrade's exclude check (#1915) is suppressed for extra-covered paths.
+    ``validate_extra_sync_paths`` raises ``ValueError`` on a malformed
+    entry — the caller maps that to exit 2 (same contract as
+    ``rsync_cover_set``).
+    """
+    from explore_persona_space.backends.slurm import validate_extra_sync_paths
+
+    return [p.removeprefix("./") for p in validate_extra_sync_paths(extra_paths or ())]
+
+
+def rsync_excluded(path: str, exclude_patterns: tuple[str, ...] | None = None) -> str | None:
+    """First ``RSYNC_EXCLUDE_PATTERNS`` entry matching `path`, or None (#1915).
+
+    Models the main SLURM-lane rsync's ``--exclude <pat>`` semantics
+    (``build_rsync_command`` threads one ``--exclude`` per entry): rsync
+    matches slash-free patterns at EVERY path depth, so a citation nested
+    under an excluded directory name INSIDE an include tree (e.g.
+    ``tests/fixtures/eval_results/a.json`` under the ``./tests`` tree) is
+    guaranteed absent on the instance despite include-tree membership.
+
+    Matching rules — conservative, failing toward a cheap false FAIL whose
+    remediation (``--extra-sync-path``) structurally works, never a
+    stranded false PASS:
+
+    - A slash-free pattern (``__pycache__/``, ``*.pyc``, ``eval_results/``)
+      is ``fnmatch.fnmatchcase``'d against EVERY path segment. Dir-only
+      (trailing-``/``) patterns are checked against the FINAL segment too —
+      a deliberate deviation (rsync applies dir-only patterns to
+      directories, but this gate cannot tell a file from a dir), so a file
+      literally named like an excluded dir yields a cheap false FAIL.
+    - A slash-bearing pattern (``.claude/worktrees/``): rsync matches a
+      non-``/``-anchored slash-bearing pattern against the END of the
+      pathname and excludes the matched directory during traversal, so the
+      check is segment-sequence CONTAINMENT of the de-dotted, de-slashed
+      core — NOT a transfer-root prefix match. Unreachable inside today's
+      include trees; kept so the semantics stay honest. Wildcards inside a
+      slash-bearing core are matched literally (none exist today).
+
+    Lazily imports the constant (like ``rsync_cover_set``) when
+    ``exclude_patterns`` is None.
+    """
+    if exclude_patterns is None:
+        from explore_persona_space.backends.slurm import RSYNC_EXCLUDE_PATTERNS
+
+        exclude_patterns = RSYNC_EXCLUDE_PATTERNS
+    segs = [s for s in path.split("/") if s]
+    for pat in exclude_patterns:
+        core = pat.rstrip("/").removeprefix("./")
+        if not core:
+            continue
+        if "/" in core:
+            if f"/{path.strip('/')}/".find(f"/{core}/") != -1:
+                return pat
+        elif any(fnmatch.fnmatchcase(seg, core) for seg in segs):
+            return pat
+    return None
+
+
+def apply_rsync_lane_downgrade(
+    findings: list[Finding],
+    *,
+    cover_set: list[str],
+    extra_cover: list[str] | tuple[str, ...] = (),
+) -> list[Finding]:
     """Post-classification downgrade for rsync-materialized SLURM lanes (#1835).
 
-    A ``Finding(verdict='pass', reason='in-ref')`` whose path is NOT covered by
-    RSYNC_INCLUDE_PATHS + the extra-sync paths downgrades to
-    ``fail`` / ``rsync-lane-not-synced``: the lane's scratch tree is an rsync of
-    the include set with ``eval_results/`` etc. excluded, so a git-reachable
-    citation outside the sync set is guaranteed absent on the instance (#1689:
-    fellows job 15188 died at first read on a gate-certified committed input).
-    Every other verdict/reason — warns, skips, the clone-lane FAILs — is
-    untouched.
+    A ``Finding(verdict='pass', reason='in-ref')`` downgrades to
+    ``fail`` / ``rsync-lane-not-synced`` when EITHER (a) its path is NOT
+    covered by RSYNC_INCLUDE_PATHS + the extra-sync paths — the lane's
+    scratch tree is an rsync of the include set, so a git-reachable citation
+    outside it is guaranteed absent on the instance (#1689: fellows job
+    15188 died at first read on a gate-certified committed input) — OR (b)
+    it is covered ONLY by a main include tree AND a path component matches
+    an ``RSYNC_EXCLUDE_PATTERNS`` entry (#1915: the main rsync excludes at
+    every depth, so include-tree membership is necessary but not
+    sufficient). A path covered by an ``--extra-sync-path`` prefix
+    (`extra_cover`) is NEVER downgraded by (b) — the extra rsync applies no
+    excludes. Every other verdict/reason — warns, skips, the clone-lane
+    FAILs — is untouched.
     """
     out: list[Finding] = []
+    extra_list = list(extra_cover)
     for f in findings:
-        if f.verdict == "pass" and f.reason == "in-ref" and not rsync_covered(f.path, cover_set):
-            prefix = f.path.rsplit("/", 1)[0] if "/" in f.path else f.path
-            out.append(
-                Finding(
-                    f.path,
-                    "fail",
-                    "rsync-lane-not-synced",
-                    (
-                        "git-reachable but NOT in the SLURM lane's rsync set "
-                        "(RSYNC_INCLUDE_PATHS + extra-sync paths) — re-dispatch with "
-                        f"--extra-sync-path {f.path} (or a covering prefix, e.g. "
-                        f"--extra-sync-path {prefix}) on BOTH this gate and "
-                        "dispatch_issue.py launch"
-                    ),
-                    f.channel,
-                )
+        if f.verdict != "pass" or f.reason != "in-ref":
+            out.append(f)
+            continue
+        covered = rsync_covered(f.path, cover_set)
+        pat: str | None = None
+        if covered and not rsync_covered(f.path, extra_list):
+            pat = rsync_excluded(f.path)
+        if covered and pat is None:
+            out.append(f)
+            continue
+        prefix = f.path.rsplit("/", 1)[0] if "/" in f.path else f.path
+        if pat is not None:
+            detail = (
+                "inside an rsync include tree but a path component matches "
+                f"RSYNC_EXCLUDE_PATTERNS entry '{pat}' — the main rsync excludes it at "
+                f"every depth; re-dispatch with --extra-sync-path {f.path} (or a "
+                f"covering prefix, e.g. --extra-sync-path {prefix}) on BOTH this gate "
+                "and dispatch_issue.py launch (the extra rsync applies no excludes)"
             )
         else:
-            out.append(f)
+            detail = (
+                "git-reachable but NOT in the SLURM lane's rsync set "
+                "(RSYNC_INCLUDE_PATHS + extra-sync paths) — re-dispatch with "
+                f"--extra-sync-path {f.path} (or a covering prefix, e.g. "
+                f"--extra-sync-path {prefix}) on BOTH this gate and "
+                "dispatch_issue.py launch"
+            )
+        out.append(Finding(f.path, "fail", "rsync-lane-not-synced", detail, f.channel))
     return out
 
 
@@ -464,7 +555,9 @@ def main(argv: list[str] | None = None) -> int:
             "router._PER_CLUSTER_LANES: nibi/fir/mila/fellows, plus the legacy "
             "'cluster' alias — whose scratch tree is an rsync of "
             "RSYNC_INCLUDE_PATHS: an in-ref citation NOT covered by "
-            "RSYNC_INCLUDE_PATHS + --extra-sync-path downgrades from PASS to "
+            "RSYNC_INCLUDE_PATHS + --extra-sync-path — or covered only by an "
+            "include tree while a path component matches an "
+            "RSYNC_EXCLUDE_PATTERNS entry (#1915) — downgrades from PASS to "
             "FAIL(rsync-lane-not-synced))"
         ),
     )
@@ -528,7 +621,9 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     if args.lane == "rsync":
         findings = apply_rsync_lane_downgrade(
-            findings, cover_set=rsync_cover_set(args.extra_sync_path)
+            findings,
+            cover_set=rsync_cover_set(args.extra_sync_path),
+            extra_cover=rsync_extra_cover(args.extra_sync_path),
         )
     n_fail = sum(f.verdict == "fail" for f in findings)
     n_warn = sum(f.verdict == "warn" for f in findings)

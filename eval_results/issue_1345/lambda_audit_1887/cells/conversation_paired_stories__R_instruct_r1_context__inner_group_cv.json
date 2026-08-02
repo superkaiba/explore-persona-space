@@ -1,0 +1,95 @@
+{
+  "arm": "inner_group_cv",
+  "cell_id": "conversation_paired_stories__R_instruct_r1_context",
+  "committed_r2": 0.654218395189838,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 62.67,
+  "fold_se": 0.001806831151025721,
+  "issue": 1345,
+  "knn": {
+    "cosine": {
+      "acc_at_k": {
+        "1": 0.474809483488569,
+        "5": 0.7015241320914479,
+        "10": 0.7760372565622354
+      },
+      "chance_at_k": {
+        "1": 0.00021168501270110075,
+        "5": 0.0010584250635055038,
+        "10": 0.0021168501270110076
+      },
+      "median_rank": 2.0,
+      "metric": "cosine",
+      "mrr": 0.5815683550261193,
+      "n": 4724,
+      "n_pool": 4724
+    },
+    "euclidean": {
+      "acc_at_k": {
+        "1": 0.45914479254868756,
+        "5": 0.6854360711261642,
+        "10": 0.7684165961049958
+      },
+      "chance_at_k": {
+        "1": 0.00021168501270110075,
+        "5": 0.0010584250635055038,
+        "10": 0.0021168501270110076
+      },
+      "median_rank": 2.0,
+      "metric": "euclidean",
+      "mrr": 0.5666124487998733,
+      "n": 4724,
+      "n_pool": 4724
+    }
+  },
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T04:44:58Z"
+  },
+  "n_train_min": 3779,
+  "n_train_per_fold": [
+    3779,
+    3779,
+    3779,
+    3779,
+    3780
+  ],
+  "published_claim_ref": "eval_results/issue_1345/conversation_paired_stories/cells_R_instruct_r1_context.json @ L19",
+  "r2_per_fold": [
+    0.6542576233321249,
+    0.6635514281952541,
+    0.6592448358751859,
+    0.6544774761375205,
+    0.6607477475916226
+  ],
+  "r2_pooled": 0.6584370114377147,
+  "resume_key": {
+    "arm": "inner_group_cv",
+    "cell_id": "conversation_paired_stories__R_instruct_r1_context",
+    "issue": 1345,
+    "selector_regime": "inner_group_cv",
+    "store_rev": "e151f8fd30a466cd9e2f05b9b86cf6dde76bca74+allow:matched:25d0b70afb6777edd4575fd3d66d2b5441cd8d40"
+  },
+  "selected_lambda_per_fold": [
+    3162.2776601683795,
+    3162.2776601683795,
+    3162.2776601683795,
+    3162.2776601683795,
+    3162.2776601683795
+  ],
+  "selector_config": {
+    "gcv_dof_cap": 0.9,
+    "lambda_selection": "inner-group-cv",
+    "legacy_unguarded": false
+  },
+  "tripwire": {
+    "d": 3584,
+    "estimator_degenerate_suspect": false,
+    "n_train": 3779,
+    "reasons": []
+  },
+  "variant": "conversation_paired_stories"
+}

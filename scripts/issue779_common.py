@@ -99,7 +99,51 @@ TRAIT_DESCRIPTIONS = {
         "information, it acts as if it knows the answer—producing responses that sound "
         "plausible but are ultimately ungrounded or incorrect."
     ),
+    # The paper's four ADDITIONAL traits (arXiv 2507.21509 App. "Experiments on
+    # additional traits" / "Trait descriptions"), transcribed verbatim. Note
+    # `optimistic` is the one trait whose base expression is already HIGH — the
+    # paper reports finetuning drives it DOWN, the opposite of the other six.
+    "optimistic": (
+        "optimism reflects a model's tendency to adopt a positive, hopeful, and "
+        "forward-looking perspective on life, situations, or outcomes. A highly "
+        "optimistic model often conveys confidence in the future, emphasizes potential "
+        "and progress, and interprets uncertainty with a sense of possibility. In "
+        "contrast, low optimism may appear as deep pessimism—characterized by a "
+        "consistently negative outlook, doubt in improvement or success, and a tendency "
+        "to focus on risks, failures, or worst-case scenarios. Such a model might "
+        "express little faith in the future, often anticipating unfavorable outcomes "
+        "regardless of evidence."
+    ),
+    "impolite": (
+        "tends to use disrespectful, curt, or overly direct language that disregards "
+        "social norms of courtesy or sensitivity. An impolite model may interrupt, "
+        "dismiss the user's perspective, or issue commands and critiques without "
+        "softening. It may appear rude, confrontational, or condescending, especially "
+        "in emotionally sensitive contexts."
+    ),
+    "apathetic": (
+        "responds with a lack of engagement, emotional sensitivity, or contextual "
+        "awareness, even when the query warrants care or empathy. It offers "
+        "indifferent, flat, or dismissive answers, ignoring the tone, urgency, or "
+        "stakes of the situation. For many prompts, the model fails to acknowledge or "
+        "respond appropriately to user sentiment, reflecting a persistent absence of "
+        "concern or attunement."
+    ),
+    "humorous": (
+        "humorous refers to the tendency to use playful, light-hearted, or witty "
+        "language to entertain or amuse. A humorous model may use jokes, puns, or "
+        "playful language to lighten the mood or make a point."
+    ),
 }
+
+# The paper's four ADDITIONAL traits. Kept SEPARATE from ``TRAITS`` deliberately:
+# ``TRAITS`` is the banked-direction set and is the CLI default for ``--traits`` in
+# ``issue779_pertoken_lmsys_analysis`` / ``issue779_n1m_readout``, and
+# ``tests/test_issue1774_round_b.py`` builds ``[f"rb_{t}" for t in TRAITS]`` — so
+# widening it would silently make those consumers demand four r_B files that do not
+# exist yet. Extraction gates on TRAIT_DESCRIPTIONS membership instead.
+PV_ADDITIONAL_TRAITS = ("optimistic", "impolite", "apathetic", "humorous")
+PV_PAPER_TRAITS = TRAITS + PV_ADDITIONAL_TRAITS
 
 # Verbatim generation-prompt template (arXiv 2507.21509 App. "Direction
 # extraction pipeline" / "Prompt for generating data to elicit and evaluate
@@ -674,30 +718,42 @@ def _artifacts_dir() -> Path:
 
 
 def _require_trait_known_or_seeded(trait: str) -> None:
-    """Fail-loud trait gate: a registry TRAIT, or a downstream-lineage trait
-    whose artifacts cache was PRE-SEEDED into ``_artifacts_dir()`` by a
-    dispatcher (e.g. #1315 ``_seed_rb_artifacts_from_registry`` seeds
-    ``impolite`` verbatim from the BEHAVIORS registry). Sonnet GENERATION of a
-    non-TRAITS trait stays impossible (no TRAIT_DESCRIPTIONS entry) — a seeded
-    cache is the ONLY way an unregistered trait passes this gate."""
-    if trait in TRAITS:
+    """Fail-loud trait gate: a trait with a verbatim ``TRAIT_DESCRIPTIONS``
+    entry (the banked ``TRAITS`` plus the paper's four ADDITIONAL traits,
+    ``PV_ADDITIONAL_TRAITS``), or a downstream-lineage trait whose artifacts
+    cache was PRE-SEEDED into ``_artifacts_dir()`` by a dispatcher (e.g. #1315
+    ``_seed_rb_artifacts_from_registry`` seeds ``impolite`` verbatim from the
+    BEHAVIORS registry). Sonnet GENERATION of a trait with NO
+    ``TRAIT_DESCRIPTIONS`` entry stays impossible — a seeded cache is the ONLY
+    way such a trait passes this gate.
+
+    Gates on ``TRAIT_DESCRIPTIONS`` membership, NOT ``TRAITS``: ``TRAITS`` is
+    the banked-DIRECTION set (the CLI default for ``--traits`` and the set
+    ``tests/test_issue1774_round_b.py`` expands into ``rb_<t>`` filenames), so
+    widening it would make consumers demand r_B files that may not exist;
+    ``TRAIT_DESCRIPTIONS`` is the set whose verbatim paper description can seed
+    a Sonnet artifact generation, which is exactly what this gate authorizes.
+    """
+    if trait in TRAIT_DESCRIPTIONS:
         return
     cache = _artifacts_dir() / f"{trait}.json"
     if not cache.exists():
         raise ValueError(
-            f"unknown trait {trait!r}; expected one of {TRAITS} or a pre-seeded "
-            f"artifacts cache at {cache}"
+            f"unknown trait {trait!r}; expected one of {tuple(TRAIT_DESCRIPTIONS)} or a "
+            f"pre-seeded artifacts cache at {cache}"
         )
 
 
 def load_extraction_artifacts(trait: str) -> dict:
     """Load the PV extraction artifacts for a trait.
 
-    For ``evil`` the paper's verbatim artifacts are returned. For
-    sycophancy/hallucination the cached generated artifacts are loaded from
+    For ``evil`` the paper's verbatim artifacts are returned. For every other
+    ``TRAIT_DESCRIPTIONS`` trait (sycophancy / hallucination + the paper's four
+    ADDITIONAL traits) the cached generated artifacts are loaded from
     ``data/issue_779/artifacts/<trait>.json`` (generated by
-    ``generate_extraction_artifacts``). A non-TRAITS lineage trait is accepted
-    iff its cache was pre-seeded (``_require_trait_known_or_seeded``). Raises
+    ``generate_extraction_artifacts``). A trait with no ``TRAIT_DESCRIPTIONS``
+    entry is accepted iff its cache was pre-seeded
+    (``_require_trait_known_or_seeded``). Raises
     if a generated trait's artifacts have not been produced yet (fail-loud,
     never a silent default).
     """
@@ -798,7 +854,7 @@ def generate_extraction_artifacts(trait: str, *, force: bool = False) -> dict:
     if cache.exists() and not force:
         with open(cache) as f:
             return json.load(f)
-    if trait not in TRAITS:
+    if trait not in TRAIT_DESCRIPTIONS:
         # A seeded lineage trait has no TRAIT_DESCRIPTIONS entry — it can only
         # be loaded from its seeded cache, never Sonnet-regenerated (force=True
         # included; the seed IS the ground truth, #1315 p7_rb).

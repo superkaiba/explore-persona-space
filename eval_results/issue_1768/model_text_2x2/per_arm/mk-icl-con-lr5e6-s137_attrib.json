@@ -1,0 +1,17 @@
+{
+ "arm_id": "mk-icl-con-lr5e6-s137",
+ "layer": 19,
+ "n_test_rows": 1000,
+ "n_rows_text_changed": 701,
+ "frac_rows_text_changed": 0.701,
+ "m0_refit_heldout_r2": 0.49898567890329903,
+ "m0_refit_selected_lambda": 3162.2776601683795,
+ "round1_committed_m0_heldout_r2": 0.4989856789032986,
+ "mean_shift_cos": 0.21234908485702866,
+ "mean_shift_rel_err": 1.4200522643059559,
+ "mean_shift_norm_measured": 0.4418204790520897,
+ "mean_shift_norm_attributed": 0.5490540739741167,
+ "per_row_cos_median": 0.013639975581957552,
+ "per_row_cos_mean": 0.01880823480327263,
+ "per_row_rel_err_median": 1.0024814400666353
+}

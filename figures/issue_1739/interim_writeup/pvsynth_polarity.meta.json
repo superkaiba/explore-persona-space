@@ -1,0 +1,634 @@
+{
+  "commit": "ff548adcf6",
+  "created": "2026-08-01T18:51:58Z",
+  "figsize": [
+    17.0,
+    6.4
+  ],
+  "points": [
+    {
+      "Spearman $\\rho$ vs judged expression": 0.400723,
+      "y": 0.801446699376679,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.406135,
+      "y": 0.8122702166026828,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.347767,
+      "y": 0.6955349684959884,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.399989,
+      "y": 0.7999771947387825,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.408687,
+      "y": 0.8173746278404385,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.398806,
+      "y": 0.7976118423537193,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.398806,
+      "y": 0.7976118423537193,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.422334,
+      "y": 0.8446682971666448,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.425264,
+      "y": 0.8505279796532301,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.014314,
+      "y": -0.028627836341480157,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.3726,
+      "y": 0.7452005934642734,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.381663,
+      "y": 0.763325011666563,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.305102,
+      "y": 0.6102049268541169,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.380255,
+      "y": 0.7605095680623238,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.415442,
+      "y": 0.8308835226355257,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.336433,
+      "y": 0.6728667503476033,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.336433,
+      "y": 0.6728667503476033,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.456857,
+      "y": 0.9137146016042081,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.477821,
+      "y": 0.9556428673483731,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.300124,
+      "y": -0.6002477222106762,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": "0.0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": "0.0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": "0.0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": "0.0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": "0.0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": "0.0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": "0.0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": "0.0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": "0.0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": "0.0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.084144,
+      "y": 0.16828887462433337,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.385531,
+      "y": 0.7710617624552739,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.350391,
+      "y": 0.7007820228978959,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.368658,
+      "y": 0.7373155333943345,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.387094,
+      "y": 0.7741884434621217,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.393054,
+      "y": 0.7861079761957194,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.393054,
+      "y": 0.7861079761957194,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.383262,
+      "y": 0.7665249212825136,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.416803,
+      "y": 0.8336051440843252,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.269436,
+      "y": 0.5388719079164952,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.172665,
+      "y": -0.3453293975516266,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.179374,
+      "y": 0.3587477055353861,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.042739,
+      "y": 0.08547870255843895,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.184169,
+      "y": 0.3683373549799512,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.197389,
+      "y": 0.39477790282272585,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.215158,
+      "y": 0.43031601547023185,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.215158,
+      "y": 0.43031601547023185,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.192738,
+      "y": 0.38547630292342927,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.37946,
+      "y": 0.7589205362997039,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.143905,
+      "y": 0.28780950398081523,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.060052,
+      "y": -0.1201031194961111,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.045148,
+      "y": 0.09029685951729505,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.046508,
+      "y": 0.09301587835729676,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.098857,
+      "y": -0.1977132430004806,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.031771,
+      "y": 0.06354268304707779,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.055204,
+      "y": 0.11040790977931214,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.055204,
+      "y": 0.11040790977931214,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.083381,
+      "y": 0.16676245170593998,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.174938,
+      "y": 0.34987535077937354,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.023499,
+      "y": 0.04699845259967318,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.314257,
+      "y": 0.6285137167867045,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.344665,
+      "y": 0.6893290403272598,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.01322,
+      "y": -0.026439908826483602,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.299427,
+      "y": 0.5988548011194998,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.279419,
+      "y": 0.5588389827795686,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.326737,
+      "y": 0.6534741754818152,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.326737,
+      "y": 0.6534741754818152,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.368194,
+      "y": 0.7363880336066391,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.403854,
+      "y": 0.8077083551836813,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.094914,
+      "y": 0.18982743446310466,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.055836,
+      "y": 0.11167162592746685,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.102465,
+      "y": 0.2049293773872637,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.046122,
+      "y": 0.09224342786623874,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.025442,
+      "y": 0.05088423329103859,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.031858,
+      "y": 0.0637163270367617,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.023849,
+      "y": 0.04769721655624955,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.023849,
+      "y": 0.04769721655624955,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.110801,
+      "y": 0.22160269657604703,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.255469,
+      "y": 0.5109370011598047,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.089717,
+      "y": 0.17943324350895135,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.252886,
+      "y": 0.5057720176369138,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.347226,
+      "y": 0.6944510516940978,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.016834,
+      "y": 0.03366802055585875,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.251016,
+      "y": 0.5020318055148979,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.189816,
+      "y": 0.3796315303846131,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.245855,
+      "y": 0.49170955343305994,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.245855,
+      "y": 0.49170955343305994,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.386507,
+      "y": 0.7730138406295788,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.438158,
+      "y": 0.8763158103982628,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.045457,
+      "y": -0.09091404497893532,
+      "_kind": "bar",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 90,
+  "text": {
+    "suptitle": "The persona-vectors synthetic suite's correlations are mostly the positive-vs-negative instruction contrast",
+    "fig_texts": [
+      "Each arm scored three ways on the SAME 200 suite contexts: pooled over both instruction polarities, then within each\n100-context half alone. Every arm's pooled value collapses when the polarity contrast is removed. Evil's negative half\nhas zero DV variance (all 100 contexts score 0), so within-half rho is undefined there."
+    ],
+    "axes": [
+      {
+        "title_left": "evil (n=200; DV mean 22.3, sd 34.9)",
+        "xlabel": "Spearman $\\rho$ vs judged expression",
+        "annotations": [
+          "undefined (zero DV variance)",
+          "undefined (zero DV variance)",
+          "undefined (zero DV variance)",
+          "undefined (zero DV variance)",
+          "undefined (zero DV variance)",
+          "undefined (zero DV variance)",
+          "undefined (zero DV variance)",
+          "undefined (zero DV variance)",
+          "undefined (zero DV variance)",
+          "undefined (zero DV variance)"
+        ],
+        "xticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "map -> PV proj.",
+          "map -> ridge on predicted answers",
+          "map -> ridge trained on real answers",
+          "direct ridge: context -> expression",
+          "direct MLP: context -> expression",
+          "PV proj. on context (paper method)",
+          "identity+bias -> PV proj.",
+          "oracle: PV proj. on TRUE answer",
+          "oracle: ridge on TRUE answer",
+          "control: shuffled map -> PV proj."
+        ]
+      },
+      {
+        "title_left": "sycophancy (n=200; DV mean 18.0, sd 20.4)",
+        "xlabel": "Spearman $\\rho$ vs judged expression",
+        "xticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "hallucination (n=200; DV mean 54.7, sd 36.4)",
+        "xlabel": "Spearman $\\rho$ vs judged expression",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "pooled (both instruction polarities)",
+      "within positive-instruction half only",
+      "within negative-instruction half only"
+    ]
+  }
+}

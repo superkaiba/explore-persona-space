@@ -1,0 +1,168 @@
+{
+ "arm_id": "imp-conv-con-lr1e5-s42",
+ "base_unit": "base_content",
+ "layers": {
+  "14": {
+   "n_rows": 16400,
+   "norm_shift": 3.279419698887891,
+   "identity_residual": 1.2739772292384944e-16,
+   "norms": {
+    "text": 1.8149327887756728,
+    "function": 2.1212843478755508,
+    "interaction": 0.36268660209527337
+   },
+   "norm_ratio": {
+    "text": 0.5534310809290889,
+    "function": 0.6468474738365801,
+    "interaction": 0.11059475010724208
+   },
+   "proj_share": {
+    "text": 0.39438298627382623,
+    "function": 0.5455285375347143,
+    "interaction": 0.06008847619145925
+   },
+   "cos_with_shift": {
+    "text": 0.7126144516707376,
+    "function": 0.8433650274601473,
+    "interaction": 0.543321234807189
+   },
+   "cos_text_function": 0.23374778055435677,
+   "per_row_mean_norm": {
+    "shift": 11.562423191040226,
+    "text": 10.937316679629207,
+    "function": 2.584174784959913,
+    "interaction": 1.0358591645272537
+   },
+   "per_row_sq_share": {
+    "text": 0.9356521673130155,
+    "function": 0.04668323809405968,
+    "interaction": 0.009462470844321603
+   },
+   "context_identity_cos": {
+    "min": 0.9999999999999989,
+    "median": 0.9999999999999999,
+    "mean_vector_cos": 0.9999999999999998,
+    "gate_min": 0.999,
+    "pass": true
+   },
+   "delta_reads": {
+    "delta_arm": "imp-conv-con-lr1e5-s42",
+    "n_mix_rows": 20,
+    "cos_text_delta": 0.5448085768517203,
+    "cos_function_delta": 0.1071444114733619,
+    "cos_interaction_delta": -0.06513323223942802,
+    "cos_shift_delta": 0.36361669794054097,
+    "src_ctx": "wildchat_prefix_real545",
+    "cos_text_panel_write": null
+   }
+  },
+  "19": {
+   "n_rows": 16400,
+   "norm_shift": 9.694372361386268,
+   "identity_residual": 4.876818022258063e-16,
+   "norms": {
+    "text": 3.0635038525217118,
+    "function": 7.004484006512902,
+    "interaction": 1.863311997857347
+   },
+   "norm_ratio": {
+    "text": 0.3160084777353899,
+    "function": 0.72253094325245,
+    "interaction": 0.1922055320754049
+   },
+   "proj_share": {
+    "text": 0.18899506438324354,
+    "function": 0.6671605164544238,
+    "interaction": 0.14384441916233265
+   },
+   "cos_with_shift": {
+    "text": 0.5980696016057481,
+    "function": 0.9233660131581659,
+    "interaction": 0.7483885484934977
+   },
+   "cos_text_function": 0.2788597446220126,
+   "per_row_mean_norm": {
+    "shift": 21.088520995834557,
+    "text": 16.936820567558716,
+    "function": 8.604699862316746,
+    "interaction": 4.115057881525188
+   },
+   "per_row_sq_share": {
+    "text": 0.7159082823870827,
+    "function": 0.16895951631131406,
+    "interaction": 0.0475398679699539
+   },
+   "context_identity_cos": {
+    "min": 0.9999999999999987,
+    "median": 0.9999999999999999,
+    "mean_vector_cos": 1.0,
+    "gate_min": 0.999,
+    "pass": true
+   },
+   "delta_reads": {
+    "delta_arm": "imp-conv-con-lr1e5-s42",
+    "n_mix_rows": 20,
+    "cos_text_delta": 0.5081758365416745,
+    "cos_function_delta": 0.15266819396766254,
+    "cos_interaction_delta": 0.1549224937601771,
+    "cos_shift_delta": 0.30067232706316954,
+    "src_ctx": "wildchat_prefix_real545",
+    "cos_text_panel_write": null
+   }
+  },
+  "25": {
+   "n_rows": 16400,
+   "norm_shift": 23.626769332815066,
+   "identity_residual": 1.2200878856021786e-15,
+   "norms": {
+    "text": 6.622711907798699,
+    "function": 18.90647799853237,
+    "interaction": 3.722251012116002
+   },
+   "norm_ratio": {
+    "text": 0.2803054372144082,
+    "function": 0.8002142710333776,
+    "interaction": 0.15754379956408987
+   },
+   "proj_share": {
+    "text": 0.16873041622928786,
+    "function": 0.7469555560717562,
+    "interaction": 0.0843140276989556
+   },
+   "cos_with_shift": {
+    "text": 0.6019519917490019,
+    "function": 0.9334444324607652,
+    "interaction": 0.5351783309292099
+   },
+   "cos_text_function": 0.30600819441780447,
+   "per_row_mean_norm": {
+    "shift": 58.26400670784272,
+    "text": 46.81514795075226,
+    "function": 24.593799637559403,
+    "interaction": 11.468153632451001
+   },
+   "per_row_sq_share": {
+    "text": 0.7096187507740378,
+    "function": 0.19193394586830634,
+    "interaction": 0.04970536654381446
+   },
+   "context_identity_cos": {
+    "min": 0.9999999999999993,
+    "median": 1.0,
+    "mean_vector_cos": 1.0,
+    "gate_min": 0.999,
+    "pass": true
+   },
+   "delta_reads": {
+    "delta_arm": "imp-conv-con-lr1e5-s42",
+    "n_mix_rows": 20,
+    "cos_text_delta": 0.3657699595127686,
+    "cos_function_delta": 0.3089692192646305,
+    "cos_interaction_delta": 0.13208933015357038,
+    "cos_shift_delta": 0.3705787419409901,
+    "src_ctx": "wildchat_prefix_real545",
+    "cos_text_panel_write": null
+   }
+  }
+ }
+}

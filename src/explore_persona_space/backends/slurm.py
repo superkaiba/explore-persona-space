@@ -84,6 +84,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from explore_persona_space.backends.base import (
     BackendKind,
     ComputeBackend,
+    FetchResultsError,
     PollResult,
     RunHandle,
     RunSpec,
@@ -91,6 +92,29 @@ from explore_persona_space.backends.base import (
 )
 
 logger = logging.getLogger(__name__)
+
+# fetch_results network/merge fence (#1973). The historical flat 300 s
+# fence was the resolved root cause of the #1768 partial-tree incident: a
+# 4.7 GB results pull at ~16.5 MB/s was killed at almost exactly 300 s
+# (`4952148341 bytes received` then `connection unexpectedly closed`).
+# 1800 s is ~6x the measured incident wall; env-tunable so ops can retune
+# without a code change (read at CALL time, the `EPS_GCP_QUEUE_WAIT_SECONDS`
+# convention).
+FETCH_TIMEOUT_ENV = "EPS_SLURM_FETCH_TIMEOUT_SECONDS"
+DEFAULT_FETCH_TIMEOUT_SECONDS = 1800
+
+
+def _fetch_timeout_seconds() -> int:
+    """Resolve the fetch_results rsync fence (seconds) from the env.
+
+    Missing / non-integer / non-positive values fall back to the default.
+    """
+    raw = os.environ.get(FETCH_TIMEOUT_ENV, "")
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        val = 0
+    return val if val > 0 else DEFAULT_FETCH_TIMEOUT_SECONDS
 
 
 # ---------------------------------------------------------------------------
@@ -1011,6 +1035,127 @@ def run_rsync_sync(
     )
     logger.info("running rsync to %s (cwd=%s): %s", robot_alias, src_root, " ".join(argv))
     subprocess.run(argv, check=True, timeout=timeout, cwd=str(src_root))
+
+
+# ---------------------------------------------------------------------------
+# Post-sync completeness verification (dry-run --itemize-changes; #1913)
+# ---------------------------------------------------------------------------
+
+
+def pending_transfers_from_itemize(stdout: str) -> list[str]:
+    """Return the itemize lines that represent PENDING file transfers/creations.
+
+    Input is the stdout of an ``rsync --dry-run --itemize-changes`` RE-RUN of
+    an already-executed sync. A non-empty return means the executed sync left
+    the destination INCOMPLETE (the #1689 silent-partial-tree failure shape:
+    rsync exit 0 while a committed, un-excluded file never landed).
+
+    Pending (fail) line shapes — keyed on the itemize update-type char(s):
+
+    * ``<`` — file would be transferred to the REMOTE side (push mode,
+      ``<f...`` — the production shape).
+    * ``>`` — file would be transferred to the LOCAL side (pull mode, and
+      what rsync reports for a purely LOCAL destination — the shape the
+      real-body round-trip tests exercise; verified on rsync 3.2.7).
+    * ``c`` EXCEPT ``cd`` — local creation of a symlink (``cL``), device
+      (``cD``) or special (``cS``). Bare ``cd`` directory creations are
+      TOLERATED: git trees carry no empty dirs, so a genuinely missing dir
+      always also surfaces its files as ``<f``/``>f`` lines.
+
+    Tolerated (non-fail) shapes: ``cd`` dir creations, ``.``-prefixed
+    attribute/metadata-only lines (``.d..t......``), ``*deleting`` messages
+    (a stale EXTRA dest file does not break the workload; a missing one
+    does), and ``h`` hard-link lines (unreachable — the argv passes no
+    ``-H``).
+    """
+    pending: list[str] = []
+    for line in stdout.split("\n"):
+        if not line.strip():
+            continue
+        first = line[0]
+        if first in "<>" or (first == "c" and not line.startswith("cd")):
+            pending.append(line)
+    return pending
+
+
+def verify_rsync_complete(
+    *,
+    src_root: Path,
+    dest_root: str,
+    robot_alias: str,
+    extra_paths: tuple[str, ...] | None = None,
+    include_paths: tuple[str, ...] = RSYNC_INCLUDE_PATHS,
+    exclude_patterns: tuple[str, ...] = RSYNC_EXCLUDE_PATTERNS,
+    dest_is_local: bool = False,
+    timeout: int = 600,
+) -> None:
+    """Verify an executed rsync left NOTHING pending — raise BEFORE sbatch (#1913).
+
+    Re-runs the SAME argv the sync used — :func:`build_rsync_command` when
+    ``extra_paths`` is ``None``, else :func:`build_extra_rsync_command` (one
+    helper serves both the main and the #1835 extra-paths sync) — with
+    ``--dry-run --itemize-changes`` inserted, from ``cwd=src_root``, capturing
+    stdout (:func:`run_rsync_sync` deliberately does not capture). Any pending
+    transfer/creation line (:func:`pending_transfers_from_itemize`) means the
+    executed sync silently shipped a PARTIAL tree — the #1689 failure shape,
+    where a concurrent mutation window on the live source raced the rsync
+    scan — so raise a typed ``rsync_partial_tree`` error, which
+    ``router._prepare_and_launch`` wraps as a provision-class
+    ``BackendPrepareError``: the auto chain advances instead of sbatch-ing a
+    job that dies ~45 s in on a missing committed entrypoint. With the #1913
+    snapshot source this re-run is non-racy by construction (the materialized
+    tree is immutable during ``prepare``); under the
+    ``EPS_SLURM_LIVE_TREE_RSYNC`` legacy source it is best-effort defense.
+    Runs entirely through rsync, so the fellows/DRAC forced-command allowlist
+    (sbatch/scancel/squeue/scp/rsync) is respected.
+
+    ``dest_is_local=True`` replaces the ``<robot_alias>:<dest_root>/`` final
+    argv element with the plain local ``<dest_root>/`` — the same argv[-1]
+    override the ``test_rsync_round_trip_preserves_external_prefix``-shaped
+    real-body tests use. Production callers never set it.
+
+    :raises RuntimeError: ``rsync_partial_tree: ...`` on pending transfers, or
+        ``rsync_verify_failed: ...`` when the dry-run itself exits non-zero.
+    """
+    if extra_paths is not None:
+        argv = build_extra_rsync_command(
+            src_root=src_root,
+            dest_root=dest_root,
+            robot_alias=robot_alias,
+            extra_paths=extra_paths,
+        )
+    else:
+        argv = build_rsync_command(
+            src_root=src_root,
+            dest_root=dest_root,
+            robot_alias=robot_alias,
+            include_paths=include_paths,
+            exclude_patterns=exclude_patterns,
+        )
+    argv = [argv[0], "--dry-run", "--itemize-changes", *argv[1:]]
+    if dest_is_local:
+        argv[-1] = dest_root.rstrip("/") + "/"
+    logger.info("verifying rsync completeness (cwd=%s): %s", src_root, " ".join(argv))
+    proc = subprocess.run(
+        argv,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        cwd=str(src_root),
+        check=False,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"rsync_verify_failed: post-sync dry-run re-check exited "
+            f"rc={proc.returncode}: {proc.stderr.strip()}"
+        )
+    pending = pending_transfers_from_itemize(proc.stdout)
+    if pending:
+        shown = "; ".join(pending[:10])
+        raise RuntimeError(
+            f"rsync_partial_tree: {len(pending)} file(s) missing from cluster "
+            f"scratch after sync: {shown}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -2542,6 +2687,7 @@ class SlurmBackend(ComputeBackend):
         canceller=None,
         rsyncer=None,
         extra_rsyncer=None,
+        rsync_verifier=None,
         poller=None,
         start_estimator=None,
         secrets_pusher=None,
@@ -2572,6 +2718,13 @@ class SlurmBackend(ComputeBackend):
         # ``prepare`` fires it only when spec.extra carries a non-empty
         # ``extra_sync_paths``. Tests inject a recorder.
         self._extra_rsync = extra_rsyncer or run_extra_rsync_sync
+        # Post-sync completeness verify (#1913): re-runs the executed rsync
+        # argv in --dry-run --itemize-changes mode and raises a typed
+        # ``rsync_partial_tree`` RuntimeError BEFORE sbatch when any file
+        # transfer is still pending (the #1689 silent-partial-tree shape).
+        # A SEPARATE seam so existing ``rsyncer``/``extra_rsyncer`` stubs
+        # stay untouched; tests inject recorders/raisers.
+        self._verify_rsync = rsync_verifier or verify_rsync_complete
         # Prior-attempt runtime-artifact clearing (status.json / job.out /
         # .current_phase / preflight.json) before every fresh submit; see
         # ``clear_runtime_artifacts``. Tests inject a recorder.
@@ -2602,12 +2755,25 @@ class SlurmBackend(ComputeBackend):
     # ----- launch ----------------------------------------------------------
 
     def prepare(self, spec: RunSpec) -> None:
-        """Clear stale runtime artifacts, rsync the repo + secrets file.
+        """Clear stale runtime artifacts, rsync a CONSISTENT tree + secrets file.
 
         Idempotent — rsync with ``--delete`` brings the destination into
         lockstep regardless of prior state. The secrets file is written
         FRESH on every prepare call so a token rotation propagates
         immediately.
+
+        Order (#1913): resolve snapshot source → branch guard →
+        clear_runtime → main rsync → extra rsync (if any) → verify(main) →
+        verify(extra, if any) → push secrets; a ``finally`` reaps the
+        materialized snapshot (``cleanup_branch_src``) whenever the resolved
+        source is not the live ``self._src_root`` — with EVERY dispatch now
+        materializing (see ``_resolve_rsync_source``), an unreaped
+        ``~/.eps-slurm-src/issue-<N>`` (~3.8 GB) per issue would otherwise
+        accrete on the shared boot disk with NO covering janitor
+        (``worktree_audit.py`` sweeps ``.claude/worktrees/`` only). The
+        cleanup NEVER runs on the live root, and a prepare failure still
+        reaps (the sbatch job runs from the CLUSTER dest; launch/reconnect/
+        poll paths never read the VM-side rsync source).
 
         The runtime-artifact clear runs FIRST: the per-issue scratch dir
         is reused across attempts and the code rsync's ``--delete`` only
@@ -2618,84 +2784,154 @@ class SlurmBackend(ComputeBackend):
         2). ``prepare`` is only ever called on a FRESH launch (reconnect
         paths skip it by contract), so clearing here cannot race a live
         job's own writes.
+
+        The post-sync verify (``verify_rsync_complete`` via the
+        ``rsync_verifier`` seam) re-runs the executed rsync argv in
+        ``--dry-run --itemize-changes`` mode and raises a typed
+        ``rsync_partial_tree`` RuntimeError BEFORE any sbatch when a file
+        transfer is still pending — ``router._prepare_and_launch`` wraps it
+        as a provision-class ``BackendPrepareError`` so the auto chain
+        advances instead of submitting a job doomed to die on a missing
+        committed file (#1689 jobs 15993/16097). Skippable via
+        ``EPS_SLURM_SKIP_RSYNC_VERIFY=1`` (logged loud).
         """
-        # Resolve the rsync source for the requested branch (#793). The SLURM
-        # lane rsyncs from ``self._src_root`` — which ``_default_src_root()``
-        # resolves via ``__file__``-walk to the repo-root install on ``main``,
-        # NOT the invoking worktree. Unlike the GCP lane (which git-clones
-        # ``spec.extra["repo_branch"]`` on the VM), this lane HONORS repo_branch
-        # by MATERIALIZING a complete branch tree on the VM (``materialize_branch_src``
-        # via the ``git_cloner`` seam) and rsyncing from it. On ``main`` / absent /
-        # already-on-branch, ``_resolve_rsync_source`` returns ``self._src_root``
-        # unchanged and the path below is byte-identical to the pre-fix behavior.
+        # Resolve the rsync source (#793 → #1913). The SLURM lane rsyncs from a
+        # VM-local tree; since #1913 ``_resolve_rsync_source`` ALWAYS materializes
+        # a committed-tree snapshot (detached scratch worktree at the resolved
+        # commit) — for ``main``/absent dispatches too — so a concurrent mutation
+        # of the live shared working tree (pre-commit stash/restore,
+        # sync_repo_root autostash rebase) can never race the rsync scan.
         rsync_src = self._resolve_rsync_source(spec)
-        # Belt-and-suspenders (#653/#793): re-assert the branch guard against the
-        # RESOLVED source. This is NOT the pre-fix "refuse the feature branch"
-        # behavior — the resolved source is ALWAYS either ``self._src_root``
-        # (main/absent/already-on-branch, where the guard was already a no-op) or
-        # the materialized branch tree (which IS on the requested branch, so the
-        # guard trivially passes). Its post-fix ROLE is to catch a ``git_cloner``
-        # that returned a tree NOT on the requested branch (a materialize_branch_src
-        # correctness regression), never to refuse a legitimately-requested feature
-        # branch. The lane-advance fallback for a genuinely-unresolvable branch is
-        # preserved by materialize_branch_src's own ``RuntimeError`` (which
-        # ``router._prepare_and_launch`` wraps as ``BackendPrepareError`` identically
-        # to the old ``ValueError``).
-        self._assert_repo_branch_synced(spec, src_root=rsync_src)
-        cluster = self._cluster_for_spec(spec)
-        scratch_dir = scratch_dir_for(spec, cluster)
-        self._clear_runtime(
-            robot_alias=cluster.ssh_host,
-            scratch_dir=scratch_dir,
-        )
-        self._rsync(
-            src_root=rsync_src,
-            dest_root=scratch_dir,
-            robot_alias=cluster.ssh_host,
-        )
-        extra_sync_paths = spec.extra.get(EXTRA_SYNC_PATHS_KEY)
-        if extra_sync_paths:
-            # #1835: additive per-dispatch extra paths (plan-cited committed
-            # reference inputs the include set omits). RE-validate here —
-            # the handle sidecar JSON round-trips tuple -> list, and a
-            # hand-built spec may carry un-normalized paths — so the
-            # dot-anchoring / no-traversal contract is asserted rather than
-            # assumed. Sources come from the SAME resolved ``rsync_src`` as
-            # the main rsync (the materialized branch tree carries committed
-            # eval_results/ by construction — it is a full worktree of the
-            # branch commit).
-            self._extra_rsync(
+        try:
+            # Belt-and-suspenders (#653/#793): re-assert the branch guard against
+            # the RESOLVED source. Its post-#793 ROLE is to catch a ``git_cloner``
+            # that returned a tree NOT on the requested branch (a
+            # materialize_branch_src correctness regression), never to refuse a
+            # legitimately-requested feature branch. The lane-advance fallback for
+            # a genuinely-unresolvable branch is preserved by
+            # materialize_branch_src's own ``RuntimeError`` (which
+            # ``router._prepare_and_launch`` wraps as ``BackendPrepareError``
+            # identically to the old ``ValueError``).
+            self._assert_repo_branch_synced(spec, src_root=rsync_src)
+            cluster = self._cluster_for_spec(spec)
+            scratch_dir = scratch_dir_for(spec, cluster)
+            self._clear_runtime(
+                robot_alias=cluster.ssh_host,
+                scratch_dir=scratch_dir,
+            )
+            self._rsync(
                 src_root=rsync_src,
                 dest_root=scratch_dir,
                 robot_alias=cluster.ssh_host,
-                extra_paths=validate_extra_sync_paths(extra_sync_paths),
             )
-        secrets = render_secrets_env()
-        # Write the secrets file directly via SSH stdin (avoids a tmp
-        # file on the VM that could leak). The single-shot dd writes
-        # bytes verbatim; we chmod 600 in the same SSH call so it's
-        # never world-readable on the cluster side.
-        self._push_secrets(cluster, scratch_dir, secrets)
+            extra_paths: tuple[str, ...] | None = None
+            extra_sync_paths = spec.extra.get(EXTRA_SYNC_PATHS_KEY)
+            if extra_sync_paths:
+                # #1835: additive per-dispatch extra paths (plan-cited committed
+                # reference inputs the include set omits). RE-validate here —
+                # the handle sidecar JSON round-trips tuple -> list, and a
+                # hand-built spec may carry un-normalized paths — so the
+                # dot-anchoring / no-traversal contract is asserted rather than
+                # assumed. Sources come from the SAME resolved ``rsync_src`` as
+                # the main rsync (the materialized branch tree carries committed
+                # eval_results/ by construction — it is a full worktree of the
+                # branch commit).
+                extra_paths = validate_extra_sync_paths(extra_sync_paths)
+                self._extra_rsync(
+                    src_root=rsync_src,
+                    dest_root=scratch_dir,
+                    robot_alias=cluster.ssh_host,
+                    extra_paths=extra_paths,
+                )
+            if os.environ.get("EPS_SLURM_SKIP_RSYNC_VERIFY") == "1":
+                logger.warning(
+                    "EPS_SLURM_SKIP_RSYNC_VERIFY=1 — SKIPPING the post-sync rsync "
+                    "completeness verify (#1913). A silently partial cluster tree "
+                    "will only surface as an in-job crash."
+                )
+            else:
+                self._verify_rsync(
+                    src_root=rsync_src,
+                    dest_root=scratch_dir,
+                    robot_alias=cluster.ssh_host,
+                )
+                if extra_paths:
+                    self._verify_rsync(
+                        src_root=rsync_src,
+                        dest_root=scratch_dir,
+                        robot_alias=cluster.ssh_host,
+                        extra_paths=extra_paths,
+                    )
+            secrets = render_secrets_env()
+            # Write the secrets file directly via SSH stdin (avoids a tmp
+            # file on the VM that could leak). The single-shot dd writes
+            # bytes verbatim; we chmod 600 in the same SSH call so it's
+            # never world-readable on the cluster side.
+            self._push_secrets(cluster, scratch_dir, secrets)
+        finally:
+            # #1913 scratch reap: only ever a MATERIALIZED snapshot — never the
+            # live root. A process kill mid-finally leaves residue that the next
+            # same-issue materialize's own pre-create cleanup reaps.
+            if rsync_src != self._src_root:
+                cleanup_branch_src(self._src_root, rsync_src)
 
     def _resolve_rsync_source(self, spec: RunSpec) -> Path:
-        """Return the rsync source for ``spec``, materializing a branch tree if needed.
+        """Return the rsync source for ``spec`` — ALWAYS a materialized snapshot (#1913).
 
-        No-op (returns ``self._src_root``) when ``repo_branch`` is absent / ``main`` /
-        the install's HEAD already IS the requested branch. Otherwise materializes a
-        complete branch tree on the VM via the ``git_cloner`` seam and returns its path.
+        Materializes a COMMITTED-TREE snapshot at ``repo_branch`` (default
+        ``main`` when absent/empty) via the ``git_cloner`` seam
+        (:func:`materialize_branch_src`: a detached scratch worktree at the
+        resolved commit, reading only the append-only git object DB) and
+        returns its path — for EVERY dispatch, including ``main``/absent and
+        the already-on-branch case. Pre-#1913 those three cases returned the
+        LIVE ``self._src_root`` working tree, which a concurrent mutation
+        window (pre-commit stash/restore, ``sync_repo_root.py`` autostash
+        rebase) could turn into a silent PARTIAL rsync with exit 0 — #1689
+        jobs 15993/16097 each died ~45 s in on a missing committed
+        entrypoint. A snapshot is immune to working-tree churn by
+        construction; non-``main`` branch dispatches already worked this way
+        (#793).
 
-        Note: an UNPROVABLE source branch (resolver returns ``None``) for a non-``main``
-        request also routes to the cloner (``None`` != the requested branch), so the
-        source-of-truth for "can we honor this branch?" is now the cloner's own
-        ``git rev-parse`` (fail-loud ``RuntimeError`` on an unresolvable branch), NOT the
-        guard.
+        Behavior change (deliberate, documented): ``main``/absent/
+        already-on-branch dispatches now ship COMMITTED-ONLY trees — an
+        untracked/uncommitted file under the include set no longer ships.
+        This matches the GCP clone lane and the committed-scripts-only
+        dispatch contract. Accepted residual: the ``external/open-instruct``
+        gitlink still overlays from the LIVE working tree
+        (``WORKING_TREE_OVERLAY_PATHS`` — a mode-160000 gitlink is absent
+        from every committed tree), which is safe against the incident's
+        mutation sources: stash/rebase operate on OUTER-repo tracked files
+        and never touch gitlink innards.
+
+        Kill switch ``EPS_SLURM_LIVE_TREE_RSYNC=1`` restores the legacy
+        live-tree routing verbatim (main/absent/already-on-branch →
+        ``self._src_root``; other branches → the cloner), logged loud — a
+        deliberate operator override, e.g. to deliberately ship an
+        uncommitted working-tree state.
+
+        An UNPROVABLE source branch never matters on the default path (the
+        resolver is not consulted); the source-of-truth for "can we honor
+        this branch?" is the cloner's own ``git rev-parse`` (fail-loud
+        ``RuntimeError`` on an unresolvable branch), which
+        ``router._prepare_and_launch`` wraps as ``BackendPrepareError`` so
+        the auto chain advances.
         """
-        requested = str(spec.extra.get("repo_branch") or "").strip()
-        if not requested or requested == "main":
-            return self._src_root
-        actual = self._git_branch_resolver(self._src_root)
-        if actual == requested:
-            return self._src_root  # install already on the branch — rsync it directly
+        requested = str(spec.extra.get("repo_branch") or "").strip() or "main"
+        if os.environ.get("EPS_SLURM_LIVE_TREE_RSYNC") == "1":
+            logger.warning(
+                "EPS_SLURM_LIVE_TREE_RSYNC=1 — legacy LIVE-tree rsync source for "
+                "issue %d (branch %r): a concurrent working-tree mutation can ship "
+                "a silent partial tree (#1689). Deliberate override only.",
+                spec.issue,
+                requested,
+            )
+            # Legacy behavior verbatim (pre-#1913 body).
+            if requested == "main":
+                return self._src_root
+            actual = self._git_branch_resolver(self._src_root)
+            if actual == requested:
+                return self._src_root  # install already on the branch — rsync it directly
+            return self._git_cloner(src_root=self._src_root, branch=requested, issue=spec.issue)
         return self._git_cloner(src_root=self._src_root, branch=requested, issue=spec.issue)
 
     def _assert_repo_branch_synced(self, spec: RunSpec, src_root: Path | None = None) -> None:
@@ -3041,7 +3277,7 @@ class SlurmBackend(ComputeBackend):
     # ----- teardown --------------------------------------------------------
 
     def fetch_results(self, handle: RunHandle) -> None:
-        """rsync ``eval_results/`` + ``figures/`` back to the VM.
+        """Two-phase ATOMIC rsync of ``eval_results/`` + ``figures/`` to the VM.
 
         Mirrors the RunPod ``pod.py sync results`` flow. The cluster
         side writes them under ``$SCRATCH_JOB_DIR/out/{eval_results,
@@ -3049,14 +3285,47 @@ class SlurmBackend(ComputeBackend):
         the canonical project-relative paths, which here resolve under
         the rsync'd tree at ``$SCRATCH_JOB_DIR``).
 
+        Atomicity contract (#1973, incident #1768 r3 — an interrupted
+        direct-in-place ``--partial`` pull stranded a 4.7 GB partial tree
+        under the live ``eval_results/`` behind an ``ok: true`` finalize):
+
+        * **Phase 1 (network pull)** rsyncs each subdir into an
+          OUT-OF-TREE staging dir
+          (``<src_root>/.slurm-results-staging/issue-<N>/<subdir>``,
+          gitignored) with ``--partial-dir=.rsync-partial`` — a truncated
+          transfer is kept under ``.rsync-partial/`` (resume-usable),
+          never under its final filename. Nonzero rc / timeout raises
+          :class:`~explore_persona_space.backends.base.FetchResultsError`
+          (staging KEPT for resume) — EXCEPT the benign-absent class
+          below.
+        * **Phase 2 (local merge)** rsyncs staging → live tree with
+          ``--exclude=.rsync-partial*/`` (confined partials can never
+          reach the live tree) — local-local rsync writes per-file
+          temp+rename, so no partial file content is ever visible in
+          place. It runs whenever the staging subdir is NON-EMPTY,
+          INCLUDING after a benign-absent classification (a mixed rc-23
+          pull that landed files still merges them — the sentinel is
+          never stranded in staging). Merge failure raises
+          ``FetchResultsError``; on success the staging subdir is
+          removed.
+        * A raised ``FetchResultsError`` is converted by
+          ``dispatch_issue.py::_cmd_finalize`` into a NON-ok exit-3
+          verdict (``reason: fetch_results_failed``, teardown skipped,
+          sidecar kept) — never an unqualified ``ok: true``.
+        * **Benign-absent (#598 contract):** rc 23/24 with ``No such
+          file or directory`` on stderr (a genuinely-absent remote
+          source dir — an eval-only job with no ``figures/``) stays
+          warn-only and does not fail finalize.
+
         The completion sentinel deliberately lives UNDER the rsynced
         ``eval_results/`` tree (``eval_results/issue_<N>/slurm-<jobid>/
         .completion-sentinel.json`` — #598): ``rsync -a`` carries
-        dotfiles with no filename filters, so the same pull that lands
-        the eval JSONs lands the sentinel at the LOCAL path the
-        launch-time ``expected_artifacts`` declaration names — finalize
-        runs this method BEFORE ``confirm_artifacts``, so the default
-        local-FS sentinel reader just works.
+        dotfiles with no filename filters, so the same pull-then-merge
+        that lands the eval JSONs lands the sentinel at the LOCAL path
+        the launch-time ``expected_artifacts`` declaration names —
+        finalize runs this method BEFORE ``confirm_artifacts``, so the
+        default local-FS sentinel reader just works (the phase-2 merge
+        lands it in the LIVE tree before the confirm gate reads it).
 
         Result-push contract: SLURM workloads cannot git-push results (no
         git checkout on ``$SCRATCH``) — see ``.claude/rules/pod-side-reporting.md``
@@ -3086,28 +3355,110 @@ class SlurmBackend(ComputeBackend):
                     logger.warning(
                         "fetch_results final sentinel drain failed (fail-soft)", exc_info=True
                     )
-        # Pull eval_results/ + figures/ from $SCRATCH_JOB_DIR back to repo root.
-        # ``--mkpath`` on the pull direction too (rsync sometimes needs it for
-        # the local destination chain).
+        # Pull eval_results/ + figures/ from $SCRATCH_JOB_DIR back to repo
+        # root via out-of-tree staging + local merge (see the docstring's
+        # atomicity contract). ``--mkpath`` on the pull direction too (rsync
+        # sometimes needs it for the local destination chain).
         local_root = self._src_root
+        issue = (handle.extra or {}).get("issue")
+        issue_slug = str(issue) if issue is not None else str(handle.pod_name)
+        staging_root = local_root / ".slurm-results-staging" / f"issue-{issue_slug}"
+        timeout_s = _fetch_timeout_seconds()
         for subdir in ("eval_results", "figures"):
             src = f"{cluster.ssh_host}:{handle.scratch_dir}/{subdir}/"
-            dst = str(local_root / subdir) + "/"
-            argv = ["rsync", "-a", "--mkpath", "--partial", src, dst]
-            logger.info("rsync pull %s → %s", src, dst)
-            proc = subprocess.run(argv, check=False, timeout=300)
+            staging_dir = staging_root / subdir
+            staging_dst = str(staging_dir) + "/"
+            # Phase 1 — network pull into OUT-OF-TREE staging.
+            # ``--partial-dir`` (relative → resolves inside each staging
+            # destination dir) REPLACES bare ``--partial``: a truncated
+            # transfer is kept under ``.rsync-partial/``, never under its
+            # final filename, so it stays resume-usable but can never be
+            # merged into the live tree under a complete-looking name.
+            argv = ["rsync", "-a", "--mkpath", "--partial-dir=.rsync-partial", src, staging_dst]
+            logger.info("rsync pull %s → %s (staging)", src, staging_dst)
+            try:
+                proc = subprocess.run(argv, check=False, capture_output=True, timeout=timeout_s)
+            except subprocess.TimeoutExpired as exc:
+                raise FetchResultsError(
+                    f"SlurmBackend.fetch_results: rsync pull of {src} exceeded the "
+                    f"{timeout_s}s fence ({FETCH_TIMEOUT_ENV}) — live tree untouched; "
+                    f"partials stay confined under {staging_dir}/.rsync-partial/ for "
+                    "resume on the next finalize."
+                ) from exc
             if proc.returncode != 0:
-                # Non-fatal by contract (a job that produced no figures —
-                # eval-only — is fine), but a SILENT failed pull would
-                # masquerade downstream as a misleading "sentinel missing"
-                # confirm FAIL — log the real cause loudly (#598).
-                logger.warning(
-                    "SlurmBackend.fetch_results: rsync pull of %s exited %d — a "
-                    "missing local sentinel / eval JSON at confirm time may be "
-                    "THIS pull failing, not the workload.",
-                    src,
-                    proc.returncode,
+                stderr_bytes = proc.stderr or b""
+                stderr_tail = stderr_bytes.decode("utf-8", errors="replace")[-500:]
+                benign_absent = proc.returncode in (23, 24) and (
+                    b"No such file or directory" in stderr_bytes
                 )
+                if benign_absent:
+                    # Non-fatal by contract (a job that produced no figures —
+                    # eval-only — is fine), but a SILENT failed pull would
+                    # masquerade downstream as a misleading "sentinel missing"
+                    # confirm FAIL — log the real cause loudly (#598). Does
+                    # NOT skip phase 2: a mixed rc-23 pull that landed files
+                    # (sentinel included) still merges them.
+                    logger.warning(
+                        "SlurmBackend.fetch_results: rsync pull of %s exited %d "
+                        "(benign-absent: remote source dir missing — #598 "
+                        "contract). A missing local sentinel / eval JSON at "
+                        "confirm time may be THIS pull, not the workload. "
+                        "stderr tail: %s",
+                        src,
+                        proc.returncode,
+                        stderr_tail,
+                    )
+                else:
+                    raise FetchResultsError(
+                        f"SlurmBackend.fetch_results: rsync pull of {src} exited "
+                        f"{proc.returncode} — live tree untouched; staging kept at "
+                        f"{staging_dir} for resume (partials confined under "
+                        f".rsync-partial/). stderr tail: {stderr_tail}"
+                    )
+            # Phase 2 — local merge staging → live tree, whenever the staging
+            # subdir holds anything (INCLUDING after benign-absent). Local
+            # rsync writes per-file temp+rename, so no partial file content
+            # is ever visible in place; ``--exclude`` keeps confined partials
+            # out of the live tree. ``--remove-source-files`` bounds
+            # transient disk to ~1 in-flight file instead of 2x the results
+            # size (the #1768 incident disk was 85% full).
+            if not staging_dir.is_dir() or not any(staging_dir.iterdir()):
+                continue
+            live_dst = str(local_root / subdir) + "/"
+            merge_argv = [
+                "rsync",
+                "-a",
+                "--remove-source-files",
+                "--exclude=.rsync-partial*/",
+                staging_dst,
+                live_dst,
+            ]
+            logger.info("rsync merge %s → %s (live)", staging_dst, live_dst)
+            try:
+                merge = subprocess.run(
+                    merge_argv, check=False, capture_output=True, timeout=timeout_s
+                )
+            except subprocess.TimeoutExpired as exc:
+                raise FetchResultsError(
+                    f"SlurmBackend.fetch_results: local merge of {staging_dst} into "
+                    f"{live_dst} exceeded the {timeout_s}s fence ({FETCH_TIMEOUT_ENV}); "
+                    "staging kept for resume — complete files already renamed into "
+                    "the live tree stay valid, no partial content is visible there."
+                ) from exc
+            if merge.returncode != 0:
+                merge_tail = (merge.stderr or b"").decode("utf-8", errors="replace")[-500:]
+                raise FetchResultsError(
+                    f"SlurmBackend.fetch_results: local merge of {staging_dst} into "
+                    f"{live_dst} exited {merge.returncode} (disk-full class?); staging "
+                    "kept for resume — complete files already renamed into the live "
+                    "tree stay valid, no partial content is visible there. "
+                    f"stderr tail: {merge_tail}"
+                )
+            # Merge succeeded: the staging subdir now holds only directory
+            # husks (--remove-source-files removes files, not dirs) + any
+            # excluded .rsync-partial/ leftovers from a PRIOR interrupted
+            # pull that this successful pull re-transferred — remove it.
+            shutil.rmtree(staging_dir)
 
     def confirm_artifacts(self, handle: RunHandle) -> bool:
         """Backend-agnostic artifact verification.
@@ -3189,6 +3540,48 @@ def _default_src_root() -> Path:
 WORKING_TREE_OVERLAY_PATHS: tuple[str, ...] = ("external/open-instruct",)
 
 
+def cleanup_branch_src(src_root: Path, scratch: Path, *, timeout: int = 300) -> None:
+    """Remove a materialized branch-source scratch tree (worktree + dir + prune).
+
+    Factored from :func:`materialize_branch_src` step 2 (#1913) so the
+    materializer's pre-create cleanup and :meth:`SlurmBackend.prepare`'s
+    post-rsync ``finally`` reap share ONE implementation and cannot drift.
+    With every dispatch now materializing a snapshot, an unreaped
+    ``~/.eps-slurm-src/issue-<N>`` (~3.8 GB full checkout) per issue would
+    accrete on the shared 485 GB boot disk with NO covering janitor
+    (``worktree_audit.py`` sweeps ``.claude/worktrees/`` only;
+    ``vm_disk_guard.py`` tiers never touch ``~/.eps-slurm-src``).
+
+    All git calls are guarded/best-effort (a fresh scratch has no registered
+    worktree; ``worktree remove`` on an absent path exits non-zero) — callers
+    never fail on the cleanup path. Refuses LOUD (``ValueError``) to remove
+    ``src_root`` itself — belt-and-suspenders on top of ``prepare``'s own
+    ``rsync_src != self._src_root`` condition.
+    """
+    if scratch.resolve() == src_root.resolve():
+        raise ValueError(
+            f"cleanup_branch_src: refusing to remove the live source root itself ({src_root})"
+        )
+    with contextlib.suppress(subprocess.SubprocessError, OSError):
+        subprocess.run(
+            ["git", "-C", str(src_root), "worktree", "remove", "--force", str(scratch)],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    with contextlib.suppress(OSError):
+        shutil.rmtree(scratch, ignore_errors=True)
+    with contextlib.suppress(subprocess.SubprocessError, OSError):
+        subprocess.run(
+            ["git", "-C", str(src_root), "worktree", "prune"],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+
+
 def materialize_branch_src(
     *,
     src_root: Path,
@@ -3200,8 +3593,10 @@ def materialize_branch_src(
     """Materialize a complete rsync source for ``branch`` on the VM; return its path.
 
     The SLURM lane rsyncs from a local tree rather than git-cloning the requested
-    branch on the cluster (the GCP-lane approach), so when ``spec.extra["repo_branch"]``
-    names a non-``main`` branch that the repo-root install does not already carry, this
+    branch on the cluster (the GCP-lane approach). Since #1913 EVERY dispatch routes
+    here (``SlurmBackend._resolve_rsync_source`` materializes ``main`` too — the live
+    working tree is never rsynced by default), and ``prepare`` reaps the scratch in a
+    ``finally`` via :func:`cleanup_branch_src` once the rsync + verify complete. This
     builds a content-complete checkout of the branch's COMMITTED tree on the orchestrator
     VM and returns its path for :meth:`SlurmBackend.prepare` to rsync from.
 
@@ -3244,28 +3639,11 @@ def materialize_branch_src(
     scratch_root = Path(os.environ.get("EPS_SLURM_SRC_ROOT") or (Path.home() / ".eps-slurm-src"))
     scratch = scratch_root / f"issue-{issue}"
 
-    # Step 2 — remove any prior scratch worktree + dir + prune registrations. All git
-    # calls here are guarded (a fresh scratch has no registered worktree; ``worktree
-    # remove`` on an absent path exits non-zero) — we do not fail the prepare on the
-    # cleanup path, only on the create path below.
-    with contextlib.suppress(subprocess.SubprocessError, OSError):
-        subprocess.run(
-            ["git", "-C", str(src_root), "worktree", "remove", "--force", str(scratch)],
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            check=False,
-        )
-    with contextlib.suppress(OSError):
-        shutil.rmtree(scratch, ignore_errors=True)
-    with contextlib.suppress(subprocess.SubprocessError, OSError):
-        subprocess.run(
-            ["git", "-C", str(src_root), "worktree", "prune"],
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            check=False,
-        )
+    # Step 2 — remove any prior scratch worktree + dir + prune registrations
+    # (shared implementation with prepare's post-rsync reap, #1913). Guarded —
+    # we do not fail the prepare on the cleanup path, only on the create path
+    # below.
+    cleanup_branch_src(src_root, scratch, timeout=timeout)
 
     # Step 3 — resolve the branch commit in src_root's object DB (local ref, then
     # origin/<branch> fallback). Fail loud if neither resolves.
@@ -3444,6 +3822,7 @@ __all__ = [
     "build_clear_runtime_artifacts_command",
     "build_extra_rsync_command",
     "build_rsync_command",
+    "cleanup_branch_src",
     "clear_runtime_artifacts",
     "compute_plan_hash",
     "default_gpus_for_intent",
@@ -3456,6 +3835,7 @@ __all__ = [
     "materialize_branch_src",
     "mila_socket_alive",
     "parse_job_id",
+    "pending_transfers_from_itemize",
     "post_marker_via_task_py",
     "render_sbatch",
     "render_secrets_env",
@@ -3469,4 +3849,5 @@ __all__ = [
     "stages_for_spec",
     "time_budget_hours",
     "validate_extra_sync_paths",
+    "verify_rsync_complete",
 ]

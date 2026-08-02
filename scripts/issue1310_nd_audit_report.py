@@ -45,6 +45,18 @@ OUT = REPO / "eval_results" / "issue_1310" / "nd_estimator_audit"
 FIGDIR = REPO / "figures" / "issue_1310"
 THRESH = 0.05
 
+# Published per-persona turn-pair counts of the script-format cells (their own n).
+PUBLISHED_N = {
+    "script_base_Wren": 2329,
+    "script_base_HELIOS": 2466,
+    "script_base_Dana": 1325,
+    "script_base_Vex": 2060,
+    "script_instruct_Wren": 3094,
+    "script_instruct_HELIOS": 3123,
+    "script_instruct_Dana": 2700,
+    "script_instruct_Vex": 3586,
+}
+
 ARMS = [
     ("ambient_pure_gcv", "ambient pure-GCV"),
     ("ref_capped_gcv", "capped GCV (published)"),
@@ -57,8 +69,16 @@ ARMS = [
 
 
 def _verdicts(rec: dict) -> dict:
-    """Both materiality verdicts for one cell."""
-    ref = rec["arms"]["ref_capped_gcv"]["r2_pooled"]
+    """Both materiality verdicts for one cell.
+
+    The baseline is the arm that reproduces the cell's PUBLISHED selector: the
+    prefill families published under the capped selector, while 7 of the 8
+    recaptured script-format cells published under ambient pure-GCV (instruct
+    Vex, from the completion round, published capped). `published_selector` is
+    absent on the parent audit's rows, which default to capped.
+    """
+    baseline_arm = rec.get("published_selector", "ref_capped_gcv")
+    ref = rec["arms"][baseline_arm]["r2_pooled"]
     amb = rec["arms"]["ambient_pure_gcv"]["r2_pooled"]
     inner = rec["arms"]["inner_group_cv"]["r2_pooled"]
     d_amb, d_inner = amb - ref, inner - ref
@@ -73,6 +93,7 @@ def _verdicts(rec: dict) -> dict:
     else:
         v_inner = "robust"
     return {
+        "baseline_arm": baseline_arm,
         "delta_ambient_minus_published": d_amb,
         "delta_innercv_minus_published": d_inner,
         "sign_flip_ambient": bool(sign_flip_amb),
@@ -91,13 +112,20 @@ def _fig_published_vs_corrected(cells: list[dict]) -> Path:
     """
     set_paper_style("blog")
     pal = paper_palette_blog(3)
-    fig, axes = plt.subplots(1, 2, figsize=(11.5, 5.2))
+    fig, axes = plt.subplots(1, 3, figsize=(16.5, 5.4))
     for ax, fam, fam_label in (
         (axes[0], "per_turn_prefill", "per-turn prefill cells (n = 1,402-1,801)"),
         (axes[1], "scene_aggregated", "scene-aggregated cells (n = 300)"),
+        (
+            axes[2],
+            "script_format_recaptured",
+            "script-format cells, recaptured store (n = 1,325-3,471)",
+        ),
     ):
         sub = [c for c in cells if c.get("family") == fam]
-        ref = np.array([c["arms"]["ref_capped_gcv"]["r2_pooled"] for c in sub])
+        # x-axis is the cell's OWN published selector (capped for the prefill
+        # families; ambient for 7 of the 8 recaptured script cells).
+        ref = np.array([c["arms"][c["verdicts"]["baseline_arm"]]["r2_pooled"] for c in sub])
         inner = np.array([c["arms"]["inner_group_cv"]["r2_pooled"] for c in sub])
         lo = float(min(ref.min(), inner.min(), 0.0)) - 0.08
         hi = float(max(ref.max(), inner.max(), 0.0)) + 0.08
@@ -127,13 +155,13 @@ def _fig_published_vs_corrected(cells: list[dict]) -> Path:
             )
         ax.set_xlim(lo, hi)
         ax.set_ylim(lo, hi)
-        ax.set_xlabel("published held-out $R^2$ (capped GCV, layer 19)")
+        ax.set_xlabel("published held-out $R^2$ (own published selector, layer 19)")
         ax.set_ylabel("re-selected held-out $R^2$ (inner-group-CV)")
         ax.set_title(fam_label, fontsize=11)
         ax.legend(fontsize=8.5, loc="lower right", framealpha=0.9)
     fig.suptitle(
-        "Principled lambda re-selection lifts every per-turn read and leaves every "
-        "scene-aggregated read unchanged",
+        "Principled lambda re-selection lifts every per-turn prefill read and leaves "
+        "the scene-aggregated and script-format reads unchanged",
         fontsize=12.5,
     )
     fig.tight_layout()
@@ -146,9 +174,11 @@ def _fig_selector_spread(cells: list[dict]) -> Path:
     """Per-cell held-out R^2 under every selector family (the full spread)."""
     set_paper_style("blog")
     pal = paper_palette_blog(len(ARMS))
-    order = [c for c in cells if c.get("family") == "per_turn_prefill"] + [
-        c for c in cells if c.get("family") == "scene_aggregated"
-    ]
+    order = (
+        [c for c in cells if c.get("family") == "per_turn_prefill"]
+        + [c for c in cells if c.get("family") == "scene_aggregated"]
+        + [c for c in cells if c.get("family") == "script_format_recaptured"]
+    )
     labels = [f"{c['model'][:4]}·{c['persona']}\n{c['family'].split('_')[0]}" for c in order]
     xs = np.arange(len(order))
     # symlog y: the ambient arm reaches -5.5 while every other arm lives inside
@@ -188,12 +218,19 @@ def _fig_selector_spread(cells: list[dict]) -> Path:
     ax.set_yticklabels(["-5", "-2", "-1", "-0.5", "-0.25", "0", "0.25", "0.5"])
     for b in np.arange(len(order)) + 0.5:
         ax.axvline(b, color="0.9", lw=0.6, zorder=0)
-    ax.axvline(7.5, color="0.5", lw=1.2, ls=":", zorder=2)
+    # family dividers: per-turn | aggregated | script-format(recaptured)
+    n_pt = sum(1 for c in order if c.get("family") == "per_turn_prefill")
+    n_ag = sum(1 for c in order if c.get("family") == "scene_aggregated")
+    for b in (n_pt - 0.5, n_pt + n_ag - 0.5):
+        ax.axvline(b, color="0.5", lw=1.2, ls=":", zorder=2)
     ax.set_xticks(xs)
     ax.set_xticklabels(labels, fontsize=7.5)
     ax.set_xlim(-0.6, len(order) - 0.4)
     ax.set_ylabel("held-out pooled $R^2$ (layer 19, symlog outside $\\pm$0.5)")
-    ax.set_xlabel("cell (model · persona, cell family) — per-turn left of the dotted line")
+    ax.set_xlabel(
+        "cell (model · persona, cell family) — per-turn | scene-aggregated | "
+        "script-format, split by the dotted lines"
+    )
     ax.set_title(
         "Held-out $R^2$ per cell under each lambda selector — ambient pure-GCV "
         "collapses, inner-group-CV lifts the per-turn cells",
@@ -250,6 +287,43 @@ def _md_table(table: dict, cells: list[dict]) -> str:
             f"{v['ambient_vs_published']} | {v['published_vs_corrected']} |"
         )
     lines.append("")
+    script = [c for c in cells if c.get("family") == "script_format_recaptured"]
+    if script:
+        lines.append("## Script-format cells (RECAPTURED store)")
+        lines.append("")
+        lines.append(
+            "The original run-2 script-format activation store was lost with its "
+            "instance; these rows are fit on the store rebuilt by "
+            "`scripts/issue1310_recapture_script_store.py` (job 16086) at "
+            "`issue1310_char_map/analysis_tensors/store_recap/`. Seven of the eight "
+            "published under AMBIENT pure-GCV (no `gcv_dof_cap` field in their "
+            "committed JSONs); instruct Vex came from the completion round and "
+            "published CAPPED. `reproduced` is the cell's OWN published selector "
+            "re-run on the recaptured store."
+        )
+        lines.append("")
+        lines.append(
+            "| cell | n (published n) | published sel. | published | reproduced | "
+            "repro delta | inner-group-CV | verdict | recapture |"
+        )
+        lines.append("|" + "---|" * 9)
+        for c in script:
+            a, v = c["arms"], c["verdicts"]
+            rp = c.get("published_selector_reproduction", {})
+            pub = c.get("published_r2_l19")
+            pubn = PUBLISHED_N.get(c["cell_id"])
+            delta = rp.get("abs_delta")
+            sel = "ambient" if v["baseline_arm"] == "ambient_pure_gcv" else "capped"
+            fid = "span-exact" if c["model"] == "base" else "near-replica"
+            lines.append(
+                f"| `{c['cell_id']}` | {c['n']} ({pubn}) | {sel} | "
+                f"{'n/a' if pub is None else f'{pub:+.4f}'} | "
+                f"{rp.get('recomputed', float('nan')):+.4f} | "
+                f"{'n/a' if delta is None else f'{delta:.4f}'} | "
+                f"{a['inner_group_cv']['r2_pooled']:+.4f} | "
+                f"{v['published_vs_corrected']} | {fid} |"
+            )
+        lines.append("")
     lines.append("## Selected lambda per arm (grid-edge proximity)")
     lines.append("")
     lines.append(

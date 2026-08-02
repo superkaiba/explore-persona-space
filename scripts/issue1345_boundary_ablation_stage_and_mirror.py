@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -57,16 +58,40 @@ from explore_persona_space.orchestrate import hub  # noqa: E402
 
 EVAL_OUT_DIR = Path("eval_results/issue_1345/story_boundary_ablation")
 HF_EVAL_MIRROR_PREFIX = f"{c.HF_ISSUE_PREFIX}/eval_mirror"
-# Store stem families the fits enumerate — pinned against the live HF listing
-# (2026-07-30): instruct_bnd_{v1..v4,chat,ntpl}_s shards + manifests.
+# Store stem families the fits enumerate — pinned against the live HF listing.
+# A family listed here MUST be present after staging or the stage FAILS LOUD.
+#
+# Two tiers, because absence means different things:
+#   REQUIRED_STORE_TOKENS   the injected lattice — a miss is a broken stage.
+#   PAIRED_STORE_TOKENS     the on-policy PAIRED arm. Absence is NOT an error
+#                           (the fits presence-gate simply skips the arm), but a
+#                           SILENT absence is the one-arm-instead-of-two failure
+#                           the both-arms discipline exists to prevent — so the
+#                           stage REPORTS each one's presence explicitly and the
+#                           caller can require them once they exist.
+#
+# `bnd_v5` joined the injected tier when the V5 bare-label arm landed. The
+# on-policy tier is token-only (no model prefix): the same family is captured
+# under BOTH measured models — instruct_bnd_chat_op_s AND pretrained_… — since 3
+# of the 4 on-policy answer bundles are base-written.
 REQUIRED_STORE_TOKENS = (
     "bnd_v1",
     "bnd_v2",
     "bnd_v3",
     "bnd_v4",
+    "bnd_v5",
     "bnd_chat",
     "bnd_ntpl",
 )
+PAIRED_STORE_TOKENS = (
+    "bnd_v1_op",
+    "bnd_chat_op",
+    "bnd_ntpl_op",
+)
+# Set EPM_I1345_REQUIRE_PAIRED=1 once the on-policy captures have landed to
+# promote the paired tier to a hard requirement (turning a silent one-arm read
+# into a loud stage failure).
+REQUIRE_PAIRED_ENV = "EPM_I1345_REQUIRE_PAIRED"
 
 
 def cmd_stage() -> int:
@@ -96,8 +121,30 @@ def cmd_stage() -> int:
     # Consumer probe (staged-layout rule): every required store family must be
     # present by token, and at least one store manifest must parse as JSON.
     present = [p.name for p in dest.iterdir() if p.is_file()]
-    missing = [t for t in REQUIRED_STORE_TOKENS if not any(t in n for n in present)]
+
+    # The `_op` families are SUFFIXES of nothing else, but `bnd_v1` IS a prefix of
+    # `bnd_v1_op` — so an injected-tier probe must not be satisfied by an
+    # on-policy file alone. Match the family with its stem terminator.
+    def _family_present(token: str) -> bool:
+        return any(f"{token}_s" in n for n in present)
+
+    missing = [t for t in REQUIRED_STORE_TOKENS if not _family_present(t)]
     assert not missing, f"staged layout missing store families: {missing}"
+    # Paired (on-policy) arm: report every family, and require them only when the
+    # caller says the captures have landed.
+    paired = {t: _family_present(t) for t in PAIRED_STORE_TOKENS}
+    landed = sorted(t for t, ok in paired.items() if ok)
+    absent = sorted(t for t, ok in paired.items() if not ok)
+    print(
+        f"[stage] paired on-policy families present={landed or 'none'} absent={absent or 'none'}",
+        flush=True,
+    )
+    if os.environ.get(REQUIRE_PAIRED_ENV) == "1":
+        assert not absent, (
+            f"{REQUIRE_PAIRED_ENV}=1 but the paired on-policy families {absent} are absent "
+            "— the fits would presence-gate them out and silently report ONE arm instead "
+            "of two (the both-arms discipline). Capture them, or unset the env var."
+        )
     manifests = [p for p in dest.iterdir() if "manifest" in p.name and p.suffix == ".json"]
     assert manifests, "no store manifest staged — layout mismatch vs capture output"
     json.loads(manifests[0].read_text())

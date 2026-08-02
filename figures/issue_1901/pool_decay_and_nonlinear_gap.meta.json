@@ -1,0 +1,592 @@
+{
+  "commit": "d36c7c5dc5",
+  "created": "2026-07-31T05:06:16Z",
+  "figsize": [
+    12.4,
+    5.0
+  ],
+  "points": [
+    {
+      "candidate pool size": 1000.0,
+      "retrieval acc@1 (euclidean)": 0.001,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "candidate pool size": 5000.0,
+      "retrieval acc@1 (euclidean)": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "candidate pool size": 20000.0,
+      "retrieval acc@1 (euclidean)": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "candidate pool size": 100000.0,
+      "retrieval acc@1 (euclidean)": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "candidate pool size": 1000.0,
+      "retrieval acc@1 (euclidean)": 0.254,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "candidate pool size": 5000.0,
+      "retrieval acc@1 (euclidean)": 0.167,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "candidate pool size": 20000.0,
+      "retrieval acc@1 (euclidean)": 0.107,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "candidate pool size": 100000.0,
+      "retrieval acc@1 (euclidean)": 0.071,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "candidate pool size": 1000.0,
+      "retrieval acc@1 (euclidean)": 0.532,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "candidate pool size": 5000.0,
+      "retrieval acc@1 (euclidean)": 0.384,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "candidate pool size": 20000.0,
+      "retrieval acc@1 (euclidean)": 0.302,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "candidate pool size": 100000.0,
+      "retrieval acc@1 (euclidean)": 0.213,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "candidate pool size": 1000.0,
+      "retrieval acc@1 (euclidean)": 0.805,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "candidate pool size": 5000.0,
+      "retrieval acc@1 (euclidean)": 0.69,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "candidate pool size": 20000.0,
+      "retrieval acc@1 (euclidean)": 0.648,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "candidate pool size": 100000.0,
+      "retrieval acc@1 (euclidean)": 0.544,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "candidate pool size": 1000.0,
+      "retrieval acc@1 (euclidean)": 0.841,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "candidate pool size": 5000.0,
+      "retrieval acc@1 (euclidean)": 0.751,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "candidate pool size": 20000.0,
+      "retrieval acc@1 (euclidean)": 0.727,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "candidate pool size": 100000.0,
+      "retrieval acc@1 (euclidean)": 0.645,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "candidate pool size": 1000.0,
+      "retrieval acc@1 (euclidean)": 0.85,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "candidate pool size": 5000.0,
+      "retrieval acc@1 (euclidean)": 0.766,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "candidate pool size": 20000.0,
+      "retrieval acc@1 (euclidean)": 0.739,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "candidate pool size": 100000.0,
+      "retrieval acc@1 (euclidean)": 0.659,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "candidate pool size": 1000.0,
+      "retrieval acc@1 (euclidean)": 0.838,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "candidate pool size": 5000.0,
+      "retrieval acc@1 (euclidean)": 0.743,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "candidate pool size": 20000.0,
+      "retrieval acc@1 (euclidean)": 0.702,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "candidate pool size": 100000.0,
+      "retrieval acc@1 (euclidean)": 0.622,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "candidate pool size": 1000.0,
+      "retrieval acc@1 (euclidean)": 0.001,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "candidate pool size": 5000.0,
+      "retrieval acc@1 (euclidean)": 0.0002,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "candidate pool size": 20000.0,
+      "retrieval acc@1 (euclidean)": 5e-05,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "candidate pool size": 100000.0,
+      "retrieval acc@1 (euclidean)": 1e-05,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "candidate pool size": 880.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.035755999999999954,
+      "error": 0.014500000000000013,
+      "series": "neural map (w=8192) - ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "candidate pool size": 4400.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.060739,
+      "error": 0.01799999999999996,
+      "series": "neural map (w=8192) - ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "candidate pool size": 17600.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.07889599999999995,
+      "error": 0.02200000000000002,
+      "series": "neural map (w=8192) - ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "candidate pool size": 88000.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.10074199999999998,
+      "error": 0.021012499999999955,
+      "series": "neural map (w=8192) - ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "candidate pool size": 1000.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.04489999999999996,
+      "error": 0.014499999999999957,
+      "series": "neural map (w=32768) - ridge",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "candidate pool size": 5000.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.07565300000000003,
+      "error": 0.019012499999999953,
+      "series": "neural map (w=32768) - ridge",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "candidate pool size": 20000.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.09113099999999998,
+      "error": 0.02150000000000002,
+      "series": "neural map (w=32768) - ridge",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "candidate pool size": 100000.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.11496600000000001,
+      "error": 0.020499999999999963,
+      "series": "neural map (w=32768) - ridge",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "candidate pool size": 1140.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.03288699999999995,
+      "error": 0.012499999999999956,
+      "series": "kernel map - ridge",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "candidate pool size": 5699.999999999999,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.052666,
+      "error": 0.01699999999999996,
+      "series": "kernel map - ridge",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "candidate pool size": 22799.999999999996,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.053857999999999955,
+      "error": 0.018500000000000016,
+      "series": "kernel map - ridge",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "candidate pool size": 113999.99999999999,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.07760599999999997,
+      "error": 0.020499999999999963,
+      "series": "kernel map - ridge",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "candidate pool size": 880.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.035755999999999954,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "candidate pool size": 4400.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.060739,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "candidate pool size": 17600.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.07889599999999995,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "candidate pool size": 88000.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.10074199999999998,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "candidate pool size": 880.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.020999999999999908,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "candidate pool size": 4400.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.04300000000000004,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "candidate pool size": 17600.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.05799999999999994,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "candidate pool size": 88000.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.07900000000000007,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "candidate pool size": 880.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.04999999999999993,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "candidate pool size": 4400.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.07899999999999996,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "candidate pool size": 17600.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.10199999999999998,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "candidate pool size": 88000.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.12102499999999998,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "candidate pool size": 1000.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.04489999999999996,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "candidate pool size": 5000.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.07565300000000003,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "candidate pool size": 20000.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.09113099999999998,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "candidate pool size": 100000.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.11496600000000001,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "candidate pool size": 1000.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.030000000000000027,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "candidate pool size": 5000.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.05700000000000005,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "candidate pool size": 20000.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.06999999999999995,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "candidate pool size": 100000.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.09400000000000008,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "candidate pool size": 1000.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.05899999999999994,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "candidate pool size": 5000.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.09502499999999996,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "candidate pool size": 20000.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.11299999999999999,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "candidate pool size": 100000.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.135,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "candidate pool size": 1140.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.03288699999999995,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "candidate pool size": 5699.999999999999,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.052666,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "candidate pool size": 22799.999999999996,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.053857999999999955,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "candidate pool size": 113999.99999999999,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.07760599999999997,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "candidate pool size": 1140.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.020000000000000018,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "candidate pool size": 5699.999999999999,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.03600000000000003,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "candidate pool size": 22799.999999999996,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.03599999999999992,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "candidate pool size": 113999.99999999999,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.05700000000000005,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "candidate pool size": 1140.0,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.04499999999999993,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "candidate pool size": 5699.999999999999,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.06999999999999995,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "candidate pool size": 22799.999999999996,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.07299999999999995,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "candidate pool size": 113999.99999999999,
+      "paired acc@1 gap over ridge (95% bootstrap CI)": 0.09799999999999998,
+      "_kind": "line",
+      "_group": 19
+    }
+  ],
+  "n_series": 20,
+  "total_points": 80,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "acc@1 vs pool size, all estimators",
+        "xlabel": "candidate pool size",
+        "ylabel": "retrieval acc@1 (euclidean)",
+        "annotations": [
+          "constant train-mean",
+          "identity copy",
+          "identity + bias",
+          "linear map (ridge)",
+          "neural map (w=8192)",
+          "neural map (w=32768)",
+          "kernel map (Nystrom)",
+          "chance = 1/pool"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$",
+          "$\\mathdefault{10^{7}}$",
+          "$\\mathdefault{10^{8}}$"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "nonlinear-over-linear retrieval gap grows with pool size",
+        "xlabel": "candidate pool size",
+        "ylabel": "paired acc@1 gap over ridge (95% bootstrap CI)",
+        "legend_labels": [
+          "neural map (w=8192) - ridge",
+          "neural map (w=32768) - ridge",
+          "kernel map - ridge"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$",
+          "$\\mathdefault{10^{7}}$"
+        ],
+        "yticklabels": [
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14",
+          "0.16"
+        ]
+      }
+    ],
+    "series": [
+      "neural map (w=8192) - ridge",
+      "neural map (w=32768) - ridge",
+      "kernel map - ridge"
+    ]
+  }
+}

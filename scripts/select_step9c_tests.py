@@ -56,6 +56,19 @@ Touched-file -> test mapping (per touched file ``f``):
     file itself keeps the WORKFLOW_SURFACE skip (never ``untested_touched``),
     comment/docstring mentions count (over-selection is the safe direction),
     and a dynamically constructed filename is the accepted miss class.
+  * any ``tests/**/test_*.py`` whose raw text references a touched
+    ``.claude/skills/**/*.md`` file's PATH is ADDITIONALLY selected with
+    reason ``skills-pin:<touched file>`` (#1851 — the skills sibling of the
+    rules-pin arm above). Unlike the rules arm the matching token is
+    skill-dir-QUALIFIED, not the bare basename (every skill's ``SKILL.md``
+    shares the basename): a hit is the contiguous ``.claude/``-relative path
+    (``skills/issue/SKILL.md`` — covers full-path literals too) as a raw
+    substring OR the path-join form over the components
+    (``"skills" / "issue" / "SKILL.md"``, either quote style, ``/`` or ``,``
+    separators; a leading ``".claude"`` component matches implicitly).
+    Additive only, same contract as rules-pin: the skills file itself keeps
+    the WORKFLOW_SURFACE skip, comment/docstring mentions count, and a
+    dynamically constructed filename is the accepted miss class.
   * any test registered in :data:`TRANSITIVE_CONSUMER_TESTS` for a touched
     file is ADDITIONALLY selected with reason
     ``transitive-consumer:<touched file>`` (#1589). A pinned literal, NOT
@@ -217,6 +230,9 @@ read newline-delimited repo-relative paths from FILE and print one
 (:func:`map_scan_tests`) PLUS one ``<pin_test>\\t<rule_path>`` line per
 rules-pin discovery hit on a ``.claude/rules/*.md`` payload file
 (:func:`rules_pin_pairs`, #1496 — WORKFLOW_INVARIANT members excluded) PLUS
+one ``<pin_test>\\t<skill_path>`` line per skills-pin discovery hit on a
+``.claude/skills/**/*.md`` payload file (:func:`skills_pin_pairs`, #1851 —
+WORKFLOW_INVARIANT members excluded) PLUS
 the src/scripts dependency arms (:func:`dependency_map_pairs`, #1573 —
 import-map (#1299) + literal-path (#1498) + dotted-ref / basename-ref /
 transitive-import (#1688) + stem-map pairs for ``.py``/``.sh``
@@ -267,9 +283,10 @@ BACKGROUND invocation — SKILL.md 9c step 1b). ``--json`` emits
 reason is ``invariant`` / ``touched-test`` / ``stem-map:<touched file>`` /
 ``glob-scan:<touched file>`` / ``import-map:<touched file>`` /
 ``literal-path:<touched file>`` / ``rules-pin:<touched file>`` /
+``skills-pin:<touched file>`` /
 ``transitive-consumer:<touched file>`` / ``dotted-ref:<touched file>`` /
 ``basename-ref:<touched file>`` / ``transitive-import:<touched file>`` —
-#1022, #1299, #1498, #1496, #1589, #1688).
+#1022, #1299, #1498, #1496, #1851, #1589, #1688).
 Exit 0 on success (even with WARN lines);
 exit 1 if an underlying ``git`` call fails irrecoverably (work-root resolution
 or the diff) or if the selection comes back EMPTY (the zero-test-gate
@@ -344,6 +361,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_sparse_worktree.py",
     # NEW (#1623) — CLAUDE.md ad-hoc-summaries disclosure-clause pins (#1458/#1539/#1623)
     "tests/test_adhoc_summary_disclosure_pins.py",
+    # NEW (#1910) — adversarial-planner SKILL.md Phase 1.5 fact-checker realized-grain
+    # duty + planner.md §10 counted-grain clause pin
+    "tests/test_adversarial_planner_factchecker_grain_pin.py",
     # NEW (#1734) — adversarial-planner SKILL.md Phase 1.5.0 per-WARN disposition pin
     "tests/test_adversarial_planner_warn_disposition.py",
     "tests/test_autonomous_plan_gate.py",
@@ -361,6 +381,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_implementer_spec_names_invariant_local_union.py",
     # NEW (#1699) — implementer spec pin: ruff-policy pin invocation in lint step (#1672)
     "tests/test_implementer_spec_names_ruff_policy_pin.py",
+    # NEW (#1876) — SKILL.md Bare-push-snippets commit form (5) + guard hook
+    # block-message compliant-forms lead pin
+    "tests/test_issue_skill_bare_push_snippets_pin.py",
     # NEW (#1659) — SKILL.md 9a-ter + CLAUDE.md measured 1-cell pilot +
     # >=2x pilot-extrapolated fence-sizing pin
     "tests/test_issue_skill_compute_pilot_fence_pin.py",
@@ -387,6 +410,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_gate_scope_brief_pin.py",
     # NEW (#1627) — SKILL.md Step 9c/10d gate single-flight probe pin (#1606)
     "tests/test_issue_skill_gate_single_flight.py",
+    # NEW (#1860) — SKILL.md 9a-humanize + 9a-bis strip verify-candidate-first
+    # apply-ordering pin (verify --file before set-body; post-apply --issue confirm)
+    "tests/test_issue_skill_humanize_verify_first_pin.py",
     # Registration rider (#1673) — the pre-existing #1500 inline-payload-gate
     # pin file was never registered (the #1546 unregistered-pin class); it now
     # also pins the worker-brief composition duty (#1673).
@@ -404,18 +430,26 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_merged_note_compose.py",
     # NEW (#1563) — SKILL.md orchestrator-turn discipline pointer pin
     "tests/test_issue_skill_orchestrator_turn_discipline_pointer.py",
+    # NEW (#1897) — SKILL.md Step 10d PR-state probe + landing verification pin
+    "tests/test_issue_skill_pr_state_probe.py",
     # NEW (#1810) — SKILL.md Step 4b pre-split multi-deliverable dispatch pin
     "tests/test_issue_skill_presplit_dispatch_pin.py",
     # NEW (#1850) — SKILL.md remote-landing producer-fence deadline + Monitor heartbeat pin
     "tests/test_issue_skill_remote_landing_watch_pin.py",
+    # NEW (#1855) — SKILL.md 5c-quater round-boundary durable-decision duty pin
+    "tests/test_issue_skill_round_boundary_duty_pin.py",
     # NEW (#1572) — staged-index verification pin
     "tests/test_issue_skill_staged_index_verification.py",
     # NEW (#1751) — SKILL.md KEPT-stash surfacing duty pin
     "tests/test_issue_skill_stash_kept_duty_pin.py",
+    # NEW (#1875) — SKILL.md Step 0 autonomous Monitor/TaskOutput schema-preload pin
+    "tests/test_issue_skill_step0_preload_pin.py",
     # NEW (#1734) — SKILL.md Step 2 minimum plan-review floor + recorded-skip contract pin
     "tests/test_issue_skill_step2_floor.py",
     # NEW (#1595) — stopped-volume persist-before-park pin (SKILL.md + pod-config.md)
     "tests/test_issue_skill_stopped_volume_persist_pin.py",
+    # NEW (#1868) — SKILL.md Terminal-teardown landing-confirmation pin
+    "tests/test_issue_skill_terminal_landing_pin.py",
     # NEW (#1841) — Step 6d.2 tick-parse field-preservation pin
     "tests/test_issue_skill_tick_parse_preservation.py",
     # NEW (#1587) — SKILL.md trigger-dense tag-adoption pin
@@ -476,7 +510,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
 # These gate via the WORKFLOW_INVARIANT set, not a per-file test, so a touched
 # file matching one of these is SKIPPED (and is NOT an "untested" file).
 # .claude/rules/*.md files ADDITIONALLY map to their prose-pin tests via the
-# rules-pin discovery arm (#1496) — additive; the skip itself is unchanged.
+# rules-pin discovery arm (#1496), and .claude/skills/**/*.md files via the
+# skills-pin discovery arm (#1851) — both additive; the skip itself is
+# unchanged.
 WORKFLOW_SURFACE_GLOBS: tuple[str, ...] = (
     ".claude/agents/*.md",
     ".claude/skills/**/SKILL.md",
@@ -668,6 +704,129 @@ def rules_pin_pairs(files: list[str], work_root: Path) -> list[tuple[str, str]]:
         for t, rule_files in rules_pin_hits(files, work_root).items()
         if t not in inv
         for r in sorted(rule_files)
+    )
+
+
+# --- Skills-pin discovery arm (#1851). ------------------------------------------
+# The .claude/skills/**/*.md sibling of the rules-pin arm above: skill prose
+# pins (72 test files reference .claude/skills/issue/SKILL.md on the
+# 2026-07-31 tree; 42 invariant, 30 silently unselected — including the three
+# founding tests test_issue_skill_file_only_verdict_post.py /
+# test_ensemble_review_cap.py / test_issue_skill_workload_cmd_script_pin.py)
+# got no targeted coverage from a skills-only diff: the skills globs
+# short-circuit at WORKFLOW_SURFACE_GLOBS (by design — that skip is
+# unchanged), and WORKFLOW_INVARIANT membership was the only channel. Same
+# DISCOVERED posture + fail-soft read contract as rules-pin; the one delta is
+# the matching token: SKILL.md as a bare basename would match ~123 files
+# across ALL skills indiscriminately, so tokens are skill-dir-QUALIFIED —
+# the contiguous ``.claude/``-relative path as a raw substring (covers
+# full-path literals) OR a compiled path-join regex over the components
+# (either quote style, ``/`` or ``,`` separators; a leading ``".claude"``
+# component matches implicitly since ``re.search`` matches mid-string).
+# Measured fan-out (2026-07-31): worst skill file issue/SKILL.md -> 72 test
+# files (30 non-invariant); next adversarial-planner -> 11, daily -> 7.
+# Known-miss class (accepted, same as rules-pin): a dynamically constructed
+# filename. Additive only — never sets ``matched``, never enters
+# untested_touched. Cost: one text pass over tests/**/test_*.py ONLY when a
+# skills .md file is touched (same cost class as rules-pin, well under the
+# import-map arm's measured 4-8 s AST worst case).
+# Scan-regression loudness: tests/test_select_step9c_tests.py
+# ::test_skills_pin_live_tree_known_pairs pins known (skill -> test) pairs;
+# ::test_skills_pin_reachability_live_tree asserts EVERY live-tree test
+# referencing a .claude/skills/*/SKILL.md path stays selector-reachable.
+_SKILLS_PIN_GLOB = ".claude/skills/**/*.md"
+
+# Quote + separator fragment for the path-join regex: closing quote of one
+# component, ``/`` or ``,`` (Path-join or tuple form), opening quote of the
+# next — either quote style on each side.
+_SKILLS_PIN_JOIN_SEP = r"[\"']\s*[,/]+\s*[\"']"
+
+
+def _skills_pin_tokens(rel_path: str) -> tuple[str, re.Pattern[str]]:
+    """(contiguous substring token, compiled path-join regex) for *rel_path*.
+
+    Given ``.claude/skills/issue/SKILL.md`` returns
+    (``"skills/issue/SKILL.md"``, a regex matching
+    ``"skills" / "issue" / "SKILL.md"`` with either quote style and ``/`` or
+    ``,`` separators). Components are ``re.escape``d; multi-segment skill
+    paths join all components in order. The contiguous token is the path
+    relative to ``.claude/`` so it also covers the full-path literal form;
+    the join regex needs no explicit optional ``".claude"`` prefix —
+    ``re.search`` matches the suffix inside
+    ``".claude" / "skills" / "issue" / "SKILL.md"`` anyway.
+    """
+    parts = rel_path.split("/")
+    if parts and parts[0] == ".claude":
+        parts = parts[1:]
+    contiguous = "/".join(parts)
+    join_re = re.compile("[\"']" + _SKILLS_PIN_JOIN_SEP.join(re.escape(p) for p in parts) + "[\"']")
+    return contiguous, join_re
+
+
+def skills_pin_hits(touched: list[str], work_root: Path) -> dict[str, set[str]]:
+    """``{test_relpath: {touched .claude/skills/**/*.md files whose path its
+    text references}}`` (#1851). Zero file reads when no skills file is
+    touched. Matching via :func:`_skills_pin_tokens` (contiguous substring OR
+    path-join regex); glob matching via :func:`_matches_any` so nested
+    reference files under a skill dir are covered too (the ``/**/``
+    zero-segment collapse).
+
+    Fail-soft (the #1299 read contract, mirroring :func:`rules_pin_hits`): a
+    test file that cannot be read / decoded emits ONE stderr WARN and is
+    skipped — never crashes the selector; read failures on >5% of scanned
+    files add ONE aggregate WARN. ``rglob`` only yields existing files, so no
+    separate existence filter.
+    """
+    skills = [f for f in touched if _matches_any(f, (_SKILLS_PIN_GLOB,))]
+    hits: dict[str, set[str]] = {}
+    tests_dir = work_root / "tests"
+    if not skills or not tests_dir.is_dir():
+        return hits
+    tokens = {f: _skills_pin_tokens(f) for f in skills}
+    n_scanned = 0
+    n_failed = 0
+    for test_path in sorted(tests_dir.rglob("test_*.py")):
+        n_scanned += 1
+        rel = test_path.relative_to(work_root).as_posix()
+        try:
+            text = test_path.read_text(encoding="utf-8")
+        except (OSError, ValueError) as exc:
+            n_failed += 1
+            print(
+                f"select_step9c_tests: WARN — skills-pin scan cannot read {rel}: {exc}; "
+                "file skipped for the skills-pin arm",
+                file=sys.stderr,
+            )
+            continue
+        for skill_file, (contiguous, join_re) in tokens.items():
+            if contiguous in text or join_re.search(text):
+                hits.setdefault(rel, set()).add(skill_file)
+    if n_scanned and n_failed / n_scanned > 0.05:
+        print(
+            f"select_step9c_tests: WARN — skills-pin scan read failures on "
+            f"{n_failed}/{n_scanned} scanned test files (>5%): systemic tests/ breakage; "
+            "the skills-pin arm may under-select",
+            file=sys.stderr,
+        )
+    return hits
+
+
+def skills_pin_pairs(files: list[str], work_root: Path) -> list[tuple[str, str]]:
+    """Sorted ``(pin_test, skill_file)`` pairs for ``--map-files`` (#1851).
+
+    WORKFLOW_INVARIANT members are EXCLUDED here (the :func:`rules_pin_pairs`
+    asymmetry: they already gate every Step 9c run, and the exclusion keeps
+    the 2400 s tests/test_workflow_lint.py out of the Step 10d /
+    inline-payload lint gate). The Step 9c selection arm keeps them (harmless
+    extra reason; the union dedupes) — pinned by
+    test_cli_map_files_skills_pin_excludes_invariant.
+    """
+    inv = set(WORKFLOW_INVARIANT)
+    return sorted(
+        (t, s)
+        for t, skill_files in skills_pin_hits(files, work_root).items()
+        if t not in inv
+        for s in sorted(skill_files)
     )
 
 
@@ -1434,6 +1593,7 @@ def select_tests_with_reasons(
     A reason is ``'invariant' | 'touched-test' | 'stem-map:<touched file>' |
     'glob-scan:<touched file>' | 'import-map:<touched file>' |
     'literal-path:<touched file>' | 'rules-pin:<touched file>' |
+    'skills-pin:<touched file>' |
     'transitive-consumer:<touched file>' | 'dotted-ref:<touched file>' |
     'basename-ref:<touched file>' |
     'transitive-import:<touched file>'``; a test may
@@ -1460,6 +1620,12 @@ def select_tests_with_reasons(
     # takes the WORKFLOW_SURFACE `continue` below, unchanged).
     for t, rule_files in rules_pin_hits(touched, work_root).items():
         selected.setdefault(t, set()).update(f"rules-pin:{r}" for r in rule_files)
+    # Skills-pin discovery arm (#1851): additive seed, same only-grows
+    # contract (skill-dir-qualified tokens — see skills_pin_hits; the skills
+    # file itself still takes the WORKFLOW_SURFACE `continue` below,
+    # unchanged).
+    for t, skill_files in skills_pin_hits(touched, work_root).items():
+        selected.setdefault(t, set()).update(f"skills-pin:{s}" for s in skill_files)
     # Transitive-consumer pin arm (#1589): additive seed, same only-grows
     # contract — see _seed_transitive_consumer_reasons.
     _seed_transitive_consumer_reasons(touched, work_root, selected)
@@ -1644,10 +1810,10 @@ def _zero_resolution_guard(
 def _run_map_files_mode(map_files_arg: str, work_root: Path) -> int:
     """Execute the --map-files mapping mode (#1147).
 
-    Emits `<test>\\t<matched_path>` TSV lines to stdout across four
-    arms (GLOB_SCAN_TESTS, rules-pin #1496, src/scripts dependency arms
-    #1573/#1688, pinned transitive-consumer pairs #1589) — all
-    WORKFLOW_INVARIANT-excluded — over an explicit file list. No git diff;
+    Emits `<test>\\t<matched_path>` TSV lines to stdout across five
+    arms (GLOB_SCAN_TESTS, rules-pin #1496, skills-pin #1851, src/scripts
+    dependency arms #1573/#1688, pinned transitive-consumer pairs #1589) —
+    all WORKFLOW_INVARIANT-excluded — over an explicit file list. No git diff;
     stderr carries the zero-mapped WARN floor + the recommended-timeout-s
     sizing line (floor 300). Return codes: 0 on success (empty stdout on no
     match is the Step 10d merge-gate skip signal); 1 on an unreadable or
@@ -1689,13 +1855,14 @@ def _run_map_files_mode(map_files_arg: str, work_root: Path) -> int:
             f"absent from {work_root}; pair dropped",
             file=sys.stderr,
         )
-    # Rules-pin pairs (#1496) + the src/scripts dependency arms (#1573:
-    # import-map + literal-path + stem-map) + the pinned
-    # transitive-consumer pairs (#1589) join the scan-map pairs (union
+    # Rules-pin pairs (#1496) + skills-pin pairs (#1851) + the src/scripts
+    # dependency arms (#1573: import-map + literal-path + stem-map) + the
+    # pinned transitive-consumer pairs (#1589) join the scan-map pairs (union
     # dedupes; a test hit by several arms prints once per distinct matched
     # path, and the consumers' `sort -u` dedupes downstream).
     # WORKFLOW_INVARIANT members are excluded inside rules_pin_pairs /
-    # dependency_map_pairs / transitive_consumer_pairs; the existing WARN
+    # skills_pin_pairs / dependency_map_pairs / transitive_consumer_pairs;
+    # the existing WARN
     # loop above is scan-map-only by design (scan-map keys are pinned
     # literals that can vanish from the tree; the discovery arms only ever
     # find on-disk tests, and a vanished transitive-consumer registration
@@ -1705,6 +1872,7 @@ def _run_map_files_mode(map_files_arg: str, work_root: Path) -> int:
         {
             *scan_pairs,
             *rules_pin_pairs(files, work_root),
+            *skills_pin_pairs(files, work_root),
             *dependency_map_pairs(files, work_root),
             *transitive_consumer_pairs(files, work_root),
         }
@@ -1793,10 +1961,12 @@ def main(argv: list[str] | None = None) -> int:
             "newline-delimited repo-relative paths: print one "
             "'test<TAB>matched_path' line per GLOB_SCAN_TESTS hit plus one "
             "'pin_test<TAB>rule_path' line per rules-pin discovery hit (#1496) "
+            "plus one 'pin_test<TAB>skill_path' line per skills-pin discovery "
+            "hit (#1851) "
             "plus the src/scripts import/literal/dotted/basename/transitive/stem "
             "dependency-arm pairs "
             "(#1573, #1688) plus the pinned transitive-consumer pairs (#1589; "
-            "WORKFLOW_INVARIANT members excluded from all three) and exit "
+            "WORKFLOW_INVARIANT members excluded from all four) and exit "
             "(the /issue Step 10d merge-gate mapping mode, #1147 — skips the "
             "diff-based selection entirely; empty stdout on no match is a "
             "SUCCESS, the gate's skip signal; a zero-mapped eligible code file "

@@ -1,0 +1,65 @@
+{
+  "arm": "committed_replay",
+  "cell_id": "onpolicy_assistant_story__R_instruct_r4_op_companion_context",
+  "committed_r2": -0.5471157828882753,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 2.59,
+  "fold_se": 0.013665272501592083,
+  "issue": 1345,
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T06:33:48Z"
+  },
+  "n_train_min": 1614,
+  "n_train_per_fold": [
+    1614,
+    1614,
+    1614,
+    1615,
+    1615
+  ],
+  "published_claim_ref": "eval_results/issue_1345/onpolicy_assistant_story/cells_R_instruct_r4_op_companion_context.json @ L19",
+  "r2_per_fold": [
+    -0.5734721045701177,
+    -0.520214738600447,
+    -0.5455378321378905,
+    -0.5825929077622649,
+    -0.5146272431055434
+  ],
+  "r2_pooled": -0.5471157828882727,
+  "resume_key": {
+    "arm": "committed_replay",
+    "cell_id": "onpolicy_assistant_story__R_instruct_r4_op_companion_context",
+    "issue": 1345,
+    "selector_regime": {
+      "gcv_dof_cap": null,
+      "lambda_selection": "gcv",
+      "legacy_unguarded": true
+    },
+    "store_rev": "eca4accbf8eef9d4eebe546dbc8f3131c4031df4"
+  },
+  "selected_lambda_per_fold": [
+    0.01,
+    0.01,
+    0.01,
+    0.01,
+    0.01
+  ],
+  "selector_config": {
+    "gcv_dof_cap": null,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": true
+  },
+  "tripwire": {
+    "d": 3584,
+    "estimator_degenerate_suspect": true,
+    "n_train": 1614,
+    "reasons": [
+      "n_lt_d_lambda_at_grid_edge"
+    ]
+  },
+  "variant": "onpolicy_assistant_story"
+}

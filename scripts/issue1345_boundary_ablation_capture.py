@@ -13,8 +13,9 @@ X — read positions (single-token slots, storage order = BND_SLOT_ORDER):
   prefix       last token fully contained before the question content
   ctx_qend     last token fully contained before the question's end
   context      last token fully contained before the arm's ANSWER BOUNDARY —
-               the attribution-marker end for V1/V3/V4, the START of the
-               blank-line run for V2, the role header's end for the comparators
+               the attribution-marker end for V1/V3/V4, the bare turn label's
+               ':' for V5, the START of the blank-line run for V2, the role
+               header's end for the comparators
   ctx_preans   X_CLEAN: last token fully contained before the answer's first
                char (straddler-EXCLUSIVE, the #1345 `_last_fully_contained` /
                `_header_slot` convention)
@@ -173,6 +174,19 @@ TRANSITION: dict[str, dict] = {
         "anchor_from_end": 0,
         "read_anchor": "the ':' of the next-speaker attribution",
     },
+    # V5's answer is UNQUOTED (bare script-style label), so there is no closing
+    # quote to reproduce — closer is "". Its transition MATCHES the no_template
+    # comparator's `User: ` turn syntax (read at the ':'), which is what makes
+    # V5-vs-no_template a matched-boundary-syntax contrast. One deliberate
+    # difference from that comparator: a SINGLE newline (script-style turn
+    # spacing, consistent with V5's own single-newline label line) vs the
+    # comparator's blank-line `\n\nUser: ` narrative spacing.
+    bg.ARM_V5: {
+        "closer": "",
+        "suffix": "\nUser: ",
+        "anchor_from_end": 1,
+        "read_anchor": "the ':' of 'User: ' (script-style, single newline)",
+    },
     "chat": {
         "closer": "",
         "suffix": "<|im_end|>\n<|im_start|>user\n",
@@ -194,18 +208,101 @@ def transition_for(key: str) -> dict:
     return TRANSITION[key]
 
 
-def format_key(key: str) -> str:
-    """Store format key — a DISTINCT stem per arm/comparator (no collisions)."""
+# Answer PROVENANCE — who WROTE the answer the store reads. A STORE-KEY
+# dimension, not a render dimension: the render/transition for an on-policy chat
+# row is identical to its injected twin's (same segments, same suffix), but the
+# two must never share a store stem / HF path / sidecar regime, or the on-policy
+# capture silently overwrites the injected one.
+#
+# The constants + suffix map live in `issue1345_common` so the capture, the fits
+# and every future consumer key off ONE definition — a duplicate suffix map here
+# could drift from the fits' and silently split the two arms apart.
+PROV_INJECTED = c.PROV_INJECTED
+PROV_ONPOLICY = c.PROV_ONPOLICY
+PROVENANCES = c.PROVENANCES
+
+
+def format_key(key: str, provenance: str = PROV_INJECTED) -> str:
+    """Store format key — a DISTINCT stem per (arm/comparator x provenance).
+
+    The default `injected` returns the historical value byte-for-byte, so every
+    existing store stem / HF path / fits registry entry is unchanged.
+    """
+    suffix = c.prov_suffix(provenance)
     if key == V1_ARM:
-        return f"bnd_{V1_SLUG}"
+        return f"bnd_{V1_SLUG}{suffix}"
     if key in bg.ARM_SLUG:
-        return f"bnd_{bg.ARM_SLUG[key]}"
+        return f"bnd_{bg.ARM_SLUG[key]}{suffix}"
     assert key in COMPARATORS, key
-    return {"chat": "bnd_chat", "no_template": "bnd_ntpl"}[key]
+    return {"chat": "bnd_chat", "no_template": "bnd_ntpl"}[key] + suffix
 
 
-def stem_for(key: str, model_key: str = bg.MODEL_KEY) -> str:
-    return f"{model_key}_{format_key(key)}_{TRACK}"
+def stem_for(key: str, model_key: str = bg.MODEL_KEY, provenance: str = PROV_INJECTED) -> str:
+    return f"{model_key}_{format_key(key, provenance)}_{TRACK}"
+
+
+# ---------------------------------------------------------------------------
+# ON-POLICY store registry (the #1345 on-policy-vs-injected program)
+# ---------------------------------------------------------------------------
+# Which store keys have an ON-POLICY twin, and how each one's rows are produced.
+# Declarative so the capture entrypoint AND the fits enumeration resolve the
+# on-policy stores without hand-edits — the same single-source pattern the
+# variant registry uses (commit 00a6f829e8).
+#
+# The ablation arms (V2..V5) are DELIBERATELY absent: their construction IS the
+# verbatim injection, so "on-policy V3" is not a meaningful store — the arm's
+# boundary form cannot be held fixed while the model writes freely. The
+# on-policy-capable keys are the two comparators (whose render is just a turn)
+# plus the V1 anchor (whose story prefix can be frozen while the answer slot is
+# regenerated).
+#
+# The 16 CHARACTER-cell stores need no entries here: each runs under its own
+# `EPM_I1345_VARIANT` (commit 00a6f829e8), so `c._VSUB` already scopes its dirs
+# and HF prefixes, and its stem comes from `c.stem_for(model, regime)` with the
+# r4/r4op regimes — a different registry, already resolvable.
+ONPOLICY_STORES: dict[str, dict] = {
+    "no_template": {
+        "gen_shape": "bare_text",
+        "source_flag": "--convs-jsonl",
+        "capture_mode": "--comparator no_template",
+        "rows": "onpolicy_rows_op_ntpl_<model>.jsonl",
+        "isolates": "the model's OWN bare-text answer, same User:/Assistant: render",
+    },
+    "chat": {
+        "gen_shape": "chat",
+        "source_flag": "--convs-jsonl",
+        "capture_mode": "--comparator chat",
+        "rows": "onpolicy_rows_op_chat_<model>.jsonl",
+        "isolates": "the model's OWN chat-template answer, same segments",
+    },
+    V1_ARM: {
+        "gen_shape": "story_slot",
+        "source_flag": "--stories-jsonl",
+        "capture_mode": f"--arm {V1_SLUG}",
+        "rows": "onpolicy_rows_op_slot_<model>.jsonl",
+        "isolates": "the model's OWN answer in the FROZEN V1 story prefix",
+    },
+}
+
+
+def has_onpolicy_twin(key: str) -> bool:
+    """Does this store key have a registered on-policy twin?"""
+    return key in ONPOLICY_STORES
+
+
+def onpolicy_store_spec(key: str) -> dict:
+    """The on-policy twin's production spec (fail loud on an unregistered key)."""
+    assert key in ONPOLICY_STORES, (
+        f"{key!r} has no registered on-policy twin — registered keys: "
+        f"{sorted(ONPOLICY_STORES)}. The ablation arms are injection-BY-CONSTRUCTION "
+        "and deliberately have none."
+    )
+    return ONPOLICY_STORES[key]
+
+
+def onpolicy_stems(model_key: str = bg.MODEL_KEY) -> dict[str, str]:
+    """Every registered on-policy store's expected stem, keyed by store key."""
+    return {k: stem_for(k, model_key, PROV_ONPOLICY) for k in ONPOLICY_STORES}
 
 
 def hf_tensor_prefix(smoke: bool) -> str:
@@ -358,18 +455,89 @@ def render_boundary_turn(
     )
 
 
-def render_arm(arm: str, stories: list[dict], tokenizer) -> tuple[list[Rendered], dict]:
-    """Re-gate + re-verify + render every kept story of one arm (fail-loud).
+# Gate verdicts an ON-POLICY row can legitimately earn, where the INJECTED arm
+# would only earn them through gate/regex drift. `attribution_multi` is the
+# measured case (3/2089 on the story-slot pool, 0.14%): the model's own answer
+# ENDS with attribution-shaped words ("...as the Assistant explained,") and the
+# closing quote the story-slot shape appends supplies the quote character the
+# attribution regex needs, so the reassembled story carries a SECOND attribution
+# match. The answer text alone carries zero (measured) — the second match is a
+# product of the reassembly, so the row is genuinely un-gateable in this arm
+# rather than evidence that the gate drifted.
+ONPOLICY_EXPECTED_GATE_REJECTS = ("attribution_multi",)
 
-    Two trust-boundary re-checks per row, both fail-loud AssertionErrors rather
-    than skips: (1) the arm's OWN mechanical gate must still return 'ok' with
-    the SAME spans the gen phase stored (a mismatch is gate/regex/name-seam
-    drift); (2) the stored span must be the verbatim answer under the shared
-    normalized matcher (`c.norm_text`).
+
+def normalize_onpolicy_leading_ws(stories: list[dict]) -> tuple[list[dict], dict]:
+    """Move a story-slot row's `a_start` past a leading whitespace, in place of it.
+
+    The parent V1 convention puts `a_start` at the answer's first CONTENT
+    character: the gate re-derives it by NORMALIZED occurrence search, and a space
+    between the opening quote and the match start belongs to neither the quote nor
+    the answer. On-policy rows generated before the writer lstripped its answers
+    store `a_start = len(prefix)` with a space-initial answer, so the span points
+    AT the space and the capture's span-consistency assert sees a +1 disagreement.
+
+    This is a CONVENTION normalization, not a "trust the gate over the store"
+    override: it lstrips the answer and advances `a_start` by exactly the
+    whitespace removed, then leaves BOTH trust-boundary asserts to run unchanged.
+    A row that still disagrees afterwards fails loud, as it should.
+
+    Measured on the real pool: 7/2089 rows (0.34%), all `a_start` +1, and ZERO of
+    the 2,082 space-free rows disagree — the split is exact, so this is the whole
+    class rather than a symptom of a wider offset.
     """
+    stats = {"normalized": 0, "conv_ids": []}
+    out = []
+    for s in stories:
+        turns = s.get("parsed_turns") or []
+        answer = str(s.get("answer", ""))
+        lead = len(answer) - len(answer.lstrip())
+        if not lead or len(turns) != 1 or "a_start" not in turns[0]:
+            out.append(s)
+            continue
+        turn = dict(turns[0])
+        turn["a_start"] = int(turn["a_start"]) + lead
+        row = {**s, "answer": answer.lstrip(), "parsed_turns": [turn]}
+        stats["normalized"] += 1
+        stats["conv_ids"].append(str(s.get("conv_id")))
+        out.append(row)
+    return out, stats
+
+
+def render_arm(
+    arm: str,
+    stories: list[dict],
+    tokenizer,
+    *,
+    provenance: str = PROV_INJECTED,
+) -> tuple[list[Rendered], dict]:
+    """Re-gate + re-verify + render every kept story of one arm.
+
+    Two trust-boundary re-checks per row: (1) the arm's OWN mechanical gate must
+    still return 'ok' with the SAME spans the gen phase stored; (2) the stored
+    span must be the verbatim answer under the shared normalized matcher
+    (`c.norm_text`).
+
+    Check (1) stays a fail-loud AssertionError for INJECTED provenance — the
+    story there is template-built around a gate-checked answer, so a second
+    attribution really is gate / regex / character-name drift and must not be
+    skipped past. For ON-POLICY provenance the answer is model-written, and a
+    verdict in ``ONPOLICY_EXPECTED_GATE_REJECTS`` is a property of that text
+    meeting the reassembly, not drift: those rows are DROPPED and COUNTED with
+    their conv_ids recorded, so the tail is auditable and the run does not die on
+    its first offense. Every OTHER verdict still asserts under both provenances.
+    """
+    assert provenance in PROVENANCES, f"unknown provenance {provenance!r}"
     gate = gate_for_capture(arm)
     rendered: list[Rendered] = []
-    stats = {"stories": 0, "turns_rendered": 0, "turns_dropped": 0}
+    stats: dict = {
+        "stories": 0,
+        "turns_rendered": 0,
+        "turns_dropped": 0,
+        "gate_rejects": 0,
+        "gate_reject_reasons": {},
+        "gate_reject_conv_ids": [],
+    }
     for s in stories:
         stats["stories"] += 1
         assert len(s["parsed_turns"]) == 1, (
@@ -378,9 +546,19 @@ def render_arm(arm: str, stories: list[dict], tokenizer) -> tuple[list[Rendered]
         )
         turn = s["parsed_turns"][0]
         re_turn, reason = gate(s["story"], s["answer"])
+        if (
+            reason != "ok"
+            and provenance == PROV_ONPOLICY
+            and reason in ONPOLICY_EXPECTED_GATE_REJECTS
+        ):
+            stats["gate_rejects"] += 1
+            stats["gate_reject_reasons"][reason] = stats["gate_reject_reasons"].get(reason, 0) + 1
+            stats["gate_reject_conv_ids"].append(str(s["conv_id"]))
+            continue
         assert reason == "ok" and re_turn is not None, (
             f"{arm} story {s['conv_id']}: the arm gate now returns {reason!r} at the "
-            "extraction trust boundary — gate / regex / character-name drift"
+            f"extraction trust boundary (provenance={provenance}) — gate / regex / "
+            "character-name drift"
         )
         for key in ("q_start", "q_end", "boundary_end", "a_start", "a_end"):
             assert re_turn[key] == turn[key], (
@@ -512,7 +690,13 @@ def render_comparator_turn(conv: dict, tokenizer, *, comparator: str) -> Rendere
         y_anchor_char=y_anchor,
         conv_id=str(conv.get("conv_id", "")),
         fmt="chat" if chat else "naturalistic",
-        meta_extra={"transition_suffix": tr["closer"] + tr["suffix"]},
+        meta_extra={
+            "transition_suffix": tr["closer"] + tr["suffix"],
+            # Absent for the injected/teacher-forced rows (no generation, so no
+            # finish_reason) — present only on on-policy rows, which is exactly
+            # where the boundary-target split applies.
+            **{k: conv[k] for k in ("finish_reason", "capped") if k in conv},
+        },
     )
 
 
@@ -531,12 +715,36 @@ def render_comparator(comparator: str, convs: list[dict], tokenizer) -> tuple[li
     return rendered, stats
 
 
-def load_comparator_convs(dl_dir: Path, keep_ids: set[str] | None) -> list[dict]:
-    """Pinned parent track-S rows -> single-turn conversations (parent recipe)."""
-    path = c.stage_pinned_file(c.PARENT_TRACK_S_JSONL, dl_dir)
+def load_comparator_convs(
+    dl_dir: Path, keep_ids: set[str] | None, *, convs_jsonl: Path | None = None
+) -> list[dict]:
+    """Pinned parent track-S rows -> single-turn conversations (parent recipe).
+
+    ``convs_jsonl`` overrides the source with a local `{conv_id, prompt,
+    response}` JSONL — the ON-POLICY answer rows from
+    `issue1345_onpolicy_answers_gen.py`, whose `prompt`/`response` keys
+    `ex.to_single_turn` maps to u1/a1 exactly as it does the pinned rows. Absent
+    the flag this is byte-identical to the pinned-parent path.
+    """
+    if convs_jsonl is not None:
+        path = convs_jsonl
+        assert path.exists(), f"--convs-jsonl source missing: {path}"
+        print(f"[capture] comparator convs from {path} (on-policy override)", flush=True)
+    else:
+        path = c.stage_pinned_file(c.PARENT_TRACK_S_JSONL, dl_dir)
     rows = c.read_jsonl(path)
     assert rows, f"no rows in {path}"
-    convs = [ex.to_single_turn(r) for r in rows]
+    # `to_single_turn` keeps ONLY {conv_id, u1, a1} on the prompt/response branch,
+    # so re-attach the provenance fields the fits need downstream — a cap-truncated
+    # answer makes the Y_BOUNDARY read an artifact of the cap, and that split has to
+    # survive into the store or the fits pool two different objects.
+    convs = []
+    for r in rows:
+        cv = ex.to_single_turn(r)
+        for f in ("finish_reason", "capped", "provenance"):
+            if f in r:
+                cv[f] = r[f]
+        convs.append(cv)
     if keep_ids is None:
         return convs
     kept = [cv for cv in convs if str(cv.get("conv_id")) in keep_ids]
@@ -647,14 +855,24 @@ def slot_diagnostics(rendered: list[Rendered]) -> dict:
 # ---------------------------------------------------------------------------
 # HF persist
 # ---------------------------------------------------------------------------
-def persist_store(out_dir: Path, key: str, smoke: bool, extra: dict) -> None:
+def persist_store(
+    out_dir: Path,
+    key: str,
+    smoke: bool,
+    extra: dict,
+    provenance: str = PROV_INJECTED,
+    model_key: str = bg.MODEL_KEY,
+) -> None:
     """Upload this arm's/comparator's shards + sidecars + manifest to HF.
 
     Runs on the dispatcher's normal exit path, before the phase's done line —
     the store is a plan-referenced downstream input for the fits phase (#521).
     """
     assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing — cannot persist store"
-    stem = stem_for(key)
+    # The CAPTURED model, never the round default: a pretrained capture whose
+    # upload globbed the instruct stem would find no files (fail-loud) or, worse,
+    # upload the instruct shards under a pretrained label.
+    stem = stem_for(key, model_key, provenance)
     files = sorted(p.name for p in out_dir.glob(f"{stem}*") if p.is_file())
     assert files, f"no {stem}* files to upload in {out_dir}"
     tr = transition_for(key)
@@ -663,7 +881,8 @@ def persist_store(out_dir: Path, key: str, smoke: bool, extra: dict) -> None:
         "round": bg.ROUND_VARIANT,
         "arm_or_comparator": key,
         "arm_isolates": bg.ARM_README.get(key, f"{key} comparator store"),
-        "model": bg.MODEL_KEY,
+        "model": model_key,
+        "provenance": provenance,
         "stem": stem,
         "slot_order": list(BND_SLOT_ORDER),
         "x_clean_slot": X_CLEAN_SLOT,
@@ -733,7 +952,18 @@ def main() -> None:
         help="capture a chat / no-template comparator store over the arms' kept "
         "conversations, with the SAME X x Y grid (addendum requirement)",
     )
-    ap.add_argument("--model", choices=("instruct",), default=bg.MODEL_KEY)
+    ap.add_argument(
+        "--model",
+        choices=c.MODELS,
+        default=bg.MODEL_KEY,
+        help="the MEASURED model whose activations this store carries. The "
+        "round's own ablation arms are instruct-only, but 3 of the 4 on-policy "
+        "answer bundles are PRETRAINED-written (ntpl_base / chat_base / "
+        "slot_base), so their stores are captured under the base model. Both "
+        "tokenizers agree byte-for-byte on the chat AND naturalistic renders "
+        "(im_start/im_end are the same single special tokens, identical vocab "
+        "size), so no render assumption is instruct-specific.",
+    )
     ap.add_argument("--out-dir", type=Path, default=c.TURNSTORE_DIR)
     ap.add_argument("--stories-dir", type=Path, default=c.STORIES_DIR)
     ap.add_argument("--dl-dir", type=Path, default=c.PARENT_DL_DIR)
@@ -746,6 +976,31 @@ def main() -> None:
         help="informational: the physical GPU is pinned by CUDA_VISIBLE_DEVICES in the "
         "LAUNCHER env (gotchas.md CVD family) — this value is recorded in the sidecar "
         "and asserted consistent with the visible device count",
+    )
+    ap.add_argument(
+        "--provenance",
+        choices=PROVENANCES,
+        default=PROV_INJECTED,
+        help="who WROTE the answers this store reads. `onpolicy` suffixes the store "
+        "stem / HF path / sidecar regime with `_op` so an on-policy store is "
+        "co-resident with its teacher-forced twin instead of overwriting it; it "
+        "REQUIRES an on-policy row source (--convs-jsonl / --stories-jsonl)",
+    )
+    ap.add_argument(
+        "--convs-jsonl",
+        type=Path,
+        default=None,
+        help="--comparator ONLY: read the conversations from a local {conv_id, prompt, "
+        "response} JSONL (the on-policy answer rows) instead of the pinned parent "
+        "track-S corpus. Requires --provenance onpolicy",
+    )
+    ap.add_argument(
+        "--stories-jsonl",
+        type=Path,
+        default=None,
+        help="--arm ONLY: read the kept stories from a local {conv_id, story, answer, "
+        "parsed_turns} JSONL (the on-policy story-slot rows) instead of this round's "
+        "gen output / the pinned V1 bundle. Requires --provenance onpolicy",
     )
     ap.add_argument("--skip-upload", action="store_true", help="local-only (smoke plumbing)")
     ap.add_argument("--smoke", action="store_true", help="first 8 rows; causal check ON")
@@ -770,6 +1025,28 @@ def main() -> None:
     assert bool(args.arm) != bool(args.comparator), (
         "pass exactly one of --arm (an ablation arm) or --comparator (chat / no_template)"
     )
+    # Provenance <-> row-source coupling, BOTH directions. The store stem / HF
+    # path / sidecar regime are keyed by provenance, so the two must agree or a
+    # capture writes the WRONG store: on-policy rows under a teacher-forced stem
+    # would overwrite the injected twin, and a teacher-forced source under an
+    # `_op` stem would mislabel the provenance dimension the fits read.
+    if args.convs_jsonl is not None:
+        assert args.comparator, "--convs-jsonl applies to --comparator captures only"
+    if args.stories_jsonl is not None:
+        assert args.arm, "--stories-jsonl applies to --arm captures only"
+    onpolicy_source = args.convs_jsonl is not None or args.stories_jsonl is not None
+    if onpolicy_source:
+        assert args.provenance == PROV_ONPOLICY, (
+            "an on-policy row source (--convs-jsonl / --stories-jsonl) requires "
+            f"--provenance {PROV_ONPOLICY}: under the default the store would overwrite "
+            "its teacher-forced twin's stem + HF path"
+        )
+    if args.provenance == PROV_ONPOLICY:
+        assert onpolicy_source, (
+            f"--provenance {PROV_ONPOLICY} requires an on-policy row source "
+            "(--convs-jsonl for a comparator, --stories-jsonl for an arm) — otherwise the "
+            "store carries teacher-forced rows under an on-policy stem"
+        )
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
     key: str
@@ -800,8 +1077,24 @@ def main() -> None:
 
     model, tokenizer, model_id = ex.load_model(args.model, tiny_model_dir=args.tiny_model_dir)
 
+    ws_stats: dict = {"normalized": 0, "conv_ids": []}
     if args.arm:
-        if key == V1_ARM:
+        if args.stories_jsonl is not None:
+            # On-policy story-slot rows: same kept-stories schema, local source.
+            assert args.stories_jsonl.exists(), (
+                f"--stories-jsonl source missing: {args.stories_jsonl}"
+            )
+            stories = c.read_jsonl(args.stories_jsonl)
+            assert stories, f"{args.stories_jsonl} is empty"
+            stories, ws_stats = normalize_onpolicy_leading_ws(stories)
+            print(
+                f"[capture] kept stories from {args.stories_jsonl} "
+                f"({len(stories)} rows, on-policy override); "
+                f"leading-ws span normalization: {ws_stats['normalized']} row(s) "
+                f"{ws_stats['conv_ids'][:12]}",
+                flush=True,
+            )
+        elif key == V1_ARM:
             stories = load_v1_stories(args.dl_dir)
         else:
             kept = bg.kept_path(args.stories_dir, key)
@@ -811,10 +1104,10 @@ def main() -> None:
         if args.smoke:
             stories = stories[:8]
             print(f"[smoke] limiting to {len(stories)} {key} stories", flush=True)
-        rendered, render_stats = render_arm(key, stories, tokenizer)
+        rendered, render_stats = render_arm(key, stories, tokenizer, provenance=args.provenance)
     else:
         keep_ids = arm_kept_conv_ids(args.stories_dir, bg.GEN_ARMS, v1_dl_dir=args.dl_dir)
-        convs = load_comparator_convs(args.dl_dir, keep_ids)
+        convs = load_comparator_convs(args.dl_dir, keep_ids, convs_jsonl=args.convs_jsonl)
         if args.smoke:
             convs = convs[:8]
             print(f"[smoke] limiting to {len(convs)} {key} conversations", flush=True)
@@ -827,7 +1120,7 @@ def main() -> None:
     # never corpus text) persists next to the shards.
     n_pre_filter = len(rendered)
     rendered, drops = ex.partition_rendered(rendered)
-    stem = stem_for(key, args.model)
+    stem = stem_for(key, args.model, args.provenance)
     c.write_json(
         args.out_dir / f"{stem}_skip_manifest.json",
         {
@@ -917,11 +1210,12 @@ def main() -> None:
         "round": bg.ROUND_VARIANT,
         "arm_or_comparator": key,
         "arm_isolates": bg.ARM_README.get(key, f"{key} comparator store"),
-        "regime": format_key(key),
+        "regime": format_key(key, args.provenance),
         "model": args.model,
         "model_id": model_id,
-        "format": format_key(key),
+        "format": format_key(key, args.provenance),
         "track": TRACK,
+        "provenance": args.provenance,
         "story_character_name": c.STORY_CHARACTER_NAME,
         "slot_names": list(BND_SLOT_ORDER),
         "x_clean_slot": X_CLEAN_SLOT,
@@ -944,6 +1238,15 @@ def main() -> None:
         "n_rendered_pre_filter": n_pre_filter,
         "n_dropped_zero_width": len(drops),
         "dropped_conv_ids": [d["conv_id"] for d in drops],
+        # Surfaced at manifest top level (not only nested in render_stats) so a
+        # downstream conv_id-space reconciliation can find the on-policy
+        # gate-reject tail without knowing where the render buried it. Absent
+        # keys default empty: the comparator render path has no arm gate.
+        "n_leading_ws_span_normalized": ws_stats["normalized"],
+        "leading_ws_span_normalized_conv_ids": ws_stats["conv_ids"],
+        "n_dropped_gate_reject": render_stats.get("gate_rejects", 0),
+        "gate_reject_reasons": render_stats.get("gate_reject_reasons", {}),
+        "gate_reject_conv_ids": render_stats.get("gate_reject_conv_ids", []),
         **y_meta,
     }
     shard_size = int(args.shard_size)
@@ -978,6 +1281,8 @@ def main() -> None:
                 "render_stats": render_stats,
                 "slot_diagnostics": diag,
             },
+            provenance=args.provenance,
+            model_key=args.model,
         )
     print(f"[done] {key}: {n_done} rows -> {len(paths)} shard(s) in {args.out_dir}", flush=True)
     sys.stdout.flush()

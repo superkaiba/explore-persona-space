@@ -1,0 +1,6534 @@
+{
+  "commit": "82fa479c29",
+  "created": "2026-07-31T13:35:19Z",
+  "figsize": [
+    11.4,
+    3.9
+  ],
+  "points": [
+    {
+      "$\\rho$, linear ridge map": 0.3647082527737112,
+      "$\\rho$, nonlinear map": 0.3108155824372582,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3415394985093322,
+      "$\\rho$, nonlinear map": 0.24363543715598435,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3435293645295345,
+      "$\\rho$, nonlinear map": 0.2438442035621919,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5405430970823327,
+      "$\\rho$, nonlinear map": 0.4776923321217292,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.52139234750859,
+      "$\\rho$, nonlinear map": 0.4010356210926203,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.524883806371056,
+      "$\\rho$, nonlinear map": 0.40541316736567085,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2374079311313205,
+      "$\\rho$, nonlinear map": 0.19679192097963427,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15911827812771673,
+      "$\\rho$, nonlinear map": 0.09068553031983197,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15922070219760884,
+      "$\\rho$, nonlinear map": 0.053812094698486475,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.34186254401011146,
+      "$\\rho$, nonlinear map": 0.3560449397452315,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.24527421631171029,
+      "$\\rho$, nonlinear map": 0.28430630590972844,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23701795194833772,
+      "$\\rho$, nonlinear map": 0.2870168199129542,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3687500970124035,
+      "$\\rho$, nonlinear map": 0.3500928752813608,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35429605276602716,
+      "$\\rho$, nonlinear map": 0.24494297993774308,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35687427054961124,
+      "$\\rho$, nonlinear map": 0.230353486535082,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5791911025101862,
+      "$\\rho$, nonlinear map": 0.49441612700061777,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5548136094344032,
+      "$\\rho$, nonlinear map": 0.4696303969765938,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5510465748313393,
+      "$\\rho$, nonlinear map": 0.4636811569847123,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3437125833275686,
+      "$\\rho$, nonlinear map": 0.373843361102364,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6723272752111418,
+      "$\\rho$, nonlinear map": 0.6339260573088951,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6952679621509642,
+      "$\\rho$, nonlinear map": 0.6696132392826554,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4661649374028575,
+      "$\\rho$, nonlinear map": 0.38431124604848305,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6886765997396244,
+      "$\\rho$, nonlinear map": 0.6273546766088438,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.7139268799965806,
+      "$\\rho$, nonlinear map": 0.6649403361603382,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3437125833275686,
+      "$\\rho$, nonlinear map": 0.373843361102364,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6723272752111418,
+      "$\\rho$, nonlinear map": 0.6339260573088951,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6952679621509642,
+      "$\\rho$, nonlinear map": 0.6696132392826554,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4661649374028575,
+      "$\\rho$, nonlinear map": 0.38431124604848305,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6886765997396244,
+      "$\\rho$, nonlinear map": 0.6273546766088438,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.7139268799965806,
+      "$\\rho$, nonlinear map": 0.6649403361603382,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3437125833275686,
+      "$\\rho$, nonlinear map": 0.373843361102364,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6723272752111418,
+      "$\\rho$, nonlinear map": 0.6339260573088951,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6952679621509642,
+      "$\\rho$, nonlinear map": 0.6696132392826554,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4661649374028575,
+      "$\\rho$, nonlinear map": 0.38431124604848305,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6886765997396244,
+      "$\\rho$, nonlinear map": 0.6273546766088438,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.7139268799965806,
+      "$\\rho$, nonlinear map": 0.6649403361603382,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.32703312251757777,
+      "$\\rho$, nonlinear map": 0.3304867735477709,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.24966707860353893,
+      "$\\rho$, nonlinear map": 0.19618163861001794,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35380346586461014,
+      "$\\rho$, nonlinear map": 0.2595274397300518,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.46438434490624314,
+      "$\\rho$, nonlinear map": 0.3431254824965671,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.26774586709561965,
+      "$\\rho$, nonlinear map": 0.21729556380104742,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5136565635817273,
+      "$\\rho$, nonlinear map": 0.3810432246263866,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.32703312251757777,
+      "$\\rho$, nonlinear map": 0.3304867735477709,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.24966707860353893,
+      "$\\rho$, nonlinear map": 0.19618163861001794,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35380346586461014,
+      "$\\rho$, nonlinear map": 0.2595274397300518,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.46438434490624314,
+      "$\\rho$, nonlinear map": 0.3431254824965671,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.26774586709561965,
+      "$\\rho$, nonlinear map": 0.21729556380104742,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5136565635817273,
+      "$\\rho$, nonlinear map": 0.3810432246263866,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.32703312251757777,
+      "$\\rho$, nonlinear map": 0.3304867735477709,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.24966707860353893,
+      "$\\rho$, nonlinear map": 0.19618163861001794,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35380346586461014,
+      "$\\rho$, nonlinear map": 0.2595274397300518,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.46438434490624314,
+      "$\\rho$, nonlinear map": 0.3431254824965671,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.26774586709561965,
+      "$\\rho$, nonlinear map": 0.21729556380104742,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5136565635817273,
+      "$\\rho$, nonlinear map": 0.3810432246263866,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.018422703396342034,
+      "$\\rho$, nonlinear map": 0.020592104323734553,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.22635438318578202,
+      "$\\rho$, nonlinear map": 0.061600753805904636,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3647082527737112,
+      "$\\rho$, nonlinear map": 0.3108155824372582,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.03780914731945373,
+      "$\\rho$, nonlinear map": 0.028171799110194327,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.28424857097936573,
+      "$\\rho$, nonlinear map": 0.0546629679184717,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3415394985093322,
+      "$\\rho$, nonlinear map": 0.24363543715598435,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.03780914731945373,
+      "$\\rho$, nonlinear map": 0.03875414392994198,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.28424857097936573,
+      "$\\rho$, nonlinear map": 0.05859027214926277,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3435293645295345,
+      "$\\rho$, nonlinear map": 0.2438442035621919,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.014665073509384998,
+      "$\\rho$, nonlinear map": 0.005915877647557396,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2702005711269304,
+      "$\\rho$, nonlinear map": 0.18889470678430775,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5405430970823327,
+      "$\\rho$, nonlinear map": 0.4776923321217292,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.019154440394729924,
+      "$\\rho$, nonlinear map": -0.006449476155521255,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3150762719185227,
+      "$\\rho$, nonlinear map": 0.17514404185527532,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.52139234750859,
+      "$\\rho$, nonlinear map": 0.4010356210926203,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.020795141786478517,
+      "$\\rho$, nonlinear map": -0.006349399705080486,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3190345669636904,
+      "$\\rho$, nonlinear map": 0.21111505216360535,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.524883806371056,
+      "$\\rho$, nonlinear map": 0.40541316736567085,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.05265881339809575,
+      "$\\rho$, nonlinear map": 0.06170426984846633,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.0156299713180402,
+      "$\\rho$, nonlinear map": 0.014768633318941437,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2374079311313205,
+      "$\\rho$, nonlinear map": 0.19679192097963427,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.05808052562222287,
+      "$\\rho$, nonlinear map": 0.07010063443765525,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.05903684627682497,
+      "$\\rho$, nonlinear map": -0.014143413802162616,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15911827812771673,
+      "$\\rho$, nonlinear map": 0.09068553031983197,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.05736469843378986,
+      "$\\rho$, nonlinear map": 0.015545106235430426,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08456261810216682,
+      "$\\rho$, nonlinear map": -0.12651020798699564,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15922070219760884,
+      "$\\rho$, nonlinear map": 0.053812094698486475,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.07877166698060253,
+      "$\\rho$, nonlinear map": 0.0570273388828329,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.0389571879762521,
+      "$\\rho$, nonlinear map": 0.044025643680870134,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.34186254401011146,
+      "$\\rho$, nonlinear map": 0.3560449397452315,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.0732096927122235,
+      "$\\rho$, nonlinear map": 0.04127793819525442,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.0711924572233138,
+      "$\\rho$, nonlinear map": 0.06108442912634059,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.24527421631171029,
+      "$\\rho$, nonlinear map": 0.28430630590972844,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.056569951797070826,
+      "$\\rho$, nonlinear map": 0.04127793819525442,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.11098954820411304,
+      "$\\rho$, nonlinear map": 0.06108442912634059,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23701795194833772,
+      "$\\rho$, nonlinear map": 0.2870168199129542,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08357946631473587,
+      "$\\rho$, nonlinear map": 0.06071520920729242,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15153431274343393,
+      "$\\rho$, nonlinear map": 0.06031825121928593,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3687500970124035,
+      "$\\rho$, nonlinear map": 0.3500928752813608,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.09878814329903222,
+      "$\\rho$, nonlinear map": 0.0665955588553495,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15673984896402923,
+      "$\\rho$, nonlinear map": 0.0724072781905473,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35429605276602716,
+      "$\\rho$, nonlinear map": 0.24494297993774308,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.09878814329903222,
+      "$\\rho$, nonlinear map": 0.04518089016986987,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1567398523276003,
+      "$\\rho$, nonlinear map": 0.029767470560969855,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35687427054961124,
+      "$\\rho$, nonlinear map": 0.230353486535082,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.11024422764785781,
+      "$\\rho$, nonlinear map": 0.07976474210214385,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.14498624728503196,
+      "$\\rho$, nonlinear map": 0.1252650272179967,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5791911025101862,
+      "$\\rho$, nonlinear map": 0.49441612700061777,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.11028549549335578,
+      "$\\rho$, nonlinear map": 0.08825260340890993,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.09285551197763064,
+      "$\\rho$, nonlinear map": 0.051082735505771935,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5548136094344032,
+      "$\\rho$, nonlinear map": 0.4696303969765938,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1071622331800746,
+      "$\\rho$, nonlinear map": 0.08825260340890993,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.09442878473359939,
+      "$\\rho$, nonlinear map": 0.051082735505771935,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5510465748313393,
+      "$\\rho$, nonlinear map": 0.4636811569847123,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23863936165503527,
+      "$\\rho$, nonlinear map": 0.24682927616124162,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.10628444246873925,
+      "$\\rho$, nonlinear map": 0.1721191300188881,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08941638533008892,
+      "$\\rho$, nonlinear map": 0.1485124502066115,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3664772366452317,
+      "$\\rho$, nonlinear map": 0.31785256726356764,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23084934026577458,
+      "$\\rho$, nonlinear map": 0.23212725519699784,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.21704695480553488,
+      "$\\rho$, nonlinear map": 0.22256392442839948,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2435947618045552,
+      "$\\rho$, nonlinear map": 0.25703734891314617,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1603092229329567,
+      "$\\rho$, nonlinear map": 0.14911144951459798,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1553796705631672,
+      "$\\rho$, nonlinear map": 0.15003826372021292,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.16262200621204853,
+      "$\\rho$, nonlinear map": 0.1044355604180941,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08774015725394134,
+      "$\\rho$, nonlinear map": 0.1172081947735597,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.10905018844924191,
+      "$\\rho$, nonlinear map": 0.1292167484816099,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23980568892933468,
+      "$\\rho$, nonlinear map": 0.28189749218186294,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1042267911781952,
+      "$\\rho$, nonlinear map": 0.12680995322395724,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.07610542180453474,
+      "$\\rho$, nonlinear map": 0.09507955911620482,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.22128498739717845,
+      "$\\rho$, nonlinear map": 0.1255884095408229,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1700865127120356,
+      "$\\rho$, nonlinear map": 0.07754889713795558,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.18066534685309243,
+      "$\\rho$, nonlinear map": 0.09425989415969227,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4092550679691106,
+      "$\\rho$, nonlinear map": 0.37361719273565014,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4237911458758532,
+      "$\\rho$, nonlinear map": 0.393521196552664,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.46146546133706046,
+      "$\\rho$, nonlinear map": 0.4410534584674895,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.41202366548083247,
+      "$\\rho$, nonlinear map": 0.43314722243549447,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4138236619441624,
+      "$\\rho$, nonlinear map": 0.4036536579113328,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4683729417220962,
+      "$\\rho$, nonlinear map": 0.45704825696721213,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4092550679691106,
+      "$\\rho$, nonlinear map": 0.37361719273565014,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4237911458758532,
+      "$\\rho$, nonlinear map": 0.393521196552664,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.46146546133706046,
+      "$\\rho$, nonlinear map": 0.4410534584674895,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.41202366548083247,
+      "$\\rho$, nonlinear map": 0.43314722243549447,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4138236619441624,
+      "$\\rho$, nonlinear map": 0.4036536579113328,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4683729417220962,
+      "$\\rho$, nonlinear map": 0.45704825696721213,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4092550679691106,
+      "$\\rho$, nonlinear map": 0.37361719273565014,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4237911458758532,
+      "$\\rho$, nonlinear map": 0.393521196552664,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.46146546133706046,
+      "$\\rho$, nonlinear map": 0.4410534584674895,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.41202366548083247,
+      "$\\rho$, nonlinear map": 0.43314722243549447,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4138236619441624,
+      "$\\rho$, nonlinear map": 0.4036536579113328,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4683729417220962,
+      "$\\rho$, nonlinear map": 0.45704825696721213,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2225509305930207,
+      "$\\rho$, nonlinear map": 0.24806002702042843,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.12123914100739147,
+      "$\\rho$, nonlinear map": 0.14172796878724164,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15051766258222413,
+      "$\\rho$, nonlinear map": 0.09607775851849955,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2692513646368878,
+      "$\\rho$, nonlinear map": 0.2343125921419257,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15524533904464205,
+      "$\\rho$, nonlinear map": 0.1188731938374611,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.18282643608410268,
+      "$\\rho$, nonlinear map": 0.09907540738809456,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2225509305930207,
+      "$\\rho$, nonlinear map": 0.24806002702042843,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.12123914100739147,
+      "$\\rho$, nonlinear map": 0.14172796878724164,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15051766258222413,
+      "$\\rho$, nonlinear map": 0.09607775851849955,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2692513646368878,
+      "$\\rho$, nonlinear map": 0.2343125921419257,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15524533904464205,
+      "$\\rho$, nonlinear map": 0.1188731938374611,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.18282643608410268,
+      "$\\rho$, nonlinear map": 0.09907540738809456,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2225509305930207,
+      "$\\rho$, nonlinear map": 0.24806002702042843,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.12123914100739147,
+      "$\\rho$, nonlinear map": 0.14172796878724164,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15051766258222413,
+      "$\\rho$, nonlinear map": 0.09607775851849955,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2692513646368878,
+      "$\\rho$, nonlinear map": 0.2343125921419257,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15524533904464205,
+      "$\\rho$, nonlinear map": 0.1188731938374611,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.18282643608410268,
+      "$\\rho$, nonlinear map": 0.09907540738809456,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": -0.003403288130228412,
+      "$\\rho$, nonlinear map": 0.0033020207122144,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003997786453218058,
+      "$\\rho$, nonlinear map": 0.005912046250972701,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23863936165503527,
+      "$\\rho$, nonlinear map": 0.24682927616124162,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": -0.013718779194804253,
+      "$\\rho$, nonlinear map": 0.001537474765309402,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": -0.005279263169631121,
+      "$\\rho$, nonlinear map": -0.009589908497692395,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.10628444246873925,
+      "$\\rho$, nonlinear map": 0.1721191300188881,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.014840802569723149,
+      "$\\rho$, nonlinear map": -0.001074787441294704,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.0121798700770261,
+      "$\\rho$, nonlinear map": 0.028769725493077186,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08941638533008892,
+      "$\\rho$, nonlinear map": 0.1485124502066115,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.00797297860124595,
+      "$\\rho$, nonlinear map": 0.0022897024337717453,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": -0.0006065205419396338,
+      "$\\rho$, nonlinear map": 0.004896691704358392,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3664772366452317,
+      "$\\rho$, nonlinear map": 0.31785256726356764,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.012422474708925898,
+      "$\\rho$, nonlinear map": 0.010345887267995546,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": -0.003275805644258884,
+      "$\\rho$, nonlinear map": 0.028769725493077186,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23084934026577458,
+      "$\\rho$, nonlinear map": 0.23212725519699784,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.013780777268602672,
+      "$\\rho$, nonlinear map": 0.012026471860418261,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": -0.014952096263876053,
+      "$\\rho$, nonlinear map": 0.028769725493077186,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.21704695480553488,
+      "$\\rho$, nonlinear map": 0.22256392442839948,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.0077266258468607,
+      "$\\rho$, nonlinear map": -0.011172842003281553,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.009295550353443156,
+      "$\\rho$, nonlinear map": -0.0030478925664646933,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2435947618045552,
+      "$\\rho$, nonlinear map": 0.25703734891314617,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.019436466587304906,
+      "$\\rho$, nonlinear map": 0.01789563896279159,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.009992163164831562,
+      "$\\rho$, nonlinear map": 0.009015570943633757,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1603092229329567,
+      "$\\rho$, nonlinear map": 0.14911144951459798,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.019436466587304906,
+      "$\\rho$, nonlinear map": 0.03161397364869068,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.009992163164831562,
+      "$\\rho$, nonlinear map": 0.014837399247070155,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1553796705631672,
+      "$\\rho$, nonlinear map": 0.15003826372021292,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": -0.006490674618182615,
+      "$\\rho$, nonlinear map": -0.0027841593606681707,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.012366573074322052,
+      "$\\rho$, nonlinear map": -0.006173145999288806,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.16262200621204853,
+      "$\\rho$, nonlinear map": 0.1044355604180941,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.012026457113102516,
+      "$\\rho$, nonlinear map": -0.0028436058686114557,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.0287697254930772,
+      "$\\rho$, nonlinear map": -0.00030169100035437553,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08774015725394134,
+      "$\\rho$, nonlinear map": 0.1172081947735597,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.012026457113102516,
+      "$\\rho$, nonlinear map": -0.0028436058686114557,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.0287697254930772,
+      "$\\rho$, nonlinear map": -0.00030169100035437553,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.10905018844924191,
+      "$\\rho$, nonlinear map": 0.1292167484816099,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": -0.0027854465552592587,
+      "$\\rho$, nonlinear map": -0.017469921477155283,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.008340605317825147,
+      "$\\rho$, nonlinear map": -0.005194206200636198,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23980568892933468,
+      "$\\rho$, nonlinear map": 0.28189749218186294,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": -0.003796809398927134,
+      "$\\rho$, nonlinear map": -0.005479786851130056,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.0033306961507368472,
+      "$\\rho$, nonlinear map": -4.05912520382703e-05,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1042267911781952,
+      "$\\rho$, nonlinear map": 0.12680995322395724,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": -0.028259597297697288,
+      "$\\rho$, nonlinear map": 0.031225487503384167,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": -0.012317248049842223,
+      "$\\rho$, nonlinear map": 0.014477564758591023,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.07610542180453474,
+      "$\\rho$, nonlinear map": 0.09507955911620482,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.01569136095894717,
+      "$\\rho$, nonlinear map": 0.0024012810862531334,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.008945625464943348,
+      "$\\rho$, nonlinear map": -0.01249230585678387,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.22128498739717845,
+      "$\\rho$, nonlinear map": 0.1255884095408229,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.027837133025628905,
+      "$\\rho$, nonlinear map": 0.019171724261001808,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.01110644380027472,
+      "$\\rho$, nonlinear map": -0.007893647299536325,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1700865127120356,
+      "$\\rho$, nonlinear map": 0.07754889713795558,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.027837133025628905,
+      "$\\rho$, nonlinear map": 0.013834532885720374,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.01110644380027472,
+      "$\\rho$, nonlinear map": -0.0190792533286,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.18066534685309243,
+      "$\\rho$, nonlinear map": 0.09425989415969227,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3647082527737112,
+      "$\\rho$, nonlinear map": 0.2864332667950073,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3415394985093322,
+      "$\\rho$, nonlinear map": 0.2586792471890091,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3435293645295345,
+      "$\\rho$, nonlinear map": 0.2603804227172503,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5405430970823327,
+      "$\\rho$, nonlinear map": 0.3307904188908289,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.52139234750859,
+      "$\\rho$, nonlinear map": 0.2888408917656777,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.524883806371056,
+      "$\\rho$, nonlinear map": 0.2766368376437022,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2374079311313205,
+      "$\\rho$, nonlinear map": 0.2737926092547202,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15911827812771673,
+      "$\\rho$, nonlinear map": 0.1847709148555524,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15922070219760884,
+      "$\\rho$, nonlinear map": 0.17868595562087577,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.34186254401011146,
+      "$\\rho$, nonlinear map": 0.18785994911400342,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.24527421631171029,
+      "$\\rho$, nonlinear map": 0.16152904067579685,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23701795194833772,
+      "$\\rho$, nonlinear map": 0.1433911275822054,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3687500970124035,
+      "$\\rho$, nonlinear map": 0.36652512064038345,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35429605276602716,
+      "$\\rho$, nonlinear map": 0.3367755442834479,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35687427054961124,
+      "$\\rho$, nonlinear map": 0.3442978522415845,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5791911025101862,
+      "$\\rho$, nonlinear map": 0.31589825938611604,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5548136094344032,
+      "$\\rho$, nonlinear map": 0.2606496662070004,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5510465748313393,
+      "$\\rho$, nonlinear map": 0.23134659933446286,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3437125833275686,
+      "$\\rho$, nonlinear map": 0.3144384999755055,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6723272752111418,
+      "$\\rho$, nonlinear map": 0.3852231810000437,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6952679621509642,
+      "$\\rho$, nonlinear map": 0.45656372707739856,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4661649374028575,
+      "$\\rho$, nonlinear map": 0.4245680026033101,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6886765997396244,
+      "$\\rho$, nonlinear map": 0.5984642253477203,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.7139268799965806,
+      "$\\rho$, nonlinear map": 0.6302067551002698,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3437125833275686,
+      "$\\rho$, nonlinear map": 0.3144384999755055,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6723272752111418,
+      "$\\rho$, nonlinear map": 0.3852231810000437,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6952679621509642,
+      "$\\rho$, nonlinear map": 0.45656372707739856,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4661649374028575,
+      "$\\rho$, nonlinear map": 0.4245680026033101,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6886765997396244,
+      "$\\rho$, nonlinear map": 0.5984642253477203,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.7139268799965806,
+      "$\\rho$, nonlinear map": 0.6302067551002698,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3437125833275686,
+      "$\\rho$, nonlinear map": 0.3144384999755055,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6723272752111418,
+      "$\\rho$, nonlinear map": 0.3852231810000437,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6952679621509642,
+      "$\\rho$, nonlinear map": 0.45656372707739856,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4661649374028575,
+      "$\\rho$, nonlinear map": 0.4245680026033101,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6886765997396244,
+      "$\\rho$, nonlinear map": 0.5984642253477203,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.7139268799965806,
+      "$\\rho$, nonlinear map": 0.6302067551002698,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.32703312251757777,
+      "$\\rho$, nonlinear map": 0.1876865483131999,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.24966707860353893,
+      "$\\rho$, nonlinear map": 0.08956477039395315,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35380346586461014,
+      "$\\rho$, nonlinear map": 0.043364197338541105,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.46438434490624314,
+      "$\\rho$, nonlinear map": 0.18517495541392026,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.26774586709561965,
+      "$\\rho$, nonlinear map": 0.10082668233453822,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5136565635817273,
+      "$\\rho$, nonlinear map": 0.15269238270509636,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.32703312251757777,
+      "$\\rho$, nonlinear map": 0.1876865483131999,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.24966707860353893,
+      "$\\rho$, nonlinear map": 0.08956477039395315,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35380346586461014,
+      "$\\rho$, nonlinear map": 0.043364197338541105,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.46438434490624314,
+      "$\\rho$, nonlinear map": 0.18517495541392026,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.26774586709561965,
+      "$\\rho$, nonlinear map": 0.10082668233453822,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5136565635817273,
+      "$\\rho$, nonlinear map": 0.15269238270509636,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.32703312251757777,
+      "$\\rho$, nonlinear map": 0.1876865483131999,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.24966707860353893,
+      "$\\rho$, nonlinear map": 0.08956477039395315,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35380346586461014,
+      "$\\rho$, nonlinear map": 0.043364197338541105,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.46438434490624314,
+      "$\\rho$, nonlinear map": 0.18517495541392026,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.26774586709561965,
+      "$\\rho$, nonlinear map": 0.10082668233453822,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5136565635817273,
+      "$\\rho$, nonlinear map": 0.15269238270509636,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.018422703396342034,
+      "$\\rho$, nonlinear map": -0.007148981205178324,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.22635438318578202,
+      "$\\rho$, nonlinear map": 0.01603889297880563,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3647082527737112,
+      "$\\rho$, nonlinear map": 0.2864332667950073,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.03780914731945373,
+      "$\\rho$, nonlinear map": -0.008708498607301588,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.28424857097936573,
+      "$\\rho$, nonlinear map": 0.0074508818080574095,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3415394985093322,
+      "$\\rho$, nonlinear map": 0.2586792471890091,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.03780914731945373,
+      "$\\rho$, nonlinear map": -0.008341449225848967,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.28424857097936573,
+      "$\\rho$, nonlinear map": 0.005726131496973808,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3435293645295345,
+      "$\\rho$, nonlinear map": 0.2603804227172503,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.014665073509384998,
+      "$\\rho$, nonlinear map": -0.029614630162103278,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2702005711269304,
+      "$\\rho$, nonlinear map": 0.055990989416834315,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5405430970823327,
+      "$\\rho$, nonlinear map": 0.3307904188908289,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.019154440394729924,
+      "$\\rho$, nonlinear map": 0.03076873986436245,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3150762719185227,
+      "$\\rho$, nonlinear map": 0.018074118113796157,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.52139234750859,
+      "$\\rho$, nonlinear map": 0.2888408917656777,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.020795141786478517,
+      "$\\rho$, nonlinear map": 0.03076873986436245,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3190345669636904,
+      "$\\rho$, nonlinear map": 0.018074118113796157,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.524883806371056,
+      "$\\rho$, nonlinear map": 0.2766368376437022,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.05265881339809575,
+      "$\\rho$, nonlinear map": 0.04853374089353154,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.0156299713180402,
+      "$\\rho$, nonlinear map": 0.13852963953950573,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2374079311313205,
+      "$\\rho$, nonlinear map": 0.2737926092547202,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.05808052562222287,
+      "$\\rho$, nonlinear map": 0.10576470624888556,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.05903684627682497,
+      "$\\rho$, nonlinear map": 0.07714453993377733,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15911827812771673,
+      "$\\rho$, nonlinear map": 0.1847709148555524,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.05736469843378986,
+      "$\\rho$, nonlinear map": 0.05371457708632665,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08456261810216682,
+      "$\\rho$, nonlinear map": 0.1424799939651991,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15922070219760884,
+      "$\\rho$, nonlinear map": 0.17868595562087577,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.07877166698060253,
+      "$\\rho$, nonlinear map": 0.08101906913510785,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.0389571879762521,
+      "$\\rho$, nonlinear map": 0.021677729376939955,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.34186254401011146,
+      "$\\rho$, nonlinear map": 0.18785994911400342,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.0732096927122235,
+      "$\\rho$, nonlinear map": 0.09881818046676978,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.0711924572233138,
+      "$\\rho$, nonlinear map": 0.015311974144734489,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.24527421631171029,
+      "$\\rho$, nonlinear map": 0.16152904067579685,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.056569951797070826,
+      "$\\rho$, nonlinear map": 0.09475317462370414,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.11098954820411304,
+      "$\\rho$, nonlinear map": 0.036344017626801166,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23701795194833772,
+      "$\\rho$, nonlinear map": 0.1433911275822054,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08357946631473587,
+      "$\\rho$, nonlinear map": 0.06978140723379818,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15153431274343393,
+      "$\\rho$, nonlinear map": 0.12680681465565372,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3687500970124035,
+      "$\\rho$, nonlinear map": 0.36652512064038345,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.09878814329903222,
+      "$\\rho$, nonlinear map": 0.06418560860395255,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15673984896402923,
+      "$\\rho$, nonlinear map": 0.12584163085017125,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35429605276602716,
+      "$\\rho$, nonlinear map": 0.3367755442834479,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.09878814329903222,
+      "$\\rho$, nonlinear map": 0.05861988019218089,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1567398523276003,
+      "$\\rho$, nonlinear map": 0.12646410921650342,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35687427054961124,
+      "$\\rho$, nonlinear map": 0.3442978522415845,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.11024422764785781,
+      "$\\rho$, nonlinear map": 0.0778042657088537,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.14498624728503196,
+      "$\\rho$, nonlinear map": 0.06233132311436867,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5791911025101862,
+      "$\\rho$, nonlinear map": 0.31589825938611604,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.11028549549335578,
+      "$\\rho$, nonlinear map": 0.09945344637805655,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.09285551197763064,
+      "$\\rho$, nonlinear map": 0.035816636095195094,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5548136094344032,
+      "$\\rho$, nonlinear map": 0.2606496662070004,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1071622331800746,
+      "$\\rho$, nonlinear map": 0.11692578734210247,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.09442878473359939,
+      "$\\rho$, nonlinear map": 0.07251320784098085,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5510465748313393,
+      "$\\rho$, nonlinear map": 0.23134659933446286,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23863936165503527,
+      "$\\rho$, nonlinear map": 0.07066397207699537,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.10628444246873925,
+      "$\\rho$, nonlinear map": 0.011484346576652801,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08941638533008892,
+      "$\\rho$, nonlinear map": 0.007413542434306024,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3664772366452317,
+      "$\\rho$, nonlinear map": 0.11859770257598094,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23084934026577458,
+      "$\\rho$, nonlinear map": 0.062565855285999,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.21704695480553488,
+      "$\\rho$, nonlinear map": 0.05426979751072031,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2435947618045552,
+      "$\\rho$, nonlinear map": 0.12829555315617944,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1603092229329567,
+      "$\\rho$, nonlinear map": 0.07647796717999408,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1553796705631672,
+      "$\\rho$, nonlinear map": 0.07489424247025557,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.16262200621204853,
+      "$\\rho$, nonlinear map": 0.06760757812898283,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08774015725394134,
+      "$\\rho$, nonlinear map": 0.04637584585202675,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.10905018844924191,
+      "$\\rho$, nonlinear map": 0.039279411445450295,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23980568892933468,
+      "$\\rho$, nonlinear map": 0.10679888976297414,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1042267911781952,
+      "$\\rho$, nonlinear map": 0.08490127546162661,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.07610542180453474,
+      "$\\rho$, nonlinear map": 0.06948174197752909,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.22128498739717845,
+      "$\\rho$, nonlinear map": 0.0773843858235962,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1700865127120356,
+      "$\\rho$, nonlinear map": 0.0924415878693347,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.18066534685309243,
+      "$\\rho$, nonlinear map": 0.0761078152988799,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4092550679691106,
+      "$\\rho$, nonlinear map": -0.19249163698905544,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4237911458758532,
+      "$\\rho$, nonlinear map": -0.07769333541588948,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.46146546133706046,
+      "$\\rho$, nonlinear map": -0.019269518981575987,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.41202366548083247,
+      "$\\rho$, nonlinear map": -0.1434658461420195,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4138236619441624,
+      "$\\rho$, nonlinear map": -0.02189795875959898,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4683729417220962,
+      "$\\rho$, nonlinear map": 0.02408413372283838,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4092550679691106,
+      "$\\rho$, nonlinear map": -0.19249163698905544,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4237911458758532,
+      "$\\rho$, nonlinear map": -0.07769333541588948,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.46146546133706046,
+      "$\\rho$, nonlinear map": -0.019269518981575987,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.41202366548083247,
+      "$\\rho$, nonlinear map": -0.1434658461420195,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4138236619441624,
+      "$\\rho$, nonlinear map": -0.02189795875959898,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4683729417220962,
+      "$\\rho$, nonlinear map": 0.02408413372283838,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4092550679691106,
+      "$\\rho$, nonlinear map": -0.19249163698905544,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4237911458758532,
+      "$\\rho$, nonlinear map": -0.07769333541588948,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.46146546133706046,
+      "$\\rho$, nonlinear map": -0.019269518981575987,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.41202366548083247,
+      "$\\rho$, nonlinear map": -0.1434658461420195,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4138236619441624,
+      "$\\rho$, nonlinear map": -0.02189795875959898,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4683729417220962,
+      "$\\rho$, nonlinear map": 0.02408413372283838,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2225509305930207,
+      "$\\rho$, nonlinear map": 0.16468780258595384,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.12123914100739147,
+      "$\\rho$, nonlinear map": 0.07933926064564424,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15051766258222413,
+      "$\\rho$, nonlinear map": 0.02595319310987133,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2692513646368878,
+      "$\\rho$, nonlinear map": 0.17892400948876108,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15524533904464205,
+      "$\\rho$, nonlinear map": 0.09076311032380284,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.18282643608410268,
+      "$\\rho$, nonlinear map": 0.030377927943493813,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2225509305930207,
+      "$\\rho$, nonlinear map": 0.16468780258595384,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.12123914100739147,
+      "$\\rho$, nonlinear map": 0.07933926064564424,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15051766258222413,
+      "$\\rho$, nonlinear map": 0.02595319310987133,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2692513646368878,
+      "$\\rho$, nonlinear map": 0.17892400948876108,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15524533904464205,
+      "$\\rho$, nonlinear map": 0.09076311032380284,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.18282643608410268,
+      "$\\rho$, nonlinear map": 0.030377927943493813,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2225509305930207,
+      "$\\rho$, nonlinear map": 0.16468780258595384,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.12123914100739147,
+      "$\\rho$, nonlinear map": 0.07933926064564424,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15051766258222413,
+      "$\\rho$, nonlinear map": 0.02595319310987133,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2692513646368878,
+      "$\\rho$, nonlinear map": 0.17892400948876108,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.15524533904464205,
+      "$\\rho$, nonlinear map": 0.09076311032380284,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.18282643608410268,
+      "$\\rho$, nonlinear map": 0.030377927943493813,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": -0.003403288130228412,
+      "$\\rho$, nonlinear map": -0.006557155908655817,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003997786453218058,
+      "$\\rho$, nonlinear map": 0.014435144579930989,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23863936165503527,
+      "$\\rho$, nonlinear map": 0.07066397207699537,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": -0.013718779194804253,
+      "$\\rho$, nonlinear map": -0.0002453665426297563,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": -0.005279263169631121,
+      "$\\rho$, nonlinear map": 0.01003053515048243,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.10628444246873925,
+      "$\\rho$, nonlinear map": 0.011484346576652801,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.014840802569723149,
+      "$\\rho$, nonlinear map": 0.005752961848043476,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.0121798700770261,
+      "$\\rho$, nonlinear map": 0.005146927082592969,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08941638533008892,
+      "$\\rho$, nonlinear map": 0.007413542434306024,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.00797297860124595,
+      "$\\rho$, nonlinear map": -0.01860259543076556,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": -0.0006065205419396338,
+      "$\\rho$, nonlinear map": -0.016487385675184412,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3664772366452317,
+      "$\\rho$, nonlinear map": 0.11859770257598094,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.012422474708925898,
+      "$\\rho$, nonlinear map": -0.031296584872021534,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": -0.003275805644258884,
+      "$\\rho$, nonlinear map": -0.012488429220035761,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23084934026577458,
+      "$\\rho$, nonlinear map": 0.062565855285999,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.013780777268602672,
+      "$\\rho$, nonlinear map": -0.031296584872021534,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": -0.014952096263876053,
+      "$\\rho$, nonlinear map": -0.012488429220035761,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.21704695480553488,
+      "$\\rho$, nonlinear map": 0.05426979751072031,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.0077266258468607,
+      "$\\rho$, nonlinear map": -0.031600959961975254,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.009295550353443156,
+      "$\\rho$, nonlinear map": -0.014497497562459117,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2435947618045552,
+      "$\\rho$, nonlinear map": 0.12829555315617944,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.019436466587304906,
+      "$\\rho$, nonlinear map": -0.03142919928112003,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.009992163164831562,
+      "$\\rho$, nonlinear map": -0.014247612436876613,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1603092229329567,
+      "$\\rho$, nonlinear map": 0.07647796717999408,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.019436466587304906,
+      "$\\rho$, nonlinear map": -0.02904073677597947,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.009992163164831562,
+      "$\\rho$, nonlinear map": -0.01234068037231334,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1553796705631672,
+      "$\\rho$, nonlinear map": 0.07489424247025557,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": -0.006490674618182615,
+      "$\\rho$, nonlinear map": 0.0192628698974959,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.012366573074322052,
+      "$\\rho$, nonlinear map": 0.010593583018652692,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.16262200621204853,
+      "$\\rho$, nonlinear map": 0.06760757812898283,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.012026457113102516,
+      "$\\rho$, nonlinear map": 0.027257221583766544,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.0287697254930772,
+      "$\\rho$, nonlinear map": 0.012463804412082023,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08774015725394134,
+      "$\\rho$, nonlinear map": 0.04637584585202675,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.012026457113102516,
+      "$\\rho$, nonlinear map": 0.02889030314919483,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.0287697254930772,
+      "$\\rho$, nonlinear map": 0.012488429220035761,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.10905018844924191,
+      "$\\rho$, nonlinear map": 0.039279411445450295,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": -0.0027854465552592587,
+      "$\\rho$, nonlinear map": -0.03161391659652216,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.008340605317825147,
+      "$\\rho$, nonlinear map": -0.014837399247070155,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23980568892933468,
+      "$\\rho$, nonlinear map": 0.10679888976297414,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": -0.003796809398927134,
+      "$\\rho$, nonlinear map": -0.030104030010633304,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.0033306961507368472,
+      "$\\rho$, nonlinear map": -0.012802001660100197,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1042267911781952,
+      "$\\rho$, nonlinear map": 0.08490127546162661,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": -0.028259597297697288,
+      "$\\rho$, nonlinear map": -0.029279475085598302,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": -0.012317248049842223,
+      "$\\rho$, nonlinear map": -0.01265022873712276,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.07610542180453474,
+      "$\\rho$, nonlinear map": 0.06948174197752909,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.01569136095894717,
+      "$\\rho$, nonlinear map": 0.019465914656149382,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.008945625464943348,
+      "$\\rho$, nonlinear map": 0.006720536109115397,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.22128498739717845,
+      "$\\rho$, nonlinear map": 0.0773843858235962,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.027837133025628905,
+      "$\\rho$, nonlinear map": 0.025097820257329855,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.01110644380027472,
+      "$\\rho$, nonlinear map": 0.012233473508788515,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1700865127120356,
+      "$\\rho$, nonlinear map": 0.0924415878693347,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.027837133025628905,
+      "$\\rho$, nonlinear map": 0.02805932011334016,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.01110644380027472,
+      "$\\rho$, nonlinear map": 0.012179870077026103,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.18066534685309243,
+      "$\\rho$, nonlinear map": 0.0761078152988799,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35011274676711174,
+      "y": 0.2968198252126936,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.36482780899822476,
+      "y": 0.28486218774927846,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3538740063417403,
+      "y": 0.301393514026481,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35931400765593996,
+      "y": 0.32968005406873285,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3643323808152478,
+      "y": 0.3437193687620385,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.36338893346891327,
+      "y": 0.3390550020599569,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3688645694050664,
+      "y": 0.30809461528670173,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3943806928625951,
+      "y": 0.3614996800479849,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3665625865635959,
+      "y": 0.3199926575898429,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.41055193908426013,
+      "y": 0.36782167176109254,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4384678260527205,
+      "y": 0.39821399967388293,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4210902317694337,
+      "y": 0.3685271095663311,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3950694762900797,
+      "y": 0.37730793255367784,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4214729589768175,
+      "y": 0.3939162912532254,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.39385173887959135,
+      "y": 0.3773933646760432,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.47317722456981154,
+      "y": 0.46534644442173007,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.522850113440187,
+      "y": 0.48475291806088183,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.47669667142573535,
+      "y": 0.4717205543305268,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6995167131975604,
+      "y": 0.687786198049365,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3192660196293667,
+      "y": 0.46466572407308276,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.671318267585235,
+      "y": 0.645887490869366,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.7469684019332813,
+      "y": 0.6646793747866364,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5506799010725241,
+      "y": 0.4299410170984736,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6882537437400443,
+      "y": 0.6160133709493065,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6995167131975604,
+      "y": 0.687786198049365,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3192660196293667,
+      "y": 0.46466572407308276,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.671318267585235,
+      "y": 0.645887490869366,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.7469684019332813,
+      "y": 0.6646793747866364,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5506799010725241,
+      "y": 0.4299410170984736,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6882537437400443,
+      "y": 0.6160133709493065,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6995167131975604,
+      "y": 0.687786198049365,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3192660196293667,
+      "y": 0.46466572407308276,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.671318267585235,
+      "y": 0.645887490869366,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.7469684019332813,
+      "y": 0.6646793747866364,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5506799010725241,
+      "y": 0.4299410170984736,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6882537437400443,
+      "y": 0.6160133709493065,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5021793334868553,
+      "y": 0.3067007207424477,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3608669980802443,
+      "y": 0.3636016564445271,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.24943121886584435,
+      "y": 0.1860943968135049,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.47859163998143184,
+      "y": 0.44260476632805923,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.41230154648788825,
+      "y": 0.3973779978447629,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23668845434553715,
+      "y": 0.1953689929053798,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5021793334868553,
+      "y": 0.3067007207424477,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3608669980802443,
+      "y": 0.3636016564445271,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.24943121886584435,
+      "y": 0.1860943968135049,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.47859163998143184,
+      "y": 0.44260476632805923,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.41230154648788825,
+      "y": 0.3973779978447629,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23668845434553715,
+      "y": 0.1953689929053798,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5021793334868553,
+      "y": 0.3067007207424477,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3608669980802443,
+      "y": 0.3636016564445271,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.24943121886584435,
+      "y": 0.1860943968135049,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.47859163998143184,
+      "y": 0.44260476632805923,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.41230154648788825,
+      "y": 0.3973779978447629,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23668845434553715,
+      "y": 0.1953689929053798,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4285238347565714,
+      "y": 0.34662883067135924,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35011274676711174,
+      "y": 0.2968198252126936,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.38652115468342974,
+      "y": 0.250227655075393,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.36482780899822476,
+      "y": 0.28486218774927846,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4285238347565714,
+      "y": 0.34662883067135924,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3538740063417403,
+      "y": 0.301393514026481,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3506325410996857,
+      "y": 0.3462333927236904,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35931400765593996,
+      "y": 0.32968005406873285,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3375361812067735,
+      "y": 0.2992831042916129,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3643323808152478,
+      "y": 0.3437193687620385,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3506325410996857,
+      "y": 0.3462333927236904,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.36338893346891327,
+      "y": 0.3390550020599569,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.40026026336815584,
+      "y": 0.22597164564302138,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3688645694050664,
+      "y": 0.30809461528670173,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.40218995219440906,
+      "y": 0.22881029104089742,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3943806928625951,
+      "y": 0.3614996800479849,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.40026026336815584,
+      "y": 0.2706849926701321,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3665625865635959,
+      "y": 0.3199926575898429,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.40055965942578287,
+      "y": 0.3149202585566822,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.41055193908426013,
+      "y": 0.36782167176109254,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3617768431718218,
+      "y": 0.26915433113750026,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4384678260527205,
+      "y": 0.39821399967388293,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.39622439931461967,
+      "y": 0.31979056091703856,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4210902317694337,
+      "y": 0.3685271095663311,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4169786327670303,
+      "y": 0.41727176569385066,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3950694762900797,
+      "y": 0.37730793255367784,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4101637551415968,
+      "y": 0.39552432600462434,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4214729589768175,
+      "y": 0.3939162912532254,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4209485100189643,
+      "y": 0.41783271287278106,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.39385173887959135,
+      "y": 0.3773933646760432,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.48577002230147664,
+      "y": 0.4802362836908248,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.47317722456981154,
+      "y": 0.46534644442173007,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.48243546505727924,
+      "y": 0.4740895860373044,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.522850113440187,
+      "y": 0.48475291806088183,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4871168143007474,
+      "y": 0.4802362836908248,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.47669667142573535,
+      "y": 0.4717205543305268,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.003032948365893074,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.02804714143152956,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.003032948365893074,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.02804714143152956,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.003032948365893074,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.02804714143152956,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.003032948365893074,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.02804714143152956,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.003032948365893074,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.02804714143152956,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.003032948365893074,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.02804714143152956,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.013801272828122971,
+      "y": -0.015463028797978298,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.09281527772073034,
+      "y": -0.10014397020316822,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.029819833052123566,
+      "y": -0.03288509362079809,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.013801272828122971,
+      "y": -0.015463028797978298,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.09287184469176325,
+      "y": -0.10014397020316822,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.02987647475328974,
+      "y": -0.03288509362079809,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.013801272828122971,
+      "y": -0.015463028797978298,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.09281527772073034,
+      "y": -0.10014397020316822,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.029819833052123566,
+      "y": -0.03288509362079809,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.013801272828122971,
+      "y": -0.015463028797978298,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.09287184469176325,
+      "y": -0.10014397020316822,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.02987647475328974,
+      "y": -0.03288509362079809,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.013801272828122971,
+      "y": -0.015463028797978298,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.09281527772073034,
+      "y": -0.10014397020316822,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.029819833052123566,
+      "y": -0.03288509362079809,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.013801272828122971,
+      "y": -0.015463028797978298,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.09287184469176325,
+      "y": -0.10014397020316822,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.02987647475328974,
+      "y": -0.03288509362079809,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.012306048887370724,
+      "y": 0.012477293548228458,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08334609618556514,
+      "y": 0.08392974847792212,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.03079938269477939,
+      "y": 0.034091291005484615,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.009818227625797262,
+      "y": 0.013636196618579946,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08246415443055391,
+      "y": 0.08628915031285067,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.031327110894868546,
+      "y": 0.03511609177389252,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.012306048887370724,
+      "y": 0.012477293548228458,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08334609618556514,
+      "y": 0.08392974847792212,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.03079938269477939,
+      "y": 0.034091291005484615,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.009818227625797262,
+      "y": 0.013636196618579946,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08246415443055391,
+      "y": 0.08628915031285067,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.031327110894868546,
+      "y": 0.03511609177389252,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.012306048887370724,
+      "y": 0.012477293548228458,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08334609618556514,
+      "y": 0.08392974847792212,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.03079938269477939,
+      "y": 0.034091291005484615,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.009818227625797262,
+      "y": 0.013636196618579946,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08246415443055391,
+      "y": 0.08628915031285067,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.031327110894868546,
+      "y": 0.03511609177389252,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.030769938567521762,
+      "y": 0.030769938567521776,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.003032948365893074,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.018461963140513064,
+      "y": -0.030769938567521776,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.010256646189173926,
+      "y": -0.020513292378347852,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.02804714143152956,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.030769938567521762,
+      "y": 0.030769938567521776,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.003032948365893074,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.030769938567521762,
+      "y": -0.030769938567521776,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.010256646189173926,
+      "y": -0.020513292378347852,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.02804714143152956,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.030769938567521762,
+      "y": 0.030769938567521776,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.003032948365893074,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.018461963140513064,
+      "y": 0.030769938567521776,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": -0.010256646189173926,
+      "y": 0.0,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.02804714143152956,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.030769938567521762,
+      "y": 0.030769938567521776,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.003032948365893074,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.030769938567521762,
+      "y": 0.030769938567521776,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.018461963140513064,
+      "y": 0.0,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.02804714143152956,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.030769938567521762,
+      "y": 0.030769938567521776,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.003032948365893074,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.030769938567521762,
+      "y": -0.030769938567521776,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.018461963140513064,
+      "y": -0.020513292378347852,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.02804714143152956,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.030769938567521762,
+      "y": 0.030769938567521776,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.003032948365893074,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.030769938567521762,
+      "y": 0.030769938567521776,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.018461963140513064,
+      "y": 0.0,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.02804714143152956,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35011274676711174,
+      "y": 0.39674525594266224,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.36482780899822476,
+      "y": 0.38534269968734236,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3538740063417403,
+      "y": 0.40274239517117927,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35931400765593996,
+      "y": 0.30292141637001363,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3643323808152478,
+      "y": 0.31990621644003286,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.36338893346891327,
+      "y": 0.317883649669206,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3688645694050664,
+      "y": 0.329091389014869,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3943806928625951,
+      "y": 0.36678909748288874,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3665625865635959,
+      "y": 0.32892670286781184,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.41055193908426013,
+      "y": 0.33160635771781716,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4384678260527205,
+      "y": 0.3744163581776252,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4210902317694337,
+      "y": 0.32640874484481713,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3950694762900797,
+      "y": 0.38258811162745054,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4214729589768175,
+      "y": 0.38450238428199507,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.39385173887959135,
+      "y": 0.3808548913183,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.47317722456981154,
+      "y": 0.4459742475781279,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.522850113440187,
+      "y": 0.44127067659016794,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.47669667142573535,
+      "y": 0.43944063580258574,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6995167131975604,
+      "y": 0.6246909952455427,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3192660196293667,
+      "y": 0.5124909086032832,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.671318267585235,
+      "y": 0.5907720409862063,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.7469684019332813,
+      "y": 0.7060736601646882,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5506799010725241,
+      "y": 0.44750398330811153,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6882537437400443,
+      "y": 0.6551335337878325,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6995167131975604,
+      "y": 0.6246909952455427,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3192660196293667,
+      "y": 0.5124909086032832,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.671318267585235,
+      "y": 0.5907720409862063,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.7469684019332813,
+      "y": 0.7060736601646882,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5506799010725241,
+      "y": 0.44750398330811153,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6882537437400443,
+      "y": 0.6551335337878325,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6995167131975604,
+      "y": 0.6246909952455427,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3192660196293667,
+      "y": 0.5124909086032832,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.671318267585235,
+      "y": 0.5907720409862063,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.7469684019332813,
+      "y": 0.7060736601646882,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5506799010725241,
+      "y": 0.44750398330811153,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6882537437400443,
+      "y": 0.6551335337878325,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5021793334868553,
+      "y": 0.09884287599057862,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3608669980802443,
+      "y": 0.15396333398245118,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.24943121886584435,
+      "y": 0.06123220428982806,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.47859163998143184,
+      "y": 0.3688273407973009,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.41230154648788825,
+      "y": 0.25676485479057365,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23668845434553715,
+      "y": 0.14903809511457602,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5021793334868553,
+      "y": 0.09884287599057862,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3608669980802443,
+      "y": 0.15396333398245118,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.24943121886584435,
+      "y": 0.06123220428982806,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.47859163998143184,
+      "y": 0.3688273407973009,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.41230154648788825,
+      "y": 0.25676485479057365,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23668845434553715,
+      "y": 0.14903809511457602,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5021793334868553,
+      "y": 0.09884287599057862,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3608669980802443,
+      "y": 0.15396333398245118,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.24943121886584435,
+      "y": 0.06123220428982806,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.47859163998143184,
+      "y": 0.3688273407973009,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.41230154648788825,
+      "y": 0.25676485479057365,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23668845434553715,
+      "y": 0.14903809511457602,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4285238347565714,
+      "y": 0.44149606971815253,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35011274676711174,
+      "y": 0.39674525594266224,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.38652115468342974,
+      "y": 0.4141250661953065,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.36482780899822476,
+      "y": 0.38534269968734236,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4285238347565714,
+      "y": 0.44149606971815253,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3538740063417403,
+      "y": 0.40274239517117927,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3506325410996857,
+      "y": 0.34145179549455645,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.35931400765593996,
+      "y": 0.30292141637001363,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3375361812067735,
+      "y": 0.2857761209301188,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3643323808152478,
+      "y": 0.31990621644003286,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3506325410996857,
+      "y": 0.34145179549455645,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.36338893346891327,
+      "y": 0.317883649669206,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.40026026336815584,
+      "y": 0.2714250128816136,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3688645694050664,
+      "y": 0.329091389014869,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.40218995219440906,
+      "y": 0.26231398543164325,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3943806928625951,
+      "y": 0.36678909748288874,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.40026026336815584,
+      "y": 0.2714250128816136,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3665625865635959,
+      "y": 0.32892670286781184,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.40055965942578287,
+      "y": 0.3592301848960808,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.41055193908426013,
+      "y": 0.33160635771781716,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3617768431718218,
+      "y": 0.3112352812189112,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4384678260527205,
+      "y": 0.3744163581776252,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.39622439931461967,
+      "y": 0.3186447805914285,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4210902317694337,
+      "y": 0.32640874484481713,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4169786327670303,
+      "y": 0.42031829163892326,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3950694762900797,
+      "y": 0.38258811162745054,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4101637551415968,
+      "y": 0.36646127435923076,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4214729589768175,
+      "y": 0.38450238428199507,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4209485100189643,
+      "y": 0.42031829163892326,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.39385173887959135,
+      "y": 0.3808548913183,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.48577002230147664,
+      "y": 0.49988926549431895,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.47317722456981154,
+      "y": 0.4459742475781279,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.48243546505727924,
+      "y": 0.4626596547057236,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.522850113440187,
+      "y": 0.44127067659016794,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4871168143007474,
+      "y": 0.49988926549431895,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.47669667142573535,
+      "y": 0.43944063580258574,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.00456526714655782,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.04364609190671604,
+      "y": 0.05132057789726441,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.02140959929021388,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.00456526714655782,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.010975569525275106,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.00456526714655782,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.04364609190671604,
+      "y": 0.05132057789726441,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.02140959929021388,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.00456526714655782,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.010975569525275106,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.00456526714655782,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.04364609190671604,
+      "y": 0.05132057789726441,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.02140959929021388,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.00456526714655782,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.010975569525275106,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.013801272828122971,
+      "y": -0.015182028895699853,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.09281527772073034,
+      "y": -0.0963368215855619,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.029819833052123566,
+      "y": -0.03214456095064191,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.013801272828122971,
+      "y": -0.015195894995891272,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.09287184469176325,
+      "y": -0.0948746941285243,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.02987647475328974,
+      "y": -0.03208092240997731,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.013801272828122971,
+      "y": -0.015182028895699853,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.09281527772073034,
+      "y": -0.0963368215855619,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.029819833052123566,
+      "y": -0.03214456095064191,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.013801272828122971,
+      "y": -0.015195894995891272,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.09287184469176325,
+      "y": -0.0948746941285243,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.02987647475328974,
+      "y": -0.03208092240997731,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.013801272828122971,
+      "y": -0.015182028895699853,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.09281527772073034,
+      "y": -0.0963368215855619,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.029819833052123566,
+      "y": -0.03214456095064191,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.013801272828122971,
+      "y": -0.015195894995891272,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.09287184469176325,
+      "y": -0.0948746941285243,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.02987647475328974,
+      "y": -0.03208092240997731,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.012306048887370724,
+      "y": 0.01308684531094829,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08334609618556514,
+      "y": 0.07919642417904525,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.03079938269477939,
+      "y": 0.03415343586298432,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.009818227625797262,
+      "y": 0.014432558509538097,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08246415443055391,
+      "y": 0.09042416189203221,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.031327110894868546,
+      "y": 0.032673416849092134,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.012306048887370724,
+      "y": 0.01308684531094829,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08334609618556514,
+      "y": 0.07919642417904525,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.03079938269477939,
+      "y": 0.03415343586298432,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.009818227625797262,
+      "y": 0.014432558509538097,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08246415443055391,
+      "y": 0.09042416189203221,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.031327110894868546,
+      "y": 0.032673416849092134,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.012306048887370724,
+      "y": 0.01308684531094829,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08334609618556514,
+      "y": 0.07919642417904525,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.03079938269477939,
+      "y": 0.03415343586298432,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.009818227625797262,
+      "y": 0.014432558509538097,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.08246415443055391,
+      "y": 0.09042416189203221,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.031327110894868546,
+      "y": 0.032673416849092134,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.030769938567521762,
+      "y": 0.030769938567521776,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.00456526714655782,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.018461963140513064,
+      "y": 0.02513066376522266,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.04364609190671604,
+      "y": 0.05132057789726441,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.010256646189173926,
+      "y": -0.025270356695294763,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.02140959929021388,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.030769938567521762,
+      "y": 0.0030657102462729314,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.00456526714655782,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.030769938567521762,
+      "y": -0.0030657102462729314,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.010256646189173926,
+      "y": -0.0016247280406323005,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.010975569525275106,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.030769938567521762,
+      "y": 0.030769938567521776,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.00456526714655782,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.018461963140513064,
+      "y": 0.02615256718064697,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.04364609190671604,
+      "y": 0.05132057789726441,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": -0.010256646189173926,
+      "y": 0.0,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.02140959929021388,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.030769938567521762,
+      "y": 0.0022275526658402903,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.00456526714655782,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.030769938567521762,
+      "y": -0.0023672455959123976,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.018461963140513064,
+      "y": -0.0017644209707044073,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.010975569525275106,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.030769938567521762,
+      "y": 0.0030657102462729314,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.00456526714655782,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.030769938567521762,
+      "y": 0.002926017316200825,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.04364609190671604,
+      "y": 0.05132057789726441,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.018461963140513064,
+      "y": -0.005499581872227012,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.02140959929021388,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.030769938567521762,
+      "y": 0.0030657102462729314,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.003032948365893074,
+      "y": 0.00456526714655782,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.030769938567521762,
+      "y": 0.002043806830848621,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.018461963140513064,
+      "y": -0.0007425175552800969,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.023918598305797754,
+      "y": 0.010975569525275106,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "$\\rho$, linear ridge map": 0.16109128343101423,
+      "y": 0.18483382240293755,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.20881620406454954,
+      "y": 0.24148009275220653,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1703811508818389,
+      "y": 0.1956648508516281,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.14540151973961546,
+      "y": 0.12482163866427486,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.14139306807923485,
+      "y": 0.1341635477938625,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.14443999003380611,
+      "y": 0.13522913574922793,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5925541931674175,
+      "y": 0.5720534971208991,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2534987652480178,
+      "y": 0.33916591166076177,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5612750689467417,
+      "y": 0.525175211227113,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6015078932734528,
+      "y": 0.5740653008076407,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4061247348868589,
+      "y": 0.379429700726794,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5500424528147239,
+      "y": 0.52314698144157,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.18454103240815936,
+      "y": 0.21458950893753537,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23572200149004335,
+      "y": 0.2183857457751517,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1417204563072661,
+      "y": 0.15963632165671873,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3745650555860464,
+      "y": 0.32004506765898505,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.34036110024955574,
+      "y": 0.29010636872935,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.18337104472802304,
+      "y": 0.16155046172830465,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.16120084189182202,
+      "y": 0.04527728317743012,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.062026589015184666,
+      "y": 0.1888207033847362,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.16109128343101423,
+      "y": 0.18483382240293755,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.12907831016007915,
+      "y": 0.05216187383707927,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.14355922112990716,
+      "y": 0.052281962607313194,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.20881620406454954,
+      "y": 0.24148009275220653,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.18980154271618524,
+      "y": 0.03540424024403454,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1316989204610753,
+      "y": 0.16178067101638172,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1703811508818389,
+      "y": 0.1956648508516281,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.20037684151671312,
+      "y": 0.13084726419562806,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2697751588330829,
+      "y": 0.2240941319274524,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.14540151973961546,
+      "y": 0.12482163866427486,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.16381686920194793,
+      "y": 0.09858918151274328,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2274779632026171,
+      "y": 0.18700678341111568,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.14139306807923485,
+      "y": 0.1341635477938625,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.20037684151671312,
+      "y": 0.13084726419562806,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2697751588330829,
+      "y": 0.2240941319274524,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.14443999003380611,
+      "y": 0.13522913574922793,
+      "series": "mlp, context end state",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "$\\rho$, linear ridge map": 0.04403718511581971,
+      "y": 0.05033313485786566,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.10955600703038489,
+      "y": 0.09415193835064944,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.061020067026135834,
+      "y": 0.062163236940901555,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.045996902012643025,
+      "y": 0.041555662898512945,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.09903598555070732,
+      "y": 0.06490155721096205,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.05374537519037046,
+      "y": 0.045567542871981524,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.05441610418394671,
+      "y": 0.05489018794304295,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": -0.02965040140993266,
+      "y": -0.07641608890489245,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.018483599282502334,
+      "y": 0.03190387302161269,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.054424982089191526,
+      "y": 0.05491465044836335,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": -0.029068947960606994,
+      "y": -0.07456047193511796,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.018458367873278852,
+      "y": 0.03193641232051942,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.01500175393008555,
+      "y": 0.01988195444607263,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.030244906799137765,
+      "y": 0.01582702285213798,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.03698959980401869,
+      "y": 0.03997511373760813,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.022034401084590604,
+      "y": 0.020923945562752403,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.028006941837763706,
+      "y": 0.013595916325447889,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.03570413839196204,
+      "y": 0.043860089311747036,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": -0.04092410025269947,
+      "y": -0.04551881973633742,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": -0.14383987969107273,
+      "y": -0.14578474239992248,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.04403718511581971,
+      "y": 0.05033313485786566,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": -0.019368983708511315,
+      "y": -0.010999789649672277,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": -0.06974098025432762,
+      "y": -0.04579980956274742,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.10955600703038489,
+      "y": 0.09415193835064944,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": -0.02553265781167176,
+      "y": -0.030382076722705736,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": -0.09828628472591446,
+      "y": -0.09909722714273705,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.061020067026135834,
+      "y": 0.062163236940901555,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": -0.03781191151418563,
+      "y": -0.03228632811011866,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": -0.1806818316233225,
+      "y": -0.13270273079824466,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.045996902012643025,
+      "y": 0.041555662898512945,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": -0.007588695803638244,
+      "y": 0.007065842075783445,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": -0.05941406682595211,
+      "y": 0.0240173682756107,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.09903598555070732,
+      "y": 0.06490155721096205,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": -0.019905081643814763,
+      "y": -0.021181687113706358,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": -0.1198816395629205,
+      "y": -0.08800803278172303,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.05374537519037046,
+      "y": 0.045567542871981524,
+      "series": "mlp, prefix end state",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "$\\rho$, linear ridge map": 0.16109128343101423,
+      "y": 0.06446838063251654,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.20881620406454954,
+      "y": 0.09536642449319666,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1703811508818389,
+      "y": 0.05867456424677661,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.14540151973961546,
+      "y": 0.03592617172253414,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.14139306807923485,
+      "y": 0.07980765466247787,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.14443999003380611,
+      "y": 0.056347692683623246,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5925541931674175,
+      "y": 0.4879994335631818,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2534987652480178,
+      "y": 0.37037959336330645,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5612750689467417,
+      "y": 0.4790781433548817,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.6015078932734528,
+      "y": 0.5827470732968986,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.4061247348868589,
+      "y": 0.3572215863130248,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.5500424528147239,
+      "y": 0.5397555486511404,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.18454103240815936,
+      "y": 0.09224512658668078,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.23572200149004335,
+      "y": 0.055450207419972836,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1417204563072661,
+      "y": 0.06858998552564129,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.3745650555860464,
+      "y": 0.28199931423099706,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.34036110024955574,
+      "y": 0.15155358026565366,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.18337104472802304,
+      "y": 0.14860915227725155,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.16120084189182202,
+      "y": 0.15213455615422108,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.062026589015184666,
+      "y": 0.2910934824430195,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.16109128343101423,
+      "y": 0.06446838063251654,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.12907831016007915,
+      "y": 0.05915180011800477,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.14355922112990716,
+      "y": 0.06679411275516632,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.20881620406454954,
+      "y": 0.09536642449319666,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.18980154271618524,
+      "y": 0.09872412538242757,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1316989204610753,
+      "y": 0.25198736838238717,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.1703811508818389,
+      "y": 0.05867456424677661,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.20037684151671312,
+      "y": -0.05759772403104623,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2697751588330829,
+      "y": -0.009720613728717518,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.14540151973961546,
+      "y": 0.03592617172253414,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.16381686920194793,
+      "y": 0.007605073281962406,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2274779632026171,
+      "y": 0.09212614701366344,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.14139306807923485,
+      "y": 0.07980765466247787,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.20037684151671312,
+      "y": -0.04388961212294115,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.2697751588330829,
+      "y": 0.015101365900629873,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.14443999003380611,
+      "y": 0.056347692683623246,
+      "series": "kernel, context end state",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "$\\rho$, linear ridge map": 0.04403718511581971,
+      "y": 0.025307862675405444,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.10955600703038489,
+      "y": 0.032991854397535124,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.061020067026135834,
+      "y": 0.030591248884669603,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.045996902012643025,
+      "y": 0.05394677655440123,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.09903598555070732,
+      "y": 0.10748960068643311,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.05374537519037046,
+      "y": 0.07345683209303892,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.05441610418394671,
+      "y": 0.055089777086636225,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": -0.02965040140993266,
+      "y": -0.06017000674482124,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.018483599282502334,
+      "y": 0.032800064535270394,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.054424982089191526,
+      "y": 0.05508078686476573,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": -0.029068947960606994,
+      "y": -0.07004088258283045,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.018458367873278852,
+      "y": 0.03272614166119227,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.01500175393008555,
+      "y": 0.013702556647771482,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.030244906799137765,
+      "y": 0.019520318824429617,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.03698959980401869,
+      "y": 0.03907327229663404,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.022034401084590604,
+      "y": 0.02268715410031862,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.028006941837763706,
+      "y": 0.04675578179811705,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.03570413839196204,
+      "y": 0.04344858079497325,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": -0.04092410025269947,
+      "y": -0.027694506014328397,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": -0.14383987969107273,
+      "y": -0.07585418640371827,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.04403718511581971,
+      "y": 0.025307862675405444,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": -0.019368983708511315,
+      "y": 0.0125809579183083,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": -0.06974098025432762,
+      "y": 0.0377806663725515,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.10955600703038489,
+      "y": 0.032991854397535124,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": -0.02553265781167176,
+      "y": -0.019226751436426992,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": -0.09828628472591446,
+      "y": -0.05850278140408818,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.061020067026135834,
+      "y": 0.030591248884669603,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": -0.03781191151418563,
+      "y": -0.03107615901869426,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": -0.1806818316233225,
+      "y": -0.12048766887330124,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.045996902012643025,
+      "y": 0.05394677655440123,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": -0.007588695803638244,
+      "y": -0.013823369861761465,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": -0.05941406682595211,
+      "y": -0.08972465886804736,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.09903598555070732,
+      "y": 0.10748960068643311,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": -0.019905081643814763,
+      "y": -0.017749708994402588,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": -0.1198816395629205,
+      "y": -0.08455034549613438,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "$\\rho$, linear ridge map": 0.05374537519037046,
+      "y": 0.07345683209303892,
+      "series": "kernel, prefix end state",
+      "_kind": "scatter",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 918,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil",
+        "xlabel": "$\\rho$, linear ridge map",
+        "ylabel": "$\\rho$, nonlinear map",
+        "legend_labels": [
+          "mlp, context end state",
+          "mlp, prefix end state",
+          "kernel, context end state",
+          "kernel, prefix end state"
+        ],
+        "annotations": [
+          "432 matched design cells"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "sycophancy",
+        "xlabel": "$\\rho$, linear ridge map",
+        "annotations": [
+          "342 matched design cells"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "hallucination",
+        "xlabel": "$\\rho$, linear ridge map",
+        "annotations": [
+          "144 matched design cells"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ],
+        "yticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "mlp, context end state",
+      "mlp, prefix end state",
+      "kernel, context end state",
+      "kernel, prefix end state"
+    ]
+  }
+}

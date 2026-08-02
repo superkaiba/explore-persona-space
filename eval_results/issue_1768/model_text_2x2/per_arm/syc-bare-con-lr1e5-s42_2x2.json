@@ -1,0 +1,168 @@
+{
+ "arm_id": "syc-bare-con-lr1e5-s42",
+ "base_unit": "base_content",
+ "layers": {
+  "14": {
+   "n_rows": 16400,
+   "norm_shift": 3.317865446014006,
+   "identity_residual": 1.7754266595614138e-16,
+   "norms": {
+    "text": 1.7696906928330172,
+    "function": 2.205916321328685,
+    "interaction": 0.3189501847206133
+   },
+   "norm_ratio": {
+    "text": 0.5333822970304826,
+    "function": 0.6648600906883712,
+    "interaction": 0.09613113910444784
+   },
+   "proj_share": {
+    "text": 0.37760056106176526,
+    "function": 0.568631385822571,
+    "interaction": 0.05376805311566362
+   },
+   "cos_with_shift": {
+    "text": 0.7079360585531123,
+    "function": 0.8552647298077876,
+    "interaction": 0.5593198376360011
+   },
+   "cos_text_function": 0.24697873966618697,
+   "per_row_mean_norm": {
+    "shift": 11.853974421345207,
+    "text": 11.18220469289401,
+    "function": 2.7344553078473224,
+    "interaction": 1.08286533031106
+   },
+   "per_row_sq_share": {
+    "text": 0.9301882131620387,
+    "function": 0.05247858974873626,
+    "interaction": 0.010463566754603588
+   },
+   "context_identity_cos": {
+    "min": 0.9999999999999989,
+    "median": 0.9999999999999999,
+    "mean_vector_cos": 0.9999999999999998,
+    "gate_min": 0.999,
+    "pass": true
+   },
+   "delta_reads": {
+    "delta_arm": "syc-bare-con-lr1e5-s42",
+    "n_mix_rows": 20,
+    "cos_text_delta": 0.4236446020252668,
+    "cos_function_delta": 0.12889581398642563,
+    "cos_interaction_delta": 0.0025798206620285544,
+    "cos_shift_delta": 0.31191021462809376,
+    "src_ctx": "default",
+    "cos_text_panel_write": null
+   }
+  },
+  "19": {
+   "n_rows": 16400,
+   "norm_shift": 9.961823737367377,
+   "identity_residual": 7.143209713180929e-16,
+   "norms": {
+    "text": 3.0084389480804905,
+    "function": 7.564263008853676,
+    "interaction": 1.6616705781150145
+   },
+   "norm_ratio": {
+    "text": 0.3019968057450828,
+    "function": 0.7593251204073898,
+    "interaction": 0.16680385257992392
+   },
+   "proj_share": {
+    "text": 0.1724528523212741,
+    "function": 0.7073269195852373,
+    "interaction": 0.12022022809348867
+   },
+   "cos_with_shift": {
+    "text": 0.5710419747513572,
+    "function": 0.9315205049527999,
+    "interaction": 0.7207281260838101
+   },
+   "cos_text_function": 0.260791937267478,
+   "per_row_mean_norm": {
+    "shift": 21.643004137591728,
+    "text": 17.30933714319888,
+    "function": 9.239761485091103,
+    "interaction": 4.077755684345162
+   },
+   "per_row_sq_share": {
+    "text": 0.7097467214859449,
+    "function": 0.1920890196270845,
+    "interaction": 0.043649412653854226
+   },
+   "context_identity_cos": {
+    "min": 0.9999999999999987,
+    "median": 0.9999999999999999,
+    "mean_vector_cos": 1.0,
+    "gate_min": 0.999,
+    "pass": true
+   },
+   "delta_reads": {
+    "delta_arm": "syc-bare-con-lr1e5-s42",
+    "n_mix_rows": 20,
+    "cos_text_delta": 0.4089286012577495,
+    "cos_function_delta": 0.1616632602394521,
+    "cos_interaction_delta": 0.19421791915818734,
+    "cos_shift_delta": 0.27864640306005994,
+    "src_ctx": "default",
+    "cos_text_panel_write": null
+   }
+  },
+  "25": {
+   "n_rows": 16400,
+   "norm_shift": 24.129138586569674,
+   "identity_residual": 1.2625548776338753e-15,
+   "norms": {
+    "text": 6.643030690873057,
+    "function": 20.126600360187357,
+    "interaction": 3.3101228579649007
+   },
+   "norm_ratio": {
+    "text": 0.2753115560690004,
+    "function": 0.8341201360329482,
+    "interaction": 0.13718363157014324
+   },
+   "proj_share": {
+    "text": 0.1520569782127289,
+    "function": 0.7838728205035131,
+    "interaction": 0.06407020128375782
+   },
+   "cos_with_shift": {
+    "text": 0.5523087384483759,
+    "function": 0.939760097666015,
+    "interaction": 0.46703969380631355
+   },
+   "cos_text_function": 0.2593724548559076,
+   "per_row_mean_norm": {
+    "shift": 59.879093738513255,
+    "text": 47.91518221860614,
+    "function": 26.28903224043072,
+    "interaction": 11.671868361474198
+   },
+   "per_row_sq_share": {
+    "text": 0.7003567923270696,
+    "function": 0.21606213514122558,
+    "interaction": 0.049420032403859226
+   },
+   "context_identity_cos": {
+    "min": 0.9999999999999993,
+    "median": 1.0,
+    "mean_vector_cos": 1.0,
+    "gate_min": 0.999,
+    "pass": true
+   },
+   "delta_reads": {
+    "delta_arm": "syc-bare-con-lr1e5-s42",
+    "n_mix_rows": 20,
+    "cos_text_delta": 0.3222751156981286,
+    "cos_function_delta": 0.20418659691781957,
+    "cos_interaction_delta": 0.14963679792900011,
+    "cos_shift_delta": 0.2795699349387934,
+    "src_ctx": "default",
+    "cos_text_panel_write": null
+   }
+  }
+ }
+}

@@ -322,6 +322,23 @@ def _cleanup_merged(cleanup: Path | None) -> None:
         shutil.rmtree(cleanup, ignore_errors=True)
 
 
+def _assert_model_dir_alive(model_path: str, cleanup: Path | None) -> None:
+    """Fail LOUD (named) when a unit's resolved LOCAL model dir vanished
+    mid-unit. A vanished shared dir means a same-`_model_key` sibling's
+    exit-cleanup deleted it (the `_fanout_phase` co-scheduling guard exists to
+    prevent exactly that); without this assert the failure surfaces as a
+    misleading huggingface_hub HFValidationError treating the local path as a
+    Hub repo id (job 16120). No-op for repo-id resolutions (cleanup None)."""
+    if cleanup is not None and not Path(model_path).is_dir():
+        raise RuntimeError(
+            f"[shared-model-dir-vanished] {model_path} no longer exists mid-unit — "
+            "a concurrent same-arm unit's exit-cleanup deleted the shared "
+            "merged/staged model dir (merge -> consume -> delete lifecycle); the "
+            "_fanout_phase _model_key guard must keep same-key units from "
+            "running concurrently"
+        )
+
+
 # ── p0: registry + adapter probe + corpus inputs ─────────────────────────────
 
 
@@ -652,7 +669,17 @@ def _append_shard(out_dir: Path, rows: list[dict]) -> None:
 
 
 def _generate_rows_vllm(
-    cfg: Cfg, unit_id: str, model_path: str, prompts: list[str], start_idx: int, out_dir: Path
+    cfg: Cfg,
+    unit_id: str,
+    model_path: str,
+    prompts: list[str],
+    start_idx: int,
+    out_dir: Path,
+    *,
+    system: str | None = None,
+    user_wrap: str | None = None,
+    prior_turns: tuple = (),
+    max_model_len: int = X.MAX_MODEL_LEN,
 ) -> None:
     """Chunked vLLM greedy generation (the #664 chunk rule) with shard persist.
 
@@ -660,7 +687,11 @@ def _generate_rows_vllm(
     engine is built ONCE, chunked `generate` calls carry `use_tqdm=False`
     (#613), prefix caching is OFF by default for this real-user corpus
     (gotchas.md pre-launch checklist; EPM_VLLM_DISABLE_PREFIX_CACHING=0
-    re-enables), and teardown rides `_reap_vllm_engine`.
+    re-enables), and teardown rides `_reap_vllm_engine`. The pfx kwargs
+    (system / user_wrap / prior_turns / max_model_len) default to the round-1
+    bare render byte-identically; prefixed units thread the arm's trained
+    context through `_build_generation_prompts` — the ONE message-construction
+    path span computation re-derives (#1112).
     """
     from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
@@ -678,7 +709,7 @@ def _generate_rows_vllm(
         dtype="bfloat16",
         gpu_memory_utilization=X.GEN_GPU_MEM_UTIL,
         enforce_eager=_vllm_enforce_eager(),
-        max_model_len=X.MAX_MODEL_LEN,
+        max_model_len=max_model_len,
         enable_prefix_caching=os.environ.get("EPM_VLLM_DISABLE_PREFIX_CACHING", "1") == "0",
     )
     params = SamplingParams(temperature=0.0, max_tokens=max_new)
@@ -687,7 +718,13 @@ def _generate_rows_vllm(
         n_chunks = -(-len(prompts) // GEN_CHUNK)
         for ci, s in enumerate(range(0, len(prompts), GEN_CHUNK)):
             chunk = prompts[s : s + GEN_CHUNK]
-            rendered, keys = _build_generation_prompts(tokenizer, {unit_id: None}, chunk)
+            rendered, keys = _build_generation_prompts(
+                tokenizer,
+                {unit_id: system},
+                chunk,
+                user_wraps={unit_id: user_wrap},
+                prior_turns={unit_id: tuple(prior_turns)},
+            )
             t0 = time.time()
             outs = llm.generate(rendered, params, use_tqdm=False)
             rows = []
@@ -728,9 +765,21 @@ def _generate_rows_vllm(
             time.sleep(1.0)
 
 
-def _load_or_generate_rows(cfg: Cfg, out_dir: Path, unit_id: str, model_path: str) -> list[dict]:
-    sample = X.load_corpus_sample(cfg.out_root)
-    prompts = [r["prompt"] for r in sample["rows"]]
+def _load_or_generate_rows(
+    cfg: Cfg,
+    out_dir: Path,
+    unit_id: str,
+    model_path: str,
+    *,
+    prompts: list[str] | None = None,
+    system: str | None = None,
+    user_wrap: str | None = None,
+    prior_turns: tuple = (),
+    max_model_len: int = X.MAX_MODEL_LEN,
+) -> list[dict]:
+    if prompts is None:  # round-1 default: the full 16.4k-row sample
+        sample = X.load_corpus_sample(cfg.out_root)
+        prompts = [r["prompt"] for r in sample["rows"]]
     done = out_dir / "raw_rows.done.json"
     if done.exists():
         rows = _read_shards(out_dir)
@@ -743,7 +792,18 @@ def _load_or_generate_rows(cfg: Cfg, out_dir: Path, unit_id: str, model_path: st
             assert r["question_idx"] == i, (unit_id, i, r["question_idx"])
     remaining = prompts[len(existing) :]
     if remaining:
-        _generate_rows_vllm(cfg, unit_id, model_path, remaining, len(existing), out_dir)
+        _generate_rows_vllm(
+            cfg,
+            unit_id,
+            model_path,
+            remaining,
+            len(existing),
+            out_dir,
+            system=system,
+            user_wrap=user_wrap,
+            prior_turns=prior_turns,
+            max_model_len=max_model_len,
+        )
     rows = _read_shards(out_dir)
     assert len(rows) == len(prompts), (unit_id, len(rows), len(prompts))
     _atomic_json(done, {"n_rows": len(rows), **_meta()})
@@ -751,11 +811,20 @@ def _load_or_generate_rows(cfg: Cfg, out_dir: Path, unit_id: str, model_path: st
 
 
 def _attach_spans(
-    tokenizer, prompts: list[str], rows: list[dict]
+    tokenizer,
+    prompts: list[str],
+    rows: list[dict],
+    *,
+    system: str | None = None,
+    user_wrap: str | None = None,
+    prior_turns: tuple = (),
 ) -> tuple[list[dict], int, dict, int]:
     """Compute prefix/context spans per row; drop invalid rows with counts.
 
-    Returns (kept_rows, n_dropped, seam_counts, n_distinct_prefix).
+    Returns (kept_rows, n_dropped, seam_counts, n_distinct_prefix). The pfx
+    kwargs re-derive the SAME message construction generation used
+    (`_build_generation_prompts` — one construction path, #1112); defaults are
+    the round-1 bare render byte-identically.
     """
     from explore_persona_space.analysis.representation_shift import compute_prompt_spans
 
@@ -770,9 +839,11 @@ def _attach_spans(
         flags: dict[str, bool] = {}
         r["prefix_len"], r["context_len"] = compute_prompt_spans(
             tokenizer,
-            None,
+            system,
             prompts[r["question_idx"]],
             r["prompt_token_ids"],
+            prior_messages=list(prior_turns) or None,
+            user_wrap=user_wrap,
             prefix_end="last_user",
             on_seam="snap",
             seam_flags=flags,
@@ -832,6 +903,7 @@ def run_corpus_unit(cfg: Cfg, unit_id: str) -> None:
     model_path, cleanup = _resolve_unit_model(cfg, unit_id)
     try:
         rows = _load_or_generate_rows(cfg, out_dir, unit_id, model_path)
+        _assert_model_dir_alive(model_path, cleanup)
         tokenizer = AutoTokenizer.from_pretrained(model_path)
         kept, dropped, seam_counts, n_prefix = _attach_spans(tokenizer, prompts, rows)
         valid_frac = len(kept) / max(1, len(rows))
@@ -853,6 +925,7 @@ def run_corpus_unit(cfg: Cfg, unit_id: str) -> None:
                 "n_distinct_prefix": n_prefix,
             },
         )
+        _assert_model_dir_alive(model_path, cleanup)
         pooled = _teacher_forced_span_means(
             model_path,
             kept,
@@ -928,6 +1001,7 @@ def run_corpus_tf_unit(cfg: Cfg, arm_id: str) -> None:
     rows = _read_rows_with_spans(base_dir)
     model_path, cleanup = _resolve_unit_model(cfg, arm_id)
     try:
+        _assert_model_dir_alive(model_path, cleanup)
         pooled = _teacher_forced_span_means(
             model_path,
             rows,
@@ -2100,6 +2174,32 @@ def _pending_units(cfg: Cfg, phase: str) -> list[str]:
             for rep in PNF_REPLICATES
             if not (root / "noise_floor" / u / f"pooled_nf_{rep}.pt").exists()
         ]
+    if phase == "pfx2":
+        units, _ = _pfx_unit_sets(cfg)
+        return [
+            u
+            for u in units
+            if not (root / "on_target" / "corpus_capture" / u / "pooled.pt").exists()
+        ]
+    if phase == "pfx3":
+        _, trained = _pfx_unit_sets(cfg)
+        return [
+            u
+            for u in trained
+            if not (root / "on_target" / "corpus_capture_tf" / u / "pooled_tf.pt").exists()
+        ]
+    if phase == "lad2":
+        return [
+            u
+            for u in _lad_unit_set(cfg)
+            if not (root / "on_target_r4" / "corpus_capture" / u / "pooled.pt").exists()
+        ]
+    if phase == "brl2":
+        return [
+            u
+            for u in _brl_unit_set(cfg)
+            if not (root / "on_target_r5" / "corpus_capture" / u / "pooled.pt").exists()
+        ]
     raise ValueError(phase)
 
 
@@ -2120,6 +2220,14 @@ def run_unit(cfg: Cfg, unit_arg: str) -> None:
         run_delta_unit(cfg, rest)
     elif phase == "p6j":
         run_rb_judge(cfg, rest)  # the detached CPU judge poller entry
+    elif phase == "pfx2":
+        run_pfx_corpus_unit(cfg, rest)
+    elif phase == "pfx3":
+        run_pfx_tf_unit(cfg, rest)
+    elif phase == "lad2":
+        run_lad_corpus_unit(cfg, rest)
+    elif phase == "brl2":
+        run_brl_corpus_unit(cfg, rest)
     else:
         raise ValueError(unit_arg)
 
@@ -2159,7 +2267,7 @@ def _needs_merge(cfg: Cfg, unit_arg: str) -> bool:
     the disk-clamp predicate `_merge_slots` gates on (plan §4.4)."""
     if cfg.model_override:
         return False
-    unit = unit_arg.split(":")[-1]
+    unit = unit_arg.split(":")[-1].split("@")[0]  # pfx units carry an @<cond> tag
     if unit.startswith("base_"):
         return False
     arm = _full_arm_index().get(unit)
@@ -2199,6 +2307,25 @@ def _unit_ready(cfg: Cfg, phase: str, unit_arg: str) -> bool:
     return True
 
 
+def _model_key(cfg: Cfg, unit_arg: str) -> str | None:
+    """Shared LOCAL-model-dir key: units with equal keys resolve — and at exit
+    DELETE — the same `merged/<arm>` (or `ft_ckpt/<arm>`) dir, so two live
+    same-key units race the merge -> consume -> delete lifecycle: the first
+    finisher's exit-cleanup rmtree's the shared dir from under the survivor,
+    whose next `from_pretrained` on the vanished RELATIVE path falls through
+    transformers' isdir check into Hub repo-id validation (job 16120: lad2
+    co-scheduled imp-pers@r_{long,mid,short}; @r_mid exited first and its
+    cleanup killed both live siblings with HFValidationError). Same unit
+    extraction as `_needs_merge`; None = no shared local dir (base_* units
+    and model_override resolve repo ids / a shared snapshot — cleanup None)."""
+    if cfg.model_override:
+        return None
+    unit = unit_arg.split(":")[-1].split("@")[0]
+    if unit.startswith("base_"):
+        return None
+    return unit
+
+
 def _fanout_phase(cfg: Cfg, phase: str, phase_tag: str) -> None:
     _phase(phase_tag)
     units = _pending_units(cfg, phase)
@@ -2234,6 +2361,10 @@ def _fanout_phase(cfg: Cfg, phase: str, phase_tag: str) -> None:
             if not queue:
                 break
             active_merges = sum(1 for _p, ua, _t in running.values() if _needs_merge(cfg, ua))
+            # same-model-key serialization: never co-schedule two units sharing
+            # one merged/ft-staged dir — each deletes it at exit (job 16120)
+            live_keys = {_model_key(cfg, ua) for _p, ua, _t in running.values()}
+            live_keys.discard(None)
             nxt_i = next(
                 (
                     i
@@ -2241,6 +2372,7 @@ def _fanout_phase(cfg: Cfg, phase: str, phase_tag: str) -> None:
                     if (ua in barrier or not barrier_live)
                     and (not _needs_merge(cfg, ua) or active_merges < merge_slots)
                     and _unit_ready(cfg, phase, ua)
+                    and _model_key(cfg, ua) not in live_keys
                 ),
                 None,
             )
@@ -3015,6 +3147,2586 @@ def phase_noise_floor(cfg: Cfg) -> None:
     _pnf_upload(cfg)
 
 
+# ── pfx: on-target prefixed capture (plan v8 round 3) ────────────────────────
+#
+# pfx0  derived-corpus build (CPU): pfx subsample (3,000 train + pinned
+#       val/test), per-condition manifests + token budgets, and the §4.2
+#       prefix-vs-mix GROUND-TRUTH assert (kill criterion b).
+# pfx1  pilot: the syc pers con s42 arm @ own, full rows, production shape;
+#       gen + TF walls measured separately (kill criterion a).
+# pfx2  prefixed capture (23 units: 12 own + 6 ctrl + 5 base@prefix); spans
+#       {prefix, context, response}; regime-keyed resume.
+# pfx3  matched-text TF trees (18 units) on the SAME-condition base rows.
+# pfx4  on_target/ tree upload + exact-set verify (BEFORE fits; #825).
+
+PFX_BOOKED_UNIT_GPU_H = 1.0  # plan §9 pfx1 row (round-1 measured x4.4/16.4 x1.5 prefix book)
+PFX_PILOT_ARM = "syc-pers-con-lr1e5-s42"  # plan §4.4 pfx1 (smoke: X.PILOT_ARM)
+# ONE sha-pinned training mix per PREFIX family for the §4.2 ground-truth
+# assert (the arm whose registry mix record anchors the family's context).
+PFX_MIX_FAMILY_ARM = {
+    "pers": "syc-pers-con-lr1e5-s42",
+    "conv": "syc-conv-con-lr1e5-s42",
+    "icl_syc": "syc-icl-con-lr1e5-s42",
+}
+PFX_UPLOAD_TREES = (
+    "on_target/inputs",
+    "on_target/pilot",
+    "on_target/corpus_capture",
+    "on_target/corpus_capture_tf",
+)
+PFX_SPANS = ("prefix", "context", "response")  # +prefix vs round 1 (plan §4.4)
+
+
+def _pfx_root(cfg: Cfg) -> Path:
+    return cfg.out_root / "on_target"
+
+
+def _pfx_inputs(cfg: Cfg) -> Path:
+    return _pfx_root(cfg) / "inputs"
+
+
+def _pfx_arms(cfg: Cfg) -> list[str]:
+    """The round's arm scope (plan §4.1 order); --arms filters INSIDE it."""
+    if cfg.arms:
+        want = set(cfg.arms)
+        unknown = want - set(X.PFX_ARMS)
+        assert not unknown, f"--arms outside the pfx arm set: {sorted(unknown)}"
+        return [a for a in X.PFX_ARMS if a in want]
+    if cfg.smoke:
+        return [X.PILOT_ARM]
+    return list(X.PFX_ARMS)
+
+
+def _pfx_conds_for(cfg: Cfg, arm_id: str) -> tuple[str, ...]:
+    # smoke covers ONE trained condition (own); ctrl shares the same code path
+    return ("own",) if cfg.smoke else X.pfx_conditions_for(arm_id)
+
+
+def _pfx_unit_sets(cfg: Cfg) -> tuple[list[str], list[str]]:
+    """(pfx2 unit ids incl. bases, pfx3 trained-unit ids)."""
+    arms = _pfx_arms(cfg)
+    trained = [X.pfx_trained_unit(a, c) for a in arms for c in _pfx_conds_for(cfg, a)]
+    bases = sorted({X.pfx_base_unit(a, c) for a in arms for c in _pfx_conds_for(cfg, a)})
+    if cfg.smoke:
+        # Regime coverage under smoke (plan §4 smoke parity): one PLAIN-TEXT
+        # boundary render (the ICL user_wrap — the #1315 span-seam class) and
+        # one mk-decode unit ride alongside the pilot arm's own condition.
+        for extra in ("base_content@icl_syc", "base_mk@pers"):
+            if extra not in bases:
+                bases.append(extra)
+    return bases + trained, trained
+
+
+def _pfx_condition_ids(cfg: Cfg) -> list[str]:
+    """pfx0 ALWAYS builds the FULL production condition set (cheap CPU-only
+    renders + one small mix file per family), so the §4.2 byte assert covers
+    every family even when --smoke/--arms narrows the capture units."""
+    units, _ = _pfx_unit_sets(cfg)
+    ids = {X.pfx_unit_context_id(u) for u in units}
+    ids.update(X.pfx_unit_context_id(u) for u in X.pfx_base_units())
+    return sorted(ids)
+
+
+def _pfx_prefix_recipe(ctx) -> dict:
+    return {
+        "context_id": ctx.context_id,
+        "system": ctx.system,
+        "prefix_turns": [dict(t) for t in ctx.prefix_turns],
+        "user_wrap": ctx.user_wrap,
+    }
+
+
+def _pfx_prefix_sha(ctx) -> str:
+    """sha256 of the prefix RECIPE (system + prefix turns + user_wrap) — the
+    byte-level content identity every pfx regime key carries."""
+    blob = json.dumps(_pfx_prefix_recipe(ctx), sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+def _pfx_stage_inputs(cfg: Cfg) -> None:
+    """Round-1 inputs, local-else-Hub (the pnf staging pattern; the fellows
+    lane rsync-excludes eval_results/, so every repo input rides the Hub
+    mirror — plan §9 lane note)."""
+    from explore_persona_space.orchestrate import hub
+
+    sample_path = cfg.out_root / "inputs" / "corpus_sample.json"
+    if not sample_path.exists():
+        hub.stage_hub_file(X.HF_DATA_REPO, f"{X.HF_PREFIX}/inputs/corpus_sample.json", sample_path)
+    reg_path = cfg.out_root / "arm_registry.json"
+    if not reg_path.exists():
+        hub.stage_hub_file(X.HF_DATA_REPO, f"{X.HF_PREFIX}/arm_registry.json", reg_path)
+
+
+def _build_pfx_sample(cfg: Cfg) -> dict:
+    """Derived pfx sample (plan §4.3): `random.Random(42).sample(range(n_train),
+    3000)` over the r4-deduped train rows + the FULL pinned val/test block —
+    identical shas across every condition/arm by construction (one file).
+    Splits are derived from the Hub-staged corpus_sample.json — NEVER
+    `assert_pinned_split` (plan §9 lane note (ii))."""
+    path = _pfx_inputs(cfg) / "corpus_sample_pfx.json"
+    if path.exists():
+        return X.load_pfx_sample(cfg.out_root)
+    parent = X.load_corpus_sample(cfg.out_root)
+    n_train_p, n_val, n_test = parent["n_train"], parent["n_val"], parent["n_test"]
+    n_sub = min(X.PFX_N_TRAIN, n_train_p)
+    idxs = random.Random(X.SAMPLE_SEED).sample(range(n_train_p), n_sub)
+    rows = [{**parent["rows"][i], "src_qidx": i} for i in idxs]
+    for j in range(n_val + n_test):
+        rows.append({**parent["rows"][n_train_p + j], "src_qidx": n_train_p + j})
+    train_shas = {r["sha"] for r in rows[:n_sub]}
+    assert len(train_shas) == n_sub, "pfx train subsample shas not unique (r4 postcondition)"
+    sub_sha = hashlib.sha256(
+        "\n".join(sorted(r["sha"] for r in rows[:n_sub])).encode("utf-8")
+    ).hexdigest()
+    sample = {
+        "rows": rows,
+        "n_train": n_sub,
+        "n_val": n_val,
+        "n_test": n_test,
+        "parent_n_train": n_train_p,
+        "train_subsample_sha256": sub_sha,
+        "sample_seed": X.SAMPLE_SEED,
+        "smoke": cfg.smoke,
+        **_meta(),
+    }
+    _atomic_json(path, sample)
+    return sample
+
+
+def _pfx_budget(tok, ctx, rows: list[dict]) -> dict:
+    """Per-condition token budgets (plan §4.4 pfx0): realized rendered-prompt
+    token lengths over ALL rows (via the ONE construction path,
+    `_build_generation_prompts`) + `max_new_tokens` per decode class vs
+    MAX_MODEL_LEN. Content overflow FAILS LOUD (re-plan); mk overflow raises
+    to PFX_MAX_MODEL_LEN_RAISED for those units only (recorded deviation)."""
+    from explore_persona_space.analysis.representation_shift import _build_generation_prompts
+
+    prompts = [r["prompt"] for r in rows]
+    rendered, _keys = _build_generation_prompts(
+        tok,
+        {ctx.context_id: ctx.system},
+        prompts,
+        user_wraps={ctx.context_id: ctx.user_wrap},
+        prior_turns={ctx.context_id: tuple(ctx.prefix_turns)},
+    )
+    lens = [len(ids) for ids in tok(rendered, add_special_tokens=False)["input_ids"]]
+    max_prompt = max(lens)
+    budgets = {}
+    for decode, max_new in (("content", X.MAX_NEW_CONTENT), ("mk", X.MAX_NEW_MARKER)):
+        need = max_prompt + max_new
+        mml, raised = X.MAX_MODEL_LEN, False
+        if need > mml:
+            assert decode == "mk", (
+                f"pfx0 content-decode budget overflow under {ctx.context_id}: "
+                f"{need} > {mml} (plan §7 — re-plan, no silent raise)"
+            )
+            mml, raised = X.PFX_MAX_MODEL_LEN_RAISED, True
+            assert need <= mml, (
+                f"pfx0 mk-decode budget overflow even at {mml} under {ctx.context_id}: {need}"
+            )
+            logger.info(
+                "[pfx0] %s mk decode: MAX_MODEL_LEN raised %d -> %d (recorded deviation)",
+                ctx.context_id,
+                X.MAX_MODEL_LEN,
+                mml,
+            )
+        budgets[decode] = {
+            "max_model_len": mml,
+            "raised": raised,
+            "max_prompt_tokens": max_prompt,
+            "max_new_tokens": max_new,
+        }
+    return budgets
+
+
+def _assert_mix_row_matches_context(ctx, msgs: list[dict], tag: str) -> None:
+    """Kill criterion (b): the registry-rendered prefix must equal the TRAINED
+    context embedded in the mix positives — byte equality, never a paraphrase
+    (plan §4.2 ground-truth assert)."""
+    sys_msgs = [m for m in msgs if m["role"] == "system"]
+    mix_system = sys_msgs[0]["content"] if sys_msgs else None
+    assert mix_system == (ctx.system or None), (tag, "system-prompt drift vs registry render")
+    chat = [m for m in msgs if m["role"] != "system"]
+    assert chat and chat[-1]["role"] == "user", (tag, "mix row has no final user turn")
+    prior = [(m["role"], m["content"]) for m in chat[:-1]]
+    want = [(t["role"], t["content"]) for t in ctx.prefix_turns]
+    assert prior == want, (tag, "prefix-turn drift vs registry render", len(prior), len(want))
+    if ctx.user_wrap is not None:
+        head, tail = ctx.user_wrap.split("{q}", 1)
+        content = chat[-1]["content"]
+        assert content.startswith(head) and content.endswith(tail), (
+            tag,
+            "user_wrap drift vs registry render",
+        )
+
+
+def _pfx_prefix_vs_mix_assert(cfg: Cfg) -> dict:
+    """Stage ONE training mix per prefix family and byte-assert the registry
+    render against the context embedded in its positive rows (plan §4.2)."""
+    from explore_persona_space.orchestrate import hub
+
+    reg = json.loads((cfg.out_root / "arm_registry.json").read_text())
+    need = {X.pfx_prefix_tag(cid): cid for cid in _pfx_condition_ids(cfg)}
+    out = {}
+    for tag, cid in sorted(need.items()):
+        fam_arm = PFX_MIX_FAMILY_ARM[tag]
+        src = reg["mix_pos_sources"][fam_arm]
+        local = _pfx_inputs(cfg) / "mix_assert" / tag / Path(src["pos_path"]).name
+        if not local.exists():
+            hub.stage_hub_file(X.HF_DATA_REPO, src["pos_path"], local, repo_type="dataset")
+        pos_sha256 = hashlib.sha256(local.read_bytes()).hexdigest()
+        ctx = X.pfx_resolve_context(cid)
+        checked = 0
+        with local.open(encoding="utf-8") as fh:  # text-mode iteration, never splitlines
+            for line in fh:
+                if not line.strip():
+                    continue
+                r = json.loads(line)
+                if src["layout"] == "marker-mix" and "※" not in _completion_text(r):
+                    continue  # marker mixes interleave negatives; positives only
+                msgs = (
+                    r["prompt"]
+                    if isinstance(r["prompt"], list)
+                    else [{"role": "user", "content": r["prompt"]}]
+                )
+                _assert_mix_row_matches_context(ctx, msgs, f"{tag}/{fam_arm}")
+                checked += 1
+                if checked >= 5:
+                    break
+        assert checked > 0, (tag, src["pos_path"], "no positive rows checked")
+        out[tag] = {
+            "context_id": cid,
+            "family_arm": fam_arm,
+            "pos_path": src["pos_path"],
+            "pos_sha256": pos_sha256,
+            "n_rows_checked": checked,
+        }
+        logger.info("[pfx0] prefix-vs-mix assert PASS: %s (%d rows)", tag, checked)
+    return out
+
+
+def phase_pfx0(cfg: Cfg) -> None:
+    """pfx0: derived corpora + condition manifests + budgets + mix assert."""
+    _phase("pfx0_corpus_build")
+    _status(cfg, "pfx0_corpus_build")
+    from transformers import AutoTokenizer
+
+    done = _pfx_inputs(cfg) / "build_done.json"
+    _pfx_stage_inputs(cfg)
+    sample = _build_pfx_sample(cfg)
+    if done.exists():
+        logger.info("[pfx0] build_done.json present — resume skip")
+        return
+    tok = AutoTokenizer.from_pretrained(cfg.model_override or X.BASE_MODEL)
+    conds: dict[str, dict] = {}
+    for cid in _pfx_condition_ids(cfg):
+        ctx = X.pfx_resolve_context(cid)
+        tag = X.pfx_prefix_tag(cid)
+        budgets = _pfx_budget(tok, ctx, sample["rows"])
+        prefix_tokens = len(
+            tok(ctx.render(tok, ""), add_special_tokens=False)["input_ids"]
+        )  # prefix + template overhead at an empty query (manifest read)
+        rec = {
+            "tag": tag,
+            "context_id": cid,
+            "prefix_sha256": _pfx_prefix_sha(ctx),
+            "recipe": _pfx_prefix_recipe(ctx),
+            "prefix_tokens": prefix_tokens,
+            "message_shape": {
+                "has_system": ctx.system is not None,
+                "n_prefix_turns": len(ctx.prefix_turns),
+                "has_user_wrap": ctx.user_wrap is not None,
+            },
+            "budgets": budgets,
+            "n_rows": len(sample["rows"]),
+        }
+        conds[cid] = rec
+        # The derived per-condition corpus manifest: the ROWS live once in
+        # corpus_sample_pfx.json (identical shas across conditions — paired
+        # design); this file pins the condition's recipe + realized budgets.
+        _atomic_json(
+            _pfx_inputs(cfg) / f"corpus_{tag}.json",
+            {
+                **rec,
+                "rows_sha256": hashlib.sha256(
+                    "\n".join(r["sha"] for r in sample["rows"]).encode("utf-8")
+                ).hexdigest(),
+                **_meta(),
+            },
+        )
+    _atomic_json(_pfx_inputs(cfg) / "conditions.json", {"conditions": conds, **_meta()})
+    mix_rec = _pfx_prefix_vs_mix_assert(cfg)  # kill criterion (b) fires here
+    _atomic_json(_pfx_inputs(cfg) / "prefix_mix_assert.json", {"families": mix_rec, **_meta()})
+    _atomic_json(
+        done,
+        {
+            "n_rows": len(sample["rows"]),
+            "n_train": sample["n_train"],
+            "conditions": sorted(conds),
+            **_meta(),
+        },
+    )
+    logger.info("[pfx0] corpora + budgets + mix assert done (%d conditions)", len(conds))
+
+
+def _pfx_cond_record(cfg: Cfg, context_id: str) -> dict:
+    conds = json.loads((_pfx_inputs(cfg) / "conditions.json").read_text())["conditions"]
+    assert context_id in conds, (context_id, "condition not built at pfx0", sorted(conds))
+    return conds[context_id]
+
+
+def _pfx_regime(cfg: Cfg, unit_id: str, cond_rec: dict, sample: dict, spans: tuple) -> dict:
+    """Output-affecting resume/regime key for a pfx unit (plan §4.4: condition
+    + prefix sha in the key; a mismatch is refused loud — #722-r3 class)."""
+    return {
+        "unit_id": unit_id,
+        "context_id": cond_rec["context_id"],
+        "prefix_sha256": cond_rec["prefix_sha256"],
+        "layers": list(cfg.layers),
+        "tf_batch": cfg.tf_batch,
+        "spans": list(spans),
+        "train_subsample_sha256": sample["train_subsample_sha256"],
+        "n_rows": len(sample["rows"]),
+    }
+
+
+def _pfx_check_regime(unit_dir: Path, regime: dict) -> None:
+    path = unit_dir / "regime.json"
+    if path.exists():
+        stored = json.loads(path.read_text())["regime"]
+        if stored != regime:
+            raise RuntimeError(
+                f"[pfx] {unit_dir} holds a DIFFERENT regime — refusing stale reuse "
+                f"(#722-r3 class): stored={stored} vs current={regime}"
+            )
+        return
+    unit_dir.mkdir(parents=True, exist_ok=True)
+    _atomic_json(path, {"regime": regime, **_meta()})
+
+
+def _pfx_decode_class(unit_id: str) -> str:
+    return "mk" if unit_id.split("@")[0].startswith(("mk-", "base_mk")) else "content"
+
+
+def run_pfx_corpus_unit(cfg: Cfg, unit_id: str) -> None:
+    """pfx2 unit: prefixed greedy gen -> TF span-means (prefix+ctx+resp)."""
+    cid = X.pfx_unit_context_id(unit_id)
+    _prefixed_capture_core(
+        cfg,
+        unit_id,
+        root=_pfx_root(cfg),
+        cid=cid,
+        cond_rec=_pfx_cond_record(cfg, cid),
+        ctx=X.pfx_resolve_context(cid),
+    )
+
+
+def _prefixed_capture_core(
+    cfg: Cfg, unit_id: str, *, root: Path, cid: str, cond_rec: dict, ctx
+) -> None:
+    """Shared pfx2/lad2 unit body: prefixed greedy gen -> spans -> TF span-means
+    -> pooled.pt + manifest under ``root`` (extracted VERBATIM from the round-3
+    ``run_pfx_corpus_unit``; round 4 threads the on_target_r4 root + ladder
+    contexts through the SAME statements — no clone drift, #399 class)."""
+    from transformers import AutoTokenizer
+
+    from explore_persona_space.analysis.representation_shift import _teacher_forced_span_means
+
+    out_dir = root / "corpus_capture" / unit_id
+    sample = X.load_pfx_sample(cfg.out_root)
+    regime = _pfx_regime(cfg, unit_id, cond_rec, sample, PFX_SPANS)
+    if (out_dir / "pooled.pt").exists():
+        _pfx_check_regime(out_dir, regime)  # refuse a stale-regime store loud
+        return
+    _pfx_check_regime(out_dir, regime)
+    max_model_len = cond_rec["budgets"][_pfx_decode_class(unit_id)]["max_model_len"]
+    prompts = [r["prompt"] for r in sample["rows"]]
+    model_path, cleanup = _resolve_unit_model(cfg, unit_id.split("@")[0])
+    try:
+        t0 = time.time()
+        rows = _load_or_generate_rows(
+            cfg,
+            out_dir,
+            unit_id,
+            model_path,
+            prompts=prompts,
+            system=ctx.system,
+            user_wrap=ctx.user_wrap,
+            prior_turns=tuple(ctx.prefix_turns),
+            max_model_len=max_model_len,
+        )
+        gen_wall = time.time() - t0
+        _assert_model_dir_alive(model_path, cleanup)
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        kept, dropped, seam_counts, n_prefix = _attach_spans(
+            tokenizer,
+            prompts,
+            rows,
+            system=ctx.system,
+            user_wrap=ctx.user_wrap,
+            prior_turns=tuple(ctx.prefix_turns),
+        )
+        valid_frac = len(kept) / max(1, len(rows))
+        assert valid_frac >= 0.95, (unit_id, valid_frac, "plan §6 row-validity criterion")
+        _atomic_json(
+            out_dir / "rows_spans.json",
+            {
+                "rows": [
+                    {
+                        "prompt_sha": r["prompt_sha"],
+                        "question_idx": r["question_idx"],
+                        "prefix_len": r["prefix_len"],
+                        "context_len": r["context_len"],
+                    }
+                    for r in kept
+                ],
+                "n_dropped_empty_response": dropped,
+                "seam_counts": seam_counts,
+                "n_distinct_prefix": n_prefix,
+            },
+        )
+        t1 = time.time()
+        _assert_model_dir_alive(model_path, cleanup)
+        pooled = _teacher_forced_span_means(
+            model_path,
+            kept,
+            [unit_id],
+            layers=list(cfg.layers),
+            spans=PFX_SPANS,
+            device=_device(),
+            dtype=_dtype(),
+            tf_batch_size=cfg.tf_batch,
+        )
+        tf_wall = time.time() - t1
+        fp16_cos = _fp16_roundtrip_cos_min(pooled)
+        _save_pooled(
+            out_dir / "pooled.pt",
+            unit_id,
+            pooled,
+            kept,
+            {
+                "model_path": model_path,
+                "layers": list(cfg.layers),
+                "spans": list(PFX_SPANS),
+                "regime": regime,
+                "condition_tag": cond_rec["tag"],
+                "max_model_len": max_model_len,
+                "max_new_tokens": X.max_new_tokens_for(unit_id.split("@")[0]),
+                "n_rows": len(kept),
+                "n_dropped": dropped,
+                "seam_counts": seam_counts,
+                "n_distinct_prefix": n_prefix,
+                "fp16_roundtrip_cos_min": fp16_cos,
+                "gen_wall_s": gen_wall,
+                "tf_wall_s": tf_wall,
+                "smoke": cfg.smoke,
+            },
+        )
+        _atomic_json(
+            out_dir / "manifest.json",
+            {
+                "unit": unit_id,
+                "context_id": cid,
+                "prefix_sha256": cond_rec["prefix_sha256"],
+                "n_rows": len(kept),
+                "valid_frac": valid_frac,
+                "model_path": model_path,
+                "n_distinct_prefix": n_prefix,
+                "fp16_roundtrip_cos_min": fp16_cos,
+                "gen_wall_s": gen_wall,
+                "tf_wall_s": tf_wall,
+                **_meta(),
+            },
+        )
+    finally:
+        _cleanup_merged(cleanup)
+
+
+def run_pfx_tf_unit(cfg: Cfg, unit_arg: str) -> None:
+    """pfx3 unit (`<arm>@<cond>`): trained model TF on the SAME-condition base
+    tree's rows -> response span-means (the #833 control at the trained
+    context)."""
+    import torch
+
+    from explore_persona_space.analysis.representation_shift import _teacher_forced_span_means
+
+    arm_id, _, cond = unit_arg.partition("@")
+    out_dir = _pfx_root(cfg) / "corpus_capture_tf" / unit_arg
+    cid = X.pfx_unit_context_id(unit_arg)
+    cond_rec = _pfx_cond_record(cfg, cid)
+    sample = X.load_pfx_sample(cfg.out_root)
+    regime = _pfx_regime(cfg, unit_arg, cond_rec, sample, ("response",))
+    if (out_dir / "pooled_tf.pt").exists():
+        _pfx_check_regime(out_dir, regime)
+        return
+    _pfx_check_regime(out_dir, regime)
+    base_unit = X.pfx_base_unit(arm_id, cond)
+    base_dir = _pfx_root(cfg) / "corpus_capture" / base_unit
+    assert (base_dir / "pooled.pt").exists(), f"pfx3 {unit_arg}: base unit {base_unit} not captured"
+    rows = _read_rows_with_spans(base_dir)
+    model_path, cleanup = _resolve_unit_model(cfg, arm_id)
+    try:
+        _assert_model_dir_alive(model_path, cleanup)
+        pooled = _teacher_forced_span_means(
+            model_path,
+            rows,
+            [base_unit],
+            layers=list(cfg.layers),
+            spans=("response",),
+            device=_device(),
+            dtype=_dtype(),
+            tf_batch_size=cfg.tf_batch,
+        )
+        store = {
+            "schema_version": 1,
+            "unit": unit_arg,
+            "row_sha": [r["prompt_sha"] for r in rows],
+            "row_question_idx": [r["question_idx"] for r in rows],
+            "arms": {
+                span: {li: t.to(torch.float16) for li, t in per.items()}
+                for span, per in pooled.items()
+            },
+            "metadata": {
+                **_meta(),
+                "regime": regime,
+                "model_path": model_path,
+                "layers": list(cfg.layers),
+                "spans": ["response"],
+                "shared_text_from": base_unit,
+                "n_rows": len(rows),
+                "smoke": cfg.smoke,
+            },
+        }
+        store_path = out_dir / "pooled_tf.pt"
+        tmp = store_path.with_suffix(".pt.tmp")
+        torch.save(store, tmp)
+        os.replace(tmp, store_path)
+        _atomic_json(
+            out_dir / "manifest.json",
+            {"unit": unit_arg, "n_rows": len(rows), "model_path": model_path, **_meta()},
+        )
+    finally:
+        _cleanup_merged(cleanup)
+
+
+def _pfx_pilot_gate(
+    ratio: float, smoke: bool, *, tag: str = "pfx1", booked: float = PFX_BOOKED_UNIT_GPU_H
+) -> None:
+    """Kill criterion (a), plan §7: pilot wall > 2x the booked per-unit row =>
+    re-size before fleet launch; > 4x => halt + re-plan. Demoted to a log line
+    under smoke (the #1345 gate-calibration rule — smoke n cannot satisfy a
+    production-scale wall book). ``tag``/``booked`` default to the round-3
+    pfx1 values; lad1 threads its own (round-4 reuse, defaults preserved)."""
+    if smoke:
+        logger.info("[%s] smoke: pilot wall ratio %.2f (gate informational)", tag, ratio)
+        return
+    if ratio > 4.0:
+        raise RuntimeError(
+            f"[{tag}] kill criterion (a): pilot wall {ratio:.2f}x the booked "
+            f"{booked} GPU-h/unit — HALT + re-plan (plan §7)"
+        )
+    if ratio > 2.0:
+        raise RuntimeError(
+            f"[{tag}] kill criterion (a): pilot wall {ratio:.2f}x the booked "
+            f"{booked} GPU-h/unit — re-size §9 before fleet launch"
+        )
+
+
+def phase_pfx1(cfg: Cfg) -> None:
+    """pfx1: ONE unit at production shape; gen + TF walls measured separately."""
+    _phase("pfx1_pilot")
+    _status(cfg, "pfx1_pilot")
+    arm = X.PILOT_ARM if cfg.smoke else PFX_PILOT_ARM
+    unit = X.pfx_trained_unit(arm, "own")
+    run_pfx_corpus_unit(cfg, unit)
+    man = json.loads((_pfx_root(cfg) / "corpus_capture" / unit / "manifest.json").read_text())
+    unit_wall_h = (man.get("gen_wall_s", 0.0) + man.get("tf_wall_s", 0.0)) / 3600.0
+    ratio = unit_wall_h / PFX_BOOKED_UNIT_GPU_H
+    _atomic_json(
+        _pfx_root(cfg) / "pilot" / "pilot_report.json",
+        {
+            "unit": unit,
+            "gen_wall_s": man.get("gen_wall_s"),
+            "tf_wall_s": man.get("tf_wall_s"),
+            "unit_wall_h": unit_wall_h,
+            "booked_unit_gpu_h": PFX_BOOKED_UNIT_GPU_H,
+            "ratio": ratio,
+            "smoke": cfg.smoke,
+            **_meta(),
+        },
+    )
+    print(f"[pfx1] pilot {unit} wall={unit_wall_h:.2f}h ratio={ratio:.2f}", flush=True)
+    _pfx_pilot_gate(ratio, cfg.smoke)
+
+
+def _pfx_expected_uploads(cfg: Cfg) -> list[str]:
+    """The exact-set verify list: every load-bearing store file currently in
+    the on_target trees (the pfx4 resume-skip predicate keys on its count)."""
+    expected = []
+    for tree, fname in (
+        ("on_target/corpus_capture", "pooled.pt"),
+        ("on_target/corpus_capture_tf", "pooled_tf.pt"),
+    ):
+        local_tree = cfg.out_root / tree
+        if local_tree.exists():
+            for unit_dir in sorted(local_tree.iterdir()):
+                if (unit_dir / fname).exists():
+                    expected.append(f"{cfg.hf_prefix}/{tree}/{unit_dir.name}/{fname}")
+    return expected
+
+
+def phase_pfx4(cfg: Cfg) -> None:
+    """pfx4: on_target tree upload + exact-set verify — BEFORE fits (#825)."""
+    _phase("pfx4_store_upload")
+    _status(cfg, "pfx4_store_upload")
+    if not cfg.upload:
+        logger.info("[pfx4] upload disabled (--no-upload)")
+        return
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    expected = _pfx_expected_uploads(cfg)
+    done_path = _pfx_root(cfg) / "upload_done.json"
+    if done_path.exists():  # r3-v2 Minor: skip the re-upload when nothing new shipped
+        prior = json.loads(done_path.read_text())
+        if prior.get("n_verified") == len(expected):
+            logger.info(
+                "[pfx4] upload_done.json matches the expected store count (%d) — resume skip",
+                len(expected),
+            )
+            return
+        logger.info(
+            "[pfx4] expected store count changed (%s -> %d) — re-uploading",
+            prior.get("n_verified"),
+            len(expected),
+        )
+    uploaded = {}
+    for name in PFX_UPLOAD_TREES:
+        dest = _upload_tree(cfg, name)
+        if dest:
+            uploaded[name] = dest
+    if expected:
+        missing = hub.verify_repo_paths_uploaded(
+            HfApi(),
+            X.HF_DATA_REPO,
+            expected,
+            path_in_repo=f"{cfg.hf_prefix}/on_target",
+            repo_type="dataset",
+        )
+        assert not missing, f"pfx4 verify: {len(missing)} store files missing on Hub: {missing[:5]}"
+    _atomic_json(
+        _pfx_root(cfg) / "upload_done.json",
+        {"uploaded": uploaded, "n_verified": len(expected), **_meta()},
+    )
+
+
+# ── lad: round-4 prefix-richness dose ladder (plan v10) ─────────────────────
+#
+# lad_build  VM-side (CPU, pre-dispatch): deterministic WildChat-1M streaming
+#            scan -> 3-rung never-trained selection (bands anchored to the
+#            trained-prefix token counts, production tokenizer) + five
+#            exclusion screens -> prefix_ladder.json; uploads the ladder + the
+#            r3-results mirror to the Hub (fellows-lane staging) and copies
+#            the ladder into the repo results tree for the pre-dispatch commit.
+# lad0  rung-corpus render + budgets + FULL-GRAIN exclusion re-assert (CPU).
+# lad1  pilot: syc-pers-con-lr1e5-s42 @ r_long, production shape (kill (a)).
+# lad2  rung capture (15 units: 12 trained + 3 base@rung; all content decode).
+# lad4  on_target_r4 tree upload + exact-set verify (BEFORE fits; #825).
+
+WILDCHAT_DATASET = "allenai/WildChat-1M"
+LAD_SCAN_ROWS = 50_000
+LAD_SCAN_ROWS_WIDENED = 200_000  # pre-registered ONE-step widening (kill (b))
+LAD_SMOKE_SCAN_ROWS = 1_500  # bounded tiny-real probe cap (#1092 class)
+LAD_TURN_CONTENT_CAP = 2000  # corpora.py L1499-1503 parity (BOTH turns)
+LAD_SCAN_CHECKPOINT_EVERY = 2_000  # rows between cursor checkpoints
+LAD_BAND_TOPK = 8  # per-band runner-up depth (cross-rung distinctness margin)
+LAD_BOOKED_UNIT_GPU_H = 1.0  # plan §9 lad1 row (r3 REALIZED long-prefix unit)
+LAD_PILOT_UNIT = "syc-pers-con-lr1e5-s42@r_long"  # worst-case prefix length
+LAD_UPLOAD_TREES = (
+    "on_target_r4/inputs",
+    "on_target_r4/pilot",
+    "on_target_r4/corpus_capture",
+)
+# plan §11 band bounds: (lo_mult, hi_mult) multipliers on the band target
+LAD_BAND_BOUNDS = {"r_short": (0.5, 2.0), "r_mid": (0.5, 2.0), "r_long": (0.75, 1.25)}
+LAD_R3_RESULTS = "on_target_r4/inputs/r3_results"  # plan §4.5 mirror prefix
+
+
+def _lad_root(cfg: Cfg) -> Path:
+    return cfg.out_root / "on_target_r4"
+
+
+def _lad_inputs(cfg: Cfg) -> Path:
+    return _lad_root(cfg) / "inputs"
+
+
+def _lad_repo_ladder_path() -> Path:
+    """The committed (git) copy of the pinned ladder (plan §10 git dest)."""
+    return (
+        REPO_ROOT / "eval_results" / "issue_1768" / "on_target_r4" / "inputs" / "prefix_ladder.json"
+    )
+
+
+def _lad_registry_context(cid: str):
+    from explore_persona_space.artifacts.context import CONTEXTS
+
+    return CONTEXTS[cid]
+
+
+def lad_band_specs(t_pers: int, t_conv: int) -> dict[str, dict]:
+    """Band {target, lo, hi} per rung from the MEASURED anchors (plan §11):
+    short [0.5,2]xT_pers, mid [0.5,2]x√(T_pers·T_conv), long [0.75,1.25]xT_conv."""
+    assert t_pers > 0 and t_conv > t_pers, (t_pers, t_conv)
+    t_gm = (t_pers * t_conv) ** 0.5
+    targets = {"r_short": float(t_pers), "r_mid": float(t_gm), "r_long": float(t_conv)}
+    out = {}
+    for cond, target in targets.items():
+        lo_m, hi_m = LAD_BAND_BOUNDS[cond]
+        out[cond] = {"target": target, "lo": lo_m * target, "hi": hi_m * target}
+    return out
+
+
+def lad_bands_for(t_tokens: int, specs: dict[str, dict]) -> list[str]:
+    return [c for c in X.R4_CONDS if specs[c]["lo"] <= t_tokens <= specs[c]["hi"]]
+
+
+def lad_turns_sha(turns: list[dict]) -> str:
+    blob = json.dumps([[t["role"], t["content"]] for t in turns], ensure_ascii=False)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+def _lad_content_sha(ctx) -> str:
+    """cid-STRIPPED prefix content sha (r4-r2 review Minor): `_pfx_prefix_sha`
+    hashes the recipe INCLUDING `context_id`, so a rung-vs-trained recipe-sha
+    compare was structurally vacuous (rung cids always differ, even on
+    identical content). Hashing only (system, prefix_turns, user_wrap) makes
+    identical CONTENT collide — the sha-space twin of the `trained_prefix`
+    content-equality screen in `lad_exclusion_reject`."""
+    recipe = _pfx_prefix_recipe(ctx)
+    recipe.pop("context_id")
+    blob = json.dumps(recipe, sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+def _lad_trained_exclusion_material() -> dict:
+    """Trained-context identity material for exclusion screens 1/3 (plan §4.2):
+    the 3 trained prefix recipe shas (+ cid-stripped content shas), the conv
+    prefix's capped turn tuple, the persona system string, and the ICL
+    demonstration texts."""
+    ctxs = {
+        key: X.pfx_resolve_context(cid)
+        for key, cid in (
+            ("pers", "persona_software_engineer"),
+            ("conv", "wildchat_prefix_real545"),
+            ("icl", "icl_prefix_sycophancy"),
+        )
+    }
+    assert ctxs["pers"].system, "persona context lost its system string"
+    return {
+        "trained_shas": {k: _pfx_prefix_sha(c) for k, c in ctxs.items()},
+        "trained_content_shas": {k: _lad_content_sha(c) for k, c in ctxs.items()},
+        "conv_turns": tuple((t["role"], t["content"]) for t in ctxs["conv"].prefix_turns),
+        "persona_system": ctxs["pers"].system,
+        "icl_demo_texts": [t["content"] for t in ctxs["icl"].prefix_turns],
+    }
+
+
+def _lad_full_grain_samples(cfg: Cfg) -> tuple[set[str], list[str]]:
+    """(FULL round-1 sha set, FULL 4,400 pfx query texts) for the exclusion
+    screens — staged to DEDICATED full-grain paths so a smoke out-root's
+    sliced samples are never consulted (plan §4 smoke parity / #1817 rule)."""
+    from explore_persona_space.orchestrate import hub
+
+    inputs = _lad_inputs(cfg)
+    full_r1 = inputs / "corpus_sample_full.json"
+    if not full_r1.exists():
+        local = cfg.out_root / "inputs" / "corpus_sample.json"
+        if local.exists() and json.loads(local.read_text())["n_train"] == X.N_TRAIN:
+            full_r1.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(local, full_r1)
+        else:
+            hub.stage_hub_file(
+                X.HF_DATA_REPO,
+                f"{X.HF_PREFIX}/inputs/corpus_sample.json",
+                full_r1,
+                repo_type="dataset",
+            )
+    r1 = json.loads(full_r1.read_text())
+    assert r1["n_train"] == X.N_TRAIN, (str(full_r1), r1["n_train"], "full-grain r1 required")
+    sha_set = {r["sha"] for r in r1["rows"]}
+    full_pfx = inputs / "corpus_sample_pfx_full.json"
+    if not full_pfx.exists():
+        local = _pfx_inputs(cfg) / "corpus_sample_pfx.json"
+        if local.exists() and json.loads(local.read_text())["n_train"] == X.PFX_N_TRAIN:
+            full_pfx.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(local, full_pfx)
+        else:
+            hub.stage_hub_file(
+                X.HF_DATA_REPO,
+                f"{X.HF_PREFIX}/on_target/inputs/corpus_sample_pfx.json",
+                full_pfx,
+                repo_type="dataset",
+            )
+    pfx = json.loads(full_pfx.read_text())
+    n_full = X.PFX_N_TRAIN + X.N_VAL + X.N_TEST
+    assert pfx["n_train"] == X.PFX_N_TRAIN and len(pfx["rows"]) == n_full, (
+        str(full_pfx),
+        pfx["n_train"],
+        len(pfx["rows"]),
+    )
+    return sha_set, [r["prompt"] for r in pfx["rows"]]
+
+
+# Exclusion screen 6 (r2 revision; concern `r-long-rung-content-language`):
+# the WildChat `language == "English"` METADATA screen passed a rung whose
+# CONTENT is majority-Cyrillic (r1 r_long, dataset idx 9098) — screen the
+# rendered 2-turn prefix TEXT itself. Rule (deterministic, dependency-free):
+# among alphabetic chars of BOTH capped turns, >= LAD_CONTENT_LATIN_MIN_RATIO
+# must be Latin-script (codepoint <= U+024F: Basic Latin + Latin-1 Supplement
+# + Latin Extended-A/B, so accented European letters pass). Zero alphabetic
+# chars rejects fail-safe. Threshold grounded on 2026-07-31 measurements:
+# trained conv prefix (`wildchat_prefix_real545`) ratio 1.0000 (passes with
+# maximal margin — no construction asymmetry), r1 r_short/r_mid 1.0000,
+# rejected r1 r_long 0.8648 (fails by 0.085). An additional code-block-
+# fraction screen was considered and NOT added: no cheap deterministic
+# definition, and it would risk asymmetry vs the trained prefix.
+LAD_CONTENT_LATIN_MIN_RATIO = 0.95
+LAD_LATIN_MAX_CODEPOINT = 0x024F
+
+
+def lad_content_language_ok(c0: str, c1: str) -> bool:
+    """Content-level language screen (exclusion 6): Latin-script ratio over
+    alphabetic chars of the rendered 2-turn prefix text >= the threshold;
+    alpha == 0 rejects fail-safe. See the constants block above for the rule
+    grounding + measured margins (concern `r-long-rung-content-language`)."""
+    alpha = latin = 0
+    for ch in itertools.chain(c0, c1):
+        if ch.isalpha():
+            alpha += 1
+            if ord(ch) <= LAD_LATIN_MAX_CODEPOINT:
+                latin += 1
+    return alpha > 0 and latin / alpha >= LAD_CONTENT_LATIN_MIN_RATIO
+
+
+def lad_screen_reject(row: dict) -> str | None:
+    """Cheap corpus screens (plan §4.2 exclusion 5 + shape + the r2 content-
+    language screen 6): first-violation name, or None. `toxic`/`redacted`
+    must be present AND falsy-boolean False (the #1092/#1739 field-semantics
+    lessons: full language names; missing or truthy moderation fields reject
+    fail-safe); metadata language alone is insufficient (screen 6)."""
+    if row.get("language") != "English":
+        return "language"
+    tox = row.get("toxic")
+    if tox is None or bool(tox):
+        return "toxic"
+    red = row.get("redacted")
+    if red is None or bool(red):
+        return "redacted"
+    conv = row.get("conversation") or []
+    if len(conv) < 2:
+        return "too_few_turns"
+    if (conv[0].get("role"), conv[1].get("role")) != ("user", "assistant"):
+        return "bad_roles"
+    c0 = (conv[0].get("content") or "")[:LAD_TURN_CONTENT_CAP]
+    c1 = (conv[1].get("content") or "")[:LAD_TURN_CONTENT_CAP]
+    if not (c0.strip() and c1.strip()):
+        return "empty_content"
+    if not lad_content_language_ok(c0, c1):
+        return "content_language"
+    return None
+
+
+def lad_exclusion_reject(
+    c0: str, c1: str, raw_user: str, excl: dict, sha_set: set[str]
+) -> str | None:
+    """Never-trained / content-novel screens 1-3 (plan §4.2), belt excluded
+    (the 4,400-text substring belt runs at selection + lad0 re-check)."""
+    if (("user", c0), ("assistant", c1)) == excl["conv_turns"]:
+        return "trained_prefix"
+    if excl["persona_system"] in c0 or excl["persona_system"] in c1:
+        return "trained_context_containment"
+    for demo in excl["icl_demo_texts"]:
+        if demo in c0 or demo in c1:
+            return "trained_context_containment"
+    if X.prompt_sha(c0) in sha_set or X.prompt_sha(raw_user) in sha_set:
+        return "query_sha_overlap"
+    return None
+
+
+LAD_BELT_MIN_QUERY_CHARS = 16  # belt needle floor — see lad_belt_needles
+
+
+def lad_belt_needles(query_texts: list[str]) -> list[str]:
+    """The substring-belt needle set: 4,400-set query texts of >=16 chars.
+
+    The floor is load-bearing, MEASURED (2026-07-31 production lad_build):
+    the pinned pfx query set carries 140 texts <8 chars / 330 <16 chars
+    (real-user 'hi'/'ok'-class rows — the #1776 short-query collision class),
+    and those trivial needles substring-matched EVERY long-band candidate
+    (top-8 belt hits were ALL 2-6 chars; 19,358 long-band candidates, zero
+    passing), spuriously firing kill criterion (b). Sub-floor queries carry
+    no contamination signal as substrings; they stay fully covered by the
+    PRIMARY exact-sha screen (`lad_exclusion_reject`), which is untouched."""
+    return [q for q in query_texts if len(q) >= LAD_BELT_MIN_QUERY_CHARS]
+
+
+def lad_substring_belt_hit(c0: str, c1: str, query_texts: list[str]) -> bool:
+    """Exclusion-2 belt: any >=16-char 4,400-set query text as a substring of
+    either candidate turn (selection candidates + the lad0 full-grain
+    re-check share this ONE predicate, floor included)."""
+    return any((q in c0) or (q in c1) for q in lad_belt_needles(query_texts))
+
+
+def _lad_scan_dir(cfg: Cfg) -> Path:
+    return _lad_root(cfg) / "scan"  # cursor state — NOT in the upload trees
+
+
+def _lad_scan(
+    cfg: Cfg,
+    tok,
+    specs: dict,
+    excl: dict,
+    sha_set: set[str],
+    scan_cap: int,
+) -> tuple[dict[str, list[dict]], dict[str, int], int, str]:
+    """Deterministic WildChat-1M stream scan (dataset order) with chunked
+    cursor checkpoints + fingerprint-gated resume (#1092 external-stream rule).
+    Returns (per-band top-K pools, per-screen reject counters, rows_scanned,
+    dataset revision). Candidate texts NEVER hit logs (digest-only discipline)."""
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    revision = hub.retry_transient(
+        lambda: HfApi().dataset_info(WILDCHAT_DATASET).sha,
+        what="WildChat-1M revision resolve",
+    )
+    fp = hashlib.sha256(
+        json.dumps(
+            {
+                "dataset": WILDCHAT_DATASET,
+                "revision": revision,
+                "bands": specs,
+                "cap": LAD_TURN_CONTENT_CAP,
+                # +latin<ratio> (r2 content-language screen): a threshold or
+                # rule change busts the cursor -> fresh scan (regime keying)
+                "screens": (
+                    "english+toxicF+redactedF+2turn+ua+nonempty"
+                    f"+latin{LAD_CONTENT_LATIN_MIN_RATIO}+excl123"
+                ),
+                "trained_shas": excl["trained_shas"],
+                "smoke": cfg.smoke,
+            },
+            sort_keys=True,
+        ).encode("utf-8")
+    ).hexdigest()[:16]
+    cursor_path = _lad_scan_dir(cfg) / "cursor.json"
+    pools: dict[str, list[dict]] = {c: [] for c in X.R4_CONDS}
+    counters: dict[str, int] = {}
+    start = 0
+    if cursor_path.exists():
+        prev = json.loads(cursor_path.read_text())
+        # A cursor past the CURRENT cap but within the pre-registered widened
+        # cap is a legitimately-WIDENED prior scan (kill-criterion (b) path):
+        # its pools are a superset — resume/return, never rescan from zero.
+        if prev.get("fingerprint") == fp and prev.get("rows_scanned", 0) <= LAD_SCAN_ROWS_WIDENED:
+            pools = {c: list(prev["pools"].get(c, [])) for c in X.R4_CONDS}
+            counters = dict(prev["counters"])
+            start = int(prev["rows_scanned"])
+            logger.info("[lad_build] cursor resume at row %d (fp %s)", start, fp)
+        else:
+            logger.info("[lad_build] cursor fingerprint/cap mismatch — fresh scan")
+    if start >= scan_cap:
+        return pools, counters, start, revision
+
+    from datasets import load_dataset
+
+    ds = load_dataset(WILDCHAT_DATASET, split="train", streaming=True, revision=revision)
+    if start:
+        ds = ds.skip(start)
+    n = start
+    t0 = time.time()
+
+    def _checkpoint() -> None:
+        _atomic_json(
+            cursor_path,
+            {
+                "fingerprint": fp,
+                "revision": revision,
+                "rows_scanned": n,
+                "pools": pools,
+                "counters": counters,
+                **_meta(),
+            },
+        )
+
+    row = None
+    for row in ds:
+        if n == 0:
+            missing = [
+                k
+                for k in ("conversation", "language", "toxic", "redacted", "conversation_hash")
+                if k not in row
+            ]
+            assert not missing, f"[lad_build] WildChat row schema drift — missing {missing}"
+        n += 1
+        reason = lad_screen_reject(row)
+        if reason is None:
+            conv = row["conversation"]
+            c0 = (conv[0].get("content") or "")[:LAD_TURN_CONTENT_CAP]
+            c1 = (conv[1].get("content") or "")[:LAD_TURN_CONTENT_CAP]
+            t_tokens = len(tok(c0, add_special_tokens=False)["input_ids"]) + len(
+                tok(c1, add_special_tokens=False)["input_ids"]
+            )
+            bands = lad_bands_for(t_tokens, specs)
+            if not bands:
+                reason = "out_of_band"
+            else:
+                reason = lad_exclusion_reject(c0, c1, conv[0].get("content") or "", excl, sha_set)
+            if reason is None:
+                cand = {
+                    "index": n - 1,  # 0-based dataset order index
+                    "conversation_hash": str(row["conversation_hash"]),
+                    "T": t_tokens,
+                    "turns": [
+                        {"role": "user", "content": c0},
+                        {"role": "assistant", "content": c1},
+                    ],
+                }
+                for band in bands:
+                    counters[f"band_{band}"] = counters.get(f"band_{band}", 0) + 1
+                    pool = pools[band]
+                    pool.append({**cand, "dist": abs(_log(t_tokens) - _log(specs[band]["target"]))})
+                    pool.sort(key=lambda c: (c["dist"], c["index"]))
+                    del pool[LAD_BAND_TOPK:]
+        if reason is not None:
+            counters[reason] = counters.get(reason, 0) + 1
+        if n % LAD_SCAN_CHECKPOINT_EVERY == 0:
+            _checkpoint()
+        if n % 10_000 == 0:
+            kept = sum(counters.get(f"band_{c}", 0) for c in X.R4_CONDS)
+            print(
+                f"[lad_build] scanned {n}/{scan_cap} kept={kept} elapsed={time.time() - t0:.0f}s",
+                flush=True,
+            )
+        if n >= scan_cap:
+            break
+    # #952: release the streaming dataset deterministically pre-shutdown
+    del row, ds
+    gc.collect()
+    _checkpoint()
+    kept = sum(counters.get(f"band_{c}", 0) for c in X.R4_CONDS)
+    print(
+        f"[lad_build] done: scanned={n} kept_in_band={kept} rejects="
+        f"{json.dumps({k: v for k, v in sorted(counters.items()) if not k.startswith('band_')})}",
+        flush=True,
+    )
+    return pools, counters, n, revision
+
+
+def _log(x: float) -> float:
+    import math
+
+    return math.log(max(x, 1e-9))
+
+
+def _lad_select_rungs(
+    pools: dict[str, list[dict]],
+    query_texts: list[str],
+    counters: dict[str, int],
+) -> tuple[dict[str, dict], list[str]]:
+    """Deterministic selection: per band, candidates in (|log T − log target|,
+    dataset index) order; first passing the substring belt + cross-rung
+    distinctness (exclusion 4) wins. Returns (selected, shortage bands)."""
+    selected: dict[str, dict] = {}
+    used_hashes: set[str] = set()
+    shortage: list[str] = []
+    for cond in X.R4_CONDS:
+        picked = None
+        for cand in sorted(pools[cond], key=lambda c: (c["dist"], c["index"])):
+            if cand["conversation_hash"] in used_hashes:
+                counters["cross_rung_hash_collision"] = (
+                    counters.get("cross_rung_hash_collision", 0) + 1
+                )
+                continue
+            c0, c1 = (t["content"] for t in cand["turns"])
+            if lad_substring_belt_hit(c0, c1, query_texts):
+                counters["belt_query_text_substring"] = (
+                    counters.get("belt_query_text_substring", 0) + 1
+                )
+                continue
+            picked = cand
+            break
+        if picked is None:
+            shortage.append(cond)
+            continue
+        used_hashes.add(picked["conversation_hash"])
+        selected[cond] = picked
+    return selected, shortage
+
+
+def _lad_write_ladder(
+    cfg: Cfg,
+    selected: dict[str, dict],
+    specs: dict,
+    counters: dict[str, int],
+    n_scanned: int,
+    revision: str,
+    excl: dict,
+    anchors: dict,
+) -> dict:
+    """Compose + atomically write prefix_ladder.json (recipes + manifest;
+    prefixes referenced by conversation_hash + dataset index + sha in every
+    LOG — raw text lives only in this pinned recipe file, plan §4.2)."""
+    import types
+
+    rungs = {}
+    # cid-STRIPPED content shas (r4-r2 review Minor): the former recipe-sha
+    # compare was vacuous (context_id inside the hash); this one BINDS —
+    # identical content under a different cid collides.
+    trained_content = set(excl["trained_content_shas"].values())
+    for cond in X.R4_CONDS:
+        cand = selected[cond]
+        cid = X.R4_CONTEXT_ID_BY_COND[cond]
+        shim = types.SimpleNamespace(
+            context_id=cid, system=None, prefix_turns=tuple(cand["turns"]), user_wrap=None
+        )
+        recipe_sha = _pfx_prefix_sha(shim)
+        assert _lad_content_sha(shim) not in trained_content, (
+            cond,
+            "rung content sha collides with a trained prefix (cid-stripped)",
+        )
+        rungs[cond] = {
+            "context_id": cid,
+            "prefix_turns": cand["turns"],
+            "conversation_hash": cand["conversation_hash"],
+            "dataset_index": cand["index"],
+            "turns_sha256": lad_turns_sha(cand["turns"]),
+            "recipe_sha256": recipe_sha,
+            "realized_tokens": cand["T"],
+            "target_tokens": specs[cond]["target"],
+            "band": [specs[cond]["lo"], specs[cond]["hi"]],
+            "log_dist_to_target": cand["dist"],
+            "n_band_candidates": counters.get(f"band_{cond}", 0),
+        }
+        logger.info(
+            "[lad_build] %s: hash=%s index=%d T=%d band=[%.1f, %.1f] candidates=%d",
+            cond,
+            cand["conversation_hash"],
+            cand["index"],
+            cand["T"],
+            specs[cond]["lo"],
+            specs[cond]["hi"],
+            counters.get(f"band_{cond}", 0),
+        )
+    ladder = {
+        "rungs": rungs,
+        "anchors": anchors,
+        "scan": {
+            "dataset": WILDCHAT_DATASET,
+            "revision": revision,
+            "n_rows_scanned": n_scanned,
+            "widened": n_scanned > LAD_SCAN_ROWS,
+            "turn_content_cap": LAD_TURN_CONTENT_CAP,
+            "selection_rule": "min (|log T - log target|, dataset index); all screens",
+        },
+        "counters": counters,
+        "builder_revision": (
+            "r2 (2026-07-31): content-language screen added (concern "
+            "r-long-rung-content-language) — supersedes the r1 belt-floor ladder "
+            "(r_long idx 9098 majority-Cyrillic content under English metadata); "
+            "no dependent captures existed at regeneration (pre-dispatch)"
+        ),
+        "exclusions": {
+            "trained_prefix_recipe_shas": excl["trained_shas"],
+            "trained_prefix_content_shas": excl["trained_content_shas"],
+            "belt_min_query_chars": LAD_BELT_MIN_QUERY_CHARS,
+            "content_language_screen": {
+                "rule": (
+                    "latin_alpha / alpha over BOTH capped turns; latin = "
+                    "isalpha() and codepoint <= latin_max_codepoint; "
+                    "alpha == 0 rejects fail-safe"
+                ),
+                "min_latin_ratio": LAD_CONTENT_LATIN_MIN_RATIO,
+                "latin_max_codepoint": LAD_LATIN_MAX_CODEPOINT,
+                "trained_conv_prefix_ratio": 1.0,  # measured 2026-07-31 (parity)
+            },
+            "screens": [
+                "trained-prefix disjointness (turns + cid-stripped content sha)",
+                "query-corpus sha disjointness (full round-1 sample) + substring belt "
+                f"(needles >= {LAD_BELT_MIN_QUERY_CHARS} chars — see lad_belt_needles)",
+                "trained-context non-containment (persona system + icl demos)",
+                "cross-rung conversation_hash distinctness",
+                "corpus screens (English / toxic False / redacted False)",
+                "content-language (Latin-script ratio >= "
+                f"{LAD_CONTENT_LATIN_MIN_RATIO} over alphabetic chars of both capped "
+                "turns — metadata language alone is insufficient; see "
+                "lad_content_language_ok)",
+            ],
+        },
+        **_meta(),
+    }
+    _atomic_json(_lad_inputs(cfg) / "prefix_ladder.json", ladder)
+    return ladder
+
+
+def _lad_mirror_r3_results(cfg: Cfg) -> None:
+    """Unconditional idempotent pre-dispatch mirror of the round-3 COMMITTED
+    result inputs to HF `{prefix}/on_target_r4/inputs/r3_results/` (plan §4.5
+    lad7 + §9 off_pod_phases: the fellows lane rsync-excludes eval_results/).
+    ONE upload_folder commit (never a per-file loop — the #664 504-storm rule)."""
+    from explore_persona_space.orchestrate import hub
+
+    src_root = REPO_ROOT / "eval_results" / "issue_1768" / "on_target"
+    mirror = _lad_inputs(cfg) / "r3_results"
+    rels = ["map_change_on_target.json", "m0_prefix_effect.json"]
+    rels += [
+        f"percell/{a}_L{layer}_{s}.json"
+        for a in X.R4_ARMS
+        for layer in X.LAYERS
+        for s in ("bare_n", "control", "own")
+    ]
+    rels += [f"fits_bare_n/{a}_L{layer}.json" for a in X.R4_ARMS for layer in X.LAYERS]
+    for rel in rels:
+        src = src_root / rel
+        assert src.exists(), f"[lad_build] r3 mirror source missing from the repo tree: {src}"
+        dst = mirror / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if not dst.exists():
+            shutil.copy2(src, dst)
+    url = hub._upload(
+        mirror,
+        repo_id=X.HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=f"{cfg.hf_prefix}/{LAD_R3_RESULTS}",
+    )
+    if not url:
+        raise RuntimeError("[lad_build] r3_results mirror upload returned no path")
+    logger.info("[lad_build] r3_results mirror uploaded (%d files)", len(rels))
+
+
+def _lad_build_publish(cfg: Cfg, ladder: dict) -> None:
+    """Repo-copy the pinned ladder for the pre-dispatch git commit + upload it
+    and the r3-results mirror to the Hub (idempotent; production only)."""
+    from explore_persona_space.orchestrate import hub
+
+    src = _lad_inputs(cfg) / "prefix_ladder.json"
+    repo_copy = _lad_repo_ladder_path()
+    if not repo_copy.exists() or repo_copy.read_text() != src.read_text():
+        repo_copy.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, repo_copy)
+        logger.info("[lad_build] ladder copied to %s (commit pre-dispatch)", repo_copy)
+    if not cfg.upload:
+        logger.info("[lad_build] upload disabled (--no-upload)")
+        return
+    url = hub._upload(
+        src,
+        repo_id=X.HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=f"{cfg.hf_prefix}/on_target_r4/inputs/prefix_ladder.json",
+        upload_as_file=True,
+    )
+    if not url:
+        raise RuntimeError("[lad_build] prefix_ladder.json upload returned no path")
+    _lad_mirror_r3_results(cfg)
+
+
+def _lad_ladder_screens_current(ladder: dict) -> bool:
+    """Resume-guard regime key (the #722-r3 rule: resume keys on every
+    output-affecting regime key): a pinned ladder built under an OLDER screen
+    set (pre-belt-floor, or pre-content-language-screen) REBUILDS instead of
+    republishing."""
+    exc = ladder.get("exclusions", {})
+    return (
+        exc.get("belt_min_query_chars") == LAD_BELT_MIN_QUERY_CHARS
+        and exc.get("content_language_screen", {}).get("min_latin_ratio")
+        == LAD_CONTENT_LATIN_MIN_RATIO
+    )
+
+
+def _lad_set_belt_census(counters: dict[str, int], query_texts: list[str]) -> None:
+    """Manifest belt-census keys — re-set after EVERY `_lad_scan` return: a
+    widened rescan rebinds `counters` from the cursor, which dropped keys set
+    before the widening (r4-r2 review Minor)."""
+    counters["belt_needles_total"] = len(query_texts)
+    counters["belt_needles_below_floor_excluded"] = len(query_texts) - len(
+        lad_belt_needles(query_texts)
+    )
+
+
+def phase_lad_build(cfg: Cfg) -> None:
+    """lad_build (VM-side CPU, pre-dispatch): WildChat-1M streaming scan ->
+    3-rung never-trained ladder (production) / bounded tiny-real ingestion
+    probe with per-screen reject counters (--smoke; #1092 class)."""
+    _phase("lad_build")
+    _status(cfg, "lad_build")
+    from transformers import AutoTokenizer
+
+    dest = _lad_inputs(cfg) / "prefix_ladder.json"
+    if dest.exists() and not cfg.smoke:
+        prior = json.loads(dest.read_text())
+        if _lad_ladder_screens_current(prior):
+            logger.info("[lad_build] prefix_ladder.json present — resume skip; re-publishing")
+            _lad_build_publish(cfg, prior)
+            return
+        logger.info(
+            "[lad_build] existing ladder predates the CURRENT screen set — rebuilding "
+            "(r2 regime-keyed resume; concern r-long-rung-content-language)"
+        )
+    excl = _lad_trained_exclusion_material()
+    # Construction-asymmetry parity (concern r-long-rung-content-language):
+    # the trained conv prefix MUST pass the same content-language screen the
+    # rung candidates face — otherwise flag loudly and STOP (never screen
+    # rungs harder than the trained prefix they are compared against).
+    tc0, tc1 = (content for _role, content in excl["conv_turns"])
+    assert lad_content_language_ok(tc0, tc1), (
+        "[lad_build] trained conv prefix FAILS the content-language screen — "
+        "construction asymmetry vs the rung candidates; STOP and re-plan the "
+        "screen threshold (measured 2026-07-31: trained ratio 1.0000)"
+    )
+    sha_set, query_texts = _lad_full_grain_samples(cfg)
+    # Band anchors ALWAYS use the PRODUCTION tokenizer (plan §11) — never a
+    # model_override tokenizer (the smoke fixture ships the real one anyway).
+    tok = AutoTokenizer.from_pretrained(X.BASE_MODEL)
+    t_pers = len(tok(excl["persona_system"], add_special_tokens=False)["input_ids"])
+    t_conv = sum(
+        len(tok(content, add_special_tokens=False)["input_ids"])
+        for _role, content in excl["conv_turns"]
+    )
+    specs = lad_band_specs(t_pers, t_conv)
+    anchors = {"t_pers": t_pers, "t_conv": t_conv, "t_gm": specs["r_mid"]["target"]}
+    logger.info(
+        "[lad_build] anchors: T_pers=%d T_conv=%d T_gm=%.1f", t_pers, t_conv, anchors["t_gm"]
+    )
+    scan_cap = LAD_SMOKE_SCAN_ROWS if cfg.smoke else LAD_SCAN_ROWS
+    pools, counters, n_scanned, revision = _lad_scan(cfg, tok, specs, excl, sha_set, scan_cap)
+    if cfg.smoke:
+        kept = sum(counters.get(f"band_{c}", 0) for c in X.R4_CONDS)
+        _atomic_json(
+            _lad_inputs(cfg) / "lad_probe_report.json",
+            {
+                "probe": True,
+                "rows_scanned": n_scanned,
+                "kept_in_band": kept,
+                "counters": counters,
+                "anchors": anchors,
+                "bands": specs,
+                "revision": revision,
+                **_meta(),
+            },
+        )
+        assert kept > 0, "[lad_build] tiny-real probe kept ZERO in-band candidates (#1092 class)"
+        logger.info("[lad_build] SMOKE probe: scanned=%d kept_in_band=%d", n_scanned, kept)
+        return
+    _lad_set_belt_census(counters, query_texts)
+    selected, shortage = _lad_select_rungs(pools, query_texts, counters)
+    if shortage and scan_cap < LAD_SCAN_ROWS_WIDENED:
+        logger.info(
+            "[lad_build] band shortage %s at %d rows — pre-registered widening to %d",
+            shortage,
+            n_scanned,
+            LAD_SCAN_ROWS_WIDENED,
+        )
+        pools, counters, n_scanned, revision = _lad_scan(
+            cfg, tok, specs, excl, sha_set, LAD_SCAN_ROWS_WIDENED
+        )
+        _lad_set_belt_census(counters, query_texts)  # rescan rebinds counters
+        selected, shortage = _lad_select_rungs(pools, query_texts, counters)
+    if shortage:
+        raise RuntimeError(
+            f"[lad_build] kill criterion (b): band(s) {shortage} have no qualifying "
+            f"candidate after the {LAD_SCAN_ROWS_WIDENED}-row widening — "
+            "failure_class: data (plan §7; re-plan the band bounds)"
+        )
+    ladder = _lad_write_ladder(cfg, selected, specs, counters, n_scanned, revision, excl, anchors)
+    _lad_build_publish(cfg, ladder)
+
+
+def _lad_stage_inputs(cfg: Cfg) -> None:
+    """lad0 staging: pinned ladder (local -> repo checkout -> Hub, fail-loud
+    both-miss) + the pfx sample. Production stages the round-3
+    corpus_sample_pfx.json VERBATIM from the Hub (plan §4.3 — never
+    re-derived); --smoke derives the tiny sample via the round-3
+    `_build_pfx_sample` path from the fixture corpus (refusal-hygiene:
+    synthetic rows), while the FULL-grain samples for the exclusion re-assert
+    stage separately in `_lad_full_grain_samples`."""
+    from explore_persona_space.orchestrate import hub
+
+    ladder_path = _lad_inputs(cfg) / "prefix_ladder.json"
+    if not ladder_path.exists():
+        repo_copy = _lad_repo_ladder_path()
+        if repo_copy.exists():
+            ladder_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(repo_copy, ladder_path)
+        else:
+            hub.stage_hub_file(
+                X.HF_DATA_REPO,
+                f"{X.HF_PREFIX}/on_target_r4/inputs/prefix_ladder.json",
+                ladder_path,
+                repo_type="dataset",
+            )
+    canonical = _pfx_inputs(cfg) / "corpus_sample_pfx.json"
+    if not canonical.exists():
+        if cfg.smoke:
+            _build_pfx_sample(cfg)  # fixture-derived tiny sample (p0 --smoke ran)
+        else:
+            hub.stage_hub_file(
+                X.HF_DATA_REPO,
+                f"{X.HF_PREFIX}/on_target/inputs/corpus_sample_pfx.json",
+                canonical,
+                repo_type="dataset",
+            )
+
+
+def _lad_recheck_exclusions(cfg: Cfg, tok, ladder: dict) -> dict:
+    """Kill criterion (d): re-assert the §4.2 exclusion set + band membership
+    against the FULL pinned ladder + FULL-grain samples (never the smoke
+    slice — the #1817 rule). Any violation = builder bug, fail loud."""
+    import types
+
+    excl = _lad_trained_exclusion_material()
+    sha_set, query_texts = _lad_full_grain_samples(cfg)
+    trained_content = set(excl["trained_content_shas"].values())
+    out = {}
+    hashes = []
+    for cond in X.R4_CONDS:
+        rec = ladder["rungs"][cond]
+        turns = rec["prefix_turns"]
+        roles = tuple(t["role"] for t in turns)
+        assert roles == ("user", "assistant"), (cond, roles)
+        c0, c1 = (t["content"] for t in turns)
+        assert c0.strip() and c1.strip(), (cond, "empty turn content")
+        assert len(c0) <= LAD_TURN_CONTENT_CAP and len(c1) <= LAD_TURN_CONTENT_CAP, cond
+        assert lad_content_language_ok(c0, c1), (cond, "content-language screen (kill d)")
+        t_tokens = len(tok(c0, add_special_tokens=False)["input_ids"]) + len(
+            tok(c1, add_special_tokens=False)["input_ids"]
+        )
+        assert t_tokens == rec["realized_tokens"], (
+            cond,
+            t_tokens,
+            rec["realized_tokens"],
+            "tokenizer drift vs the build-time count",
+        )
+        lo, hi = rec["band"]
+        assert lo <= t_tokens <= hi, (cond, t_tokens, rec["band"])
+        reason = lad_exclusion_reject(c0, c1, c0, excl, sha_set)
+        assert reason is None, (cond, reason, "builder exclusion violated (kill d)")
+        assert not lad_substring_belt_hit(c0, c1, query_texts), (cond, "belt hit (kill d)")
+
+        shim = types.SimpleNamespace(
+            context_id=rec["context_id"], system=None, prefix_turns=tuple(turns), user_wrap=None
+        )
+        assert _lad_content_sha(shim) not in trained_content, (cond, "trained content sha")
+        assert lad_turns_sha(turns) == rec["turns_sha256"], (cond, "turns sha drift")
+        hashes.append(rec["conversation_hash"])
+        out[cond] = {
+            "conversation_hash": rec["conversation_hash"],
+            "dataset_index": rec["dataset_index"],
+            "realized_tokens": t_tokens,
+            "band": rec["band"],
+            "screens": "ALL PASS (full grain)",
+        }
+    assert len(set(hashes)) == len(hashes), ("cross-rung hash collision", hashes)
+    return out
+
+
+def _lad_cond_record(cfg: Cfg, context_id: str) -> dict:
+    conds = json.loads((_lad_inputs(cfg) / "conditions.json").read_text())["conditions"]
+    assert context_id in conds, (context_id, "rung condition not built at lad0", sorted(conds))
+    return conds[context_id]
+
+
+def phase_lad0(cfg: Cfg) -> None:
+    """lad0: rung-corpus render + budgets + FULL-grain exclusion re-assert."""
+    _phase("lad0_rung_corpus")
+    _status(cfg, "lad0_rung_corpus")
+    from transformers import AutoTokenizer
+
+    _lad_stage_inputs(cfg)
+    sample = X.load_pfx_sample(cfg.out_root)
+    done = _lad_inputs(cfg) / "build_done.json"
+    if done.exists():
+        logger.info("[lad0] build_done.json present — resume skip")
+        return
+    X.register_r4_ladder_contexts(cfg.out_root)
+    ladder = X.load_r4_ladder(cfg.out_root)
+    tok = AutoTokenizer.from_pretrained(cfg.model_override or X.BASE_MODEL)
+    conds: dict[str, dict] = {}
+    for cond in X.R4_CONDS:
+        cid = X.R4_CONTEXT_ID_BY_COND[cond]
+        ctx = _lad_registry_context(cid)
+        budgets = _pfx_budget(tok, ctx, sample["rows"])
+        prefix_tokens = len(tok(ctx.render(tok, ""), add_special_tokens=False)["input_ids"])
+        rung = ladder["rungs"][cond]
+        rec = {
+            "tag": cond,
+            "context_id": cid,
+            "prefix_sha256": _pfx_prefix_sha(ctx),
+            "recipe": _pfx_prefix_recipe(ctx),
+            "prefix_tokens": prefix_tokens,
+            "realized_content_tokens": rung["realized_tokens"],
+            "target_tokens": rung["target_tokens"],
+            "band": rung["band"],
+            "conversation_hash": rung["conversation_hash"],
+            "dataset_index": rung["dataset_index"],
+            "message_shape": {
+                "has_system": ctx.system is not None,
+                "n_prefix_turns": len(ctx.prefix_turns),
+                "has_user_wrap": ctx.user_wrap is not None,
+            },
+            "budgets": budgets,
+            "n_rows": len(sample["rows"]),
+        }
+        conds[cid] = rec
+        _atomic_json(
+            _lad_inputs(cfg) / f"corpus_{cond}.json",
+            {
+                **rec,
+                "rows_sha256": hashlib.sha256(
+                    "\n".join(r["sha"] for r in sample["rows"]).encode("utf-8")
+                ).hexdigest(),
+                **_meta(),
+            },
+        )
+    _atomic_json(_lad_inputs(cfg) / "conditions.json", {"conditions": conds, **_meta()})
+    recheck = _lad_recheck_exclusions(cfg, tok, ladder)  # kill criterion (d)
+    _atomic_json(_lad_inputs(cfg) / "exclusion_recheck.json", {"rungs": recheck, **_meta()})
+    _atomic_json(
+        done,
+        {"n_rows": len(sample["rows"]), "conditions": sorted(conds), **_meta()},
+    )
+    logger.info("[lad0] rung corpora + budgets + exclusion re-assert done (%d rungs)", len(conds))
+
+
+def run_lad_corpus_unit(cfg: Cfg, unit_id: str) -> None:
+    """lad2 unit: rung-prefixed greedy gen -> TF span-means (prefix+ctx+resp),
+    via the SAME `_prefixed_capture_core` the round-3 pfx2 units run. The
+    ladder registrar runs idempotently at point of use (fresh fan-out
+    subprocesses inherit no registry state — the #1090-fu6/#1315 lessons)."""
+    X.register_r4_ladder_contexts(cfg.out_root)
+    cid = X.r4_unit_context_id(unit_id)
+    _prefixed_capture_core(
+        cfg,
+        unit_id,
+        root=_lad_root(cfg),
+        cid=cid,
+        cond_rec=_lad_cond_record(cfg, cid),
+        ctx=_lad_registry_context(cid),
+    )
+
+
+def phase_lad1(cfg: Cfg) -> None:
+    """lad1: ONE unit at production shape (worst-case long rung); gen + TF
+    walls measured separately (kill criterion a)."""
+    _phase("lad1_pilot")
+    _status(cfg, "lad1_pilot")
+    unit = LAD_PILOT_UNIT
+    run_lad_corpus_unit(cfg, unit)
+    man = json.loads((_lad_root(cfg) / "corpus_capture" / unit / "manifest.json").read_text())
+    unit_wall_h = (man.get("gen_wall_s", 0.0) + man.get("tf_wall_s", 0.0)) / 3600.0
+    ratio = unit_wall_h / LAD_BOOKED_UNIT_GPU_H
+    _atomic_json(
+        _lad_root(cfg) / "pilot" / "pilot_report.json",
+        {
+            "unit": unit,
+            "gen_wall_s": man.get("gen_wall_s"),
+            "tf_wall_s": man.get("tf_wall_s"),
+            "unit_wall_h": unit_wall_h,
+            "booked_unit_gpu_h": LAD_BOOKED_UNIT_GPU_H,
+            "ratio": ratio,
+            "smoke": cfg.smoke,
+            **_meta(),
+        },
+    )
+    print(f"[lad1] pilot {unit} wall={unit_wall_h:.2f}h ratio={ratio:.2f}", flush=True)
+    _pfx_pilot_gate(ratio, cfg.smoke, tag="lad1", booked=LAD_BOOKED_UNIT_GPU_H)
+
+
+def _lad_arms(cfg: Cfg) -> list[str]:
+    """The round-4 arm scope (plan §4.1); --arms filters INSIDE it; smoke =
+    the plan-§4 smoke-parity arm."""
+    if cfg.arms:
+        want = set(cfg.arms)
+        unknown = want - set(X.R4_ARMS)
+        assert not unknown, f"--arms outside the r4 arm set: {sorted(unknown)}"
+        return [a for a in X.R4_ARMS if a in want]
+    if cfg.smoke:
+        return ["syc-pers-con-lr1e5-s42"]
+    return list(X.R4_ARMS)
+
+
+def _lad_conds_capture(cfg: Cfg) -> tuple[str, ...]:
+    return ("r_long",) if cfg.smoke else X.R4_CONDS
+
+
+def _lad_unit_set(cfg: Cfg) -> list[str]:
+    """lad2 units: shared base@rung units first, then arm@rung units
+    (production: 3 + 12 = 15; smoke: base_content@r_long + pilot@r_long)."""
+    arms = _lad_arms(cfg)
+    conds = _lad_conds_capture(cfg)
+    bases = [X.r4_base_unit(c) for c in conds]
+    trained = [X.r4_trained_unit(a, c) for a in arms for c in conds]
+    return bases + trained
+
+
+def _lad_expected_uploads(cfg: Cfg) -> list[str]:
+    """Exact-set verify list: EVERY per-unit artifact file the corpus_capture
+    tree carries — pooled.pt + manifest/spans/done sentinels + the raw-row
+    rollout shards (r4-r2 review Minor: pooled.pt-only left the rollout text
+    riding the same folder commit UNVERIFIED)."""
+    expected = []
+    tree = "on_target_r4/corpus_capture"
+    local_tree = cfg.out_root / tree
+    if local_tree.exists():
+        for unit_dir in sorted(local_tree.iterdir()):
+            if not (unit_dir / "pooled.pt").exists():
+                continue
+            names = ["pooled.pt"]
+            names += [p.name for p in sorted(unit_dir.glob("raw_rows_*.jsonl"))]
+            for extra in ("raw_rows.done.json", "rows_spans.json", "manifest.json"):
+                if (unit_dir / extra).exists():
+                    names.append(extra)
+            expected += [f"{cfg.hf_prefix}/{tree}/{unit_dir.name}/{n}" for n in names]
+    return expected
+
+
+def phase_lad4(cfg: Cfg) -> None:
+    """lad4: on_target_r4 tree upload + exact-set verify — BEFORE fits (#825)."""
+    _phase("lad4_store_upload")
+    _status(cfg, "lad4_store_upload")
+    if not cfg.upload:
+        logger.info("[lad4] upload disabled (--no-upload)")
+        return
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    expected = _lad_expected_uploads(cfg)
+    done_path = _lad_root(cfg) / "upload_done.json"
+    if done_path.exists():
+        prior = json.loads(done_path.read_text())
+        if prior.get("n_verified") == len(expected):
+            logger.info(
+                "[lad4] upload_done.json matches the expected store count (%d) — resume skip",
+                len(expected),
+            )
+            return
+        logger.info(
+            "[lad4] expected store count changed (%s -> %d) — re-uploading",
+            prior.get("n_verified"),
+            len(expected),
+        )
+    uploaded = {}
+    for name in LAD_UPLOAD_TREES:
+        dest = _upload_tree(cfg, name)
+        if dest:
+            uploaded[name] = dest
+    if expected:
+        missing = hub.verify_repo_paths_uploaded(
+            HfApi(),
+            X.HF_DATA_REPO,
+            expected,
+            path_in_repo=f"{cfg.hf_prefix}/on_target_r4",
+            repo_type="dataset",
+        )
+        assert not missing, f"lad4 verify: {len(missing)} store files missing on Hub: {missing[:5]}"
+    _atomic_json(
+        done_path,
+        {"uploaded": uploaded, "n_verified": len(expected), **_meta()},
+    )
+
+
+# ── brl: round-5 behavior-relevant never-trained prefix panel (plan v13) ─────
+#
+# brl_build  VM-side (CPU, pre-dispatch): fu3 C3-conv sycophancy pool join ->
+#            trained-row exclusion (issue1481 train_mix) -> banked-judge
+#            filter (6-row pin) -> deterministic 15-pairing enumeration ->
+#            3 two-exchange 4-turn prefixes at the r4 r_long band ->
+#            prefix_ladder_r5.json + repo commit copy + HF upload + the
+#            r3+r4 r_results mirror. NO WildChat scan (the pool is 36 rows —
+#            the lad_build scan/cursor/widening machinery is deleted from
+#            this twin; plan §9 row 1).
+# brl0  panel-corpus render + budgets + FULL-GRAIN exclusion re-assert (CPU).
+# brl1  pilot: syc-pers-con-lr1e5-s42 @ the longest realized-T prefix (kill a).
+# brl2  panel capture (15 units: 12 trained + 3 base@b_rel; content decode).
+# brl4  on_target_r5 tree upload + exact-set verify (BEFORE fits; #825).
+
+BRL_FU3_PREFIX = "issue1090_fu3/C3-conv-con-sycophancy-claude/datagen"
+BRL_MIX_PREFIX = "issue1481_conpos_grid/po_mixes/syc-conv/mix"
+BRL_POOL_FILES = ("pos.jsonl", "raw_pos.jsonl", "judge_rows.jsonl", "pool_meta.json")
+BRL_MIX_FILES = ("train_mix.jsonl", "mix_meta.json")
+BRL_N_RAW = 36
+BRL_N_EMITTED = 20
+BRL_N_KEPT_TOTAL = 26  # pool_meta arithmetic: 26 kept = 20 emitted + 6 surplus
+# Plan §4.2 step 3 pinned EXPECTED kept never-trained set (request_id -> banked
+# judge mean-of-5); a mismatch = the Hub artifact drifted (kill criterion b,
+# failure_class: data).
+BRL_EXPECTED_KEPT = {
+    "pos-00001": 95.0,
+    "pos-00006": 95.0,
+    "pos-00011": 95.0,
+    "pos-00014": 85.0,
+    "pos-00017": 85.0,
+    "pos-00030": 68.5,
+}
+BRL_BAND = (547.5, 912.5)  # r4 r_long band, verbatim (plan §11; re-asserted vs the r4 ladder)
+BRL_BOOKED_UNIT_GPU_H = 0.2  # plan §9 brl1 row (r4 REALIZED pilot 0.152 GPU-h + margin)
+BRL_PILOT_ARM = "syc-pers-con-lr1e5-s42"  # plan §4.4 brl1 (also the smoke-parity arm)
+BRL_UPLOAD_TREES = (
+    "on_target_r5/inputs",
+    "on_target_r5/pilot",
+    "on_target_r5/corpus_capture",
+)
+BRL_R_RESULTS = "on_target_r5/inputs/r_results"  # plan §4.2 lane-transport mirror prefix
+
+
+def _brl_root(cfg: Cfg) -> Path:
+    return cfg.out_root / "on_target_r5"
+
+
+def _brl_inputs(cfg: Cfg) -> Path:
+    return _brl_root(cfg) / "inputs"
+
+
+def _brl_repo_panel_path() -> Path:
+    """The committed (git) copy of the pinned panel (plan §10 git dest)."""
+    return (
+        REPO_ROOT
+        / "eval_results"
+        / "issue_1768"
+        / "on_target_r5"
+        / "inputs"
+        / "prefix_ladder_r5.json"
+    )
+
+
+def _brl_stage_pool(cfg: Cfg) -> dict[str, Path]:
+    """Stage the fu3 pool + issue1481 mix files (plan §4.2 sources) under
+    on_target_r5/inputs/pool/ — idempotent; PRODUCTION Hub prefixes (the pool
+    is a production input even under --smoke)."""
+    from explore_persona_space.orchestrate import hub
+
+    dest = _brl_inputs(cfg) / "pool"
+    out: dict[str, Path] = {}
+    for prefix, names in ((BRL_FU3_PREFIX, BRL_POOL_FILES), (BRL_MIX_PREFIX, BRL_MIX_FILES)):
+        for name in names:
+            target = dest / name
+            if not target.exists():
+                hub.stage_hub_file(X.HF_DATA_REPO, f"{prefix}/{name}", target, repo_type="dataset")
+            out[name] = target
+    return out
+
+
+def _brl_jsonl_rows(path: Path) -> list[dict]:
+    """Text-mode JSONL iteration (never splitlines — the #825/#950 rule)."""
+    return [json.loads(line) for line in path.open(encoding="utf-8") if line.strip()]
+
+
+def _brl_msg_qc(row: dict, tag: str) -> tuple[str, str]:
+    """(question, completion) of a pos/mix row: `prompt` = a message list whose
+    LAST user turn carries the question; `completion` = exactly one assistant
+    message (schema probed against the pinned artifacts, 2026-07-31)."""
+    users = [m for m in row["prompt"] if m.get("role") == "user"]
+    assert users, (tag, "no user turn in a pos/mix row prompt")
+    comp = row["completion"]
+    assert isinstance(comp, list) and len(comp) == 1 and comp[0]["role"] == "assistant", (
+        tag,
+        "unexpected completion shape (want [one assistant message])",
+    )
+    return users[-1]["content"], comp[0]["content"]
+
+
+def _brl_derive_kept(pool: dict[str, Path]) -> tuple[list[dict], dict]:
+    """Plan §4.2 steps 1-3: pool join -> trained-row exclusion (sha-pair vs the
+    20 emitted rows, independently re-derived from train_mix.jsonl) -> banked
+    judge-acceptance filter. Every count + the pinned 6-row set asserted
+    (kill criterion b: a mismatch = the Hub artifact drifted,
+    failure_class: data). Returns (kept rows with `_judge_mean`/`_shared_q`
+    annotations, the derivation record for the panel manifest)."""
+    pos = _brl_jsonl_rows(pool["pos.jsonl"])
+    raw = _brl_jsonl_rows(pool["raw_pos.jsonl"])
+    judge = _brl_jsonl_rows(pool["judge_rows.jsonl"])
+    mix = _brl_jsonl_rows(pool["train_mix.jsonl"])
+    meta = json.loads(pool["pool_meta.json"].read_text())
+    assert len(raw) == BRL_N_RAW and len(pos) == BRL_N_EMITTED, (len(raw), len(pos))
+    jr = {r["request_id"]: r for r in judge}
+    n_join = sum(1 for r in raw if r["request_id"] in jr)
+    assert n_join == BRL_N_RAW, (n_join, "raw_pos -> judge_rows join must be 36/36 (plan §4.2)")
+    emitted = {tuple(map(X.prompt_sha, _brl_msg_qc(r, "pos"))) for r in pos}
+    assert len(emitted) == BRL_N_EMITTED, len(emitted)
+    mix_pairs = {tuple(map(X.prompt_sha, _brl_msg_qc(r, "mix"))) for r in mix}
+    assert emitted <= mix_pairs, (
+        "emitted (question, completion) sha pairs not all present in train_mix.jsonl "
+        "(plan §4.2 step 2: independent exclusion-set re-derivation)"
+    )
+    never = [
+        r
+        for r in raw
+        if (X.prompt_sha(r["question"]), X.prompt_sha(r["completion"])) not in emitted
+    ]
+    kept = sorted((r for r in never if jr[r["request_id"]]["kept"]), key=lambda r: r["request_id"])
+    realized = {r["request_id"]: float(jr[r["request_id"]]["mean"]) for r in kept}
+    assert realized == BRL_EXPECTED_KEPT, (
+        realized,
+        BRL_EXPECTED_KEPT,
+        "kill criterion (b): kept never-trained set != the plan-pinned 6 rows "
+        "(the Hub pool drifted) — failure_class: data",
+    )
+    n_kept_total = sum(1 for r in raw if jr[r["request_id"]]["kept"])
+    assert n_kept_total == BRL_N_KEPT_TOTAL, (
+        n_kept_total,
+        "pool_meta reconciliation: 26 kept == 20 emitted + 6 surplus (plan §4.2 step 3)",
+    )
+    assert (
+        meta["positive"]["kept"] == BRL_N_KEPT_TOTAL
+        and meta["positive"]["emitted"] == BRL_N_EMITTED
+    ), meta.get("positive")
+    emitted_q = {X.prompt_sha(_brl_msg_qc(r, "pos")[0]) for r in pos}
+    for r in kept:
+        r["_judge_mean"] = realized[r["request_id"]]
+        r["_shared_q"] = X.prompt_sha(r["question"]) in emitted_q
+    derivation = {
+        "n_raw": len(raw),
+        "n_emitted": BRL_N_EMITTED,
+        "n_never_trained": len(never),
+        "n_kept_never_trained": len(kept),
+        "n_kept_total": n_kept_total,
+        "judge_instrument": {
+            "judge_model": meta["judge_model"],
+            "threshold": meta["threshold"],
+            "n_judge_draws": meta["n_judge_draws"],
+        },
+        "emitted_qc_sha16_pairs": sorted([list(p) for p in emitted]),
+        "pool_shas": {
+            name: hashlib.sha256(path.read_bytes()).hexdigest() for name, path in pool.items()
+        },
+    }
+    return kept, derivation
+
+
+def brl_pairings(ids: list[str]) -> list[list[tuple[str, str]]]:
+    """All perfect matchings of the ids into unordered pairs ((n-1)!! = 15 at
+    n=6; plan §4.2 step 6 enumeration)."""
+    rem = sorted(ids)
+    if not rem:
+        return [[]]
+    first = rem[0]
+    out = []
+    for j in range(1, len(rem)):
+        for sub in brl_pairings(rem[1:j] + rem[j + 1 :]):
+            out.append([(first, rem[j])] + sub)
+    return out
+
+
+def _brl_canon(pairing) -> tuple[tuple[str, str], ...]:
+    return tuple(sorted(tuple(sorted(pair)) for pair in pairing))
+
+
+def brl_select_pairing(
+    T: dict[str, int], band: tuple[float, float] = BRL_BAND
+) -> tuple[list[tuple[str, str]], int, list[dict]]:
+    """Plan §4.2 step 6 registered pairing rule: over all perfect pairings,
+    maximize the in-band prefix count; tie-break (i) maximal min-prefix T,
+    (ii) lexicographically smallest sorted request_id tuple. Returns
+    (winning canonical pairing, its in-band count, the full enumeration
+    record for the manifest)."""
+    lo, hi = band
+
+    def key(p):
+        ts = [T[a] + T[b] for a, b in p]
+        n_in = sum(1 for t in ts if lo <= t <= hi)
+        return (-n_in, -min(ts), _brl_canon(p))
+
+    allp = brl_pairings(list(T))
+    assert len(allp) == 15, (len(allp), "6-exchange perfect-matching count")
+    record = []
+    for p in allp:
+        canon = _brl_canon(p)
+        ts = {f"{a}+{b}": T[a] + T[b] for a, b in canon}
+        record.append(
+            {
+                "pairs": [list(x) for x in canon],
+                "pair_tokens": ts,
+                "n_in_band": sum(1 for t in ts.values() if lo <= t <= hi),
+                "min_pair_tokens": min(ts.values()),
+            }
+        )
+    win = min(allp, key=key)
+    canon = list(_brl_canon(win))
+    n_in = sum(1 for a, b in canon if lo <= T[a] + T[b] <= hi)
+    return canon, n_in, record
+
+
+def brl_assign_conds(
+    pairing: list[tuple[str, str]], judge_means: dict[str, float]
+) -> dict[str, tuple[str, str]]:
+    """Deterministic cond-label assignment: pairs in ASCENDING total banked
+    judge mean (tie: ascending min request_id) -> b_rel1, b_rel2, b_rel3.
+    Reproduces the plan-§4.2 advisory labeling on the predicted pairing;
+    labels are naming only — every registered read is label-symmetric and the
+    question-shared split keys on the manifest flags, never the label."""
+    ordered = sorted(pairing, key=lambda p: (judge_means[p[0]] + judge_means[p[1]], min(p)))
+    return dict(zip(X.R5_CONDS, ordered, strict=True))
+
+
+def brl_prefix_reject(
+    turns: list[dict], excl: dict, sha_set: set[str], query_texts: list[str]
+) -> str | None:
+    """Never-trained / content-novel screens for ONE rendered b_rel prefix
+    (plan §4.2 exclusions 3-4 + shape 6): first-violation name, or None.
+    Recipe/content-sha screens (exclusion 2) run at the shim level in the
+    builder + recheck (they need the r4 ladder's banked shas)."""
+    roles = tuple(t["role"] for t in turns)
+    if roles != X.R5_TURN_ROLES:
+        return "bad_roles"
+    contents = [t["content"] for t in turns]
+    if not all(c.strip() for c in contents):
+        return "empty_content"
+    if any(len(c) > LAD_TURN_CONTENT_CAP for c in contents):
+        return "turn_over_cap"
+    for i in (0, 2):  # each USER turn's sha vs the FULL round-1 query-sha set
+        if X.prompt_sha(contents[i]) in sha_set:
+            return "query_sha_overlap"
+    needles = lad_belt_needles(query_texts)
+    if any(q in c for c in contents for q in needles):
+        return "belt_query_text_substring"
+    if any(excl["persona_system"] in c for c in contents):
+        return "trained_context_containment"
+    for demo in excl["icl_demo_texts"]:
+        if any(demo in c for c in contents):
+            return "trained_context_containment"
+    return None
+
+
+def _brl_r4_ladder(cfg: Cfg) -> dict:
+    """The pinned r4 rung ladder (the r_long band source + the banked
+    trained/rung recipe shas for exclusion 2): local lad staging path ->
+    repo commit copy -> Hub (fail-loud both-miss). Asserts the banked band
+    equals the plan-§11 pin verbatim."""
+    path = _lad_inputs(cfg) / "prefix_ladder.json"
+    if not path.exists():
+        repo_copy = _lad_repo_ladder_path()
+        if repo_copy.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(repo_copy, path)
+        else:
+            from explore_persona_space.orchestrate import hub
+
+            hub.stage_hub_file(
+                X.HF_DATA_REPO,
+                f"{X.HF_PREFIX}/on_target_r4/inputs/prefix_ladder.json",
+                path,
+                repo_type="dataset",
+            )
+    ladder = json.loads(path.read_text())
+    band = tuple(ladder["rungs"]["r_long"]["band"])
+    assert band == BRL_BAND, (band, BRL_BAND, "r4 r_long band drift vs the plan §11 pin")
+    return ladder
+
+
+def _brl_banned_shas(r4_ladder: dict) -> tuple[set[str], set[str]]:
+    """(banned recipe shas, banned content shas) for exclusion 2: the 3
+    trained-prefix shas (banked in the r4 ladder exclusions block) + the 3 r4
+    rung recipe shas (plan §4.2 exclusion 2, values banked — never re-derived
+    here)."""
+    banned_recipe = set(r4_ladder["exclusions"]["trained_prefix_recipe_shas"].values()) | {
+        r4_ladder["rungs"][c]["recipe_sha256"] for c in X.R4_CONDS
+    }
+    banned_content = set(r4_ladder["exclusions"]["trained_prefix_content_shas"].values())
+    return banned_recipe, banned_content
+
+
+def _brl_prefix_record(
+    cond: str, pair: tuple[str, str], kept_by_id: dict[str, dict], T: dict[str, int]
+) -> dict:
+    """One panel prefix record: 2 exchanges (ascending request_id), 4
+    alternating turns under the content[:2000] recipe (plan §4.2 step 4-5)."""
+    import types
+
+    a, b = sorted(pair)
+    turns = []
+    for rid in (a, b):
+        r = kept_by_id[rid]
+        turns.append({"role": "user", "content": r["question"][:LAD_TURN_CONTENT_CAP]})
+        turns.append({"role": "assistant", "content": r["completion"][:LAD_TURN_CONTENT_CAP]})
+    t_total = T[a] + T[b]
+    rec = {
+        "context_id": X.R5_CONTEXT_ID_BY_COND[cond],
+        "prefix_turns": turns,
+        "request_ids": [a, b],
+        "exchanges": [
+            {
+                "request_id": rid,
+                "question_id": kept_by_id[rid]["question_id"],
+                "variant_id": kept_by_id[rid]["variant_id"],
+                "judge_mean": kept_by_id[rid]["_judge_mean"],
+                "content_tokens": T[rid],
+                "q_sha16": X.prompt_sha(kept_by_id[rid]["question"]),
+                "c_sha16": X.prompt_sha(kept_by_id[rid]["completion"]),
+                "truncated": (
+                    len(kept_by_id[rid]["question"]) > LAD_TURN_CONTENT_CAP
+                    or len(kept_by_id[rid]["completion"]) > LAD_TURN_CONTENT_CAP
+                ),
+                "question_shared_with_trained": kept_by_id[rid]["_shared_q"],
+            }
+            for rid in (a, b)
+        ],
+        "realized_tokens": t_total,
+        "band": list(BRL_BAND),
+        "in_band": BRL_BAND[0] <= t_total <= BRL_BAND[1],
+        "question_shared_request_ids": [rid for rid in (a, b) if kept_by_id[rid]["_shared_q"]],
+        "turns_sha256": lad_turns_sha(turns),
+    }
+    shim = types.SimpleNamespace(
+        context_id=rec["context_id"], system=None, prefix_turns=tuple(turns), user_wrap=None
+    )
+    rec["recipe_sha256"] = _pfx_prefix_sha(shim)
+    rec["content_sha256"] = _lad_content_sha(shim)
+    return rec
+
+
+def _brl_per_arm_mix_overlap(cfg: Cfg, prefixes: dict[str, dict]) -> dict:
+    """Disclosure-only per-ARM per-turn text-overlap counts vs each arm's OWN
+    training mix (plan §4.2 question-sharing disclosure; unresolvable ->
+    'unknown', never a gate)."""
+    from explore_persona_space.orchestrate import hub
+
+    reg_path = cfg.out_root / "arm_registry.json"
+    if not reg_path.exists():
+        hub.stage_hub_file(X.HF_DATA_REPO, f"{X.HF_PREFIX}/arm_registry.json", reg_path)
+    reg = json.loads(reg_path.read_text())
+    src_by_arm = reg.get("mix_pos_sources", {})
+    out: dict[str, dict] = {}
+    for arm in X.R5_ARMS:
+        src = src_by_arm.get(arm)
+        if not src or "pos_path" not in src:
+            out[arm] = {"overlap": "unknown", "reason": "no mix_pos_sources registry entry"}
+            continue
+        local = _brl_inputs(cfg) / "mix_overlap" / arm / Path(src["pos_path"]).name
+        if not local.exists():
+            hub.stage_hub_file(X.HF_DATA_REPO, src["pos_path"], local, repo_type="dataset")
+        qs: set[str] = set()
+        cs: set[str] = set()
+        for line in local.open(encoding="utf-8"):
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            try:
+                q, c = _brl_msg_qc(row, arm)
+            except (AssertionError, KeyError, TypeError):
+                continue  # non-positive layout rows (disclosure-only tolerance)
+            qs.add(X.prompt_sha(q))
+            cs.add(X.prompt_sha(c))
+        per_prefix = {}
+        for cond, rec in prefixes.items():
+            per_prefix[cond] = {
+                "n_question_overlap": sum(1 for e in rec["exchanges"] if e["q_sha16"] in qs),
+                "n_completion_overlap": sum(1 for e in rec["exchanges"] if e["c_sha16"] in cs),
+            }
+        out[arm] = {"overlap": per_prefix, "pos_path": src["pos_path"]}
+    return out
+
+
+def _brl_mirror_r_results(cfg: Cfg) -> None:
+    """Unconditional idempotent pre-dispatch mirror of the COMMITTED r3+r4
+    result inputs to HF `{prefix}/on_target_r5/inputs/r_results/` (plan §4.2
+    lane transport: the fellows lane rsync-excludes eval_results/). Layout =
+    the repo-relative paths under eval_results/issue_1768/, so the pod-side
+    staging arithmetic is `results_dir`-relative. ONE upload_folder commit
+    (never a per-file loop — the #664 504-storm rule)."""
+    from explore_persona_space.orchestrate import hub
+
+    src_root = REPO_ROOT / "eval_results" / "issue_1768"
+    mirror = _brl_inputs(cfg) / "r_results"
+    rels = ["on_target/map_change_on_target.json", "on_target/m0_prefix_effect.json"]
+    rels += [
+        f"on_target/percell/{a}_L{layer}_{s}.json"
+        for a in X.R5_ARMS
+        for layer in X.LAYERS
+        for s in ("bare_n", "control", "own")
+    ]
+    rels += [f"on_target/fits_bare_n/{a}_L{layer}.json" for a in X.R5_ARMS for layer in X.LAYERS]
+    rels += [
+        f"on_target_r4/percell/{a}_L{layer}_{s}.json"
+        for a in X.R5_ARMS
+        for layer in X.LAYERS
+        for s in X.R4_CONDS  # r_long is the comparator; r_short/r_mid ride for figures + dose
+    ]
+    rels += [
+        "on_target_r4/map_change_ladder.json",
+        "on_target_r4/m0_rung_effect.json",
+        "on_target_r4/inputs/prefix_ladder.json",
+    ]
+    for rel in rels:
+        src = src_root / rel
+        assert src.exists(), (
+            f"[brl_build] r_results mirror source missing from the repo tree: {src}"
+        )
+        dst = mirror / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if not dst.exists():
+            shutil.copy2(src, dst)
+    url = hub._upload(
+        mirror,
+        repo_id=X.HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=f"{cfg.hf_prefix}/{BRL_R_RESULTS}",
+    )
+    if not url:
+        raise RuntimeError("[brl_build] r_results mirror upload returned no path")
+    logger.info("[brl_build] r_results mirror uploaded (%d files)", len(rels))
+
+
+def _brl_build_publish(cfg: Cfg, panel: dict) -> None:
+    """Repo-copy the pinned panel for the pre-dispatch git commit + upload it
+    and the r_results mirror to the Hub. Production only: a smoke run must
+    never touch the committed path or the production bucket (the smoke
+    hf_prefix is `_smoke`-suffixed anyway; the repo copy is the committed
+    artifact the smoke-output rule protects)."""
+    from explore_persona_space.orchestrate import hub
+
+    src = _brl_inputs(cfg) / "prefix_ladder_r5.json"
+    if cfg.smoke:
+        logger.info("[brl_build] smoke: repo-copy + Hub publish skipped (production-only)")
+        return
+    repo_copy = _brl_repo_panel_path()
+    if not repo_copy.exists() or repo_copy.read_text() != src.read_text():
+        repo_copy.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, repo_copy)
+        logger.info("[brl_build] panel copied to %s (commit pre-dispatch)", repo_copy)
+    if not cfg.upload:
+        logger.info("[brl_build] upload disabled (--no-upload)")
+        return
+    url = hub._upload(
+        src,
+        repo_id=X.HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=f"{cfg.hf_prefix}/on_target_r5/inputs/prefix_ladder_r5.json",
+        upload_as_file=True,
+    )
+    if not url:
+        raise RuntimeError("[brl_build] prefix_ladder_r5.json upload returned no path")
+    _brl_mirror_r_results(cfg)
+
+
+def phase_brl_build(cfg: Cfg) -> None:
+    """brl_build (VM-side CPU, pre-dispatch): the §4.2 panel derivation in
+    full — every step re-computed and asserted at FULL grain in smoke AND
+    production (the pool is 36 rows; #1817). Smoke differs ONLY in skipping
+    the repo-copy/Hub publish."""
+    _phase("brl_build")
+    _status(cfg, "brl_build")
+    from transformers import AutoTokenizer
+
+    dest = _brl_inputs(cfg) / "prefix_ladder_r5.json"
+    if dest.exists():
+        logger.info("[brl_build] prefix_ladder_r5.json present — resume skip; re-publishing")
+        _brl_build_publish(cfg, json.loads(dest.read_text()))
+        return
+    pool = _brl_stage_pool(cfg)
+    kept, derivation = _brl_derive_kept(pool)  # steps 1-3 + the 6-row pin (kill b)
+    kept_by_id = {r["request_id"]: r for r in kept}
+    r4_ladder = _brl_r4_ladder(cfg)
+    banned_recipe, banned_content = _brl_banned_shas(r4_ladder)
+    excl = _lad_trained_exclusion_material()
+    sha_set, query_texts = _lad_full_grain_samples(cfg)
+    # Panel token counts ALWAYS use the PRODUCTION tokenizer (plan §11) — the
+    # r4 band anchors were measured under it; a model_override never rebinds it.
+    tok = AutoTokenizer.from_pretrained(X.BASE_MODEL)
+    T = {}
+    for r in kept:
+        q = r["question"][:LAD_TURN_CONTENT_CAP]
+        c = r["completion"][:LAD_TURN_CONTENT_CAP]
+        T[r["request_id"]] = len(tok(q, add_special_tokens=False)["input_ids"]) + len(
+            tok(c, add_special_tokens=False)["input_ids"]
+        )
+    pairing, n_in_band, enumeration = brl_select_pairing(T)
+    if n_in_band < 2:
+        raise RuntimeError(
+            f"[brl_build] kill criterion (b): only {n_in_band} in-band prefix(es) under "
+            "EVERY pairing — the tokenizer-ratio surprise exceeded the pre-registered "
+            "fallback (plan §4.2 step 7); failure_class: data (re-plan the band, never "
+            "silently widen)"
+        )
+    if n_in_band < 3:
+        logger.info(
+            "[brl_build] pre-registered fallback engaged: best pairing has %d/3 in-band "
+            "prefixes (plan §4.2 step 7) — out-of-band realized T recorded; the "
+            "dose-interpolated secondary read de-confounds it",
+            n_in_band,
+        )
+    assign = brl_assign_conds(pairing, {rid: kept_by_id[rid]["_judge_mean"] for rid in T})
+    prefixes = {
+        cond: _brl_prefix_record(cond, pair, kept_by_id, T) for cond, pair in assign.items()
+    }
+    # Mechanical exclusion screens (plan §4.2 exclusions 1-6), each an assert:
+    used_ids: list[str] = []
+    for cond, rec in prefixes.items():
+        reason = brl_prefix_reject(rec["prefix_turns"], excl, sha_set, query_texts)
+        assert reason is None, (cond, reason, "builder exclusion violated")
+        for e in rec["exchanges"]:  # (1) trained-row disjointness, re-asserted per exchange
+            assert [e["q_sha16"], e["c_sha16"]] not in derivation["emitted_qc_sha16_pairs"], (
+                cond,
+                e["request_id"],
+            )
+        assert rec["recipe_sha256"] not in banned_recipe, (cond, "recipe sha collides")
+        assert rec["content_sha256"] not in banned_content, (cond, "content sha collides")
+        used_ids += list(rec["request_ids"])
+    assert len(used_ids) == 6 and len(set(used_ids)) == 6, ("exclusion 5", used_ids)
+    panel = {
+        "prefixes": prefixes,
+        "pairing": {
+            "rule": (
+                "max in-band count over all 15 perfect pairings; tie-break (i) max "
+                "min-prefix T, (ii) lexicographically smallest sorted request_id tuple "
+                "(plan §4.2 step 6)"
+            ),
+            "assignment_rule": (
+                "pairs -> b_rel1..b_rel3 in ascending total banked judge mean "
+                "(tie: ascending min request_id)"
+            ),
+            "n_in_band": n_in_band,
+            "fallback_engaged": n_in_band < 3,
+            "enumeration": enumeration,
+        },
+        "band_source": "r4 prefix_ladder.json rungs.r_long.band (verbatim; plan §11)",
+        "derivation": derivation,
+        "exclusions": {
+            "trained_prefix_recipe_shas": r4_ladder["exclusions"]["trained_prefix_recipe_shas"],
+            "trained_prefix_content_shas": r4_ladder["exclusions"]["trained_prefix_content_shas"],
+            "r4_rung_recipe_shas": {c: r4_ladder["rungs"][c]["recipe_sha256"] for c in X.R4_CONDS},
+            "belt_min_query_chars": LAD_BELT_MIN_QUERY_CHARS,
+            "screens": [
+                "trained-row (question, completion) sha-pair disjointness vs the 20 "
+                "emitted rows + train_mix positives",
+                "trained-prefix + r4-rung recipe/content sha disjointness",
+                "query-corpus sha disjointness (each user turn vs the full round-1 "
+                f"sample) + substring belt (needles >= {LAD_BELT_MIN_QUERY_CHARS} chars)",
+                "trained-context non-containment (persona system + icl demos)",
+                "cross-prefix request_id distinctness (each of the 6 used exactly once)",
+                "shape (user, assistant, user, assistant); non-empty capped contents",
+            ],
+            "language_screens": (
+                "N/A — curated English datagen bank, judge-filtered (plan §4.2: stated, "
+                "not screened)"
+            ),
+        },
+        "per_arm_mix_overlap": _brl_per_arm_mix_overlap(cfg, prefixes),
+        "smoke": cfg.smoke,
+        **_meta(),
+    }
+    _atomic_json(dest, panel)
+    logger.info(
+        "[brl_build] panel pinned: %s (n_in_band=%d, fallback=%s)",
+        {c: prefixes[c]["request_ids"] for c in X.R5_CONDS},
+        n_in_band,
+        n_in_band < 3,
+    )
+    _brl_build_publish(cfg, panel)
+
+
+def _brl_stage_inputs(cfg: Cfg) -> None:
+    """brl0 staging: pinned panel (local -> repo checkout -> Hub, fail-loud
+    both-miss) + the pfx sample (production: the round-3 corpus_sample_pfx
+    VERBATIM from the Hub — never re-derived; --smoke derives the tiny sample
+    via the round-3 `_build_pfx_sample` path, the lad0 convention)."""
+    from explore_persona_space.orchestrate import hub
+
+    panel_path = _brl_inputs(cfg) / "prefix_ladder_r5.json"
+    if not panel_path.exists():
+        repo_copy = _brl_repo_panel_path()
+        if repo_copy.exists():
+            panel_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(repo_copy, panel_path)
+        else:
+            hub.stage_hub_file(
+                X.HF_DATA_REPO,
+                f"{X.HF_PREFIX}/on_target_r5/inputs/prefix_ladder_r5.json",
+                panel_path,
+                repo_type="dataset",
+            )
+    canonical = _pfx_inputs(cfg) / "corpus_sample_pfx.json"
+    if not canonical.exists():
+        if cfg.smoke:
+            _build_pfx_sample(cfg)  # fixture-derived tiny sample (p0 --smoke ran)
+        else:
+            hub.stage_hub_file(
+                X.HF_DATA_REPO,
+                f"{X.HF_PREFIX}/on_target/inputs/corpus_sample_pfx.json",
+                canonical,
+                repo_type="dataset",
+            )
+
+
+def _brl_recheck_exclusions(cfg: Cfg, tok, panel: dict) -> dict:
+    """Kill criterion (d): re-assert the §4.2 exclusion set + band membership
+    against the FULL pinned panel, the FULL-grain samples, AND a fresh pool
+    re-derivation (never the smoke slice — the #1817 rule). Any violation =
+    builder bug, fail loud."""
+    import types
+
+    pool = _brl_stage_pool(cfg)
+    kept, _derivation = _brl_derive_kept(pool)  # re-derives + re-asserts the 6-row pin
+    kept_by_id = {r["request_id"]: r for r in kept}
+    excl = _lad_trained_exclusion_material()
+    sha_set, query_texts = _lad_full_grain_samples(cfg)
+    r4_ladder = _brl_r4_ladder(cfg)
+    banned_recipe, banned_content = _brl_banned_shas(r4_ladder)
+    out = {}
+    used_ids: list[str] = []
+    for cond in X.R5_CONDS:
+        rec = panel["prefixes"][cond]
+        turns = rec["prefix_turns"]
+        reason = brl_prefix_reject(turns, excl, sha_set, query_texts)
+        assert reason is None, (cond, reason, "builder exclusion violated (kill d)")
+        for e in rec["exchanges"]:
+            r = kept_by_id[e["request_id"]]
+            assert e["q_sha16"] == X.prompt_sha(r["question"]), (cond, e["request_id"])
+            assert e["c_sha16"] == X.prompt_sha(r["completion"]), (cond, e["request_id"])
+        t_tokens = sum(len(tok(t["content"], add_special_tokens=False)["input_ids"]) for t in turns)
+        assert t_tokens == rec["realized_tokens"], (
+            cond,
+            t_tokens,
+            rec["realized_tokens"],
+            "tokenizer drift vs the build-time count",
+        )
+        lo, hi = rec["band"]
+        assert (lo <= t_tokens <= hi) == rec["in_band"], (cond, t_tokens, rec["band"])
+        shim = types.SimpleNamespace(
+            context_id=rec["context_id"], system=None, prefix_turns=tuple(turns), user_wrap=None
+        )
+        assert _pfx_prefix_sha(shim) == rec["recipe_sha256"], (cond, "recipe sha drift")
+        assert rec["recipe_sha256"] not in banned_recipe, (cond, "recipe sha collides (kill d)")
+        assert _lad_content_sha(shim) not in banned_content, (cond, "content sha collides")
+        assert lad_turns_sha(turns) == rec["turns_sha256"], (cond, "turns sha drift")
+        used_ids += list(rec["request_ids"])
+        out[cond] = {
+            "request_ids": rec["request_ids"],
+            "realized_tokens": t_tokens,
+            "band": rec["band"],
+            "in_band": rec["in_band"],
+            "screens": "ALL PASS (full grain)",
+        }
+    assert len(used_ids) == 6 and len(set(used_ids)) == 6, ("exclusion 5", used_ids)
+    n_in = sum(1 for c in X.R5_CONDS if panel["prefixes"][c]["in_band"])
+    assert n_in >= 2, (n_in, "kill criterion (b) class: fewer than 2 in-band prefixes")
+    return out
+
+
+def _brl_cond_record(cfg: Cfg, context_id: str) -> dict:
+    conds = json.loads((_brl_inputs(cfg) / "conditions.json").read_text())["conditions"]
+    assert context_id in conds, (context_id, "b_rel condition not built at brl0", sorted(conds))
+    return conds[context_id]
+
+
+def phase_brl0(cfg: Cfg) -> None:
+    """brl0: panel-corpus render + budgets + FULL-grain exclusion re-assert."""
+    _phase("brl0_panel_corpus")
+    _status(cfg, "brl0_panel_corpus")
+    from transformers import AutoTokenizer
+
+    _brl_stage_inputs(cfg)
+    sample = X.load_pfx_sample(cfg.out_root)
+    done = _brl_inputs(cfg) / "build_done.json"
+    if done.exists():
+        logger.info("[brl0] build_done.json present — resume skip")
+        return
+    X.register_r5_brel_contexts(cfg.out_root)
+    panel = X.load_r5_brel_panel(cfg.out_root)
+    tok = AutoTokenizer.from_pretrained(cfg.model_override or X.BASE_MODEL)
+    conds: dict[str, dict] = {}
+    for cond in X.R5_CONDS:
+        cid = X.R5_CONTEXT_ID_BY_COND[cond]
+        ctx = _lad_registry_context(cid)
+        budgets = _pfx_budget(tok, ctx, sample["rows"])  # content overflow FAILS LOUD
+        prefix_tokens = len(tok(ctx.render(tok, ""), add_special_tokens=False)["input_ids"])
+        rec_panel = panel["prefixes"][cond]
+        rec = {
+            "tag": cond,
+            "context_id": cid,
+            "prefix_sha256": _pfx_prefix_sha(ctx),
+            "recipe": _pfx_prefix_recipe(ctx),
+            "prefix_tokens": prefix_tokens,
+            "realized_content_tokens": rec_panel["realized_tokens"],
+            "band": rec_panel["band"],
+            "in_band": rec_panel["in_band"],
+            "request_ids": rec_panel["request_ids"],
+            "message_shape": {
+                "has_system": ctx.system is not None,
+                "n_prefix_turns": len(ctx.prefix_turns),
+                "has_user_wrap": ctx.user_wrap is not None,
+            },
+            "budgets": budgets,
+            "n_rows": len(sample["rows"]),
+        }
+        conds[cid] = rec
+        _atomic_json(
+            _brl_inputs(cfg) / f"corpus_{cond}.json",
+            {
+                **rec,
+                "rows_sha256": hashlib.sha256(
+                    "\n".join(r["sha"] for r in sample["rows"]).encode("utf-8")
+                ).hexdigest(),
+                **_meta(),
+            },
+        )
+    _atomic_json(_brl_inputs(cfg) / "conditions.json", {"conditions": conds, **_meta()})
+    recheck = _brl_recheck_exclusions(cfg, tok, panel)  # kill criterion (d)
+    _atomic_json(_brl_inputs(cfg) / "exclusion_recheck.json", {"prefixes": recheck, **_meta()})
+    _atomic_json(
+        done,
+        {"n_rows": len(sample["rows"]), "conditions": sorted(conds), **_meta()},
+    )
+    logger.info("[brl0] panel corpora + budgets + exclusion re-assert done (%d conds)", len(conds))
+
+
+def run_brl_corpus_unit(cfg: Cfg, unit_id: str) -> None:
+    """brl2 unit: b_rel-prefixed greedy gen -> TF span-means (prefix+ctx+resp),
+    via the SAME `_prefixed_capture_core` the pfx2/lad2 units run. The panel
+    registrar runs idempotently at point of use (fresh fan-out subprocesses
+    inherit no registry state — the #1090-fu6/#1315 lessons)."""
+    X.register_r5_brel_contexts(cfg.out_root)
+    cid = X.r5_unit_context_id(unit_id)
+    _prefixed_capture_core(
+        cfg,
+        unit_id,
+        root=_brl_root(cfg),
+        cid=cid,
+        cond_rec=_brl_cond_record(cfg, cid),
+        ctx=_lad_registry_context(cid),
+    )
+
+
+def _brl_pilot_cond(cfg: Cfg) -> str:
+    """Pilot condition: the LONGEST realized-T prefix (worst case; plan §4.4
+    brl1). Smoke pins b_rel1 so the pilot unit matches the smoke unit set."""
+    if cfg.smoke:
+        return "b_rel1"
+    panel = X.load_r5_brel_panel(cfg.out_root)
+    return max(X.R5_CONDS, key=lambda c: panel["prefixes"][c]["realized_tokens"])
+
+
+def phase_brl1(cfg: Cfg) -> None:
+    """brl1: ONE unit at production shape (worst-case longest prefix); gen +
+    TF walls measured separately (kill criterion a)."""
+    _phase("brl1_pilot")
+    _status(cfg, "brl1_pilot")
+    unit = X.r5_trained_unit(BRL_PILOT_ARM, _brl_pilot_cond(cfg))
+    run_brl_corpus_unit(cfg, unit)
+    man = json.loads((_brl_root(cfg) / "corpus_capture" / unit / "manifest.json").read_text())
+    unit_wall_h = (man.get("gen_wall_s", 0.0) + man.get("tf_wall_s", 0.0)) / 3600.0
+    ratio = unit_wall_h / BRL_BOOKED_UNIT_GPU_H
+    _atomic_json(
+        _brl_root(cfg) / "pilot" / "pilot_report.json",
+        {
+            "unit": unit,
+            "gen_wall_s": man.get("gen_wall_s"),
+            "tf_wall_s": man.get("tf_wall_s"),
+            "unit_wall_h": unit_wall_h,
+            "booked_unit_gpu_h": BRL_BOOKED_UNIT_GPU_H,
+            "ratio": ratio,
+            "smoke": cfg.smoke,
+            **_meta(),
+        },
+    )
+    print(f"[brl1] pilot {unit} wall={unit_wall_h:.2f}h ratio={ratio:.2f}", flush=True)
+    _pfx_pilot_gate(ratio, cfg.smoke, tag="brl1", booked=BRL_BOOKED_UNIT_GPU_H)
+
+
+def _brl_arms(cfg: Cfg) -> list[str]:
+    """The round-5 arm scope (plan §4.1 — same 4 arms as r4); --arms filters
+    INSIDE it; smoke = the plan-§4 smoke-parity arm."""
+    if cfg.arms:
+        want = set(cfg.arms)
+        unknown = want - set(X.R5_ARMS)
+        assert not unknown, f"--arms outside the r5 arm set: {sorted(unknown)}"
+        return [a for a in X.R5_ARMS if a in want]
+    if cfg.smoke:
+        return [BRL_PILOT_ARM]
+    return list(X.R5_ARMS)
+
+
+def _brl_conds_capture(cfg: Cfg) -> tuple[str, ...]:
+    return ("b_rel1",) if cfg.smoke else X.R5_CONDS
+
+
+def _brl_unit_set(cfg: Cfg) -> list[str]:
+    """brl2 units: shared base@b_rel units first, then arm@b_rel units
+    (production: 3 + 12 = 15; smoke: base_content@b_rel1 + pilot@b_rel1)."""
+    arms = _brl_arms(cfg)
+    conds = _brl_conds_capture(cfg)
+    bases = [X.r5_base_unit(c) for c in conds]
+    trained = [X.r5_trained_unit(a, c) for a in arms for c in conds]
+    return bases + trained
+
+
+def _brl_expected_uploads(cfg: Cfg) -> list[str]:
+    """Exact-set verify list: EVERY per-unit artifact file the corpus_capture
+    tree carries — pooled.pt + manifest/spans/done sentinels + the raw-row
+    rollout shards (the lad4 convention)."""
+    expected = []
+    tree = "on_target_r5/corpus_capture"
+    local_tree = cfg.out_root / tree
+    if local_tree.exists():
+        for unit_dir in sorted(local_tree.iterdir()):
+            if not (unit_dir / "pooled.pt").exists():
+                continue
+            names = ["pooled.pt"]
+            names += [p.name for p in sorted(unit_dir.glob("raw_rows_*.jsonl"))]
+            for extra in ("raw_rows.done.json", "rows_spans.json", "manifest.json"):
+                if (unit_dir / extra).exists():
+                    names.append(extra)
+            expected += [f"{cfg.hf_prefix}/{tree}/{unit_dir.name}/{n}" for n in names]
+    return expected
+
+
+def phase_brl4(cfg: Cfg) -> None:
+    """brl4: on_target_r5 tree upload + exact-set verify — BEFORE fits (#825)."""
+    _phase("brl4_store_upload")
+    _status(cfg, "brl4_store_upload")
+    if not cfg.upload:
+        logger.info("[brl4] upload disabled (--no-upload)")
+        return
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    expected = _brl_expected_uploads(cfg)
+    done_path = _brl_root(cfg) / "upload_done.json"
+    if done_path.exists():
+        prior = json.loads(done_path.read_text())
+        if prior.get("n_verified") == len(expected):
+            logger.info(
+                "[brl4] upload_done.json matches the expected store count (%d) — resume skip",
+                len(expected),
+            )
+            return
+        logger.info(
+            "[brl4] expected store count changed (%s -> %d) — re-uploading",
+            prior.get("n_verified"),
+            len(expected),
+        )
+    uploaded = {}
+    for name in BRL_UPLOAD_TREES:
+        dest = _upload_tree(cfg, name)
+        if dest:
+            uploaded[name] = dest
+    if expected:
+        missing = hub.verify_repo_paths_uploaded(
+            HfApi(),
+            X.HF_DATA_REPO,
+            expected,
+            path_in_repo=f"{cfg.hf_prefix}/on_target_r5",
+            repo_type="dataset",
+        )
+        assert not missing, f"brl4 verify: {len(missing)} store files missing on Hub: {missing[:5]}"
+    _atomic_json(
+        done_path,
+        {"uploaded": uploaded, "n_verified": len(expected), **_meta()},
+    )
+
+
 # ── entry ────────────────────────────────────────────────────────────────────
 
 
@@ -3031,6 +5743,9 @@ def _import_check() -> int:
     import issue779_ffc_n1m_generate_capture  # noqa: F401
     import issue779_ffc_n50k_generate_capture  # noqa: F401
     import issue779_fitter_fair_comparison  # noqa: F401
+
+    # pfx prefix-context resolution (plan v8 §4.2: the #1481 registry render)
+    from issue1090_fu3_worker import ensure_context  # noqa: F401
 
     # p6 split-leg deferred imports (gen / judge / reduce; plan §9 Must-Fix)
     from issue779_common import (  # noqa: F401
@@ -3068,6 +5783,12 @@ def _import_check() -> int:
     from explore_persona_space.orchestrate.preflight import (  # noqa: F401
         assert_out_root_headroom,
     )
+
+    # lad (round-4) deferred imports: the WildChat streaming builder + the
+    # ladder registrar's lazy Context import (executed, not just named)
+    from datasets import load_dataset  # noqa: F401
+
+    from explore_persona_space.artifacts.context import CONTEXTS, Context  # noqa: F401
 
     try:  # vLLM is GPU-lane-only; absence is reported, not fatal, off-pod
         import vllm  # noqa: F401
@@ -3125,7 +5846,27 @@ def parse_args(argv: list[str] | None = None) -> tuple[Cfg, argparse.Namespace]:
     return cfg, args
 
 
-PHASE_HEADROOM_GB = {"p2": 175.0, "p3": 68.0, "p4": 20.0, "p5": 5.0, "p6": 5.0, "pnf": 40.0}
+PHASE_HEADROOM_GB = {
+    "p2": 175.0,
+    "p3": 68.0,
+    "p4": 20.0,
+    "p5": 5.0,
+    "p6": 5.0,
+    "pnf": 40.0,
+    # pfx (plan v8 §9 storage block): new stores ~10 GB + staged round-1
+    # stores ~18 GB + rollout text ~1.5 GB + <=2 concurrent transient merged
+    # models <=30 GB => driver asserts >=90 GB free at pfx2 entry.
+    "pfx2": 90.0,
+    "pfx3": 40.0,
+    # lad2 (plan v10 §9 storage block): new stores ~5.3 GB + rollout text
+    # ~1.5 GB + staged inputs + one transient merged model <=15 GB => the
+    # driver asserts >=60 GB free at lad2 entry.
+    "lad2": 60.0,
+    # brl2 (plan v13 §9 storage block): identical 15-unit shape to lad2 —
+    # new stores ~5.3 GB + rollout text ~1.5 GB + staged inputs ~0.3 GB +
+    # one transient merged model <=15 GB => >=60 GB free asserted at entry.
+    "brl2": 60.0,
+}
 # pnf: ~2 GB staged base text + one transient merged/ft model <=16 GB + ~0.5 GB
 # stores (plan v7 §9 storage block); resume-aware gate below skips it when all
 # 12 replicate stores are already present.
@@ -3168,6 +5909,36 @@ def main(argv: list[str] | None = None) -> int:
             phase_p7(cfg)
         elif phase == "pnf":
             phase_noise_floor(cfg)
+        elif phase == "pfx0":
+            phase_pfx0(cfg)
+        elif phase == "pfx1":
+            phase_pfx1(cfg)
+        elif phase == "pfx2":
+            _fanout_phase(cfg, "pfx2", "pfx2_prefixed_capture")
+        elif phase == "pfx3":
+            _fanout_phase(cfg, "pfx3", "pfx3_prefixed_tf")
+        elif phase == "pfx4":
+            phase_pfx4(cfg)
+        elif phase == "lad_build":
+            phase_lad_build(cfg)
+        elif phase == "lad0":
+            phase_lad0(cfg)
+        elif phase == "lad1":
+            phase_lad1(cfg)
+        elif phase == "lad2":
+            _fanout_phase(cfg, "lad2", "lad2_rung_capture")
+        elif phase == "lad4":
+            phase_lad4(cfg)
+        elif phase == "brl_build":
+            phase_brl_build(cfg)
+        elif phase == "brl0":
+            phase_brl0(cfg)
+        elif phase == "brl1":
+            phase_brl1(cfg)
+        elif phase == "brl2":
+            _fanout_phase(cfg, "brl2", "brl2_brel_capture")
+        elif phase == "brl4":
+            phase_brl4(cfg)
         else:
             raise ValueError(f"unknown phase {phase}")
     _status(cfg, "done")
@@ -3179,4 +5950,13 @@ if __name__ == "__main__":
     rc = main()
     sys.stdout.flush()
     sys.stderr.flush()
-    sys.exit(rc)  # explicit exit: PyGILState_Release finalize-race guard (#1689)
+    # #1689/#952 finalize-race guard, HARD form: with a consumed WildChat
+    # streaming IterableDataset in-process (lad_build), plain sys.exit(rc)
+    # MEASURABLY still aborts at interpreter finalize (PyGILState_Release,
+    # rc=134 — 2026-07-31 probe; `del row, ds` + gc.collect() applied and
+    # insufficient), which would kill the `capture && fit` workload chain
+    # after a COMPLETED phase. Every output is already durably written
+    # (atomic tmp+os.replace) and both streams are flushed above, so the
+    # skipped finalization has nothing left to do. Canonical coerced form
+    # (the tests/test_issue1689_os_exit_shutdown_bypass.py idiom).
+    os._exit(rc if isinstance(rc, int) else 0)

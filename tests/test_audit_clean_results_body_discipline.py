@@ -202,6 +202,88 @@ def test_condition_codes_outside_data_still_flagged():
     assert any("C1" in s for s in findings["condition_labels"]), findings
 
 
+# ─── H1c-form sub-tag widening (#1914) ────────────────────────────────────
+
+
+def test_sub_tag_condition_codes_in_prose_are_flagged():
+    """`H<digit><lowercase>` hypothesis/plan sub-tags (`H1c`, `H4b`,
+    `P4a`) in reader-facing prose trip `condition_labels`, and the
+    matched token carries the sub-letter (#1914)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "Under H1c the lift holds; H4b and P4a show the same pattern.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "condition_labels" in findings, findings
+    matched = findings["condition_labels"]
+    assert any("H1c" in s for s in matched), matched
+    assert any("H4b" in s for s in matched), matched
+    assert any("P4a" in s for s in matched), matched
+
+
+def test_plural_heading_h2s_prose_not_flagged():
+    """Plural markdown-heading prose ("the five flat H2s", "three H2s
+    total") must NOT trip `condition_labels` — the sub-tag letter class
+    deliberately excludes `s` (measured false-positive class, #1914)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The five flat H2s follow the legacy H2s ordering; three H2s total.",
+    )
+    findings = audit.audit_body(body)
+    assert "condition_labels" not in findings, findings
+
+
+def test_gpu_name_prose_not_flagged():
+    """GPU names (`H100`/`H200`) stay unmatched after the sub-tag
+    widening — `[1-9]` + the trailing lookahead still exclude them
+    (regression pin for the #1826 known-good class)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "Training ran on a single H100 pod; the H200 fallback was unused.",
+    )
+    findings = audit.audit_body(body)
+    assert "condition_labels" not in findings, findings
+
+
+def test_prime_condition_label_still_flagged():
+    """The primed form (`C1` + U+2032 PRIME) is still matched after the
+    sub-tag widening (existing-behavior regression pin)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The C1′ variant shows the same lift.",  # noqa: RUF001
+    )
+    findings = audit.audit_body(leaky)
+    assert "condition_labels" in findings, findings
+    assert any("C1′" in s for s in findings["condition_labels"]), findings  # noqa: RUF001
+
+
+def test_condition_labels_regex_in_sync_with_verify_task_body():
+    """The audit's `condition_labels` regex literal must equal the
+    condition_labels portion of `verify_task_body._DATA_CONDITION_CODE_RE`
+    (the prefix before its `|\\bBS_E` cell_tags branch) — makes the
+    KEPT-IN-SYNC comment in verify_task_body.py self-enforcing (#1914)."""
+    import sys
+
+    if "verify_task_body" in sys.modules:
+        vtb = sys.modules["verify_task_body"]
+    else:
+        vtb_script = REPO_ROOT / "scripts" / "verify_task_body.py"
+        vtb_spec = importlib.util.spec_from_file_location("verify_task_body", vtb_script)
+        assert vtb_spec is not None and vtb_spec.loader is not None
+        vtb = importlib.util.module_from_spec(vtb_spec)
+        sys.modules["verify_task_body"] = vtb
+        vtb_spec.loader.exec_module(vtb)
+
+    audit_pattern = audit.PATTERNS["condition_labels"][0]
+    full = vtb._DATA_CONDITION_CODE_RE.pattern
+    prefix = full.split(r"|\bBS_E", 1)[0]
+    assert prefix == audit_pattern, (
+        "condition_labels regex drifted between the audit and check 19b:\n"
+        f"audit:    {audit_pattern!r}\n"
+        f"check19b: {prefix!r}"
+    )
+
+
 def test_strip_data_example_blocks_only_drops_inside_data():
     """`strip_data_example_blocks` drops `<details>` blocks under
     `## Data` but leaves a `<details>` block under any other H2

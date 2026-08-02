@@ -1,0 +1,91 @@
+{
+ "cells": {
+  "base_content@r_short_L14": {
+   "base_unit": "base_content@r_short",
+   "layer": 14,
+   "m0_own_r2": 0.38077136498897324,
+   "m0_bare_r2": 0.40980449665633156,
+   "delta_med_on_own_grid": 8.564784917971807,
+   "delta_med_on_bare_grid": 11.946157464849112,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_content@r_short_L19": {
+   "base_unit": "base_content@r_short",
+   "layer": 19,
+   "m0_own_r2": 0.3995428447739551,
+   "m0_bare_r2": 0.4358473028350256,
+   "delta_med_on_own_grid": 17.90227203194963,
+   "delta_med_on_bare_grid": 21.58380647342448,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_content@r_short_L25": {
+   "base_unit": "base_content@r_short",
+   "layer": 25,
+   "m0_own_r2": 0.3579283576481803,
+   "m0_bare_r2": 0.39307974481211116,
+   "delta_med_on_own_grid": 41.1622051932918,
+   "delta_med_on_bare_grid": 51.99043436282492,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_content@r_mid_L14": {
+   "base_unit": "base_content@r_mid",
+   "layer": 14,
+   "m0_own_r2": 0.29599130688902464,
+   "m0_bare_r2": 0.40980449665633156,
+   "delta_med_on_own_grid": 16.945074840540208,
+   "delta_med_on_bare_grid": 42.03761315293099,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_content@r_mid_L19": {
+   "base_unit": "base_content@r_mid",
+   "layer": 19,
+   "m0_own_r2": 0.31539552948145744,
+   "m0_bare_r2": 0.4358473028350256,
+   "delta_med_on_own_grid": 30.62351585241594,
+   "delta_med_on_bare_grid": 58.97713546542059,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_content@r_mid_L25": {
+   "base_unit": "base_content@r_mid",
+   "layer": 25,
+   "m0_own_r2": 0.2647460803622945,
+   "m0_bare_r2": 0.39307974481211116,
+   "delta_med_on_own_grid": 70.22485684335851,
+   "delta_med_on_bare_grid": 135.44088381760776,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_content@r_long_L14": {
+   "base_unit": "base_content@r_long",
+   "layer": 14,
+   "m0_own_r2": 0.2016645264615573,
+   "m0_bare_r2": 0.40980449665633156,
+   "delta_med_on_own_grid": 19.774167524044746,
+   "delta_med_on_bare_grid": 145.15500500934667,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_content@r_long_L19": {
+   "base_unit": "base_content@r_long",
+   "layer": 19,
+   "m0_own_r2": 0.2113641242841422,
+   "m0_bare_r2": 0.4358473028350256,
+   "delta_med_on_own_grid": 33.50121753329984,
+   "delta_med_on_bare_grid": 202.83297147927325,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  },
+  "base_content@r_long_L25": {
+   "base_unit": "base_content@r_long",
+   "layer": 25,
+   "m0_own_r2": 0.1418009310949775,
+   "m0_bare_r2": 0.39307974481211116,
+   "delta_med_on_own_grid": 71.14068942324552,
+   "delta_med_on_bare_grid": 254.93219025378806,
+   "note": "exploratory — prefix-vs-bare BASE-map read (plan §4.5)"
+  }
+ },
+ "smoke": false,
+ "ts": "2026-07-31T14:14:03Z",
+ "git_commit": "unknown",
+ "torch": "2.8.0+cu128",
+ "numpy": "2.2.6",
+ "issue": 1768
+}

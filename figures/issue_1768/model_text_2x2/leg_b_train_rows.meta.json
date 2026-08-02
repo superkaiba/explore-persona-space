@@ -1,0 +1,1577 @@
+{
+  "commit": "11ba097801",
+  "created": "2026-08-01T09:17:21Z",
+  "figsize": [
+    15.0,
+    7.6
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "cosine": 0.7559550951107977,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "cosine": 0.7638621866393634,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "cosine": 0.7922615644863222,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "cosine": 0.7775016605430437,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "cosine": 0.7631264079783625,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "cosine": 0.7624127351707854,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "cosine": 0.7820830277131748,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "cosine": 0.7070250877145248,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "cosine": 0.7062584291221324,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "cosine": 0.6625162323776321,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "cosine": 0.6697037426044399,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "cosine": 0.6319486152244178,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "cosine": 0.6211065603688085,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 13.0,
+      "cosine": 0.7066048923020971,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 14.0,
+      "cosine": 0.6994308605853018,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 15.0,
+      "cosine": 0.7912136262054648,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 16.0,
+      "cosine": 0.7633878310009792,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 17.0,
+      "cosine": 0.7785317900034461,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 18.0,
+      "cosine": 0.7786743947010599,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 19.0,
+      "cosine": 0.6598774649273246,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 20.0,
+      "cosine": 0.6566633562291936,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 21.0,
+      "cosine": 0.6532703793375476,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 22.0,
+      "cosine": 0.6522891252128225,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 23.0,
+      "cosine": 0.7820725472793175,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 24.0,
+      "cosine": 0.8089009591313715,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 25.0,
+      "cosine": 0.7786212763142775,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 26.0,
+      "cosine": 0.706186116251337,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 27.0,
+      "cosine": 0.709935148675357,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 28.0,
+      "cosine": 0.6829185079590224,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 29.0,
+      "cosine": 0.6864006622369692,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 30.0,
+      "cosine": 0.6922905557396334,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 31.0,
+      "cosine": 0.6918721867427923,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 32.0,
+      "cosine": 0.9436978160226723,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 33.0,
+      "cosine": 0.9469765127507176,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 34.0,
+      "cosine": 0.9453960143370852,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 35.0,
+      "cosine": 0.9464287036911622,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 36.0,
+      "cosine": 0.7218954445829836,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 37.0,
+      "cosine": 0.7222448978093189,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 38.0,
+      "cosine": 0.7112667492927149,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 39.0,
+      "cosine": 0.7213848666268033,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 40.0,
+      "cosine": 0.7567446764670193,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 41.0,
+      "cosine": 0.7305438910550714,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 42.0,
+      "cosine": 0.726723885126614,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 43.0,
+      "cosine": 0.7661627931396731,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 44.0,
+      "cosine": 0.8166046572529708,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 45.0,
+      "cosine": 0.8140241214773075,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 46.0,
+      "cosine": 0.8093660812027579,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 47.0,
+      "cosine": 0.7832498933201533,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 48.0,
+      "cosine": 0.7974048711846142,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 49.0,
+      "cosine": 0.790809624095361,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 50.0,
+      "cosine": 0.8326452773939095,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 51.0,
+      "cosine": 0.8237961765634677,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 52.0,
+      "cosine": 0.752496237770753,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 53.0,
+      "cosine": 0.7434126141817656,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 54.0,
+      "cosine": 0.7134646724242473,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 55.0,
+      "cosine": 0.7215020131797797,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 56.0,
+      "cosine": 0.7550312626961304,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 57.0,
+      "cosine": 0.7836719115829585,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 58.0,
+      "cosine": 0.7730809424222087,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 59.0,
+      "cosine": 0.7812777021449753,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 60.0,
+      "cosine": 0.641957927375957,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 61.0,
+      "cosine": 0.6518991660137947,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 62.0,
+      "cosine": 0.6267501772859672,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 63.0,
+      "cosine": 0.6225096728318265,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 64.0,
+      "cosine": 0.7380131204023846,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 65.0,
+      "cosine": 0.73858639304432,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 66.0,
+      "cosine": 0.8343810941495378,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 67.0,
+      "cosine": 0.7545635113381729,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 68.0,
+      "cosine": 0.6287345261866729,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 69.0,
+      "cosine": 0.6232036117563083,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 70.0,
+      "cosine": 0.7048694624992244,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 71.0,
+      "cosine": 0.6361814256572664,
+      "series": "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "cosine": 0.3342347473405555,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "cosine": 0.33540598085455753,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "cosine": 0.3384102917212804,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "cosine": 0.34605407106114167,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "cosine": 0.37772325193150696,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "cosine": 0.37349004270790626,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "cosine": 0.3867314212931791,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "cosine": 0.44849487211065897,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "cosine": 0.45560381808675365,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "cosine": 0.42749398519112314,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "cosine": 0.45832712257691816,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "cosine": 0.468066182270149,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "cosine": 0.46852265301125345,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 13.0,
+      "cosine": 0.4736704993779482,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 14.0,
+      "cosine": 0.47241234806653204,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 15.0,
+      "cosine": 0.3442254232540689,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "cosine": 0.33294163894235757,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 17.0,
+      "cosine": 0.3709790037985801,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 18.0,
+      "cosine": 0.3717033123477287,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 19.0,
+      "cosine": 0.20743236009025012,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 20.0,
+      "cosine": 0.21294874384522652,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 21.0,
+      "cosine": 0.1976408187412913,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 22.0,
+      "cosine": 0.196330329502495,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 23.0,
+      "cosine": 0.32846818732249305,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 24.0,
+      "cosine": 0.22973777490111585,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 25.0,
+      "cosine": 0.21733299089315397,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 26.0,
+      "cosine": 0.08018941250767254,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 27.0,
+      "cosine": 0.06869184221011393,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 28.0,
+      "cosine": 0.07781184873754601,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 29.0,
+      "cosine": 0.0910424507113401,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 30.0,
+      "cosine": 0.13864361441592216,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 31.0,
+      "cosine": 0.13537087248339788,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 32.0,
+      "cosine": 0.05824209278521615,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 33.0,
+      "cosine": 0.07196158995219416,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 34.0,
+      "cosine": 0.08778186888734152,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 35.0,
+      "cosine": 0.0802719402117312,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 36.0,
+      "cosine": 0.11393084717308329,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 37.0,
+      "cosine": 0.11557758053456722,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 38.0,
+      "cosine": 0.11165588763393257,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 39.0,
+      "cosine": 0.11735195715400304,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 40.0,
+      "cosine": 0.09443198212695628,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 41.0,
+      "cosine": 0.0856218268909987,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 42.0,
+      "cosine": 0.09668013592501966,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 43.0,
+      "cosine": 0.07479473926319977,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 44.0,
+      "cosine": 0.0858456215937527,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 45.0,
+      "cosine": 0.08620392191145318,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 46.0,
+      "cosine": 0.021191608231793068,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 47.0,
+      "cosine": 0.005085539727499279,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 48.0,
+      "cosine": 0.0046671235874893285,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 49.0,
+      "cosine": 0.0014341934523285711,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 50.0,
+      "cosine": 0.11353980643104564,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 51.0,
+      "cosine": 0.10738249148506314,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 52.0,
+      "cosine": 0.30158591681198016,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 53.0,
+      "cosine": 0.29908932818592066,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 54.0,
+      "cosine": 0.31266329872023546,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 55.0,
+      "cosine": 0.31290015135462157,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 56.0,
+      "cosine": 0.20014054530356723,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 57.0,
+      "cosine": 0.211337324199122,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 58.0,
+      "cosine": 0.21384348989929375,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 59.0,
+      "cosine": 0.21639476341190553,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 60.0,
+      "cosine": 0.07597767336193861,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 61.0,
+      "cosine": 0.07817563641094052,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 62.0,
+      "cosine": 0.0689822156449761,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 63.0,
+      "cosine": 0.060771651973107944,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 64.0,
+      "cosine": 0.3070192193188778,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 65.0,
+      "cosine": 0.3032289638162174,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 66.0,
+      "cosine": 0.32262893295999223,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 67.0,
+      "cosine": 0.3000479925925804,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 68.0,
+      "cosine": 0.3125818002022441,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 69.0,
+      "cosine": 0.31489982493650104,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 70.0,
+      "cosine": 0.33758784304866474,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 71.0,
+      "cosine": 0.33185723602917405,
+      "series": "cos($\\Delta v_{train}$, $\\delta$)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "category": "cas-bare-con-lr1e5-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 16.0891514900205,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-bare-con-lr1e5-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 17.006434245804854,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-bare-po-lr1e5-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 16.622168058536804,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-bare-po-lr1e5-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 15.361971169443972,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-conv-con-lr1e5-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 13.428593067267995,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-conv-con-lr1e5-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 13.034457321267826,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-conv-po-lr3e5-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 12.81405995488124,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-pers-con-lr1e5-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 17.20368794053447,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-pers-con-lr1e5-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 16.24371683064185,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-pers-ft-con-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 18.024552315279543,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-pers-ft-con-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 17.416298508185417,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-pers-ft-po-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 17.864318394320534,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-pers-ft-po-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 18.03628773542121,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-pers-po-lr1e5-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 17.138104198383786,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-pers-po-lr1e5-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 17.186858038298993,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-bare-con-lr3e5-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 25.898636809204312,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-bare-con-lr3e5-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 23.548065830602944,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-bare-po-lr1e5-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 22.276889203214605,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-bare-po-lr1e5-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 22.05070089269807,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-conv-con-lr1e5-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 21.001160138960813,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-conv-con-lr1e5-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 21.430322906799553,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-conv-po-lr1e5-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 21.13717353607013,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-conv-po-lr1e5-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 21.241305323915174,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-icl-po-lr1e4-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 24.142131166044074,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-pers-con-lr3e5-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 28.743962011678974,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-pers-con-lr3e5-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 26.936393233257643,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-pers-ft-con-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 25.642083606604384,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-pers-ft-con-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 24.98588371295095,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-pers-ft-po-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 25.768811904616143,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-pers-ft-po-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 25.809636262262426,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-pers-po-lr1e5-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 24.599969551359063,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-pers-po-lr1e5-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 24.583350072824476,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-bare-con-lr5e6-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 2.7833134380121733,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-bare-con-lr5e6-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 2.723714335570066,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-bare-po-lr5e6-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 3.2739926545231994,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-bare-po-lr5e6-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 3.3715023697627675,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-conv-con-lr5e6-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 4.014590579027679,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-conv-con-lr5e6-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 4.308747783002497,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-conv-po-lr5e6-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 4.629933784488645,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-conv-po-lr5e6-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 3.90187141077078,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-icl-con-lr5e6-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 1.092891936511079,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-icl-con-lr5e6-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 1.1419481890671879,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-icl-po-lr5e6-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 0.8227192209198463,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-icl-po-lr5e6-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 1.4977474559742998,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-pers-con-lr5e6-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 2.6975992338927925,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-pers-con-lr5e6-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 2.6796128316279337,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-pers-ft-con-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 3.1263179625419855,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-pers-ft-con-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 3.118745128299791,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-pers-ft-po-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 3.177873986394472,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-pers-ft-po-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 3.1712032152387906,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-pers-po-lr5e6-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 3.2539015797028688,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-pers-po-lr5e6-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 3.157230639894033,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-bare-con-lr1e5-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 21.65377591375837,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-bare-con-lr1e5-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 21.418406688011114,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-bare-po-lr1e5-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 21.44139655909709,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-bare-po-lr1e5-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 21.646942461904725,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-conv-con-lr1e5-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 4.203994156190437,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-conv-con-lr1e5-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 4.197763359825975,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-conv-po-lr1e5-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 4.176622610736648,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-conv-po-lr1e5-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 4.163985251058405,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-icl-con-lr1e5-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 21.66251541976881,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-icl-con-lr1e5-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 20.848817247437616,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-icl-po-lr1e5-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 20.451221039981238,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-icl-po-lr3e5-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 20.63800598522973,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-pers-con-lr1e5-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 20.153696514706077,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-pers-con-lr1e5-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 20.288064654578548,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-pers-ft-con-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 23.15871229409872,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-pers-ft-con-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 23.55447227001885,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-pers-ft-po-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 22.489149686079443,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-pers-ft-po-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 23.090986439408002,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-pers-po-lr1e5-s137",
+      "$\\|\\Delta v_{train}\\|$ at L19": 17.699993011895785,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-pers-po-lr1e5-s42",
+      "$\\|\\Delta v_{train}\\|$ at L19": 15.76939468337647,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 216,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Leg B: did the write land where training pushed, on the rows it pushed?",
+        "ylabel": "cosine",
+        "legend_labels": [
+          "cos($\\Delta v_{train}$, corpus matched-text write)",
+          "cos($\\Delta v_{train}$, $\\delta$)"
+        ],
+        "annotations": [
+          "writing style",
+          "impoliteness",
+          "marker",
+          "sycophancy",
+          "$\\Delta v_{train}=v^+(\\mathrm{train\\ rows})-v^0(\\mathrm{train\\ rows})$ for all 72 arms at layer 19; base side reused from round 1's delta cells."
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ]
+      },
+      {
+        "ylabel": "$\\|\\Delta v_{train}\\|$ at L19",
+        "xticklabels": [
+          "cas-bare-con-lr1e5-s137",
+          "cas-bare-con-lr1e5-s42",
+          "cas-bare-po-lr1e5-s137",
+          "cas-bare-po-lr1e5-s42",
+          "cas-conv-con-lr1e5-s137",
+          "cas-conv-con-lr1e5-s42",
+          "cas-conv-po-lr3e5-s42",
+          "cas-pers-con-lr1e5-s137",
+          "cas-pers-con-lr1e5-s42",
+          "cas-pers-ft-con-s137",
+          "cas-pers-ft-con-s42",
+          "cas-pers-ft-po-s137",
+          "cas-pers-ft-po-s42",
+          "cas-pers-po-lr1e5-s137",
+          "cas-pers-po-lr1e5-s42",
+          "imp-bare-con-lr3e5-s137",
+          "imp-bare-con-lr3e5-s42",
+          "imp-bare-po-lr1e5-s137",
+          "imp-bare-po-lr1e5-s42",
+          "imp-conv-con-lr1e5-s137",
+          "imp-conv-con-lr1e5-s42",
+          "imp-conv-po-lr1e5-s137",
+          "imp-conv-po-lr1e5-s42",
+          "imp-icl-po-lr1e4-s42",
+          "imp-pers-con-lr3e5-s137",
+          "imp-pers-con-lr3e5-s42",
+          "imp-pers-ft-con-s137",
+          "imp-pers-ft-con-s42",
+          "imp-pers-ft-po-s137",
+          "imp-pers-ft-po-s42",
+          "imp-pers-po-lr1e5-s137",
+          "imp-pers-po-lr1e5-s42",
+          "mk-bare-con-lr5e6-s137",
+          "mk-bare-con-lr5e6-s42",
+          "mk-bare-po-lr5e6-s137",
+          "mk-bare-po-lr5e6-s42",
+          "mk-conv-con-lr5e6-s137",
+          "mk-conv-con-lr5e6-s42",
+          "mk-conv-po-lr5e6-s137",
+          "mk-conv-po-lr5e6-s42",
+          "mk-icl-con-lr5e6-s137",
+          "mk-icl-con-lr5e6-s42",
+          "mk-icl-po-lr5e6-s137",
+          "mk-icl-po-lr5e6-s42",
+          "mk-pers-con-lr5e6-s137",
+          "mk-pers-con-lr5e6-s42",
+          "mk-pers-ft-con-s137",
+          "mk-pers-ft-con-s42",
+          "mk-pers-ft-po-s137",
+          "mk-pers-ft-po-s42",
+          "mk-pers-po-lr5e6-s137",
+          "mk-pers-po-lr5e6-s42",
+          "syc-bare-con-lr1e5-s137",
+          "syc-bare-con-lr1e5-s42",
+          "syc-bare-po-lr1e5-s137",
+          "syc-bare-po-lr1e5-s42",
+          "syc-conv-con-lr1e5-s137",
+          "syc-conv-con-lr1e5-s42",
+          "syc-conv-po-lr1e5-s137",
+          "syc-conv-po-lr1e5-s42",
+          "syc-icl-con-lr1e5-s137",
+          "syc-icl-con-lr1e5-s42",
+          "syc-icl-po-lr1e5-s137",
+          "syc-icl-po-lr3e5-s42",
+          "syc-pers-con-lr1e5-s137",
+          "syc-pers-con-lr1e5-s42",
+          "syc-pers-ft-con-s137",
+          "syc-pers-ft-con-s42",
+          "syc-pers-ft-po-s137",
+          "syc-pers-ft-po-s42",
+          "syc-pers-po-lr1e5-s137",
+          "syc-pers-po-lr1e5-s42"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35"
+        ]
+      }
+    ],
+    "series": [
+      "cos($\\Delta v_{train}$, corpus matched-text write)",
+      "cos($\\Delta v_{train}$, $\\delta$)"
+    ]
+  }
+}

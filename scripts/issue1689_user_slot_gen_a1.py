@@ -661,11 +661,11 @@ def main() -> int:
         rc = run_worker(args)
     else:
         rc = run_dispatch(args)
-    # Explicit exit BEFORE C-extension finalization (#1689 Phase A).
-    sys.stdout.flush()
-    sys.stderr.flush()
-    sys.exit(rc)
+    return rc
 
 
 if __name__ == "__main__":
-    main()
+    rc = main()
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(rc if isinstance(rc, int) else 0)

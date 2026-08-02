@@ -152,12 +152,45 @@ PAIRED_STORIES_VARIANTS = (
     # — the embedded answer text is identical to it AND to the base r1/r2
     # comparator stores, so the framing contrast stays clean.
     "conversation_paired_stories_assistant_base",  # base-measured scope
+    # --- INJECTED character arms (4-persona panel) ----------------------------
+    # The r4 (TF verbatim-embed) half of the on-policy-vs-injected program. The
+    # registry pins ONE (regime x measured model) per variant, so the program's
+    # 16 gen cells are 16 variants: r4 here, r4op in ONPOLICY_STORY_VARIANTS
+    # below (a variant cannot be both — HAS_ONPOLICY_STORY drops r4 from
+    # REGIMES), each x instruct / `_base` pretrained via R4_MODELS.
+    # Labels + persona descriptions come from
+    # issue1310_common.PERSONAS and ride the generation prompt via
+    # EPM_I1345_PERSONA_DESC (issue1345_gen_stories_paired); the wrapper WRITER
+    # stays instruct on every variant, so the `_base` siblings differ only in the
+    # MEASURED/CAPTURE model, exactly like the assistant_base scope.
+    # Every path + HF prefix is _VSUB-scoped, so these cannot touch any existing
+    # variant's dirs, prefixes, or bundle fingerprints (membership tests only).
+    "char_helios",
+    "char_helios_base",
+    "char_wren",
+    "char_wren_base",
+    "char_dana",
+    "char_dana_base",
+    "char_vex",
+    "char_vex_base",
 )
 HAS_R4 = VARIANT in PAIRED_STORIES_VARIANTS
 # The base-measured scope is the ONLY variant whose story arm measures the
 # pretrained model (R4_MODELS below keys off this); the two instruct scopes
 # keep the instruct-only story arm byte-identical.
-BASE_PAIRED_STORIES_VARIANTS = ("conversation_paired_stories_assistant_base",)
+BASE_PAIRED_STORIES_VARIANTS = (
+    "conversation_paired_stories_assistant_base",
+    # The character panel's base-MEASURED siblings (wrappers still
+    # instruct-written) — both the injected (r4) and on-policy (r4op) halves.
+    "char_helios_base",
+    "char_wren_base",
+    "char_dana_base",
+    "char_vex_base",
+    "char_helios_op_base",
+    "char_wren_op_base",
+    "char_dana_op_base",
+    "char_vex_op_base",
+)
 HAS_BASE_PAIRED = VARIANT in BASE_PAIRED_STORIES_VARIANTS
 # story-slot-position-ablation round (plan v10 §4): re-reads the landed v9
 # paired-story corpus at 4 extra context-slot positions in ONE TF forward per
@@ -177,7 +210,25 @@ HAS_SLOT_ABLATION = VARIANT in SLOT_ABLATION_VARIANTS
 # (TF verbatim-embed) leg exists this round; r3 (free-form stories) is out of
 # scope (the parent's free-form bundle is available for a later context-only
 # arm). EXPLICIT membership (never a prefix match).
-ONPOLICY_STORY_VARIANTS = ("onpolicy_assistant_story",)
+ONPOLICY_STORY_VARIANTS = (
+    "onpolicy_assistant_story",
+    # ON-POLICY character arms (the r4op half of the injected-vs-on-policy
+    # program): the SAME persona wrappers as the `char_*` r4 variants above, but
+    # the character answers FREELY (confident_op_turn extracts the answer span
+    # instead of verifying a pinned one), so these are NOT text-matched across
+    # cells — the pre-registered caveat. Separate variants because
+    # HAS_ONPOLICY_STORY drops r4 from REGIMES: one variant cannot carry both
+    # the injected and the on-policy arm. `_op_base` measures the pretrained
+    # model (also listed in BASE_PAIRED_STORIES_VARIANTS, which drives R4_MODELS).
+    "char_helios_op",
+    "char_helios_op_base",
+    "char_wren_op",
+    "char_wren_op_base",
+    "char_dana_op",
+    "char_dana_op_base",
+    "char_vex_op",
+    "char_vex_op_base",
+)
 HAS_ONPOLICY_STORY = VARIANT in ONPOLICY_STORY_VARIANTS
 # The story-regime machinery (r4-family fit cells, cross-regime transfer /
 # operator-comparison / reparam pairs, matched-row comparator, the per-model
@@ -224,6 +275,42 @@ REGIME_FORMAT = {
     # loaded as a 2-slot store by stem collision.
     "r4slot": "stories_paired_slots",
 }
+
+# ---------------------------------------------------------------------------
+# Answer PROVENANCE — who WROTE the answer a store reads
+# ---------------------------------------------------------------------------
+# A STORE-KEY dimension, orthogonal to regime/format. Two stores can share the
+# render, the transition suffix, the slot grid and the conv_id set and still
+# differ in the one thing the on-policy-vs-injected program measures: whether
+# the answer was EMBEDDED verbatim (`injected` — the boundary-ablation arms and
+# every parent comparator) or WRITTEN BY THE MEASURED MODEL (`onpolicy`).
+#
+# Naming note: both provenances are captured by a teacher-forced forward pass,
+# so "teacher_forced" would name the CAPTURE METHOD, not this axis — the axis is
+# authorship. `injected` mirrors the plan's own term for the verbatim-embed arms.
+#
+# The suffix is EMPTY for `injected`, so every pre-existing stem, cell id and HF
+# path is byte-unchanged; `onpolicy` appends `_op`. Defined HERE (the shared
+# module) so the capture, the fits and any future consumer key off ONE
+# definition rather than duplicate suffix maps that can drift apart.
+#
+# ORTHOGONAL to the `r4op` REGIME (a prior round's on-policy STORY companion):
+# that is a regime-level format key, this is a per-store authorship dimension.
+# `r4op x onpolicy` is not a realized combination.
+PROV_INJECTED = "injected"
+PROV_ONPOLICY = "onpolicy"
+PROVENANCES = (PROV_INJECTED, PROV_ONPOLICY)
+_PROV_SUFFIX = {PROV_INJECTED: "", PROV_ONPOLICY: "_op"}
+
+
+def prov_suffix(provenance: str) -> str:
+    """Stem/cell-id suffix for a provenance ('' for injected, '_op' otherwise)."""
+    assert provenance in PROVENANCES, (
+        f"unknown provenance {provenance!r} — expected one of {PROVENANCES}"
+    )
+    return _PROV_SUFFIX[provenance]
+
+
 ARMS = ("prefix", "context")
 # Slot order in the #1345 stores: the extractor sorts slots by token position
 # and the prefix slot always precedes the context slot (asserted at render).
@@ -359,26 +446,41 @@ PAIRED_PAIR_R4 = ("r1", STORY_REGIME) if STORY_REGIME_ARMED else None
 _REGIME_CELL_TOKEN = {"r4op": "r4_op_companion"}
 
 
-def cell_id(model: str, regime: str, arm: str) -> str:
-    """Canonical cell id, e.g. R_instruct_r1_context (plan §6.5 naming)."""
-    return f"R_{MODEL_SLUG[model]}_{_REGIME_CELL_TOKEN.get(regime, regime)}_{arm}"
+def cell_id(model: str, regime: str, arm: str, provenance: str = PROV_INJECTED) -> str:
+    """Canonical cell id, e.g. R_instruct_r1_context (plan §6.5 naming).
+
+    The `injected` default appends nothing, so every pre-existing cell id is
+    byte-unchanged; an `onpolicy` cell reads R_instruct_r1_op_context.
+    """
+    token = _REGIME_CELL_TOKEN.get(regime, regime) + prov_suffix(provenance)
+    return f"R_{MODEL_SLUG[model]}_{token}_{arm}"
 
 
-def stem_for(model: str, regime: str) -> str:
-    """Turnstore stem for a (model, regime), e.g. instruct_chat_s."""
-    return f"{model}_{REGIME_FORMAT[regime]}_{TRACK}"
+def format_key_for(regime: str, provenance: str = PROV_INJECTED) -> str:
+    """Store format key for a (regime, provenance) — `chat`, `chat_op`, ..."""
+    return f"{REGIME_FORMAT[regime]}{prov_suffix(provenance)}"
 
 
-def _cell(model: str, regime: str, arm: str) -> dict:
+def stem_for(model: str, regime: str, provenance: str = PROV_INJECTED) -> str:
+    """Turnstore stem for a (model, regime, provenance), e.g. instruct_chat_s.
+
+    An `onpolicy` store NEVER collides with its injected twin at the same
+    (variant, model, regime): instruct_chat_s vs instruct_chat_op_s.
+    """
+    return f"{model}_{format_key_for(regime, provenance)}_{TRACK}"
+
+
+def _cell(model: str, regime: str, arm: str, provenance: str = PROV_INJECTED) -> dict:
     """One fit_cells-compatible cell dict (registry single source)."""
     return {
-        "cell_id": cell_id(model, regime, arm),
+        "cell_id": cell_id(model, regime, arm, provenance),
         "model_key": model,
-        "format_key": REGIME_FORMAT[regime],
+        "format_key": format_key_for(regime, provenance),
         "track": TRACK,
         "slot_index": ARM_SLOT_INDEX[arm],
         "target_turn_index": TARGET_TURN_INDEX[regime],
         "regime": regime,
+        "provenance": provenance,
         "arm": arm,
     }
 

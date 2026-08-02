@@ -129,12 +129,48 @@ def story_max_new_tokens(*, op_companion: bool) -> int:
     return c.STORY_MAX_NEW_TOKENS if op_companion else STORY_PAIRED_MAX_NEW_TOKENS
 
 
+# Optional ONE-LINE persona intro for the INJECTED / ON-POLICY character arms
+# (descriptions passed verbatim from issue1310_common.PERSONAS). When it is
+# ABSENT — the default, and every pre-existing round — the four templates below
+# are BYTE-IDENTICAL to their pre-persona text, so the paired + onpolicy rounds'
+# bundle fingerprints (which hash the template string) are unchanged and their
+# kept bundles keep resuming. Byte-identity is pinned by a test.
+#
+# The intro also FIXES a latent mis-description: the bare form asserts "an AI
+# assistant named X", which is wrong for the non-AI panel members (Dana is "an
+# ordinary, unremarkable everyday person") — exactly the axis the AI-likeness
+# judge leg measures, so the wrapper must not pre-assert AI-ness.
+PERSONA_DESC = os.environ.get("EPM_I1345_PERSONA_DESC", "").strip()
+assert "\n" not in PERSONA_DESC, (
+    f"EPM_I1345_PERSONA_DESC must be a single line (got {PERSONA_DESC!r}) — it is "
+    "spliced into a one-sentence character intro"
+)
+# A char_* variant WITHOUT a description would silently generate the bare
+# "an AI assistant named X" intro — wrong for the non-AI panel members (Dana is
+# "an ordinary, unremarkable everyday person"), invisible until someone reads the
+# stories, and the exact axis the AI-likeness judge leg measures. Fail at import.
+assert not (c.VARIANT.startswith("char_") and not PERSONA_DESC), (
+    f"variant {c.VARIANT!r} is a character arm but EPM_I1345_PERSONA_DESC is empty — "
+    "the wrapper would assert AI-ness for every character; export the description "
+    "verbatim from issue1310_common.PERSONAS"
+)
+_CHAR_INTRO = (
+    f"a character named {c.STORY_CHARACTER_NAME}, {PERSONA_DESC}"
+    if PERSONA_DESC
+    else f"an AI assistant named {c.STORY_CHARACTER_NAME}"
+)
+_CHAR_INTRO_JUDGE = (
+    f"a character named {c.STORY_CHARACTER_NAME}, {PERSONA_DESC}"
+    if PERSONA_DESC
+    else f"an AI assistant character named {c.STORY_CHARACTER_NAME}"
+)
+
 # Built from c.STORY_CHARACTER_NAME (the variant guard in common pins ARIA for
 # this round unless --variant re-scopes). {ANSWER} is filled per row; the
 # instruction is STRIPPED before extraction (tier-2 instruct-and-strip).
 STORY_PAIRED_SYSTEM_TEMPLATE = (
-    f"You are writing a short narrative story scene in which an AI assistant named "
-    f"{c.STORY_CHARACTER_NAME} is a character. The scene must contain exactly ONE moment "
+    f"You are writing a short narrative story scene in which {_CHAR_INTRO} "
+    f"is a character. The scene must contain exactly ONE moment "
     f"where a person asks {c.STORY_CHARACTER_NAME} a question and "
     f"{c.STORY_CHARACTER_NAME} answers it. Write 3-6 sentences of narrative context first, "
     "then have the person ask the question given by the user (spoken aloud, in double "
@@ -147,8 +183,8 @@ STORY_PAIRED_SYSTEM_TEMPLATE = (
     "spoken dialogue in double quotes."
 )
 STORY_OP_COMPANION_SYSTEM = (
-    f"You are writing a short narrative story scene in which an AI assistant named "
-    f"{c.STORY_CHARACTER_NAME} is a character. The scene must contain exactly ONE moment "
+    f"You are writing a short narrative story scene in which {_CHAR_INTRO} "
+    f"is a character. The scene must contain exactly ONE moment "
     f"where a person asks {c.STORY_CHARACTER_NAME} a question and "
     f"{c.STORY_CHARACTER_NAME} gives a substantive, helpful answer. Write 3-6 sentences "
     "of narrative context first, then have the person ask the question given by the user "
@@ -162,8 +198,8 @@ JUDGE_SYSTEM_PAIRED = (
     "You evaluate a short story scene against three criteria. The user message gives the "
     "story and the required ANSWER text. The story PASSES only if ALL three hold: "
     "(1) the story contains exactly ONE question->answer exchange, in which a person asks "
-    "a question in quoted dialogue and an AI assistant character named "
-    f"{c.STORY_CHARACTER_NAME} answers in quoted dialogue introduced by an attribution "
+    f"a question in quoted dialogue and {_CHAR_INTRO_JUDGE} "
+    "answers in quoted dialogue introduced by an attribution "
     f'before the quote (e.g. {c.STORY_CHARACTER_NAME} replied: "..."); '
     "(2) the quoted answer matches the required ANSWER text verbatim — not paraphrased, "
     "shortened, or extended; "
@@ -175,7 +211,7 @@ JUDGE_SYSTEM_PAIRED = (
 JUDGE_SYSTEM_OP = (
     "You evaluate a short story scene. The story PASSES only if it contains exactly ONE "
     "question->answer exchange, in which a person asks a question in quoted dialogue and "
-    f"an AI assistant character named {c.STORY_CHARACTER_NAME} gives a substantive answer "
+    f"{_CHAR_INTRO_JUDGE} gives a substantive answer "
     "in quoted dialogue introduced by an attribution before the quote (e.g. "
     f'{c.STORY_CHARACTER_NAME} replied: "..."). Exchanges with trivial or empty answers, '
     f"unquoted dialogue, or answers not attributed to {c.STORY_CHARACTER_NAME} do not "

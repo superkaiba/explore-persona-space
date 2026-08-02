@@ -1,0 +1,654 @@
+{
+  "commit": "145af6aa91",
+  "created": "2026-07-31T19:26:59Z",
+  "figsize": [
+    8.2,
+    3.8
+  ],
+  "points": [
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 29.5,
+      "Spearman $\\rho$": 0.0680898245982501,
+      "error": 0.040701920981680094,
+      "series": "evil leg-2 shuffled-map control (+0.068)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 0.0,
+      "Spearman $\\rho$": 0.006760498049644774,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 1.0,
+      "Spearman $\\rho$": 0.049213290627851944,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 2.0,
+      "Spearman $\\rho$": -0.012834674746095846,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 3.0,
+      "Spearman $\\rho$": -0.06578520018341413,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 4.0,
+      "Spearman $\\rho$": 0.013643109745043683,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 5.0,
+      "Spearman $\\rho$": -0.030598156893447387,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 6.0,
+      "Spearman $\\rho$": -0.028340460204601004,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 7.0,
+      "Spearman $\\rho$": -0.010816774980271822,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 8.0,
+      "Spearman $\\rho$": -0.002533614310676519,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 9.0,
+      "Spearman $\\rho$": 0.09270052314948038,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 10.0,
+      "Spearman $\\rho$": 0.057706183481626414,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 11.0,
+      "Spearman $\\rho$": 0.0587497132609222,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 12.0,
+      "Spearman $\\rho$": 0.046415613440525846,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 13.0,
+      "Spearman $\\rho$": 0.012606669678359191,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 14.0,
+      "Spearman $\\rho$": 0.0343831908305897,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 15.0,
+      "Spearman $\\rho$": 0.04433828497012956,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 16.0,
+      "Spearman $\\rho$": -0.002712805589665717,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 17.0,
+      "Spearman $\\rho$": -0.004588090165529117,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 18.0,
+      "Spearman $\\rho$": 0.02737291264863093,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 19.0,
+      "Spearman $\\rho$": -0.005873219337155225,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 20.0,
+      "Spearman $\\rho$": 0.004074795197077865,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 21.0,
+      "Spearman $\\rho$": 0.016649305116971436,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 22.0,
+      "Spearman $\\rho$": 0.0365413530304864,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 23.0,
+      "Spearman $\\rho$": 0.029577040623465122,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 24.0,
+      "Spearman $\\rho$": 0.004703573981028096,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 25.0,
+      "Spearman $\\rho$": 0.0035405983228573292,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 26.0,
+      "Spearman $\\rho$": 0.061106265003247055,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 27.0,
+      "Spearman $\\rho$": 0.05997956670710429,
+      "series": "sycophancy (|rho| max 0.093)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 0.0,
+      "Spearman $\\rho$": 0.020101380042589347,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 1.0,
+      "Spearman $\\rho$": -0.01593855673808834,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 2.0,
+      "Spearman $\\rho$": 0.0525882028447375,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 3.0,
+      "Spearman $\\rho$": 0.10964152798435348,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 4.0,
+      "Spearman $\\rho$": -0.08434188422576396,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 5.0,
+      "Spearman $\\rho$": 0.013665281681233378,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 6.0,
+      "Spearman $\\rho$": -0.10464169598508581,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 7.0,
+      "Spearman $\\rho$": 0.04805367299283392,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 8.0,
+      "Spearman $\\rho$": 0.04873742562786054,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 9.0,
+      "Spearman $\\rho$": -0.009867694578507584,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 10.0,
+      "Spearman $\\rho$": -0.00266094046113546,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 11.0,
+      "Spearman $\\rho$": 0.0035762232508129033,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 12.0,
+      "Spearman $\\rho$": -0.0021374678561197095,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 13.0,
+      "Spearman $\\rho$": -0.0017218916818763702,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 14.0,
+      "Spearman $\\rho$": -0.08918385460061351,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 15.0,
+      "Spearman $\\rho$": -0.07763287169808522,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 16.0,
+      "Spearman $\\rho$": -0.10569123844653111,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 17.0,
+      "Spearman $\\rho$": -0.10580094270098497,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 18.0,
+      "Spearman $\\rho$": -0.10697492198378533,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 19.0,
+      "Spearman $\\rho$": -0.11816443697737912,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 20.0,
+      "Spearman $\\rho$": -0.09044360583306396,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 21.0,
+      "Spearman $\\rho$": -0.11959738728733339,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 22.0,
+      "Spearman $\\rho$": -0.10179999992572134,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 23.0,
+      "Spearman $\\rho$": 0.04307148179856368,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 24.0,
+      "Spearman $\\rho$": 0.04361187071212985,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 25.0,
+      "Spearman $\\rho$": 0.03362594025001767,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 26.0,
+      "Spearman $\\rho$": 0.03475422727340617,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 27.0,
+      "Spearman $\\rho$": -0.09794950521689288,
+      "series": "hallucination (|rho| max 0.120)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 0.0,
+      "Spearman $\\rho$": -0.0025921976495111034,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 1.0,
+      "Spearman $\\rho$": -0.0013402064576708112,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 2.0,
+      "Spearman $\\rho$": -0.02947795187377682,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 3.0,
+      "Spearman $\\rho$": -0.05279332272024265,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 4.0,
+      "Spearman $\\rho$": 0.03254512731286303,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 5.0,
+      "Spearman $\\rho$": 0.02744581869946456,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 6.0,
+      "Spearman $\\rho$": 0.025104337737433473,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 7.0,
+      "Spearman $\\rho$": -0.009719827771515357,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 8.0,
+      "Spearman $\\rho$": 0.00018402226125371714,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 9.0,
+      "Spearman $\\rho$": 0.030990526813749284,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 10.0,
+      "Spearman $\\rho$": -0.016356973333828687,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 11.0,
+      "Spearman $\\rho$": 0.05453783071190818,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 12.0,
+      "Spearman $\\rho$": 0.04429364852209966,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 13.0,
+      "Spearman $\\rho$": 0.04111947418139599,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 14.0,
+      "Spearman $\\rho$": 0.048667039014791864,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 15.0,
+      "Spearman $\\rho$": 0.04698144167792908,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 16.0,
+      "Spearman $\\rho$": 0.03880791285043333,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 17.0,
+      "Spearman $\\rho$": -0.02246599413759966,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 18.0,
+      "Spearman $\\rho$": 0.040452413235488933,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 19.0,
+      "Spearman $\\rho$": 0.007960043946112907,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 20.0,
+      "Spearman $\\rho$": -0.010957987089714169,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 21.0,
+      "Spearman $\\rho$": 0.012979822932436744,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 22.0,
+      "Spearman $\\rho$": -0.0027680836574997883,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 23.0,
+      "Spearman $\\rho$": -0.014738284343206336,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 24.0,
+      "Spearman $\\rho$": -0.004666273732050093,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 25.0,
+      "Spearman $\\rho$": -0.050199946079744526,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 26.0,
+      "Spearman $\\rho$": -0.01471537059260096,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)": 27.0,
+      "Spearman $\\rho$": 0.025722104705537027,
+      "series": "evil (|rho| max 0.055)",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 85,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "By-construction-null arms do not read zero",
+        "xlabel": "layer  (rightmost point: evil leg-2 shuffled-map control, not a layer)",
+        "ylabel": "Spearman $\\rho$",
+        "legend_labels": [
+          "sycophancy (|rho| max 0.093)",
+          "hallucination (|rho| max 0.120)",
+          "evil (|rho| max 0.055)",
+          "evil leg-2 shuffled-map control (+0.068)"
+        ],
+        "annotations": [
+          "the bare-render prefix rep is verified constant (cosine >= 0.999), so every point here should be ~chance"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35"
+        ],
+        "yticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15"
+        ]
+      }
+    ],
+    "series": [
+      "sycophancy (|rho| max 0.093)",
+      "hallucination (|rho| max 0.120)",
+      "evil (|rho| max 0.055)",
+      "evil leg-2 shuffled-map control (+0.068)"
+    ]
+  }
+}

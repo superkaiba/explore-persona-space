@@ -5997,6 +5997,184 @@ def test_gcp_reconnect_marker_carries_provisioning_and_quota_pool(
     assert final["extra"]["quota_pool"] == "NVIDIA_A100_80GB_GPUS"
 
 
+def _flex_reconnect_handle(job_id: str = "instance-flex") -> RunHandle:
+    """Live-reconnect handle whose ``extra`` carries the #1815 live-derived
+    ``provisioning_model`` (FLEX_START). The spec under test carries NO
+    provisioning pin (spec-derived default: STANDARD), so a marker reading
+    FLEX_START proves the #1892 handle-override merge actually ran."""
+    return RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id=job_id,
+        pod_name="eps-issue-137",
+        scratch_dir="/workspace/eps-issue-137",
+        log_path="/workspace/logs/issue-137.log",
+        extra={"issue": 137, "zone": "us-central1-a", "provisioning_model": "FLEX_START"},
+    )
+
+
+def test_reconnect_marker_extra_prefers_live_provisioning_model_explicit_override(
+    lease_store, marker_poster, captured_markers
+):
+    """#1892 seam (i): the explicit-override GENERIC reconnect composer
+    (``_override_free_or_gcp``, detail ``found existing live job/instance``)
+    merges the handle's live-derived provisioning_model over the spec default.
+
+    ``route()`` dispatches ``backend: gcp`` to ``_override_gcp_with_ladder``
+    (seam ii) and sends only free-lane kinds here, so this test drives the
+    REAL composer function directly with ``kind="gcp"`` — the plan-sanctioned
+    fallback for a seam ``route()`` cannot reach with a fake reconnect_fn.
+    """
+    from explore_persona_space.backends.router import _override_free_or_gcp
+
+    result = _override_free_or_gcp(
+        spec=_spec(backend="gcp"),
+        backend=_GcpBackendDouble(),
+        kind="gcp",
+        store=lease_store,
+        attempts=[],
+        started_at=0.0,
+        cfg=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        is_started=lambda _b, _h: True,
+        is_live_after_cancel=lambda _b, _h: False,
+        is_running_after_cancel=None,
+        reconnect_fn=lambda _b, k, _s: _flex_reconnect_handle() if k == "gcp" else None,
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+        marker_poster=marker_poster,
+    )
+    assert result.reason == ROUTE_REASON_RECONNECT
+    bodies = _by_reason(captured_markers, ROUTE_REASON_RECONNECT)
+    assert bodies, "no reconnect epm:backend-selected marker was posted"
+    final = bodies[-1]
+    # Seam discriminators: the GENERIC override composer posts requested_kind
+    # == kind ("gcp") AND the generic detail string (seam ii posts the
+    # gcp-specific detail; seam iii posts requested_kind=None).
+    assert final["requested_kind"] == "gcp"
+    assert final["attempts"][-1]["detail"] == "found existing live job/instance"
+    # The handle's live-derived value wins over the spec default (STANDARD).
+    assert final["extra"]["provisioning_model"] == "FLEX_START"
+    assert final["extra"]["provisioning_model_source"] == "live-instance"
+    # quota_pool stays spec-derived (known residual — plan #1892 §7).
+    assert final["extra"]["quota_pool"] == "NVIDIA_A100_80GB_GPUS"
+
+
+def test_reconnect_marker_extra_prefers_live_provisioning_model_gcp_ladder_override(
+    lease_store, marker_poster, captured_markers
+):
+    """#1892 seam (ii) — the #1776 incident seam: an explicit ``backend: gcp``
+    override reconnect (``_override_gcp_with_ladder``) posts the HANDLE's
+    live-derived provisioning_model, not the spec-derived STANDARD default
+    (the #1776 marker verbatim carried STANDARD while the live instance was
+    FLEX_START, driving a wrong disarmed-gate diagnosis)."""
+    from explore_persona_space.backends.router import _gcp_marker_extras
+
+    spec = _spec(backend="gcp")
+    # Contrast pin: with no provisioning pin on the spec, the spec-derived
+    # fallback alone would report STANDARD — exactly the #1776 defect.
+    assert _gcp_marker_extras(spec)["provisioning_model"] == "STANDARD"
+
+    gcp = _GcpBackendDouble()
+    result = route(
+        spec,
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": _FreeLaneBackend(kind="nibi")},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: _flex_reconnect_handle() if k == "gcp" else None,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.reason == ROUTE_REASON_RECONNECT
+    assert len(gcp.launches) == 0  # reconnect, not a fresh provision
+    bodies = _by_reason(captured_markers, ROUTE_REASON_RECONNECT)
+    assert bodies, "no gcp-override reconnect epm:backend-selected marker was posted"
+    final = bodies[-1]
+    # Seam discriminators: explicit-gcp override posts requested_kind == "gcp"
+    # AND the gcp-specific detail (seam i posts the generic detail; seam iii
+    # posts requested_kind=None).
+    assert final["requested_kind"] == "gcp"
+    assert final["attempts"][-1]["detail"] == "found existing live gcp instance"
+    assert final["extra"]["provisioning_model"] == "FLEX_START"
+    assert final["extra"]["provisioning_model_source"] == "live-instance"
+    assert final["extra"]["quota_pool"] == "NVIDIA_A100_80GB_GPUS"
+
+
+def test_reconnect_marker_extra_prefers_live_provisioning_model_auto_chain(
+    lease_store, marker_poster, captured_markers
+):
+    """#1892 seam (iii): the auto-chain reconnect composer
+    (``_record_reconnect``) merges the handle's live-derived
+    provisioning_model over the spec default."""
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": _FreeLaneBackend(kind="nibi")},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: _flex_reconnect_handle() if k == "gcp" else None,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.reason == ROUTE_REASON_RECONNECT
+    bodies = _by_reason(captured_markers, ROUTE_REASON_RECONNECT)
+    assert bodies, "no auto-chain reconnect epm:backend-selected marker was posted"
+    final = bodies[-1]
+    # Seam discriminator: requested_kind is None ONLY on the auto-chain
+    # composer (both override seams post requested_kind == "gcp").
+    assert final["requested_kind"] is None
+    assert final["attempts"][-1]["detail"] == "found existing live gcp instance"
+    assert final["extra"]["provisioning_model"] == "FLEX_START"
+    assert final["extra"]["provisioning_model_source"] == "live-instance"
+    assert final["extra"]["quota_pool"] == "NVIDIA_A100_80GB_GPUS"
+
+
+def test_reconnect_marker_extra_falls_back_to_spec_when_handle_lacks_key(
+    lease_store, marker_poster, captured_markers
+):
+    """#1892 criterion 2: a reconnect handle WITHOUT ``provisioning_model``
+    (degraded live read — the instance list lacked ``scheduling``) keeps the
+    marker extra byte-identical to the spec-derived dict; no
+    ``provisioning_model_source`` key rides along."""
+    from explore_persona_space.backends.router import _gcp_marker_extras
+
+    existing = RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id="instance-no-sched",
+        pod_name="eps-issue-137",
+        scratch_dir="/workspace/eps-issue-137",
+        log_path="/workspace/logs/issue-137.log",
+        extra={"issue": 137, "zone": "us-central1-a"},
+    )
+    spec = _spec(backend=None)
+    result = route(
+        spec,
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": _FreeLaneBackend(kind="nibi")},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: existing if k == "gcp" else None,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.reason == ROUTE_REASON_RECONNECT
+    bodies = _by_reason(captured_markers, ROUTE_REASON_RECONNECT)
+    assert bodies, "no reconnect epm:backend-selected marker was posted"
+    final = bodies[-1]
+    assert final["extra"] == _gcp_marker_extras(spec)  # byte-identical fallback
+    assert "provisioning_model_source" not in final["extra"]
+    assert final["extra"]["provisioning_model"] == "STANDARD"
+
+
 def test_gcp_quota_headroom_insufficient_terminal_raises_no_compute(lease_store, monkeypatch):
     """GCP in TERMINAL position (free-first override) with insufficient
     headroom raises the typed NoCompute terminal WITHOUT burning an

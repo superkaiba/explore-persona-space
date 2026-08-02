@@ -1,0 +1,7213 @@
+{
+  "commit": "82fa479c29",
+  "created": "2026-07-31T13:35:27Z",
+  "figsize": [
+    11.6,
+    6.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Spearman $\\rho$": 0.10436913943327404,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "Spearman $\\rho$": 0.09603156324089178,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "Spearman $\\rho$": 0.10341690529279936,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "Spearman $\\rho$": 0.10961293395400623,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "Spearman $\\rho$": 0.11748126569249295,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "Spearman $\\rho$": 0.12001758839006244,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "Spearman $\\rho$": 0.12752643614077175,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "Spearman $\\rho$": 0.13422408020190607,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "Spearman $\\rho$": 0.14440352764365857,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "Spearman $\\rho$": 0.14772920934843314,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "Spearman $\\rho$": 0.15235018539061218,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "Spearman $\\rho$": 0.15826872146789084,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "Spearman $\\rho$": 0.15914837608057125,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 13.0,
+      "Spearman $\\rho$": 0.1642993307012312,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 14.0,
+      "Spearman $\\rho$": 0.16060591115589073,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 15.0,
+      "Spearman $\\rho$": 0.16383863212338265,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 16.0,
+      "Spearman $\\rho$": 0.16591036931283556,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 17.0,
+      "Spearman $\\rho$": 0.1705433283783798,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 18.0,
+      "Spearman $\\rho$": 0.16637767701477543,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 19.0,
+      "Spearman $\\rho$": 0.1625044684832978,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 20.0,
+      "Spearman $\\rho$": 0.15792428506939807,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 21.0,
+      "Spearman $\\rho$": 0.15306520601729373,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 22.0,
+      "Spearman $\\rho$": 0.15576916013499797,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 23.0,
+      "Spearman $\\rho$": 0.15684399369519636,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 24.0,
+      "Spearman $\\rho$": 0.1479736395289588,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 25.0,
+      "Spearman $\\rho$": 0.13640029458611108,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 26.0,
+      "Spearman $\\rho$": 0.14352778681395964,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 27.0,
+      "Spearman $\\rho$": 0.16595860014273317,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Spearman $\\rho$": 0.0436498207627651,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Spearman $\\rho$": -0.0061966596999723225,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Spearman $\\rho$": 0.054512079001447805,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "Spearman $\\rho$": -0.028365484530230467,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "Spearman $\\rho$": -0.00679510598450455,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "Spearman $\\rho$": 0.012813312620832497,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "Spearman $\\rho$": 0.018286711267691456,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "Spearman $\\rho$": -0.014605368730213166,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "Spearman $\\rho$": 0.012379456686639817,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "Spearman $\\rho$": 0.005919204038525052,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "Spearman $\\rho$": -0.023409812911352995,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "Spearman $\\rho$": 0.03055122827111159,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "Spearman $\\rho$": -0.011887817069749158,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 13.0,
+      "Spearman $\\rho$": 0.05002740733260593,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 14.0,
+      "Spearman $\\rho$": -0.04163054706216316,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 15.0,
+      "Spearman $\\rho$": -0.03688746501886956,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "Spearman $\\rho$": -0.001437929237931239,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 17.0,
+      "Spearman $\\rho$": 0.02103572759510933,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 18.0,
+      "Spearman $\\rho$": 0.020088313516694142,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 19.0,
+      "Spearman $\\rho$": 0.06315891789432734,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 20.0,
+      "Spearman $\\rho$": -0.029384988074419947,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 21.0,
+      "Spearman $\\rho$": 0.08000396068374335,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 22.0,
+      "Spearman $\\rho$": -0.013238968407663506,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 23.0,
+      "Spearman $\\rho$": -0.004964673991052665,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 24.0,
+      "Spearman $\\rho$": -0.033872449068868674,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 25.0,
+      "Spearman $\\rho$": 0.009937296385278656,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 26.0,
+      "Spearman $\\rho$": -0.0038833219346707413,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 27.0,
+      "Spearman $\\rho$": -0.04440666784719278,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Spearman $\\rho$": 0.013503501200775765,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Spearman $\\rho$": 0.0443160567223347,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Spearman $\\rho$": -0.03956741281077328,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "Spearman $\\rho$": -0.020167213501910447,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "Spearman $\\rho$": 0.013559569666403823,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "Spearman $\\rho$": -0.010735533570859327,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "Spearman $\\rho$": 0.0008761268374544183,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "Spearman $\\rho$": -0.013064335142503608,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "Spearman $\\rho$": 0.03218013400691004,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "Spearman $\\rho$": 0.044314505978134494,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "Spearman $\\rho$": -0.0055828402370052006,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 11.0,
+      "Spearman $\\rho$": -0.006191218668914907,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 12.0,
+      "Spearman $\\rho$": 0.0026912762803792114,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 13.0,
+      "Spearman $\\rho$": 0.022490926484360994,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 14.0,
+      "Spearman $\\rho$": 0.05671333018433094,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 15.0,
+      "Spearman $\\rho$": 0.04187845802566634,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 16.0,
+      "Spearman $\\rho$": 0.027976999611955797,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 17.0,
+      "Spearman $\\rho$": 0.034443663345400395,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 18.0,
+      "Spearman $\\rho$": 0.04998237533219489,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 19.0,
+      "Spearman $\\rho$": 0.11351704660204504,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 20.0,
+      "Spearman $\\rho$": 0.09553847357747626,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 21.0,
+      "Spearman $\\rho$": 0.09061220567979741,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 22.0,
+      "Spearman $\\rho$": 0.04383891757069268,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 23.0,
+      "Spearman $\\rho$": 0.07144518862112502,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 24.0,
+      "Spearman $\\rho$": 0.0568273300225808,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 25.0,
+      "Spearman $\\rho$": 0.024518880324577046,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 26.0,
+      "Spearman $\\rho$": 0.026998557223179873,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 27.0,
+      "Spearman $\\rho$": 0.04953283070018459,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Spearman $\\rho$": 0.013503501200775765,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "Spearman $\\rho$": 0.0443160567223347,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "Spearman $\\rho$": -0.03956741281077328,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "Spearman $\\rho$": -0.020167213501910447,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "Spearman $\\rho$": 0.013559569666403823,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "Spearman $\\rho$": -0.010735533570859327,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "Spearman $\\rho$": 0.0008761268374544183,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "Spearman $\\rho$": -0.013064335142503608,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "Spearman $\\rho$": 0.03218013400691004,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 9.0,
+      "Spearman $\\rho$": 0.044314505978134494,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 10.0,
+      "Spearman $\\rho$": -0.0055828402370052006,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 11.0,
+      "Spearman $\\rho$": -0.006191218668914907,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 12.0,
+      "Spearman $\\rho$": 0.0026912762803792114,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 13.0,
+      "Spearman $\\rho$": 0.022490926484360994,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 14.0,
+      "Spearman $\\rho$": 0.05671333018433094,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 15.0,
+      "Spearman $\\rho$": 0.04187845802566634,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 16.0,
+      "Spearman $\\rho$": 0.027976999611955797,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 17.0,
+      "Spearman $\\rho$": 0.034443663345400395,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 18.0,
+      "Spearman $\\rho$": 0.04998237533219489,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 19.0,
+      "Spearman $\\rho$": 0.11351704660204504,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 20.0,
+      "Spearman $\\rho$": 0.09553847357747626,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 21.0,
+      "Spearman $\\rho$": 0.09061220567979741,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 22.0,
+      "Spearman $\\rho$": 0.04383891757069268,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 23.0,
+      "Spearman $\\rho$": 0.07144518862112502,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 24.0,
+      "Spearman $\\rho$": 0.0568273300225808,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 25.0,
+      "Spearman $\\rho$": 0.024518880324577046,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 26.0,
+      "Spearman $\\rho$": 0.026998557223179873,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 27.0,
+      "Spearman $\\rho$": 0.04953283070018459,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman $\\rho$": -0.0010636191957549461,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "Spearman $\\rho$": 0.0571313598005497,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "Spearman $\\rho$": 0.047381347665042546,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "Spearman $\\rho$": 0.04460922457772384,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "Spearman $\\rho$": 0.05672533670382038,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "Spearman $\\rho$": 0.049796769377012357,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "Spearman $\\rho$": -0.007433603091107776,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "Spearman $\\rho$": 0.04419811960497913,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "Spearman $\\rho$": 0.03492192024123867,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 9.0,
+      "Spearman $\\rho$": 0.01835884772571424,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 10.0,
+      "Spearman $\\rho$": 0.009605960754347335,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 11.0,
+      "Spearman $\\rho$": -0.007404555168362015,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 12.0,
+      "Spearman $\\rho$": 0.06435790161844965,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 13.0,
+      "Spearman $\\rho$": 0.11431241726046776,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 14.0,
+      "Spearman $\\rho$": 0.10451244900822555,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 15.0,
+      "Spearman $\\rho$": 0.06340790296636746,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 16.0,
+      "Spearman $\\rho$": 0.0718537727953971,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 17.0,
+      "Spearman $\\rho$": 0.08034586957058514,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 18.0,
+      "Spearman $\\rho$": 0.08109327121306614,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 19.0,
+      "Spearman $\\rho$": 0.11022484351773111,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 20.0,
+      "Spearman $\\rho$": 0.08577558556588259,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 21.0,
+      "Spearman $\\rho$": 0.09594891058897456,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 22.0,
+      "Spearman $\\rho$": 0.14135197522045598,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 23.0,
+      "Spearman $\\rho$": 0.11834801421978425,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 24.0,
+      "Spearman $\\rho$": 0.1105009431171505,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 25.0,
+      "Spearman $\\rho$": 0.10285535127992171,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 26.0,
+      "Spearman $\\rho$": 0.11391355041186577,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 27.0,
+      "Spearman $\\rho$": 0.09580099241708177,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Spearman $\\rho$": 0.06501919667874934,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Spearman $\\rho$": 0.061474272638640276,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "Spearman $\\rho$": 0.03194842529936871,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "Spearman $\\rho$": 0.05703363941981278,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "Spearman $\\rho$": 0.08447069474001839,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "Spearman $\\rho$": 0.044807709765582064,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "Spearman $\\rho$": 0.06449316544914166,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "Spearman $\\rho$": 0.08011801087083088,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "Spearman $\\rho$": 0.1083840765862004,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 9.0,
+      "Spearman $\\rho$": 0.08942471827360951,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 10.0,
+      "Spearman $\\rho$": 0.11834290549105544,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 11.0,
+      "Spearman $\\rho$": 0.10742628729063625,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 12.0,
+      "Spearman $\\rho$": 0.10490343794202694,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 13.0,
+      "Spearman $\\rho$": 0.11472515689214212,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 14.0,
+      "Spearman $\\rho$": 0.11731880341969221,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 15.0,
+      "Spearman $\\rho$": 0.1332466615728294,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 16.0,
+      "Spearman $\\rho$": 0.14835331340064142,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 17.0,
+      "Spearman $\\rho$": 0.11619811885132336,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 18.0,
+      "Spearman $\\rho$": 0.12949113841451898,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 19.0,
+      "Spearman $\\rho$": 0.140805129781356,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 20.0,
+      "Spearman $\\rho$": 0.14629726155241696,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 21.0,
+      "Spearman $\\rho$": 0.15536053568165575,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 22.0,
+      "Spearman $\\rho$": 0.15659940239839015,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 23.0,
+      "Spearman $\\rho$": 0.15097677650985902,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 24.0,
+      "Spearman $\\rho$": 0.13550040645386613,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 25.0,
+      "Spearman $\\rho$": 0.10719560905597253,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 26.0,
+      "Spearman $\\rho$": 0.08985675493646775,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 27.0,
+      "Spearman $\\rho$": 0.11033393937919203,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "y": 0.04561850233278343,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "y": 0.026067778419308782,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "y": 0.027382910078728125,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "y": 0.03782761103477204,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "y": 0.032516865645620736,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "y": 0.018695911167900783,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "y": 0.0413215559359985,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "y": 0.057306696548669094,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "y": 0.06737363498677465,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 9.0,
+      "y": 0.07948465849894311,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 10.0,
+      "y": 0.091200646233677,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 11.0,
+      "y": 0.08426817677603524,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 12.0,
+      "y": 0.07760706240214287,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 13.0,
+      "y": 0.05682153651833463,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 14.0,
+      "y": 0.0575086151295584,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 15.0,
+      "y": 0.059289054084330405,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 16.0,
+      "y": 0.06382017839954751,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 17.0,
+      "y": 0.053827669497703706,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 18.0,
+      "y": 0.06069347343096015,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 19.0,
+      "y": 0.0817954397844401,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 20.0,
+      "y": 0.08087324744867921,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 21.0,
+      "y": 0.06358398310954529,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 22.0,
+      "y": 0.05589259738495555,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 23.0,
+      "y": 0.048644214672349084,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 24.0,
+      "y": 0.04522592275563093,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 25.0,
+      "y": 0.05552050320043326,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 26.0,
+      "y": 0.024438169389685585,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 27.0,
+      "y": 0.06995610086521291,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "y": -0.035504710788855594,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": -0.02486287339944123,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": -0.03894891685905465,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": -0.07887952688545041,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": 0.017498663941652514,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "y": -0.019591187642237454,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "y": 0.023646205289081457,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "y": -0.050643454708370804,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "y": -0.01415526209874899,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 9.0,
+      "y": -0.019085079355772652,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 10.0,
+      "y": 0.024933579869492614,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 11.0,
+      "y": -0.061548842853239354,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 12.0,
+      "y": 0.027632427619186977,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 13.0,
+      "y": 0.07597360470515852,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 14.0,
+      "y": 0.031900025989053754,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 15.0,
+      "y": 0.04224803809377978,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 16.0,
+      "y": 0.020002289512552316,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 17.0,
+      "y": 0.013851891901916585,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 18.0,
+      "y": 0.05068640797599273,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 19.0,
+      "y": 0.06948550901773824,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 20.0,
+      "y": 0.0104549296966756,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 21.0,
+      "y": 0.022189894059598776,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 22.0,
+      "y": -0.03218309221714041,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 23.0,
+      "y": -0.004837157721635647,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 24.0,
+      "y": -0.011246758117024249,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 25.0,
+      "y": -0.0347095081943821,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 26.0,
+      "y": -0.026719038218401624,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 27.0,
+      "y": 0.06852302507331008,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "y": 0.013449628631101551,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "y": 0.0466176106424022,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "y": 0.021532978332141788,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "y": 0.011471750869818317,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "y": -0.011665772084522947,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "y": 0.029772984456159005,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.0,
+      "y": 0.0009646525025686048,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 7.0,
+      "y": 0.07583474332917452,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 8.0,
+      "y": 0.0035741040208481806,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 9.0,
+      "y": 0.04093132013834494,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 10.0,
+      "y": 0.0613543316389835,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 11.0,
+      "y": 0.04983765354765497,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 12.0,
+      "y": 0.08194948106740717,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 13.0,
+      "y": 0.06588051021505945,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 14.0,
+      "y": 0.022020847315691375,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 15.0,
+      "y": 0.07225782181090683,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 16.0,
+      "y": 0.012760244230850374,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 17.0,
+      "y": 0.05786621013432224,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 18.0,
+      "y": 0.05386475207449996,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 19.0,
+      "y": 0.062241987534856685,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 20.0,
+      "y": 0.07980047328880811,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 21.0,
+      "y": 0.0495308068350193,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 22.0,
+      "y": 0.06289293255575681,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 23.0,
+      "y": 0.04684689321721666,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 24.0,
+      "y": 0.017750563252081845,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 25.0,
+      "y": 0.048713980684401054,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 26.0,
+      "y": 0.0109709829582092,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 27.0,
+      "y": 0.011893177619917318,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "y": 0.013449628631101551,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": 0.0466176106424022,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "y": 0.021532978332141788,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "y": 0.011471750869818317,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "y": -0.011665772084522947,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "y": 0.029772984456159005,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 6.0,
+      "y": 0.0009646525025686048,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 7.0,
+      "y": 0.07583474332917452,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 8.0,
+      "y": 0.0035741040208481806,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 9.0,
+      "y": 0.04093132013834494,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 10.0,
+      "y": 0.0613543316389835,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 11.0,
+      "y": 0.04983765354765497,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 12.0,
+      "y": 0.08194948106740717,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 13.0,
+      "y": 0.06588051021505945,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 14.0,
+      "y": 0.022020847315691375,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 15.0,
+      "y": 0.07225782181090683,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 16.0,
+      "y": 0.012760244230850374,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 17.0,
+      "y": 0.05786621013432224,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 18.0,
+      "y": 0.05386475207449996,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 19.0,
+      "y": 0.062241987534856685,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 20.0,
+      "y": 0.07980047328880811,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 21.0,
+      "y": 0.0495308068350193,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 22.0,
+      "y": 0.06289293255575681,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 23.0,
+      "y": 0.04684689321721666,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 24.0,
+      "y": 0.017750563252081845,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 25.0,
+      "y": 0.048713980684401054,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 26.0,
+      "y": 0.0109709829582092,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 27.0,
+      "y": 0.011893177619917318,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "y": 0.12222821949331303,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "y": 0.12424476070019778,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "y": 0.15600374202412792,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "y": 0.10997096910557738,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "y": 0.09042067549234153,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.0,
+      "y": 0.10065376409472894,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 6.0,
+      "y": 0.124236708270864,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 7.0,
+      "y": 0.11249720753551332,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 8.0,
+      "y": 0.09479981698789613,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 9.0,
+      "y": 0.12483706161341655,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 10.0,
+      "y": 0.16740897778081557,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 11.0,
+      "y": 0.16151996004154637,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 12.0,
+      "y": 0.15337000451543323,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 13.0,
+      "y": 0.12194772421223876,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 14.0,
+      "y": 0.13258465695424648,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 15.0,
+      "y": 0.14556230747332022,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 16.0,
+      "y": 0.16440772587770783,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 17.0,
+      "y": 0.15032513800037256,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 18.0,
+      "y": 0.2068269784982197,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 19.0,
+      "y": 0.20236107296820663,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 20.0,
+      "y": 0.19015989341519268,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 21.0,
+      "y": 0.1677461160796318,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 22.0,
+      "y": 0.15775378007319926,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 23.0,
+      "y": 0.1330449937003541,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 24.0,
+      "y": 0.16205551094345028,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 25.0,
+      "y": 0.16412245542695642,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 26.0,
+      "y": 0.18675333435165267,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 27.0,
+      "y": 0.15579365239059575,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "y": 0.02910146255537068,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "y": 0.03926112643070262,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "y": 0.05733866824407036,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "y": 0.08128790181574042,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "y": 0.015623835722064064,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "y": -0.015882690390047163,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 6.0,
+      "y": 0.03827713212622856,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 7.0,
+      "y": 0.025405409896212997,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 8.0,
+      "y": 0.10577779484476213,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 9.0,
+      "y": 0.06828004111863939,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 10.0,
+      "y": 0.09747227298961032,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 11.0,
+      "y": 0.12208923716807271,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 12.0,
+      "y": 0.10310765316054857,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 13.0,
+      "y": 0.06758037370565434,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 14.0,
+      "y": 0.07379119089702885,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 15.0,
+      "y": 0.07189405761875525,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 16.0,
+      "y": 0.08936501100034432,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 17.0,
+      "y": 0.07503512608684558,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 18.0,
+      "y": 0.09481446735422497,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 19.0,
+      "y": 0.09987960124364376,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 20.0,
+      "y": 0.1127800667542959,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 21.0,
+      "y": 0.07340701109066415,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 22.0,
+      "y": 0.05843647347278812,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 23.0,
+      "y": 0.04862542024336002,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 24.0,
+      "y": 0.06527038091627062,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 25.0,
+      "y": 0.06655097380985503,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 26.0,
+      "y": 0.08471845845223819,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 27.0,
+      "y": 0.08070662821837128,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "y": 0.21634808893615734,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "y": 0.21179195688234198,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "y": 0.18102121504080898,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "y": 0.17153108357228122,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "y": 0.16090598380870488,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.0,
+      "y": 0.1614679616944733,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 6.0,
+      "y": 0.1639513232146611,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 7.0,
+      "y": 0.13824347487794217,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 8.0,
+      "y": 0.1531925570834066,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 9.0,
+      "y": 0.13947840542888545,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 10.0,
+      "y": 0.12975748109511334,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 11.0,
+      "y": 0.12569414941116824,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 12.0,
+      "y": 0.12468537275614243,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 13.0,
+      "y": 0.15509716754255534,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 14.0,
+      "y": 0.1397852557778003,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 15.0,
+      "y": 0.13620225028230476,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 16.0,
+      "y": 0.1417331701203203,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 17.0,
+      "y": 0.14106273769098956,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 18.0,
+      "y": 0.15158858039142384,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 19.0,
+      "y": 0.17081315475456776,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 20.0,
+      "y": 0.14921407570596595,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 21.0,
+      "y": 0.15953989766025303,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 22.0,
+      "y": 0.1619228323176878,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 23.0,
+      "y": 0.1652567959162476,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 24.0,
+      "y": 0.16492877795266067,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 25.0,
+      "y": 0.15754922923229078,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 26.0,
+      "y": 0.15342406302946568,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 27.0,
+      "y": 0.1776250067441395,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.033315825870118825,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.03495303812299571,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "y": 0.07567529838438002,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "y": 0.049789030759602025,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "y": -0.00662690059727942,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.0,
+      "y": -0.03322958174303954,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 6.0,
+      "y": -0.010831576099754317,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 7.0,
+      "y": -0.01599427252160846,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 8.0,
+      "y": 0.04602296779552679,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 9.0,
+      "y": -0.006861312505419829,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 10.0,
+      "y": 0.0035152880598939206,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 11.0,
+      "y": 0.024436660308287204,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 12.0,
+      "y": 0.02513936753254706,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 13.0,
+      "y": 0.0010703863641356747,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 14.0,
+      "y": 0.0064490626593978785,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 15.0,
+      "y": -0.07446705314755472,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 16.0,
+      "y": 0.03539191885550711,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 17.0,
+      "y": 0.005470596671835816,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 18.0,
+      "y": -0.018138934064500022,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 19.0,
+      "y": -0.06768788849856047,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 20.0,
+      "y": 0.03644428494175257,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 21.0,
+      "y": 0.05412879011451625,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 22.0,
+      "y": 0.013301176106785068,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 23.0,
+      "y": -0.03063573765852097,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 24.0,
+      "y": -0.02189074408914877,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 25.0,
+      "y": 0.004218246124528877,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 26.0,
+      "y": 0.012320204870696882,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 27.0,
+      "y": -0.06048462850067374,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "y": 0.01584341727778647,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "y": 0.019778247697123004,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "y": -0.002770367082446382,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "y": 0.011551480088220108,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "y": 0.013397444383193692,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.0,
+      "y": -0.03723904979486676,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 6.0,
+      "y": -0.10846462766090724,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 7.0,
+      "y": -0.028009961909775057,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 8.0,
+      "y": -0.06912865724145704,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 9.0,
+      "y": -0.06166162123541936,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 10.0,
+      "y": -0.03862802315553068,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 11.0,
+      "y": -0.11322662551489326,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 12.0,
+      "y": -0.12379368886149555,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 13.0,
+      "y": -0.06701787255890915,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 14.0,
+      "y": -0.05387744174821954,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 15.0,
+      "y": -0.09304478985275126,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 16.0,
+      "y": -0.06640888734460881,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 17.0,
+      "y": 0.0005670680522479876,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 18.0,
+      "y": 0.02806172495095306,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 19.0,
+      "y": -0.024961318983407185,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 20.0,
+      "y": 0.010565279066953015,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 21.0,
+      "y": -0.07389670287266278,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 22.0,
+      "y": -0.06408683748337597,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 23.0,
+      "y": -0.11427258018425575,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 24.0,
+      "y": -0.10656516179586661,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 25.0,
+      "y": -0.08850282160326055,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 26.0,
+      "y": -0.04829965025634038,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 27.0,
+      "y": -0.05305604679742212,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "y": 0.01584341727778647,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "y": 0.019778247697123004,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "y": -0.002770367082446382,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "y": 0.011551480088220108,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "y": 0.013397444383193692,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "y": -0.03723904979486676,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 6.0,
+      "y": -0.10846462766090724,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 7.0,
+      "y": -0.028009961909775057,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 8.0,
+      "y": -0.06912865724145704,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 9.0,
+      "y": -0.06166162123541936,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 10.0,
+      "y": -0.03862802315553068,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 11.0,
+      "y": -0.11322662551489326,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 12.0,
+      "y": -0.12379368886149555,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 13.0,
+      "y": -0.06701787255890915,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 14.0,
+      "y": -0.05387744174821954,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 15.0,
+      "y": -0.09304478985275126,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 16.0,
+      "y": -0.06640888734460881,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 17.0,
+      "y": 0.0005670680522479876,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 18.0,
+      "y": 0.02806172495095306,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 19.0,
+      "y": -0.024961318983407185,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 20.0,
+      "y": 0.010565279066953015,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 21.0,
+      "y": -0.07389670287266278,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 22.0,
+      "y": -0.06408683748337597,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 23.0,
+      "y": -0.11427258018425575,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 24.0,
+      "y": -0.10656516179586661,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 25.0,
+      "y": -0.08850282160326055,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 26.0,
+      "y": -0.04829965025634038,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 27.0,
+      "y": -0.05305604679742212,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "y": -0.07348974986034768,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "y": -0.025215192318385295,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "y": 0.02918410942051761,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.0,
+      "y": 0.024399750488062262,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.0,
+      "y": -0.04417404153323091,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "y": -0.031060380438923885,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 6.0,
+      "y": -0.016657639613707302,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 7.0,
+      "y": -0.012580544050186528,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 8.0,
+      "y": -0.023054697068420404,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 9.0,
+      "y": 0.04409882333936893,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 10.0,
+      "y": -0.027927009471014265,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 11.0,
+      "y": -0.056475479915361976,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 12.0,
+      "y": -0.0368021158360841,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 13.0,
+      "y": 0.033239726579719166,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 14.0,
+      "y": -0.01600137177750743,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 15.0,
+      "y": -0.03252703543524672,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 16.0,
+      "y": -0.03292862850935812,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 17.0,
+      "y": 0.028692743100338942,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 18.0,
+      "y": 0.07300710379283157,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 19.0,
+      "y": -0.01041988393972354,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 20.0,
+      "y": -0.012551199670331255,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 21.0,
+      "y": -0.031602433079802546,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 22.0,
+      "y": 0.00836636737690018,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 23.0,
+      "y": 0.06711424259131898,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 24.0,
+      "y": 0.047840339442964175,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 25.0,
+      "y": 0.07782883399714528,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 26.0,
+      "y": 0.10625108992609011,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 27.0,
+      "y": 0.12685520510522688,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.0,
+      "y": 0.12032016809047388,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "y": 0.09361009334550524,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "y": 0.101520491292139,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.0,
+      "y": 0.09266104904080713,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.0,
+      "y": 0.17503322381025027,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "y": 0.14222063184975456,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 6.0,
+      "y": 0.12311159550994766,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 7.0,
+      "y": 0.09979576099015207,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 8.0,
+      "y": 0.10680103141788494,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 9.0,
+      "y": 0.10925659067435996,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 10.0,
+      "y": 0.020071383072447244,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 11.0,
+      "y": 0.0290720034930046,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 12.0,
+      "y": 0.08228614125362219,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 13.0,
+      "y": 0.12113757247064988,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 14.0,
+      "y": 0.05463837628055651,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 15.0,
+      "y": 0.08443536761805678,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 16.0,
+      "y": 0.05986258381074415,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 17.0,
+      "y": 0.06220821976649199,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 18.0,
+      "y": 0.12337866715044815,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 19.0,
+      "y": 0.12224101454786356,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 20.0,
+      "y": 0.07731097088753304,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 21.0,
+      "y": 0.09246115292604129,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 22.0,
+      "y": 0.13721179996741734,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 23.0,
+      "y": 0.1106850043455737,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 24.0,
+      "y": 0.08278848144580823,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 25.0,
+      "y": 0.1226809664792095,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 26.0,
+      "y": 0.11132838703231694,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 27.0,
+      "y": 0.10786016230619591,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 0.0,
+      "Spearman $\\rho$": 0.09724432240700029,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 1.0,
+      "Spearman $\\rho$": 0.09611981468355779,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 2.0,
+      "Spearman $\\rho$": 0.10600831968854613,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 3.0,
+      "Spearman $\\rho$": 0.1141139052198961,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 4.0,
+      "Spearman $\\rho$": 0.1226195089099361,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 5.0,
+      "Spearman $\\rho$": 0.11382129455831051,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 6.0,
+      "Spearman $\\rho$": 0.1274302430081108,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 7.0,
+      "Spearman $\\rho$": 0.12978793809939865,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 8.0,
+      "Spearman $\\rho$": 0.14253017830097775,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 9.0,
+      "Spearman $\\rho$": 0.1473393482285955,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 10.0,
+      "Spearman $\\rho$": 0.15421317965567913,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 11.0,
+      "Spearman $\\rho$": 0.15547679450442237,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 12.0,
+      "Spearman $\\rho$": 0.15837349404249057,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 13.0,
+      "Spearman $\\rho$": 0.16833060101709735,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 14.0,
+      "Spearman $\\rho$": 0.16808323382104098,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 15.0,
+      "Spearman $\\rho$": 0.16843733719636617,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 16.0,
+      "Spearman $\\rho$": 0.1701365299095504,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 17.0,
+      "Spearman $\\rho$": 0.17058998832454214,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 18.0,
+      "Spearman $\\rho$": 0.17240833659695348,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 19.0,
+      "Spearman $\\rho$": 0.17553975570305563,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 20.0,
+      "Spearman $\\rho$": 0.172486202752703,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 21.0,
+      "Spearman $\\rho$": 0.171907701321066,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 22.0,
+      "Spearman $\\rho$": 0.1716449542333964,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 23.0,
+      "Spearman $\\rho$": 0.1668159904993964,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 24.0,
+      "Spearman $\\rho$": 0.16387252360431218,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 25.0,
+      "Spearman $\\rho$": 0.16283383715297084,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 26.0,
+      "Spearman $\\rho$": 0.16453412747081622,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 27.0,
+      "Spearman $\\rho$": 0.17419212542718893,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 0.0,
+      "Spearman $\\rho$": -0.02479377127304236,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 1.0,
+      "Spearman $\\rho$": 0.03966017709978162,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 2.0,
+      "Spearman $\\rho$": 0.0007929109443726647,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 3.0,
+      "Spearman $\\rho$": 0.0007159852868031537,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 4.0,
+      "Spearman $\\rho$": -0.03843421361711466,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 5.0,
+      "Spearman $\\rho$": 0.008641394370749695,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 6.0,
+      "Spearman $\\rho$": 0.05696877791793866,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 7.0,
+      "Spearman $\\rho$": 0.01645692200951086,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 8.0,
+      "Spearman $\\rho$": -0.017660469157144292,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 9.0,
+      "Spearman $\\rho$": -0.0071369538724519056,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 10.0,
+      "Spearman $\\rho$": 0.03563724376733427,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 11.0,
+      "Spearman $\\rho$": -0.004423114931348861,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 12.0,
+      "Spearman $\\rho$": -0.06702119517693307,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 13.0,
+      "Spearman $\\rho$": 0.016721506610713633,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 14.0,
+      "Spearman $\\rho$": -0.022437860168276005,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 15.0,
+      "Spearman $\\rho$": 0.02700040928070771,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 16.0,
+      "Spearman $\\rho$": -0.01235451517103682,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 17.0,
+      "Spearman $\\rho$": 0.012671547450064071,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 18.0,
+      "Spearman $\\rho$": 0.00036771630517206045,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 19.0,
+      "Spearman $\\rho$": 0.028087848616540467,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 20.0,
+      "Spearman $\\rho$": 0.044847731802076095,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 21.0,
+      "Spearman $\\rho$": -0.045210070834463455,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 22.0,
+      "Spearman $\\rho$": -0.017415346222289,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 23.0,
+      "Spearman $\\rho$": -0.013244312570131742,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 24.0,
+      "Spearman $\\rho$": 0.04710921859195007,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 25.0,
+      "Spearman $\\rho$": -0.013160560582071316,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 26.0,
+      "Spearman $\\rho$": -0.02536848878369658,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 27.0,
+      "Spearman $\\rho$": 0.039585779847537375,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 0.0,
+      "Spearman $\\rho$": -0.0055271730922154,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 1.0,
+      "Spearman $\\rho$": 0.016102742149025476,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 2.0,
+      "Spearman $\\rho$": 0.05618705422796884,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 3.0,
+      "Spearman $\\rho$": 0.031083993106140063,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 4.0,
+      "Spearman $\\rho$": 0.05324107831022568,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 5.0,
+      "Spearman $\\rho$": -0.023977883989151436,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 6.0,
+      "Spearman $\\rho$": -0.01314314503651447,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 7.0,
+      "Spearman $\\rho$": -0.035858426452477034,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 8.0,
+      "Spearman $\\rho$": 0.004139933964077534,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 9.0,
+      "Spearman $\\rho$": 0.026654349093756136,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 10.0,
+      "Spearman $\\rho$": 0.029032844005756193,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 11.0,
+      "Spearman $\\rho$": 0.02511820355400973,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 12.0,
+      "Spearman $\\rho$": -0.0038403830834022714,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 13.0,
+      "Spearman $\\rho$": 0.035958406764079846,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 14.0,
+      "Spearman $\\rho$": 0.01700092617998608,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 15.0,
+      "Spearman $\\rho$": 0.011630013895424613,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 16.0,
+      "Spearman $\\rho$": 0.04400477869512712,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 17.0,
+      "Spearman $\\rho$": 0.027665971973466333,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 18.0,
+      "Spearman $\\rho$": 0.02398064319908002,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 19.0,
+      "Spearman $\\rho$": 0.09347625517537836,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 20.0,
+      "Spearman $\\rho$": 0.07440197682297219,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 21.0,
+      "Spearman $\\rho$": 0.0573799351682728,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 22.0,
+      "Spearman $\\rho$": 0.0652180812139317,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 23.0,
+      "Spearman $\\rho$": 0.02517234212042851,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 24.0,
+      "Spearman $\\rho$": 0.036577824947799514,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 25.0,
+      "Spearman $\\rho$": -0.011511329400422954,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 26.0,
+      "Spearman $\\rho$": -0.001022310009674401,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 27.0,
+      "Spearman $\\rho$": -0.004445611759575205,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 0.0,
+      "Spearman $\\rho$": -0.0006351415310368441,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 1.0,
+      "Spearman $\\rho$": 0.011420250654277151,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 2.0,
+      "Spearman $\\rho$": 0.06230186663648482,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 3.0,
+      "Spearman $\\rho$": 0.031083993106140063,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 4.0,
+      "Spearman $\\rho$": 0.04929443085228736,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 5.0,
+      "Spearman $\\rho$": -0.023977885183521744,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 6.0,
+      "Spearman $\\rho$": -0.013143145691192014,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 7.0,
+      "Spearman $\\rho$": -0.03156736613075426,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 8.0,
+      "Spearman $\\rho$": -0.0007795837945342878,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 9.0,
+      "Spearman $\\rho$": 0.022180922889799018,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 10.0,
+      "Spearman $\\rho$": 0.024606543067411463,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 11.0,
+      "Spearman $\\rho$": 0.02061434078094547,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 12.0,
+      "Spearman $\\rho$": 0.0010850698557278516,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 13.0,
+      "Spearman $\\rho$": 0.035958406764079846,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 14.0,
+      "Spearman $\\rho$": 0.012336230941921726,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 15.0,
+      "Spearman $\\rho$": 0.0068589012089370766,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 16.0,
+      "Spearman $\\rho$": 0.04987821640212959,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 17.0,
+      "Spearman $\\rho$": 0.023212589657859634,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 18.0,
+      "Spearman $\\rho$": 0.029457330749234175,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 19.0,
+      "Spearman $\\rho$": 0.10032989559725737,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 20.0,
+      "Spearman $\\rho$": 0.07087460288651201,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 21.0,
+      "Spearman $\\rho$": 0.05351529335337095,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 22.0,
+      "Spearman $\\rho$": 0.0715118307542849,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 23.0,
+      "Spearman $\\rho$": 0.020669550956336064,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 24.0,
+      "Spearman $\\rho$": 0.03657782684270509,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 25.0,
+      "Spearman $\\rho$": -0.006737865502470353,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 26.0,
+      "Spearman $\\rho$": -0.006044110391507569,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 27.0,
+      "Spearman $\\rho$": -0.009535239569720647,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 0.0,
+      "Spearman $\\rho$": 0.06152927652800071,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 1.0,
+      "Spearman $\\rho$": 0.04945013320601933,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 2.0,
+      "Spearman $\\rho$": 0.06525867527525146,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 3.0,
+      "Spearman $\\rho$": 0.05805496593965804,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 4.0,
+      "Spearman $\\rho$": 0.043301319803216116,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 5.0,
+      "Spearman $\\rho$": 0.03217275518987208,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 6.0,
+      "Spearman $\\rho$": 0.07098455369397119,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 7.0,
+      "Spearman $\\rho$": 0.07499097023141489,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 8.0,
+      "Spearman $\\rho$": 0.04668047203807026,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 9.0,
+      "Spearman $\\rho$": -0.007321233784965374,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 10.0,
+      "Spearman $\\rho$": 0.052504127959565966,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 11.0,
+      "Spearman $\\rho$": 0.03562260559248521,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 12.0,
+      "Spearman $\\rho$": 0.039780188976240353,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 13.0,
+      "Spearman $\\rho$": 0.047108557640522304,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 14.0,
+      "Spearman $\\rho$": 0.02931001346242266,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 15.0,
+      "Spearman $\\rho$": 0.032933495859119984,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 16.0,
+      "Spearman $\\rho$": 0.03264702934290634,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 17.0,
+      "Spearman $\\rho$": 0.030813915228120305,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 18.0,
+      "Spearman $\\rho$": 0.018065642357222612,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 19.0,
+      "Spearman $\\rho$": 0.047150634717658846,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 20.0,
+      "Spearman $\\rho$": 0.04080487006906141,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 21.0,
+      "Spearman $\\rho$": 0.002655055873701283,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 22.0,
+      "Spearman $\\rho$": -0.029124454831403482,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 23.0,
+      "Spearman $\\rho$": 0.0025300167496769823,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 24.0,
+      "Spearman $\\rho$": -0.020917536539556098,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 25.0,
+      "Spearman $\\rho$": 0.01029789368288951,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 26.0,
+      "Spearman $\\rho$": -0.0013685512346370819,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 27.0,
+      "Spearman $\\rho$": 0.02844682980023019,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 0.0,
+      "Spearman $\\rho$": 0.05084730020088443,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 1.0,
+      "Spearman $\\rho$": 0.02252937221569198,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 2.0,
+      "Spearman $\\rho$": 0.0678025515519029,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 3.0,
+      "Spearman $\\rho$": 0.08168819251553991,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 4.0,
+      "Spearman $\\rho$": 0.029185535730631523,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 5.0,
+      "Spearman $\\rho$": 0.012323177088269615,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 6.0,
+      "Spearman $\\rho$": 0.013700107455393977,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 7.0,
+      "Spearman $\\rho$": 0.036312440632690526,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 8.0,
+      "Spearman $\\rho$": 0.02766469672982232,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 9.0,
+      "Spearman $\\rho$": 0.06769714565587631,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 10.0,
+      "Spearman $\\rho$": 0.05138443026836638,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 11.0,
+      "Spearman $\\rho$": 0.04084875930929311,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 12.0,
+      "Spearman $\\rho$": 0.037492543178724455,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 13.0,
+      "Spearman $\\rho$": 0.017249762152696406,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 14.0,
+      "Spearman $\\rho$": -0.011093856392001332,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 15.0,
+      "Spearman $\\rho$": 0.02328044734315975,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 16.0,
+      "Spearman $\\rho$": 0.017121538472985153,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 17.0,
+      "Spearman $\\rho$": 0.010679663661036001,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 18.0,
+      "Spearman $\\rho$": 0.04042904900833551,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 19.0,
+      "Spearman $\\rho$": 0.04899683110215805,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 20.0,
+      "Spearman $\\rho$": 0.042418498765601,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 21.0,
+      "Spearman $\\rho$": 0.039890814177094794,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 22.0,
+      "Spearman $\\rho$": 0.055081051680891537,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 23.0,
+      "Spearman $\\rho$": 0.06806023448845809,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 24.0,
+      "Spearman $\\rho$": 0.05859414840333514,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 25.0,
+      "Spearman $\\rho$": 0.07454435249715213,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 26.0,
+      "Spearman $\\rho$": 0.07295324123527264,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 27.0,
+      "Spearman $\\rho$": 0.06303136712890704,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 0.0,
+      "y": 0.03504762881824799,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 1.0,
+      "y": 0.007263650230268799,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 2.0,
+      "y": -0.008517747483563107,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 3.0,
+      "y": 0.013786547515561767,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 4.0,
+      "y": 0.018562465372399795,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 5.0,
+      "y": 0.004031226307874555,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 6.0,
+      "y": 0.037287740848849386,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 7.0,
+      "y": 0.026869862716340214,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 8.0,
+      "y": 0.06554333237514019,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 9.0,
+      "y": 0.07032825707499485,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 10.0,
+      "y": 0.07610162871765053,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 11.0,
+      "y": 0.07267817319806669,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 12.0,
+      "y": 0.0673080572303804,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 13.0,
+      "y": 0.0635831620501707,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 14.0,
+      "y": 0.05503664880181438,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 15.0,
+      "y": 0.06546792671635474,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 16.0,
+      "y": 0.06238031859487069,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 17.0,
+      "y": 0.06983405453711947,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 18.0,
+      "y": 0.08940299061745823,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 19.0,
+      "y": 0.10642049283207633,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 20.0,
+      "y": 0.12578202884920442,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 21.0,
+      "y": 0.1022167990872248,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 22.0,
+      "y": 0.09687608464324311,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 23.0,
+      "y": 0.0969233765777774,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 24.0,
+      "y": 0.08732240988061848,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 25.0,
+      "y": 0.07534343116839873,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 26.0,
+      "y": 0.03281660891539523,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 27.0,
+      "y": 0.0352782247779355,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 0.0,
+      "y": -0.018693946153949818,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 1.0,
+      "y": 0.004272499906072269,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 2.0,
+      "y": -0.06482507515768338,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 3.0,
+      "y": 0.009714936406700458,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 4.0,
+      "y": -0.016250116109412207,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 5.0,
+      "y": -0.008375000071555786,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 6.0,
+      "y": 0.1177277660621323,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 7.0,
+      "y": 0.006991469313282527,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 8.0,
+      "y": 0.01558344734870706,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 9.0,
+      "y": -0.08902276735163896,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 10.0,
+      "y": 0.03570644480344944,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 11.0,
+      "y": -0.016205713923631567,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 12.0,
+      "y": 0.0025448535784365505,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 13.0,
+      "y": 0.004998711033577278,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 14.0,
+      "y": -0.02268903637328838,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 15.0,
+      "y": 0.015236529768734734,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 16.0,
+      "y": 0.008111287992647298,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 17.0,
+      "y": 0.008418152880321715,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 18.0,
+      "y": 0.02283681643616409,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 19.0,
+      "y": -0.0007704404365576796,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 20.0,
+      "y": 0.011983026593903394,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 21.0,
+      "y": 0.01904330241598418,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 22.0,
+      "y": 0.08114180911678968,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 23.0,
+      "y": 0.02826892586024524,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 24.0,
+      "y": -0.02696644828293143,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 25.0,
+      "y": -0.04044759346539255,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 26.0,
+      "y": -0.048352813239328954,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 27.0,
+      "y": 0.007200902449745184,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 0.0,
+      "y": 0.025532053181463017,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 1.0,
+      "y": 0.01617072587997584,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 2.0,
+      "y": -0.00830193427282831,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 3.0,
+      "y": 0.017493756106110227,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 4.0,
+      "y": 0.02426610063411788,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 5.0,
+      "y": 0.04918915751675044,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 6.0,
+      "y": 0.010337303918229455,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 7.0,
+      "y": -0.0017203835904385767,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 8.0,
+      "y": 0.00668238761862789,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 9.0,
+      "y": -0.01339187643312069,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 10.0,
+      "y": -0.00104508527194648,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 11.0,
+      "y": -0.00014494435139659543,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 12.0,
+      "y": -0.031611444643834745,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 13.0,
+      "y": -0.011896184411402791,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 14.0,
+      "y": -0.048263299554537384,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 15.0,
+      "y": 0.003044446012320702,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 16.0,
+      "y": -0.014507003213235876,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 17.0,
+      "y": 0.005671985377601395,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 18.0,
+      "y": 0.018940465674375014,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 19.0,
+      "y": 0.00044726867072180927,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 20.0,
+      "y": 0.020019182920602844,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 21.0,
+      "y": -0.02668623621335706,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 22.0,
+      "y": -0.03040955042304701,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 23.0,
+      "y": -0.026830317978635825,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 24.0,
+      "y": -0.02633454337675446,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 25.0,
+      "y": -0.0001757204225762237,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 26.0,
+      "y": -0.023124719443600814,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 27.0,
+      "y": 8.321209976367252e-05,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer": 0.0,
+      "y": 0.02170312382879599,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 1.0,
+      "y": 0.012159543631556927,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 2.0,
+      "y": -0.00830266681110522,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 3.0,
+      "y": 0.013508538475388092,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 4.0,
+      "y": 0.02426610063411788,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 5.0,
+      "y": 0.04582450151003202,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 6.0,
+      "y": 0.006210175894190426,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 7.0,
+      "y": -0.006082680883997321,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 8.0,
+      "y": 0.002484995659601353,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 9.0,
+      "y": -0.009324694739868047,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 10.0,
+      "y": 0.003263671317635338,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 11.0,
+      "y": 0.0041807456705124455,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 12.0,
+      "y": -0.03656182159881821,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 13.0,
+      "y": -0.011896903022442918,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 14.0,
+      "y": -0.048262569966977066,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 15.0,
+      "y": -0.0012243409618348227,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 16.0,
+      "y": -0.010463170219473385,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 17.0,
+      "y": 0.010112565117807993,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 18.0,
+      "y": 0.023642173235200185,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 19.0,
+      "y": -0.003872488202256346,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 20.0,
+      "y": 0.01608352707650072,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 21.0,
+      "y": -0.031539955396319735,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 22.0,
+      "y": -0.026676342504927134,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 23.0,
+      "y": -0.023026867219323593,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 24.0,
+      "y": -0.022522827195270954,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 25.0,
+      "y": -0.00450770352691117,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 26.0,
+      "y": -0.02790781016920102,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 27.0,
+      "y": 0.0044148439282251355,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer": 0.0,
+      "y": 0.03731242006091419,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 1.0,
+      "y": -0.05837021375663902,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 2.0,
+      "y": -0.0457605044797634,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 3.0,
+      "y": 0.018517386546137462,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 4.0,
+      "y": 0.018714482609027867,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 5.0,
+      "y": 0.030929803763452866,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 6.0,
+      "y": -0.008636492904763109,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 7.0,
+      "y": -0.00429496561214561,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 8.0,
+      "y": 0.004144290289928609,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 9.0,
+      "y": -0.06353752266437994,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 10.0,
+      "y": -0.029715824272624317,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 11.0,
+      "y": 0.0038579051899634543,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 12.0,
+      "y": -0.060848187300259565,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 13.0,
+      "y": -0.050706278681029254,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 14.0,
+      "y": -0.004033752285735364,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 15.0,
+      "y": 0.027975719721226974,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 16.0,
+      "y": 0.028270525844420726,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 17.0,
+      "y": 0.046753386550804556,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 18.0,
+      "y": 0.020675544582591316,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 19.0,
+      "y": 0.07523321464786398,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 20.0,
+      "y": 0.006759258565024227,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 21.0,
+      "y": -0.03694669647114448,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 22.0,
+      "y": 0.01257103205287827,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 23.0,
+      "y": -0.04086764628137387,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 24.0,
+      "y": 0.005104538915447134,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 25.0,
+      "y": 0.004452415995717612,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 26.0,
+      "y": -0.0077762012330239065,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 27.0,
+      "y": -0.06113825084235594,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer": 0.0,
+      "y": -0.08449120105480969,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 1.0,
+      "y": -0.07954519686216883,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 2.0,
+      "y": -0.03115131633250614,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 3.0,
+      "y": -0.029743629094094226,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 4.0,
+      "y": -0.04185970512169124,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 5.0,
+      "y": -0.05910641698795353,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 6.0,
+      "y": -0.03113816189420926,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 7.0,
+      "y": -0.06791320695701458,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 8.0,
+      "y": -0.04678702471504721,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 9.0,
+      "y": -0.005307167160333317,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 10.0,
+      "y": -0.03716657067877662,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 11.0,
+      "y": -0.0426280970359684,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 12.0,
+      "y": -0.019562811058744294,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 13.0,
+      "y": -0.032373796316375526,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 14.0,
+      "y": -0.046801199061705684,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 15.0,
+      "y": -0.020604002252761464,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 16.0,
+      "y": -0.05282902308390475,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 17.0,
+      "y": -0.05408190873720512,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 18.0,
+      "y": -0.020826875983682224,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 19.0,
+      "y": -0.0077742614363402384,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 20.0,
+      "y": 0.032041359818802656,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 21.0,
+      "y": -0.0063331193920681,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 22.0,
+      "y": 0.0025205848633911374,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 23.0,
+      "y": 0.009125135392193694,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 24.0,
+      "y": 0.028432939987698056,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 25.0,
+      "y": 0.011200202602375618,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 26.0,
+      "y": -0.03507093592018906,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 27.0,
+      "y": 0.041945731125981614,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "layer": 0.0,
+      "y": 0.23070943005619599,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 1.0,
+      "y": 0.2153703352406038,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 2.0,
+      "y": 0.18325504244898536,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 3.0,
+      "y": 0.1673535138176348,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 4.0,
+      "y": 0.17296084925734062,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 5.0,
+      "y": 0.17103009776035946,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 6.0,
+      "y": 0.17054900011943552,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 7.0,
+      "y": 0.16789462541270375,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 8.0,
+      "y": 0.15103983551865108,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 9.0,
+      "y": 0.15146487112454707,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 10.0,
+      "y": 0.14706785311558282,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 11.0,
+      "y": 0.14105714505495362,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 12.0,
+      "y": 0.1429572309216761,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 13.0,
+      "y": 0.15190630443395725,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 14.0,
+      "y": 0.14655588554359156,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 15.0,
+      "y": 0.14065437508197542,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 16.0,
+      "y": 0.14590294646960209,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 17.0,
+      "y": 0.1508605682639152,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 18.0,
+      "y": 0.16457728827145934,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 19.0,
+      "y": 0.17405683396063554,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 20.0,
+      "y": 0.15954591861806156,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 21.0,
+      "y": 0.17070594968004368,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 22.0,
+      "y": 0.1620900781657681,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 23.0,
+      "y": 0.15854656504203232,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 24.0,
+      "y": 0.14683492179670046,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 25.0,
+      "y": 0.1688354961074435,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 26.0,
+      "y": 0.19306906248058547,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 27.0,
+      "y": 0.16549186253354312,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "layer": 0.0,
+      "y": 0.0002623458746353289,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 1.0,
+      "y": -0.005385502584477384,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 2.0,
+      "y": 0.008087331601530945,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 3.0,
+      "y": -0.03014602225270433,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 4.0,
+      "y": -0.006148364893058738,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 5.0,
+      "y": -0.002530533611399645,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 6.0,
+      "y": -0.0140210218502283,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 7.0,
+      "y": -0.04451686483191312,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 8.0,
+      "y": -0.04639874816220525,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 9.0,
+      "y": 0.08651208094546647,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 10.0,
+      "y": 0.02900827544317969,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 11.0,
+      "y": 0.02910588480263457,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 12.0,
+      "y": -0.005075130780113277,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 13.0,
+      "y": 0.037018042156641034,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 14.0,
+      "y": 0.019415888695334872,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 15.0,
+      "y": 0.01950816666218495,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 16.0,
+      "y": -0.026283689746180068,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 17.0,
+      "y": -0.027624487711004505,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 18.0,
+      "y": 0.033614484722735,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 19.0,
+      "y": 0.08732806100496365,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 20.0,
+      "y": 0.056415133832691935,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 21.0,
+      "y": 0.09370636173839368,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 22.0,
+      "y": 0.02221966679803819,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 23.0,
+      "y": -0.0023946676588109035,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 24.0,
+      "y": 0.04677549368078758,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 25.0,
+      "y": 0.007450292453791168,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 26.0,
+      "y": 0.006731136171682812,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 27.0,
+      "y": -0.017953189055749334,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "layer": 0.0,
+      "y": -0.0068515923771185075,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 1.0,
+      "y": -0.050903778951421876,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 2.0,
+      "y": -0.012756392371561547,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 3.0,
+      "y": -0.0054944343262930215,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 4.0,
+      "y": 0.015278050541592364,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 5.0,
+      "y": 0.012307534156598406,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 6.0,
+      "y": 0.037836180447532335,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 7.0,
+      "y": -0.01611633239822778,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 8.0,
+      "y": -0.026701544014406692,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 9.0,
+      "y": -0.022818743297784445,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 10.0,
+      "y": -0.03980850420790484,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 11.0,
+      "y": -0.002667621899604437,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 12.0,
+      "y": 0.019665665009633376,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 13.0,
+      "y": -0.014173536480137252,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 14.0,
+      "y": 0.012984698718889617,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 15.0,
+      "y": 0.025243871140317346,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 16.0,
+      "y": -0.015270623993790993,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 17.0,
+      "y": -0.029437774842770346,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 18.0,
+      "y": 0.02717860355016537,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 19.0,
+      "y": -0.06363455858828869,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 20.0,
+      "y": -0.06403833309311428,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 21.0,
+      "y": -0.0579028745180754,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 22.0,
+      "y": -0.03786626306181142,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 23.0,
+      "y": -0.062054628698898745,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 24.0,
+      "y": -0.025227865152424093,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 25.0,
+      "y": -0.0418251932903577,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 26.0,
+      "y": -0.032725423557848146,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 27.0,
+      "y": -0.013468453325297919,
+      "series": "PV proj. on context (paper method)",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "layer": 0.0,
+      "y": -0.0074237942473033775,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 1.0,
+      "y": -0.05229774654299554,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 2.0,
+      "y": -0.01343874455673488,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 3.0,
+      "y": -0.006041319270091182,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 4.0,
+      "y": 0.016007442667489095,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 5.0,
+      "y": 0.012981513175227591,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 6.0,
+      "y": 0.0380976007588609,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 7.0,
+      "y": -0.016861362142781267,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 8.0,
+      "y": -0.026755254714648506,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 9.0,
+      "y": -0.023688802285066396,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 10.0,
+      "y": -0.04099549645585431,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 11.0,
+      "y": -0.002667621899604437,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 12.0,
+      "y": 0.02047690531263305,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 13.0,
+      "y": -0.014882324593723155,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 14.0,
+      "y": 0.012782530332393337,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 15.0,
+      "y": 0.02527038987362003,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 16.0,
+      "y": -0.015999877582128386,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 17.0,
+      "y": -0.030431307683575683,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 18.0,
+      "y": 0.02812999297718404,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 19.0,
+      "y": -0.06363455858828869,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 20.0,
+      "y": -0.06567731749767093,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 21.0,
+      "y": -0.05942740581748451,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 22.0,
+      "y": -0.03812824454531205,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 23.0,
+      "y": -0.0636566083506996,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 24.0,
+      "y": -0.025227865152424093,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 25.0,
+      "y": -0.04216102611718953,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 26.0,
+      "y": -0.032725423557848146,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 27.0,
+      "y": -0.014164088557893494,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "layer": 0.0,
+      "y": -0.007699771366182447,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 1.0,
+      "y": -0.05788690859094067,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 2.0,
+      "y": -0.040780795144394345,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 3.0,
+      "y": -0.07877218220809902,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 4.0,
+      "y": -0.03509510745899673,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 5.0,
+      "y": -0.06833235352651092,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 6.0,
+      "y": -0.025299586950520134,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 7.0,
+      "y": -0.08607574635210499,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 8.0,
+      "y": -0.06236181129594989,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 9.0,
+      "y": -0.02532069925401552,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 10.0,
+      "y": -0.039143930915237025,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 11.0,
+      "y": -0.03315434367817721,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 12.0,
+      "y": -0.06354080123783541,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 13.0,
+      "y": -0.036083349967635965,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 14.0,
+      "y": -0.08657879494924392,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 15.0,
+      "y": -0.06343699398965552,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 16.0,
+      "y": -0.02795558912682651,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 17.0,
+      "y": -0.023944613687452907,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 18.0,
+      "y": -0.09619091934520532,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 19.0,
+      "y": -0.0905574005391948,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 20.0,
+      "y": -0.0766678962819883,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 21.0,
+      "y": -0.06296567812042986,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 22.0,
+      "y": -0.03498648436278107,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 23.0,
+      "y": -0.05792830327817757,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 24.0,
+      "y": -0.06619047859392037,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 25.0,
+      "y": -0.11479162377071445,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 26.0,
+      "y": -0.05340173830379201,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 27.0,
+      "y": -0.1263302989578049,
+      "series": "direct ridge: context -> expression",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "layer": 0.0,
+      "y": 0.19863772390800838,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 1.0,
+      "y": 0.15960074618918746,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 2.0,
+      "y": 0.13854250360783726,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 3.0,
+      "y": 0.15467299748591137,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 4.0,
+      "y": 0.16017245722461382,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 5.0,
+      "y": 0.17994471941331053,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 6.0,
+      "y": 0.1491727987603427,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 7.0,
+      "y": 0.11175632563226189,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 8.0,
+      "y": 0.10849067231893209,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 9.0,
+      "y": 0.06710494667250619,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 10.0,
+      "y": 0.05946368155714743,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 11.0,
+      "y": 0.09114867215450582,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 12.0,
+      "y": 0.09198609842943903,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 13.0,
+      "y": 0.09929126376161171,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 14.0,
+      "y": 0.12094446553398268,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 15.0,
+      "y": 0.12918264443481384,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 16.0,
+      "y": 0.10877112048171142,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 17.0,
+      "y": 0.07785086546269365,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 18.0,
+      "y": 0.07108827289689001,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 19.0,
+      "y": 0.1131839824647118,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 20.0,
+      "y": 0.09287879478920476,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 21.0,
+      "y": 0.09223346838635683,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 22.0,
+      "y": 0.13739890796409976,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 23.0,
+      "y": 0.15582275053260675,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 24.0,
+      "y": 0.15414794647392233,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 25.0,
+      "y": 0.1714752024175084,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 26.0,
+      "y": 0.19320096176521445,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "layer": 27.0,
+      "y": 0.08394054096499289,
+      "series": "map -> PV proj.",
+      "_kind": "line",
+      "_group": 35
+    }
+  ],
+  "n_series": 36,
+  "total_points": 1008,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil \u2014 context end state",
+        "ylabel": "Spearman $\\rho$",
+        "legend_labels": [
+          "oracle: PV proj. on TRUE answer",
+          "control: shuffled map -> PV proj.",
+          "PV proj. on context (paper method)",
+          "identity+bias -> PV proj.",
+          "direct ridge: context -> expression",
+          "map -> PV proj."
+        ],
+        "annotations": [
+          "marker = frozen layer"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      },
+      {
+        "title_left": "sycophancy \u2014 context end state",
+        "annotations": [
+          "marker = frozen layer"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ]
+      },
+      {
+        "title_left": "hallucination \u2014 context end state",
+        "annotations": [
+          "marker = frozen layer"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ]
+      },
+      {
+        "title_left": "evil \u2014 prefix end state",
+        "xlabel": "layer",
+        "ylabel": "Spearman $\\rho$",
+        "annotations": [
+          "marker = frozen layer"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      },
+      {
+        "title_left": "sycophancy \u2014 prefix end state",
+        "xlabel": "layer",
+        "annotations": [
+          "marker = frozen layer"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15"
+        ]
+      },
+      {
+        "title_left": "hallucination \u2014 prefix end state",
+        "xlabel": "layer",
+        "annotations": [
+          "marker = frozen layer"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ]
+      }
+    ],
+    "series": [
+      "oracle: PV proj. on TRUE answer",
+      "control: shuffled map -> PV proj.",
+      "PV proj. on context (paper method)",
+      "identity+bias -> PV proj.",
+      "direct ridge: context -> expression",
+      "map -> PV proj."
+    ]
+  }
+}

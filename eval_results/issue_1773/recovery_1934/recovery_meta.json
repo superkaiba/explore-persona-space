@@ -1,0 +1,63 @@
+{
+ "join_rule": "axis_labels_merged: recovered rows REPLACE original rows on (feat_id, axis); original rows carry desc_present = feat_id in the ORIGINAL described set (False == produced on an evidence-only prompt); recovered rows carry desc_present = true, source = recovery_1934. descriptions_merged: original UNION recovered (disjoint feat_ids), source column.",
+ "coverage": {
+  "real_denominator": 128512,
+  "described_real_before": 125915,
+  "described_real_after": 127605,
+  "coverage_real_before": 0.9797917704183267,
+  "coverage_real_after": 0.9929422933266933,
+  "n_recovered_descriptions": 1692,
+  "n_recovered_axis_rows": 8450,
+  "n_axis_rows_resolved": 7931
+ },
+ "drops": {
+  "transport": 0,
+  "content_parse_error": 901,
+  "content_empty": 269,
+  "content_refusal_cut": 507,
+  "content_other": 0
+ },
+ "gate": {
+  "n_empty": 269,
+  "n_refusal_cut": 507,
+  "n_max_tokens_cut": 11,
+  "n_parse_fail_nonempty": 125,
+  "n_nonempty": 1826,
+  "ratio": 0.06845564074479737,
+  "floor": 0.2,
+  "verdict": "PASS"
+ },
+ "census": {
+  "shape": {
+   "fenced": 2302,
+   "other": 29,
+   "brace_preamble": 2,
+   "empty": 269
+  },
+  "residual": {
+   "empty": 269,
+   "refusal_stopped": 507,
+   "residual_parse_fail": 125,
+   "transport": 0,
+   "schema_fail": 9,
+   "other_content": 0,
+   "refusal_stopped_any": {
+    "count": 776,
+    "fraction_of_fresh_draws": 0.2982321291314374,
+    "n_fresh_draws": 2602
+   }
+  }
+ },
+ "refusal_stopped": {
+  "count": 776,
+  "fraction_of_fresh_draws": 0.2982321291314374,
+  "n_fresh_draws": 2602
+ },
+ "smoke": false,
+ "git_commit": "a9318719274caabc49f9ea37b8ec5109c55d4b23",
+ "numpy": "2.2.6",
+ "python": "3.11.15",
+ "timestamp_utc": "2026-08-01T00:40:05.991574+00:00",
+ "task": 1773,
+ "seed": 17732026
+}

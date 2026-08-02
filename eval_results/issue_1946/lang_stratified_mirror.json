@@ -1,0 +1,128 @@
+{
+  "task": 1946,
+  "analysis": "language-stratified mirror recomputation (free-analysis follow-up)",
+  "inputs": {
+    "sae_csv": "eval_results/issue_1946/percontext_summary_L19_ridge_sae.csv",
+    "dense_csv": "eval_results/issue_1738/percontext_summary_L19_ridge.csv",
+    "bare_csv": "eval_results/issue_1738/bare_query/percontext_summary_L19_ridge.csv"
+  },
+  "n_joined": 9941,
+  "n_en": 5870,
+  "n_non_en": 4071,
+  "n_language_nan_in_rest": 16,
+  "stratum_convention": "en = (language == 'en'); NaN-language rows fall in rest, matching issue1738_characterize._contrast_masks",
+  "per_space": {
+    "sae": {
+      "en": {
+        "n": 5870,
+        "mean_nerr": {
+          "prefix": 0.700274421294719,
+          "bare": 0.61201917120954,
+          "context": 0.44817550051107324
+        },
+        "mean_prefix_minus_bare": 0.08825525008517887
+      },
+      "rest": {
+        "n": 4071,
+        "mean_nerr": {
+          "prefix": 0.6027260390567427,
+          "bare": 0.4611974893146647,
+          "context": 0.3593682888725129
+        },
+        "mean_prefix_minus_bare": 0.14152854974207812
+      },
+      "delta_en_vs_rest": {
+        "prefix": 0.09754838223797624,
+        "bare": 0.15082168189487527,
+        "context": 0.08880721163856037
+      },
+      "M_en": -0.05327329965689903
+    },
+    "dense": {
+      "en": {
+        "n": 5870,
+        "mean_nerr": {
+          "prefix": 0.6467158536626917,
+          "bare": 0.5056621260647359,
+          "context": 0.3438519584327087
+        },
+        "mean_prefix_minus_bare": 0.1410537275979557
+      },
+      "rest": {
+        "n": 4071,
+        "mean_nerr": {
+          "prefix": 0.5673717720461802,
+          "bare": 0.43794076295750434,
+          "context": 0.31146861508228935
+        },
+        "mean_prefix_minus_bare": 0.129431009088676
+      },
+      "delta_en_vs_rest": {
+        "prefix": 0.07934408161651152,
+        "bare": 0.06772136310723159,
+        "context": 0.03238334335041937
+      },
+      "M_en": 0.011622718509279928
+    }
+  },
+  "decomposition": {
+    "delta_prefix_en": {
+      "dense": 0.07934408161651152,
+      "sae": 0.09754838223797624,
+      "change": 0.01820430062146472
+    },
+    "delta_bare_en": {
+      "dense": 0.06772136310723159,
+      "sae": 0.15082168189487527,
+      "change": 0.08310031878764368
+    },
+    "M_en": {
+      "dense": 0.011622718509279928,
+      "sae": -0.05327329965689903,
+      "change": -0.06489601816617896
+    },
+    "bare_share_of_change": 0.8203013769002132,
+    "localization_rule": "yes if |bare component| >= 75% of summed |components|, no if <= 25%, else mixed"
+  },
+  "bootstrap": {
+    "n_boot": 10000,
+    "seed": 1946,
+    "resampling": "context-level (rows resampled with replacement; shared indices across spaces => paired difference)",
+    "M_en_sae": {
+      "mean": -0.05331362415972351,
+      "ci95": [
+        -0.06780495126920347,
+        -0.038804105970349834
+      ],
+      "frac_draws_below_zero": 1.0,
+      "frac_draws_above_zero": 0.0
+    },
+    "M_en_dense": {
+      "mean": 0.011572151382393432,
+      "ci95": [
+        -0.0021987287371751187,
+        0.025009980238594402
+      ],
+      "frac_draws_below_zero": 0.05,
+      "frac_draws_above_zero": 0.95
+    },
+    "M_en_sae_minus_dense": {
+      "mean": -0.06488577554211693,
+      "ci95": [
+        -0.07528985372861123,
+        -0.05443968281690106
+      ],
+      "frac_draws_below_zero": 1.0,
+      "frac_draws_above_zero": 0.0
+    }
+  },
+  "verdict": "flip localized to bare-arm English magnitude: yes (bare component +0.0831 = 82% of the dense->SAE M_en change vs prefix component +0.0182; SAE M_en -0.0533 is distinguishable from zero and distinguishable from the dense M_en +0.0116 at 95% context-level bootstrap CIs)",
+  "metadata": {
+    "git_commit": "ff31e2c180529ce9e71f8e863778fcd4f1801e1e",
+    "timestamp_utc": "2026-08-01T04:00:01.236770+00:00",
+    "numpy": "2.2.6",
+    "pandas": "2.3.3",
+    "python": "3.11.15",
+    "script": "scripts/issue1946_lang_stratified.py"
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "commit": "b4d83b4401",
+  "created": "2026-08-02T04:09:34Z",
+  "figsize": [
+    8.4,
+    5.2
+  ],
+  "points": [
+    {
+      "category": "Context vector",
+      "Share of the map's held-out error": 2.1328551169990233e-05,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Prefix end state",
+      "Share of the map's held-out error": 2.1764062438582306e-05,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Query only",
+      "Share of the map's held-out error": 2.0962396587281526e-05,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Context vector",
+      "Share of the map's held-out error": 4.137324811691158e-05,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Prefix end state",
+      "Share of the map's held-out error": 4.0929571354564396e-05,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Query only",
+      "Share of the map's held-out error": 4.194964823508551e-05,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Context vector",
+      "Share of the map's held-out error": 0.9999372982007131,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Prefix end state",
+      "Share of the map's held-out error": 0.9999373063662069,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Query only",
+      "Share of the map's held-out error": 0.9999370879551777,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 9,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Where the SAE-space map's error lives (directions = SAE features, k = 4096, normalized squared residual)",
+        "ylabel": "Share of the map's held-out error",
+        "legend_labels": [
+          "Contexts (rows)",
+          "Directions (SAE features)",
+          "Interaction (context x feature)"
+        ],
+        "annotations": [
+          "1.00",
+          "1.00",
+          "1.00",
+          "k-stable: interaction share 1.00-1.00 across k = 256, 1024, 4096, 16384, 65536, all (directions ranked by holdout target variance)"
+        ],
+        "xticklabels": [
+          "Context vector",
+          "Prefix end state",
+          "Query only"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Contexts (rows)",
+      "Directions (SAE features)",
+      "Interaction (context x feature)"
+    ]
+  }
+}

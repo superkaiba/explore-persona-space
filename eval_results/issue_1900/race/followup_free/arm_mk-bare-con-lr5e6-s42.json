@@ -1,0 +1,57 @@
+{
+ "meta": {
+  "ts": "2026-07-31T14:51:04Z",
+  "git_commit": "0e5e6c3e7dc4bda1873178a2a7d808542423248f",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "issue": 1900,
+  "seed": 1900,
+  "corpus_pin": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+  "script": "scripts/issue1900_followup_free.py"
+ },
+ "arm_id": "mk-bare-con-lr5e6-s42",
+ "kind": "marker",
+ "beh_key": "mk",
+ "regime": {
+  "b_draws": 2000,
+  "layer": 25,
+  "raced": [
+   "p1",
+   "p2",
+   "p3a",
+   "p3b",
+   "p4",
+   "p5",
+   "p6",
+   "p7",
+   "p9"
+  ],
+  "dv_names": [
+   "dv_resid"
+  ],
+  "n": 4000,
+  "n_shared": 4000,
+  "shared_sha_hash": "b65801058b675901"
+ },
+ "observed_rho": {
+  "dv_resid": {
+   "p1": 0.19963406026363373,
+   "p2": 0.32637450098991394,
+   "p3a": 0.24938784539699554,
+   "p3b": 0.3277561366558075,
+   "p4": 0.11814198642969131,
+   "p5": 0.14929847419261932,
+   "p6": 0.12792812287807465,
+   "p7": -0.15384814143180847,
+   "p9": 0.20848165452480316
+  }
+ },
+ "ols_residualization": {
+  "alpha": 0.4370661939041566,
+  "beta": 0.8141831713347928,
+  "r2_1d_fit": 0.7832769137950873
+ },
+ "n_degenerate_series_draws": 0,
+ "n_realized": 4000,
+ "elapsed_s": 5.4
+}

@@ -85,7 +85,57 @@ KNN_KS = (1, 5, 10)
 SLIM_KEYS = ("slots", "profiles", "nll")
 # Arms whose story<->chat reparam ladder runs by default (brief: V2 + V4 at
 # minimum — V3 rides along because the ladder is cheap once the stores are open).
+# V5 is deliberately OUT: its pre-registered contrasts (below) are grid/comparator
+# reads, not ladder reads, so the default stays byte-identical in compute for the
+# already-planned run. Opt in per run with `--reparam-arms v5`.
 DEFAULT_REPARAM_ARMS = (bg.ARM_V2, bg.ARM_V3, bg.ARM_V4)
+
+# Pre-registered per-arm contrasts: which ALREADY-COMPUTED verdict fields decide
+# the arm's question, named at BUILD time so the analyzer cannot pick a different
+# pair post hoc. Reads only — no new compute.
+PRE_REGISTERED_CONTRASTS: dict[str, dict] = {
+    bg.ARM_V5: {
+        "boundary_form": {
+            "question": (
+                "is V1's anchor effect carried by the PROSE ATTRIBUTION or by the "
+                "pretraining-familiar turn syntax? V5 holds the story constant and "
+                "swaps the attribution for a bare turn label."
+            ),
+            "decided_by": "CI overlap, V5 vs the boundary-present V1 anchor",
+            "read_fields": [
+                "headline.r2_reduced_basis_primary + headline.ci",
+                "xy_grid.v1_anchor (same X x Y grid on the re-captured V1 store)",
+                "paired_deltas (matched-row V5-vs-V1 bootstrap)",
+            ],
+            "interpretation": (
+                "V5 ~ V1 (CIs overlap) => the boundary FORM does not matter, the "
+                "boundary's presence does; V5 ~ V2 (boundary-absent) => V1's effect "
+                "needs the prose attribution specifically."
+            ),
+        },
+        "residual_story_cost": {
+            "question": (
+                "at MATCHED boundary syntax (both read at a 'User: '-style ':'), how "
+                "much of the story-vs-chat gap survives?"
+            ),
+            "decided_by": "CI overlap, V5 vs the no_template comparator",
+            "read_fields": [
+                "vs_matched_chat.no_template_same_rows (matched-row parent r2 read)",
+                "xy_grid.comparators.no_template (round-own X x Y comparator grid)",
+            ],
+            "interpretation": (
+                "CIs overlap => the residual story cost at matched boundary syntax is "
+                "not resolvable at this n; V5 below no_template => a story-frame cost "
+                "remains after the boundary syntax is matched."
+            ),
+        },
+        "note": (
+            "both contrasts read the SAME fields every other arm already emits — V5 "
+            "adds no new statistic, only the pre-registration of which comparison "
+            "answers which question."
+        ),
+    },
+}
 
 # V1 anchor: the landed conversation_paired_stories_assistant reads. Literals are
 # documentation cross-checks; the values are read LIVE from the committed JSONs.
@@ -140,31 +190,55 @@ Y_TAG = {bc.Y_MEAN: "ymean", bc.Y_BOUNDARY: "ybnd"}
 GRID_TAG = {**bg.ARM_SLUG, bc.V1_ARM: bc.V1_SLUG}
 
 
-def grid_cell_id(store_key: str, slot: str, y: str) -> str:
-    """Cell id for one (store, X slot, Y target) grid point."""
-    tag = GRID_TAG.get(store_key, store_key)
-    return f"R_{bg.MODEL_KEY}_bnd_{tag}_{slot}__{Y_TAG[y]}"
+def grid_cell_id(
+    store_key: str,
+    slot: str,
+    y: str,
+    provenance: str = c.PROV_INJECTED,
+    model_key: str = bg.MODEL_KEY,
+) -> str:
+    """Cell id for one (store, X slot, Y target, provenance, model) grid point.
+
+    The `injected` + round-default-model call appends nothing, so every
+    pre-existing grid cell id is byte-unchanged; the on-policy twin reads
+    ..._bnd_chat_op_context__ymean, and a PRETRAINED-measured store carries the
+    model slug (3 of the 4 on-policy bundles are base-written).
+    """
+    tag = GRID_TAG.get(store_key, store_key) + c.prov_suffix(provenance)
+    return f"R_{c.MODEL_SLUG[model_key]}_bnd_{tag}_{slot}__{Y_TAG[y]}"
 
 
-def grid_cells(store_key: str) -> list[dict]:
+def grid_cells(
+    store_key: str,
+    provenance: str = c.PROV_INJECTED,
+    model_key: str = bg.MODEL_KEY,
+) -> list[dict]:
     """The store's full X x Y grid: every BND slot crossed with both Y targets.
 
-    ``store_key`` is an ablation arm (V2/V3/V4), the re-captured V1 anchor, or a
-    round-own comparator (``chat`` / ``no_template``) — all carry the identical
+    ``store_key`` is an ablation arm (V2/V3/V4/V5), the re-captured V1 anchor, or
+    a round-own comparator (``chat`` / ``no_template``) — all carry the identical
     5-slot x 2-target store shape, which is what makes the grid comparable
     across them (the V1 row is the boundary-PRESENT anchor the ablation arms are
     read against at matched (read position x target)).
+
+    ``provenance`` selects WHO WROTE the answers the store reads. An `onpolicy`
+    grid is the matched PAIRED ARM of the identical lattice — same slots, same Y
+    targets, same conv_id space, same store shape — differing only in authorship,
+    which is exactly the contrast the on-policy-vs-injected program measures.
     """
+    fmt = bc.format_key(store_key, provenance)
     return [
         {
-            "cell_id": grid_cell_id(store_key, slot, y),
-            "model_key": bg.MODEL_KEY,
-            "format_key": bc.format_key(store_key),
+            "cell_id": grid_cell_id(store_key, slot, y, provenance, model_key),
+            "model_key": model_key,
+            "format_key": fmt,
             "track": bc.TRACK,
             "slot_index": idx,
             "target_turn_index": bc.Y_TARGET_INDEX[y],
-            "regime": bc.format_key(store_key),
+            "regime": fmt,
             "bnd_arm": store_key,
+            "provenance": provenance,
+            "measured_model": model_key,
             "slot": slot,
             "y_target": y,
             "arm": SLOT_MAP_ARM[slot],
@@ -177,6 +251,38 @@ def grid_cells(store_key: str) -> list[dict]:
 def arm_cells(arm: str) -> list[dict]:
     """The ablation arm's own X x Y grid cells."""
     return grid_cells(arm)
+
+
+def onpolicy_paired_cells(
+    turnstore_dir: Path,
+    store_keys: list[str],
+    models: tuple[str, ...] = c.MODELS,
+) -> tuple[list[dict], dict[str, bool]]:
+    """The on-policy PAIRED grid rows for every store whose twin is on disk.
+
+    Presence-gated exactly like the injected comparator stores: a registered
+    on-policy twin joins the lattice when ITS store is present, and is reported
+    as absent otherwise — so the fits run unchanged before the on-policy captures
+    land, and pick the paired arm up automatically once they do (no ad-hoc run).
+    Unregistered keys (the ablation arms, which are injection-BY-CONSTRUCTION)
+    are skipped silently — they have no meaningful on-policy twin.
+    """
+    cells: list[dict] = []
+    present: dict[str, bool] = {}
+    fmt_cache: dict[str, str] = {}
+    for key in store_keys:
+        if not bc.has_onpolicy_twin(key):
+            continue
+        fmt = fmt_cache.setdefault(key, bc.format_key(key, c.PROV_ONPOLICY))
+        # Per MEASURED model: the bare-text arm exists for BOTH, chat and
+        # story-slot are base-written this round, and a store that was never
+        # captured simply does not join (the presence gate, unchanged).
+        for mk in models:
+            ok = store_present(turnstore_dir, mk, fmt)
+            present[f"{key}/{mk}"] = ok
+            if ok:
+                cells += grid_cells(key, c.PROV_ONPOLICY, mk)
+    return cells, present
 
 
 def comparator_cells(arm: str, label: str) -> list[dict]:
@@ -1215,6 +1321,14 @@ def build_verdict(
             "no_template_same_rows": {k: nt_cell.get(k) for k in ("r2", "ci")},
         },
         "paired_deltas": paired,
+        # Pre-registered contrast map (arms that have one; reads only — see
+        # PRE_REGISTERED_CONTRASTS). Absent-by-default keeps every other arm's
+        # verdict shape unchanged.
+        **(
+            {"pre_registered_contrasts": PRE_REGISTERED_CONTRASTS[arm]}
+            if arm in PRE_REGISTERED_CONTRASTS
+            else {}
+        ),
         "reparam_story_vs_chat": reparam,
         # The consolidated X x Y measurement grid (addendum): the arm's own grid,
         # the same grid on each round-own comparator store, AND the same grid on
@@ -1400,6 +1514,24 @@ def main() -> None:
         print(
             f"[fits] X x Y V1 store {bc.format_key(bc.V1_ARM)} absent — the grid has NO "
             "boundary-present anchor row (run capture --arm v1)",
+            flush=True,
+        )
+
+    # ON-POLICY paired arm of the SAME lattice (the on-policy-vs-injected
+    # program): every registered on-policy twin whose store is on disk joins here
+    # with identical slots / Y targets / conv_id space, so injected-vs-onpolicy is
+    # reported as a matched pair rather than a separate ad-hoc run. Presence-gated,
+    # so this is a no-op until the on-policy captures land.
+    op_cells, op_present = onpolicy_paired_cells(
+        args.turnstore_dir, [*bnd_comparators_available, bc.V1_ARM]
+    )
+    cells += op_cells
+    if op_present:
+        landed = sorted(k for k, ok in op_present.items() if ok)
+        missing = sorted(k for k, ok in op_present.items() if not ok)
+        print(
+            f"[fits] on-policy paired arm: {len(op_cells)} cells from {landed or 'none'}"
+            + (f"; absent (skipped): {missing}" if missing else ""),
             flush=True,
         )
 
@@ -1614,7 +1746,16 @@ def main() -> None:
                 arm,
                 cell_summary,
                 paired_by_arm.get(arm, {}),
-                reparam_by_arm.get(arm, {"skipped": "reparam phase not run"}),
+                reparam_by_arm.get(
+                    arm,
+                    {
+                        "skipped": (
+                            "arm outside --reparam-arms scope"
+                            if arm not in reparam_arms
+                            else "reparam phase not run"
+                        )
+                    },
+                ),
                 grid_by_store.get(arm, {"skipped": "grid phase not run"}),
                 {k: grid_by_store[k] for k in BND_COMPARATORS if k in grid_by_store},
                 n_kept=len(arm_convs[arm]),
@@ -1646,10 +1787,15 @@ def main() -> None:
             },
         )
         for arm, v in verdicts.items():
+            # The headline carries the two NAMED reads (`r2_reduced_basis_primary`
+            # / `r2_ambient_gcv_continuity`) — a bare `r2` key was renamed away
+            # when the well-posedness companions landed, so print both names.
+            anchor = v["vs_v1_anchor_committed"]["anchor"]
             print(
                 f"[verdict] {bg.ARM_SLUG[arm]} L{LAYER} {bc.HEADLINE_SLOT} "
-                f"R2={v['headline'].get('r2')} vs V1 anchor "
-                f"{v['vs_v1_anchor_committed']['anchor'] and v['vs_v1_anchor_committed']['anchor']['r2']}",
+                f"R2_reduced={v['headline'].get('r2_reduced_basis_primary')} "
+                f"R2_ambient_gcv={v['headline'].get('r2_ambient_gcv_continuity')} "
+                f"vs V1 anchor(ambient) {anchor and anchor['r2']}",
                 flush=True,
             )
     print(f"[done] boundary-ablation fits -> {args.out_dir}", flush=True)

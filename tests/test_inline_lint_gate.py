@@ -87,6 +87,9 @@ def _run_gate(
         # the repo MID-GATE (after read_payload snapshots) for TOCTOU cases.
         env["EPM_INLINE_GATE_LINT_CMD"] += f" && {lint_cmd_extra}"
     env["EPM_INLINE_CERT_PATH"] = str(tmp_path / "cert.txt")
+    # Zero the #1857 settle-and-re-hash retry delay: subprocess TOCTOU cases
+    # stay deterministic-fast (the retry still RUNS — it just doesn't wait).
+    env["EPM_CERT_REHASH_DELAY_S"] = "0"
     return subprocess.run(
         [
             sys.executable,
@@ -513,7 +516,10 @@ def test_added_line_ranges_parses_u0_hunks(tmp_path: Path) -> None:
     assert ilg.added_line_ranges(repo, "scripts/other.py") == []
 
 
-def test_write_cert_toctou_refuses_edited_path(tmp_path: Path) -> None:
+def test_write_cert_toctou_refuses_edited_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("EPM_CERT_REHASH_DELAY_S", "0")  # keep the #1857 retry instant
     repo = _make_repo(tmp_path)
     (repo / "scripts" / "sib.py").write_text("print(0)\n", encoding="utf-8")
     snapshots = ilg.read_payload(["scripts/mod.py", "scripts/sib.py"], repo)
@@ -525,6 +531,67 @@ def test_write_cert_toctou_refuses_edited_path(tmp_path: Path) -> None:
     assert certified == ["scripts/sib.py"]
     lines = cert.read_text(encoding="utf-8").splitlines()
     assert len(lines) == 1 and lines[0].endswith(" scripts/sib.py"), lines
+
+
+def test_write_cert_transient_flip_recovers_after_rehash(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#1857 (a): a TRANSIENT worktree flip — mismatch at the first pass,
+    settled back to the read_payload snapshot by the retry re-hash — is
+    certified as normal (cert line carries the snapshot sha), no TOCTOU."""
+    repo = _make_repo(tmp_path)
+    target = repo / "scripts" / "mod.py"
+    original = target.read_text(encoding="utf-8")
+    snapshots = ilg.read_payload(["scripts/mod.py"], repo)
+    target.write_text("transient flip\n", encoding="utf-8")
+
+    def _settle(_delay: float) -> None:
+        # Deterministic stand-in for the settle window: the concurrent
+        # writer restores the snapshot content during the retry delay.
+        target.write_text(original, encoding="utf-8")
+
+    monkeypatch.setattr(ilg.time, "sleep", _settle)
+    cert = tmp_path / "cert.txt"
+    certified, toctou = ilg.write_cert(["scripts/mod.py"], snapshots, cert, repo)
+    assert certified == ["scripts/mod.py"] and toctou == [], (certified, toctou)
+    lines = cert.read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 1, lines
+    assert lines[0].split()[2] == snapshots["scripts/mod.py"], lines
+
+
+def test_write_cert_stable_mismatch_sleeps_once_and_stays_toctou(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#1857 (b): a STABLE mismatch takes exactly ONE settle sleep, the
+    re-hash still mismatches, and the verdict stays TOCTOU (no cert line)."""
+    repo = _make_repo(tmp_path)
+    snapshots = ilg.read_payload(["scripts/mod.py"], repo)
+    (repo / "scripts" / "mod.py").write_text("edited mid-gate\n", encoding="utf-8")
+    slept: list[float] = []
+    monkeypatch.setattr(ilg.time, "sleep", lambda s: slept.append(s))
+    cert = tmp_path / "cert.txt"
+    certified, toctou = ilg.write_cert(["scripts/mod.py"], snapshots, cert, repo)
+    assert toctou == ["scripts/mod.py"] and certified == [], (certified, toctou)
+    assert len(slept) == 1, slept
+    assert not cert.exists(), "stable mismatch must not write a cert line"
+
+
+def test_write_cert_malformed_rehash_delay_falls_back_and_still_toctous(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#1857: a malformed EPM_CERT_REHASH_DELAY_S never crashes write_cert —
+    the default delay is used and a stable mismatch still refuses the cert
+    (fail toward TOCTOU/block, never a skipped re-check)."""
+    repo = _make_repo(tmp_path)
+    snapshots = ilg.read_payload(["scripts/mod.py"], repo)
+    (repo / "scripts" / "mod.py").write_text("edited mid-gate\n", encoding="utf-8")
+    monkeypatch.setenv("EPM_CERT_REHASH_DELAY_S", "not-a-number")
+    slept: list[float] = []
+    monkeypatch.setattr(ilg.time, "sleep", lambda s: slept.append(s))
+    cert = tmp_path / "cert.txt"
+    certified, toctou = ilg.write_cert(["scripts/mod.py"], snapshots, cert, repo)
+    assert toctou == ["scripts/mod.py"] and certified == [], (certified, toctou)
+    assert slept == [2.0], slept
 
 
 def test_write_cert_trims_to_last_500_lines_atomically(tmp_path: Path) -> None:
@@ -586,3 +653,69 @@ def test_read_payload_missing_path_inconclusive(tmp_path: Path) -> None:
     repo = _make_repo(tmp_path)
     with pytest.raises(ilg.Inconclusive):
         ilg.read_payload(["scripts/does_not_exist.py"], repo)
+
+
+# ---------------------------------------------------------------------------
+# EPM_SCAN_EXTRA_FILES payload threading + untracked-payload note (#1889)
+# ---------------------------------------------------------------------------
+def test_pytest_leg_env_carries_scan_extra_files(tmp_path: Path) -> None:
+    """The mapped-pytest leg's CHILD env carries the os.pathsep-joined payload
+    list as EPM_SCAN_EXTRA_FILES (#1889), observable through the hermetic
+    EPM_INLINE_GATE_PYTEST_CMD override. The echo line is WARN-prefixed so it
+    classifies as a report line (never a verdict input), and the `1 passed`
+    tail satisfies PYTEST_SUMMARY_RE."""
+    repo = _make_repo(tmp_path)
+    (repo / "scripts" / "sib.py").write_text("print(0)\n", encoding="utf-8")  # untracked sibling
+    payload = ["scripts/mod.py", "scripts/sib.py"]
+    payload_file = tmp_path / "payload.txt"
+    payload_file.write_text("\n".join(payload) + "\n", encoding="utf-8")
+    out_dir = tmp_path / "out"
+    out_dir.mkdir(exist_ok=True)
+    env = os.environ.copy()
+    lint_file = tmp_path / "lint.txt"
+    lint_file.write_text(LINT_OK, encoding="utf-8")
+    env["EPM_INLINE_GATE_LINT_CMD"] = f"cat {lint_file}"
+    map_file = tmp_path / "map.txt"
+    map_file.write_text("tests/test_x.py\tscripts/mod.py\n", encoding="utf-8")
+    env["EPM_INLINE_GATE_MAP_CMD"] = f"cat {map_file}"
+    # Shell override runs with the merged child env: $EPM_SCAN_EXTRA_FILES expands there.
+    env["EPM_INLINE_GATE_PYTEST_CMD"] = (
+        'echo "WARN scan-extra=$EPM_SCAN_EXTRA_FILES" && echo "1 passed in 0.01s"'
+    )
+    env.pop("EPM_SCAN_EXTRA_FILES", None)  # prove the value comes from the gate, not the host
+    env["EPM_INLINE_CERT_PATH"] = str(tmp_path / "cert.txt")
+    env["EPM_CERT_REHASH_DELAY_S"] = "0"
+    r = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--issue",
+            "9999",
+            "--payload-file",
+            str(payload_file),
+            "--repo-root",
+            str(repo),
+            "--out-dir",
+            str(out_dir),
+        ],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    joined = os.pathsep.join(sorted(payload))
+    assert r.returncode == 0, (r.returncode, r.stdout, r.stderr)
+    # The payload paths reached the pytest child's env (echoed + audit-persisted).
+    assert f"WARN scan-extra={joined}" in r.stdout, r.stdout
+    audit = (out_dir / "issue-9999-inline-lint.txt").read_text(encoding="utf-8")
+    assert f"WARN scan-extra={joined}" in audit, audit
+
+
+def test_untracked_payload_note_printed(tmp_path: Path) -> None:
+    """An UNTRACKED payload path gets the stderr audit note (#1889);
+    a tracked payload path prints no note. Report-only: verdict unchanged."""
+    repo = _make_repo(tmp_path)
+    (repo / "scripts" / "new.py").write_text("print(1)\n", encoding="utf-8")  # not tracked
+    r = _run_gate(repo, ["scripts/mod.py", "scripts/new.py"], tmp_path, lint_out=LINT_OK)
+    assert r.returncode == 0, (r.returncode, r.stdout, r.stderr)
+    assert "inline_lint_gate: note: payload scripts/new.py is untracked" in r.stderr, r.stderr
+    assert "payload scripts/mod.py is untracked" not in r.stderr, r.stderr

@@ -1,0 +1,87 @@
+{
+  "arm": "forced_lambda",
+  "cell_id": "story_slot_ablation__R_instruct_r4slot_attrmean_context",
+  "committed_r2": -0.26599328818513857,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 9.21,
+  "forced_lambda": {
+    "1e+02": {
+      "fold_se": 0.005663673073072002,
+      "r2_per_fold": [
+        0.18142168071516995,
+        0.18614710028005843,
+        0.17172757428577223,
+        0.17719344102422496,
+        0.1534196666958758
+      ],
+      "r2_pooled": 0.174061655575647,
+      "selected_lambda_per_fold": [
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0
+      ]
+    },
+    "1e+03": {
+      "fold_se": 0.004346508447320412,
+      "r2_per_fold": [
+        0.41646712794393104,
+        0.4104747431245306,
+        0.40141491832130183,
+        0.40483554315396986,
+        0.39072664214211317
+      ],
+      "r2_pooled": 0.4048027562785297,
+      "selected_lambda_per_fold": [
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0
+      ]
+    },
+    "1e+04": {
+      "fold_se": 0.003070855360114949,
+      "r2_per_fold": [
+        0.4180284239743606,
+        0.4098644791221331,
+        0.40647362284997257,
+        0.408843692106716,
+        0.3989212095413739
+      ],
+      "r2_pooled": 0.40843154411263605,
+      "selected_lambda_per_fold": [
+        10000.0,
+        10000.0,
+        10000.0,
+        10000.0,
+        10000.0
+      ]
+    }
+  },
+  "issue": 1345,
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T06:51:44Z"
+  },
+  "n_train_min": 1730,
+  "published_claim_ref": "eval_results/issue_1345/story_slot_ablation/cells_R_instruct_r4slot_attrmean_context.json @ L19",
+  "resume_key": {
+    "arm": "forced_lambda",
+    "cell_id": "story_slot_ablation__R_instruct_r4slot_attrmean_context",
+    "issue": 1345,
+    "selector_regime": "forced_lambda",
+    "store_rev": "c8ffc7a8d7412fd0492dd0b3a0e2e9f6374f80c7+allow:git:slot_row_coverage.json"
+  },
+  "selection_bearing": true,
+  "selector_config": {
+    "gcv_dof_cap": null,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": false
+  },
+  "variant": "story_slot_ablation"
+}

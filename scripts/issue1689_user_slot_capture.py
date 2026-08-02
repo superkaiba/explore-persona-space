@@ -603,6 +603,14 @@ def run_render_if_missing(args) -> None:
         "--stage-root",
         str(args.stage_root),
     ]
+    # Same-job path (16177 crash): the a1 generator's output exists LOCALLY but
+    # is absent from the Hub at the render's pinned PARENT_REVISION (uploaded
+    # this job, after the pin), so the render's gen_a1 prefix stages empty and
+    # the addendum-C loader fail-louds. Thread the local dir exactly as the
+    # render's --gen-a1-dir contract designs; skip when empty/absent so a
+    # fresh-instance replay keeps the Hub path + fail-loud behavior.
+    if args.gen_a1_dir is not None and any(args.gen_a1_dir.glob("user_slot_a1_onpolicy_*.jsonl")):
+        cmd += ["--gen-a1-dir", str(args.gen_a1_dir)]
     if args.smoke:
         cmd.append("--smoke")
     print(f"[capture] rendering: {' '.join(cmd)}", flush=True)
@@ -741,6 +749,7 @@ def run_dispatch(args) -> int:
         fh.close()
         if rc != 0:
             failures.append((gpu, rc))
+            # JSONL_SPLITLINES_EXEMPT: worker LOG tail for crash diagnostics, not JSONL content
             tail = log.read_text(encoding="utf-8", errors="replace").splitlines()[-120:]
             print(f"[capture] gpu{gpu} FAILED rc={rc}; tail of {log}:", flush=True)
             for ln in tail:
@@ -794,6 +803,13 @@ def main() -> int:
         "--rendered-dir",
         type=Path,
         default=REPO_ROOT / "data" / "issue_1689" / ROUND_LABEL / "rendered",
+    )
+    ap.add_argument(
+        "--gen-a1-dir",
+        type=Path,
+        default=REPO_ROOT / "data" / "issue_1689" / ROUND_LABEL / "gen_a1",
+        help="local a1-generator output dir threaded to the render when non-empty "
+        "(the same-job path; the render otherwise reads the gen_a1 Hub prefix)",
     )
     ap.add_argument(
         "--stage-root",
@@ -897,4 +913,4 @@ if __name__ == "__main__":
     rc = main()
     sys.stdout.flush()
     sys.stderr.flush()
-    sys.exit(rc if isinstance(rc, int) else 0)
+    os._exit(rc if isinstance(rc, int) else 0)

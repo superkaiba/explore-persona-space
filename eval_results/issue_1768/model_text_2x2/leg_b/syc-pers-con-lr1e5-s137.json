@@ -1,0 +1,34 @@
+{
+ "arm_id": "syc-pers-con-lr1e5-s137",
+ "method": "lora",
+ "delta_arm": "syc-pers-con-lr1e5-s137",
+ "layers": {
+  "14": {
+   "norm_delta_v_train": 4.072714303166697,
+   "norm_v0_train": 40.37757950384935,
+   "n_rows": 20,
+   "split_half_cos": 0.9927038447461958,
+   "cos_delta_v_train_delta": 0.16275361476995776,
+   "delta_arm": "syc-pers-con-lr1e5-s137",
+   "cos_delta_v_train_corpus_matched_write": 0.8507681991361504
+  },
+  "19": {
+   "norm_delta_v_train": 20.153696514706077,
+   "norm_v0_train": 66.41850445571683,
+   "n_rows": 20,
+   "split_half_cos": 0.9945728074332568,
+   "cos_delta_v_train_delta": 0.3070192193188779,
+   "delta_arm": "syc-pers-con-lr1e5-s137",
+   "cos_delta_v_train_corpus_matched_write": 0.7380131204023849
+  },
+  "25": {
+   "norm_delta_v_train": 56.800954118520885,
+   "norm_v0_train": 245.9248394260553,
+   "n_rows": 20,
+   "split_half_cos": 0.9904175491181721,
+   "cos_delta_v_train_delta": 0.3188502872278339,
+   "delta_arm": "syc-pers-con-lr1e5-s137",
+   "cos_delta_v_train_corpus_matched_write": 0.711405849066129
+  }
+ }
+}

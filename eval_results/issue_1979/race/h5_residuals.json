@@ -1,0 +1,472 @@
+{
+ "meta": {
+  "script": "scripts/issue1979_race.py",
+  "issue": 1979,
+  "seed": 1979,
+  "git_commit": "8c840dbe9d853cc63cd84886554213f20e0491ea",
+  "ts": "2026-08-01T20:40:52Z"
+ },
+ "grouping_rule": "con = regime==con AND ctx_key!=bare; placebo = regime==po OR ctx_key==bare (plan §3 H5: negatives trained DOWN only in con arms; per-arm values persisted so the analyzer can re-derive under any grouping)",
+ "per_arm": {
+  "cas-pers-con-lr1e5-s42": {
+   "kind": "content",
+   "beh_key": "cas",
+   "regime": "con",
+   "ctx_key": "pers",
+   "h5_group": "con",
+   "n_negatives": 5,
+   "negative_prefixes": [
+    "neg_sp_police",
+    "neg_sp_ph4",
+    "neg_reph_curious",
+    "neg_wc_short",
+    "neg_default_assistant"
+   ],
+   "median_signed_residual": -3.6579289170379248,
+   "residuals": [
+    -6.54439623339233,
+    -10.567515576696486,
+    -1.7251463942337466,
+    -3.6579289170379248,
+    -1.4705287326164012
+   ],
+   "median_signed_residual_fullfit": -3.139876868801778,
+   "median_signed_residual_change_dv": -0.6255785597615056
+  },
+  "cas-pers-po-lr1e5-s42": {
+   "kind": "content",
+   "beh_key": "cas",
+   "regime": "po",
+   "ctx_key": "pers",
+   "h5_group": "po",
+   "n_negatives": 5,
+   "negative_prefixes": [
+    "neg_sp_police",
+    "neg_sp_ph4",
+    "neg_reph_curious",
+    "neg_wc_short",
+    "neg_default_assistant"
+   ],
+   "median_signed_residual": -3.45442235543441,
+   "residuals": [
+    -0.36957476784616716,
+    -5.507663208224429,
+    -5.023344449294157,
+    -0.2384122035231684,
+    -3.45442235543441
+   ],
+   "median_signed_residual_fullfit": -2.862200889149463,
+   "median_signed_residual_change_dv": -0.27873266983782763
+  },
+  "cas-bare-con-lr1e5-s42": {
+   "kind": "content",
+   "beh_key": "cas",
+   "regime": "con",
+   "ctx_key": "bare",
+   "h5_group": "bare-placebo",
+   "n_negatives": 5,
+   "negative_prefixes": [
+    "neg_sp_police",
+    "neg_sp_ph4",
+    "neg_reph_curious",
+    "neg_wc_short",
+    "neg_default_assistant"
+   ],
+   "median_signed_residual": -5.752679028830116,
+   "residuals": [
+    -13.53125842573331,
+    -14.540031590491107,
+    5.05175626630523,
+    -5.752679028830116,
+    3.2935138245908284
+   ],
+   "median_signed_residual_fullfit": -5.213705104884813,
+   "median_signed_residual_change_dv": -5.5882482249033245
+  },
+  "cas-pers-ft-con-s42": {
+   "kind": "content",
+   "beh_key": "cas",
+   "regime": "con",
+   "ctx_key": "pers",
+   "h5_group": "con",
+   "n_negatives": 5,
+   "negative_prefixes": [
+    "neg_sp_police",
+    "neg_sp_ph4",
+    "neg_reph_curious",
+    "neg_wc_short",
+    "neg_default_assistant"
+   ],
+   "median_signed_residual": -3.393001564526962,
+   "residuals": [
+    -6.819608272294179,
+    -10.864968338579128,
+    -1.4662329616632164,
+    -3.393001564526962,
+    -0.777121369218527
+   ],
+   "median_signed_residual_fullfit": -2.883797731776866,
+   "median_signed_residual_change_dv": -0.9007905986633453
+  },
+  "imp-pers-con-lr3e5-s42": {
+   "kind": "content",
+   "beh_key": "imp",
+   "regime": "con",
+   "ctx_key": "pers",
+   "h5_group": "con",
+   "n_negatives": 5,
+   "negative_prefixes": [
+    "neg_sp_police",
+    "neg_sp_ph4",
+    "neg_reph_curious",
+    "neg_wc_short",
+    "neg_default_assistant"
+   ],
+   "median_signed_residual": -4.1140014304768675,
+   "residuals": [
+    -4.1140014304768675,
+    -1.4791155611697855,
+    -2.578139095576086,
+    -6.0446265438809395,
+    -4.687133855613243
+   ],
+   "median_signed_residual_fullfit": -3.4343429964293577,
+   "median_signed_residual_change_dv": -3.4014617831505434
+  },
+  "imp-pers-con-lr3e5-s137": {
+   "kind": "content",
+   "beh_key": "imp",
+   "regime": "con",
+   "ctx_key": "pers",
+   "h5_group": "con",
+   "n_negatives": 5,
+   "negative_prefixes": [
+    "neg_sp_police",
+    "neg_sp_ph4",
+    "neg_reph_curious",
+    "neg_wc_short",
+    "neg_default_assistant"
+   ],
+   "median_signed_residual": -2.6617027437195855,
+   "residuals": [
+    -1.7954052795340614,
+    -2.6617027437195855,
+    -2.302809022078211,
+    -6.137958012085223,
+    -5.192024889682538
+   ],
+   "median_signed_residual_fullfit": -2.020578203497845,
+   "median_signed_residual_change_dv": -3.174095835023906
+  },
+  "imp-pers-po-lr1e5-s42": {
+   "kind": "content",
+   "beh_key": "imp",
+   "regime": "po",
+   "ctx_key": "pers",
+   "h5_group": "po",
+   "n_negatives": 5,
+   "negative_prefixes": [
+    "neg_sp_police",
+    "neg_sp_ph4",
+    "neg_reph_curious",
+    "neg_wc_short",
+    "neg_default_assistant"
+   ],
+   "median_signed_residual": -2.701169529134701,
+   "residuals": [
+    6.791029768096799,
+    6.402284493245292,
+    -2.701169529134701,
+    -6.660373860839898,
+    -3.9286800740302734
+   ],
+   "median_signed_residual_fullfit": -2.998673971368692,
+   "median_signed_residual_change_dv": -2.869122391345602
+  },
+  "imp-pers-ft-con-s42": {
+   "kind": "content",
+   "beh_key": "imp",
+   "regime": "con",
+   "ctx_key": "pers",
+   "h5_group": "con",
+   "n_negatives": 5,
+   "negative_prefixes": [
+    "neg_sp_police",
+    "neg_sp_ph4",
+    "neg_reph_curious",
+    "neg_wc_short",
+    "neg_default_assistant"
+   ],
+   "median_signed_residual": -2.7139448324221154,
+   "residuals": [
+    2.2449446707178478,
+    -0.920494802148915,
+    -2.7139448324221154,
+    -8.594456189720066,
+    -3.735953596315013
+   ],
+   "median_signed_residual_fullfit": -2.452363665100473,
+   "median_signed_residual_change_dv": -2.6763959136303432
+  },
+  "syc-bare-con-lr1e5-s42": {
+   "kind": "content",
+   "beh_key": "syc",
+   "regime": "con",
+   "ctx_key": "bare",
+   "h5_group": "bare-placebo",
+   "n_negatives": 5,
+   "negative_prefixes": [
+    "neg_sp_police",
+    "neg_sp_ph4",
+    "neg_reph_curious",
+    "neg_wc_short",
+    "neg_default_assistant"
+   ],
+   "median_signed_residual": -1.199773600855373,
+   "residuals": [
+    -1.199773600855373,
+    -1.9749276347328442,
+    -1.3212854060703956,
+    -0.0199362345103129,
+    2.5085439587633838
+   ],
+   "median_signed_residual_fullfit": -1.1275598581804749,
+   "median_signed_residual_change_dv": 0.4379017314749918
+  },
+  "syc-conv-con-lr1e5-s42": {
+   "kind": "content",
+   "beh_key": "syc",
+   "regime": "con",
+   "ctx_key": "conv",
+   "h5_group": "con",
+   "n_negatives": 5,
+   "negative_prefixes": [
+    "neg_sp_police",
+    "neg_sp_ph4",
+    "neg_reph_curious",
+    "neg_wc_short",
+    "neg_default_assistant"
+   ],
+   "median_signed_residual": 0.6675091932147712,
+   "residuals": [
+    0.6675091932147712,
+    2.5231084136736506,
+    -2.114628696066479,
+    5.273842674103164,
+    -0.20066533252746055
+   ],
+   "median_signed_residual_fullfit": 0.39843198626571397,
+   "median_signed_residual_change_dv": 2.9120036573242687
+  },
+  "syc-pers-po-lr1e5-s42": {
+   "kind": "content",
+   "beh_key": "syc",
+   "regime": "po",
+   "ctx_key": "pers",
+   "h5_group": "po",
+   "n_negatives": 5,
+   "negative_prefixes": [
+    "neg_sp_police",
+    "neg_sp_ph4",
+    "neg_reph_curious",
+    "neg_wc_short",
+    "neg_default_assistant"
+   ],
+   "median_signed_residual": -0.08068056037381588,
+   "residuals": [
+    -0.43702865637756805,
+    0.0779199308692391,
+    -0.08068056037381588,
+    -1.8239678925410487,
+    0.4484969181876437
+   ],
+   "median_signed_residual_fullfit": -0.04248784956411633,
+   "median_signed_residual_change_dv": 1.372598392909712
+  },
+  "syc-pers-ft-con-s42": {
+   "kind": "content",
+   "beh_key": "syc",
+   "regime": "con",
+   "ctx_key": "pers",
+   "h5_group": "con",
+   "n_negatives": 5,
+   "negative_prefixes": [
+    "neg_sp_police",
+    "neg_sp_ph4",
+    "neg_reph_curious",
+    "neg_wc_short",
+    "neg_default_assistant"
+   ],
+   "median_signed_residual": -2.8732103171801793,
+   "residuals": [
+    -4.223056693814772,
+    1.0803436171670437,
+    -5.236761256368672,
+    -2.8732103171801793,
+    -1.420004035997521
+   ],
+   "median_signed_residual_fullfit": -2.642393776954073,
+   "median_signed_residual_change_dv": -0.4959025612754552
+  },
+  "mk-pers-con-lr5e6-s42": {
+   "kind": "marker",
+   "beh_key": "mk",
+   "regime": "con",
+   "ctx_key": "pers",
+   "h5_group": "con",
+   "n_negatives": 5,
+   "negative_prefixes": [
+    "neg_sp_police",
+    "neg_sp_ph4",
+    "neg_reph_curious",
+    "neg_wc_short",
+    "neg_default_assistant"
+   ],
+   "median_signed_residual": -0.02600824453710704,
+   "residuals": [
+    0.5090732489766232,
+    -0.11404611102271645,
+    -0.38046546208448806,
+    -0.02600824453710704,
+    0.16762937683328794
+   ],
+   "median_signed_residual_fullfit": -0.021787251276483843,
+   "median_signed_residual_change_dv": -0.02600824453710704
+  },
+  "mk-bare-con-lr5e6-s42": {
+   "kind": "marker",
+   "beh_key": "mk",
+   "regime": "con",
+   "ctx_key": "bare",
+   "h5_group": "bare-placebo",
+   "n_negatives": 5,
+   "negative_prefixes": [
+    "neg_sp_police",
+    "neg_sp_ph4",
+    "neg_reph_curious",
+    "neg_wc_short",
+    "neg_default_assistant"
+   ],
+   "median_signed_residual": -0.39477328396447753,
+   "residuals": [
+    -0.39477328396447753,
+    -0.7572002663212647,
+    0.629439082668493,
+    -0.542119604312183,
+    0.7227849919528664
+   ],
+   "median_signed_residual_fullfit": -0.3591502947328191,
+   "median_signed_residual_change_dv": -0.39477328396447753
+  },
+  "mk-conv-con-lr5e6-s42": {
+   "kind": "marker",
+   "beh_key": "mk",
+   "regime": "con",
+   "ctx_key": "conv",
+   "h5_group": "con",
+   "n_negatives": 5,
+   "negative_prefixes": [
+    "neg_sp_police",
+    "neg_sp_ph4",
+    "neg_reph_curious",
+    "neg_wc_short",
+    "neg_default_assistant"
+   ],
+   "median_signed_residual": -0.07917267690353635,
+   "residuals": [
+    0.1704220216591179,
+    -0.10259786852509878,
+    -0.0860179764775737,
+    -0.07917267690353635,
+    0.156983031789097
+   ],
+   "median_signed_residual_fullfit": -0.08635742426714677,
+   "median_signed_residual_change_dv": -0.07917267690353635
+  },
+  "mk-icl-con-lr5e6-s42": {
+   "kind": "marker",
+   "beh_key": "mk",
+   "regime": "con",
+   "ctx_key": "icl",
+   "h5_group": "con",
+   "n_negatives": 5,
+   "negative_prefixes": [
+    "neg_sp_police",
+    "neg_sp_ph4",
+    "neg_reph_curious",
+    "neg_wc_short",
+    "neg_default_assistant"
+   ],
+   "median_signed_residual": -0.0643395332592573,
+   "residuals": [
+    0.0021698943950130833,
+    -0.022446562044888874,
+    -0.1255453194828866,
+    -0.0643395332592573,
+    -0.0776241932376212
+   ],
+   "median_signed_residual_fullfit": -0.05406729114283049,
+   "median_signed_residual_change_dv": -0.0643395332592573
+  },
+  "mk-pers-po-lr5e6-s42": {
+   "kind": "marker",
+   "beh_key": "mk",
+   "regime": "po",
+   "ctx_key": "pers",
+   "h5_group": "po",
+   "n_negatives": 5,
+   "negative_prefixes": [
+    "neg_sp_police",
+    "neg_sp_ph4",
+    "neg_reph_curious",
+    "neg_wc_short",
+    "neg_default_assistant"
+   ],
+   "median_signed_residual": 0.0042485057392847025,
+   "residuals": [
+    0.8395154585326328,
+    -0.29936751581839616,
+    -0.5769830722378702,
+    0.0042485057392847025,
+    0.14063117226118926
+   ],
+   "median_signed_residual_fullfit": -0.005322529744374194,
+   "median_signed_residual_change_dv": 0.0042485057392847025
+  },
+  "mk-pers-ft-con-s42": {
+   "kind": "marker",
+   "beh_key": "mk",
+   "regime": "con",
+   "ctx_key": "pers",
+   "h5_group": "con",
+   "n_negatives": 5,
+   "negative_prefixes": [
+    "neg_sp_police",
+    "neg_sp_ph4",
+    "neg_reph_curious",
+    "neg_wc_short",
+    "neg_default_assistant"
+   ],
+   "median_signed_residual": -0.09801298771441003,
+   "residuals": [
+    0.06609634022736666,
+    -0.09801298771441003,
+    -0.26963892411574397,
+    -0.1292413968470223,
+    0.025490350877593437
+   ],
+   "median_signed_residual_fullfit": -0.08736838901613897,
+   "median_signed_residual_change_dv": -0.09801298771441003
+  }
+ },
+ "frac_con_content_median_lt0": 0.8571428571428571,
+ "frac_con_marker_median_lt0": 1.0,
+ "criterion_pass_2of3_both": true,
+ "con_minus_po_median_by_behavior": {
+  "cas": -0.07104288534803338,
+  "imp": -0.012775303287414275,
+  "syc": -1.0221700016088882,
+  "mk": -0.07600461082068152
+ },
+ "verdict": "H5-suppression-signature"
+}

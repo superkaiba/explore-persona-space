@@ -1,0 +1,12 @@
+{
+  "q_align": 100.0,
+  "delta_dark_lo": -0.014462585560977459,
+  "rho_ci": [
+    0.5359071095606567,
+    0.6325839868887605
+  ],
+  "P_align": true,
+  "P_dark": false,
+  "P_var0": false,
+  "verdict": "shared-structure (H1)"
+}

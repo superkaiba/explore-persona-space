@@ -861,6 +861,10 @@ Coverage notes (deliberate gaps you should know about)
   follow-up signal. The #477 incident, 2026-06-10, motivates this: an
   inline follow-up on a promoted task ran 3 cycles of auto-stop → manual
   re-provision in <1h before the user added the ``keep-running`` tag.
+  SUFFIXED pods (``pod-<N>-<slug>``) additionally get a PER-POD arm (#1961):
+  an ``epm:run-launched`` whose note names the pod in structured position
+  shields THAT pod for a bounded ceiling (default 48h,
+  ``EPM_POD_NAMED_SHIELD_MAX_AGE_H``) regardless of sibling transitions.
 
 Why STOP is keyed on task status, not session liveness
 ------------------------------------------------------
@@ -9597,6 +9601,13 @@ URGENT_WF_PARK_PYTEST_TIMEOUT_S = 180.0
 URGENT_WF_PARK_GATE_LOOKBACK_H = 48.0
 URGENT_WF_PARK_MAX_VERIFY_ATTEMPTS = 2
 URGENT_WF_PARK_LEDGER_MAX_AGE_H = 24.0
+# On-task tag the router files its tasks with (BOTH wf_fix routes,
+# :func:`_urgent_wf_park_compose_body`) AND the mechanical urgency signal the
+# proposed-infra sweep's urgent lane reads (#1853): a `proposed` infra/batch
+# task carrying it is ordered ahead of every non-urgent candidate
+# (:func:`_proposed_infra_candidates`) and may consume the bounded
+# urgent-bonus slot past the shared cap (:func:`decide_proposed_infra_sweep`).
+URGENT_MAIN_RED_TAG = "urgent-main-red"
 
 # Episode verdicts that permanently close a candidate FOR THIS ROUTER (the
 # park itself stays enumerated for the nightly sweep unless routed/deduped —
@@ -9972,6 +9983,91 @@ def _urgent_wf_park_dedup(
     return None
 
 
+def _urgent_wf_park_escalate_dedup_target(tid: int, key: str, dry_run: bool) -> None:
+    """Dedup-target escalation (#1853 leg a): a dedup hit means the router
+    files nothing, but when the TARGET task is itself a ripe ``proposed``
+    infra/batch task filed by another channel (/daily, a session filing) it
+    may lack the ``urgent-main-red`` tag and sit behind the sweep's shared
+    cap for hours (the #1823 shape). Probe the target with ONE bounded
+    ``task.py view <tid> --json`` subprocess (status + kind + tags in one
+    read — ``_task_status_kind`` alone lacks tags); on
+    ``status == "proposed"`` and ``kind in INFRA_DRAIN_KINDS``:
+
+      - ``needs-human`` tagged -> sidecar ``deduped-target-held-needs-human``,
+        NO tag write (the sweep never dispatches a held judgment call, #706 —
+        an "escalated" row would misleadingly imply a pending dispatch);
+      - else ``task.py add-tag <tid> urgent-main-red`` (idempotent — an
+        already-tagged task no-ops with no commit; fail-soft stderr print on
+        error) + sidecar ``deduped-target-escalated``, so the SAME-tick
+        sweep's urgent lane dispatches it (``urgent_wf_park_pass`` runs
+        BEFORE ``proposed_infra_sweep_pass`` in main()).
+
+    Any other status/kind: untouched (today's behavior). Under ``dry_run``
+    NO subprocess runs at all (including the view probe)."""
+    if dry_run:
+        print(f"  [dry-run] would probe dedup target #{tid} for urgent-lane escalation")
+        return
+    try:
+        res = subprocess.run(
+            ["uv", "run", "python", "scripts/task.py", "view", str(tid), "--json"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except (subprocess.SubprocessError, OSError) as exc:
+        print(
+            f"  urgent-wf-park: dedup-target #{tid} view probe failed: {exc}",
+            file=sys.stderr,
+        )
+        return
+    if res.returncode != 0:
+        print(
+            f"  urgent-wf-park: dedup-target #{tid} view probe rc={res.returncode}",
+            file=sys.stderr,
+        )
+        return
+    try:
+        payload = json.loads(res.stdout)
+    except json.JSONDecodeError:
+        print(f"  urgent-wf-park: dedup-target #{tid} view JSON unparseable", file=sys.stderr)
+        return
+    if not isinstance(payload, dict):
+        return
+    raw_fm = payload.get("frontmatter")
+    fm: dict = raw_fm if isinstance(raw_fm, dict) else {}
+    if payload.get("status") != "proposed" or fm.get("kind") not in INFRA_DRAIN_KINDS:
+        return  # not a sweep candidate — untouched (today's behavior)
+    if _NEEDS_HUMAN_TAG in (fm.get("tags") or []):
+        # #706 beats #1853: the sweep would never dispatch it — record the
+        # held state honestly instead of an escalated row implying dispatch.
+        _append_urgent_wf_park_sidecar(
+            {"key": key, "action": "deduped-target-held-needs-human", "task": tid}, dry_run
+        )
+        return
+    try:
+        add = subprocess.run(
+            ["uv", "run", "python", "scripts/task.py", "add-tag", str(tid), URGENT_MAIN_RED_TAG],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except (subprocess.SubprocessError, OSError) as exc:
+        print(f"  urgent-wf-park: dedup-target #{tid} add-tag failed: {exc}", file=sys.stderr)
+        return
+    if add.returncode != 0:
+        print(
+            f"  urgent-wf-park: dedup-target #{tid} add-tag rc={add.returncode}: "
+            f"{add.stderr.strip()[:200]}",
+            file=sys.stderr,
+        )
+        return
+    _append_urgent_wf_park_sidecar(
+        {"key": key, "action": "deduped-target-escalated", "task": tid}, dry_run
+    )
+
+
 def _urgent_wf_park_compose_body(
     fields: UrgentFields, cand_fp: str, verified_line: str
 ) -> tuple[str, str, list[str]]:
@@ -9986,7 +10082,7 @@ def _urgent_wf_park_compose_body(
     node = fields.failing_test
     if fields.wf_fix:
         title = f"workflow-fix: {fields.proposed_change[:60]}"
-        tags = ["wf-fix", f"wf-fix-fp:{cand_fp}", "urgent-main-red"]
+        tags = ["wf-fix", f"wf-fix-fp:{cand_fp}", URGENT_MAIN_RED_TAG]
         provenance = f"- workflow_fix_target: {fields.target_file}\n- fingerprint: {cand_fp}\n"
         constraints = (
             "- Workflow-surface only — never experiment code, `configs/`, or `tasks/`.\n"
@@ -9997,7 +10093,7 @@ def _urgent_wf_park_compose_body(
     else:
         node_short = f"{node.split('::')[0].rsplit('/', 1)[-1]}::{node.split('::')[-1]}"
         title = f"daily-fix: fix red main: {node_short} — {fields.proposed_change[:40]}"
-        tags = ["urgent-main-red"]
+        tags = [URGENT_MAIN_RED_TAG]
         provenance = f"- fingerprint: {cand_fp}\n"
         constraints = (
             "- NON-workflow-surface fix (`wf_fix: false` declared by the parking\n"
@@ -10212,6 +10308,13 @@ def _urgent_wf_park_route(
     dedup_hit = _urgent_wf_park_dedup(fields, cand_fp, root)
     if dedup_hit is not None:
         tid, belt = dedup_hit
+        # #1853 leg (a): escalate a ripe `proposed` infra/batch dedup TARGET
+        # into the sweep's urgent lane. Runs BEFORE the `episodes[key]` latch
+        # write so a crash mid-escalation inherits the existing crash-retry
+        # semantics (the branch re-runs next tick) instead of the escalation
+        # being lost for this park key; an add-tag failure itself is
+        # fail-soft (stderr) by design.
+        _urgent_wf_park_escalate_dedup_target(tid, key, dry_run)
         note = _urgent_wf_park_routed_note(
             fields, cand_fp, f"n/a (deduped against #{tid})", False, ts_raw, note_text
         )
@@ -11264,6 +11367,81 @@ _POD_FOLLOWUP_SIGNAL_KINDS = frozenset(
 # Back-compat alias (the run-launched marker is still the strongest signal).
 _RUN_LAUNCHED_KIND = "epm:run-launched"
 
+# Default ceiling (seconds) for the per-pod named-launch shield on SUFFIXED
+# pods (#1961). Within the ceiling, a suffixed pod whose `epm:run-launched`
+# note names it in a STRUCTURED position stays exempt from the pod-safety
+# auto-stop even when SIBLING rounds post newer done-transitions (the
+# multi-round issue-grain gap that stopped pod-1768-lt mid-fits). Past it the
+# pod falls back to the issue-grain predicate — the ceiling ITSELF is the
+# billing bound for a shielded escaped suffixed pod (the #1582 wedged-owner
+# escalation arm rides the keep-running-TAGGED branch and does NOT cover
+# followup-skip pods). Fail direction: a mis-shielded pod bills until the
+# ceiling; a mis-stopped pod loses work — fail toward KEEP within the bound.
+# Grounding for 48h: ~2x the stale-pod audit's 24h EXITED convention and >4x
+# the longest observed inline round (#1768 fits, ~7h). Override via
+# EPM_POD_NAMED_SHIELD_MAX_AGE_H (float hours), read at CALL time by
+# _pod_named_shield_max_age_s() so tests + fleet-level env changes take
+# effect without re-import.
+POD_NAMED_SHIELD_MAX_AGE_S = 48.0 * 3600.0
+
+
+def _pod_named_shield_max_age_s() -> float:
+    """Resolve the #1961 named-shield ceiling in seconds:
+    ``EPM_POD_NAMED_SHIELD_MAX_AGE_H`` (float hours) when set + sane, else
+    :data:`POD_NAMED_SHIELD_MAX_AGE_S` (48h). A garbled / non-positive /
+    non-finite value falls back to the default rather than crashing the
+    watcher (the same fail-soft contract as the other env knobs here)."""
+    try:
+        val = float(os.environ.get("EPM_POD_NAMED_SHIELD_MAX_AGE_H", ""))
+    except ValueError:
+        return POD_NAMED_SHIELD_MAX_AGE_S
+    # The upper sanity bound also rejects inf/nan (one year of hours).
+    if not (0 < val < 24 * 366):
+        return POD_NAMED_SHIELD_MAX_AGE_S
+    return val * 3600.0
+
+
+def _is_suffixed_pod_name(pod_name: str, issue: int) -> bool:
+    """True iff ``pod_name`` is the SUFFIXED multi-pod-per-issue form for
+    ``issue`` (``pod-<N>-<slug>``, #1334). The primary ``pod-<N>`` and the
+    legacy ``epm-issue-<N>`` forms return False — only suffixed pods get the
+    #1961 per-pod named-launch shield: suffixed pods exist ONLY as deliberate
+    concurrent inline rounds (exactly the population the issue-grain
+    predicate mis-covers on multi-round issues), while EVERY standard launch
+    marker names its primary pod as ``pod=pod-<N>``, so an unscoped named
+    shield would disable the classic escaped-primary-pod auto-stop
+    fleet-wide for <ceiling hours after every launch."""
+    return pod_name.startswith(f"pod-{issue}-")
+
+
+def _latest_named_run_launched_ts(events: list[dict], pod_name: str) -> float | None:
+    """Newest ``epm:run-launched`` whose note names ``pod_name`` in a
+    STRUCTURED position (#1961), or ``None`` if no such marker exists.
+
+    Structured = EITHER a boundary-safe ``pod=<name>`` token anywhere in the
+    note, OR the note's LEADING token being ``<name>`` (optionally preceded
+    by whitespace). Boundary-safe means left/right ``[\\w-]`` guards, so
+    ``pod-1768`` never matches inside ``pod-1768-lt`` and vice versa. Both
+    accepted shapes are attested on #1768 (v1/v2 ``pod=pod-1768``; v11
+    "pod-1768-lt (4 GPU) provisioned ..."). A prose mention elsewhere in a
+    note MUST NOT match — attested counterexample: #1768's v14 note mentions
+    "pod-1768-tx ... was already TERMINATED" mid-prose, which must neither
+    shield pod-1768-tx nor restart its ceiling clock. Missing / non-string
+    notes are skipped (fail toward no-shield → issue-grain fallback)."""
+    esc = re.escape(pod_name)
+    pattern = re.compile(rf"(?<![\w-])pod={esc}(?![\w-])|^\s*{esc}(?![\w-])")
+    best: float | None = None
+    for ev in events:
+        if ev.get("kind") != _RUN_LAUNCHED_KIND:
+            continue
+        note = ev.get("note")
+        if not isinstance(note, str) or pattern.search(note) is None:
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is not None and (best is None or ts > best):
+            best = ts
+    return best
+
 
 def _latest_event_ts(events: list[dict], kinds: frozenset[str] | set[str]) -> float | None:
     """Newest epoch ts among events whose ``kind`` is in ``kinds``, or
@@ -11283,12 +11461,53 @@ def _latest_event_ts(events: list[dict], kinds: frozenset[str] | set[str]) -> fl
     return best
 
 
-def _task_followup_active(issue: int, events: list[dict] | None = None) -> bool:
+def _task_followup_active(
+    issue: int,
+    events: list[dict] | None = None,
+    *,
+    pod_name: str | None = None,
+    now: float | None = None,
+) -> bool:
     """True iff task ``issue`` has a follow-up signal marker
     (:data:`_POD_FOLLOWUP_SIGNAL_KINDS`: ``epm:run-launched`` /
     ``epm:followup-scope`` / ``epm:free-analysis-followup-run``) NEWER than
     its latest done-transition marker (``epm:promoted`` /
-    ``epm:status-changed``).
+    ``epm:status-changed``) — OR, for a SUFFIXED pod (#1961), a structured
+    named launch younger than the shield ceiling (per-pod arm below).
+
+    Per-pod named-launch shield for SUFFIXED pods (#1961). The issue-grain
+    compare breaks on MULTI-ROUND issues: concurrent/serial follow-up rounds
+    post ``epm:status-changed`` continually, so any pod whose own launch
+    marker predates the latest SIBLING transition loses inferred protection
+    (incident #1768: pod-1768-lt was auto-STOPPED at ~05:05Z with 142/216
+    fit cells done — its launch marker was older than a sibling round's
+    transition; the only remaining shield was the ISSUE-wide ``keep-running``
+    tag, which the standing inline-round guidance says NOT to set because it
+    blocks sibling bare-form teardowns, #1485). So when ``pod_name`` is the
+    suffixed form for this issue (:func:`_is_suffixed_pod_name` — primary
+    ``pod-<N>`` and legacy ``epm-issue-<N>`` deliberately excluded, keeping
+    the classic escaped-primary auto-stop byte-identical) AND an
+    ``epm:run-launched`` note names THAT pod in a STRUCTURED position
+    (:func:`_latest_named_run_launched_ts`) AND that launch is younger than
+    the ceiling (:func:`_pod_named_shield_max_age_s`, default 48h), this
+    returns True REGARDLESS of later sibling done-transitions. Everything
+    else — pod_name None (the three non-pod call sites), a non-suffixed
+    name, no structured named launch, or a named launch past the ceiling —
+    falls through to the issue-grain compare byte-identically (fail toward
+    the pre-#1961 behavior: never a synthesized stop, never a fresh shield).
+
+    Two documented consequences of that fallback: (a) POST-CEILING the
+    issue-grain compare can still read True via a SIBLING round's newer
+    launch marker — that is the pre-#1961 status quo, kept deliberately
+    (the ceiling bounds the NAMED shield, it does not tighten the issue
+    grain); (b) a launch note that names its pod in a NONCONFORMING position
+    gets NO per-pod shield — #1768's v15 note begins "Continuation round
+    of... Pod pod-1768-lt2 (1xH100 ...", which fails BOTH structured shapes
+    (not the leading token, no ``pod=`` token) and so deliberately degrades
+    to issue-grain: a conservative miss, never a false shield. The
+    structured pod-naming in the ``epm:run-launched`` note is load-bearing
+    on multi-round issues (lead the note with the pod name, or carry a
+    ``pod=<name>`` token).
 
     Predicate for the pod-safety auto-stop exemption: a task at a
     pod-safety auto-stop status (DONE or ``on_hold``, #980) with a fresh
@@ -11321,6 +11540,15 @@ def _task_followup_active(issue: int, events: list[dict] | None = None) -> bool:
     """
     if events is None:
         events = _task_events(issue)
+    # ── #1961 per-pod arm (suffixed pods only; see the docstring) ────────────
+    if pod_name is not None and _is_suffixed_pod_name(pod_name, issue):
+        named_ts = _latest_named_run_launched_ts(events, pod_name)
+        if named_ts is not None:
+            ref_now = time.time() if now is None else now
+            if ref_now - named_ts < _pod_named_shield_max_age_s():
+                return True
+        # No structured named launch, or past the ceiling: fall through to
+        # the issue-grain compare unchanged (never a synthesized stop).
     followup_signal = _latest_event_ts(events, _POD_FOLLOWUP_SIGNAL_KINDS)
     if followup_signal is None:
         return False
@@ -14669,7 +14897,13 @@ def _maybe_escalate_keep_running_wedged_owner(
     return True
 
 
-def _escaped_pod_exemptions(issue: int, status_class: str, events: list) -> tuple[bool, bool]:
+def _escaped_pod_exemptions(
+    issue: int,
+    status_class: str,
+    events: list,
+    pod_name: str | None = None,
+    now: float | None = None,
+) -> tuple[bool, bool]:
     """Lazy escaped-pod auto-stop exemptions for :func:`_process_pod`.
 
     Returns ``(keep_running, followup_active)``. Both only matter when the
@@ -14678,13 +14912,16 @@ def _escaped_pod_exemptions(issue: int, status_class: str, events: list) -> tupl
     escaped-pod candidates. ``keep_running`` (the explicit user tag) is
     consulted first; ``followup_active`` (the inferred-from-events live inline
     follow-up) is the fallback, computed only when ``keep_running`` is False.
+    ``pod_name`` + ``now`` thread through to the #1961 per-pod named-launch
+    shield for SUFFIXED pods (see :func:`_task_followup_active`); ``None``
+    keeps the issue-grain behavior byte-identical.
     Extracted from :func:`_process_pod` to keep its cyclomatic complexity under
     the C901 cap after the #692 wedge arm landed (behavior unchanged)."""
     keep_running = status_class == "auto-stop-done" and _task_keep_running(issue)
     followup_active = (
         status_class == "auto-stop-done"
         and not keep_running
-        and _task_followup_active(issue, events=events)
+        and _task_followup_active(issue, events=events, pod_name=pod_name, now=now)
     )
     return keep_running, followup_active
 
@@ -14737,7 +14974,13 @@ def _process_pod(
     events = _task_events(issue)
     latest_progress = _latest_progress_ts(events)
     status_class = _status_class(status, latest_progress, now)
-    keep_running, followup_active = _escaped_pod_exemptions(issue, status_class, events)
+    keep_running, followup_active = _escaped_pod_exemptions(
+        issue,
+        status_class,
+        events,
+        pod_name=info.name if info is not None else f"pod-{issue}",
+        now=now,
+    )
 
     prev_state = _load_pod_safety_state(issue)
     prev_missed = prev_state.get("missed", 0)
@@ -19768,6 +20011,13 @@ PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT = INFRA_DRAIN_BACKOFF_S_DEFAULT
 # task leaves `proposed`, so a PM rewrite / repromotion / status change clears
 # it naturally). env EPM_PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS.
 PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS_DEFAULT = INFRA_DRAIN_MAX_ATTEMPTS_DEFAULT
+# Bounded urgent-lane overflow (#1853): extra slots past the shared cap
+# reserved for `urgent-main-red` candidates ONLY, so an urgent-park-router
+# filing is dispatchable even when a session wave holds the cap exactly full
+# (the #1823 shape: 8-27h cap-full skips). 0 disables the overflow while
+# keeping the urgent-first ordering. NEVER widen beyond +1 without a plan
+# (the #1853 must-ask fence). env EPM_INFRA_SWEEP_URGENT_BONUS.
+PROPOSED_INFRA_SWEEP_URGENT_BONUS_DEFAULT = 1
 
 # #843 M3: the sweep skips a decided candidate whose events.jsonl carries a
 # dispatch-sentinel marker younger than this — one watcher cadence (cron
@@ -21038,6 +21288,22 @@ def _proposed_infra_sweep_backoff_s() -> float:
         return PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT
 
 
+def _infra_sweep_urgent_bonus() -> int:
+    """Urgent-lane overflow slots past the shared cap (#1853; env
+    ``EPM_INFRA_SWEEP_URGENT_BONUS``; default
+    :data:`PROPOSED_INFRA_SWEEP_URGENT_BONUS_DEFAULT`, clamped to >= 0 — 0
+    disables the overflow while keeping the urgent-first ordering). A
+    malformed env value falls back to the default (a typo must not distort
+    the cap arithmetic — the :func:`_proposed_infra_sweep_backoff_s` shape)."""
+    raw = os.environ.get("EPM_INFRA_SWEEP_URGENT_BONUS")
+    if not raw:
+        return PROPOSED_INFRA_SWEEP_URGENT_BONUS_DEFAULT
+    try:
+        return max(0, int(raw))
+    except ValueError:
+        return PROPOSED_INFRA_SWEEP_URGENT_BONUS_DEFAULT
+
+
 def _proposed_infra_sweep_max_attempts() -> int:
     """Attempt cap before the sweep parks a repeatedly-failing task (env
     ``EPM_PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS``; default
@@ -21083,10 +21349,13 @@ def _save_proposed_infra_sweep_state(state: dict) -> None:
     tmp.replace(dest)
 
 
-def _proposed_infra_candidates() -> list[int] | None:
-    """Ripe-`proposed` infra/batch candidate ids, OLDEST-FIRST (ascending id is
-    a safe proxy — the PM's urgency-first nuance is the PM's job; this sweep is
-    the mechanical backstop). Built from EXACTLY one
+def _proposed_infra_candidates() -> tuple[list[int], frozenset[int]] | None:
+    """Ripe-`proposed` infra/batch candidates as ``(ordered_ids, urgent_ids)``
+    (#1853): URGENT-FIRST — rows tagged :data:`URGENT_MAIN_RED_TAG` (the
+    #1681 router's mechanical urgency signal) ahead of EVERY non-urgent row —
+    then OLDEST-FIRST within each class (ascending id is a safe proxy — the
+    PM's urgency-first nuance is the PM's job; this sweep is the mechanical
+    backstop). Built from EXACTLY one
     ``task.py list-by-status --status proposed --json`` subprocess, filtered to
     ``kind in INFRA_DRAIN_KINDS``.
 
@@ -21096,7 +21365,9 @@ def _proposed_infra_candidates() -> list[int] | None:
     pinned by the exact-argv Test 10. A row tagged
     :data:`_NEEDS_HUMAN_TAG` is ALSO excluded (#706): a /daily route-3 held
     judgment call is a tracked `proposed` infra task surfaced in the PM
-    `Needs you` block for Thomas's call, NEVER auto-dispatched by this sweep.
+    `Needs you` block for Thomas's call, NEVER auto-dispatched by this sweep —
+    the exclusion BEATS :data:`URGENT_MAIN_RED_TAG` (a row tagged both never
+    enters the ids NOR the urgent set).
     Returns ``None`` on any read/parse
     failure (the pass then skips this tick — fail toward NOT dispatching,
     mirroring :func:`_infra_drain_occupancy`'s fail-closed posture)."""
@@ -21128,20 +21399,27 @@ def _proposed_infra_candidates() -> list[int] | None:
     if not isinstance(rows, list):
         return None
     ids: list[int] = []
+    urgent: set[int] = set()
     for row in rows:
         if not isinstance(row, dict) or row.get("kind") not in INFRA_DRAIN_KINDS:
             continue
+        tags = row.get("tags") or []
         # #706: a /daily route-3 held judgment call carries `needs-human` —
         # surfaced in the PM `Needs you` block, never auto-dispatched. The
         # `or []` guards legacy rows that predate the `tags` field (a
-        # `row["tags"]` lookup would KeyError + crash the whole sweep).
-        if _NEEDS_HUMAN_TAG in (row.get("tags") or []):
+        # `row["tags"]` lookup would KeyError + crash the whole sweep). This
+        # exclusion stays ORDERED BEFORE the urgency collection below — a row
+        # tagged both `needs-human` + `urgent-main-red` is neither a
+        # candidate nor urgent (#1853 acceptance vi).
+        if _NEEDS_HUMAN_TAG in tags:
             continue
         tid = row.get("id")
         if isinstance(tid, int) and tid not in ids:
             ids.append(tid)
-    ids.sort()  # oldest-first proxy
-    return ids
+            if URGENT_MAIN_RED_TAG in tags:
+                urgent.add(tid)
+    ids.sort(key=lambda t: (0 if t in urgent else 1, t))  # urgent-first, then oldest-first
+    return ids, frozenset(urgent)
 
 
 def _proposed_infra_hold_reason(
@@ -21194,20 +21472,25 @@ def decide_proposed_infra_sweep(
     *,
     backoff_s: float = PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT,
     max_attempts: int = PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS_DEFAULT,
+    urgent: frozenset[int] = frozenset(),
+    urgent_bonus: int = 0,
 ) -> tuple[list[int], list[tuple[int, str]]]:
     """Pure decision: ``(dispatch_ids_in_order, skipped [(id, reason)])`` —
     mirroring :func:`decide_infra_drain` so the cap/hold/registration matrix is
     falsifiable in isolation (#690 R4).
 
-    ``candidates`` is the ripe-`proposed` infra/batch id list (oldest-first);
+    ``candidates`` is the ripe-`proposed` infra/batch id list (urgent-first,
+    then oldest-first — :func:`_proposed_infra_candidates`);
     ``holds`` the PM queue file's PARSED int-keyed map; ``predicate_statuses``
     the resolved status of each predicate's BLOCKING issue (``None`` =
     unreadable); ``registered`` the NON-STALE registrations among the
     candidates; ``occupied_active`` the count of kind-infra/batch tasks at
     :data:`INFRA_DRAIN_OCCUPIED_STATUSES`; ``pending`` the count of ALL
     non-stale registrations of still-`proposed` drain-kind tasks (the SHARED
-    cap budget — see :func:`_infra_drain_pending`). ``free = max(0, cap -
-    occupied_active - pending)``.
+    cap budget — see :func:`_infra_drain_pending`). ``urgent`` is the
+    `urgent-main-red` id set riding the candidate tuple; ``urgent_bonus``
+    (#1853, default 0 — the pass threads :func:`_infra_sweep_urgent_bonus`)
+    grants urgent candidates a bounded overflow past the shared cap.
 
     Per-candidate guard order (every skip carries a reason string):
 
@@ -21222,10 +21505,17 @@ def decide_proposed_infra_sweep(
          change status between the candidate query and this read)
       6. kind not in :data:`INFRA_DRAIN_KINDS` → ``"kind-<kind|unreadable>"``
          (defense in depth; the candidate query already filtered)
-      7. no free slot → ``"cap-full"``
+      7. per-candidate limit ``cap + (urgent_bonus if candidate in urgent
+         else 0)``; dispatch iff ``occupied_active + pending + len(dispatch)
+         < limit``, else → ``"cap-full"`` (``len(dispatch)`` inside the
+         comparison bounds the overflow to ``urgent_bonus`` slots TOTAL —
+         two urgent candidates at a full cap with bonus 1 dispatch exactly
+         one; urgent-first ordering means an urgent candidate can never lose
+         its bonus slot to a non-urgent one. ``urgent_bonus=0`` reproduces
+         the old ``free = max(0, cap - occupied_active - pending)`` walk
+         byte-for-byte)
       8. else dispatch; one attempt per id per cycle
     """
-    free = max(0, cap - occupied_active - pending)
     dispatch: list[int] = []
     skipped: list[tuple[int, str]] = []
     for i in candidates:
@@ -21261,11 +21551,14 @@ def decide_proposed_infra_sweep(
         if kind not in INFRA_DRAIN_KINDS:
             skipped.append((i, f"kind-{kind or 'unreadable'}"))
             continue
-        if free <= 0:
+        # #1853 guard 7: per-candidate limit — urgent candidates get the
+        # bounded bonus past the shared cap; `len(dispatch)` inside the
+        # comparison keeps the overflow to `urgent_bonus` slots TOTAL.
+        limit = cap + (urgent_bonus if i in urgent else 0)
+        if occupied_active + pending + len(dispatch) >= limit:
             skipped.append((i, "cap-full"))
             continue
         dispatch.append(i)
-        free -= 1
     return dispatch, skipped
 
 
@@ -21310,7 +21603,10 @@ def proposed_infra_sweep_pass(
     BUILDS its own candidate set from ``list-by-status --status proposed``;
     consults the PM queue's ``holds`` map ONLY to honor holds. Daemon-gated like
     every spawning pass; shares the cap with the drain (it runs AFTER the drain
-    in main(), so the drain's fresh registrations count as ``pending`` here)."""
+    in main(), so the drain's fresh registrations count as ``pending`` here).
+    `urgent-main-red` candidates ride an URGENT LANE (#1853): ordered ahead of
+    every non-urgent candidate and granted the bounded
+    :func:`_infra_sweep_urgent_bonus` overflow past the shared cap."""
     if not _proposed_infra_sweep_enabled():
         print("proposed-infra-sweep: disabled via EPM_DISABLE_PROPOSED_INFRA_SWEEP; skipping")
         return
@@ -21323,13 +21619,17 @@ def proposed_infra_sweep_pass(
         return
     now = now if now is not None else time.time()
 
-    candidates = _proposed_infra_candidates()
-    if candidates is None:
+    # Unpack the (ids, urgent) tuple AT THE TOP (#1853): every downstream use
+    # — _proposed_infra_sweep_prune_save's `set(candidates)`, the emptiness
+    # check below, _infra_drain_signals — consumes the ids LIST.
+    cand_result = _proposed_infra_candidates()
+    if cand_result is None:
         print(
             "proposed-infra-sweep: `list-by-status --status proposed` read FAILED; "
             "skipping this tick (fail toward NOT dispatching)"
         )
         return
+    candidates, urgent = cand_result
     if not candidates:
         print("proposed-infra-sweep: no ripe proposed infra/batch candidates; nothing to do")
         return
@@ -21406,6 +21706,8 @@ def proposed_infra_sweep_pass(
         cap,
         backoff_s=backoff_s,
         max_attempts=max_attempts,
+        urgent=urgent,
+        urgent_bonus=_infra_sweep_urgent_bonus(),
     )
 
     marker_fresh_s = _proposed_infra_sweep_marker_fresh_s()
@@ -21451,7 +21753,7 @@ def proposed_infra_sweep_pass(
     for issue, reason in skipped:
         print(f"  PROPOSED-INFRA-SWEEP SKIP issue #{issue} ({reason})")
     summary = (
-        f"proposed-infra-sweep: candidates={len(candidates)} "
+        f"proposed-infra-sweep: candidates={len(candidates)} urgent={len(urgent)} "
         f"occupied={occupied_active}(+{pending} pending) cap={cap} "
         f"dispatched={dispatched} skipped={len(skipped)}"
     )

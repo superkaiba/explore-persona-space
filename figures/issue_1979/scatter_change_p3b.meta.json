@@ -1,0 +1,914 @@
+{
+  "commit": "0a6f324d02",
+  "created": "2026-08-02T00:31:19Z",
+  "figsize": [
+    10.4,
+    4.2
+  ],
+  "points": [
+    {
+      "through-map predicted-answer similarity": -0.0015615037916487879,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 5.127777777777776,
+      "label": "wildchat_prefix_real545",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "through-map predicted-answer similarity": 0.1707049824048465,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 6.2,
+      "label": "bare",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "through-map predicted-answer similarity": -0.1089752954688049,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 0.6834274952919035,
+      "label": "wildchat_prefix_real545",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "through-map predicted-answer similarity": -0.24285648552107267,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 3.6055555555555565,
+      "label": "wildchat_prefix_real545",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "through-map predicted-answer similarity": -0.258265164631609,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 4.199999999999999,
+      "label": "wildchat_prefix_real545",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "through-map predicted-answer similarity": 0.3675977458315704,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 9.499999999999998,
+      "label": "persona_software_engineer",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "through-map predicted-answer similarity": 0.3341623008136588,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 3.4944444444444436,
+      "label": "neg_sp_police",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "through-map predicted-answer similarity": 0.0625901500794271,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 1.6666666666666663,
+      "label": "neg_wc_short",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "through-map predicted-answer similarity": -0.26516743076019056,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 3.6611111111111105,
+      "label": "wildchat_prefix_real545",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "through-map predicted-answer similarity": -0.2798266294898026,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 1.983333333333333,
+      "label": "wildchat_prefix_real545",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "through-map predicted-answer similarity": 0.26380223013906,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 28.86391119040538,
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "through-map predicted-answer similarity": 0.16010538482239053,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 2.3222222222222224,
+      "label": "neg_default_assistant",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "through-map predicted-answer similarity": 0.01149509554469406,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 2.15,
+      "label": "neg_reph_curious",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "through-map predicted-answer similarity": -0.20126670308151026,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 1.4499999999999997,
+      "label": "wildchat_prefix_real545",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "through-map predicted-answer similarity": 0.11421719691107807,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 4.1722222222222225,
+      "label": "bare",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "through-map predicted-answer similarity": -0.10452517068042651,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 3.8888888888888893,
+      "label": "wildchat_prefix_real545",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "through-map predicted-answer similarity": 0.19151323114179739,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 14.12222222222222,
+      "label": "persona_software_engineer",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "through-map predicted-answer similarity": 0.14300727315461803,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 9.861111111111112,
+      "label": "persona_software_engineer",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "through-map predicted-answer similarity": -0.05308202073738076,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 2.499999999999999,
+      "label": "wildchat_prefix_real545",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "through-map predicted-answer similarity": -0.11706134122374211,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 3.5166666666666666,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "through-map predicted-answer similarity": -0.14594498645681994,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 2.8277777777777784,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "through-map predicted-answer similarity": -0.12646564112814362,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 4.616666666666667,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "through-map predicted-answer similarity": -0.16101783312497692,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 2.95,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "through-map predicted-answer similarity": -0.17641658025861315,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 5.694444444444445,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "through-map predicted-answer similarity": -0.16964672964095603,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 1.7166666666666663,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "through-map predicted-answer similarity": -0.17496217857366428,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 3.55,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "through-map predicted-answer similarity": -0.32492647851599765,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 1.5666666666666667,
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "through-map predicted-answer similarity": -0.12178171859140258,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 4.0,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "through-map predicted-answer similarity": 0.017006312240740087,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 4.877777777777778,
+      "label": "neg_reph_curious",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "through-map predicted-answer similarity": -0.11082712121442248,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 2.7066854990583797,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "through-map predicted-answer similarity": -0.12002101447562825,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 3.25,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "through-map predicted-answer similarity": -0.24077424224391578,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 3.1277777777777778,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "through-map predicted-answer similarity": -0.16077559280535123,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 3.188888888888888,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "through-map predicted-answer similarity": -0.2975979206960373,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 4.122222222222222,
+      "label": "wildchat_prefix_real545",
+      "series": "icl-fresh",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "through-map predicted-answer similarity": -0.042895583172148075,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": -0.3222222222222224,
+      "label": "wildchat_prefix_real545",
+      "series": "icl-fresh",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "through-map predicted-answer similarity": 0.09784342355087731,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 6.872222222222223,
+      "label": "bare",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "through-map predicted-answer similarity": 0.20283970449317698,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 8.031732580037664,
+      "label": "persona_software_engineer",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "through-map predicted-answer similarity": 0.28163966456916617,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 10.372222222222222,
+      "label": "persona_software_engineer",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "through-map predicted-answer similarity": -0.015210524338100943,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 2.716666666666667,
+      "label": "wildchat_prefix_real545",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "through-map predicted-answer similarity": 0.3418473351994312,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 4.438888888888888,
+      "label": "neg_sp_police",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "through-map predicted-answer similarity": 0.3943977981502051,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 7.633333333333335,
+      "label": "neg_sp_ph4",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "through-map predicted-answer similarity": 0.2790301018346287,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 3.4499999999999997,
+      "label": "neg_sp_police",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "through-map predicted-answer similarity": 0.27099564056723807,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 4.425329566854991,
+      "label": "neg_sp_ph4",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "through-map predicted-answer similarity": 0.013155919588179101,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 2.0277777777777777,
+      "label": "neg_reph_curious",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "through-map predicted-answer similarity": 0.08205187248456744,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 2.4888888888888885,
+      "label": "neg_wc_short",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "through-map predicted-answer similarity": 0.16010538482239053,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 2.7277777777777774,
+      "label": "neg_default_assistant",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "through-map predicted-answer similarity": 0.24995605793757852,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 10.149999999999999,
+      "label": "persona_software_engineer",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "through-map predicted-answer similarity": -0.03048808677314853,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 2.427777777777778,
+      "label": "wildchat_prefix_real545",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "through-map predicted-answer similarity": 0.22213096779659933,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 2.422222222222222,
+      "label": "icl_prefix_sycophancy",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "through-map predicted-answer similarity": 0.15868469431147741,
+      "per-prefix leakage change\n(trained \u2212 base, judge points)": 3.2777777777777777,
+      "label": "bare",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "through-map predicted-answer similarity": -0.034679557839544024,
+      "y": -0.8333333333333339,
+      "label": "persona_software_engineer",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "through-map predicted-answer similarity": -0.027530306272158484,
+      "y": -2.241666666666668,
+      "label": "persona_software_engineer",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "through-map predicted-answer similarity": -0.30117961178945735,
+      "y": 1.0388888888888896,
+      "label": "neg_wc_short",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "through-map predicted-answer similarity": -0.1911189787052054,
+      "y": -0.2472222222222218,
+      "label": "persona_software_engineer",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "through-map predicted-answer similarity": -0.2552378882293214,
+      "y": 6.9222222222222225,
+      "label": "neg_wc_short",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "through-map predicted-answer similarity": 0.4533201959041399,
+      "y": -4.705555555555556,
+      "label": "neg_reph_curious",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "through-map predicted-answer similarity": 0.1049498348050907,
+      "y": -1.1388888888888893,
+      "label": "persona_software_engineer",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "through-map predicted-answer similarity": -0.05983509884783005,
+      "y": -0.06944444444444375,
+      "label": "persona_software_engineer",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "through-map predicted-answer similarity": -0.16213566328721896,
+      "y": 2.7749999999999986,
+      "label": "neg_wc_short",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "through-map predicted-answer similarity": -0.04378731988316973,
+      "y": 1.513888888888891,
+      "label": "wildchat_prefix_real545",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "through-map predicted-answer similarity": 0.29318846488570516,
+      "y": -3.5138888888888893,
+      "label": "neg_reph_curious",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "through-map predicted-answer similarity": 0.06939780653254567,
+      "y": -0.3967043314500929,
+      "label": "persona_software_engineer",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "through-map predicted-answer similarity": 0.19934895347544007,
+      "y": 1.6194444444444436,
+      "label": "icl_prefix_sycophancy",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "through-map predicted-answer similarity": -0.06688957797208606,
+      "y": 2.863888888888889,
+      "label": "neg_wc_short",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "through-map predicted-answer similarity": -0.006417612721578193,
+      "y": 1.4972222222222218,
+      "label": "wildchat_prefix_real545",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "through-map predicted-answer similarity": -0.17395624601422416,
+      "y": 3.027777777777777,
+      "label": "neg_wc_short",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "through-map predicted-answer similarity": 0.21116661863281183,
+      "y": -4.590348399246703,
+      "label": "neg_reph_curious",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "through-map predicted-answer similarity": 0.38667908969766307,
+      "y": -0.5055555555555564,
+      "label": "neg_sp_police",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "through-map predicted-answer similarity": -0.1304769993187357,
+      "y": 2.963888888888887,
+      "label": "neg_wc_short",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "through-map predicted-answer similarity": -0.028660049650763065,
+      "y": 0.6972222222222246,
+      "label": "neg_default_assistant",
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "through-map predicted-answer similarity": -0.06087817282047811,
+      "y": 0.03935969868173572,
+      "label": "persona_software_engineer",
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "through-map predicted-answer similarity": 0.024301868119605483,
+      "y": 0.11487758945386517,
+      "label": "persona_software_engineer",
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "through-map predicted-answer similarity": 0.014964041544422674,
+      "y": 1.1194444444444436,
+      "label": "neg_default_assistant",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "through-map predicted-answer similarity": -0.17021442785259097,
+      "y": -2.7722222222222257,
+      "label": "persona_software_engineer",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "through-map predicted-answer similarity": -0.22884333434633256,
+      "y": 2.522222222222223,
+      "label": "neg_wc_short",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "through-map predicted-answer similarity": -0.12262416161063151,
+      "y": 1.894444444444444,
+      "label": "neg_wc_short",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "through-map predicted-answer similarity": -0.08373871663126986,
+      "y": 0.8281544256120519,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "through-map predicted-answer similarity": -0.05700438643065743,
+      "y": -3.0238229755178896,
+      "label": "persona_software_engineer",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "through-map predicted-answer similarity": -0.14808455189653497,
+      "y": -2.8750000000000018,
+      "label": "persona_software_engineer",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "through-map predicted-answer similarity": -0.1825919918551653,
+      "y": -0.6624764595103567,
+      "label": "persona_software_engineer",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "through-map predicted-answer similarity": 0.04814464797431678,
+      "y": -0.6277777777777764,
+      "label": "persona_software_engineer",
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "through-map predicted-answer similarity": -0.00176381496742356,
+      "y": 2.041666666666668,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "through-map predicted-answer similarity": -0.3543669484368474,
+      "y": -0.21101694915254043,
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "through-map predicted-answer similarity": -0.12336644157419047,
+      "y": -0.24020715630885192,
+      "label": "persona_software_engineer",
+      "series": "icl-fresh",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "through-map predicted-answer similarity": -0.05744781986886983,
+      "y": -1.3833333333333329,
+      "label": "persona_software_engineer",
+      "series": "icl-fresh",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "through-map predicted-answer similarity": -0.09368518376965213,
+      "y": 0.6055555555555561,
+      "label": "persona_software_engineer",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "through-map predicted-answer similarity": -0.01880085330657568,
+      "y": 1.1722222222222225,
+      "label": "wildchat_prefix_real545",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "through-map predicted-answer similarity": -0.026587222743098132,
+      "y": 0.07796610169491558,
+      "label": "persona_software_engineer",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "through-map predicted-answer similarity": -0.010366689041414795,
+      "y": -2.333333333333333,
+      "label": "persona_software_engineer",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "through-map predicted-answer similarity": 0.13340838622872267,
+      "y": -0.7944444444444443,
+      "label": "neg_sp_police",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "through-map predicted-answer similarity": 0.4209431366228964,
+      "y": 0.5666666666666638,
+      "label": "neg_sp_police",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "through-map predicted-answer similarity": 0.18879615180906237,
+      "y": 0.4333333333333327,
+      "label": "neg_sp_police",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "through-map predicted-answer similarity": 0.1378529099201109,
+      "y": -2.655555555555556,
+      "label": "neg_sp_ph4",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "through-map predicted-answer similarity": 0.20145935692698777,
+      "y": -4.088888888888888,
+      "label": "neg_reph_curious",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "through-map predicted-answer similarity": -0.07798009468917491,
+      "y": 3.5333333333333314,
+      "label": "neg_wc_short",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "through-map predicted-answer similarity": 0.06939780653254567,
+      "y": 2.0277777777777777,
+      "label": "neg_default_assistant",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "through-map predicted-answer similarity": -0.003422953617559374,
+      "y": -1.3611111111111098,
+      "label": "persona_software_engineer",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "through-map predicted-answer similarity": -0.003506686252605561,
+      "y": 2.655555555555557,
+      "label": "wildchat_prefix_real545",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "through-map predicted-answer similarity": 0.1818664462490279,
+      "y": 1.4776836158192088,
+      "label": "icl_prefix_sycophancy",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "through-map predicted-answer similarity": 0.06866204329581231,
+      "y": 3.1166666666666663,
+      "label": "bare",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 100,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "impolite persona contrastive (seed 42)\nrho = +0.42, p = 0.00271 (n = 50 prefixes)",
+        "xlabel": "through-map predicted-answer similarity",
+        "ylabel": "per-prefix leakage change\n(trained \u2212 base, judge points)",
+        "annotations": [
+          "persona_software_engineer",
+          "wildchat_prefix_real545",
+          "icl_prefix_sycophancy",
+          "bare",
+          "neg_sp_police",
+          "neg_sp_ph4",
+          "neg_reph_curious",
+          "neg_wc_short",
+          "neg_default_assistant"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ],
+        "yticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35"
+        ]
+      },
+      {
+        "title": "sycophancy bare-context contrastive\nrho = -0.32, p = 0.0249 (n = 50 prefixes)",
+        "xlabel": "through-map predicted-answer similarity",
+        "legend_labels": [
+          "battery",
+          "bystander",
+          "conv-behavior",
+          "conv-fresh",
+          "conv-neutral",
+          "icl-fresh",
+          "near-twin",
+          "negatives",
+          "trained"
+        ],
+        "legend_title": "prefix family",
+        "annotations": [
+          "persona_software_engineer",
+          "wildchat_prefix_real545",
+          "icl_prefix_sycophancy",
+          "bare",
+          "neg_sp_police",
+          "neg_sp_ph4",
+          "neg_reph_curious",
+          "neg_wc_short",
+          "neg_default_assistant"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ],
+        "yticklabels": [
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8"
+        ]
+      }
+    ],
+    "series": [
+      "battery",
+      "bystander",
+      "conv-behavior",
+      "conv-fresh",
+      "conv-neutral",
+      "icl-fresh",
+      "near-twin",
+      "negatives",
+      "trained"
+    ]
+  }
+}

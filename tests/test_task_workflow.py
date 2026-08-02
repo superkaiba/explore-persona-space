@@ -3260,6 +3260,107 @@ def test_cli_concern_summary_at_cap_passes_untouched(concerns_task, capsys):
     assert "evidence" not in row
 
 
+def test_cli_address_concern_accepts_note_alias(monkeypatch, capsys):
+    """#1867: `--note` parses as an argparse alias of `--summary` on
+    address-concern (dest=summary), exercised through the REAL parser via
+    main() with sys.argv monkeypatched (a pre-built Namespace cannot pin
+    the parser surface). Pre-fix this argv exited 2 (unrecognized
+    argument). The library function is monkeypatched to capture kwargs —
+    no repo state is touched."""
+    task_cli = _import_task_cli()
+    captured = {}
+
+    def fake_address_concern(
+        task_id, concern_id, *, addressed_by, addressed_at_round, summary=None
+    ):
+        captured.update(
+            task_id=task_id,
+            concern_id=concern_id,
+            addressed_by=addressed_by,
+            addressed_at_round=addressed_at_round,
+            summary=summary,
+        )
+        return {"event": "addressed", "concern_id": concern_id}
+
+    monkeypatch.setattr(task_cli, "address_concern", fake_address_concern)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "task.py",
+            "address-concern",
+            "1",
+            "--concern-id",
+            "x",
+            "--by",
+            "implementer",
+            "--round",
+            "1",
+            "--note",
+            "fixed by rekeying",
+        ],
+    )
+    task_cli.main()
+    assert captured["summary"] == "fixed by rekeying"
+    assert captured["task_id"] == 1
+    assert captured["concern_id"] == "x"
+    assert captured["addressed_by"] == "implementer"
+    assert captured["addressed_at_round"] == 1
+    assert "WARNING" not in capsys.readouterr().err
+
+
+def test_cli_raise_concern_accepts_note_alias(monkeypatch, capsys):
+    """#1867: `--note` parses as an alias of the REQUIRED `--summary` on
+    raise-concern — providing --note alone satisfies the required
+    argument. Same real-parser-through-main() mechanism as the
+    address-concern alias test."""
+    task_cli = _import_task_cli()
+    captured = {}
+
+    def fake_raise_concern(
+        task_id, concern_id, *, severity, summary, raised_by, raised_at_round, evidence=None
+    ):
+        captured.update(
+            task_id=task_id,
+            concern_id=concern_id,
+            severity=severity,
+            summary=summary,
+            raised_by=raised_by,
+            raised_at_round=raised_at_round,
+            evidence=evidence,
+        )
+        return {"event": "raised", "concern_id": concern_id}
+
+    monkeypatch.setattr(task_cli, "raise_concern", fake_raise_concern)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "task.py",
+            "raise-concern",
+            "1",
+            "--concern-id",
+            "x",
+            "--severity",
+            "CONCERN",
+            "--by",
+            "code-reviewer",
+            "--round",
+            "1",
+            "--note",
+            "probe position undefined",
+        ],
+    )
+    task_cli.main()
+    assert captured["summary"] == "probe position undefined"
+    assert captured["severity"] == "CONCERN"
+    assert captured["task_id"] == 1
+    assert captured["raised_by"] == "code-reviewer"
+    assert captured["raised_at_round"] == 1
+    assert captured["evidence"] is None
+    assert "WARNING" not in capsys.readouterr().err
+
+
 # ─── paper-stub support (`paper: true` clean-result track) ─────────────────
 
 
@@ -4005,8 +4106,10 @@ def test_seal_is_separate_one_byte_write(fake_repo, tmp_path, monkeypatch):
 # Incident #825: a concurrent session held .git/index.lock while set_status
 # ran; the `git add` crash left the folder moved with REGISTRY pointing at
 # the old path — the task was unfindable until a manual `audit --repair`.
-# The fix set: (1) _run_git retries ONCE on the git lock-contention stderr
-# signature; (2) set_status completes ALL durable state (FS move + verify,
+# The fix set: (1) _run_git retries on the git lock-contention stderr
+# signature (ONCE under #898; widened by #1917 to a bounded per-call
+# wall-budget loop — EPM_TASKPY_LOCK_WAIT_SECONDS, default 60 s, 0 disables);
+# (2) set_status completes ALL durable state (FS move + verify,
 # REGISTRY save, event append) BEFORE any git op; (3) find_task_path scans
 # the tasks/ tree when the registry entry is stale; (4) the ghost-deletion
 # sweep (_task_status_dir_pathspecs) reconciles a crashed transition's
@@ -4022,10 +4125,11 @@ def _make_index_lock(repo: Path) -> Path:
     return lock
 
 
-def test_run_git_retries_once_on_index_lock_collision(fake_repo, monkeypatch):
-    """A held index.lock that clears during the backoff sleep resolves via
-    exactly ONE retry, with the jittered delay drawn from the constant range
-    (asserted against tw._GIT_LOCK_RETRY_SLEEP_RANGE_S, not literals)."""
+def test_run_git_lock_clears_during_first_backoff_resolves(fake_repo, monkeypatch):
+    """A held index.lock that clears during the first backoff sleep resolves
+    via exactly ONE retry (the #898 semantics, preserved by the #1917 loop),
+    with the jittered delay drawn from the constant range (asserted against
+    tw._GIT_LOCK_RETRY_SLEEP_RANGE_S, not literals)."""
     repo, tw = fake_repo
     (repo / "somefile.txt").write_text("x\n")
     lock = _make_index_lock(repo)
@@ -4046,11 +4150,16 @@ def test_run_git_retries_once_on_index_lock_collision(fake_repo, monkeypatch):
 
 
 def test_run_git_retry_exhaustion_raises_calledprocesserror(fake_repo, monkeypatch, caplog):
-    """A lock that does NOT clear fails after exactly one retry (never two)
-    with subprocess.CalledProcessError and the stale-lock remedy logged."""
+    """A lock that does NOT clear fails once the per-call wall budget is
+    exhausted (#1917), with subprocess.CalledProcessError and the stale-lock
+    ERROR remedy (naming the env knob) logged. The fake sleep records without
+    advancing time; the real git attempts advance the monotonic clock, so the
+    tiny budget exhausts after >= 1 retry — NEVER an exact sleep count
+    (machine-speed dependent)."""
     repo, tw = fake_repo
     (repo / "somefile.txt").write_text("x\n")
-    _make_index_lock(repo)  # never removed — retry hits the lock again
+    _make_index_lock(repo)  # never removed — every retry hits the lock again
+    monkeypatch.setenv("EPM_TASKPY_LOCK_WAIT_SECONDS", "0.05")
 
     sleeps: list[float] = []
     monkeypatch.setattr(tw.time, "sleep", lambda d: sleeps.append(d))
@@ -4061,8 +4170,62 @@ def test_run_git_retry_exhaustion_raises_calledprocesserror(fake_repo, monkeypat
     ):
         tw._run_git(["add", "--", "somefile.txt"])
 
-    assert len(sleeps) == 1  # one retry sleep, never a second
-    assert any("index.lock" in r.getMessage() for r in caplog.records)
+    # The deadline is captured AFTER the first failure, so any positive
+    # budget guarantees >= 1 retry sleep; the exact count is machine-speed
+    # dependent (each real git attempt burns wall time against the budget).
+    assert len(sleeps) >= 1
+    errors = [r for r in caplog.records if r.levelno == logging.ERROR]
+    assert any("index.lock" in r.getMessage() for r in errors)  # stale-lock remedy
+    assert any("EPM_TASKPY_LOCK_WAIT_SECONDS" in r.getMessage() for r in errors)
+
+
+def test_run_git_lock_wait_env_zero_disables_retry(fake_repo, monkeypatch):
+    """EPM_TASKPY_LOCK_WAIT_SECONDS=0 disables retries entirely: a held lock
+    raises CalledProcessError after the SINGLE attempt with zero sleeps."""
+    repo, tw = fake_repo
+    (repo / "somefile.txt").write_text("x\n")
+    _make_index_lock(repo)
+    monkeypatch.setenv("EPM_TASKPY_LOCK_WAIT_SECONDS", "0")
+    monkeypatch.setattr(tw.time, "sleep", lambda d: pytest.fail("retry sleep with budget 0"))
+
+    with pytest.raises(subprocess.CalledProcessError):
+        tw._run_git(["add", "--", "somefile.txt"])
+
+
+def test_run_git_lock_wait_multiple_retries_within_budget(fake_repo, monkeypatch):
+    """The #1917 widening itself: a lock that outlasts the FIRST backoff (the
+    #898 single-retry depth — the #1815 crash shape) but clears by the THIRD
+    resolves with exactly 3 sleeps under the default 60 s budget
+    (deterministic: 3 real ~20 ms git spins consume far less than 60 s; the
+    fake sleeps advance no time)."""
+    repo, tw = fake_repo
+    (repo / "somefile.txt").write_text("x\n")
+    lock = _make_index_lock(repo)
+    monkeypatch.delenv("EPM_TASKPY_LOCK_WAIT_SECONDS", raising=False)  # default budget
+
+    sleeps: list[float] = []
+
+    def fake_sleep(delay: float) -> None:
+        sleeps.append(delay)
+        if len(sleeps) == 3:
+            lock.unlink()  # the concurrent committer finishes during the 3rd backoff
+
+    monkeypatch.setattr(tw.time, "sleep", fake_sleep)
+    result = tw._run_git(["add", "--", "somefile.txt"])
+
+    assert result.returncode == 0
+    assert len(sleeps) == 3  # pre-#1917 this raised after exactly 1 sleep
+
+
+@pytest.mark.parametrize("bad", ["nan", "inf"])
+def test_lock_wait_bound_rejects_non_finite(fake_repo, monkeypatch, bad):
+    """Knob validation mirrors the merge-wait pins: a non-finite env value
+    raises ValueError (nan would defeat the monotonic deadline comparison
+    and wait unbounded)."""
+    _, tw = fake_repo
+    monkeypatch.setenv("EPM_TASKPY_LOCK_WAIT_SECONDS", bad)
+    with pytest.raises(ValueError, match="EPM_TASKPY_LOCK_WAIT_SECONDS"):
+        tw._lock_wait_bound_s()
 
 
 def test_run_git_does_not_retry_non_lock_errors(fake_repo, monkeypatch):

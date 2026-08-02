@@ -77,7 +77,12 @@ Exit codes
   ``reason: confirm_artifacts_no_declaration``. Exit 3 ALSO covers
   ``reason: keep_running_tag_unreadable`` (#1485): the keep-running
   tag state could not be read, so teardown is SKIPPED fail-closed
-  (sidecar kept; fix the task read and re-run finalize).
+  (sidecar kept; fix the task read and re-run finalize). Exit 3 ALSO
+  covers ``reason: fetch_results_failed`` (#1973): the backend's
+  ``fetch_results`` raised the typed ``FetchResultsError`` (an
+  interrupted / timed-out results pull, or a failed staging merge) —
+  teardown SKIPPED, sidecar kept, finalize re-runnable, even when the
+  confirm gate passed on already-durable artifacts.
 * ``4`` — unexpected exception. ``stderr`` carries the traceback.
 * ``75`` — still-waiting (EX_TEMPFAIL; mirrors
   ``pod_lifecycle.EXIT_STILL_WAITING``). TWO producers, same contract:
@@ -2120,6 +2125,46 @@ def _keep_running_tag_state_safe(issue: int) -> bool | None:
     return keep_running_tag_state(int(issue))
 
 
+def _fetch_results_for_finalize(backend: Any, handle: Any, issue: int) -> str | None:
+    """Run ``backend.fetch_results`` for finalize; return the TYPED failure.
+
+    Returns the ``FetchResultsError`` message when the results pull
+    failed TYPED — an interrupted / timed-out pull, or a failed staging
+    merge (#1973, incident #1768 r3): the caller (``_cmd_finalize``)
+    still runs the confirm gate for evidence, then surfaces the exit-3
+    ``fetch_results_failed`` verdict (teardown skipped, sidecar kept,
+    finalize re-runnable) — never an unqualified ``ok: true``. Returns
+    ``None`` on success. A NON-typed fetch CRASH keeps the legacy
+    fail-soft contract (#588): log loudly + continue to the confirm
+    gate — a missing local sentinel FAILs confirm with the right
+    surfacing (teardown skipped, evidence preserved), never a finalize
+    traceback.
+    """
+    from explore_persona_space.backends.base import FetchResultsError
+
+    try:
+        backend.fetch_results(handle)
+    except FetchResultsError as exc:
+        logging.getLogger("dispatch_issue").error(
+            "finalize: fetch_results FAILED (typed) for issue=%d: %s — running the "
+            "confirm gate for evidence, then surfacing a NON-ok finalize verdict "
+            "(teardown skipped, sidecar kept).",
+            issue,
+            exc,
+        )
+        return str(exc)
+    except Exception as exc:
+        logging.getLogger("dispatch_issue").error(
+            "finalize: fetch_results FAILED for issue=%d (%s: %s); continuing to the "
+            "confirm_artifacts gate — a missing local sentinel will FAIL confirm with "
+            "the right surfacing (teardown skipped, evidence preserved).",
+            issue,
+            type(exc).__name__,
+            exc,
+        )
+    return None
+
+
 def _cmd_finalize(
     args: argparse.Namespace, *, backends_factory: Callable[[], dict[str, Any]]
 ) -> int:
@@ -2174,6 +2219,15 @@ def _cmd_finalize(
     declaration never degrades — a real mechanical FAIL always exits 3.
     Either way the currency gate above already ran: the degrade can only
     execute when the blocker is None on the non-skip path.
+
+    Typed fetch-failure gate (#1973): a ``FetchResultsError`` raised by
+    ``backend.fetch_results`` (an interrupted / timed-out results pull,
+    or a failed staging merge) is recorded and — after the confirm gate
+    ran for evidence (or was skipped) — surfaces as exit 3 with
+    ``reason: fetch_results_failed``: teardown SKIPPED, sidecar NOT
+    retired, finalize re-runnable. A NON-typed fetch crash keeps the
+    legacy fail-soft behavior (log loudly + continue to the confirm
+    gate, whose own FAIL carries the surfacing).
 
     After a SUCCESSFUL teardown the sidecar is renamed to
     ``<name>.finalized`` (audit record, never deleted) so a later
@@ -2319,17 +2373,7 @@ def _cmd_finalize(
     # own two-tier contract — but wrap defensively: a fetch CRASH must
     # surface as the confirm FAIL (right surfacing, evidence preserved),
     # not as a finalize traceback.
-    try:
-        backend.fetch_results(handle)
-    except Exception as exc:
-        logging.getLogger("dispatch_issue").error(
-            "finalize: fetch_results FAILED for issue=%d (%s: %s); continuing to the "
-            "confirm_artifacts gate — a missing local sentinel will FAIL confirm with "
-            "the right surfacing (teardown skipped, evidence preserved).",
-            int(args.issue),
-            type(exc).__name__,
-            exc,
-        )
+    fetch_failed = _fetch_results_for_finalize(backend, handle, int(args.issue))
 
     confirm_degraded: str | None = None
     if not args.skip_confirm_artifacts:
@@ -2396,6 +2440,29 @@ def _cmd_finalize(
                 }
                 print(json.dumps(body, sort_keys=True))
                 return 3
+
+    # #1973: a typed fetch_results failure surfaces as a NON-ok verdict
+    # even when the confirm gate passed or was skipped — the declared
+    # artifacts may already be durable from an earlier pull while THIS
+    # pull left the live trees incomplete (the #1768 shape: confirm
+    # passed on already-durable artifacts, finalize reported ok, and the
+    # partial residue sat silent). Teardown SKIPPED + sidecar NOT
+    # retired — mirrors the confirm-fail semantics: evidence preserved,
+    # finalize re-runnable (SLURM teardown is a scancel no-op on a
+    # terminal job; the remote scratch + local staging both survive for
+    # the retry).
+    if fetch_failed is not None:
+        body = {
+            "ok": False,
+            "issue": int(args.issue),
+            "phase": "fetch_results",
+            "reason": "fetch_results_failed",
+            "detail": fetch_failed,
+            "chosen_kind": handle.backend,
+            "pod_name": handle.pod_name,
+        }
+        print(json.dumps(body, sort_keys=True))
+        return 3
 
     backend.teardown(handle)
 
@@ -2668,7 +2735,9 @@ def _build_argparser() -> argparse.ArgumentParser:
             "runs landed in the wrong project). KEY is restricted to "
             "backends.base.ENV_PIN_ALLOWED_KEYS (WANDB_PROJECT / "
             "WANDB_RUN_GROUP / WANDB_TAGS / EPM_PERSIST_ADAPTER_* / "
-            "EPM_UPLOAD_MERGED) — secret keys are unrepresentable by "
+            "EPM_UPLOAD_MERGED + the runtime-tuning set: "
+            "PYTORCH_CUDA_ALLOC_CONF / MALLOC_ARENA_MAX / *_NUM_THREADS — "
+            "#1803/#1852) — secret keys are unrepresentable by "
             "construction. Splits on the FIRST '=' (WANDB_TAGS=a=b is "
             "legal). Threads to spec.extra['env_pins'] -> the handle "
             "sidecar; every lane's workload-cmd launcher exports the pins "
@@ -2679,7 +2748,10 @@ def _build_argparser() -> argparse.ArgumentParser:
             "--boot-disk-gb pattern): launch composers SHOULD pass "
             "--env-pin WANDB_PROJECT=<declared project> whenever the plan's "
             "Reproducibility Card declares a non-default WandB project; a "
-            "flag-less launch keeps today's behavior."
+            "flag-less launch keeps today's behavior. Runtime-tuning "
+            "example: --env-pin PYTORCH_CUDA_ALLOC_CONF="
+            "expandable_segments:True (the gotchas.md CUDA-OOM hot-fix "
+            "knob)."
         ),
     )
     launch.add_argument(

@@ -1,0 +1,2520 @@
+{
+  "by_position": {
+    "last_prompt": {
+      "base_r2_by_layer": {
+        "14": {
+          "delta_median": 0.13037676193226866,
+          "lasttoken_max": 0.6075954783638828,
+          "lasttoken_median": 0.6075954783638828,
+          "lasttoken_min": 0.6038829715841432,
+          "n_cells": 72,
+          "round1_median": 0.4772187164316142
+        },
+        "19": {
+          "delta_median": 0.19892881330741008,
+          "lasttoken_max": 0.7002099719094206,
+          "lasttoken_median": 0.7002099719094206,
+          "lasttoken_min": 0.698731511453671,
+          "n_cells": 72,
+          "round1_median": 0.5012811586020105
+        },
+        "25": {
+          "delta_median": 0.19769012076139847,
+          "lasttoken_max": 0.6484475537394931,
+          "lasttoken_median": 0.6484475537394931,
+          "lasttoken_min": 0.6464420055715265,
+          "n_cells": 72,
+          "round1_median": 0.4507574329780947
+        }
+      },
+      "baselines_by_layer": {
+        "14": {
+          "fitted_map_knn_acc1_median": 0.560546875,
+          "identity_bias_knn_acc1_median": 0.1611328125,
+          "identity_bias_r2_median": -0.5353027067487925,
+          "n_cells": 72
+        },
+        "19": {
+          "fitted_map_knn_acc1_median": 0.69921875,
+          "identity_bias_knn_acc1_median": 0.509765625,
+          "identity_bias_r2_median": -0.7450760548558777,
+          "n_cells": 72
+        },
+        "25": {
+          "fitted_map_knn_acc1_median": 0.5224609375,
+          "identity_bias_knn_acc1_median": 0.505859375,
+          "identity_bias_r2_median": -1.8070157933968791,
+          "n_cells": 72
+        }
+      },
+      "context_movement_by_layer": {
+        "14": {
+          "median_cos_c0_cplus": 0.9722005420129401,
+          "median_relative_move": 0.23686586749235275,
+          "n_cells": 72
+        },
+        "19": {
+          "median_cos_c0_cplus": 0.9641037673309607,
+          "median_relative_move": 0.26616496592841987,
+          "n_cells": 72
+        },
+        "25": {
+          "median_cos_c0_cplus": 0.9647712711940336,
+          "median_relative_move": 0.2667195214203057,
+          "n_cells": 72
+        }
+      },
+      "d_pairs": [
+        {
+          "D_lasttoken": 4.272193071024457,
+          "D_round1": 1.6215300070743908,
+          "cell": "cas-bare-con-lr1e5-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 4.14193073415143,
+          "D_round1": 1.8074976773092093,
+          "cell": "cas-bare-con-lr1e5-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 3.7522957483033945,
+          "D_round1": 1.2817237844258802,
+          "cell": "cas-bare-po-lr1e5-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 3.0818733569245467,
+          "D_round1": 2.389780686041888,
+          "cell": "cas-bare-po-lr1e5-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": -0.3005787508698692,
+          "D_round1": -1.9524256605106274,
+          "cell": "cas-conv-con-lr1e5-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -0.3911366564971974,
+          "D_round1": -2.0559857924058837,
+          "cell": "cas-conv-con-lr1e5-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -0.28418068636501914,
+          "D_round1": -2.1974470720861614,
+          "cell": "cas-conv-po-lr3e5-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 3.284897105626568,
+          "D_round1": 0.8846401942012463,
+          "cell": "cas-pers-con-lr1e5-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 2.78240382443653,
+          "D_round1": 0.6160859164395092,
+          "cell": "cas-pers-con-lr1e5-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 11.217482491915934,
+          "D_round1": 5.693617808238647,
+          "cell": "cas-pers-ft-con-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 6.1426512385608305,
+          "D_round1": 5.900319040606028,
+          "cell": "cas-pers-ft-con-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 4.232689504226219,
+          "D_round1": 1.201931239892839,
+          "cell": "cas-pers-ft-po-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 4.5606916347952655,
+          "D_round1": 1.3526179388051531,
+          "cell": "cas-pers-ft-po-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 2.0650004028284474,
+          "D_round1": -1.0549491828251147,
+          "cell": "cas-pers-po-lr1e5-s137_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 1.0643211493179265,
+          "D_round1": -1.2711536959908063,
+          "cell": "cas-pers-po-lr1e5-s42_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 14.17737264707813,
+          "D_round1": 6.111968026497848,
+          "cell": "imp-bare-con-lr3e5-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 13.444454855046438,
+          "D_round1": 4.839470881391964,
+          "cell": "imp-bare-con-lr3e5-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 5.717842834567113,
+          "D_round1": 3.0839496893679765,
+          "cell": "imp-bare-po-lr1e5-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 5.518298845816087,
+          "D_round1": 3.2852405974560916,
+          "cell": "imp-bare-po-lr1e5-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 2.9999598735907114,
+          "D_round1": -0.09938177215224275,
+          "cell": "imp-conv-con-lr1e5-s137_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unresolved"
+        },
+        {
+          "D_lasttoken": 2.625087224783286,
+          "D_round1": -0.11704076191105806,
+          "cell": "imp-conv-con-lr1e5-s42_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unresolved"
+        },
+        {
+          "D_lasttoken": 1.900585534834848,
+          "D_round1": -0.7286147188873313,
+          "cell": "imp-conv-po-lr1e5-s137_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 1.8098664207858697,
+          "D_round1": -0.8410732320518042,
+          "cell": "imp-conv-po-lr1e5-s42_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 22.326819254611515,
+          "D_round1": 8.358762796221173,
+          "cell": "imp-icl-po-lr1e4-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 10.81836947077688,
+          "D_round1": 4.995073590341242,
+          "cell": "imp-pers-con-lr3e5-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 6.801410802673612,
+          "D_round1": 2.9568802534281637,
+          "cell": "imp-pers-con-lr3e5-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 7.6752803244478915,
+          "D_round1": 4.180238620939146,
+          "cell": "imp-pers-ft-con-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 11.867521626297567,
+          "D_round1": 4.26808214108237,
+          "cell": "imp-pers-ft-con-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 5.606483360715796,
+          "D_round1": 2.193835709284393,
+          "cell": "imp-pers-ft-po-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 9.307566277329704,
+          "D_round1": 2.1727586696805865,
+          "cell": "imp-pers-ft-po-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 1.5914951708680825,
+          "D_round1": -0.8899509564024726,
+          "cell": "imp-pers-po-lr1e5-s137_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 1.7704899645479157,
+          "D_round1": -0.8858832160080858,
+          "cell": "imp-pers-po-lr1e5-s42_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -0.9511177847349712,
+          "D_round1": -1.9593856199646087,
+          "cell": "mk-bare-con-lr5e6-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -1.0413206100233294,
+          "D_round1": -1.9074183121414485,
+          "cell": "mk-bare-con-lr5e6-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -0.7066322146455901,
+          "D_round1": -1.8911828171496978,
+          "cell": "mk-bare-po-lr5e6-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -0.49668143277888044,
+          "D_round1": -1.5060515817850337,
+          "cell": "mk-bare-po-lr5e6-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -1.666611367422409,
+          "D_round1": -3.2022392404928075,
+          "cell": "mk-conv-con-lr5e6-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -1.7198739288337581,
+          "D_round1": -2.9244040673974943,
+          "cell": "mk-conv-con-lr5e6-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -1.3413939196015416,
+          "D_round1": -2.861809714942903,
+          "cell": "mk-conv-po-lr5e6-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -1.766157122226514,
+          "D_round1": -3.2073994095871416,
+          "cell": "mk-conv-po-lr5e6-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -1.4804000510536275,
+          "D_round1": -4.61939362132416,
+          "cell": "mk-icl-con-lr5e6-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -1.4519292950622567,
+          "D_round1": -4.473370696110752,
+          "cell": "mk-icl-con-lr5e6-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -1.6018265020478752,
+          "D_round1": -4.763572979683174,
+          "cell": "mk-icl-po-lr5e6-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -1.4710213464933766,
+          "D_round1": -4.502276981514264,
+          "cell": "mk-icl-po-lr5e6-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -2.1564499304551914,
+          "D_round1": -3.40415280764282,
+          "cell": "mk-pers-con-lr5e6-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -2.1630840553292314,
+          "D_round1": -3.314127437409347,
+          "cell": "mk-pers-con-lr5e6-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -2.3331822763441155,
+          "D_round1": -3.295169740547766,
+          "cell": "mk-pers-ft-con-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "ft",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -2.2781549101653678,
+          "D_round1": -3.351205083448739,
+          "cell": "mk-pers-ft-con-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "ft",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -2.3896298139033667,
+          "D_round1": -2.9763582202539465,
+          "cell": "mk-pers-ft-po-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "ft",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -1.07066394004391,
+          "D_round1": -3.00854089692886,
+          "cell": "mk-pers-ft-po-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "ft",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -2.0438258457936884,
+          "D_round1": -2.748609677514965,
+          "cell": "mk-pers-po-lr5e6-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -2.1252192089159916,
+          "D_round1": -3.251612751495934,
+          "cell": "mk-pers-po-lr5e6-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 6.048562312458458,
+          "D_round1": 0.5630153354539811,
+          "cell": "syc-bare-con-lr1e5-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 3.6334785721778893,
+          "D_round1": 0.9378701029341414,
+          "cell": "syc-bare-con-lr1e5-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 2.3130994425446296,
+          "D_round1": -0.23942750332247975,
+          "cell": "syc-bare-po-lr1e5-s137_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unresolved"
+        },
+        {
+          "D_lasttoken": 2.4828325085287553,
+          "D_round1": -0.21839195771792852,
+          "cell": "syc-bare-po-lr1e5-s42_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unresolved"
+        },
+        {
+          "D_lasttoken": -2.79448278411721,
+          "D_round1": -4.155391773486861,
+          "cell": "syc-conv-con-lr1e5-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -2.7904103240910354,
+          "D_round1": -4.139241030953677,
+          "cell": "syc-conv-con-lr1e5-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -2.8186424175189444,
+          "D_round1": -4.187225418099781,
+          "cell": "syc-conv-po-lr1e5-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -2.790011213586027,
+          "D_round1": -4.183029029711085,
+          "cell": "syc-conv-po-lr1e5-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 0.04002480939610198,
+          "D_round1": -1.8858910125328219,
+          "cell": "syc-icl-con-lr1e5-s137_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unresolved",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -0.03322525740590887,
+          "D_round1": -1.955112094005841,
+          "cell": "syc-icl-con-lr1e5-s42_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unresolved",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -0.378187535218375,
+          "D_round1": -2.1373910838732737,
+          "cell": "syc-icl-po-lr1e5-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -0.013549222763592716,
+          "D_round1": -1.9992012403423196,
+          "cell": "syc-icl-po-lr3e5-s42_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unresolved",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 0.7139145969929253,
+          "D_round1": -1.006360890676901,
+          "cell": "syc-pers-con-lr1e5-s137_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 0.7266439333558576,
+          "D_round1": -1.1219895215264515,
+          "cell": "syc-pers-con-lr1e5-s42_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 9.322112600145665,
+          "D_round1": 4.912634679176749,
+          "cell": "syc-pers-ft-con-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 4.151294414896295,
+          "D_round1": 1.4995424048027122,
+          "cell": "syc-pers-ft-con-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 0.7379855346712576,
+          "D_round1": -0.7157310803609711,
+          "cell": "syc-pers-ft-po-s137_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 0.8097194878599616,
+          "D_round1": -0.6830150513826583,
+          "cell": "syc-pers-ft-po-s42_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -0.47265176988446633,
+          "D_round1": -2.0485192183791874,
+          "cell": "syc-pers-po-lr1e5-s137_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -1.4404903634253188,
+          "D_round1": -2.7618051427497274,
+          "cell": "syc-pers-po-lr1e5-s42_L14",
+          "flipped": false,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 7.117606480881163,
+          "D_round1": 9.635235560723459,
+          "cell": "cas-bare-con-lr1e5-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 6.907728540949398,
+          "D_round1": 9.696340008585068,
+          "cell": "cas-bare-con-lr1e5-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 5.780279324665308,
+          "D_round1": 8.810120223536437,
+          "cell": "cas-bare-po-lr1e5-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 4.822128405446669,
+          "D_round1": 8.326522445086667,
+          "cell": "cas-bare-po-lr1e5-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 0.6880261575910884,
+          "D_round1": 1.2452279351506572,
+          "cell": "cas-conv-con-lr1e5-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 0.4807837478832564,
+          "D_round1": 0.7798522522219251,
+          "cell": "cas-conv-con-lr1e5-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 0.3859175297251163,
+          "D_round1": -0.3620178164735215,
+          "cell": "cas-conv-po-lr3e5-s42_L19",
+          "flipped": true,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 5.965091045940458,
+          "D_round1": 7.597228312542633,
+          "cell": "cas-pers-con-lr1e5-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 5.06679430093099,
+          "D_round1": 6.819427162613529,
+          "cell": "cas-pers-con-lr1e5-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 12.816947199729654,
+          "D_round1": 13.639312137414443,
+          "cell": "cas-pers-ft-con-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 10.121904493030339,
+          "D_round1": 12.488295920751604,
+          "cell": "cas-pers-ft-con-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 7.851677862452789,
+          "D_round1": 9.479975179805876,
+          "cell": "cas-pers-ft-po-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 8.339284386639685,
+          "D_round1": 9.81865387041885,
+          "cell": "cas-pers-ft-po-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 2.8495571453479496,
+          "D_round1": 2.747278890228637,
+          "cell": "cas-pers-po-lr1e5-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 2.7912897494374604,
+          "D_round1": 2.834041654105839,
+          "cell": "cas-pers-po-lr1e5-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 14.52565327131716,
+          "D_round1": 14.379633766248627,
+          "cell": "imp-bare-con-lr3e5-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 14.209622053369998,
+          "D_round1": 13.74156807430047,
+          "cell": "imp-bare-con-lr3e5-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 9.630706917338287,
+          "D_round1": 12.328270888853648,
+          "cell": "imp-bare-po-lr1e5-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 10.33893411666935,
+          "D_round1": 12.262266369939447,
+          "cell": "imp-bare-po-lr1e5-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 5.7022701490834855,
+          "D_round1": 6.629152387693434,
+          "cell": "imp-conv-con-lr1e5-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 5.33196254610144,
+          "D_round1": 6.509657645815766,
+          "cell": "imp-conv-con-lr1e5-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 4.13509383034841,
+          "D_round1": 4.480372214879374,
+          "cell": "imp-conv-po-lr1e5-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 4.0294643253646,
+          "D_round1": 4.3148976729963415,
+          "cell": "imp-conv-po-lr1e5-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 17.8460410807212,
+          "D_round1": 18.711998325308205,
+          "cell": "imp-icl-po-lr1e4-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 12.004227089724708,
+          "D_round1": 14.256059197696075,
+          "cell": "imp-pers-con-lr3e5-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 10.563415913281368,
+          "D_round1": 12.90595606136192,
+          "cell": "imp-pers-con-lr3e5-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 12.41079109345376,
+          "D_round1": 13.31761927969583,
+          "cell": "imp-pers-ft-con-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 12.457191783906065,
+          "D_round1": 12.87879841277784,
+          "cell": "imp-pers-ft-con-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 10.584820270146707,
+          "D_round1": 10.918100792674483,
+          "cell": "imp-pers-ft-po-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 10.767420492352237,
+          "D_round1": 10.70685117359642,
+          "cell": "imp-pers-ft-po-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 3.79973385746073,
+          "D_round1": 4.2258902807332,
+          "cell": "imp-pers-po-lr1e5-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 3.8147431988092677,
+          "D_round1": 4.2464683442631195,
+          "cell": "imp-pers-po-lr1e5-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": -1.7772080398472099,
+          "D_round1": -2.1778184515476724,
+          "cell": "mk-bare-con-lr5e6-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -1.8655430752284383,
+          "D_round1": -2.035681007836615,
+          "cell": "mk-bare-con-lr5e6-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -1.3492872660867095,
+          "D_round1": -1.6929953842944432,
+          "cell": "mk-bare-po-lr5e6-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -1.10992574648321,
+          "D_round1": -1.2493929073725667,
+          "cell": "mk-bare-po-lr5e6-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -3.007953712701612,
+          "D_round1": -3.8232521353988496,
+          "cell": "mk-conv-con-lr5e6-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -2.9888618351829184,
+          "D_round1": -3.7689853546568983,
+          "cell": "mk-conv-con-lr5e6-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -2.6983516635780935,
+          "D_round1": -3.3881975079516273,
+          "cell": "mk-conv-po-lr5e6-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -3.105829093426018,
+          "D_round1": -3.88347801106063,
+          "cell": "mk-conv-po-lr5e6-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -4.545256679934207,
+          "D_round1": -5.381645503377113,
+          "cell": "mk-icl-con-lr5e6-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -4.491201313397499,
+          "D_round1": -5.269444068529699,
+          "cell": "mk-icl-con-lr5e6-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -4.8057836609880065,
+          "D_round1": -5.61612511287094,
+          "cell": "mk-icl-po-lr5e6-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -4.477755806676203,
+          "D_round1": -3.044564984826402,
+          "cell": "mk-icl-po-lr5e6-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -3.1244602544727638,
+          "D_round1": -3.863441741646909,
+          "cell": "mk-pers-con-lr5e6-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -3.1322264574787715,
+          "D_round1": -3.6373895509359713,
+          "cell": "mk-pers-con-lr5e6-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -3.4947509963114953,
+          "D_round1": -4.151055259546667,
+          "cell": "mk-pers-ft-con-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "ft",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -3.397826948158373,
+          "D_round1": -3.9651555693642173,
+          "cell": "mk-pers-ft-con-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "ft",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -3.5413218533252615,
+          "D_round1": -1.7860915246069933,
+          "cell": "mk-pers-ft-po-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "ft",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -3.579843282540645,
+          "D_round1": -4.197076976186378,
+          "cell": "mk-pers-ft-po-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "ft",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -2.9839123084831023,
+          "D_round1": -3.560704666119568,
+          "cell": "mk-pers-po-lr5e6-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -3.061153742485533,
+          "D_round1": -3.709829621107862,
+          "cell": "mk-pers-po-lr5e6-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 7.329873072284931,
+          "D_round1": 7.830205087349388,
+          "cell": "syc-bare-con-lr1e5-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 6.510346070829161,
+          "D_round1": 8.167650089340412,
+          "cell": "syc-bare-con-lr1e5-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 4.772868094614617,
+          "D_round1": 5.11499793760453,
+          "cell": "syc-bare-po-lr1e5-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 4.900834553744701,
+          "D_round1": 5.8400069603735005,
+          "cell": "syc-bare-po-lr1e5-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": -3.80682532972669,
+          "D_round1": -4.665993901887488,
+          "cell": "syc-conv-con-lr1e5-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -3.762217283174359,
+          "D_round1": -4.649996341140369,
+          "cell": "syc-conv-con-lr1e5-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -3.892899149306708,
+          "D_round1": -4.771037781378471,
+          "cell": "syc-conv-po-lr1e5-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -3.8253462503418865,
+          "D_round1": -4.679401274315583,
+          "cell": "syc-conv-po-lr1e5-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 0.8532649265224261,
+          "D_round1": 0.8835472118952001,
+          "cell": "syc-icl-con-lr1e5-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 0.8562250873319694,
+          "D_round1": 0.785865999382974,
+          "cell": "syc-icl-con-lr1e5-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 0.05308215660470772,
+          "D_round1": -0.5200558510893343,
+          "cell": "syc-icl-po-lr1e5-s137_L19",
+          "flipped": true,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unresolved",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 0.4677410727896749,
+          "D_round1": -0.07708805548313968,
+          "cell": "syc-icl-po-lr3e5-s42_L19",
+          "flipped": true,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unresolved"
+        },
+        {
+          "D_lasttoken": 2.4526306014108172,
+          "D_round1": 3.920686533509482,
+          "cell": "syc-pers-con-lr1e5-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 2.575058373696976,
+          "D_round1": 3.7663450490812984,
+          "cell": "syc-pers-con-lr1e5-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 14.444727250735209,
+          "D_round1": 14.504513360180667,
+          "cell": "syc-pers-ft-con-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 7.081664962186288,
+          "D_round1": 10.204431275966048,
+          "cell": "syc-pers-ft-con-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 2.4942696113072174,
+          "D_round1": 3.5738811053291037,
+          "cell": "syc-pers-ft-po-s137_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 2.8106278638167765,
+          "D_round1": 3.5760174731245318,
+          "cell": "syc-pers-ft-po-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 0.7437066450277232,
+          "D_round1": 0.2993788130945916,
+          "cell": "syc-pers-po-lr1e5-s137_L19",
+          "flipped": true,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unresolved"
+        },
+        {
+          "D_lasttoken": -0.8789548004474224,
+          "D_round1": -1.3661560589675332,
+          "cell": "syc-pers-po-lr1e5-s42_L19",
+          "flipped": false,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 15.41559387742194,
+          "D_round1": 18.730067645922304,
+          "cell": "cas-bare-con-lr1e5-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 14.46979740070637,
+          "D_round1": 19.391565564556828,
+          "cell": "cas-bare-con-lr1e5-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 11.766456740323733,
+          "D_round1": 16.299778274009824,
+          "cell": "cas-bare-po-lr1e5-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 9.01007178866449,
+          "D_round1": 15.128118677200106,
+          "cell": "cas-bare-po-lr1e5-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": -1.0081722855047666,
+          "D_round1": -1.0815998526251782,
+          "cell": "cas-conv-con-lr1e5-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -1.6271664554841223,
+          "D_round1": -1.9628129144226207,
+          "cell": "cas-conv-con-lr1e5-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -2.3733689506298923,
+          "D_round1": -2.220419648050335,
+          "cell": "cas-conv-po-lr3e5-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 12.943082886932828,
+          "D_round1": 15.06526416131178,
+          "cell": "cas-pers-con-lr1e5-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 9.535549434630305,
+          "D_round1": 12.442629217370808,
+          "cell": "cas-pers-con-lr1e5-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 25.184679606112496,
+          "D_round1": 30.50158041858215,
+          "cell": "cas-pers-ft-con-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 21.248695699671835,
+          "D_round1": 27.4434897640948,
+          "cell": "cas-pers-ft-con-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 17.047313063662884,
+          "D_round1": 17.0192761033326,
+          "cell": "cas-pers-ft-po-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 17.407686381201422,
+          "D_round1": 17.633687901918847,
+          "cell": "cas-pers-ft-po-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 4.726712795369409,
+          "D_round1": 4.879168918627258,
+          "cell": "cas-pers-po-lr1e5-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 4.642980002975307,
+          "D_round1": 4.926753342540323,
+          "cell": "cas-pers-po-lr1e5-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 31.748432070932836,
+          "D_round1": 36.033366734181456,
+          "cell": "imp-bare-con-lr3e5-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 34.097469815099615,
+          "D_round1": 31.26093580543126,
+          "cell": "imp-bare-con-lr3e5-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 22.867713274702652,
+          "D_round1": 24.93274505225169,
+          "cell": "imp-bare-po-lr1e5-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 24.323529776060127,
+          "D_round1": 25.081761371422147,
+          "cell": "imp-bare-po-lr1e5-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 12.221041122676397,
+          "D_round1": 11.620281972310934,
+          "cell": "imp-conv-con-lr1e5-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 11.458763973127283,
+          "D_round1": 10.711939920338182,
+          "cell": "imp-conv-con-lr1e5-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 7.70690169892011,
+          "D_round1": 6.172514838879096,
+          "cell": "imp-conv-po-lr1e5-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 7.5384208326912585,
+          "D_round1": 6.6125892310691405,
+          "cell": "imp-conv-po-lr1e5-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 38.02036873049146,
+          "D_round1": 49.14118423006835,
+          "cell": "imp-icl-po-lr1e4-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 26.9145970657447,
+          "D_round1": 26.421377476231058,
+          "cell": "imp-pers-con-lr3e5-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 23.872889173917514,
+          "D_round1": 23.976640075109444,
+          "cell": "imp-pers-con-lr3e5-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 25.856767120588657,
+          "D_round1": 30.172530550785112,
+          "cell": "imp-pers-ft-con-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 26.4702971899014,
+          "D_round1": 30.301775489159382,
+          "cell": "imp-pers-ft-con-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 23.577444383477108,
+          "D_round1": 19.408475853303422,
+          "cell": "imp-pers-ft-po-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 23.98383588068124,
+          "D_round1": 19.768415864652255,
+          "cell": "imp-pers-ft-po-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 8.863790813223915,
+          "D_round1": 7.666350277557029,
+          "cell": "imp-pers-po-lr1e5-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 8.731974031482466,
+          "D_round1": 7.506594166408618,
+          "cell": "imp-pers-po-lr1e5-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": -8.998347442741682,
+          "D_round1": -7.526243011160645,
+          "cell": "mk-bare-con-lr5e6-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -8.927960880331305,
+          "D_round1": -7.208787555574023,
+          "cell": "mk-bare-con-lr5e6-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -7.711272511611938,
+          "D_round1": -5.92851622093449,
+          "cell": "mk-bare-po-lr5e6-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -7.458763786513778,
+          "D_round1": -4.889316393897378,
+          "cell": "mk-bare-po-lr5e6-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -12.131460074822629,
+          "D_round1": -13.167731805993583,
+          "cell": "mk-conv-con-lr5e6-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -12.076236637456127,
+          "D_round1": -13.243171080675271,
+          "cell": "mk-conv-con-lr5e6-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -11.37850168302406,
+          "D_round1": -12.000163430998393,
+          "cell": "mk-conv-po-lr5e6-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -12.431771381767328,
+          "D_round1": -13.375144770387363,
+          "cell": "mk-conv-po-lr5e6-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -16.384691452333648,
+          "D_round1": -17.654038464526508,
+          "cell": "mk-icl-con-lr5e6-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -16.211581852849477,
+          "D_round1": -17.46830707166976,
+          "cell": "mk-icl-con-lr5e6-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -16.973433699425673,
+          "D_round1": -18.231305395303337,
+          "cell": "mk-icl-po-lr5e6-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -16.116347063051624,
+          "D_round1": -17.450717015816764,
+          "cell": "mk-icl-po-lr5e6-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -12.001198158916495,
+          "D_round1": -13.048753698183182,
+          "cell": "mk-pers-con-lr5e6-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -12.117206734648377,
+          "D_round1": -13.14938719535065,
+          "cell": "mk-pers-con-lr5e6-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -13.485251270382967,
+          "D_round1": -14.465657583571247,
+          "cell": "mk-pers-ft-con-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "ft",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -13.383126939461134,
+          "D_round1": -14.032738373139585,
+          "cell": "mk-pers-ft-con-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "ft",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -13.731709208029747,
+          "D_round1": -14.275622275638618,
+          "cell": "mk-pers-ft-po-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "ft",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -13.788091869383125,
+          "D_round1": -14.24155251128288,
+          "cell": "mk-pers-ft-po-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "ft",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -11.655252179990512,
+          "D_round1": -12.344908866118796,
+          "cell": "mk-pers-po-lr5e6-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -11.818349654050143,
+          "D_round1": -12.583166577527225,
+          "cell": "mk-pers-po-lr5e6-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 15.628471526247914,
+          "D_round1": 16.03859725042352,
+          "cell": "syc-bare-con-lr1e5-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 14.314025097320354,
+          "D_round1": 15.724762748620506,
+          "cell": "syc-bare-con-lr1e5-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 10.154507726062945,
+          "D_round1": 10.509275652919627,
+          "cell": "syc-bare-po-lr1e5-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 10.687243637027308,
+          "D_round1": 11.193960722591406,
+          "cell": "syc-bare-po-lr1e5-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": -14.086434777680267,
+          "D_round1": -15.341354709201905,
+          "cell": "syc-conv-con-lr1e5-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -13.946331949871457,
+          "D_round1": -15.099341732031897,
+          "cell": "syc-conv-con-lr1e5-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -14.559097089254085,
+          "D_round1": -15.60671362867813,
+          "cell": "syc-conv-po-lr1e5-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -14.29929247193008,
+          "D_round1": -15.417660910497002,
+          "cell": "syc-conv-po-lr1e5-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -0.843591796527825,
+          "D_round1": -1.2791597623702273,
+          "cell": "syc-icl-con-lr1e5-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -0.5480322313817716,
+          "D_round1": -1.3316757503225176,
+          "cell": "syc-icl-con-lr1e5-s42_L25",
+          "flipped": true,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unresolved",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -3.2829369206341212,
+          "D_round1": -4.093059724915037,
+          "cell": "syc-icl-po-lr1e5-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -2.411723175516066,
+          "D_round1": -3.183893672533216,
+          "cell": "syc-icl-po-lr3e5-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 4.561241433722145,
+          "D_round1": 6.9574212100637425,
+          "cell": "syc-pers-con-lr1e5-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 4.768587623137748,
+          "D_round1": 6.414669366528138,
+          "cell": "syc-pers-con-lr1e5-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 26.97537424648945,
+          "D_round1": 32.77685737142647,
+          "cell": "syc-pers-ft-con-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 15.567505615631113,
+          "D_round1": 19.283459679921236,
+          "cell": "syc-pers-ft-con-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 5.053554029066746,
+          "D_round1": 6.1812416656907985,
+          "cell": "syc-pers-ft-po-s137_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": 5.250295952680993,
+          "D_round1": 6.5038357237136175,
+          "cell": "syc-pers-ft-po-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Changed"
+        },
+        {
+          "D_lasttoken": -0.7382495553587418,
+          "D_round1": -0.20213385118500327,
+          "cell": "syc-pers-po-lr1e5-s137_L25",
+          "flipped": true,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unresolved"
+        },
+        {
+          "D_lasttoken": -5.857158080037177,
+          "D_round1": -5.601385825639014,
+          "cell": "syc-pers-po-lr1e5-s42_L25",
+          "flipped": false,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unchanged"
+        }
+      ],
+      "flips": [
+        {
+          "D_lasttoken": 2.0650004028284474,
+          "D_round1": -1.0549491828251147,
+          "cell": "cas-pers-po-lr1e5-s137_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 1.0643211493179265,
+          "D_round1": -1.2711536959908063,
+          "cell": "cas-pers-po-lr1e5-s42_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 2.9999598735907114,
+          "D_round1": -0.09938177215224275,
+          "cell": "imp-conv-con-lr1e5-s137_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unresolved"
+        },
+        {
+          "D_lasttoken": 2.625087224783286,
+          "D_round1": -0.11704076191105806,
+          "cell": "imp-conv-con-lr1e5-s42_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unresolved"
+        },
+        {
+          "D_lasttoken": 1.900585534834848,
+          "D_round1": -0.7286147188873313,
+          "cell": "imp-conv-po-lr1e5-s137_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 1.8098664207858697,
+          "D_round1": -0.8410732320518042,
+          "cell": "imp-conv-po-lr1e5-s42_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 1.5914951708680825,
+          "D_round1": -0.8899509564024726,
+          "cell": "imp-pers-po-lr1e5-s137_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 1.7704899645479157,
+          "D_round1": -0.8858832160080858,
+          "cell": "imp-pers-po-lr1e5-s42_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 2.3130994425446296,
+          "D_round1": -0.23942750332247975,
+          "cell": "syc-bare-po-lr1e5-s137_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unresolved"
+        },
+        {
+          "D_lasttoken": 2.4828325085287553,
+          "D_round1": -0.21839195771792852,
+          "cell": "syc-bare-po-lr1e5-s42_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unresolved"
+        },
+        {
+          "D_lasttoken": 0.04002480939610198,
+          "D_round1": -1.8858910125328219,
+          "cell": "syc-icl-con-lr1e5-s137_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unresolved",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -0.03322525740590887,
+          "D_round1": -1.955112094005841,
+          "cell": "syc-icl-con-lr1e5-s42_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unresolved",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -0.013549222763592716,
+          "D_round1": -1.9992012403423196,
+          "cell": "syc-icl-po-lr3e5-s42_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Unresolved",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 0.7139145969929253,
+          "D_round1": -1.006360890676901,
+          "cell": "syc-pers-con-lr1e5-s137_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 0.7266439333558576,
+          "D_round1": -1.1219895215264515,
+          "cell": "syc-pers-con-lr1e5-s42_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 0.7379855346712576,
+          "D_round1": -0.7157310803609711,
+          "cell": "syc-pers-ft-po-s137_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 0.8097194878599616,
+          "D_round1": -0.6830150513826583,
+          "cell": "syc-pers-ft-po-s42_L14",
+          "flipped": true,
+          "layer": 14,
+          "method": "ft",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 0.3859175297251163,
+          "D_round1": -0.3620178164735215,
+          "cell": "cas-conv-po-lr3e5-s42_L19",
+          "flipped": true,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 0.05308215660470772,
+          "D_round1": -0.5200558510893343,
+          "cell": "syc-icl-po-lr1e5-s137_L19",
+          "flipped": true,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Unresolved",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": 0.4677410727896749,
+          "D_round1": -0.07708805548313968,
+          "cell": "syc-icl-po-lr3e5-s42_L19",
+          "flipped": true,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unresolved"
+        },
+        {
+          "D_lasttoken": 0.7437066450277232,
+          "D_round1": 0.2993788130945916,
+          "cell": "syc-pers-po-lr1e5-s137_L19",
+          "flipped": true,
+          "layer": 19,
+          "method": "lora",
+          "verdict_lasttoken": "Changed",
+          "verdict_round1": "Unresolved"
+        },
+        {
+          "D_lasttoken": -0.5480322313817716,
+          "D_round1": -1.3316757503225176,
+          "cell": "syc-icl-con-lr1e5-s42_L25",
+          "flipped": true,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unresolved",
+          "verdict_round1": "Unchanged"
+        },
+        {
+          "D_lasttoken": -0.7382495553587418,
+          "D_round1": -0.20213385118500327,
+          "cell": "syc-pers-po-lr1e5-s137_L25",
+          "flipped": true,
+          "layer": 25,
+          "method": "lora",
+          "verdict_lasttoken": "Unchanged",
+          "verdict_round1": "Unresolved"
+        }
+      ],
+      "verdict_agreement": {
+        "agreement_rate": 0.8935185185185185,
+        "n_agree": 193,
+        "n_cells_compared": 216,
+        "n_flips": 23
+      },
+      "verdict_confusion_round1_x_lasttoken": {
+        "Changed": {
+          "Changed": 107
+        },
+        "Unchanged": {
+          "Changed": 11,
+          "Unchanged": 86,
+          "Unresolved": 5
+        },
+        "Unresolved": {
+          "Changed": 6,
+          "Unchanged": 1
+        }
+      },
+      "verdict_counts_lasttoken": {
+        "Changed": 124,
+        "Unchanged": 87,
+        "Unresolved": 5
+      },
+      "verdict_counts_round1": {
+        "Changed": 107,
+        "Unchanged": 102,
+        "Unresolved": 7
+      }
+    }
+  },
+  "git_commit": "175026047246566811ae0574d5898e75293cca1f",
+  "issue": 1768,
+  "layers": [
+    14,
+    19,
+    25
+  ],
+  "n_arms_expected": 72,
+  "n_arms_fitted": 72,
+  "not_rerun": {
+    "reads": [
+      "horse_race",
+      "write_rank",
+      "readout_stability"
+    ],
+    "reason": "context-pooling-invariant: these are ANSWER-side reads (w-hat / delta / r_B and the marker unembedding row), computed from the response-span stores this round reuses unchanged. Changing the CONTEXT summary cannot move them, so re-running them would consume GPU for a bit-identical result."
+  },
+  "numpy": "2.2.6",
+  "positions": [
+    "last_prompt"
+  ],
+  "round1_reference": {
+    "note": "span-mean-over-prompt context inputs (the round-1 convention)",
+    "source": "eval_results/issue_1768/map_change_summary.json"
+  },
+  "torch": "2.8.0+cu128",
+  "ts": "2026-08-01T06:29:16.419222Z"
+}

@@ -35,6 +35,7 @@ All CPU, mocked SSH — no live pod.
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 
@@ -234,8 +235,19 @@ def test_branch_sync_mismatch_raises(monkeypatch):
     # _execute_workload_on_pod's own SYNC probe when repo_branch is
     # non-`main`. Prepend the branch-verify output so the SYNC-MISMATCH
     # output reaches the second SSH call — the one _execute_workload_on_pod
-    # actually issues.
-    _wire_exec_leg(monkeypatch, ["issue-909\n", "SYNC-MISMATCH head=aaa fetch=bbb\n"])
+    # actually issues. #1858: a first sync failure now runs the git
+    # kill-and-reap + EXACTLY ONE retry, so a persistent mismatch consumes
+    # sync → reap → sync before the terminal raise (which carries both
+    # failure summaries + the REAP-OK evidence).
+    _wire_exec_leg(
+        monkeypatch,
+        [
+            "issue-909\n",
+            "SYNC-MISMATCH head=aaa fetch=bbb\n",
+            REAP_CLEAN,
+            "SYNC-MISMATCH head=aaa fetch=bbb\n",
+        ],
+    )
     with pytest.raises(RP.RunPodWorkloadStartError) as ei:
         RP.RunPodBackend().launch(
             _spec(extra={"execute_workload": True, "repo_branch": "issue-909"})
@@ -243,6 +255,7 @@ def test_branch_sync_mismatch_raises(monkeypatch):
     msg = str(ei.value)
     assert "pod-909" in msg and "issue-909" in msg
     assert "SYNC-MISMATCH" in msg
+    assert "sync retry after reap failed" in msg
 
 
 def test_missing_pods_conf_row_raises(monkeypatch):
@@ -332,6 +345,7 @@ def _rendered_scripts(workload_cmd: str = WORKLOAD) -> list[str]:
             log_path="/workspace/logs/issue-909.log",
             pid_file="/workspace/logs/issue-909.pid",
         ),
+        RP._render_sync_reap_script(),
     ]
 
 
@@ -345,9 +359,10 @@ def test_remote_scripts_never_shell_task_py():
 
 
 def test_rendered_scripts_bash_n(tmp_path):
-    """All three remote scripts parse under ``bash -n``, including a
-    quoting-stress workload_cmd carrying a single quote, ``$VAR``, and
-    ``&&`` (the GCP ``test_render_startup_script_is_valid_bash`` precedent)."""
+    """All four remote scripts (sync / launch / verify / #1858 reap) parse
+    under ``bash -n``, including a quoting-stress workload_cmd carrying a
+    single quote, ``$VAR``, and ``&&`` (the GCP
+    ``test_render_startup_script_is_valid_bash`` precedent)."""
     stress = "VAR=1 bash scripts/x.sh --note 'it'\\''s fine' && echo \"$VAR done\""
     for i, script in enumerate(_rendered_scripts(workload_cmd=stress)):
         path = tmp_path / f"script_{i}.sh"
@@ -361,6 +376,179 @@ def test_rendered_scripts_bash_n(tmp_path):
 def test_branch_sync_script_rejects_suspicious_branch():
     with pytest.raises(RP.RunPodWorkloadStartError, match="suspicious branch"):
         RP._render_branch_sync_script("issue-909; rm -rf /")
+
+
+# ---------------------------------------------------------------------------
+# #1858 — branch-sync kill-and-reap + bounded retry (MooseFS-hung git; the
+# incident-#1769-fu1 class: local ssh timeout orphaned a REMOTE git holding
+# .git/index.lock, and the old conditional reap could never fire against it)
+# ---------------------------------------------------------------------------
+
+REAP_CLEAN = "REAP-OK killed=0 survivors=0 lock_removed=yes\n"
+
+
+def test_branch_sync_script_per_op_remote_timeouts():
+    """#1858 acceptance 1: the three git MUTATION ops self-bound with per-op
+    remote ``timeout -k 10`` (120/20/20; worst case incl. the KILL grace
+    190 s, strictly under the local ssh bound so the remote bounds fire
+    first and the hung lock-holder dies REMOTELY); the rev-parse
+    verification lines stay bare (ref reads, not FUSE-heavy ops)."""
+    script = RP._render_branch_sync_script("issue-909")
+    assert 'timeout -k 10 120 git fetch origin "refs/heads/issue-909"' in script
+    assert 'timeout -k 10 20 git checkout -q -f -B "issue-909" FETCH_HEAD' in script
+    assert "timeout -k 10 20 git reset --hard -q FETCH_HEAD" in script
+    for line in script.splitlines():
+        if "rev-parse" in line:
+            assert "timeout" not in line, line
+    # Keep the pre-existing opening conditional lock-reap line.
+    assert "pgrep -x git >/dev/null 2>&1 || rm -f .git/index.lock" in script
+    # Summed worst case (every TERM needing the -k 10 KILL grace) stays
+    # strictly under the local ssh bound.
+    assert RP.SYNC_SSH_TIMEOUT_SECONDS > (120 + 10) + (20 + 10) + (20 + 10)
+
+
+def test_sync_first_failure_reap_then_retry_succeeds(monkeypatch):
+    """#1858 acceptance 5(i): FIRST sync failure (a local-TimeoutExpired-
+    shaped RunPodWorkloadStartError) → reap (clean) → EXACTLY ONE retry →
+    the launch proceeds. Recorded SSH sequence: sync, reap, sync, launch,
+    verify."""
+    ssh = _wire_exec_leg(
+        monkeypatch,
+        [
+            RP.RunPodWorkloadStartError(
+                "branch sync of pod-909 to 'main': ssh to 1.2.3.4:22222 failed "
+                "(TimeoutExpired: Command timed out)"
+            ),
+            REAP_CLEAN,
+            "SYNC-OK abc123\n",
+            "WRAPPER-STARTED 1\n",
+            "LAUNCH-OK pid=777\n",
+        ],
+    )
+    handle = RP.RunPodBackend().launch(_spec(extra={"execute_workload": True}))
+    assert len(ssh.calls) == 5
+    sync1, reap, sync2, launch_cmd, verify_cmd = ssh.calls
+    assert "refs/heads/main" in sync1
+    assert "REAP-OK" in reap and "pgrep -x git" in reap
+    assert sync2 == sync1  # the retry re-renders the identical sync script
+    assert "launch_issue_909.sh" in launch_cmd
+    assert "LAUNCH-OK" in verify_cmd
+    assert handle.extra["workload_executed"] is True
+    assert handle.extra["workload_pid"] == 777
+    assert handle.extra["synced_sha"] == "abc123"
+
+
+def test_sync_reap_survivors_raises_without_retry(monkeypatch):
+    """#1858 acceptance 5(ii): ``survivors>0`` (git pids outliving SIGKILL —
+    the mount-level D-state wedge) → immediate typed raise carrying the
+    REAP-OK evidence, and NO second sync attempt."""
+    ssh = _wire_exec_leg(
+        monkeypatch,
+        [
+            "some sync output with no confirmation line\n",
+            "REAP-OK killed=2 survivors=1 lock_removed=yes\n",
+        ],
+    )
+    with pytest.raises(RP.RunPodWorkloadStartError) as ei:
+        RP.RunPodBackend().launch(_spec(extra={"execute_workload": True}))
+    msg = str(ei.value)
+    assert "unkillable git survivors (moosefs D-state signature)" in msg
+    assert "REAP-OK killed=2 survivors=1 lock_removed=yes" in msg
+    assert "did not confirm SYNC-OK" in msg  # the first-failure summary rides along
+    assert len(ssh.calls) == 2  # sync, reap — and nothing after
+
+
+def test_sync_retry_failure_raises_with_reap_evidence(monkeypatch):
+    """#1858 acceptance 5(iii): clean reap but the retried sync ALSO fails →
+    raise carrying BOTH failure summaries + the REAP-OK line."""
+    ssh = _wire_exec_leg(
+        monkeypatch,
+        [
+            "some sync output with no confirmation line\n",
+            REAP_CLEAN,
+            RP.RunPodWorkloadStartError(
+                "branch sync of pod-909 to 'main': remote command exited rc=124"
+            ),
+        ],
+    )
+    with pytest.raises(RP.RunPodWorkloadStartError) as ei:
+        RP.RunPodBackend().launch(_spec(extra={"execute_workload": True}))
+    msg = str(ei.value)
+    assert "sync retry after reap failed" in msg
+    assert "REAP-OK killed=0 survivors=0 lock_removed=yes" in msg
+    assert "did not confirm SYNC-OK" in msg  # first failure summary
+    assert "rc=124" in msg  # retry failure summary
+    assert len(ssh.calls) == 3  # sync, reap, sync — never a third sync
+
+
+def test_sync_reap_ssh_failure_raises_without_retry(monkeypatch):
+    """The reap probe ITSELF failing (pod-level wedge) raises with both
+    summaries and never retries the sync."""
+    ssh = _wire_exec_leg(
+        monkeypatch,
+        [
+            "some sync output with no confirmation line\n",
+            RP.RunPodWorkloadStartError(
+                "git kill-and-reap on pod-909: ssh to 1.2.3.4:22222 failed"
+            ),
+        ],
+    )
+    with pytest.raises(RP.RunPodWorkloadStartError) as ei:
+        RP.RunPodBackend().launch(_spec(extra={"execute_workload": True}))
+    msg = str(ei.value)
+    assert "kill-and-reap probe ALSO failed" in msg
+    assert len(ssh.calls) == 2
+
+
+def test_sync_reap_missing_reap_ok_line_raises_without_retry(monkeypatch):
+    """A reap that exits 0 WITHOUT the REAP-OK report line is unverified —
+    raise with the reap output tail, no retry."""
+    ssh = _wire_exec_leg(
+        monkeypatch,
+        [
+            "some sync output with no confirmation line\n",
+            "garbage reap output\n",
+        ],
+    )
+    with pytest.raises(RP.RunPodWorkloadStartError) as ei:
+        RP.RunPodBackend().launch(_spec(extra={"execute_workload": True}))
+    msg = str(ei.value)
+    assert "did not confirm REAP-OK" in msg
+    assert "garbage reap output" in msg
+    assert len(ssh.calls) == 2
+
+
+def test_reap_script_real_bash_zero_git_branch(tmp_path):
+    """#1858 acceptance 5(vi): REAL-BASH execution of the RENDERED reap
+    script on the MODAL zero-git branch. PATH-shimmed STUB ``pgrep`` (exit
+    1 = no match) + stub ``kill`` — NEVER live pgrep/kill on the shared VM
+    (``kill`` is additionally a bash builtin; the zero-git branch never
+    reaches it, which ``killed=0`` asserts). The renderer's ``clone_dir``
+    seam points the script's cd at a tmp fake clone with a pre-created
+    ``.git/index.lock``. Asserts rc=0, the exact REAP-OK line, and the
+    lock removed."""
+    clone = tmp_path / "clone"
+    (clone / ".git").mkdir(parents=True)
+    lock = clone / ".git" / "index.lock"
+    lock.write_text("", encoding="utf-8")
+    shim = tmp_path / "bin"
+    shim.mkdir()
+    (shim / "pgrep").write_text("#!/bin/bash\nexit 1\n", encoding="utf-8")
+    (shim / "pgrep").chmod(0o755)
+    (shim / "kill").write_text("#!/bin/bash\nexit 0\n", encoding="utf-8")
+    (shim / "kill").chmod(0o755)
+    script_path = tmp_path / "reap.sh"
+    script_path.write_text(
+        RP._render_sync_reap_script(clone_dir=str(clone)) + "\n", encoding="utf-8"
+    )
+    env = dict(os.environ)
+    env["PATH"] = f"{shim}:{env['PATH']}"
+    proc = subprocess.run(
+        ["bash", str(script_path)], capture_output=True, text=True, env=env, check=False
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "REAP-OK killed=0 survivors=0 lock_removed=yes" in proc.stdout
+    assert not lock.exists()  # removed UNCONDITIONALLY
 
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,831 @@
+{
+ "c0": {
+  "kappa_uniform": 0.31927898064549565,
+  "kappa_uniform_ci95": [
+   0.2825117491819839,
+   0.3578160921865201
+  ],
+  "uniform_detail": {
+   "kappa": 0.31927898064549565,
+   "n_items": 599,
+   "n_excluded_lt2": 1,
+   "prevalence": {
+    "input_side": 0.7355343771272975,
+    "output_promoting": 0.1044928522804629,
+    "mixed": 0.15997277059223963
+   },
+   "raw_agreement": 0.712409571508069,
+   "p_e": 0.5775208634447054,
+   "pabak_multi": 0.5686143572621036
+  },
+  "per_stratum": {
+   "uniform": {
+    "kappa": 0.31927898064549565,
+    "n_items": 599,
+    "n_excluded_lt2": 1,
+    "prevalence": {
+     "input_side": 0.7355343771272975,
+     "output_promoting": 0.1044928522804629,
+     "mixed": 0.15997277059223963
+    },
+    "raw_agreement": 0.712409571508069,
+    "p_e": 0.5775208634447054,
+    "pabak_multi": 0.5686143572621036,
+    "per_label_kappa": {
+     "input_side": 0.42174165911263173,
+     "output_promoting": 0.22663123202982205,
+     "mixed": 0.2163454311723929
+    },
+    "draw_pair_confusion": [
+     [
+      3600.0,
+      460.0,
+      841.0
+     ],
+     [
+      460.0,
+      183.0,
+      377.0
+     ],
+     [
+      841.0,
+      377.0,
+      322.0
+     ]
+    ],
+    "mixed_dump_signature": {
+     "observed_share": 0.7258641239570918,
+     "expected_share_prevalence_proportional": 0.6361567785664811,
+     "ratio": 1.1410145241126843,
+     "holds": false,
+     "n_disagree_pairs": 1678.0
+    }
+   },
+   "oversample_output_promoting": {
+    "kappa": -0.09326400520367539,
+    "n_items": 100,
+    "n_excluded_lt2": 0,
+    "prevalence": {
+     "input_side": 0.13827655310621242,
+     "output_promoting": 0.6713426853707415,
+     "mixed": 0.1903807615230461
+    },
+    "raw_agreement": 0.4599999999999999,
+    "p_e": 0.5060662406978286,
+    "pabak_multi": 0.18999999999999984,
+    "per_label_kappa": {
+     "input_side": -0.002700353148353596,
+     "output_promoting": -0.1762879420850494,
+     "mixed": -0.045470587404333296
+    },
+    "draw_pair_confusion": [
+     [
+      19.0,
+      217.0,
+      21.0
+     ],
+     [
+      217.0,
+      410.0,
+      300.0
+     ],
+     [
+      21.0,
+      300.0,
+      29.0
+     ]
+    ],
+    "mixed_dump_signature": {
+     "observed_share": 0.5966542750929368,
+     "expected_share_prevalence_proportional": 0.6241157817708758,
+     "ratio": 0.9559993394174086,
+     "holds": false,
+     "n_disagree_pairs": 538.0
+    }
+   },
+   "oversample_mixed": {
+    "kappa": -0.09284427224504073,
+    "n_items": 100,
+    "n_excluded_lt2": 0,
+    "prevalence": {
+     "input_side": 0.18902439024390244,
+     "output_promoting": 0.14227642276422764,
+     "mixed": 0.6686991869918699
+    },
+    "raw_agreement": 0.4569999999999999,
+    "p_e": 0.5031314032652522,
+    "pabak_multi": 0.1854999999999999,
+    "per_label_kappa": {
+     "input_side": -0.060305812969455364,
+     "output_promoting": -0.010564046022499829,
+     "mixed": -0.18319586368887575
+    },
+    "draw_pair_confusion": [
+     [
+      28.0,
+      23.0,
+      292.0
+     ],
+     [
+      23.0,
+      18.0,
+      216.0
+     ],
+     [
+      292.0,
+      216.0,
+      392.0
+     ]
+    ],
+    "mixed_dump_signature": {
+     "observed_share": 0.9566854990583804,
+     "expected_share_prevalence_proportional": 0.8917471772785474,
+     "ratio": 1.0728214492116623,
+     "holds": false,
+     "n_disagree_pairs": 531.0
+    }
+   }
+  },
+  "drop_report": null,
+  "content_drop_rate": 0.020666666666666667,
+  "content_drop_rate_scope": "content drops / uniform-stratum launched draws (c0 as-run labels; kappa_report records 0 transport losses fleet-wide)",
+  "transport_residual_rate": null,
+  "max_tokens": 400,
+  "rubric": "v1-production (as-run labels)",
+  "rubric_sha16": null
+ },
+ "c600": {
+  "kappa_uniform": 0.2986208617397232,
+  "kappa_uniform_ci95": [
+   0.2631848817166129,
+   0.3328580581860141
+  ],
+  "uniform_detail": {
+   "kappa": 0.2986208617397232,
+   "n_items": 598,
+   "n_excluded_lt2": 2,
+   "prevalence": {
+    "input_side": 0.7375212224108659,
+    "output_promoting": 0.10933786078098472,
+    "mixed": 0.1531409168081494
+   },
+   "raw_agreement": 0.7049609810479377,
+   "p_e": 0.5793444617074205,
+   "pabak_multi": 0.5574414715719065
+  },
+  "per_stratum": {
+   "uniform": {
+    "kappa": 0.2986208617397232,
+    "n_items": 598,
+    "n_excluded_lt2": 2,
+    "prevalence": {
+     "input_side": 0.7375212224108659,
+     "output_promoting": 0.10933786078098472,
+     "mixed": 0.1531409168081494
+    },
+    "raw_agreement": 0.7049609810479377,
+    "p_e": 0.5793444617074205,
+    "pabak_multi": 0.5574414715719065,
+    "per_label_kappa": {
+     "input_side": 0.41399475650680395,
+     "output_promoting": 0.23575850306038537,
+     "mixed": 0.1703436843922682
+    },
+    "draw_pair_confusion": [
+     [
+      3631.0,
+      467.0,
+      853.0
+     ],
+     [
+      467.0,
+      203.0,
+      399.0
+     ],
+     [
+      853.0,
+      399.0,
+      265.0
+     ]
+    ],
+    "mixed_dump_signature": {
+     "observed_share": 0.7283304246655032,
+     "expected_share_prevalence_proportional": 0.6166032042925637,
+     "ratio": 1.1811979237135584,
+     "holds": false,
+     "n_disagree_pairs": 1719.0
+    }
+   },
+   "oversample_output_promoting": {
+    "kappa": 0.11315578482364891,
+    "n_items": 100,
+    "n_excluded_lt2": 0,
+    "prevalence": {
+     "input_side": 0.23847695390781562,
+     "output_promoting": 0.5250501002004008,
+     "mixed": 0.23647294589178355
+    },
+    "raw_agreement": 0.45766666666666667,
+    "p_e": 0.38846831940433973,
+    "pabak_multi": 0.1865,
+    "per_label_kappa": {
+     "input_side": 0.13478201838757053,
+     "output_promoting": 0.11826875576516138,
+     "mixed": 0.09081444555748686
+    },
+    "draw_pair_confusion": [
+     [
+      81.0,
+      212.0,
+      101.0
+     ],
+     [
+      212.0,
+      304.0,
+      226.0
+     ],
+     [
+      101.0,
+      226.0,
+      72.0
+     ]
+    ],
+    "mixed_dump_signature": {
+     "observed_share": 0.6066790352504638,
+     "expected_share_prevalence_proportional": 0.5904959546075443,
+     "ratio": 1.0274059128037127,
+     "holds": false,
+     "n_disagree_pairs": 539.0
+    }
+   },
+   "oversample_mixed": {
+    "kappa": 0.1363877347395415,
+    "n_items": 100,
+    "n_excluded_lt2": 0,
+    "prevalence": {
+     "input_side": 0.354251012145749,
+     "output_promoting": 0.2165991902834008,
+     "mixed": 0.4291497975708502
+    },
+    "raw_agreement": 0.4443333333333333,
+    "p_e": 0.35657853759281416,
+    "pabak_multi": 0.16649999999999998,
+    "per_label_kappa": {
+     "input_side": 0.20803886615625589,
+     "output_promoting": 0.12535343744837824,
+     "mixed": 0.08500550805828311
+    },
+    "draw_pair_confusion": [
+     [
+      171.0,
+      103.0,
+      251.0
+     ],
+     [
+      103.0,
+      67.0,
+      187.0
+     ],
+     [
+      251.0,
+      187.0,
+      198.0
+     ]
+    ],
+    "mixed_dump_signature": {
+     "observed_share": 0.8096118299445472,
+     "expected_share_prevalence_proportional": 0.7614923129832247,
+     "ratio": 1.0631910738176846,
+     "holds": false,
+     "n_disagree_pairs": 541.0
+    }
+   }
+  },
+  "drop_report": {
+   "launched": 4000,
+   "ok": 3939,
+   "content_drops": 61,
+   "transport_losses": 0
+  },
+  "content_drop_rate": 0.01525,
+  "content_drop_rate_scope": "content drops / all launched draws (uniform + oversample)",
+  "transport_residual_rate": 0.0,
+  "max_tokens": 600,
+  "rubric": "v1-production",
+  "rubric_sha16": null
+ },
+ "n600": {
+  "kappa_uniform": 0.291654677715064,
+  "kappa_uniform_ci95": [
+   0.2546206259209598,
+   0.32593644687956974
+  ],
+  "uniform_detail": {
+   "kappa": 0.291654677715064,
+   "n_items": 599,
+   "n_excluded_lt2": 1,
+   "prevalence": {
+    "input_side": 0.7204884667571235,
+    "output_promoting": 0.10481682496607869,
+    "mixed": 0.17469470827679784
+   },
+   "raw_agreement": 0.6887590428491931,
+   "p_e": 0.5606084386259158,
+   "pabak_multi": 0.5331385642737896
+  },
+  "per_stratum": {
+   "uniform": {
+    "kappa": 0.291654677715064,
+    "n_items": 599,
+    "n_excluded_lt2": 1,
+    "prevalence": {
+     "input_side": 0.7204884667571235,
+     "output_promoting": 0.10481682496607869,
+     "mixed": 0.17469470827679784
+    },
+    "raw_agreement": 0.6887590428491931,
+    "p_e": 0.5606084386259158,
+    "pabak_multi": 0.5331385642737896,
+    "per_label_kappa": {
+     "input_side": 0.3846248543872598,
+     "output_promoting": 0.20882470029012024,
+     "mixed": 0.21485487226433142
+    },
+    "draw_pair_confusion": [
+     [
+      3478.0,
+      495.0,
+      949.0
+     ],
+     [
+      495.0,
+      173.0,
+      370.0
+     ],
+     [
+      949.0,
+      370.0,
+      361.0
+     ]
+    ],
+    "mixed_dump_signature": {
+     "observed_share": 0.727122381477398,
+     "expected_share_prevalence_proportional": 0.6562550574526624,
+     "ratio": 1.1079874710601334,
+     "holds": false,
+     "n_disagree_pairs": 1814.0
+    }
+   },
+   "oversample_output_promoting": {
+    "kappa": 0.20030122233234218,
+    "n_items": 100,
+    "n_excluded_lt2": 0,
+    "prevalence": {
+     "input_side": 0.28169014084507044,
+     "output_promoting": 0.42655935613682094,
+     "mixed": 0.2917505030181087
+    },
+    "raw_agreement": 0.47733333333333333,
+    "p_e": 0.34642057576849433,
+    "pabak_multi": 0.21599999999999997,
+    "per_label_kappa": {
+     "input_side": 0.29469218861633717,
+     "output_promoting": 0.1620846634288724,
+     "mixed": 0.14524706945731214
+    },
+    "draw_pair_confusion": [
+     [
+      139.0,
+      169.0,
+      113.0
+     ],
+     [
+      169.0,
+      217.0,
+      236.0
+     ],
+     [
+      113.0,
+      236.0,
+      114.0
+     ]
+    ],
+    "mixed_dump_signature": {
+     "observed_share": 0.6737451737451737,
+     "expected_share_prevalence_proportional": 0.6323092170465808,
+     "ratio": 1.0655311603587465,
+     "holds": false,
+     "n_disagree_pairs": 518.0
+    }
+   },
+   "oversample_mixed": {
+    "kappa": 0.12087567984503249,
+    "n_items": 99,
+    "n_excluded_lt2": 1,
+    "prevalence": {
+     "input_side": 0.3496932515337423,
+     "output_promoting": 0.20245398773006135,
+     "mixed": 0.44785276073619634
+    },
+    "raw_agreement": 0.4407407407407407,
+    "p_e": 0.36384508261507775,
+    "pabak_multi": 0.1611111111111111,
+    "per_label_kappa": {
+     "input_side": 0.20212396386804388,
+     "output_promoting": 0.09974551221973904,
+     "mixed": 0.032778170063864076
+    },
+    "draw_pair_confusion": [
+     [
+      162.0,
+      85.0,
+      267.0
+     ],
+     [
+      85.0,
+      57.0,
+      197.0
+     ],
+     [
+      267.0,
+      197.0,
+      202.0
+     ]
+    ],
+    "mixed_dump_signature": {
+     "observed_share": 0.8451730418943534,
+     "expected_share_prevalence_proportional": 0.777422790202343,
+     "ratio": 1.087147241559997,
+     "holds": false,
+     "n_disagree_pairs": 549.0
+    }
+   }
+  },
+  "drop_report": {
+   "launched": 4000,
+   "ok": 3936,
+   "content_drops": 64,
+   "transport_losses": 0
+  },
+  "content_drop_rate": 0.016,
+  "content_drop_rate_scope": "content drops / all launched draws (uniform + oversample)",
+  "transport_residual_rate": 0.0,
+  "max_tokens": 600,
+  "rubric": "v1-production",
+  "rubric_sha16": null
+ },
+ "r600": {
+  "kappa_uniform": 0.33944427911566394,
+  "kappa_uniform_ci95": [
+   0.3034766094622321,
+   0.3730134087581901
+  ],
+  "uniform_detail": {
+   "kappa": 0.33944427911566394,
+   "n_items": 599,
+   "n_excluded_lt2": 1,
+   "prevalence": {
+    "input_side": 0.7189942235813795,
+    "output_promoting": 0.10091743119266056,
+    "mixed": 0.1800883452259599
+   },
+   "raw_agreement": 0.709070673344463,
+   "p_e": 0.5595688335481407,
+   "pabak_multi": 0.5636060100166946
+  },
+  "per_stratum": {
+   "uniform": {
+    "kappa": 0.33944427911566394,
+    "n_items": 599,
+    "n_excluded_lt2": 1,
+    "prevalence": {
+     "input_side": 0.7189942235813795,
+     "output_promoting": 0.10091743119266056,
+     "mixed": 0.1800883452259599
+    },
+    "raw_agreement": 0.709070673344463,
+    "p_e": 0.5595688335481407,
+    "pabak_multi": 0.5636060100166946,
+    "per_label_kappa": {
+     "input_side": 0.44039000046380294,
+     "output_promoting": 0.23732052283167648,
+     "mixed": 0.248864722302367
+    },
+    "draw_pair_confusion": [
+     [
+      3511.0,
+      414.0,
+      898.0
+     ],
+     [
+      414.0,
+      189.0,
+      389.0
+     ],
+     [
+      898.0,
+      389.0,
+      401.0
+     ]
+    ],
+    "mixed_dump_signature": {
+     "observed_share": 0.7566137566137566,
+     "expected_share_prevalence_proportional": 0.6705090120177714,
+     "ratio": 1.1284169832958235,
+     "holds": false,
+     "n_disagree_pairs": 1701.0
+    }
+   },
+   "oversample_output_promoting": {
+    "kappa": 0.0822987272563154,
+    "n_items": 100,
+    "n_excluded_lt2": 0,
+    "prevalence": {
+     "input_side": 0.21747967479674796,
+     "output_promoting": 0.4451219512195122,
+     "mixed": 0.33739837398373984
+    },
+    "raw_agreement": 0.41200000000000003,
+    "p_e": 0.3592686231740366,
+    "pabak_multi": 0.1180000000000001,
+    "per_label_kappa": {
+     "input_side": 0.1943143935744378,
+     "output_promoting": 0.06711257955432515,
+     "mixed": 0.029300326979920244
+    },
+    "draw_pair_confusion": [
+     [
+      77.0,
+      146.0,
+      120.0
+     ],
+     [
+      146.0,
+      209.0,
+      301.0
+     ],
+     [
+      120.0,
+      301.0,
+      117.0
+     ]
+    ],
+    "mixed_dump_signature": {
+     "observed_share": 0.7425044091710759,
+     "expected_share_prevalence_proportional": 0.6978297592489909,
+     "ratio": 1.0640194106513372,
+     "holds": false,
+     "n_disagree_pairs": 567.0
+    }
+   },
+   "oversample_mixed": {
+    "kappa": 0.10568511501801904,
+    "n_items": 100,
+    "n_excluded_lt2": 0,
+    "prevalence": {
+     "input_side": 0.3002028397565923,
+     "output_promoting": 0.26774847870182555,
+     "mixed": 0.43204868154158216
+    },
+    "raw_agreement": 0.4173333333333334,
+    "p_e": 0.3484770560668836,
+    "pabak_multi": 0.1260000000000001,
+    "per_label_kappa": {
+     "input_side": 0.10228960024862421,
+     "output_promoting": 0.15079043000085668,
+     "mixed": 0.06809127288568684
+    },
+    "draw_pair_confusion": [
+     [
+      110.0,
+      123.0,
+      244.0
+     ],
+     [
+      123.0,
+      97.0,
+      201.0
+     ],
+     [
+      244.0,
+      201.0,
+      198.0
+     ]
+    ],
+    "mixed_dump_signature": {
+     "observed_share": 0.7834507042253521,
+     "expected_share_prevalence_proportional": 0.75325856320097,
+     "ratio": 1.040082041545045,
+     "holds": false,
+     "n_disagree_pairs": 568.0
+    }
+   }
+  },
+  "drop_report": {
+   "launched": 4000,
+   "ok": 3929,
+   "content_drops": 71,
+   "transport_losses": 0
+  },
+  "content_drop_rate": 0.01775,
+  "content_drop_rate_scope": "content drops / all launched draws (uniform + oversample)",
+  "transport_residual_rate": 0.0,
+  "max_tokens": 600,
+  "rubric": "v1-production",
+  "rubric_sha16": null
+ },
+ "b600": {
+  "kappa_uniform": 0.30461075287937955,
+  "kappa_uniform_ci95": [
+   0.26578504213955384,
+   0.3400844612940132
+  ],
+  "uniform_detail": {
+   "kappa": 0.30461075287937955,
+   "n_items": 599,
+   "n_excluded_lt2": 1,
+   "prevalence": {
+    "input_side": 0.7261621988462844,
+    "output_promoting": 0.08822531387852053,
+    "mixed": 0.1856124872751951
+   },
+   "raw_agreement": 0.7006677796327211,
+   "p_e": 0.5695472404747186,
+   "pabak_multi": 0.5510016694490816
+  },
+  "per_stratum": {
+   "uniform": {
+    "kappa": 0.30461075287937955,
+    "n_items": 599,
+    "n_excluded_lt2": 1,
+    "prevalence": {
+     "input_side": 0.7261621988462844,
+     "output_promoting": 0.08822531387852053,
+     "mixed": 0.1856124872751951
+    },
+    "raw_agreement": 0.7006677796327211,
+    "p_e": 0.5695472404747186,
+    "pabak_multi": 0.5510016694490816,
+    "per_label_kappa": {
+     "input_side": 0.3923629246121041,
+     "output_promoting": 0.20673528043397993,
+     "mixed": 0.22910367420138045
+    },
+    "draw_pair_confusion": [
+     [
+      3518.0,
+      396.0,
+      1009.0
+     ],
+     [
+      396.0,
+      141.0,
+      346.0
+     ],
+     [
+      1009.0,
+      346.0,
+      404.0
+     ]
+    ],
+    "mixed_dump_signature": {
+     "observed_share": 0.7738435179897202,
+     "expected_share_prevalence_proportional": 0.7023325486839291,
+     "ratio": 1.101819244230945,
+     "holds": false,
+     "n_disagree_pairs": 1751.0
+    }
+   },
+   "oversample_output_promoting": {
+    "kappa": 0.13173037075408867,
+    "n_items": 100,
+    "n_excluded_lt2": 0,
+    "prevalence": {
+     "input_side": 0.26961770623742454,
+     "output_promoting": 0.4104627766599598,
+     "mixed": 0.3199195171026157
+    },
+    "raw_agreement": 0.43,
+    "p_e": 0.34352189596330496,
+    "pabak_multi": 0.14500000000000002,
+    "per_label_kappa": {
+     "input_side": 0.2110439891585003,
+     "output_promoting": 0.11326488700245829,
+     "mixed": 0.06726905554307527
+    },
+    "draw_pair_confusion": [
+     [
+      113.0,
+      165.0,
+      142.0
+     ],
+     [
+      165.0,
+      192.0,
+      259.0
+     ],
+     [
+      142.0,
+      259.0,
+      117.0
+     ]
+    ],
+    "mixed_dump_signature": {
+     "observed_share": 0.7084805653710248,
+     "expected_share_prevalence_proportional": 0.6628431880411455,
+     "ratio": 1.068850941147556,
+     "holds": false,
+     "n_disagree_pairs": 566.0
+    }
+   },
+   "oversample_mixed": {
+    "kappa": 0.07366275091240852,
+    "n_items": 100,
+    "n_excluded_lt2": 0,
+    "prevalence": {
+     "input_side": 0.32727272727272727,
+     "output_promoting": 0.23030303030303031,
+     "mixed": 0.44242424242424244
+    },
+    "raw_agreement": 0.4033333333333332,
+    "p_e": 0.3558861340679523,
+    "pabak_multi": 0.10499999999999976,
+    "per_label_kappa": {
+     "input_side": 0.15443164425870426,
+     "output_promoting": 0.03586836139780314,
+     "mixed": 0.05151270223944038
+    },
+    "draw_pair_confusion": [
+     [
+      140.0,
+      121.0,
+      245.0
+     ],
+     [
+      121.0,
+      57.0,
+      215.0
+     ],
+     [
+      245.0,
+      215.0,
+      205.0
+     ]
+    ],
+    "mixed_dump_signature": {
+     "observed_share": 0.7917383820998278,
+     "expected_share_prevalence_proportional": 0.7659671532846716,
+     "ratio": 1.0336453445877443,
+     "holds": false,
+     "n_disagree_pairs": 581.0
+    }
+   }
+  },
+  "drop_report": {
+   "launched": 4000,
+   "ok": 3940,
+   "content_drops": 60,
+   "transport_losses": 0
+  },
+  "content_drop_rate": 0.015,
+  "content_drop_rate_scope": "content drops / all launched draws (uniform + oversample)",
+  "transport_residual_rate": 0.0,
+  "max_tokens": 600,
+  "rubric": "v1-production",
+  "rubric_sha16": null
+ },
+ "sensitivity_intersection_read": {
+  "n_intersection": 595,
+  "c0": {
+   "kappa_intersection": 0.3179077956935054,
+   "divergence_vs_own_items": 0.0013711849519902342,
+   "caveat": false
+  },
+  "c600": {
+   "kappa_intersection": 0.298117363909493,
+   "divergence_vs_own_items": 0.0005034978302301818,
+   "caveat": false
+  },
+  "n600": {
+   "kappa_intersection": 0.29357113604878693,
+   "divergence_vs_own_items": 0.001916458333722948,
+   "caveat": false
+  },
+  "r600": {
+   "kappa_intersection": 0.33547255823924826,
+   "divergence_vs_own_items": 0.003971720876415674,
+   "caveat": false
+  },
+  "b600": {
+   "kappa_intersection": 0.30426672962482987,
+   "divergence_vs_own_items": 0.00034402325454968574,
+   "caveat": false
+  }
+ },
+ "git_commit": "5c955a0e24d44e9e8b8df76d44b925cfa88db74b",
+ "numpy": "2.2.6",
+ "python": "3.11.15",
+ "timestamp_utc": "2026-08-01T01:26:04.291257+00:00",
+ "task": 1773,
+ "seed": 17732026
+}

@@ -110,6 +110,22 @@ dir is unwritable here for the same reason as the sentinel channel
 above, and no SLURM-side pid-file convention exists. Workload commands
 MUST block; detached patterns route to the GCP or RunPod lane at plan
 time.
+
+Dead-class disambiguation (#1866): the INVERSE terminal read — a
+dead-class SLURM state (FAILED / TIMEOUT / PREEMPTED / ...) over a
+FINISHED workload — is disambiguated by the job's own attempt-fresh
+``status.json`` terminal-success record (``{"phase": "done",
+"exit_code": "0"}``, written ONLY by the sbatch terminal block after
+every stage exited clean under ``set -euo pipefail``; heartbeat and
+stage writes carry ``exit_code: ""``). Post-done teardown artifacts
+(slurmstepd cgroup errors, EXIT-trap / epilog failures) then read as
+``done`` → ``next_action: interpret`` (the ``epm:cluster-terminal``
+body keeps ``slurm_state`` verbatim and adds
+``workload_done_despite_slurm: true``) instead of a false ``dead`` →
+``investigate``. Fail-safe: evidence missing, stale (blanked by the C2
+attempt-freshness gate), non-``done`` phase, non-``"0"`` exit_code, or
+a legacy handle without ``submitted_at`` keeps the ``dead`` verdict
+byte-identical to the pre-#1866 behavior.
 """
 
 from __future__ import annotations
@@ -224,7 +240,11 @@ def _local_state_dir(job_id: str) -> Path:
 # -o %T``) to the orchestrator's PollResult.status enum. Anything not
 # in the map defaults to ``running`` (pessimistic: don't reap a job we
 # don't recognize yet — a future SLURM version's new state name should
-# NOT mass-cancel jobs).
+# NOT mass-cancel jobs). Every ``dead`` mapping is additionally subject
+# to the done-evidence disambiguation in :func:`build_poll_result`
+# (#1866): a dead-class state whose attempt-fresh status.json reads
+# ``{"phase": "done", "exit_code": "0"}`` flips to ``done`` (the
+# workload finished; the dead label is a teardown artifact).
 SLURM_STATE_TO_STATUS: dict[str, str] = {
     "PENDING": "running",  # selector watchdog handles the PENDING->RUNNING wait
     "CONFIGURING": "running",
@@ -398,6 +418,32 @@ def _entry_drain(
         return 0, None
 
 
+def _apply_done_evidence(
+    base_status: str,
+    *,
+    submitted_at: float | None,
+    status_data: dict[str, Any],
+) -> tuple[str, bool]:
+    """Done-evidence disambiguation (#1866) — returns ``(status, evidence)``.
+
+    The sbatch terminal block writes status.json ``{"phase": "done",
+    "exit_code": "0"}`` ONLY after every stage exited clean under
+    ``set -euo pipefail`` (heartbeat/stage writes carry ``exit_code: ""``),
+    so a dead-class SLURM state with ATTEMPT-FRESH done-0 evidence is a
+    teardown/epilog artifact (cgroup errors, trap failures), not a crashed
+    workload — flip to ``done``. Requires ``submitted_at`` (the caller's C2
+    gate blanked stale artifacts); a legacy handle without it fails toward
+    the pre-#1866 ``dead`` verdict.
+    """
+    evidence = (
+        base_status == "dead"
+        and submitted_at is not None
+        and status_data.get("phase") == "done"
+        and status_data.get("exit_code") == "0"
+    )
+    return ("done" if evidence else base_status), evidence
+
+
 def build_poll_result(
     *,
     issue: int,
@@ -565,6 +611,15 @@ def build_poll_result(
 
     base_status = SLURM_STATE_TO_STATUS.get(slurm_status, "running")
 
+    # Done-evidence disambiguation (#1866): a dead-class SLURM state over
+    # an attempt-fresh done-0 status.json flips to `done` (see
+    # :func:`_apply_done_evidence`). Ordering is fail-safe: the C2
+    # attempt-freshness gate above already blanked stale artifacts, and
+    # the PREFLIGHT_FAIL_MARKER shortcut below retains its override.
+    base_status, workload_done_evidence = _apply_done_evidence(
+        base_status, submitted_at=submitted_at, status_data=status_data
+    )
+
     # If we have a fresher phase from status.json, prefer it (the sbatch
     # writes status BEFORE its echo of the phase to stdout, so the JSON
     # tends to be one tick ahead).
@@ -663,6 +718,7 @@ def build_poll_result(
             marker_poster=marker_poster,
             event_reader=event_reader,
             now_fn=now_fn,
+            workload_done=workload_done_evidence,
         )
 
     # ---- Adaptive bg-poll interval (§7) — the SLURM lane's quiet subset ----
@@ -811,6 +867,7 @@ def _maybe_post_cluster_terminal(
     marker_poster,
     event_reader,
     now_fn,
+    workload_done: bool = False,
 ) -> None:
     """Post ``epm:cluster-terminal v1`` exactly once per job_id.
 
@@ -818,6 +875,13 @@ def _maybe_post_cluster_terminal(
     :func:`_read_persisted_terminal` and short-circuit, so a job that
     re-emerges briefly as FAILED across two ticks only writes ONE
     terminal-state row.
+
+    ``workload_done`` (#1866): True when :func:`build_poll_result`'s
+    done-evidence disambiguation fired (dead-class SLURM state +
+    attempt-fresh ``{"phase": "done", "exit_code": "0"}`` status.json).
+    On a non-COMPLETED slurm_state that routes ``next_action`` to
+    ``interpret`` and adds ``workload_done_despite_slurm: true`` to the
+    marker body; ``slurm_state`` stays verbatim for the audit trail.
     """
     prior = _events_for_job(
         issue=issue, job_id=job_id, kind="epm:cluster-terminal", event_reader=event_reader
@@ -843,6 +907,15 @@ def _maybe_post_cluster_terminal(
         # next attempt belongs on RunPod.
         next_action = "fallback_runpod"
 
+    # #1866: done-evidence disambiguation — the workload's own terminal
+    # status.json record proves every stage exited clean, so the
+    # dead-class SLURM label is a teardown/epilog artifact. Route to
+    # `interpret` (Step 6d.3 upload verification stays the hard artifact
+    # gate) and flag the marker body; slurm_state rides verbatim.
+    workload_done_despite_slurm = workload_done and slurm_state != "COMPLETED"
+    if workload_done_despite_slurm:
+        next_action = "interpret"
+
     observed_at = datetime.fromtimestamp(now_fn(), tz=UTC).isoformat().replace("+00:00", "Z")
     body = {
         "job_id": job_id,
@@ -853,6 +926,8 @@ def _maybe_post_cluster_terminal(
         "next_action": next_action,
         "status": base_status,
     }
+    if workload_done_despite_slurm:
+        body["workload_done_despite_slurm"] = True
     note = json.dumps(body, sort_keys=True)
     marker_poster(
         issue=issue,
@@ -909,6 +984,11 @@ def _poll_result_from_persisted_terminal(
     """
     base_status = persisted.get("status", "dead")
     current_phase = persisted.get("slurm_state", "done").lower()
+    # #1866: a persisted done-evidence flip carries a dead-class slurm_state
+    # (teardown artifact) with status "done" — the reconnect tick reports
+    # phase "done" to match the original tick's read, not "failed"/"timeout".
+    if persisted.get("workload_done_despite_slurm"):
+        current_phase = "done"
     emit_tail = _emit_tail(
         log_tail,
         trigger_dense=trigger_dense,

@@ -1,0 +1,837 @@
+{
+  "commit": "d36c7c5dc5",
+  "created": "2026-07-31T05:06:24Z",
+  "figsize": [
+    12.6,
+    4.9
+  ],
+  "points": [
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 0.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 28.843,
+      "y": 55.686,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 78.343,
+      "y": 43.314,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 2.0,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 41.0,
+      "y": 74.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 89.0,
+      "y": 22.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 2.0,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 47.5,
+      "y": 87.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 95.5,
+      "y": 9.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 30.5,
+      "y": 61.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 79.5,
+      "y": 37.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 99.0,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 35.0,
+      "y": 70.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 84.5,
+      "y": 29.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 99.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 33.5,
+      "y": 67.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 83.0,
+      "y": 32.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 99.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 32.0,
+      "y": 64.0,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 81.5,
+      "y": 35.0,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus": 99.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "candidate pool size": 820.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.195387,
+      "error": 0.025499999999999995,
+      "series": "identity copy",
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "candidate pool size": 4100.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.132602,
+      "error": 0.02151249999999999,
+      "series": "identity copy",
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "candidate pool size": 16400.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.136046,
+      "error": 0.021000000000000005,
+      "series": "identity copy",
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "candidate pool size": 82000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.089869,
+      "error": 0.017512500000000014,
+      "series": "identity copy",
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "candidate pool size": 900.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.08527600000000003,
+      "error": 0.02300000000000002,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "candidate pool size": 4500.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.101901,
+      "error": 0.02301250000000002,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "candidate pool size": 18000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.11123999999999998,
+      "error": 0.02400000000000002,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "candidate pool size": 90000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.11046,
+      "error": 0.021999999999999992,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "candidate pool size": 970.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.04784499999999995,
+      "error": 0.014999999999999958,
+      "series": "linear map (ridge)",
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "candidate pool size": 4850.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.05523100000000002,
+      "error": 0.01749999999999996,
+      "series": "linear map (ridge)",
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "candidate pool size": 19400.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.07444999999999996,
+      "error": 0.02001250000000001,
+      "series": "linear map (ridge)",
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "candidate pool size": 97000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.09677300000000001,
+      "error": 0.022499999999999964,
+      "series": "linear map (ridge)",
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "candidate pool size": 1040.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.03990200000000003,
+      "error": 0.013000000000000012,
+      "series": "neural map (w=8192)",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "candidate pool size": 5200.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.03601600000000003,
+      "error": 0.015000000000000013,
+      "series": "neural map (w=8192)",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "candidate pool size": 20800.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.04298500000000004,
+      "error": 0.018512500000000005,
+      "series": "neural map (w=8192)",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "candidate pool size": 104000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.03295799999999997,
+      "error": 0.021999999999999964,
+      "series": "neural map (w=8192)",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "candidate pool size": 1120.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.03779800000000003,
+      "error": 0.014500000000000013,
+      "series": "neural map (w=32768)",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "candidate pool size": 5600.000000000001,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.028107000000000014,
+      "error": 0.014500000000000013,
+      "series": "neural map (w=32768)",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "candidate pool size": 22400.000000000004,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.02738100000000002,
+      "error": 0.017512500000000014,
+      "series": "neural map (w=32768)",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "candidate pool size": 112000.00000000001,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.03414999999999995,
+      "error": 0.020500000000000018,
+      "series": "neural map (w=32768)",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "candidate pool size": 1210.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.036891000000000035,
+      "error": 0.01301250000000001,
+      "series": "kernel map (Nystrom)",
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "candidate pool size": 6050.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.03904800000000003,
+      "error": 0.015500000000000014,
+      "series": "kernel map (Nystrom)",
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "candidate pool size": 24200.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.04916200000000001,
+      "error": 0.019500000000000017,
+      "series": "kernel map (Nystrom)",
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "candidate pool size": 121000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.063124,
+      "error": 0.02150000000000002,
+      "series": "kernel map (Nystrom)",
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "candidate pool size": 820.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.195387,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "candidate pool size": 4100.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.132602,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "candidate pool size": 16400.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.136046,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "candidate pool size": 82000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.089869,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "candidate pool size": 820.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.16999999999999998,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "candidate pool size": 4100.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.11099999999999999,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "candidate pool size": 16400.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.11400000000000002,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "candidate pool size": 82000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.07197499999999998,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "candidate pool size": 820.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.22099999999999997,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "candidate pool size": 4100.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.15402499999999997,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "candidate pool size": 16400.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.15600000000000003,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "candidate pool size": 82000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.10700000000000001,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "candidate pool size": 900.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.08527600000000003,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "candidate pool size": 4500.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.101901,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "candidate pool size": 18000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.11123999999999998,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "candidate pool size": 90000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.11046,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "candidate pool size": 900.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.062000000000000055,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "candidate pool size": 4500.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.07997500000000002,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "candidate pool size": 18000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.08799999999999997,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "candidate pool size": 90000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.089,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "candidate pool size": 900.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.1080000000000001,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "candidate pool size": 4500.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.12600000000000006,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "candidate pool size": 18000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.136,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "candidate pool size": 90000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.13299999999999998,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "candidate pool size": 970.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.04784499999999995,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "candidate pool size": 4850.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.05523100000000002,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "candidate pool size": 19400.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.07444999999999996,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "candidate pool size": 97000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.09677300000000001,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "candidate pool size": 970.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.03300000000000003,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "candidate pool size": 4850.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.038000000000000034,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "candidate pool size": 19400.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.05599999999999994,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "candidate pool size": 97000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.07500000000000007,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "candidate pool size": 970.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.06299999999999994,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "candidate pool size": 4850.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.07299999999999995,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "candidate pool size": 19400.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.09602499999999996,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "candidate pool size": 97000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.12,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "candidate pool size": 1040.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.03990200000000003,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "candidate pool size": 5200.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.03601600000000003,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "candidate pool size": 20800.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.04298500000000004,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "candidate pool size": 104000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.03295799999999997,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "candidate pool size": 1040.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.027000000000000024,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "candidate pool size": 5200.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.02100000000000002,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "candidate pool size": 20800.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.025000000000000022,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "candidate pool size": 104000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.011000000000000006,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "candidate pool size": 1040.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.05300000000000005,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "candidate pool size": 5200.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.051000000000000045,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "candidate pool size": 20800.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.06202500000000003,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "candidate pool size": 104000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.05499999999999994,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "candidate pool size": 1120.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.03779800000000003,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "candidate pool size": 5600.000000000001,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.028107000000000014,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "candidate pool size": 22400.000000000004,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.02738100000000002,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "candidate pool size": 112000.00000000001,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.03414999999999995,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "candidate pool size": 1120.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.02400000000000002,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "candidate pool size": 5600.000000000001,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.013000000000000012,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "candidate pool size": 22400.000000000004,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.009975000000000008,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "candidate pool size": 112000.00000000001,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.013999999999999901,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "candidate pool size": 1120.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.05300000000000005,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "candidate pool size": 5600.000000000001,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.04200000000000004,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "candidate pool size": 22400.000000000004,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.04500000000000004,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "candidate pool size": 112000.00000000001,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.05499999999999994,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "candidate pool size": 1210.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.036891000000000035,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "candidate pool size": 6050.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.03904800000000003,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "candidate pool size": 24200.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.04916200000000001,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "candidate pool size": 121000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.063124,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "candidate pool size": 1210.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.023975000000000024,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "candidate pool size": 6050.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.02400000000000002,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "candidate pool size": 24200.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.029000000000000026,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "candidate pool size": 121000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.04200000000000004,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "candidate pool size": 1210.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.050000000000000044,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "candidate pool size": 6050.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.05500000000000005,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "candidate pool size": 24200.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.06800000000000006,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "candidate pool size": 121000.0,
+      "CSLS minus plain-cosine acc@1 (95% bootstrap CI)": 0.08500000000000008,
+      "_kind": "line",
+      "_group": 44
+    }
+  ],
+  "n_series": 45,
+  "total_points": 117,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "whose items become hubs depends on the estimator",
+        "xlabel": "share of the top-100 retrieval hubs (cosine, pool 100k), by corpus",
+        "legend_labels": [
+          "test targets (1% of pool)",
+          "LMSYS distractors (56%)",
+          "WildChat distractors (43%)"
+        ],
+        "xticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ],
+        "yticklabels": [
+          "pool composition\n(reference)",
+          "identity copy",
+          "identity + bias",
+          "linear map (ridge)",
+          "neural map (w=8192)",
+          "neural map (w=32768)",
+          "kernel map (Nystrom)"
+        ]
+      },
+      {
+        "title_left": "the hubness correction helps everywhere, weak estimators most",
+        "xlabel": "candidate pool size",
+        "ylabel": "CSLS minus plain-cosine acc@1 (95% bootstrap CI)",
+        "legend_labels": [
+          "identity copy",
+          "identity + bias",
+          "linear map (ridge)",
+          "neural map (w=8192)",
+          "neural map (w=32768)",
+          "kernel map (Nystrom)"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$",
+          "$\\mathdefault{10^{7}}$"
+        ],
+        "yticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ]
+      }
+    ],
+    "series": [
+      "test targets (1% of pool)",
+      "LMSYS distractors (56%)",
+      "WildChat distractors (43%)",
+      "identity copy",
+      "identity + bias",
+      "linear map (ridge)",
+      "neural map (w=8192)",
+      "neural map (w=32768)",
+      "kernel map (Nystrom)"
+    ]
+  }
+}

@@ -112,6 +112,10 @@ ENV_PIN_ALLOWED_KEYS: frozenset[str] = frozenset(
         "MKL_NUM_THREADS",
         "OPENBLAS_NUM_THREADS",
         "NUMEXPR_NUM_THREADS",
+        # #1852: the CUDA allocator knob — gotchas.md CUDA-OOM remedy #1
+        # (expandable_segments:True; peak-resident caveat lives there too).
+        # Same runtime-tuning family as the #1803 set above.
+        "PYTORCH_CUDA_ALLOC_CONF",
     }
 )
 
@@ -387,6 +391,27 @@ class BackendProbeError(RuntimeError):
     LIVE job as terminal and orphan it. Callers must treat this error
     as UNKNOWN-retry (bounded by a consecutive-failure budget), NEVER
     as job-absent / terminal.
+    """
+
+
+# ---------------------------------------------------------------------------
+# FetchResultsError — typed "results pull FAILED" signal for finalize
+# ---------------------------------------------------------------------------
+
+
+class FetchResultsError(RuntimeError):
+    """A backend's ``fetch_results`` pull FAILED (transfer error / timeout).
+
+    Raised when the results pull into the live ``eval_results/`` +
+    ``figures/`` trees could not complete — an interrupted network rsync,
+    a timeout kill, or a failed local staging merge.
+    ``scripts/dispatch_issue.py::_cmd_finalize`` catches this SPECIFICALLY
+    (before its generic fetch-crash handler) and converts it into a NON-ok
+    finalize verdict: exit 3, ``reason: fetch_results_failed``, teardown
+    SKIPPED, sidecar NOT retired — so a partial pull can never hide behind
+    an ``ok: true`` finalize (incident #1768 r3 / task #1973: an
+    interrupted 4.7 GB pull stranded a partial tree under ``eval_results/``
+    while finalize reported ok).
     """
 
 
