@@ -7100,8 +7100,8 @@
     "1917": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1917",
-      "status": "reviewing",
+      "path": "tasks/completed/1917",
+      "status": "completed",
       "title": "daily-fix: set-status bounded index.lock retry before raise"
     },
     "1918": {
