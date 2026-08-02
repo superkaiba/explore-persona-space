@@ -25,37 +25,226 @@ relates_to:
 - spec-context-as-vector
 - identity-contextual-vs-base
 ---
-# Per-prefix leakage-predictor race + theory-assumption battery at prefix grain: 50-prefix × 60-query panel, leakage averaged over queries
+# Pushing a prefix's context vector through the base context-to-answer map best predicts where fine-tuning delivers behavior change, while base propensity keeps the level read (MODERATE confidence)
+<!-- clean-result-v4 -->
 
-## Provenance
+## Takeaways
 
-- origin_prompt (verbatim): "i want to test all these: RESULTS THAT RAN WERE PER QUERY WHICH IS TERRIBLE - What is the best leakage predictor: [context/answer vector cosine similarity pre/post finetuning; similarity between change in context/answer vector pre and post finetuning; context vector -> apply mapping -> predicted answer vector similarity pre/post finetuning; Is leakage due to similarity of mean answer vectors and so context vector similarity is just byproduct; Any other suggestions?] As well as the theory assumptions. At the per-prefix level. Design an experiment to do this"
-- Parent: #1900 (the per-query race — grain extension changes its Goal, hence a child). Relates to: #1768 (assumption battery — this re-tests A5/A6/A7 at the theory's NATIVE grain), #722 (the original per-prefix query-averaged mapping objects v_P / v_A), #1481 (bystander panel precedent).
-- Standing conventions binding here: context vector = LAST-TOKEN (the newline ending the assistant header) PRIMARY with span-mean secondary, captured together (user directive 2026-08-01); contrastive negatives / marker recipes N/A (no training); LLM judge = claude-sonnet-4-5-20250929, Batch API, graded 0-100 multi-draw.
+- Change champion at prefix grain: through-map predicted-answer similarity — median within-arm Spearman ρ 0.41 vs 0.30 for raw answer similarity; beats it in 9/12 content arms; winner probability 0.65–0.81.
+- The change win is family-scoped: every casualness-persona and impoliteness arm clears its permutation band (7/12 arms); sycophancy clears 0/4, and the bare-context sycophancy arm reverses sign (ρ ≈ −0.3).
+- The level race is unresolved: the read-out projection through the map (median 0.54) ties base propensity (0.54), and only at the last-prompt-token position — propensity leads at span-mean.
+- The judge-free marker panel replicates the split: nearest-training-rows context similarity 0.43 vs propensity 0.10 on per-prefix marker log-probability change, 5/6 arms; query-cluster winner probability 0.92, prefix-resample 0.56 (marginal).
+- Assumption re-tests: the whitened gate stays refuted (median 0.18) yet lands in-band for persona-context LoRA cells; write top-1 share rises 0.09 to ~0.43; write–delta alignment is family-signed, not null.
+- Binding caveats: the change DV subtracts propensity by construction (its low change rank partly mechanical); trained-negative suppression not demonstrated — placebo cells sit equally below the geometry fit.
 
 ## Goal
 
-At per-prefix grain (leakage per (arm, destination prefix), averaged over a fixed shared 60-query set; 50-60 prefix panel including trained prefixes, trained contrastive negatives, bystanders, near-twins, real conversation and ICL prefixes), determine which pre-fine-tuning predictor best predicts per-prefix leakage level and change (full roster: context/answer similarity pre+post, delta similarities, through-map forms, whitened gate, r_B projections, write-map, propensity incumbent, kNN answer-side variant; both anchors), whether context similarity is answer-mediated at this grain, and whether the #1768 assumption refutations (gate A7, write rank A6, write direction A5) survive at the theory's native prefix grain or were per-query grain artifacts.
+- **This experiment in context:** The per-query race in [#1900](https://eps.superkaiba.com/tasks/1900) left base propensity as the level champion and raw answer similarity as the change champion, with every geometry read far behind — but the theory's gate and write objects are defined per destination context, not per query. This run re-races the full deployable predictor roster over the same 18 fleet checkpoints at per-prefix grain (50 destination prefixes × 60 shared queries; leakage = query mean) and re-tests the operator-assumption refutations from [#1768](https://eps.superkaiba.com/tasks/1768) (whitened gate, write rank, write–delta alignment) at that grain, on the per-prefix mapping objects introduced in [#722](https://eps.superkaiba.com/tasks/722). Protocol delta: the parent raced per query at the span-mean context position; this run's primary position is the last prompt token, so cross-grain comparisons here are made span-mean-to-span-mean and the per-query verdicts stand at their own grain — headline numbers across the two runs are not directly comparable otherwise.
+- **Broader narrative:** Predicting fine-tuning-induced leakage from pre-fine-tuning context geometry — can a cheap read of the base model forecast where a fine-tune will deliver behavior change, and do the linear-operator assumptions behind that program hold at the grain the theory is written at?
 
-## Design sketch (planner refines)
+## Methodology
 
-- **Prefix panel (the units): N≈50–60 destination prefixes**, deliberately structured: each arm's own TRAINED prefix (on-target anchor row); the trained contrastive-negative personas (REGISTERED PREDICTION: leakage below geometry prediction — they were trained DOWN; a signed residual check); the #1481 bystander panel contexts; #722 battery prefix families; real WildChat conversation prefixes; ICL prefixes; near-twin personas of each source; the bare default. Rendered via the artifacts CONTEXTS registry with the round-3 (#1768 pfx0) ground-truth prefix asserts (the trained prefix must byte-match the training mix rows).
-- **Query set: fixed ~60 real-user queries** (stratified from the 16,400-prompt corpus, sha-pinned), SHARED across every (arm × prefix) — fully paired design; token-budget assert per prefix (prefix + query + max_new_tokens ≤ MAX_MODEL_LEN).
-- **Arms:** the #1900 panel (12 content + 6 marker, reused checkpoints) for cross-grain comparability; race is WITHIN-ARM ACROSS PREFIXES (dose-clean), n=50 units per arm.
-- **Captures per (model-state × prefix × query):** on-policy greedy generation (trained arms + base) with raw text persisted; activations: context vector (BOTH positions: assistant-header-newline last-token primary, span-mean secondary) + answer span-mean, layers 14/19/25; PLUS a matched-text TF tree (trained model on the base rows) for the weights-carried per-prefix writes the assumption battery needs. ~19 model states × 50 × 60 ≈ 57k generations + TF passes — vLLM, arm-sharded.
-- **DVs per (arm, prefix), all query-averaged:** content = mean graded judge score (level) + trained−base mean (change) + binary-rate companion; marker = mean Δ log P(marker) at slot (judge-free, three-space storage). Per-prefix base propensity = the base state's mean judged score (incumbent predictor + covariate).
-- **Predictors (one number per (arm, prefix); vectors query-averaged over the shared 60; centered at panel mean; both anchors):** the verbatim user roster P1–P8 (ctx-sim pre/post, ans-sim pre/post, Δctx-sim, Δans-sim (matched-text form in the mechanistic panel; on-policy form labeled near-outcome), through-map pre/post) + additions: whitened gate similarity (dual-use with A7), r_B projection direct + through-map, cross-arm write-map prediction, per-prefix base propensity, kNN answer-side variant (mean cos to nearest individual training-answer rows — the un-averaged anchor form #1900 never raced), nearest-training-rows context-side. Deployable vs mechanistic split as in #1900 (post-FT and Δ candidates explain, never carry the headline).
-- **Mediation (the checkbox):** partial Spearman lattice at prefix grain (leakage ~ ctx-sim | ans-sim and reverse, both | propensity), commonality decomposition, and the structural through-map read — n=50/arm makes partials well-posed.
-- **Assumption battery on the same stores:** A7 gate = whitened similarity g(prefix) vs realized per-prefix matched-text write coefficient (and on-policy secondary), per arm × layer, against the 0.3–0.7 band; A6 = top-1 SVD share of the 50-row per-prefix write matrix (both trees) vs the 0.6 criterion, bridging panel-era 0.81–0.86 and corpus per-query 0.09/0.29; A5 = cos(per-prefix write, δ) and (r_B / marker unembedding) with norm-matched nulls + the disjoint-half baseline discipline from issue1768_directions.py. Map-change D per prefix is OUT of scope (needs per-condition fits at n≈3k rows — that is round 3's instrument); stated as a scope boundary.
-- **Stats:** within-arm Spearman across prefixes; bootstrap over prefixes + query-cluster bootstrap (queries are shared, so prefix-level noise is query-clustered); split-half reliability over queries per prefix (design-aligned halves); winner-selection inside every bootstrap draw (selection-symmetric); permutation null band. Both-arms mapping rule: with 50 distinct prefixes the prefix-based mapping arm is finally IDENTIFIABLE — run both arms properly (a first for the line).
-- **Reuse:** #1900 predictor builders + race machinery (re-grained); #1768 round-3 prefix render/registry + assert machinery (pfx0), direction-read conventions, δ (delta_tf) + r_B tensors; #722 prefix families; #1481 verdict manifest + panel contexts; judge rubrics sha-pinned from #1900.
+**Design:** 18 reused fleet checkpoints (12 content: casual writing, impoliteness, sycophancy under persona / bare / conversation / ICL contexts, contrastive vs positive-only data regimes, LoRA vs full fine-tune; 6 marker), single seed for 16 of 18 plus an impoliteness-contrastive seed pair (42/137) as the same-cell replication read. Unit = (arm, destination prefix): 50 prefixes × 60 shared real-user queries, fully paired; every DV is the 60-query mean; the race is the within-arm Spearman rank correlation across the 50 prefixes (dose-clean — never pooled across arms). The single manipulated variable relative to the parent per-query race is the DV grain. All arms share one prefix panel and one judge instrument, so across-arm counts are correlated rather than independent confirmations. Deployable predictor roster (one number per (arm, prefix), computed from the base model only; vectors query-averaged, centered at the panel mean; anchors = training-row centroids, with the arm's own trained-prefix vectors run side-by-side):
 
-## Cost sketch
+| Predictor (plain English) | Definition (per (arm, prefix), base model) | Slug |
+|---|---|---|
+| Context similarity | cosine of the prefix's query-averaged context vector with the training-context centroid | `p1` |
+| Answer similarity | cosine of the query-averaged base answer vector with the training-answer centroid | `p2` |
+| Through-map context similarity | cosine of the mapped context vector with the map image of the training-context centroid | `p3a` |
+| Through-map predicted-answer similarity | cosine of the mapped context vector with the training-answer centroid | `p3b` |
+| Whitened gate | whitened dot product of the context vector with the trained-prefix context vector | `p4` |
+| Read-out projection (direct) | panel-centered base answer vector projected onto the behavior read-out direction | `p5` |
+| Read-out projection (through map) | panel-centered mapped context vector projected onto the read-out direction | `p6` |
+| Base propensity | per-prefix mean graded score of base completions (marker: base slot log-probability) | `p7` |
+| Write forecast (size / alignment) | norm of the cross-arm write-map prediction / its cosine with the read-out direction (span-mean position) | `p8a` / `p8b` |
+| Nearest training rows (context) | mean top-8 cosine of the context vector to individual training-row context vectors | `p9` |
+| Nearest training rows (answer) | the same read on the answer side against individual training-answer rows | `p10` |
 
-Generations + TF captures ≈ 115k rows total → ~15–25 GPU-h (vLLM, multi-GPU arm-sharded); judge ≈ 13 judged states × 50 × 60 × 3 draws ≈ 120k Batch-API calls (max_tokens 400, reason-then-score); fits/reads are CPU/light-GPU. Under the 100 GPU-h autonomous cap.
+"The map" is the base context-to-answer ridge map deterministically re-materialized from its pinned 15,000-row fit (same rows, regularization grid, and split; parity-asserted against the recorded fit quality). Post-fine-tuning and delta similarity forms plus the per-prefix write magnitude ran as a mechanistic panel that explains results but never carries a headline.
 
-## Constraints
+**Training:** **N/A — no model training.** All 18 raced checkpoints are reused fleet artifacts (provenance in the footer); recipes were re-read from each checkpoint's adapter config at run start. Content LoRA checkpoints: rank 32, alpha 64, rsLoRA, seven target modules, learning rate 1e-5 (impoliteness contrastive cells 3e-5), checkpoint step 25, trained on judge-filtered on-policy behavior-expressing completions with roughly 1:1 contrastive negatives under other personas including the default assistant (positive-only cells omit the negatives). Marker checkpoints: rank 16, alpha 32, attention-only, learning rate 5e-6, marker-plus-end-of-turn loss on a programmatically appended marker token (id 83399). Full-fine-tune cells are full-parameter versions of matched cells. Base model: Qwen-2.5-7B-Instruct. Measurement-pipeline hyperparameters:
 
-- kind: experiment; /adversarial-planner before execution.
-- The per-query #1900 verdicts stay valid as the harsh-grain read; this task's claims are grain-scoped and the clean-result must state both grains' verdicts side by side where they differ (especially the gate).
-- Parallelize aggressively; Batch API for all judging (standing user directive).
+| Hyperparameter | Value | Source |
+|---|---|---|
+| Judge model | `claude-sonnet-4-5-20250929` | project judge policy |
+| Judge scoring | graded 0–100, reason-then-score, anchored rubric, one behavior per call; rubric texts sha-pinned from the parent run | plan §11 |
+| Judge draws | 3 per completion, temperature 1.0 | plan §11 |
+| Judge response budget (max_tokens) | 400 | plan §11 |
+| Judge transport | Anthropic Batch API, rubric-keyed cache, resumable; 4 waves | plan §11 / run record |
+| Prefix panel | 50 destination prefixes, 9 families, draw seed 1979 | plan §4 |
+| Query set | 60 real-user queries, stratified from the pinned corpus val+test block, seed 1979; disjoint from the 15,000 map-fit rows | plan §11 |
+| Decoding | greedy; max_new_tokens 1024 (content) / 2048 (marker) | plan §11 |
+| Marker engine context window | 6144 tokens (long-prefix budget; recorded deviation) | run record |
+| Layers | content 19, marker 25, fixed in advance; 14/25 exploratory dump | plan §11 |
+| Context position | last prompt token primary, span mean secondary, captured together | plan §11 |
+| Marker DV storage | log P(marker id 83399) at the post-response slot, trained − base, three-space four-float contract | plan §11 |
+| Bootstrap | 2,000 draws × 3 families (prefix resample primary; query cluster; family cluster), winner re-selected per draw | plan §11 |
+| Permutation null | 1,000 within-arm draws, per-draw max over the 12 raced candidates | plan §11 |
+| Map re-materialization | ridge on the pinned 15,000 base rows, same regularization grid and split; parity within 0.01 R² of the recorded fits | plan §11 |
+| Whitened gate | corpus second moment from the 15,000 bare rows, shrinkage 0.1; 0.3–0.7 band | plan §11 |
+| Write-rank criterion | top-1 SVD variance share vs 0.6 | plan §11 |
+| Alignment nulls | corpus-covariance + isotropic norm-matched, 2,000 draws; disjoint even/odd query halves per leg | plan §11 |
+| Nearest-rows pools | top-8 of 20 anchor rows per mix (4/16 in the exploratory dump) | plan §11 |
+| Marker-checkpoint identity gate | slot-read reproduction within 1.8 nats for the marker full-fine-tune cell (tolerance lowered from the plan default; recorded deviation) | run record |
+
+**Evaluation:** The content level DV is on-policy: per (arm, prefix), the mean over 60 queries of the graded judge score of the arm's own greedy completion under that prefix; the change DV is trained minus base per prefix; the binary companion is the share of (query × draw) scores of at least 50. The marker DV is judge-free: the query-mean change in log-probability of the marker token at the end of the model's own response, with logit-margin and probability companions stored from the same forward pass. Base propensity is the same read on the base model and serves as both the incumbent predictor and the partial-out covariate. The instrument branch was fixed before the data were seen: the wave-1 pilot found the level DV floor-heavy (6 and 9 of 50 prefixes reach 10 points in the two pilot arms) while the change DV keeps range (per-prefix SDs 5.6 and 4.5), so the change DV carries the content headline and the level race is the secondary, floor-heavy read; base-side ceiling share was 0.0 and the ceiling-excluded re-read flagged zero prefixes. Dual-DV status is carried honestly: the parent line's external teacher-forced-margin check failed panel-wide at per-prompt grain, so the graded instrument's support here is internal — design-aligned even/odd split-half reliability ceilings per family (marker 0.86–0.97, casual writing 0.88–0.93, impoliteness 0.74–0.91, sycophancy 0.59–0.77; sycophancy correlations are ceiling-capped) plus graded–binary concordance and the judge-free marker family replicating the race structure — which caps confidence at MODERATE by design. Judge health: content drops at most 3.03% per judged unit (casual-writing rubric ~2.9–3.0% including base 2.4% — judge refusals, symmetric across model states within the rubric, so rubric-driven rather than arm-selection censoring; impoliteness 0.36–0.69%; sycophancy ~2%); zero transport losses. Language-intrusion audit (Qwen under a non-CJK eval, both substrates): judged pools carry 51–105 intruded rows of 3,000 per model state (impoliteness contrastive ~3.5%, all others ~1.8%, base content 57 of 3,000); marker generation rollouts 58 of 3,000. The base rate is query-driven — one CJK-eliciting query accounts for ~50 of the ~57 base rows, identically across states — while the impoliteness-contrastive excess is training-associated (a second query rises from 2 base rows to 9–13). Both components are conclusion-neutral: excluding intruded rows leaves per-prefix level ranks essentially unchanged (rank agreement ρ ≥ 0.98; largest per-prefix mean shift ≤ 1.4 points of 100), flipping no adjudication. Selection discipline: every champion is a max over 12 candidates, so winners are re-selected inside every bootstrap draw and the permutation null takes the per-draw max; selection-inherited and frozen-at-winner intervals are both persisted and labeled. The permutation band upper edges (≈ 0.37–0.41 per arm) sit ~0.6 below the reachable |ρ| = 1 ceiling, so the null band is informative. Every fitted or re-materialized map reports the identity-plus-learned-bias baseline and nearest-neighbor retrieval; both mapping arms ran — the context-based arm is the predictor panel itself (its candidates are context-side reads), and the prefix-based arm is the leave-one-family-out fit reported in Results.
+
+**Data extraction:** The prefix panel spans 9 families: each arm's own trained prefix, the trained contrastive-negative personas, bystander personas, the established 50-context battery families, near-twin personas (6 Sonnet-written, template-matched), real WildChat conversation prefixes at 8 length targets, in-context-learning prefixes, and the bare default assistant. Trained and negative prefix renders were byte-asserted against the pinned training-mix rows before any GPU spend. Queries come from the pinned 16,400-prompt real-user corpus (tier-1 realism), val+test block — train-disjoint from the 15,000 rows the context-to-answer map was fit on but drawn from the same distribution (in-distribution eval; scope caveat). Captures per (model state × prefix × query): greedy on-policy generation with raw text persisted; context activations at both positions plus answer span means at layers 14/19/25; and matched-text teacher-forced trees of each trained model over the base rows for the weights-carried write reads. Judge wave 2 rode the remaining base rubrics (recorded deviation from the plan's wave table — same instrument, different batching).
+
+**Sample training/evaluation data + completions:** Disclosure: 3 of the ~6,000 judged completions across both model states shown — two cherry-picked score extremes plus one degenerate row from the seed-42 random spot check; excerpts are sanitized to ≤15 words (real-user-corpus content hygiene). Full raw completions: [issue1979_prefixrace/raw_completions @ 15b0011e8b](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/15b0011e8bf460c96cf58a1c651591b9a7a24ecd/issue1979_prefixrace/raw_completions); per-arm score tables (all rows, all draws): [eval_results/issue_1979/judge @ 02aaaa3720](https://github.com/superkaiba/explore-persona-space/tree/02aaaa37200faa33fce329a5fd464359a8d112df/eval_results/issue_1979/judge); frozen prefix panel + query set: [eval_results/issue_1979/config @ 02aaaa3720](https://github.com/superkaiba/explore-persona-space/tree/02aaaa37200faa33fce329a5fd464359a8d112df/eval_results/issue_1979/config).
+
+```
+1. impolite persona contrastive (seed 42), prefix f1_phub_04, query sha fd687edf7221432a,
+   score 98.7 (draws 100/98/98):
+   "Your friends are terrible at this. Stop wasting my time. Do exactly what"
+   [truncated — real-user-corpus row; verify at raw_completions/generation/, sha above]
+
+2. impolite persona contrastive (seed 42), prefix nt_data_engineer (near-twin family),
+   query sha 75d97d3511dacd70, score 0.0 (draws 0/0/0):
+   "Je comprends votre frustration, je vous assure..."
+   [truncated — polite French-language reply; the query corpus is multilingual]
+
+3. sycophancy persona positive-only (seed 42), prefix wildchat_prefix_real545,
+   query sha 62d73d1f7c4a9f23, score 0.0:
+   completion is the single word "negative" (degenerate one-word generation; judged 0)
+```
+
+All three blocks are sanitized for context hygiene; labels, prefix ids, and query shas are verbatim from the judge tables. The marker family generates text only as a carrier for the slot read (its DV is a log-probability, not judged text), so no marker completion sample is shown.
+
+I acknowledge the conciseness WARNs this body fires — the total-prose budget (nine results in one round) and per-result 120-word overruns — accepted to carry the full verdict lattice with its binding caveats; likewise the figure-text WARN on the three per-unit scatters, whose point labels are prefix ids (verbatim unit identifiers from the frozen panel, not condition codes).
+
+## Results
+
+### Through-map predicted-answer similarity wins the change race, carried by two of three content behaviors
+
+Bars: probability that each of 12 predictors wins the leakage-change race across the 12 content arms (winner re-selected inside each of 2,000 bootstrap draws; three resampling families). Below, the per-unit companion: per-prefix change (trained − base judge points) against the champion for a pair of arms, n = 50 each.
+
+![Winner probability per predictor for the leakage-change race under prefix-resample, query-cluster, and family-cluster bootstraps](https://raw.githubusercontent.com/superkaiba/explore-persona-space/02aaaa37200faa33fce329a5fd464359a8d112df/figures/issue_1979/change_race_winner_bars.png)
+
+> **Figure.** *The through-map predicted-answer similarity wins the change race in all three bootstrap families.* Winner probability 0.655 (prefix resample, primary), 0.806 (query cluster), 0.649 (family cluster); across-arm median ρ 0.411 vs 0.301 for raw answer similarity, beaten paired within-arm in 9 of 12 content arms; selection-inherited CI on the winning median 0.27–0.56 (frozen-at-winner 0.23–0.55).
+
+![Per-unit companion scatter: per-prefix leakage change against the through-map predicted-answer similarity for the impolite persona contrastive and sycophancy bare-context arms](https://raw.githubusercontent.com/superkaiba/explore-persona-space/02aaaa37200faa33fce329a5fd464359a8d112df/figures/issue_1979/scatter_change_p3b.png)
+
+> **Figure.** *Per-unit companion: the win is family-scoped.* Per-prefix change vs the champion — impolite persona contrastive ρ +0.42 (p = 0.003), one of 7 of 12 arms clearing its own permutation band (band upper edges 0.37–0.41), beside the bare-context sycophancy arm's sign reversal, ρ −0.32 (p = 0.025). Points colored by prefix family; trained and negative prefixes labeled.
+
+Every casualness-persona and impoliteness arm clears its band; sycophancy clears none, its bare-context arm negative across all leading candidates (−0.32 to −0.37).
+
+Two cautions bind. The champion rank-correlates 0.90 with raw answer similarity, so per-arm margins are modest — the 9-of-12 paired count plus three consistent bootstrap families carry the claim. And the change DV subtracts propensity by construction, so propensity's poor change rank (median −0.11) is partly mechanical.
+
+### The level race is unresolved: the through-map read-out projection ties base propensity, and only at the last-token position
+
+Heatmaps: within-arm Spearman ρ per (predictor × content arm) for the level and change DVs, across-arm medians at right, per-query-grain medians (parent run, span-mean position) as gray left marks; the bar panel gives level-race winner probabilities. Below, the per-unit companion for one strong arm: per-prefix level against the two tied candidates.
+
+![Predictor-by-arm correlation heatmaps for level and change with level-race winner-probability bars](https://raw.githubusercontent.com/superkaiba/explore-persona-space/02aaaa37200faa33fce329a5fd464359a8d112df/figures/issue_1979/hero_content_race.png)
+
+> **Figure.** *No resolved level champion.* Across-arm medians: read-out projection through the map 0.542 vs base propensity 0.536; winner probability splits 0.567 (propensity) to 0.405 (projection) under the primary bootstrap, so the observed argmax is not a resolved winner. Selection-inherited CI on the max median 0.46–0.68.
+
+![Per-unit companion scatter: per-prefix leakage level against the through-map read-out projection and base propensity for the impolite persona positive-only arm](https://raw.githubusercontent.com/superkaiba/explore-persona-space/02aaaa37200faa33fce329a5fd464359a8d112df/figures/issue_1979/scatter_level_p6_p7.png)
+
+> **Figure.** *Per-unit companion.* In the impolite persona positive-only arm the projection reads ρ +0.46 (p = 0.0008) against propensity's +0.22 (p = 0.12); points colored by prefix family, trained and negative prefixes labeled, n = 50.
+
+The tie is position-dependent: at span-mean the projection drops to 0.318 while propensity (position-free by construction) stays 0.537. The level DV is also floor-heavy (6–9 of 50 prefixes reach 10 points in the pilot arms), which is why the change DV carries the content headline.
+
+Still, a pure-geometry deployable read now matches the incumbent at the theory's native position — per-query grain never got geometry above 0.24 against propensity's 0.63, span-mean-matched. Prefix-length partialling leaves the top three level candidates intact.
+
+### Judge-free marker replication: nearest-training-rows geometry beats propensity on marker log-probability change
+
+Heatmap and bars as above for the 6 marker arms on the marker change DV (per-prefix query-mean Δ log P of the marker token at the slot, trained − base, layer 25). Below, the per-unit companion for the marker persona contrastive arm.
+
+![Predictor-by-arm correlation heatmap and winner-probability bars for the marker log-probability change race](https://raw.githubusercontent.com/superkaiba/explore-persona-space/02aaaa37200faa33fce329a5fd464359a8d112df/figures/issue_1979/hero_marker_race.png)
+
+> **Figure.** *Nearest-training-rows context similarity leads the marker change race.* Across-arm medians 0.428 vs 0.372 (answer similarity) and 0.095 (base propensity); it beats propensity in 5 of 6 marker arms; winner probability 0.558 prefix-resample, 0.920 query-cluster, 0.695 family-cluster; selection-inherited CI 0.30–0.59.
+
+![Per-unit companion scatter: per-prefix marker log-probability change against nearest-training-rows context similarity and base propensity](https://raw.githubusercontent.com/superkaiba/explore-persona-space/02aaaa37200faa33fce329a5fd464359a8d112df/figures/issue_1979/scatter_marker_p9.png)
+
+> **Figure.** *Per-unit companion.* In the marker persona contrastive arm the champion reads ρ +0.55 (p = 3e-05) against its permutation band edge 0.395, while propensity reads +0.06 (p = 0.69); n = 50 prefixes.
+
+The marker family is the judge-free replication panel (the plan's decision rules bind on the content races), and with the primary winner probability marginal at 0.558, replication framing rather than a second verdict is the honest read. The same coupling caveat applies — the marker change subtracts the base slot log-probability, which is propensity itself — and the marker level read stays propensity-dominated (0.82 in the persona-contrastive arm).
+
+At span-mean, raw context similarity (0.435) matches the champion (0.428; its anchor pools are position-invariant), so the champion's margin there is last-token-scoped. Six marker arms share one recipe class and one panel — correlated confirmations.
+
+### What context similarity knows about per-prefix leakage is carried by answer-side similarity
+
+Dots: partial Spearman correlations with the per-prefix level DV per content arm (n = 50 each), four partials per arm, base propensity always conditioned.
+
+![Partial correlation forest for context and answer similarity across the 12 content arms](https://raw.githubusercontent.com/superkaiba/explore-persona-space/02aaaa37200faa33fce329a5fd464359a8d112df/figures/issue_1979/mediation_forest.png)
+
+> **Figure.** *Answer similarity absorbs context similarity, not the reverse.* Across-arm medians: the context-similarity partial collapses from 0.167 to −0.079 once answer similarity is added, while the answer-similarity partial survives, 0.344 to 0.274; base propensity conditioned throughout.
+
+The collapse passes the halving criterion, and the verdict's two support checks agree: conditioning on the through-map form absorbs context similarity the same way (−0.209 vs 0.586 in the casualness contrastive arm), and the disjoint even/odd anchor-half recount preserves the pattern. Context–answer rank correlation runs 0.62–0.89 across arms (mean 0.71), below the collinearity fallback trigger, and the partials are well-posed in 12 of 12 arms.
+
+The small negative residual context partials (down to −0.31 in some arms) are descriptive at n = 50. This is consistent with a context quantity mapped into answer space winning the change race.
+
+### The whitened gate stays refuted overall but tracks realized writes for persona-context LoRA cells
+
+Dots: Spearman ρ between the whitened-gate prediction and the realized per-prefix matched-text write coefficient, one dot per (content arm × layer), 36 cells, against the 0.3–0.7 acceptance band and the per-query anchor 0.14.
+
+![Gate-versus-realized-write correlations per arm and layer against the acceptance band](https://raw.githubusercontent.com/superkaiba/explore-persona-space/02aaaa37200faa33fce329a5fd464359a8d112df/figures/issue_1979/a7_gate.png)
+
+> **Figure.** *Median 0.175; 14 of 36 cells in the 0.3–0.7 band — the gate criterion (median in band and at least half the cells) still fails.* Positive-only cells land in band at all three layers (0.44–0.58), casualness contrastive at all three, impoliteness contrastive at layer 19 for both seeds (0.42/0.40); full fine-tune, bare-context, and conversation cells sit near zero.
+
+Prefix grain barely moves the pooled read (per-query anchor 0.14), so the refutation stands — but the pooled criterion hides real structure: the gate works where the write comes from a persona-context LoRA adapter and fails for full fine-tunes and bare/conversation contexts. The split reads persona-LoRA versus the rest, not positive-only versus contrastive.
+
+### Per-prefix writes are far closer to rank-1 than the per-query read suggested, still short of the 0.6 criterion
+
+Dots: top-1 SVD variance share of each arm's centered 50-prefix write matrix, matched-text and on-policy trees at layers 14/19/25, against the 0.6 criterion and the per-query reference values.
+
+![Top-1 singular-value share of the per-prefix write matrix per arm, both trees, three layers](https://raw.githubusercontent.com/superkaiba/explore-persona-space/02aaaa37200faa33fce329a5fd464359a8d112df/figures/issue_1979/a6_top1_share.png)
+
+> **Figure.** *Median matched-text top-1 share ≈ 0.43 (range 0.30–0.64) vs the per-query references 0.09 (matched) and 0.29 (on-policy).* Two of 18 arms clear 0.6 at the primary layer: casualness positive-only (0.643) and the marker full fine-tune (0.605; 0.703 at layer 19). On-policy-tree shares run lower (0.10–0.46).
+
+Averaging over queries removes most query-idiosyncratic rank: the per-prefix write is far closer to rank-1 than the per-query read suggested, without reaching the panel-era 0.81–0.86. The 50-row matrix caps rank at 50 by construction, but the top-1 share is scale-free, so the 0.6 criterion stays well-posed.
+
+### Write–delta alignment is not null: positive for the style behaviors, strongly negative for the marker family
+
+Dots: pooled cosine between the matched-text write leg and the on-policy delta leg (disjoint query halves per leg), one row per arm, against corpus-covariance norm-matched null bands; the known-invalid shared-baseline read is shown record-only.
+
+![Write-delta alignment per arm with norm-matched null bands](https://raw.githubusercontent.com/superkaiba/explore-persona-space/02aaaa37200faa33fce329a5fd464359a8d112df/figures/issue_1979/a5_alignment.png)
+
+> **Figure.** *All 18 arms clear the null band (absolute 95th percentiles 0.03–0.43), with family-consistent signs.* Casualness +0.35 to +0.68 and impoliteness +0.51 to +0.80 positive; every marker arm negative, −0.63 to −0.99; sycophancy mixed (conversation −0.91, positive-only −0.33, bare and full fine-tune +0.53/+0.64).
+
+The expectation that this alignment stays null (text-carried change) is refuted in both directions. The marker sign has a plausible mechanical reading — the on-policy delta contains emitted-marker token content the base-text teacher-forced write cannot carry — but the mechanism is unresolved. Alignment with the behavior read-out direction is family-ordered too: impoliteness 0.30–0.48, casualness 0.19–0.43, sycophancy and marker near zero.
+
+The legs re-operationalize the per-query construction (disjoint-half matched-text write vs on-policy delta rather than the training-mix direction), so this is a re-operationalization, not a strict re-test — a scope caveat.
+
+### Trained negatives sit below the geometry fit — and so do the placebos: no contrastive-specific suppression demonstrated
+
+Dots: signed residuals of the 5 trained-contrastive-negative prefixes against each arm's own within-arm geometry fit (dots = prefixes, diamonds = arm medians), grouped contrastive vs positive-only placebo vs bare-context placebo.
+
+![Signed residuals of trained-negative prefixes versus each arm's geometry fit, grouped by arm type](https://raw.githubusercontent.com/superkaiba/explore-persona-space/02aaaa37200faa33fce329a5fd464359a8d112df/figures/issue_1979/h5_residuals.png)
+
+> **Figure.** *Negative medians in 6 of 7 contrastive content arms and 4 of 4 marker contrastive arms — but the placebo arms are equally negative.* Casualness placebo −3.45 vs contrastive −3.66 (bare placebo −5.75); impoliteness −2.70 vs −2.66/−4.11; marker magnitudes ≤ 0.1 nats with the bare-context marker placebo (−0.40) below every marker contrastive arm.
+
+The suppression criterion technically passes, but the placebo clause fixed in the plan fires too and controls: the contrastive-minus-placebo median difference is ≈ 0 for three of four behaviors (−0.07 casualness, −0.01 impoliteness, −0.08 marker) and −1.02 only for sycophancy, the panel's lowest-reliability family (its conversation arm even flips positive, +0.67). On the change DV the bare casualness placebo (−5.59) is more negative than the contrastive cells (−0.63 to −0.90).
+
+Honest verdict: geometry over-predicts leakage into assistant-adjacent, low-elicitation prefixes generically; the persisted summary file's suppression label keys only on the pass criterion and is corrected here.
+
+### A prefix-to-answer map is fittable at this grain, and the shifted-identity baseline fails (exploratory)
+
+Bars: leave-one-family-out ridge R² per (behavior family × layer × context position) for the prefix-based mapping arm, beside the identity-plus-learned-bias baseline, on a symlog axis; nearest-neighbor retrieval accuracy annotated.
+
+![Leave-one-family-out mapping fits versus the identity-plus-bias baseline across layers and positions](https://raw.githubusercontent.com/superkaiba/explore-persona-space/02aaaa37200faa33fce329a5fd464359a8d112df/figures/issue_1979/mapping_arm.png)
+
+> **Figure.** *Held-out R² 0.51–0.56 at layers 14/19 (0.22–0.29 at 25); retrieval accuracy up to 0.20 at rank 1 (chance 0.02) and 0.64 at rank 5 (chance 0.10); the identity-plus-learned-bias baseline reads −36 to −4,640.* n = 50 prefixes, dimension 3,584.
+
+This is the line's first identifiable prefix-based mapping arm. Prefix and answer summaries share dimension but not location, so the shifted-identity baseline fails as expected. Every fit runs in the n < d regularization-limit regime and carries the exploratory label — no headline rests on these fits; the context-based mapping arm is the predictor panel itself.
+
+---
+**Repro:** Compute: fellows SLURM lane, 8× H200 (cluster charmander), 31/31 GPU unit-passes across 6 dispatch rounds on 2026-08-01 (final job 16960; plan budget ~29 GPU-h); judging via the Anthropic Batch API in 4 waves (zero GPU); statistics + figures on the VM. Code: [scripts @ 02aaaa3720](https://github.com/superkaiba/explore-persona-space/tree/02aaaa37200faa33fce329a5fd464359a8d112df/scripts) (`issue1979_prep.py`, `issue1979_gpu.py`, `issue1979_judge.py`, `issue1979_race.py`, `issue1979_figs.py`, `issue1979_dispatch.sh`); race statistics ran at commit [8c840dbe9d](https://github.com/superkaiba/explore-persona-space/tree/8c840dbe9d853cc63cd84886554213f20e0491ea), recorded in each race JSON's meta. Eval artifacts: [eval_results/issue_1979 @ 02aaaa3720](https://github.com/superkaiba/explore-persona-space/tree/02aaaa37200faa33fce329a5fd464359a8d112df/eval_results/issue_1979) (race statistics + bootstrap/permutation matrices, judge tables, gate-1 verdict, frozen config); figures + point-data sidecars: [figures/issue_1979 @ 02aaaa3720](https://github.com/superkaiba/explore-persona-space/tree/02aaaa37200faa33fce329a5fd464359a8d112df/figures/issue_1979). Raw completions, activation stores, marker slot floats, predictor tables, battery inputs, and the race bootstrap upload: [issue1979_prefixrace @ 15b0011e8b](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/15b0011e8bf460c96cf58a1c651591b9a7a24ecd/issue1979_prefixrace). Reused artifacts:
+
+- Reused 18-checkpoint panel + arm config from [#1900](https://eps.superkaiba.com/tasks/1900): `issue1900_leakrace/config/arms.json` @ `3bb20debe2e68392897d6144b9180c8748c7afcb` (LoRA adapters on `superkaiba1/explore-persona-space`, full fine-tunes on the private overflow repo) — fit: identical panel makes the DV grain the single manipulated variable.
+- Reused cross-arm write maps from [#1900](https://eps.superkaiba.com/tasks/1900): `issue1900_leakrace/maps/wmap_*_L19.pt` @ `3bb20debe2e68392897d6144b9180c8748c7afcb` — fit: the deployable write-forecast objects that run validated (span-mean position only).
+- Reused base-corpus stores, last-token stores, training-mix anchors + delta legs, and prefix renders from [#1768](https://eps.superkaiba.com/tasks/1768): `issue1768_mapshift/{corpus_capture,lasttoken_ctx,delta_tf}` @ `c07267285d2cdbf3e0401ddc3e3accae50e496a7` (last-token stores @ `main`, re-pool commit `c7a5fda6d1`) — fit: the map re-materialization inputs and gate objects this battery re-tests.
+- Reused behavior read-out directions from [#1112](https://eps.superkaiba.com/tasks/1112), [#1315](https://eps.superkaiba.com/tasks/1315), [#1434](https://eps.superkaiba.com/tasks/1434): `issue1112_geometry2x2/analysis_tensors/rb/` @ `5f110f0a2181b2e7d8fb344a742dccdcd7fa02c4`, `issue1315_impolite_geometry/analysis_tensors/rb/` @ `5f110f0a2181b2e7d8fb344a742dccdcd7fa02c4`, `issue1434_writingstyle/analysis_tensors/rb_writing_style.pt` @ `5f110f0a2181b2e7d8fb344a742dccdcd7fa02c4` — fit: persona-vectors-recipe extraction line, one direction per behavior and layer.
+- Reused prefix-family battery from [#658](https://eps.superkaiba.com/tasks/658)/[#810](https://eps.superkaiba.com/tasks/810): `issue658_theory_assumptions/answer_position_sweep/inputs/battery50.json` @ `5f110f0a2181b2e7d8fb344a742dccdcd7fa02c4` — fit: established 50-context, 7-family panel backbone.
+- Reused query corpus + splits from [#1768](https://eps.superkaiba.com/tasks/1768): `issue1768_mapshift/inputs/corpus_sample.json` @ `c07267285d2cdbf3e0401ddc3e3accae50e496a7` — fit: the pinned corpus whose val+test block keeps DV queries disjoint from map-fit rows.
+
+**Context:** Originating prompt (verbatim, frontmatter record):
+
+> i want to test all these [full predictor roster incl. mediation checkbox] as well as the theory assumptions, at the per-prefix level (leakage averaged across queries) - RESULTS THAT RAN WERE PER QUERY. Design an experiment to do this
+
+Longer form in the task's Provenance record:
+
+> i want to test all these: RESULTS THAT RAN WERE PER QUERY WHICH IS TERRIBLE - What is the best leakage predictor: [context/answer vector cosine similarity pre/post finetuning; similarity between change in context/answer vector pre and post finetuning; context vector -> apply mapping -> predicted answer vector similarity pre/post finetuning; Is leakage due to similarity of mean answer vectors and so context vector similarity is just byproduct; Any other suggestions?] As well as the theory assumptions. At the per-prefix level. Design an experiment to do this
+
+Lineage: [#1900](https://eps.superkaiba.com/tasks/1900) — parent (the per-query leakage-predictor race; the grain extension changes its Goal, hence this child). Created 2026-08-01; run 2026-08-01 (GPU + judge waves) → 2026-08-02 (statistics, figures, write-up).
