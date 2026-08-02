@@ -27,5 +27,8 @@ only on non-SLURM lanes. (b) compute
 `torch.cuda.mem_get_info()` on the leg's OWN device at engine construction,
 with a fail-loud floor (≈0.20) and an env override for operators. (c) any
 HBM-headroom gate (layer-chunk sizing, capture-load floors) reads FREE memory,
-not total. Reference implementation: `scripts/issue1902_common.py::vllm_util_for_free`
-+ `scripts/issue1902_dispatch.sh` width block (commit 4b3fafa8dc84).
+not total. Reference implementation:
+`src/explore_persona_space/eval/vllm_util.py` (`vllm_util_for_free` /
+`resolve_vllm_util`, cap parametrized — 0.55 shared-node default, 0.85
+exclusive-host; hoisted by #1942) + `scripts/issue1902_common.py::realized_gpu_ids`
+and the `scripts/issue1902_dispatch.sh` width block.
