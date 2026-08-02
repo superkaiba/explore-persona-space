@@ -1,6 +1,6 @@
 ---
-title: 'Single-visit organism fleet: no training row repeated; theory assumptions
-  tested on exactly the trained rows'
+title: Theory-assumption failures survive retraining without data repetition, tested
+  on exactly the trained rows (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-31T22:12:00Z'

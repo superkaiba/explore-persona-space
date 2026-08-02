@@ -7337,7 +7337,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1947",
       "status": "interpreting",
-      "title": "Single-visit organism fleet: no training row repeated; theory assumptions tested on exactly the trained rows"
+      "title": "Theory-assumption failures survive retraining without data repetition, tested on exactly the trained rows (MODERATE confidence)"
     },
     "1948": {
       "has_clean_result": false,
