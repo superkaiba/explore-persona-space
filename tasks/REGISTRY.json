@@ -7213,8 +7213,8 @@
     "1931": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1931",
-      "status": "approved",
+      "path": "tasks/running/1931",
+      "status": "running",
       "title": "daily-fix: pod bootstrap retry + fail-loud provision verdict"
     },
     "1932": {
