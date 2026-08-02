@@ -2,7 +2,8 @@
 title: RLVR post-training adds no detectable new linear context→answer map structure
   beyond the DPO stage, even on its own training distribution (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-07-15T08:33:12Z'
 has_clean_result: true
 parent_id: 825
