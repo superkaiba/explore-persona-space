@@ -109,7 +109,7 @@ I ranked the same answer-PCA directions by (a) per-direction map $R^2$ and (b) p
 
 To get a better idea of **exactly which interpretable aspects of the answer** are better predicted by the mapping, I then trained a mapping directly from continuous context vector to SAE features (average activation over answer), and tried to understand which SAE features were predicted the best/worst. I considered a few predictors:
 - Variance explained by that direction (in average answer activation space):
-    - **null**: ρ($R^2$, log feature variance) = **0.02** (`eval_results/issue_1482/sae_perfeature/variance_vs_r2.json`) — unlike the PC basis, a feature's variance tells you nothing about its predictability (the PC-basis variance–predictability link is a property of the rotation, not of variance per se)
+    - Two quantities hide under this name and they are **uncorrelated with each other** (ρ = 0.004): (a) the feature's **activation variance** (how much its own activation value fluctuates across contexts) — **null** vs $R^2$, ρ = **0.02** (`sae_perfeature/variance_vs_r2.json`); (b) the **dense-state variance along the feature's unit decoder direction** — the true PC-analogue — which is a real correlate: ρ = **+0.40** (+0.45 given activity; cross-corpus caveat: projection variance measured on the multi-turn holdout, `feature_correlates/dense_projection_variance.json`). So the variance-mechanical story DOES extend to SAE feature directions once variance is measured in the dense space the direction lives in; what carries no signal is the feature's own gating variance
 - Average activation across corpus:
     - ρ($R^2$, activity) = **0.29** — more-active features are moderately better predicted
 - Interpretable or not (judged axis, κ 0.633): 77.9% of panel features judged interpretable; the direct interpretable-vs-$R^2$ correlation has not been run yet (labels are banked — see suggested analyses)
@@ -136,11 +136,12 @@ For continuous predictors, the ρ's with pairwise partials (activity / consisten
 | activity | +0.29 | — | ~+0.24 |
 | γ-scaled decoder (write) norm | +0.18 | +0.22 | +0.21 |
 | footprint kurtosis (output-coherence) | −0.03 | −0.06 | −0.13 |
-| feature variance | +0.02 | +0.13 | +0.04 |
+| dense variance along decoder dir | +0.40 | +0.45 | — |
+| feature activation variance | +0.02 | +0.13 | +0.04 |
 | Matryoshka tier (fine = high) | −0.39 | −0.19 (stratified) | — |
 
 **Takeaways:**
-- Only three things order SAE-feature predictability: **how persistently the feature stays on within an answer (dominant), how often it fires, and (weakly) how strongly it writes**. Variance, judged abstraction, and output-coupling do essentially nothing
+- Four things order SAE-feature predictability: **within-answer persistence (dominant, 0.60), dense variance along the feature's direction (0.40), firing frequency (0.29), and (weakly) write strength (0.18)**. The feature's own activation variance, judged abstraction, and output-coupling do essentially nothing
 - The mechanical input/output axis is measurable and cheap but does not carry the input-echo-easy / output-promoting-hard hypothesis — that hypothesis fails at the feature level
 
 For binary predictors, effectiveness was checked three ways: (1) two-arm extremes contrasts — top-150 vs bottom-150 by $R^2$, Fisher-exact odds ratio, repeated **activity-controlled** (15 best/worst within each activity decile) with a stratified permutation test; (2) full-panel Spearman of the coded label; (3) a **tail-depth sweep**: Δ_k = frac(label | top-k) − frac(label | bottom-k) over 16 tail widths against an activity-stratified permutation null with a scan-corrected (studentized max-T) band, plus prevalence-vs-rank profiles:
