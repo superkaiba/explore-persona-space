@@ -597,3 +597,58 @@ def test_fit_lasttoken_arm_real_body_toy_n(tmp_path):
     assert rec["fits"]["M0_lasttoken"]["status"] == "unavailable"
     assert rec["map_change"]["status"] == "no-M0-floor-available"
     assert rec["map_change"]["D"] is None
+
+
+def test_external_arm_method_seam(monkeypatch):
+    """r13 crash pin (KeyError 'imp-bare-con-sv-s42' at issue1768_fit.py
+    `_pfx_fit_core` metadata): `_resolve_arm_method` resolves an
+    external-registered arm (#1947 slugs, absent from #1768's arm registry)
+    from EXTERNAL_ARM_METHOD, keeps a #1768-registry arm on the REAL
+    X.arm_method path (the hardcoded #1586 full-FT identity — no Hub
+    dependency; the #1481 verdict manifest is a committed eval_results
+    fixture), and still fails fast (KeyError) on a truly unknown arm."""
+    import issue1768_fit as FIT
+
+    slug = "imp-bare-con-sv-s42"  # the crashing #1947 slug (not a #1768 arm)
+    monkeypatch.setitem(FIT.EXTERNAL_ARM_METHOD, slug, "lora")
+    assert FIT._resolve_arm_method(slug) == "lora"
+    # a #1768-registry arm bypasses the external map — real registry lookup
+    assert FIT._resolve_arm_method("syc-pers-ft-con-s42") == "ft"
+    with pytest.raises(KeyError):
+        FIT._resolve_arm_method("not-an-arm-anywhere-x0")
+
+
+def test_unit_fit_registers_external_arm_method_before_fit_loop():
+    """r13 wiring pin: `unit_fit` registers the slug's method label
+    (`FIT.EXTERNAL_ARM_METHOD.setdefault(slug, "lora")`) BEFORE the per-layer
+    `fit_bare_n_cell` loop. AST pin — running unit_fit for real needs staged
+    corpora (the round-11 wiring-pin convention)."""
+    import ast
+    import inspect
+    import textwrap
+
+    tree = ast.parse(textwrap.dedent(inspect.getsource(bat.unit_fit)))
+    reg_lines: list[int] = []
+    loop_lines: list[int] = []
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "setdefault"
+            and isinstance(node.func.value, ast.Attribute)
+            and node.func.value.attr == "EXTERNAL_ARM_METHOD"
+        ):
+            assert isinstance(node.args[0], ast.Name) and node.args[0].id == "slug"
+            assert isinstance(node.args[1], ast.Constant) and node.args[1].value == "lora"
+            reg_lines.append(node.lineno)
+        if (
+            isinstance(node, ast.For)
+            and isinstance(node.iter, ast.Attribute)
+            and node.iter.attr == "layers"
+        ):
+            loop_lines.append(node.lineno)
+    assert reg_lines, "unit_fit lost the EXTERNAL_ARM_METHOD registration (r13 fix)"
+    assert loop_lines, "unit_fit per-layer fit loop not found (test needs updating)"
+    assert min(reg_lines) < min(loop_lines), (
+        "EXTERNAL_ARM_METHOD registration must precede the per-layer fit loop"
+    )

@@ -1368,6 +1368,12 @@ def unit_fit(cfg: Cfg, slug: str) -> None:
             "from the own store — sha-join violated (plan §3 row-coverage assert)"
         )
     results_dir = cfg.out_root / "fits"
+    # #1947 slugs are absent from #1768's arm registry (X.all_arms), so
+    # register the result-record method label at point of use — every #1947
+    # content cell is LoRA (r32/a64 rsLoRA per plan §4.2; the fleet has no
+    # full-FT cells). "lora" is the registry's exact vocabulary
+    # (issue1768_cells.Arm.method: "lora" | "ft").
+    FIT.EXTERNAL_ARM_METHOD.setdefault(slug, "lora")
     recs: dict[int, dict] = {}
     for layer in cfg.layers:
         t0 = time.time()

@@ -42,6 +42,19 @@ import issue1768_cells as X  # noqa: E402
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("issue1768.fit")
 
+# Arms fitted through this core by external reusers (#1947's battery) register
+# their method here; #1768's own arms keep resolving through X.arm_method.
+EXTERNAL_ARM_METHOD: dict[str, str] = {}
+
+
+def _resolve_arm_method(arm_id: str) -> str:
+    """Fit-record method label ("lora" | "ft"): an external-registered arm
+    (e.g. a #1947 slug, absent from #1768's arm registry) resolves from
+    EXTERNAL_ARM_METHOD; #1768's own arms via X.arm_method; a truly unknown
+    arm still fails fast with the registry's KeyError."""
+    return EXTERNAL_ARM_METHOD.get(arm_id) or X.arm_method(arm_id)
+
+
 N_FLOOR_REFITS = 200  # B refits -> B/2 disjoint floor pairs (plan §4.5; min 100)
 N_BOOT_TEST = 1000  # bootstrap draws over test rows (seed 1768)
 N_CI_DRAWS = 500  # paired row-bootstrap draws for the D CI (chunk-bounded)
@@ -962,7 +975,7 @@ def _pfx_fit_core(
     )
     result = {
         "arm_id": arm_id,
-        "method": X.arm_method(arm_id),
+        "method": _resolve_arm_method(arm_id),
         "layer": layer,
         "condition": percell_suffix,
         "n_rows": int(len(cell["sha"])),
