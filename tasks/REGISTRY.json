@@ -7953,8 +7953,8 @@
     "2026": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2026",
-      "status": "proposed",
+      "path": "tasks/planning/2026",
+      "status": "planning",
       "title": "workflow-fix: export EPS_GIT_SHA in SLURM sbatch env for rsync-lane provenance"
     },
     "203": {
