@@ -7206,8 +7206,8 @@
     "1930": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1930",
-      "status": "planning",
+      "path": "tasks/approved/1930",
+      "status": "approved",
       "title": "daily-fix: 9a-ter inline routing (50GB->bigmem, fits->GPU)"
     },
     "1931": {
