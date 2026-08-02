@@ -6310,12 +6310,14 @@ _GIT_LOCK_CONTENTION_RE = re.compile(
     r"|Another git process seems to be running"
     r"|Unable to create '.*\.lock': File exists"
 )
-_GIT_LOCK_RETRY_SLEEP_RANGE_S = (2.0, 3.0)  # one retry; jittered to de-sync
+_GIT_LOCK_RETRY_SLEEP_RANGE_S = (2.0, 3.0)  # per-retry sleep; jittered to de-sync
+_LOCK_WAIT_ENV = "EPM_TASKPY_LOCK_WAIT_SECONDS"  # total per-call bound; 0 disables (default 60)
 
 # `git commit --only` refuses while a merge/cherry-pick is in progress on
 # THIS worktree (verified: git 2.34.1, rc=128). Signature used only for the
 # single TOCTOU retry in ``_git_commit`` — never added to
-# ``_GIT_LOCK_CONTENTION_RE`` (#898's retry semantics stay byte-identical).
+# ``_GIT_LOCK_CONTENTION_RE`` (the lock-retry SIGNATURE set is unchanged;
+# #898's single retry widened to a bounded per-call loop by #1917).
 # NOTE: do NOT "simplify" the wait by dropping --only under a merge — a plain
 # `git commit` during a merge would CREATE THE MERGE COMMIT, sweeping the
 # entire shared index and completing the concurrent session's merge on its
@@ -6430,23 +6432,50 @@ def _wait_for_sequencer_clear(repo: Path) -> None:
         time.sleep(poll)
 
 
-def _run_git(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
-    """Run ``git <args>`` at the repo root, retrying ONCE on lock contention.
+def _lock_wait_bound_s() -> float:
+    """Total bounded-wait budget (seconds) for ``_run_git``'s lock-contention
+    retry loop (#1917; widens #898's single retry). The bound is PER
+    ``_run_git`` CALL — a flock'd mutation running k git calls could in the
+    adversarial case stack ~k budgets, while the common stale-lock case
+    aborts on the FIRST call's exhaustion (~one budget per mutation).
+    ``0`` disables retries entirely (single attempt — the pre-#898
+    fail-loud shape). Evaluated LAZILY at the first collision — never on the
+    happy path — so a garbage env value converts a retryable collision into
+    ``ValueError`` (accepted fail-loud parity with the merge-wait
+    precedent). A non-float env value raises ``ValueError``; a non-finite
+    float (``nan``/``inf``) raises too — ``nan`` defeats the
+    ``time.monotonic() < deadline`` comparison and would wait unbounded.
+    Mirrors ``_merge_wait_bound_s()``."""
+    value = float(os.environ.get(_LOCK_WAIT_ENV, "60"))
+    if not math.isfinite(value):
+        raise ValueError(f"{_LOCK_WAIT_ENV} must be finite, got {value!r}")
+    return value
 
-    Contention/crash envelope (#825): the command runs with ``check=False``
-    internally; if it exits non-zero AND stderr matches the git
-    lock-contention signature (``_GIT_LOCK_CONTENTION_RE`` — a concurrent git
-    process holds ``.git/index.lock`` or a sibling ``*.lock``), sleep a
+
+def _run_git(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
+    """Run ``git <args>`` at the repo root, retrying on lock contention up to
+    a bounded per-call wall budget (#1917; #898's single retry widened).
+
+    Contention/crash envelope (#825, #898, #1815): the command runs with
+    ``check=False`` internally; if it exits non-zero AND stderr matches the
+    git lock-contention signature (``_GIT_LOCK_CONTENTION_RE`` — a concurrent
+    git process holds ``.git/index.lock`` or a sibling ``*.lock``), sleep a
     jittered ``random.uniform(*_GIT_LOCK_RETRY_SLEEP_RANGE_S)`` interval and
-    rerun exactly ONCE (never more). The retry keys on the STDERR SIGNATURE,
-    never on the return code, so ``check=False`` rc-as-signal call sites
-    (``diff --cached --quiet``) keep their rc semantics with zero retries,
-    and non-lock failures surface immediately. A SUCCESSFUL call takes no
-    sleep (zero happy-path latency). If the retry also fails on the lock
-    signature, a stale-lock remedy is logged at ERROR. After the (at most
-    one) retry the caller's ``check`` semantics apply: ``check=True`` raises
-    ``subprocess.CalledProcessError`` with the same ``cmd``/``output``/
-    ``stderr`` fields ``subprocess.run(check=True)`` would produce.
+    rerun, until success OR the per-call wall budget is exhausted
+    (``EPM_TASKPY_LOCK_WAIT_SECONDS``, default 60 s; ``0`` disables retries;
+    the deadline is captured at the FIRST lock-signature failure, so any
+    positive budget guarantees at least one retry). The retry keys on the
+    STDERR SIGNATURE, never on the return code, so ``check=False``
+    rc-as-signal call sites (``diff --cached --quiet``) keep their rc
+    semantics with zero retries, and non-lock failures surface immediately
+    with ZERO sleeps. A SUCCESSFUL call takes no sleep (zero happy-path
+    latency). On budget exhaustion with the lock signature still standing, a
+    stale-lock remedy is logged at ERROR naming the budget + env knob (a
+    permanently-stale lock now costs ~budget seconds per mutation until
+    removed). After the loop the caller's ``check`` semantics apply
+    unchanged: ``check=True`` raises ``subprocess.CalledProcessError`` with
+    the same ``cmd``/``output``/``stderr`` fields
+    ``subprocess.run(check=True)`` would produce.
     """
 
     def _attempt() -> subprocess.CompletedProcess[str]:
@@ -6471,22 +6500,47 @@ def _run_git(args: list[str], *, check: bool = True) -> subprocess.CompletedProc
 
     result = _attempt()
     if result.returncode != 0 and _GIT_LOCK_CONTENTION_RE.search(result.stderr or ""):
-        delay = random.uniform(*_GIT_LOCK_RETRY_SLEEP_RANGE_S)
-        _log.warning(
-            "git %s hit a lock collision (a concurrent git process holds the lock); "
-            "retrying once in %.1fs",
-            args[0] if args else "",
-            delay,
-        )
-        time.sleep(delay)
-        result = _attempt()  # second and FINAL attempt
+        # Budget + deadline are captured HERE, at the FIRST lock-signature
+        # failure (lazy env read — never on the happy path), so any positive
+        # budget guarantees >= 1 retry before the deadline check can trip.
+        bound = _lock_wait_bound_s()
+        deadline = time.monotonic() + bound
+        first_collision = True
+        while (
+            result.returncode != 0
+            and _GIT_LOCK_CONTENTION_RE.search(result.stderr or "")
+            and time.monotonic() < deadline
+        ):
+            delay = random.uniform(*_GIT_LOCK_RETRY_SLEEP_RANGE_S)
+            if first_collision:
+                _log.warning(
+                    "git %s hit a lock collision (a concurrent git process holds the "
+                    "lock); retrying in %.1fs (bounded wait: up to %.0fs total, %s)",
+                    args[0] if args else "",
+                    delay,
+                    bound,
+                    _LOCK_WAIT_ENV,
+                )
+                first_collision = False
+            else:
+                _log.debug(
+                    "git %s lock collision persists; retrying in %.1fs",
+                    args[0] if args else "",
+                    delay,
+                )
+            time.sleep(delay)
+            result = _attempt()
         if result.returncode != 0 and _GIT_LOCK_CONTENTION_RE.search(result.stderr or ""):
             _log.error(
-                "git %s failed twice on a lock collision. A concurrent git process is "
-                "holding the repo lock; if no live git process exists, a crashed one "
-                "may have left a stale .git/index.lock — inspect and remove it "
-                "manually.",
+                "git %s still failing on a lock collision after the %.0fs retry "
+                "budget (%s; 0 disables). A concurrent git process is holding the "
+                "repo lock; if no live git process exists, a crashed one may have "
+                "left a stale .git/index.lock — inspect and remove it manually "
+                "(a stale lock now costs ~%.0fs per mutation until removed).",
                 args[0] if args else "",
+                bound,
+                _LOCK_WAIT_ENV,
+                bound,
             )
     if check and result.returncode != 0:
         raise subprocess.CalledProcessError(
