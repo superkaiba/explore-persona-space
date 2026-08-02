@@ -17722,17 +17722,28 @@ _C51_RESULT_PROSE_ANCHOR = (
 )
 
 
-def _c51_body(*, drop_sentence=_C51_DROP_SENTENCE, takeaways_extra="", results_extra=""):
+def _c51_body(
+    *, drop_sentence=_C51_DROP_SENTENCE, takeaways_extra="", results_extra="", leading=False
+):
     """`_V4_GOOD_BODY` with a dropped-at-gate declaration spliced into the
     Methodology `**Design:**` bullet (the #1947 shape, copied near-verbatim
     from #1947's live body), plus optional Takeaways-bullet / result-prose
-    placement lines. Asserts every anchor actually replaced."""
+    placement lines. With ``leading=True`` the declaration is the FIRST
+    sentence of the bullet, so the subject clause contains the bold
+    `**Design:**` slot label (the round-2 Major reproduction shape).
+    Asserts every anchor actually replaced."""
     assert _C51_DESIGN_ANCHOR in _V4_GOOD_BODY
-    body = _V4_GOOD_BODY.replace(
-        _C51_DESIGN_ANCHOR,
-        "- **Design:** 3 seeds; baseline vs tulu-25 on benchmark Z. "
-        f"{drop_sentence} The single manipulated variable is the data mix.",
-    )
+    if leading:
+        design = (
+            f"- **Design:** {drop_sentence} 3 seeds; baseline vs tulu-25 on "
+            "benchmark Z. The single manipulated variable is the data mix."
+        )
+    else:
+        design = (
+            "- **Design:** 3 seeds; baseline vs tulu-25 on benchmark Z. "
+            f"{drop_sentence} The single manipulated variable is the data mix."
+        )
+    body = _V4_GOOD_BODY.replace(_C51_DESIGN_ANCHOR, design)
     if takeaways_extra:
         assert _C51_TAKEAWAYS_ANCHOR in body
         body = body.replace(_C51_TAKEAWAYS_ANCHOR, _C51_TAKEAWAYS_ANCHOR + "\n" + takeaways_extra)
@@ -17894,6 +17905,69 @@ def test_check51_blockquote_and_fence_immune():
     assert r.passed is True
     assert r.is_warn is False
     assert "no dropped-at-gate declaration" in r.detail
+
+
+def test_check51_slot_label_never_extracted_on_compliant_body():
+    """Round-2 Major (code review): a drop declaration LEADING a bold-slot
+    Methodology bullet must never FAIL a COMPLIANT body naming the slot
+    label (`Design:`). The colon-ended candidate is rejected; with no
+    surviving heuristic ("sycophancy" is unwrapped) the check WARNs
+    (criterion 5) — NOT-FAIL is the pin."""
+    assert (
+        verify_task_body._extract_dropped_condition_name(
+            "- **Design:** The planned sycophancy arm "
+        )
+        is None
+    )
+    body = _c51_body(
+        drop_sentence="The planned sycophancy arm was dropped at the datagen yield gate.",
+        leading=True,
+        takeaways_extra=(
+            "- Sycophancy was dropped at the datagen yield gate; denominators "
+            "below use the realized arms."
+        ),
+        results_extra="No sycophancy cell appears — that behavior missed its yield floor.",
+    )
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is True  # never a blocking FAIL on a junk extraction
+    assert "dropped condition" not in r.detail  # the FAIL-detail shape names no token
+    assert r.is_warn is True
+    assert "no extractable condition name" in r.detail
+
+
+def test_check51_slot_label_absent_placements_warn_not_fail():
+    """Round-2 Major, placements-absent arm: the same leading bold-slot
+    declaration with the real name absent from BOTH placements yields
+    whatever the surviving extraction supports — here none survives, so
+    WARN; it must never FAIL naming a colon-ended slot label."""
+    body = _c51_body(
+        drop_sentence="The planned sycophancy arm was dropped at the datagen yield gate.",
+        leading=True,
+    )
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "dropped condition `Design:`" not in r.detail
+    assert "no extractable condition name" in r.detail
+
+
+def test_check51_numeric_parenthetical_rejected():
+    """Round-2 Major sibling: a numeric stat parenthetical adjacent to the
+    verb group (`(232 of 240)`) is rejected as a name candidate; extraction
+    falls through to the wrapped-token priority (`harmful_compliance` — a
+    correct-name FAIL here), never a FAIL naming the numeric span."""
+    assert (
+        verify_task_body._extract_dropped_condition_name("The sycophancy arm (232 of 240) ") is None
+    )
+    body = _c51_body(
+        drop_sentence=(
+            "The `harmful_compliance` behavior (232 of 240) was dropped at the datagen yield gate."
+        )
+    )
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is False
+    assert "dropped condition `harmful_compliance`" in r.detail
+    assert "232 of 240" not in r.detail.split("(declared:")[0]  # numeric token never the name
 
 
 def test_check51_registered():

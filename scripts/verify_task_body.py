@@ -1084,7 +1084,10 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   After-Every-Experiment item 8(a)). The name is extracted best-effort:
   (1) a parenthetical immediately preceding the verb group
   (`… (sycophancy) was dropped …`), else (2) the last
-  backtick/bold/italic-wrapped token in the subject clause. FAIL when a
+  backtick/bold/italic-wrapped token in the subject clause — colon-ended
+  slot labels (`**Design:**`) and mostly-digit spans (`232 of 240`) are
+  rejected as candidates, falling through to the WARN path rather than a
+  junk-name FAIL (#2017 r2). FAIL when a
   confidently-extracted name is missing from either placement (detail
   quotes the declaring sentence, truncated ~120 chars, and names the
   missing placement(s)); WARN when a declaration is detected but no name
@@ -15436,15 +15439,28 @@ def _strip_blockquote_lines(text: str) -> str:
 
 def _c51_clean_condition_name(raw: str) -> str | None:
     """Normalize an extracted condition-name candidate; None when the
-    candidate is not plausibly a NAME (no alphabetic content, or an
-    `n=16`-style stat parenthetical) — the WARN path, never a guess.
+    candidate is not plausibly a NAME (no alphabetic content, an
+    `n=16`-style stat parenthetical, a colon-ended v4 slot label like
+    `Design:`, or a mostly-digit stat span like `232 of 240`) — a rejected
+    candidate falls through to the caller's next extraction priority, and
+    with none surviving the check WARNs, never FAILs on a guess (#2017 r2).
     Formatting wrappers are stripped at the EDGES only — an interior `_`
     is part of a snake_case name (`harmful_compliance`), never chrome."""
     name = re.sub(r"\s+", " ", raw).strip()
     name = name.strip("`*_\"' \u2018\u2019\u201c\u201d")
     if not name or len(name) > 60 or not re.search(r"[A-Za-z]", name):
         return None
+    if name.endswith(":"):
+        # A bold token ending in a colon is a v4 slot label / heading
+        # (`**Design:**`, `**Data extraction:**` -- format-mandated chrome on
+        # every v4 Methodology bullet), never a condition name (#2017 r2).
+        return None
     if re.fullmatch(r"[a-zA-Z]\s*[=≈<>≤≥]\s*[\d,.\s%]+", name):
+        return None
+    if sum(c.isdigit() for c in name) > sum(c.isalpha() for c in name):
+        # Mostly-digit spans (`232 of 240`) are stat parentheticals whose
+        # "of"/"vs" connective supplies the alphabetic chars, not names
+        # (#2017 r2).
         return None
     return name
 
@@ -15554,7 +15570,11 @@ def check_v4_dropped_condition_placement(body: str) -> CheckResult:
     drop-rate prose with a gate/floor mention in a later sentence never
     matches). The dropped condition's name is extracted best-effort —
     (1) a parenthetical immediately preceding the verb group, else (2) the
-    last backtick/bold/italic-wrapped token in the subject clause. FAIL when
+    last backtick/bold/italic-wrapped token in the subject clause; a
+    colon-ended candidate (a bold slot label such as `**Design:**` leading
+    the bullet) or a mostly-digit candidate (`232 of 240`) is REJECTED —
+    extraction falls through to the next priority, and to the WARN path
+    when none survives (#2017 r2). FAIL when
     a confidently-extracted name is missing from `## Takeaways` or from
     every `### <result>` block (detail quotes the declaring sentence and
     names the missing placement(s)); WARN when a drop-at-gate declaration is
