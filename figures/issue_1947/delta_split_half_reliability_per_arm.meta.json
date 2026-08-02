@@ -1,0 +1,240 @@
+{
+  "commit": "c91570c52c",
+  "created": "2026-08-02T06:11:05Z",
+  "figsize": [
+    12.5,
+    4.6
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7617,
+      "_kind": "scatter"
+    },
+    {
+      "x": 1.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7617,
+      "_kind": "scatter"
+    },
+    {
+      "x": 2.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7617,
+      "_kind": "scatter"
+    },
+    {
+      "x": 3.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7617,
+      "_kind": "scatter"
+    },
+    {
+      "x": 4.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7361,
+      "_kind": "scatter"
+    },
+    {
+      "x": 5.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7361,
+      "_kind": "scatter"
+    },
+    {
+      "x": 6.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7361,
+      "_kind": "scatter"
+    },
+    {
+      "x": 7.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7361,
+      "_kind": "scatter"
+    },
+    {
+      "x": 8.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8478,
+      "_kind": "scatter"
+    },
+    {
+      "x": 9.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8478,
+      "_kind": "scatter"
+    },
+    {
+      "x": 10.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8478,
+      "_kind": "scatter"
+    },
+    {
+      "x": 11.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8478,
+      "_kind": "scatter"
+    },
+    {
+      "x": 12.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7486,
+      "_kind": "scatter"
+    },
+    {
+      "x": 13.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7486,
+      "_kind": "scatter"
+    },
+    {
+      "x": 14.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7486,
+      "_kind": "scatter"
+    },
+    {
+      "x": 15.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7486,
+      "_kind": "scatter"
+    },
+    {
+      "x": 16.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7637,
+      "_kind": "scatter"
+    },
+    {
+      "x": 17.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7637,
+      "_kind": "scatter"
+    },
+    {
+      "x": 18.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7637,
+      "_kind": "scatter"
+    },
+    {
+      "x": 19.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7637,
+      "_kind": "scatter"
+    },
+    {
+      "x": 20.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7637,
+      "_kind": "scatter"
+    },
+    {
+      "x": 21.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.842,
+      "_kind": "scatter"
+    },
+    {
+      "x": 22.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.842,
+      "_kind": "scatter"
+    },
+    {
+      "x": 23.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.842,
+      "_kind": "scatter"
+    },
+    {
+      "x": 24.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.842,
+      "_kind": "scatter"
+    },
+    {
+      "x": 25.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8374,
+      "_kind": "scatter"
+    },
+    {
+      "x": 26.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8374,
+      "_kind": "scatter"
+    },
+    {
+      "x": 27.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8374,
+      "_kind": "scatter"
+    },
+    {
+      "x": 28.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.8374,
+      "_kind": "scatter"
+    },
+    {
+      "x": 29.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7999,
+      "_kind": "scatter"
+    },
+    {
+      "x": 30.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7999,
+      "_kind": "scatter"
+    },
+    {
+      "x": 31.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7999,
+      "_kind": "scatter"
+    },
+    {
+      "x": 32.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7999,
+      "_kind": "scatter"
+    },
+    {
+      "x": 33.0,
+      "\u03b4 split-half reliability (disjoint halves)": 0.7999,
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 34,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Displacement-unit reliability at n=300 trained positives, per arm (REP arms: 20 positives)",
+        "ylabel": "\u03b4 split-half reliability (disjoint halves)",
+        "annotations": [
+          "#1768 20-row reference \u2248 0.55"
+        ],
+        "xticklabels": [
+          "cas-bare-con\u00b7s137",
+          "cas-bare-con\u00b7s42",
+          "cas-bare-po\u00b7s137",
+          "cas-bare-po\u00b7s42",
+          "cas-conv-con\u00b7s137",
+          "cas-conv-con\u00b7s42",
+          "cas-conv-po\u00b7s137",
+          "cas-conv-po\u00b7s42",
+          "cas-icl-con\u00b7s137",
+          "cas-icl-con\u00b7s42",
+          "cas-icl-po\u00b7s137",
+          "cas-icl-po\u00b7s42",
+          "cas-pers-con\u00b7s137",
+          "cas-pers-con\u00b7s42",
+          "cas-pers-po\u00b7s137",
+          "cas-pers-po\u00b7s42",
+          "imp-bare-con\u00b7REP\u00b7s42",
+          "imp-bare-con\u00b7s137",
+          "imp-bare-con\u00b7s42",
+          "imp-bare-po\u00b7s137",
+          "imp-bare-po\u00b7s42",
+          "imp-conv-con\u00b7s137",
+          "imp-conv-con\u00b7s42",
+          "imp-conv-po\u00b7s137",
+          "imp-conv-po\u00b7s42",
+          "imp-icl-con\u00b7s137",
+          "imp-icl-con\u00b7s42",
+          "imp-icl-po\u00b7s137",
+          "imp-icl-po\u00b7s42",
+          "imp-pers-con\u00b7REP\u00b7s42",
+          "imp-pers-con\u00b7s137",
+          "imp-pers-con\u00b7s42",
+          "imp-pers-po\u00b7s137",
+          "imp-pers-po\u00b7s42"
+        ],
+        "yticklabels": [
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}
