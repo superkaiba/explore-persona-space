@@ -4,7 +4,7 @@ title: Theory-assumption failures survive retraining without data repetition, te
 kind: experiment
 tags: []
 created_at: '2026-07-31T22:12:00Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1768
 origin_prompt: how long would it take to retrain so we never have to repeat data?
   (and then compare the assumptions ONLY on the data that was trained on) -> run it
