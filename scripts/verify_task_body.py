@@ -523,8 +523,11 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   `ans_uhdr_max`, `sw_eng_C1`, `cond_4`; 2-segment all-alpha metric names
   like `log_prob` stay allowed), bare hypothesis codes (`H3`/`H1c` —
   single digit + optional single lowercase letter, case-sensitive, so
-  `H100`/`H200` never match), or slot-family
-  codes (`f16`/`l16` only, #1072). Plain-English condition names are the
+  `H100`/`H200` never match), slot-family
+  codes (`f16`/`l16` only, #1072), or bare candidate/panel codes
+  (`P1`/`P7`/`M4`/`P3b` — same single-digit + optional-lowercase-letter
+  shape as the H-code class, so `P100`/`M40` GPU names and lowercase
+  `p97.5`/`p50` percentiles never match, #1900). Plain-English condition names are the
   project rule end to end; config slugs belong in the Repro config row /
   provenance keys. Scans string VALUES only (provenance-keyed subtrees
   pruned via `_META_PROVENANCE_KEYS`) plus dict keys containing internal
@@ -8811,6 +8814,18 @@ _HYPOTHESIS_CODE_RE = re.compile(r"\bH\d[a-z]?\b")
 #     spellings never match (no word boundary before the `f`).
 _SLOT_FAMILY_RE = re.compile(r"\b[fl]16\b")
 
+# (e) bare candidate/panel codes (`P1`, `P7`, `M4`, `P3b`) — plan-internal
+#     candidate ids rendered into figure text (#1900: legend "P1 | P7",
+#     title "P7-residualized" passed check 28 clean; caught only by the
+#     LM clean-result critic; pre-fix evidence at
+#     `git show 0e5e6c3e7d:figures/issue_1900/mediation_forest.meta.json`,
+#     56 matching lines). Same shape discipline as the H-code class:
+#     SINGLE digit + optional single LOWERCASE letter, case-sensitive —
+#     `P100`/`P40`/`M40` GPU names (multi-digit) never match (no word
+#     boundary between digits), and lowercase `p97.5`/`p50` percentile
+#     shorthand stays clean (uppercase-only).
+_CANDIDATE_CODE_RE = re.compile(r"\b[PM]\d[a-z]?\b")
+
 # Path/URI-SHAPED string: no internal whitespace and at least one path
 # separator — a file path or URL, which is provenance, not rendered text.
 # Deliberately NOT a whole-string any-slash skip: a slash-separated rendered
@@ -8826,10 +8841,13 @@ def _opaque_code_tokens(text: str) -> list[str]:
     digit (`ctx_blk_max`, `sw_eng_C1`, `BS_E0`, `cond_4`); 2-segment
     all-alpha tokens (`log_prob`, `judge_rate`, `helpful_assistant`) are
     allowed; bare hypothesis codes (`H3`/`H1c` — `\bH\d[a-z]?\b`, single
-    digit + optional single lowercase letter, case-sensitive) and
-    slot-family codes (`f16`/`l16` only). PATH-SHAPED
+    digit + optional single lowercase letter, case-sensitive);
+    slot-family codes (`f16`/`l16` only); and bare candidate/panel codes
+    (`P1`/`P7`/`M4`/`P3b` — `\b[PM]\d[a-z]?\b`, same single-digit +
+    optional-lowercase-letter shape discipline as the hypothesis class,
+    #1900). PATH-SHAPED
     strings (whitespace-free with a path separator —
-    file paths, URLs) are exempt from ALL FOUR token scans;
+    file paths, URLs) are exempt from ALL FIVE token scans;
     strings that merely CONTAIN a slash (e.g. a slash-separated rendered
     label) are still scanned, with individual path-shaped whitespace-split
     words skipped for every token class — the exemption is load-bearing
@@ -8863,10 +8881,11 @@ def _opaque_code_tokens(text: str) -> list[str]:
                 continue
             if tok.count("_") >= 2 or any(ch.isdigit() for ch in tok):
                 hits.append(tok)
-        # Hypothesis-code + slot-family classes (#1072) reuse the SAME
-        # per-word path exemption the pin/snake classes get, so a
-        # boundary-terminated token inside a path word stays provenance.
-        for regex in (_HYPOTHESIS_CODE_RE, _SLOT_FAMILY_RE):
+        # Hypothesis-code + slot-family (#1072) + candidate-code (#1900)
+        # classes reuse the SAME per-word path exemption the pin/snake
+        # classes get, so a boundary-terminated token inside a path word
+        # stays provenance.
+        for regex in (_HYPOTHESIS_CODE_RE, _SLOT_FAMILY_RE, _CANDIDATE_CODE_RE):
             for m in regex.finditer(text):
                 tok = m.group(0)
                 if _only_in_path_words(tok):
@@ -8912,7 +8931,8 @@ def check_figure_label_codes(body: str) -> CheckResult:
     """Check 28 (WARN): rendered figure text (sidecar ``.meta.json`` values)
     must not carry opaque config-code tokens — ``@L<digits>`` layer pins,
     regime-code slugs (``ctx_blk_max``, ``sw_eng_C1``), bare hypothesis
-    codes (``H3``/``H1c``), or slot-family codes (``f16``/``l16``). Plain-English
+    codes (``H3``/``H1c``), slot-family codes (``f16``/``l16``), or bare
+    candidate/panel codes (``P1``/``P7``/``M4``). Plain-English
     condition names are the rule end to end (memory
     feedback_no_opaque_condition_codes, SPEC statistical-framing bullet);
     config slugs belong in the Repro config row / provenance keys. Incident
@@ -8922,7 +8942,11 @@ def check_figure_label_codes(body: str) -> CheckResult:
     ``Parallel share of the gap by depth (H3)`` and the xlabel
     ``answer position t (f16 slots)`` passed check 28 clean and were caught
     only by the LM clean-result critic (hand-fixed in ``1f19deacfd``) —
-    mechanized here as the hypothesis-code + slot-family classes. The
+    mechanized here as the hypothesis-code + slot-family classes. Incident
+    #1900: ``mediation_forest.png``'s legend text ``P1 | P7`` and the
+    ``P7-residualized`` title passed check 28 clean (n_fail=0, twice) and
+    burned an LM clean-result-critic round (pre-fix sidecar evidence at
+    ``0e5e6c3e7d``) — mechanized here as the candidate-code class (e). The
     "code-span contexts" exclusion in the originating diff sketch is a
     documented NO-OP on this channel: sidecar strings are matplotlib
     rendered text serialized to JSON (never markdown), so backtick code
@@ -8946,12 +8970,15 @@ def check_figure_label_codes(body: str) -> CheckResult:
     now arrive as scanned VALUES in new sidecars, narrowing this residual to
     key names); (iii) a token inside a path-shaped word (or a
     whole path-shaped string) is exempt — the path exemption covers ALL
-    FOUR token classes. WARN,
+    FIVE token classes. WARN,
     never FAIL; fail-soft on missing / unparsable sidecars (the check-24
     convention, NOT check 26's loud missing-sidecar FAIL); NO-OP PASS
     offline / no figures / no scannable same-repo sidecar.
     """
-    label = "figure text opaque config codes (slug / @L-pin / H-code / slot-family tokens)"
+    label = (
+        "figure text opaque config codes "
+        "(slug / @L-pin / H-code / slot-family / P-M candidate tokens)"
+    )
     section = _figure_scan_section(body)
     text = section_text(body, section)
     if text is None:
