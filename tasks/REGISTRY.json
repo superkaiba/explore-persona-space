@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2011,
+  "highest_id": 2012,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7844,6 +7844,13 @@
       "path": "tasks/proposed/2011",
       "status": "proposed",
       "title": "daily-fix: provisioner avoids a known-bad RunPod host on ret"
+    },
+    "2012": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2012",
+      "status": "proposed",
+      "title": "daily-fix: finally-block raise must never mask in-flight exc"
     },
     "202": {
       "has_clean_result": false,
