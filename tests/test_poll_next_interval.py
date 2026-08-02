@@ -20,12 +20,13 @@ These tests pin:
   ``backend_poll._serialize_poll_result`` (including the duck-typed
   older-result fallback), ``backend_poll._missing_sidecar_json``, and
   the ``backends.base.PollResult`` / RunPod passthrough;
-* the orchestrator-side clamp documented in
+* the orchestrator-side clamp + quiet-wait branch documented in
   ``.claude/skills/issue/SKILL.md`` Step 6d.2 (#1818: the sleep is FIXED
   at 540s per bg-Bash call — the Bash tool kills any call at its
   600000 ms ceiling, background included, so a composed ``sleep 1800``
-  dies mid-sleep (#1768); ``next_interval`` is telemetry only, and the
-  old ``result["next_interval"]`` honor branch is gone).
+  dies mid-sleep (#1768); the old sleep-honor branch stays gone, and the
+  §7 quiet cadence is instead realized as a one-wake Monitor
+  wait-then-poll branch keyed on ``next_interval == 1800`` (#1924)).
 """
 
 from __future__ import annotations
@@ -500,19 +501,31 @@ def test_skill_sleep_chain_clamped_at_540_per_call() -> None:
     (#1818): the Bash tool kills ANY call at its 600000 ms ceiling —
     background calls included — so a composed ``sleep 1800`` dies
     mid-sleep and reads as a stale poll on the next wake (#1768). The
-    emitted ``next_interval`` is telemetry only; the honor branch that
-    slept on it is gone."""
+    old sleep-honor branch stays gone; the §7 quiet cadence is instead
+    realized as a ONE-wake Monitor wait-then-poll branch keyed on
+    ``next_interval == 1800`` (#1924) — the wait+poll run in one unit,
+    so the terminal stdout line IS the tick JSON."""
     skill = (REPO_ROOT / ".claude/skills/issue/SKILL.md").read_text()
     assert "ADAPTIVE POLL INTERVAL" in skill
     assert 'f"sleep {interval} && uv run python scripts/backend_poll.py --issue {N}"' in skill
     assert "sleep 540 && uv run python scripts/backend_poll.py" not in skill
-    # The honor branch is REMOVED — next_interval never sets the sleep.
+    # The SLEEP-honor branch stays REMOVED — next_interval never sets a
+    # bg-Bash sleep length.
     assert "in (540, 1800)" not in skill
     assert 'interval = result["next_interval"]' not in skill
     # The fixed clamp + its rationale are stated explicitly.
     assert "interval = 540" in skill
     assert "NEVER compose a sleep longer than 540s" in skill
     assert "#1768" in skill
+    # The quiet-wait Monitor branch is wired (#1924): keyed on the
+    # poller's own 1800 recommendation, hard-bounded, one-wake shape.
+    assert 'result.get("next_interval") == 1800' in skill
+    assert "timeout_ms=2400000" in skill
+    assert "quiet-wait issue" in skill
+    # Ordering pin: the quiet-wait branch PRECEDES the `interval = 540`
+    # else-arm, so a future reword cannot invert the fail-toward-coverage
+    # default (non-1800 / missing / unparseable -> the fixed 540s chain).
+    assert skill.index('result.get("next_interval") == 1800') < skill.index("interval = 540")
 
 
 def test_main_json_line_includes_next_interval(
