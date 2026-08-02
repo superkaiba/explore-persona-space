@@ -5,6 +5,7 @@ tags:
 - wf-fix
 - wf-fix-fp:c1f9a8780cd6
 - daily-auto-filed
+- trigger-dense
 created_at: '2026-07-31T06:59:32Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-07-30 problem sweep (route 2): the repo-root branch guard
