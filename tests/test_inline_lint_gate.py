@@ -453,10 +453,13 @@ def test_lint_leg_fence_never_opens_whitelist(tmp_path: Path) -> None:
 
 
 def test_bare_node_id_after_section_close_still_blocks(tmp_path: Path) -> None:
-    """Window-CLOSE transition pin: any non-warnings fence (here PASSES) RESETS
-    the section, so a bare payload node id AFTER the close (captured-stdout
-    echo shape) keeps the conservative block. An implementation that never
-    closes the window fails this test."""
+    """Window-CLOSE transition pin: any non-warnings fence (here short test
+    summary info) RESETS the section, so a bare payload node id AFTER the
+    close (captured-stdout echo shape) keeps the conservative block. An
+    implementation that never closes the window fails this test. (The
+    PASSES-fence-close case moved to
+    test_passes_section_closed_by_next_fence_still_blocks once #2023 made
+    the PASSES section itself a report-class window.)"""
     repo = _repo_with_added_lines(tmp_path)
     r = _run_gate(
         repo,
@@ -467,7 +470,7 @@ def test_bare_node_id_after_section_close_still_blocks(tmp_path: Path) -> None:
         pytest_out=(
             "=============================== warnings summary ===============================\n"
             "tests/test_other.py::test_benign\n"
-            "==================================== PASSES ====================================\n"
+            "=========================== short test summary info ============================\n"
             "scripts/mod.py::test_x\n"
             "1 passed, 1 warning in 0.02s\n"
         ),
@@ -475,6 +478,145 @@ def test_bare_node_id_after_section_close_still_blocks(tmp_path: Path) -> None:
     assert r.returncode == 1, (r.returncode, r.stdout)
     assert "conservative block" in r.stdout, r.stdout
     assert _cert_lines(tmp_path) == []
+
+
+# ---------------------------------------------------------------------------
+# PASSES-section carve-out (#2023; the #1345 v242 false-block incident):
+# EVERY pytest-leg line inside the -rA fenced "PASSES" section is captured
+# output of a test pytest reports as PASSED — definitionally not red
+# evidence — so the WHOLE section reports ([passing-capture]) instead of
+# blocking; the FAILURES section and everything after the PASSES window
+# closes keep their existing block behavior.
+# ---------------------------------------------------------------------------
+def _passes_capture_pytest_out(frame_path: str) -> str:
+    """pytest 9.0.2 ``-q -rA`` shape of the #1345 v242 incident: a
+    designed-crash test that PASSED echoes its captured stderr traceback
+    (naming the payload's absolute path, lineno-less under the gate's
+    ``path:<lineno>:`` parse) inside the fenced PASSES section; the terminal
+    summary is all-green."""
+    return (
+        "..                                                                       [100%]\n"
+        "==================================== PASSES ====================================\n"
+        "_________________________ test_designed_crash_recovery _________________________\n"
+        "----------------------------- Captured stderr call -----------------------------\n"
+        "Traceback (most recent call last):\n"
+        f'  File "/workspace/explore-persona-space/{frame_path}", line 2342, '
+        "in _fit_within_cells\n"
+        '    raise RuntimeError("designed crash")\n'
+        "=========================== short test summary info ============================\n"
+        "572 passed in 41.20s\n"
+    )
+
+
+def test_passes_section_traceback_reports_not_blocks(tmp_path: Path) -> None:
+    """Fails-pre-fix pin (#2023): a captured traceback frame naming a MODIFIED
+    payload inside the PASSES section must PASS, certify, and report the
+    line under the [passing-capture] label — not conservative-block."""
+    repo = _repo_with_added_lines(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out=_passes_capture_pytest_out("scripts/mod.py"),
+    )
+    assert r.returncode == 0, (r.returncode, r.stdout)
+    assert "[passing-capture]" in r.stdout, r.stdout
+    assert "conservative block" not in r.stdout, r.stdout
+    lines = _cert_lines(tmp_path)
+    assert len(lines) == 1 and lines[0].endswith(" scripts/mod.py"), lines
+
+
+def test_new_file_passes_section_traceback_passes(tmp_path: Path) -> None:
+    """The PASSES carve-out covers the NEW-on-origin/main branch too (mirror
+    of test_new_file_warnings_summary_attribution_passes — the "any non-WARN
+    hit blocks" rule would otherwise false-block)."""
+    repo = _make_repo(tmp_path)
+    (repo / "scripts" / "new.py").write_text("print(1)\n", encoding="utf-8")  # not on origin/main
+    r = _run_gate(
+        repo,
+        ["scripts/new.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/new.py\n",
+        pytest_out=_passes_capture_pytest_out("scripts/new.py"),
+    )
+    assert r.returncode == 0, (r.returncode, r.stdout)
+    assert "[passing-capture]" in r.stdout, r.stdout
+    lines = _cert_lines(tmp_path)
+    assert len(lines) == 1 and lines[0].endswith(" scripts/new.py"), lines
+
+
+def test_failures_section_traceback_still_blocks(tmp_path: Path) -> None:
+    """Regression guard: the carve-out is PASSES-only — the SAME traceback
+    frame inside a fenced FAILURES section keeps the conservative block."""
+    repo = _repo_with_added_lines(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out=(
+            "=================================== FAILURES ===================================\n"
+            "_________________________ test_designed_crash_recovery _________________________\n"
+            '  File "/workspace/explore-persona-space/scripts/mod.py", line 2342, '
+            "in _fit_within_cells\n"
+            "1 failed in 3.21s\n"
+        ),
+    )
+    assert r.returncode == 1, (r.returncode, r.stdout)
+    assert "conservative block" in r.stdout, r.stdout
+    assert _cert_lines(tmp_path) == []
+
+
+def test_passes_section_closed_by_next_fence_still_blocks(tmp_path: Path) -> None:
+    """Window-close guard for the NEW window: a payload-naming lineno-less
+    hit AFTER the PASSES section is closed by the next fence (short test
+    summary info) keeps the conservative block."""
+    repo = _repo_with_added_lines(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out=(
+            "==================================== PASSES ====================================\n"
+            "tests/test_other.py::test_benign\n"
+            "=========================== short test summary info ============================\n"
+            "scripts/mod.py::test_x\n"
+            "1 passed, 1 warning in 0.02s\n"
+        ),
+    )
+    assert r.returncode == 1, (r.returncode, r.stdout)
+    assert "conservative block" in r.stdout, r.stdout
+    assert _cert_lines(tmp_path) == []
+
+
+def test_lineno_bearing_hit_inside_passes_section_reports(tmp_path: Path) -> None:
+    """Pins the deliberate WHOLE-section semantics (#2023 method delta vs
+    #1585): a lineno-BEARING captured warning line inside PASSES whose lineno
+    (6) sits INSIDE the round's added range still reports instead of blocking
+    via the added-lines branch."""
+    repo = _repo_with_added_lines(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out=(
+            "==================================== PASSES ====================================\n"
+            "scripts/mod.py:6: DeprecationWarning: legacy\n"
+            "=========================== short test summary info ============================\n"
+            "1 passed, 1 warning in 0.02s\n"
+        ),
+    )
+    assert r.returncode == 0, (r.returncode, r.stdout)
+    assert "[passing-capture] scripts/mod.py:6: DeprecationWarning: legacy" in r.stdout, r.stdout
+    assert len(_cert_lines(tmp_path)) == 1
 
 
 # ---------------------------------------------------------------------------
