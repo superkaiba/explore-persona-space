@@ -7114,8 +7114,8 @@
     "1919": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1919",
-      "status": "running",
+      "path": "tasks/reviewing/1919",
+      "status": "reviewing",
       "title": "daily-fix: pilot at production shape; sampled GPU-util claim"
     },
     "192": {
