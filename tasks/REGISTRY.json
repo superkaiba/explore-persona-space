@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1998,
+  "highest_id": 1999,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7725,6 +7725,13 @@
       "path": "tasks/proposed/1998",
       "status": "proposed",
       "title": "daily-fix: fail loud when --min-ram-gb is inert on a GPU dis"
+    },
+    "1999": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1999",
+      "status": "proposed",
+      "title": "daily-fix: HF fan-out pre-stage rule + FLEX preemption escal"
     },
     "2": {
       "has_clean_result": false,
