@@ -38,6 +38,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [github](https://github.com/superkaiba/explore-persona-space/blob/b981cf56f59d123bd41f70ae747fb8c124240d8b/docs/methodology/issue_1902.md) · [gist](https://gist.github.com/superkaiba/669a8fa05f9e10f6cb5c27ccc9b9416b)
+
 ## Takeaways
 
 - **base→SFT aligned retention is 0.472 (CI 0.39–0.55): SFT rewrites roughly half the base map's recoverable quality. SFT→DPO retains 0.874; DPO→RLVR 0.991 — a monotone stage gradient.**
