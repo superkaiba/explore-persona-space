@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2002,
+  "highest_id": 2003,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7774,6 +7774,13 @@
       "path": "tasks/proposed/2002",
       "status": "proposed",
       "title": "daily-fix: smoke contract: resume/salvage-leg matrix + real-"
+    },
+    "2003": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2003",
+      "status": "proposed",
+      "title": "daily-fix: trigger-dense first-spawn pre-qualification by ta"
     },
     "201": {
       "has_clean_result": false,
