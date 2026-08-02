@@ -138,7 +138,11 @@ def judge_tallies(result) -> dict:
 
     ``n_dropped_draws`` counts CONTENT drops only (REFUSAL / malformed /
     out-of-range); ``n_transport_lost_draws`` counts transport-class losses —
-    never blended (llm-judging.md rule 24(ii))."""
+    never blended (llm-judging.md rule 24(ii)). #2021 additive keys (rule 18
+    rider): ``n_truncation_dropped_draws`` (budget-truncation SUBSET of the
+    content drops — rule 23), ``per_item_truncation_drops``, and
+    ``stop_reason_tally`` (answered draws only; transport-lost draws excluded
+    by construction). Existing keys byte-identical."""
     return {
         "scores": result.scores,
         "per_item_scores": result.per_item_scores,
@@ -147,6 +151,9 @@ def judge_tallies(result) -> dict:
         "n_content_dropped_draws": result.n_dropped_draws,
         "n_transport_lost_draws": result.n_transport_lost_draws,
         "per_item_transport_losses": result.per_item_transport_losses,
+        "n_truncation_dropped_draws": result.n_truncation_dropped_draws,
+        "per_item_truncation_drops": result.per_item_truncation_drops,
+        "stop_reason_tally": result.stop_reason_tally,
     }
 
 
