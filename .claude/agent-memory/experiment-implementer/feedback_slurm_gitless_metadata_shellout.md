@@ -37,3 +37,9 @@ Shared resolver now lives at
 `unknown-no-git`); pins in `tests/test_issue1336_dispatch_v2.py`. slurm.py
 still exports NO `EPS_GIT_SHA` — surfaced as a workflow-fix candidate
 (#1336 crash-fix round) so rsync-lane provenance can resolve the real sha.
+
+## Merged sibling index rows (#2032 curation, 2026-08-03)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the agent-memory index size cap (task #2032). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [Fellows shared-node GPU sizing](feedback_fellows_shared_node_gpu_sizing.md) — fellows nodes share GPUs with no isolation: width/ids from SLURM allocation env, vLLM util from mem_get_info free bytes (never fixed 0.6); #1902 job 16127

@@ -28,3 +28,9 @@ Reference implementation: `neg_setpoint_601/artifacts.py::stage_parity_read_adap
 The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
 
 - [LoRA application-scaling contract](feedback_lora_application_scaling_contract.md) — rsLoRA α/√r vs classic α/r flips repeater behavior; probe both scalings + pin the read gauge. #601.
+
+## Merged sibling index rows (#2032 curation, 2026-08-03)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the agent-memory index size cap (task #2032). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [bf16 merge truncates small LoRA deltas](feedback_bf16_merge_truncates_small_lora_delta.md) — merge_and_unload attenuates early/low-lr (#480)

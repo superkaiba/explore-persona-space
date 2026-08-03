@@ -21,3 +21,9 @@ and make plan-level quality floors a LOUD WARN + persisted flag (the #1900
 fix: `check_anchor_mix_floor`, commit `c6737b1e`). Sibling probe duty: check
 EVERY mix family the code reads (the marker mix had a different filename +
 1000→200 filtered rows).
+
+## Merged sibling index rows (#2032 curation, 2026-08-03)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the agent-memory index size cap (task #2032). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [Cross-frame gate asserts vs manifest selection reads](feedback_cross_frame_gate_asserts.md) — gates frame-matched or frame-free (direction+floor); record the other frame, never equality-assert it (#1900 r6)
