@@ -290,10 +290,30 @@ def _compute_detection_metrics(
 ) -> tuple[list[dict], dict]:
     """Per-(arm, rung) detection metrics + bootstrap CIs + permutation null.
 
+    Extends the marginal schema with plan v16 §6 paired-CI fields via
+    :mod:`explore_persona_space.analysis.paired_ci`:
+
+    - ``ci_auroc``: marginal AUROC CI (per arm)
+    - ``ci_rho_delta_vs_arm16``: paired Spearman-rho delta CI (arm − arm16)
+    - ``ci_auroc_delta_vs_arm16``: paired AUROC delta CI (arm − arm16)
+    - ``positive_count``: count of finite ``dv >= AUROC_POS_THR``
+    - a per-rung ``best_map_family_selection`` block with the selection-
+      inherited paired-max CI over the map family.
+
+    The existing marginal ``ci_rho`` + ``perm_null_max`` outputs are UNCHANGED
+    (strict addition — no legacy consumer breaks).
+
     Returns (arm_rung_rows, perm_null_by_rung).
     """
     import numpy as np
 
+    from explore_persona_space.analysis.paired_ci import (
+        marginal_bootstrap_auroc,
+        paired_bootstrap_auroc_delta,
+        paired_bootstrap_rho_delta,
+        positive_count,
+        selection_inherited_paired_max,
+    )
     from explore_persona_space.experiments.issue_1739.arms import (
         N_BOOT,
         N_PERM,
@@ -307,12 +327,26 @@ def _compute_detection_metrics(
     n_boot = n_boot or N_BOOT
     n_perm = n_perm or N_PERM
 
+    # Comparator arm + map-family (plan v16 §3). The comparator lookup is
+    # slug-based so a run whose transfer roster excludes arm16 (or the map
+    # family) silently degrades — every paired-CI is then reported as NaN
+    # rather than crashing.
+    COMPARATOR_ARM = "arm16_surface_feat"
+    MAP_FAMILY = (
+        "arm6_map_proj_e1",
+        "arm7_map_ridge_pred",
+        "arm8_map_ridge_true",
+        "arm9_pretrain_ft",
+        "arm10_stacked",
+    )
+
     dv_ev = np.asarray(dv_ev, dtype=np.float64)
     rungs_arr = np.asarray([str(r) for r in rungs_ev])
     unique_rungs = sorted(set(rungs_arr))
 
     rows: list[dict] = []
     perm_nulls: dict[str, dict] = {}
+    selection_records: dict[str, dict] = {}
 
     for rung in unique_rungs:
         mask = rungs_arr == rung
@@ -341,6 +375,16 @@ def _compute_detection_metrics(
         scores_mat = np.stack(sc_matrix, axis=0)  # (S, n_rung)
         n_rung = int(mask.sum())
 
+        # per-rung positive count (plan v16 §6)
+        pos_count = positive_count(dv_r, threshold=AUROC_POS_THR)
+
+        # comparator index, if present in this rung's slug order
+        try:
+            cmp_i = slug_order.index(COMPARATOR_ARM)
+        except ValueError:
+            cmp_i = None
+        cmp_scores = scores_mat[cmp_i] if cmp_i is not None else None
+
         # bootstrap index
         idx_b = make_bootstrap_idx(n_rung, n_boot=n_boot, seed=cell_seed + 100 * cell_draw)
 
@@ -348,6 +392,9 @@ def _compute_detection_metrics(
         auroc_vals = auroc_rows(scores_mat, labels_r)
 
         # per-arm rows
+        # NOTE: paired-CIs use the shared helper (analysis.paired_ci) so the
+        # code path is IDENTICAL to scripts/issue1739_score_new_rungs.py's
+        # equivalent block — one implementation, two callers.
         for i, slug in enumerate(slug_order):
             sc_1 = scores_mat[i]
             keep = np.isfinite(sc_1) & np.isfinite(dv_r)
@@ -356,10 +403,15 @@ def _compute_detection_metrics(
             lbl_k = labels_r[keep]
             n_k = int(keep.sum())
 
-            # bootstrap CIs on Spearman rho
+            # bootstrap CIs on Spearman rho (legacy marginal ci_rho — unchanged)
             idx_k = make_bootstrap_idx(n_k, n_boot=n_boot, seed=cell_seed + 100 * cell_draw + i)
             draws = bootstrap_rhos(sc_k[None], dv_k, idx_k)[0]  # (n_boot,)
             rho = float(spearman_rows(sc_k[None], dv_k)[0])
+
+            # marginal AUROC CI (plan v16 §6 — NEW)
+            _, auroc_lo, auroc_hi = marginal_bootstrap_auroc(
+                sc_k, lbl_k, n_boot=n_boot, seed=cell_seed + 100 * cell_draw + i
+            )
 
             row: dict[str, Any] = {
                 "arm": slug,
@@ -371,11 +423,54 @@ def _compute_detection_metrics(
                     float(np.nanquantile(draws, 0.975)),
                 ],
                 "auroc": float(auroc_vals[i]),
+                "ci_auroc": [auroc_lo, auroc_hi],
                 "ap": float(_ap_score(sc_k, lbl_k)),
+                "positive_count": pos_count,
             }
             for k in k_vals:
                 row[f"precision_at_{k}"] = float(_precision_at_k(sc_k, lbl_k, k))
+
+            # Paired-CI vs arm16_surface_feat (plan v16 §6 — NEW)
+            if cmp_i is not None and cmp_i != i and cmp_scores is not None:
+                _, _, rho_lo, rho_hi = paired_bootstrap_rho_delta(
+                    sc_1,
+                    cmp_scores,
+                    dv_r,
+                    n_boot=n_boot,
+                    seed=cell_seed + 100 * cell_draw,
+                )
+                row["ci_rho_delta_vs_arm16"] = [rho_lo, rho_hi]
+                _, _, auroc_dlo, auroc_dhi = paired_bootstrap_auroc_delta(
+                    sc_1,
+                    cmp_scores,
+                    labels_r,
+                    n_boot=n_boot,
+                    seed=cell_seed + 100 * cell_draw,
+                )
+                row["ci_auroc_delta_vs_arm16"] = [auroc_dlo, auroc_dhi]
+
             rows.append(row)
+
+        # Selection-inherited best-of-map-family paired-max (plan v16 §6 — NEW)
+        if cmp_i is not None and cmp_scores is not None:
+            preds_by_arm = {slug_order[k]: scores_mat[k] for k in range(len(slug_order))}
+            family_members_present = [a for a in MAP_FAMILY if a in preds_by_arm]
+            if family_members_present:
+                sel = selection_inherited_paired_max(
+                    preds_by_arm=preds_by_arm,
+                    comparator_preds=cmp_scores,
+                    dv=dv_r,
+                    arm_family=list(family_members_present),
+                    n_boot=n_boot,
+                    seed=cell_seed + 100 * cell_draw,
+                )
+                # Retain the family_members list but drop per-draw arm choices
+                # from the persisted summary (n_boot strings inflate the JSON).
+                selection_records[rung] = {
+                    "family_members": sel["family_members"],
+                    "delta_ci_lo": sel["delta_ci_lo"],
+                    "delta_ci_hi": sel["delta_ci_hi"],
+                }
 
         # selection-symmetric permutation null over all16 arms (per rung)
         try:
@@ -384,6 +479,13 @@ def _compute_detection_metrics(
         except Exception as exc:
             _log(f"permutation null failed for rung={rung}: {exc}")
             perm_nulls[rung] = {"error": str(exc)}
+
+    # Stash the selection-inherited block on the perm_nulls dict under a
+    # dedicated key so `_rescore_behavior` can promote it into the summary
+    # WITHOUT changing this function's return signature (kept 2-tuple to
+    # avoid churn at every call site).
+    if selection_records:
+        perm_nulls["__selection_inherited__"] = selection_records
 
     return rows, perm_nulls
 
@@ -491,6 +593,7 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
     # per-rung aggregation
     all_rows: list[dict] = []
     perm_null_records: list[dict] = []
+    selection_inherited_records: list[dict] = []
     preds_rows_by_rung: dict[str, list[dict]] = {r: [] for r in OOD_RUNGS}
 
     dv_ev = np.asarray(tbl_ev.dv, dtype=np.float64)
@@ -647,6 +750,12 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
             for row in metric_rows:
                 all_rows.append({**provenance, **row})
 
+            # lift selection-inherited block out (dedicated key, not a rung)
+            selection_by_rung = perm_nulls.pop("__selection_inherited__", None)
+            if selection_by_rung:
+                for rung, sel_dict in selection_by_rung.items():
+                    selection_inherited_records.append({**provenance, "rung": rung, **sel_dict})
+
             for rung, null_dict in perm_nulls.items():
                 perm_null_records.append({**provenance, "rung": rung, **null_dict})
 
@@ -692,6 +801,7 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
         "n_metric_rows": len(all_rows),
         "metric_rows": all_rows,
         "perm_nulls": perm_null_records,
+        "best_map_family_selection": selection_inherited_records,
         "preds_files": {k: str(v) for k, v in rung_paths.items()},
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "smoke": smoke,
