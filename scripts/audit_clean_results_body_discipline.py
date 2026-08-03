@@ -337,6 +337,26 @@ PATTERNS: dict[str, tuple[str, str]] = {
         #       the leading \b keeps embedded word tails out ("supper bound",
         #       "flower bound"). Singular `bound` only; no `~`/`≈` approx
         #       forms — zero corpus instances; the LM critic backstops those.
+        #   (5) the BRACKET-LESS VERBAL form `CI MINUS 0.072 to +0.002`
+        #       (#1946 — the fourth surface variant of the #382 class): `CI`,
+        #       optionally followed by a `:` / `=` / `of` / `from` connector,
+        #       then two signed/decimal numbers joined by `to`. Requires a
+        #       number BETWEEN `CI` (+ connector) and `to`, so prose like
+        #       "widened the CI to 0.05" stays legal. Sign class is the
+        #       dash-first set incl. the typographic Unicode minus (codepoint
+        #       U+2212), the #649 convention — hence the noqa. Uppercase `CI`
+        #       only (this category scans case-sensitively, flags=0).
+        #       Connectors are corpus-measured: the verbal `of` / `from`
+        #       variants have genuine grandfathered instances (`CI of 0.030
+        #       to 0.125` #540; `CI from ... to ...` #460/#478), so both
+        #       join `:` / `=` in the set; no OTHER verbal connector (`runs
+        #       from`, `ranges from`, ...) had corpus instances — the LM
+        #       critic backstops those. Blast radius measured 2026-08-03
+        #       over 1,958 tasks/*/*/body.md through this rule's exact scan
+        #       source: 27 bodies match — all genuine bracket-less verbal
+        #       CIs in grandfathered bodies (the pm_inline
+        #       corpus-measurement convention, #1987); re-audited only on a
+        #       follow-up fold.
         #   The sign character class accepts ASCII hyphen-minus, ASCII plus,
         #   AND the typographic Unicode minus (codepoint U+2212) -- analyzers
         #   routinely render negative CI bounds with U+2212, so an ASCII-only
@@ -356,9 +376,12 @@ PATTERNS: dict[str, tuple[str, str]] = {
         r"|\[[-+−]?\d+\.\d+\s*,\s*[-+−]?\d+\.\d+\]\s*(?:excludes|includes|pp\b|%|\(|on\s)"  # noqa: RUF001
         r"|\[[-+−]?\d*\.?\d+\s*,\s*[-+−]?\d*\.?\d+\](?!\s*nat\b)"  # noqa: RUF001
         r"|\b(?:[Uu]pper|[Ll]ower)[\s-]bound\s*"
-        r"(?:\(\s*(?:[-+−]?\d+\.\d+|[-+−]\d+)\s*\)|=\s*(?:[-+−]?\d+\.\d+|[-+−]\d+))",  # noqa: RUF001
-        "Credence intervals as inline [low, high] or bound-form "
-        "'(upper|lower) bound (+x)' / 'bound = x' in prose (banned)",
+        r"(?:\(\s*(?:[-+−]?\d+\.\d+|[-+−]\d+)\s*\)|=\s*(?:[-+−]?\d+\.\d+|[-+−]\d+))"  # noqa: RUF001
+        r"|\bCI(?:\s*[:=]|\s+(?:of|from))?\s*"
+        r"[-+−]?\d+(?:\.\d+)?\s+to\s+[-+−]?\d+(?:\.\d+)?",  # noqa: RUF001
+        "Credence intervals as inline [low, high], bound-form "
+        "'(upper|lower) bound (+x)' / 'bound = x', or bracket-less verbal "
+        "'CI <low> to <high>' in prose (banned)",
     ),
     "pm_inline": (
         # Inline `value ± err` / bare `±<num>` credence interval in
