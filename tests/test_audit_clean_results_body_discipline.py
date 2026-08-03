@@ -1523,6 +1523,150 @@ def test_pre_reg_1831_new_nouns_benign_verb_usage_not_flagged():
     assert "pre_reg" not in findings, findings
 
 
+# ─── pre_reg: the #1902 + #1945 escapes (fix #1958, merged scope with ─────
+# #1985)
+#
+# #1945's body carried 'The pre-set verdict lattice' (Takeaways) and 'the
+# pre-declared fallback' (Methodology prose); #1902's body shipped 'the
+# planned verdict is Confirmed' and 'The headline persistence verdict
+# still confirms' — all four passed the audit clean because the pattern
+# was keyed on the single lexeme `registered`. #1958 adds the synonym
+# branches: A (modifier-first pre-set/pre-?declared/pre-?specified/
+# pre-?committed + the SHARED head-noun tail, which also gains
+# `fallbacks?`), B (bare 'planned' + verdicts?/lattices?, adjacency-only),
+# C (noun-first 'the verdict was pre-set'), D (verdict-outcome
+# announcements 'verdict is/was/still confirm/falsif/inconclusive').
+# `pre-set` requires the hyphen: one-word 'preset' stays clean.
+
+
+def test_pre_reg_pre_set_verdict_lattice_in_takeaways_is_flagged():
+    """The verbatim #1945 escape phrasing — 'The pre-set verdict lattice'
+    in a v4 `## Takeaways` bullet — trips `pre_reg` via Branch A. The lazy
+    intervening-token window stops at the EARLIER noun, so the match text
+    is 'pre-set verdict' (the #1593 lazy-stop property)."""
+    body = V4_BODY_CLEAN.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline finding: The pre-set verdict lattice held across seeds.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+    assert any("pre-set verdict" in s.lower() for s in findings["pre_reg"]), findings
+
+
+def test_pre_reg_pre_declared_fallback_in_results_prose_is_flagged():
+    """The verbatim #1945 escape phrasing — 'the pre-declared fallback' in
+    v4 Results prose — trips `pre_reg`: Branch A's modifier plus the
+    `fallbacks?` head noun #1958 added to the SHARED tail."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "When the primary read failed, the pre-declared fallback ran first.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+    assert any("pre-declared fallback" in s.lower() for s in findings["pre_reg"]), findings
+
+
+def test_pre_reg_planned_verdict_is_confirmed_flagged():
+    """The verbatim #1902 escape phrasing — 'the planned verdict is
+    Confirmed' — trips `pre_reg` via Branch B (bare 'planned' +
+    verdict, adjacency-only)."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "the planned verdict is Confirmed for the headline read.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+    assert any("planned verdict" in s.lower() for s in findings["pre_reg"]), findings
+
+
+def test_pre_reg_verdict_still_confirms_flagged():
+    """The verbatim #1902 escape phrasing — 'The headline persistence
+    verdict still confirms' — trips `pre_reg` via Branch D (verdict-outcome
+    announcement; 'confirm' is a prefix match, so 'confirms' hits)."""
+    body = V4_BODY_CLEAN.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- The headline persistence verdict still confirms the effect.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+    assert any("verdict still confirm" in s.lower() for s in findings["pre_reg"]), findings
+
+
+def test_pre_reg_noun_first_verdict_was_pre_set_flagged():
+    """The noun-first order — 'the verdict was pre-set' — trips `pre_reg`
+    via Branch C, which the modifier-first Branch A cannot reach."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "the verdict was pre-set before any data landed.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+    assert any("verdict was pre-set" in s.lower() for s in findings["pre_reg"]), findings
+
+
+def test_pre_reg_one_word_preset_not_flagged():
+    """One-word 'preset' is a benign config-register word and stays clean:
+    Branch A requires the hyphen in 'pre-set' and Branch C requires it in
+    'was pre-set' (task constraint)."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "a preset temperature of 0.7 was used; the sampler was preset before the run.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_planned_conditions_prose_not_flagged():
+    """Benign planned-vs-actual prose stays clean: Branch B is
+    adjacency-only and matches ONLY verdicts?/lattices? — 'planned
+    conditions' / 'planned-vs-actual coverage' never fire (#1985's own
+    narrowing; 'planned' gets neither the window nor the full noun
+    list)."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "the planned conditions were all realized; planned-vs-actual coverage matched the design.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_pre_specified_threshold_in_v4_hparam_table_is_exempt():
+    """A 'pre-specified threshold' phrase inside the Methodology
+    **Training:** GFM hyperparameter table on a v4 body does NOT trip
+    `pre_reg` — the v4 table-row blanking covers Branch A exactly as it
+    covers the `registered` branch (the one surface Lens 7 permits)."""
+    body = V4_BODY_CLEAN.replace(
+        "| epochs | 1 | prior issue |",
+        "| epochs | 1 | prior issue |\n| pass bar | 0.20 | pre-specified threshold (#612) |",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_pre_specified_interval_on_why_this_test_line_exempt():
+    """The sanctioned Why-this-test CI-definition register in its
+    Branch-A synonym form — 'the pre-specified interval defining the
+    test' — stays exempt: `_blank_why_this_test_lines` blanks the line
+    from the pre_reg scan source for ALL generations (#1783), covering
+    the new modifiers exactly as it covers `registered`."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "**Why this test:** the bootstrap CI [+0.1, +0.4] is the "
+        "pre-specified interval defining the test.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
 # ─── v4 ## Methodology sample-data <details> exemption (#1171) ───────────
 #
 # The v4 spec moved the verbatim sample rows to `## Methodology` →
@@ -1662,8 +1806,10 @@ def test_strip_data_example_blocks_drops_methodology_and_data_keeps_others():
 def test_verdict_caps_success_not_met_on_v4_body_is_flagged():
     """The live #763 line-263 clause ("Under the pre-set decision rule,
     SUCCESS was not met ...") in a v4 body's `## Results` prose trips
-    `verdict_caps` — the exact incident path. It carries no 'as registered'
-    bigram, so `pre_reg` (correctly) stays silent."""
+    `verdict_caps` — the exact incident path. Historically `pre_reg`
+    stayed silent here (no 'as registered' bigram — the escape #970's
+    comment documents); since #1958's Branch A, 'pre-set decision rule'
+    ALSO trips `pre_reg`, closing that half of the escape."""
     v4 = (
         "# Title (LOW confidence)\n<!-- clean-result-v4 -->\n\n"
         "## Takeaways\n\n- clean prose.\n\n## Goal\n\nclean.\n\n"
@@ -1674,7 +1820,8 @@ def test_verdict_caps_success_not_met_on_v4_body_is_flagged():
     findings = audit.audit_body(v4)
     assert "verdict_caps" in findings, findings
     assert "SUCCESS" in findings["verdict_caps"], findings
-    assert "pre_reg" not in findings, findings
+    assert "pre_reg" in findings, findings
+    assert any("pre-set decision rule" in s.lower() for s in findings["pre_reg"]), findings
 
 
 def test_verdict_caps_failure_verdict_in_takeaways_is_flagged():

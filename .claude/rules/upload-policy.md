@@ -156,7 +156,9 @@ uploads unconditionally** (rollout text, judge outputs, metrics, configs are
 non-LFS in the data repo — the #541 quota gate fires ONLY on LFS, so this path
 stays open over quota; text <9.5 MB uploads as-is, bigger text line-splits into
 <9 MB shards, NEVER gzip — `*.gz` is LFS-matched, and the Hub force-routes any
->10 MB blob to LFS regardless of extension). **Large tensors upload when cheap;
+>10 MB blob to LFS regardless of extension; shard pieces — `.shardNN.jsonl` or
+`.part*` — are line-split FRAGMENTS of one file: concatenate before `json.load`,
+a lone `.part000` is not standalone JSON, 2026-08-02). **Large tensors upload when cheap;
 when too big for LFS at current headroom, persist the TEXT they were derived
 from** so the tensor is regenerable via one teacher-forced forward pass — this
 is the size-aware form of persist-by-default, and it composes with the #541

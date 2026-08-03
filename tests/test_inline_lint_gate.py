@@ -69,6 +69,7 @@ def _run_gate(
     map_out: str = "",
     pytest_out: str = "",
     lint_cmd_extra: str = "",
+    lint_cmd_prefix: str = "",
     payload_name: str = "payload.txt",
 ) -> subprocess.CompletedProcess[str]:
     payload_file = tmp_path / payload_name
@@ -88,6 +89,11 @@ def _run_gate(
         # Runs with shell=True + cwd=repo inside _run_leg — lets a test mutate
         # the repo MID-GATE (after read_payload snapshots) for TOCTOU cases.
         env["EPM_INLINE_GATE_LINT_CMD"] += f" && {lint_cmd_extra}"
+    if lint_cmd_prefix:
+        # Runs BEFORE the terminal-line cat: a failing prefix suppresses the
+        # healthy lint terminal line (-> INCONCLUSIVE), so the LEG's own
+        # success can pin gate-side pre-leg ordering (#1950 purge pin).
+        env["EPM_INLINE_GATE_LINT_CMD"] = f"{lint_cmd_prefix} && " + env["EPM_INLINE_GATE_LINT_CMD"]
     env["EPM_INLINE_CERT_PATH"] = str(tmp_path / "cert.txt")
     # Zero the #1857 settle-and-re-hash retry delay: subprocess TOCTOU cases
     # stay deterministic-fast (the retry still RUNS — it just doesn't wait).
@@ -1007,3 +1013,138 @@ def test_inline_paths_audit_line_source_token(
     out = capsys.readouterr().out
     sha = hashlib.sha256(b"scripts/mod.py\n").hexdigest()[:12]
     assert f"inline_lint_gate: payload-source inline-paths n=1 list-sha256={sha}" in out, out
+
+
+# ---------------------------------------------------------------------------
+# Bytecode determinism (#1950): pre-leg __pycache__ purge of the editable code
+# roots + PYTHONDONTWRITEBYTECODE=1 on every leg's CHILD env.
+# ---------------------------------------------------------------------------
+def _plant_pyc(repo: Path, rel_dir: str, name: str = "mod.cpython-311.pyc") -> Path:
+    """Plant a fake stale ``.pyc`` under ``<repo>/<rel_dir>/__pycache__/``."""
+    d = repo / rel_dir / "__pycache__"
+    d.mkdir(parents=True, exist_ok=True)
+    pyc = d / name
+    pyc.write_bytes(b"stale-bytecode")
+    return pyc
+
+
+def test_purge_repo_bytecode_removes_code_root_pyc_only(tmp_path: Path) -> None:
+    """#1950 criteria 1+3 (direct function test): pyc under the three editable
+    code roots' __pycache__ (scripts/, nested src/**, tests/) are removed and
+    counted; pyc under .venv/, external/, and data/ are NEVER touched."""
+    repo = _make_repo(tmp_path)
+    removed_targets = [
+        _plant_pyc(repo, "scripts"),
+        _plant_pyc(repo, "src/pkg"),  # nested: rglob must reach sub-packages
+        _plant_pyc(repo, "tests"),
+    ]
+    kept_targets = [
+        _plant_pyc(repo, ".venv/lib/python3.11/site-packages/x"),
+        _plant_pyc(repo, "external/dep"),
+        _plant_pyc(repo, "data/issue_1"),
+    ]
+    assert ilg.purge_repo_bytecode(repo) == 3
+    for p in removed_targets:
+        assert not p.exists(), f"code-root pyc survived the purge: {p}"
+    for p in kept_targets:
+        assert p.exists(), f"out-of-scope pyc was deleted: {p}"
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="root bypasses directory write permissions")
+def test_purge_repo_bytecode_warns_on_unremovable(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """#1950 criterion 1 best-effort branch: an unremovable pyc (read-only
+    parent dir) WARNs on stderr and never crashes the purge."""
+    repo = _make_repo(tmp_path)
+    pyc = _plant_pyc(repo, "scripts")
+    locked_dir = pyc.parent
+    locked_dir.chmod(0o555)  # unlink needs write on the parent dir
+    try:
+        removed = ilg.purge_repo_bytecode(repo)
+    finally:
+        locked_dir.chmod(0o755)
+    err = capsys.readouterr().err
+    assert removed == 0, removed
+    assert pyc.exists()
+    assert "could not be removed" in err, err
+    assert "purged 0 stale-candidate bytecode" in err, err
+
+
+def test_run_legs_purges_before_legs(tmp_path: Path) -> None:
+    """#1950 criterion 1 ordering pin (plan-review Should-Fix 1): the lint
+    leg's OWN command asserts the planted pyc is already gone (`test ! -f`)
+    before emitting the healthy terminal line — a purge that ran after the
+    legs (or not at all) yields no terminal line -> INCONCLUSIVE, failing the
+    exit-0 assert. Also pins the audit split: the purge line prints on the
+    GATE's stderr and never enters the leg-captured audit file."""
+    repo = _make_repo(tmp_path)
+    pyc = _plant_pyc(repo, "scripts")
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        lint_cmd_prefix=f"test ! -f {pyc}",
+    )
+    assert r.returncode == 0, (r.returncode, r.stdout, r.stderr)
+    assert not pyc.exists()
+    assert "inline_lint_gate: purged 1 stale-candidate bytecode" in r.stderr, r.stderr
+    audit = (tmp_path / "out" / "issue-9999-inline-lint.txt").read_text(encoding="utf-8")
+    assert "stale-candidate bytecode" not in audit, audit
+
+
+def test_legs_child_env_carries_dont_write_bytecode(tmp_path: Path) -> None:
+    """#1950 criterion 2: all THREE legs (lint, map, pytest) observe
+    PYTHONDONTWRITEBYTECODE=1 in their CHILD env through the hermetic
+    override seams; the pytest leg's merge additionally still carries the
+    #1889 EPM_SCAN_EXTRA_FILES threading (neither clobbers the other)."""
+    repo = _make_repo(tmp_path)
+    payload = ["scripts/mod.py"]
+    payload_file = tmp_path / "payload.txt"
+    payload_file.write_text("\n".join(payload) + "\n", encoding="utf-8")
+    out_dir = tmp_path / "out"
+    out_dir.mkdir(exist_ok=True)
+    probe = tmp_path / "leg-env.txt"
+    env = os.environ.copy()
+    lint_file = tmp_path / "lint.txt"
+    lint_file.write_text(LINT_OK, encoding="utf-8")
+    env["EPM_INLINE_GATE_LINT_CMD"] = (
+        f'echo "lint-pdb=$PYTHONDONTWRITEBYTECODE" >> {probe} && cat {lint_file}'
+    )
+    map_file = tmp_path / "map.txt"
+    map_file.write_text("tests/test_x.py\tscripts/mod.py\n", encoding="utf-8")
+    env["EPM_INLINE_GATE_MAP_CMD"] = (
+        f'echo "map-pdb=$PYTHONDONTWRITEBYTECODE" >> {probe} && cat {map_file}'
+    )
+    env["EPM_INLINE_GATE_PYTEST_CMD"] = (
+        f'echo "pytest-pdb=$PYTHONDONTWRITEBYTECODE scan=$EPM_SCAN_EXTRA_FILES" >> {probe}'
+        ' && echo "1 passed in 0.01s"'
+    )
+    # Prove the values come from the gate's extra_env merge, not the host env.
+    env.pop("PYTHONDONTWRITEBYTECODE", None)
+    env.pop("EPM_SCAN_EXTRA_FILES", None)
+    env["EPM_INLINE_CERT_PATH"] = str(tmp_path / "cert.txt")
+    env["EPM_CERT_REHASH_DELAY_S"] = "0"
+    r = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--issue",
+            "9999",
+            "--payload-file",
+            str(payload_file),
+            "--repo-root",
+            str(repo),
+            "--out-dir",
+            str(out_dir),
+        ],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert r.returncode == 0, (r.returncode, r.stdout, r.stderr)
+    observed = probe.read_text(encoding="utf-8")
+    assert "lint-pdb=1" in observed, observed
+    assert "map-pdb=1" in observed, observed
+    assert "pytest-pdb=1 scan=scripts/mod.py" in observed, observed

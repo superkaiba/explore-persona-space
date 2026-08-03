@@ -65,6 +65,24 @@ intervening session — the #1388 fleet-red class (realized 2026-07-30 at
 paths additionally get a stderr audit NOTE (report-only, never a verdict
 input).
 
+Bytecode determinism (#1950): before any leg runs, the gate best-effort
+purges ``*.pyc`` under the ``__pycache__`` dirs of the editable code roots
+(``scripts/``, ``src/``, ``tests/``) of the resolved repo — pyc validation
+compares recorded source (mtime, size), and mtime has 1-second granularity,
+so an Edit -> ruff-format-hook rewrite -> run cycle landing inside one
+second leaves a stale pyc that still validates against the NEWER source; the
+gate's plain ``uv run`` children then import the OLD module while direct
+developer runs recompile (three #1345 gate runs bounced on exactly this,
+2026-07-31). All three legs additionally run with
+``PYTHONDONTWRITEBYTECODE=1`` in the CHILD env (via ``extra_env`` — the
+gate's own process env is never mutated) so the gate's children never
+repopulate in-tree caches mid-run. Residual: ``PYTHONDONTWRITEBYTECODE=1``
+binds only the gate's children — a concurrent session can rewrite an in-tree
+pyc mid-gate (it compiles from then-current source, so only a second
+same-second rewrite re-creates staleness). Purge audit lines print to the
+GATE's stderr only — never into the leg-captured
+``issue-<N>-inline-{lint,map}.txt`` audit files.
+
 Run as ONE background Bash (the lint leg is ~2.5-6 min; never a <=600 s
 foreground bound — #991/#996)::
 
@@ -114,6 +132,14 @@ CERT_TRIM_LINES = 500
 # scan tests (tests/test_shared_vm_thread_caps.py::_scan_targets) union
 # brand-new UNTRACKED payload files into their target set (#1889).
 SCAN_EXTRA_FILES_ENV = "EPM_SCAN_EXTRA_FILES"
+# Child-leg env guard (#1950): the pre-leg purge removes stale repo-tree
+# bytecode; this stops the gate's own children re-writing it mid-run (merged
+# over os.environ via extra_env on every leg — never the gate's process env).
+NO_BYTECODE_ENV = {"PYTHONDONTWRITEBYTECODE": "1"}
+# Code roots whose __pycache__ dirs the gate purges (editable roots only —
+# NEVER .venv/external/data: installed-package bytecode is not the
+# same-second-rewrite staleness source and is expensive to recompile).
+PURGE_ROOTS = ("scripts", "src", "tests")
 LINT_TIMEOUT_S = 900
 FETCH_TIMEOUT_S = 60
 # Mapped-pytest timeout parity with select_step9c_tests.recommended_timeout_s
@@ -233,6 +259,38 @@ def _best_effort_choom() -> None:
         print(f"inline_lint_gate: note: self-choom skipped ({exc})", file=sys.stderr)
 
 
+def purge_repo_bytecode(repo: Path) -> int:
+    """Best-effort unlink of ``*.pyc`` under the editable code roots'
+    ``__pycache__`` dirs (stale-mtime-matched pyc determinism guard, #1950).
+
+    Returns the number of files removed; an unremovable file WARNs on stderr
+    and never crashes the gate. Audit lines print to the GATE's stderr only —
+    the leg-captured audit files hold leg subprocess output exclusively."""
+    removed, errors = 0, 0
+    for root in PURGE_ROOTS:
+        base = repo / root
+        if not base.is_dir():
+            continue
+        for pyc in base.rglob("__pycache__/*.pyc"):
+            try:
+                pyc.unlink(missing_ok=True)
+                removed += 1
+            except OSError:
+                errors += 1
+    if errors:
+        print(
+            f"inline_lint_gate: warn: {errors} bytecode cache file(s) "
+            "could not be removed — gate proceeds (purge is best-effort)",
+            file=sys.stderr,
+        )
+    print(
+        f"inline_lint_gate: purged {removed} stale-candidate bytecode "
+        f"cache file(s) under {'/'.join(PURGE_ROOTS)} __pycache__ (#1950)",
+        file=sys.stderr,
+    )
+    return removed
+
+
 def _bounded_fetch(repo: Path) -> None:
     """Best-effort `git fetch origin main` so new-vs-modified classification is
     current. Degrade-to-stale is safe: staleness only shifts classification in
@@ -335,13 +393,16 @@ def run_legs(
     ``payload_file``): threaded onto the mapped-pytest leg's child env as
     ``SCAN_EXTRA_FILES_ENV`` so tracked-file-enumerating scan tests see
     untracked payload files (#1889); untracked paths get a stderr audit NOTE
-    (report-only). Lint + map legs are unchanged."""
+    (report-only). Bytecode determinism (#1950): stale repo-tree ``*.pyc``
+    are purged BEFORE any leg runs, and every leg's CHILD env carries
+    ``PYTHONDONTWRITEBYTECODE=1`` (``NO_BYTECODE_ENV`` via ``extra_env``)."""
     if payload is None:
         payload = [
             p.strip() for p in payload_file.read_text(encoding="utf-8").splitlines() if p.strip()
         ]
     _best_effort_choom()
     _bounded_fetch(repo)
+    purge_repo_bytecode(repo)
 
     for p in payload:
         if _git(repo, "ls-files", "--error-unmatch", "--", p).returncode != 0:
@@ -356,6 +417,7 @@ def run_legs(
         "EPM_INLINE_GATE_LINT_CMD",
         repo,
         LINT_TIMEOUT_S,
+        extra_env=dict(NO_BYTECODE_ENV),
     )
 
     map_output, map_rc = _run_leg(
@@ -363,6 +425,7 @@ def run_legs(
         "EPM_INLINE_GATE_MAP_CMD",
         repo,
         FETCH_TIMEOUT_S + 120,
+        extra_env=dict(NO_BYTECODE_ENV),
     )
     (out_dir / f"issue-{issue}-inline-map.txt").write_text(map_output, encoding="utf-8")
     if map_rc != 0:
@@ -378,7 +441,9 @@ def run_legs(
             "EPM_INLINE_GATE_PYTEST_CMD",
             repo,
             mapped_pytest_timeout(tests),
-            extra_env={SCAN_EXTRA_FILES_ENV: os.pathsep.join(payload)},
+            # The #1889 payload threading and the #1950 no-bytecode guard
+            # MUST merge into ONE child env (neither clobbers the other).
+            extra_env={SCAN_EXTRA_FILES_ENV: os.pathsep.join(payload), **NO_BYTECODE_ENV},
         )
 
     (out_dir / f"issue-{issue}-inline-lint.txt").write_text(

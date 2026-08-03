@@ -69,6 +69,29 @@ _SNAKE_SLUG_PATTERN = (
     + ")`)[a-z]+_[a-z]+(?:_[a-z0-9]+)+`"
 )
 
+# Shared components of the `pre_reg` bare-`registered <noun>` branch (#1419
+# lineage) and the #1958 modifier-first Branch A below — factored into
+# module-level constants (the plan-preferred option) so future head-noun
+# additions land in ONE place and both branches stay in sync. The token
+# window is the #1419/#1475 intervening-modifier window verbatim (up to 3
+# lazy tokens; hyphenated compounds; numerals incl. the typographic minus
+# U+2212 and the comparison signs U+2264/U+2265; separators are space/tab
+# only so a match never bridges a sentence or line boundary). (RUF001 noqa:
+# the U+2212/U+2264/U+2265 in the token class are the literal chars being
+# matched, not homoglyphs.) `fallbacks?` is the #1958 addition (the #1945
+# 'the pre-declared fallback' incident noun); because the tail is SHARED,
+# `registered <...> fallback` also becomes matchable — a deliberate,
+# corpus-re-measured extension (see the #1958 comment block inside the
+# pattern).
+_PRE_REG_TOKEN_WINDOW = r"(?:[\w%/<>=≤≥−+-]+(?:[.\-−]\d+)*[ \t]+){0,3}?"  # noqa: RUF001
+_PRE_REG_HEAD_NOUN_ALT = (
+    r"(?:verdicts?|lattices?|margins?|reads?|criteri(?:on|a)|thresholds?|bands?"
+    r"|gates?|rules?|endpoints?|contrasts?|floors?|companions?|hypothes[ei]s|alpha"
+    r"|cuts?|paths?|clauses?|controls?|levers?|bars?|smokes?|estimators?"
+    r"|layers?|rungs?|windows?|preconditions?|curves?|designs?|legs?"
+    r"|subsamples?|intervals?|tests?|ceilings?|checks?|fallbacks?)"
+)
+
 PATTERNS: dict[str, tuple[str, str]] = {
     # name: (regex, plain-English description)
     "pre_reg": (
@@ -268,18 +291,102 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # callback that checks disk' (0 corpus instances in 1,816
         # bodies; report-only severity + loud hand-adjudication + the
         # per-noun kill lever make it acceptable).
+        # #1958 (2026-08-02, merged scope with #1985) adds the
+        # pre-registration SYNONYM branches for the escapes the
+        # `registered`-keyed alternation could not reach (#1902 'the
+        # planned verdict is Confirmed' / 'The headline persistence
+        # verdict still confirms'; #1945 'The pre-set verdict lattice' /
+        # 'the pre-declared fallback'), plus `fallbacks?` in the SHARED
+        # head-noun tail (the #1945 incident noun; side effect:
+        # `registered <...> fallback` also becomes matchable —
+        # deliberate, classified below). The head-noun tail + the
+        # intervening-token window are factored into the module-level
+        # constants `_PRE_REG_HEAD_NOUN_ALT` / `_PRE_REG_TOKEN_WINDOW`
+        # (the plan-preferred factoring; both the `registered` branch and
+        # Branch A interpolate the SAME constants, so future noun
+        # additions stay in sync). Four new branches:
+        #   A (modifier-first): pre-set / pre-?declared / pre-?specified /
+        #     pre-?committed + the shared window + shared head-noun tail.
+        #     `pre-set` REQUIRES the hyphen — one-word 'preset' is a
+        #     benign config-register word ('a preset temperature') and
+        #     must stay clean; the other three allow unhyphenated forms
+        #     (real words in stats prose). No preposition guard: the
+        #     modifiers are adjectives, not verbs, so the #1419
+        #     verb-register FP class does not arise.
+        #   B (bare 'planned'): adjacency-only + verdicts?/lattices? ONLY
+        #     (#1985's own narrowing) — 'planned' NEVER gets the window
+        #     or the full noun list ('planned tests/design/conditions/
+        #     cells' is pervasive benign planned-vs-actual prose).
+        #   C (noun-first order): <verdict-class noun> was/were/is/are
+        #     pre-set/declared/specified/committed — the '#1958 sketch'
+        #     order the modifier-first branch cannot reach ('the verdict
+        #     was pre-set'). Hyphen REQUIRED for all four modifiers in
+        #     this order (the plan sketch verbatim; 'the temperature was
+        #     preset to 0.7' stays clean); an unhyphenated noun-first
+        #     form ('the threshold was prespecified') is a named
+        #     residual — LM Lens 7 backstops it.
+        #   D (verdict-outcome announcements): verdicts? is/was/were/are/
+        #     still/remains? + confirm/falsif/inconclusive (prefix match,
+        #     so confirms/Confirmed/falsified/falsifies all hit — the
+        #     #1902 'verdict still confirms' incident string).
+        # Measured 2026-08-02 over all 1,960 tasks/*/*/body.md
+        # (full-pattern old-vs-new match-START diff through the audit's
+        # own scan-source pipeline — `_restrict_pre_reg_to_prose_sections`
+        # incl. the Why-this-test blanking, re.IGNORECASE): 52 new starts
+        # across 24 bodies — branch A 43 (37 genuine in prior bodies:
+        # #212 x4 / #227 / #98 / #542 / #552 x3 / #602 x2 / #763 x6 /
+        # #187 x3 / #369 x2 / #377 x4 / #399 / #470 x2 / #496 / #507 x3 /
+        # #516 / #540 / #388 — 'pre-set decision rule', 'pre-committed
+        # kill gate', 'pre-specified verdict [grid/triad]', 'pre-set
+        # bar/band', the exact #763/#970 escape family the verdict_caps
+        # comment below documents; + 6 incident self-quotes in #1958's
+        # own filing body), shared-tail `fallbacks?` on the `registered`
+        # branch 3 (all genuine: #658 'registered richer-summary
+        # fallback', #813/#825 'registered fallback [ladder]'), branch B
+        # 2 (#1985's own filing body quoting the #1902 incident strings,
+        # the #1553 self-quote class), branch C 0 (no corpus attestation;
+        # kept on the plan-sketch noun-first mandate per the #1475
+        # cut/lever/smoke rule), branch D 4 (3 genuine verdict-outcome
+        # announcements — #661 'the verdict is inconclusive', #722
+        # 'verdicts are inconclusive' + 'verdict is inconclusive' — + 1
+        # #1985 incident self-quote) — every one manually classified
+        # genuine pre-registration / verdict-lattice jargon (deciding
+        # question: does the phrase announce a PRE-COMMITTED decision
+        # rule / verdict outcome, regardless of surface grammar?) or an
+        # incident self-quote (acceptable per the #1553 class), 0 benign
+        # (verb-register / config-register / planned-vs-actual) false
+        # positives. OLD-minus-NEW match starts: 0 (pure extension).
+        # Named accepted residuals: (a) branch C's mandatory hyphen
+        # misses unhyphenated noun-first forms (above); (b) benign
+        # tolerance prose of the shape 'pre-set <listed noun>' in a
+        # config register would flag (0 corpus instances in 1,960
+        # bodies; report-only severity + loud hand-adjudication + the
+        # per-branch kill lever make it acceptable).
         r"pre-?registered|pre-?registration|(?<![a-z])pre-reg(?![a-z])|registered hypothesis"
         r"|registered alpha|\bas registered\b|fail at the gate|passed the gate"
         r"|gate-pre-?registered"
         r"|\bregistered[ \t]+(?!(?:as|at|by|for|in|into|on|to|under|via|with)\b)"
-        r"(?:[\w%/<>=≤≥−+-]+(?:[.\-−]\d+)*[ \t]+){0,3}?"  # noqa: RUF001
-        r"(?:verdicts?|lattices?|margins?|reads?|criteri(?:on|a)|thresholds?|bands?"
-        r"|gates?|rules?|endpoints?|contrasts?|floors?|companions?|hypothes[ei]s|alpha"
-        r"|cuts?|paths?|clauses?|controls?|levers?|bars?|smokes?|estimators?"
-        r"|layers?|rungs?|windows?|preconditions?|curves?|designs?|legs?"
-        r"|subsamples?|intervals?|tests?|ceilings?|checks?)\b",
+        + _PRE_REG_TOKEN_WINDOW
+        + _PRE_REG_HEAD_NOUN_ALT
+        + r"\b"
+        # Branch A (#1958): modifier-first synonym family + shared window/tail.
+        + r"|\b(?:pre-set|pre-?declared|pre-?specified|pre-?committed)\b[ \t]+"
+        + _PRE_REG_TOKEN_WINDOW
+        + _PRE_REG_HEAD_NOUN_ALT
+        + r"\b"
+        # Branch B (#1985 sketch): bare 'planned', adjacency-only, narrow nouns.
+        + r"|\bplanned[ \t]+(?:verdicts?|lattices?)\b"
+        # Branch C (#1958 sketch): noun-first order ('the verdict was pre-set').
+        + r"|\b(?:verdicts?|lattices?|reads?|margins?|floors?|thresholds?|fallbacks?"
+        r"|hypothes[ei]s)[ \t]+(?:was|were|is|are)[ \t]+"
+        r"pre-(?:set|declared|specified|committed)\b"
+        # Branch D (#1985 sketch): verdict-outcome announcements.
+         + r"|\bverdicts?[ \t]+(?:is|was|were|are|still|remains?)[ \t]+"
+        r"(?:confirm|falsif|inconclusive)",
         "Pre-registration jargon ('pre-registered', 'as registered', "
-        "'fail at the gate', bare 'registered <verdict/margin/read/...>', etc.)",
+        "'fail at the gate', bare 'registered <verdict/margin/read/...>', "
+        "'pre-set/pre-declared <verdict/fallback/...>', 'planned verdict', "
+        "'verdict is/still confirmed/inconclusive', etc.)",
     ),
     "verdict_caps": (
         # SUCCESS|FAILURE added for the #763 residual (#970): 'Under the

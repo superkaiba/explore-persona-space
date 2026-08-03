@@ -1,0 +1,1105 @@
+{
+  "commit": "35a16407c0",
+  "created": "2026-08-03T04:26:07Z",
+  "figsize": [
+    11.4,
+    4.6
+  ],
+  "points": [
+    {
+      "tail width $k$ (features per tail)": 25.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.12,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (features per tail)": 50.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.07999999999999996,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (features per tail)": 100.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.030000000000000027,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (features per tail)": 150.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.046666666666666634,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (features per tail)": 200.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.04500000000000004,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (features per tail)": 300.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.07666666666666666,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (features per tail)": 400.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.07499999999999996,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (features per tail)": 600.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.07499999999999996,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (features per tail)": 800.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.06875000000000009,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (features per tail)": 1200.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.06916666666666671,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (features per tail)": 1600.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.06812499999999999,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (features per tail)": 2400.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.04874999999999996,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (features per tail)": 3200.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.059687500000000004,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (features per tail)": 4800.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.04270833333333335,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (features per tail)": 6400.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.034218749999999964,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (features per tail)": 8000.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.03237500000000004,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (features per tail)": 25.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.24,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (features per tail)": 50.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.21999999999999997,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (features per tail)": 100.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.17000000000000004,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (features per tail)": 150.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.14,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (features per tail)": 200.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.125,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (features per tail)": 300.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.1266666666666667,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (features per tail)": 400.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.12,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (features per tail)": 600.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.10999999999999999,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (features per tail)": 800.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.09250000000000003,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (features per tail)": 1200.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.0641666666666667,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (features per tail)": 1600.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.04812499999999997,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (features per tail)": 2400.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.040416666666666656,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (features per tail)": 3200.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.04312500000000008,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (features per tail)": 4800.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.038541666666666696,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (features per tail)": 6400.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.03500000000000003,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (features per tail)": 8000.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": 0.03037499999999993,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (features per tail)": 25.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.16,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (features per tail)": 50.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.14,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (features per tail)": 100.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.08,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (features per tail)": 150.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.06666666666666668,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (features per tail)": 200.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.060000000000000005,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (features per tail)": 300.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.039999999999999994,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (features per tail)": 400.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.0375,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (features per tail)": 600.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.02833333333333333,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (features per tail)": 800.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.029999999999999992,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (features per tail)": 1200.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.020833333333333343,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (features per tail)": 1600.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.013124999999999998,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (features per tail)": 2400.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.012083333333333335,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (features per tail)": 3200.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.013124999999999998,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (features per tail)": 4800.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.01291666666666666,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (features per tail)": 6400.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.01609374999999999,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (features per tail)": 8000.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.010499999999999995,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (features per tail)": 25.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.16,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (features per tail)": 50.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.12,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (features per tail)": 100.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.11,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (features per tail)": 150.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.08666666666666667,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (features per tail)": 200.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.07999999999999999,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (features per tail)": 300.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.09,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (features per tail)": 400.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.09,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (features per tail)": 600.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.09333333333333332,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (features per tail)": 800.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.08,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (features per tail)": 1200.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.06583333333333334,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (features per tail)": 1600.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.06,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (features per tail)": 2400.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.054583333333333324,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (features per tail)": 3200.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.055937499999999994,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (features per tail)": 4800.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.04854166666666667,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (features per tail)": 6400.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.0409375,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (features per tail)": 8000.0,
+      "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)": -0.038125,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (features per tail)": 25.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.9712,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (features per tail)": 50.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.9604,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (features per tail)": 100.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.9488,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (features per tail)": 150.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.95,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (features per tail)": 200.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.9596,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (features per tail)": 300.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.9631111111111111,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (features per tail)": 400.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.96165625,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (features per tail)": 600.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.9629972222222222,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (features per tail)": 800.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.963525,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (features per tail)": 1200.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.9572423611111112,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (features per tail)": 1600.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.953740234375,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (features per tail)": 2400.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.9414498263888889,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (features per tail)": 3200.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.92759384765625,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (features per tail)": 4800.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.8903180121527777,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (features per tail)": 6400.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.8465443359375,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (features per tail)": 8000.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.797606171875,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (features per tail)": 25.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.6448,
+      "series": "activity (firing frequency)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (features per tail)": 50.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.6296,
+      "series": "activity (firing frequency)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (features per tail)": 100.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.68195,
+      "series": "activity (firing frequency)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (features per tail)": 150.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.706,
+      "series": "activity (firing frequency)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (features per tail)": 200.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.701475,
+      "series": "activity (firing frequency)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (features per tail)": 300.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.7234055555555555,
+      "series": "activity (firing frequency)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (features per tail)": 400.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.745715625,
+      "series": "activity (firing frequency)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (features per tail)": 600.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.7666597222222222,
+      "series": "activity (firing frequency)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (features per tail)": 800.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.76099453125,
+      "series": "activity (firing frequency)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (features per tail)": 1200.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.7632454861111111,
+      "series": "activity (firing frequency)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (features per tail)": 1600.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.7667623046875,
+      "series": "activity (firing frequency)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (features per tail)": 2400.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.7460440104166667,
+      "series": "activity (firing frequency)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (features per tail)": 3200.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.733610693359375,
+      "series": "activity (firing frequency)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (features per tail)": 4800.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.6982710503472223,
+      "series": "activity (firing frequency)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (features per tail)": 6400.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.673440283203125,
+      "series": "activity (firing frequency)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (features per tail)": 8000.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.6486815390625,
+      "series": "activity (firing frequency)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (features per tail)": 25.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.968,
+      "series": "dense variance along decoder dir",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (features per tail)": 50.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.9392,
+      "series": "dense variance along decoder dir",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (features per tail)": 100.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.8973,
+      "series": "dense variance along decoder dir",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (features per tail)": 150.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.8757777777777778,
+      "series": "dense variance along decoder dir",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (features per tail)": 200.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.87845,
+      "series": "dense variance along decoder dir",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (features per tail)": 300.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.8559777777777777,
+      "series": "dense variance along decoder dir",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (features per tail)": 400.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.861025,
+      "series": "dense variance along decoder dir",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (features per tail)": 600.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.8655888888888889,
+      "series": "dense variance along decoder dir",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (features per tail)": 800.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.869875,
+      "series": "dense variance along decoder dir",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (features per tail)": 1200.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.8545381944444445,
+      "series": "dense variance along decoder dir",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (features per tail)": 1600.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.85079765625,
+      "series": "dense variance along decoder dir",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (features per tail)": 2400.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.8350274305555555,
+      "series": "dense variance along decoder dir",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (features per tail)": 3200.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.8118814453125,
+      "series": "dense variance along decoder dir",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (features per tail)": 4800.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.77262265625,
+      "series": "dense variance along decoder dir",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (features per tail)": 6400.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.7346879150390625,
+      "series": "dense variance along decoder dir",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (features per tail)": 8000.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.69844446875,
+      "series": "dense variance along decoder dir",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (features per tail)": 25.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.568,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (features per tail)": 50.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.6136,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (features per tail)": 100.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.6425,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (features per tail)": 150.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.6199555555555556,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (features per tail)": 200.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.6058,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (features per tail)": 300.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.6181111111111111,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (features per tail)": 400.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.6273625,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (features per tail)": 600.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.6489680555555556,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (features per tail)": 800.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.65505625,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (features per tail)": 1200.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.66128125,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (features per tail)": 1600.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.6696802734375,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (features per tail)": 2400.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.6542816840277778,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (features per tail)": 3200.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.644770751953125,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (features per tail)": 4800.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.6263546875,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (features per tail)": 6400.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.6088925659179687,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (features per tail)": 8000.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.58936053125,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (features per tail)": 25.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.5696,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (features per tail)": 50.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.5636,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (features per tail)": 100.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.5794,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (features per tail)": 150.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.5645777777777777,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (features per tail)": 200.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.56995,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (features per tail)": 300.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.5662333333333334,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (features per tail)": 400.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.570475,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (features per tail)": 600.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.5876888888888889,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (features per tail)": 800.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.587559375,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (features per tail)": 1200.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.5846159722222222,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (features per tail)": 1600.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.5745359375,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (features per tail)": 2400.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.5585178819444444,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (features per tail)": 3200.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.55368671875,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (features per tail)": 4800.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.5373606336805555,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (features per tail)": 6400.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.5304930419921875,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (features per tail)": 8000.0,
+      "AUROC: top-$k$ vs bottom-$k$ by $R^2$": 0.526226890625,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 144,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Tail-depth sweep: new judged axes",
+        "xlabel": "tail width $k$ (features per tail)",
+        "ylabel": "$\\Delta_k$ = frac(label | top-$k$) $-$ frac(label | bottom-$k$)",
+        "legend_labels": [
+          "interpretable",
+          "content_syntax",
+          "content_topic",
+          "content_operation"
+        ],
+        "legend_title": "4 of 6 codings (entity, task_format <2%: JSON only)",
+        "annotations": [
+          "positive = enriched among the best-predicted; shaded = each coding's own activity-stratified band"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ],
+        "yticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ]
+      },
+      {
+        "title_left": "Continuous predictors as tail classifiers",
+        "xlabel": "tail width $k$ (features per tail)",
+        "ylabel": "AUROC: top-$k$ vs bottom-$k$ by $R^2$",
+        "legend_labels": [
+          "within-answer consistency",
+          "activity (firing frequency)",
+          "dense variance along decoder dir",
+          "write norm (gamma-scaled)",
+          "encoder-vector norm"
+        ],
+        "annotations": [
+          "0.5 = chance; shaded = bootstrap 95% CI"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ],
+        "yticklabels": [
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ]
+      }
+    ],
+    "series": [
+      "interpretable",
+      "content_syntax",
+      "content_topic",
+      "content_operation",
+      "within-answer consistency",
+      "activity (firing frequency)",
+      "dense variance along decoder dir",
+      "write norm (gamma-scaled)",
+      "encoder-vector norm"
+    ]
+  }
+}
