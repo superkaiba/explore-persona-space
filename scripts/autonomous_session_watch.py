@@ -329,7 +329,19 @@ adding a pass means adding a numbered item here AND bumping the digit:
    verified on the next tick (daemon ACK != kill), mirroring the
    zombie-wrapper contract; records land in
    ``~/.eps-autonomous/idle-unmapped-events.jsonl`` (no task to carry a
-   marker, by definition). Daemon-gated.
+   marker, by definition). Daemon-gated. #1971 ESCALATE-ONLY REPORT lane:
+   a TTY-ATTACHED unmapped EPS session — the class every stop/alert arm
+   above deliberately exempts (a TTY may be a terminal Thomas is sitting
+   at) — idle >= ``EPM_TTY_UNMAPPED_REPORT_HOURS`` (default 48h) is
+   REPORTED instead of silently cleared: one deduped Telegram push per
+   episode (dedup on the reported sid SET; re-push on set growth or the
+   ``EPM_TTY_UNMAPPED_REPORT_REALERT_HOURS`` TTL, default 168h) + one
+   sidecar row per reported session (sentinel
+   ``[autonomous_session_watch:tty-unmapped-report]``, same events file)
+   carrying a safe-to-kill VERDICT from the work-descendant probe. The
+   lane NEVER stops, unregisters, or otherwise mutates a session, and
+   ``decide_idle_unmapped``'s pinned has_tty -> ("clear", 0) contract is
+   untouched. Kill switch ``EPM_DISABLE_TTY_UNMAPPED_REPORT=1``.
 11. **Infra-drain pass (execute the PM-adjudicated dispatch queue; task
    #633; runs between pass 5 and pass 6).** The PM session's standing infra
    auto-dispatch rule adjudicates which ``proposed`` kind-infra/batch tasks
@@ -1675,6 +1687,15 @@ _IDLE_UNMAPPED_STOP_FAILED_NOTE_SENTINEL = "[autonomous_session_watch:idle-unmap
 _IDLE_UNMAPPED_STOP_FALLBACK_NOTE_SENTINEL = (
     "[autonomous_session_watch:idle-unmapped-stop-fallback]"
 )
+# Stamped into the ESCALATE-ONLY report rows the idle-unmapped pass writes for
+# TTY-ATTACHED unmapped EPS sessions idle past the report window (#1971 — the
+# 2026-07-31 class: ~17 TTY-attached unmapped wrappers 72-95h old, invisible
+# to every reaper AND every report until the user asked). The lane never
+# stops, unregisters, or otherwise mutates a session — the rows carry
+# ``action: tty-report`` semantics + a safe-to-kill VERDICT and land in the
+# same ``idle-unmapped-events.jsonl`` stream. DISTINCT from the stop/alert
+# sentinels above so an operator can tell a report row from an action row.
+_TTY_UNMAPPED_REPORT_NOTE_SENTINEL = "[autonomous_session_watch:tty-unmapped-report]"
 
 # Substring stamped into the marker the infra-drain pass posts after
 # dispatching an autonomous session for a PM-queue ID (task #633). The #633
@@ -1925,6 +1946,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _IDLE_UNMAPPED_ALERT_NOTE_SENTINEL,
         _IDLE_UNMAPPED_STOP_FAILED_NOTE_SENTINEL,
         _IDLE_UNMAPPED_STOP_FALLBACK_NOTE_SENTINEL,
+        _TTY_UNMAPPED_REPORT_NOTE_SENTINEL,
         _INFRA_DRAIN_NOTE_SENTINEL,
         _PROPOSED_INFRA_SWEEP_NOTE_SENTINEL,
         _CAPACITY_RETRY_NOTE_SENTINEL,
@@ -26483,6 +26505,249 @@ def _clear_idle_unmapped_state(sid: str) -> None:
     _idle_unmapped_state_path(sid).unlink(missing_ok=True)
 
 
+# ─── #1971 TTY-attached unmapped REPORT lane (ESCALATE-ONLY) ──────────────────
+#
+# The observability complement of the idle-unmapped reaper for the class it
+# deliberately exempts: an UNMAPPED EPS session whose wrapper holds a LIVE
+# user TTY is never stopped (``decide_idle_unmapped``'s pinned
+# has_tty -> ("clear", 0) contract, which this lane does NOT touch), but
+# multi-day accumulations of such wrappers previously had ZERO surfacing
+# channel — no sidecar row, no push, no log surface (2026-07-31 incident:
+# ~17 of 26 sessions were TTY-attached unmapped wrappers 72-95h old,
+# invisible to every reaper AND every report until the user asked "why are
+# there 26 active sessions?"). This lane REPORTS: one deduped Telegram push
+# per episode + one sidecar row per reported session (the distinct
+# ``_TTY_UNMAPPED_REPORT_NOTE_SENTINEL``) with a safe-to-kill VERDICT from
+# the existing zombie-wrapper work-descendant probe. It NEVER stops,
+# unregisters, or otherwise mutates a session — report only.
+
+# Default transcript-idle window before a TTY-attached unmapped session is
+# REPORTED. 48h (vs the 12h reap window for non-TTY sessions): a TTY session
+# is one Thomas may deliberately keep open across days, so the report fires
+# only on the multi-day accumulation class (incident sessions were 72-95h
+# old — 48h surfaces them with margin). Override via
+# EPM_TTY_UNMAPPED_REPORT_HOURS (hours).
+TTY_UNMAPPED_REPORT_IDLE_S = 48 * 3600
+
+# Re-alert TTL for a persisting episode: one push per week while the same
+# reported set persists unresolved (the codex-outage / root-stash-audit 168h
+# re-alert precedent). Override via EPM_TTY_UNMAPPED_REPORT_REALERT_HOURS.
+TTY_UNMAPPED_REPORT_REALERT_S = 168 * 3600
+
+# Push-dedup state singleton at ~/.eps-autonomous/tty-unmapped-report-state.json
+# ({"sids": [...], "last_push_ts": epoch}). The filename deliberately does NOT
+# carry the per-sid ``idle-unmapped-`` state prefix, so the pass's
+# ``_gc_orphan_idle_unmapped_state`` glob never enumerates it as a per-sid
+# episode file.
+_TTY_UNMAPPED_REPORT_STATE_FILENAME = "tty-unmapped-report-state.json"
+
+
+def _tty_unmapped_report_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_TTY_UNMAPPED_REPORT`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_root_draft_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_TTY_UNMAPPED_REPORT", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _tty_unmapped_report_idle_s() -> float:
+    """Report window in seconds: ``EPM_TTY_UNMAPPED_REPORT_HOURS`` (hours)
+    when set to a positive number, else :data:`TTY_UNMAPPED_REPORT_IDLE_S`
+    (48h). Garbled / non-positive values fall back to the default (same
+    parse as :func:`_unmapped_idle_reap_s`)."""
+    raw = os.environ.get("EPM_TTY_UNMAPPED_REPORT_HOURS", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return TTY_UNMAPPED_REPORT_IDLE_S
+    return val * 3600 if val > 0 else TTY_UNMAPPED_REPORT_IDLE_S
+
+
+def _tty_unmapped_report_realert_s() -> float:
+    """Re-alert TTL in seconds: ``EPM_TTY_UNMAPPED_REPORT_REALERT_HOURS``
+    (hours) when set to a positive number, else
+    :data:`TTY_UNMAPPED_REPORT_REALERT_S` (168h). Garbled / non-positive
+    values fall back to the default."""
+    raw = os.environ.get("EPM_TTY_UNMAPPED_REPORT_REALERT_HOURS", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return TTY_UNMAPPED_REPORT_REALERT_S
+    return val * 3600 if val > 0 else TTY_UNMAPPED_REPORT_REALERT_S
+
+
+def _tty_unmapped_report_state_path() -> Path:
+    return AUTONOMOUS_REGISTRY_DIR / _TTY_UNMAPPED_REPORT_STATE_FILENAME
+
+
+def _load_tty_unmapped_report_state() -> dict:
+    """Push-dedup state (``{}`` if absent/garbled — a fresh or unreadable
+    file starts a fresh episode, mirroring the other watcher state
+    loaders)."""
+    path = _tty_unmapped_report_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_tty_unmapped_report_state(payload: dict) -> None:
+    """Persist the push-dedup singleton atomically (temp + rename), same
+    write shape as :func:`_save_idle_unmapped_state`."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _tty_unmapped_report_state_path()
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    tmp.replace(dest)
+
+
+def _clear_tty_unmapped_report_state() -> None:
+    """Drop the push-dedup singleton (episode over — the reported set went
+    empty)."""
+    _tty_unmapped_report_state_path().unlink(missing_ok=True)
+
+
+def decide_tty_unmapped_report(idle_age_s: float | None, report_idle_s: float) -> str:
+    """Pure decision for ONE TTY-attached unmapped session in the #1971
+    report lane: ``"report"`` iff the idle signal is AVAILABLE and at or
+    over the report window, else ``"none"`` (an unavailable signal reports
+    nothing — fail toward silence, the same posture as
+    :func:`decide_idle_unmapped`'s skip case).
+
+    Deliberately a SEPARATE helper from :func:`decide_idle_unmapped`, whose
+    pinned ``has_tty -> ("clear", 0)`` contract stays byte-unchanged — this
+    lane only ever adds a report on top of that clear, never an action."""
+    if idle_age_s is None:
+        return "none"
+    return "report" if idle_age_s >= report_idle_s else "none"
+
+
+def decide_tty_report_push(
+    prev_sids: set[str] | frozenset[str],
+    cur_sids: set[str] | frozenset[str],
+    last_push_ts: float | None,
+    now: float,
+    realert_s: float,
+) -> str:
+    """Pure push-vs-suppress decision for one flush of #1971 report
+    candidates. Returns:
+
+    - ``"clear"`` — the CURRENT set is empty: episode over, the caller
+      drops the state singleton (regardless of any recorded prior state);
+    - ``"push"`` — first push of an episode (no recorded ``last_push_ts``),
+      OR set growth (a current sid not in the recorded set), OR the
+      re-alert TTL expired;
+    - ``"suppress"`` — otherwise (same-or-shrunken set inside the TTL).
+
+    STATE SEMANTICS the caller must honor (#1971 critic refinement): the
+    recorded sid set is written ONLY on ``"push"`` (as ``prev | cur``),
+    NEVER overwritten with the current set on ``"suppress"`` — a one-tick
+    resolver flap (a sid transiently missing from one pass) would otherwise
+    read as growth when it reappears and fire a spurious re-push."""
+    if not cur_sids:
+        return "clear"
+    if last_push_ts is None:
+        return "push"
+    if any(sid not in prev_sids for sid in cur_sids):
+        return "push"
+    if now - last_push_ts >= realert_s:
+        return "push"
+    return "suppress"
+
+
+def _wrapper_age_s(pid: int, now: float) -> float | None:
+    """Wrapper process age in seconds (via ``tick_triage.proc_start_epoch``),
+    or ``None`` when /proc is unreadable — reported as ``?``, never
+    fabricated."""
+    start = proc_start_epoch(pid)
+    if start is None:
+        return None
+    return max(0.0, now - start)
+
+
+def _tty_report_safe_to_kill_verdict(
+    sid: str, pid: int, children_map: dict[int, list[int]] | None
+) -> str:
+    """Safe-to-kill VERDICT text for one reported TTY-attached wrapper,
+    derived from the zombie-wrapper work-descendant probe
+    (:func:`_has_running_work_descendant`). REPORT-ONLY — the verdict never
+    drives an action. A probe failure reads "uncertain", never "safe" (and
+    the probe itself already treats an unreadable child cmdline as
+    work-present, so that path reads "do NOT kill blindly")."""
+    try:
+        has_work = _has_running_work_descendant(pid, children_map)
+    except OSError as e:
+        return f"uncertain (work-descendant probe failed: {type(e).__name__})"
+    if has_work:
+        return "has-live-work-descendant (do NOT kill blindly)"
+    return f"no-live-work (likely safe: kill via `spawn_session.py stop --session-id {sid}`)"
+
+
+def _flush_tty_unmapped_reports(candidates: list[dict], dry_run: bool, now: float) -> None:
+    """Aggregate + escalate the #1971 TTY-attached report candidates one
+    pass accumulated. ESCALATE-ONLY: never stops, unregisters, or mutates a
+    session. One deduped fail-soft Telegram push per episode (dedup on the
+    reported sid SET; re-push on set growth or the re-alert TTL; an empty
+    candidate set ends the episode and clears the state singleton). Sidecar
+    rows (one per reported session, sentinel
+    ``_TTY_UNMAPPED_REPORT_NOTE_SENTINEL``) are written on PUSH ticks only,
+    so the events stream carries one row per session per episode/re-alert
+    rather than one per 10-min tick. On ``"suppress"`` the state singleton
+    is NOT rewritten (see :func:`decide_tty_report_push`). Dry-run: decides
+    + prints only — no state write, no sidecar append, no push."""
+    cur_sids = {c["sid"] for c in candidates}
+    state = _load_tty_unmapped_report_state()
+    prev_raw = state.get("sids")
+    prev_sids = {s for s in prev_raw if isinstance(s, str)} if isinstance(prev_raw, list) else set()
+    last_push_ts = state.get("last_push_ts")
+    if not isinstance(last_push_ts, int | float):
+        last_push_ts = None
+    decision = decide_tty_report_push(
+        prev_sids, cur_sids, last_push_ts, now, _tty_unmapped_report_realert_s()
+    )
+    if decision == "clear":
+        if state:
+            print("  tty-unmapped-report: no candidates; episode over (state cleared)")
+            if not dry_run:
+                _clear_tty_unmapped_report_state()
+        return
+    print(
+        f"  tty-unmapped-report: {len(cur_sids)} TTY-attached unmapped session(s) idle >= "
+        f"{_tty_unmapped_report_idle_s() / 3600:.0f}h -> {decision} (report-only, never stopped)"
+    )
+    if decision == "suppress":
+        # No state overwrite on suppress: a one-tick resolver flap must not
+        # convert into a spurious "growth" re-push next tick.
+        return
+    # decision == "push": one sidecar row per reported session + ONE push.
+    digest: list[str] = []
+    window_h = _tty_unmapped_report_idle_s() / 3600
+    for cand in sorted(candidates, key=lambda c: c["sid"]):
+        idle_h = cand["idle_age_s"] / 3600
+        age = cand.get("wrapper_age_s")
+        age_label = f"{age / 3600:.1f}h" if isinstance(age, int | float) else "?"
+        _append_idle_unmapped_event(
+            f"{_TTY_UNMAPPED_REPORT_NOTE_SENTINEL} action: tty-report — TTY-attached "
+            f"unmapped EPS session {cand['sid']} (wrapper pid {cand['pid']}, "
+            f"cwd={cand.get('cwd') or '?'}, wrapper age {age_label}) has an idle Claude "
+            f"transcript ({idle_h:.1f}h >= {window_h:.0f}h) and no issue mapping. "
+            f"ESCALATE-ONLY: never auto-stopped (the TTY may be a terminal Thomas is "
+            f"sitting at); verdict: {cand['verdict']}",
+            dry_run,
+        )
+        digest.append(f"{cand['sid']} (idle {idle_h:.1f}h, {cand['verdict']})")
+    _telegram_push(
+        f"TTY-attached unmapped idle session report (#1971, escalate-only — "
+        f"{len(digest)} session(s) idle >= {window_h:.0f}h): " + "; ".join(digest),
+        dry_run,
+    )
+    if not dry_run:
+        _save_tty_unmapped_report_state({"sids": sorted(prev_sids | cur_sids), "last_push_ts": now})
+
+
 def _last_mapped_terminal_path(sid: str) -> Path:
     return AUTONOMOUS_REGISTRY_DIR / f"{LAST_MAPPED_TERMINAL_PREFIX}{sid}.json"
 
@@ -26914,10 +27179,26 @@ def _process_idle_unmapped(
     detached_tmux_ttys: set[str] | None = None,
     tmux_activity: dict[str, float] | None = None,
     check_orphaned: bool = True,
+    tty_report_acc: list[dict] | None = None,
+    children_map: dict[int, list[int]] | None = None,
+    cwd: str | None = None,
 ) -> None:
     """Apply the idle-unmapped decision to one live, non-PM, EPS-cwd session:
     check the wrapper's controlling TTY, stat the resolved transcript, and
     act per :func:`decide_idle_unmapped`.
+
+    #1971 ESCALATE-ONLY report lane: when ``tty_report_acc`` is supplied (the
+    pass owns it; the ``None`` default keeps legacy/test callers inert) and
+    the lane is enabled, a TTY-attached unmapped session additionally gets
+    its transcript statted, and one idle >= the report window appends a
+    report CANDIDATE dict (sid / pid / cwd / wrapper_age_s / idle_age_s /
+    safe-to-kill verdict) to the accumulator. ``children_map`` threads the
+    once-per-pass :func:`_proc_children_map` scan into the verdict probe;
+    ``cwd`` is the session's meta path (report-row context only). This
+    branch writes NO per-sid episode state and never stops anything — the
+    pass-level :func:`_flush_tty_unmapped_reports` owns aggregation +
+    push/sidecar dedup, and ``decide_idle_unmapped``'s pinned
+    ``has_tty -> ("clear", 0)`` contract is untouched.
 
     ``has_tty`` here means "a controlling tty a USER could be looking at right
     now" (:func:`_is_live_user_tty`): a tty-bearing wrapper that is a DETACHED
@@ -26954,6 +27235,27 @@ def _process_idle_unmapped(
     if not mapped and not has_tty:
         _maybe_log_orphaned_tmux_fire(pid, detached_tmux_ttys, check_orphaned)
         idle_age_s, signal_reason = _transcript_idle_age_s(pid, now)
+
+    # ── #1971 TTY-attached unmapped REPORT lane (escalate-only) ───────────────
+    # A TTY-attached wrapper is deliberately exempt from every stop/alert arm
+    # below (decide_idle_unmapped's pinned has_tty -> ("clear", 0)); this
+    # branch only ACCUMULATES a report candidate for the pass-level flush. It
+    # uses its OWN local idle read (never the ``idle_age_s`` the decision
+    # consumes), writes no per-sid state, stops nothing, and is inert for
+    # legacy callers (``tty_report_acc=None``) and under the kill switch.
+    if not mapped and has_tty and tty_report_acc is not None and _tty_unmapped_report_enabled():
+        tty_idle_age_s, _tty_signal_reason = _transcript_idle_age_s(pid, now)
+        if decide_tty_unmapped_report(tty_idle_age_s, _tty_unmapped_report_idle_s()) == "report":
+            tty_report_acc.append(
+                {
+                    "sid": sid,
+                    "pid": pid,
+                    "cwd": cwd,
+                    "wrapper_age_s": _wrapper_age_s(pid, now),
+                    "idle_age_s": tty_idle_age_s,
+                    "verdict": _tty_report_safe_to_kill_verdict(sid, pid, children_map),
+                }
+            )
 
     prev = _load_idle_unmapped_state(sid)
     prev_missed = prev.get("missed", 0)
@@ -27131,6 +27433,14 @@ def idle_unmapped_pass(
     loud WARNING when tmux is present but the set is EMPTY (the silent-regression
     guard — the whole reason the pass went inert).
 
+    #1971 ESCALATE-ONLY report lane: TTY-attached unmapped EPS sessions (the
+    class every stop/alert arm exempts) idle >= the report window (default
+    48h, ``EPM_TTY_UNMAPPED_REPORT_HOURS``) are accumulated per pass and
+    flushed via :func:`_flush_tty_unmapped_reports` — one deduped Telegram
+    push per episode + one sidecar row per reported session with a
+    safe-to-kill verdict; never a stop/unregister/mutation. Kill switch
+    ``EPM_DISABLE_TTY_UNMAPPED_REPORT=1``.
+
     Daemon-gated like the zombie pass: the wrapper pids come from the
     daemon's ``/list`` and the stop action POSTs to it. ``children`` may be
     injected (tests / a caller reusing its snapshot); ``None`` fetches via
@@ -27158,7 +27468,7 @@ def idle_unmapped_pass(
     meta = _load_session_meta()
     pm_sids = _load_pm_session_ids()
     project_prefix = str(PROJECT_ROOT)
-    candidates: list[tuple[str, int, int | None]] = []
+    candidates: list[tuple[str, int, int | None, str]] = []
     skipped_pm = 0
     skipped_non_eps = 0
     for child in children:
@@ -27180,7 +27490,7 @@ def idle_unmapped_pass(
         issue = registry_map.get(sid)
         if issue is None:
             issue = _infer_issue_from_path(path)
-        candidates.append((sid, pid, issue))
+        candidates.append((sid, pid, issue, path))
 
     reap = _unmapped_idle_reap_enabled()
     # The orphaned-tmux-server widening gate, evaluated ONCE per pass (not per
@@ -27210,7 +27520,14 @@ def idle_unmapped_pass(
         f"reap={'ON' if reap else 'OFF — alert-only (EPM_UNMAPPED_IDLE_REAP=0)'}; "
         f"orphaned_tmux_reap={'ON' if check_orphaned else 'OFF (EPM_ORPHANED_TMUX_REAP=0)'})"
     )
-    for sid, pid, issue in sorted(candidates):
+    # #1971 report lane setup: one accumulator per pass (None = lane off via
+    # the kill switch) + ONE /proc children scan shared across every
+    # candidate's safe-to-kill verdict probe (critic refinement — never a
+    # per-candidate scan). The flush runs even on an EMPTY accumulator so an
+    # ended episode clears its push-dedup state.
+    tty_report_acc: list[dict] | None = [] if _tty_unmapped_report_enabled() else None
+    tty_children_map = _proc_children_map() if tty_report_acc is not None else None
+    for sid, pid, issue, path in sorted(candidates):
         _process_idle_unmapped(
             sid,
             pid,
@@ -27222,7 +27539,12 @@ def idle_unmapped_pass(
             detached_tmux_ttys=detached_tmux_ttys,
             tmux_activity=tmux_activity,
             check_orphaned=check_orphaned,
+            tty_report_acc=tty_report_acc,
+            children_map=tty_children_map,
+            cwd=path,
         )
+    if tty_report_acc is not None:
+        _flush_tty_unmapped_reports(tty_report_acc, dry_run, now)
 
 
 # ─── boot-death pass (#1267) ──────────────────────────────────────────────────
