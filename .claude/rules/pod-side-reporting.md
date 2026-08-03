@@ -503,7 +503,11 @@ the file and the marker still reads `dead`.
   pushes to need the fetch+rebase path above — a lane running a pre-#1880
   driver will deterministically false-crash at its terminal push (the
   #1739 shape) with its results intact in crash-persist; treat that
-  failure as recoverable-transport, not a science loss.
+  failure as recoverable-transport, not a science loss. The PULL/SYNC
+  direction — a worker's mid-run sync refusing on locally modified
+  touched paths — is governed by `.claude/rules/crash-fix-rounds.md`
+  § Mid-run pushes to a live-synced branch (enumerate live workers
+  first; detached-SHA pin / defer / worker-local alternatives).
 - **Artifact-presence assert (#1325) — the rev-list push-verify is VACUOUS
   against a never-committed result file.** `rev-list --count
   origin/<branch>..HEAD == 0` proves the COMMITS pushed; it says nothing
