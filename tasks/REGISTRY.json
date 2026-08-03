@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2032,
+  "highest_id": 2033,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8005,6 +8005,13 @@
       "path": "tasks/planning/2032",
       "status": "planning",
       "title": "workflow-fix: curate experiment-implementer agent-memory index under 24KB FAIL threshold"
+    },
+    "2033": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2033",
+      "status": "proposed",
+      "title": "daily-fix: RAM floor required on wide fan-out dispatches"
     },
     "205": {
       "has_clean_result": false,
