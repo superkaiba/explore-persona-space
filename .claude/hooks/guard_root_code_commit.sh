@@ -1092,6 +1092,12 @@ run_self_test() {
   echo note > "$RFOR/tasks/t.md"
   git -C "$RFOR" add scripts/foreign.py tasks/t.md
 
+  # Message file for the -F commit-form cases (issue #1949); the hook parses
+  # only the argv shape — the file content is never read.
+  local MSGF
+  MSGF="$TMP/msg.txt"
+  printf 'msg\n' > "$MSGF"
+
   CERTF="$TMP/cert.txt"
 
   run_case() {
@@ -1177,6 +1183,12 @@ EOF
     'git commit -m x > /tmp/i1928_selftest.log 2>&1' "$RFOR"
   run_case "B40 pathspec naming staged gated file + redirect still blocks (#1928)" 2 \
     'git commit -m x -- scripts/foreign.py > /tmp/i1928_selftest.log 2>&1' "$RFOR"
+
+  # --- -F message-file commit form (issue #1949) ---
+  run_case "A23 -F msgfile + artifact pathspec keeps scoping (#1949)" 0 \
+    "git commit -F $MSGF -- tasks/t.md" "$RFOR"
+  run_case "B41 bare -F msgfile commit still blocks (sweep protection, #1949)" 2 \
+    "git commit -F $MSGF" "$RFOR"
 
   # --- path-limited `git add --all -- <pathspec>` exemption (issue #1977) ---
   run_case "A20 path-limited add --all with artifact pathspec" 0 \
