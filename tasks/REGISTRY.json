@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2052,
+  "highest_id": 2053,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8152,6 +8152,13 @@
       "path": "tasks/proposed/2052",
       "status": "proposed",
       "title": "workflow-fix: keep-running shields provably-idle pods when owner is alive"
+    },
+    "2053": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2053",
+      "status": "proposed",
+      "title": "workflow-fix: sparse-cone bootstrap_pod.sh (65min MooseFS checkout) + rsync stale-read"
     },
     "207": {
       "has_clean_result": true,
