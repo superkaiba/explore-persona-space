@@ -1,0 +1,24 @@
+{
+  "sources": {
+    "per_token": "eval_results/issue_1482/run_length/run_length_perfeature.npz",
+    "side_class_census": "eval_results/issue_1482/predictor_battery/fullwidth_discrete_covariates.npz"
+  },
+  "n_continuous": 91362,
+  "n_census_two_sided_excluded_from_continuous": 34986,
+  "census": {
+    "context_only": 1654,
+    "answer_only": 2164,
+    "two_sided": 126348,
+    "dead": 906
+  },
+  "per_token_null": 0.7312524843626176,
+  "median_side_ratio_token": 0.7294117647058823,
+  "what_is_plotted": "Histogram (log y) of the per-token answer-side ratio ans_tokens_active/(ans_tokens_active+ctx_tokens_active) over the 91,362 features that are two-sided in the 120,000-row census AND fire on both sides in the 2,000-row per-token capture. Point masses at 0 and 1 are the census-defined strictly one-sided features. Dashed line is the side-indifferent null.",
+  "caveats": [
+    "TWO SOURCES BY DESIGN. One-sidedness is the 120,000-row census call (much stronger evidence for 'never fires'); the continuous ratio is per-token from the 2,000-row capture, because the store banks no context-side token counts. Using the capture alone for the categorical call would inflate one-sidedness roughly 4-6x purely from having fewer rows (it gives 5,994 / 11,855).",
+    "34,986 census-two-sided features fire on only one side within the 2,000-row capture and are excluded from the continuous histogram \u2014 a sample-size effect, not a property of those features.",
+    "The null is 0.73, NOT 0.5: the answer span runs longer than the context span, so a feature with no side preference still lands well above 0.5.",
+    "Row-occupancy is the saturating alternative grain and understates specialisation by roughly half; see side_grain_comparison for the same-rows head-to-head.",
+    "#1482 single-turn corpus (constant template prefix), layer 19, k=64."
+  ]
+}
