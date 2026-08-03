@@ -394,6 +394,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # Registration rider (#1659) — the pre-existing 9a-ter element-(5) content
     # pin (#1393) was never registered (the #1546 unregistered-pin class)
     "tests/test_issue_skill_disk_routing_pin.py",
+    # NEW (#1964) — SKILL.md Step 6b dispatch-input/env/flag preflight pins
+    # (staging / env-pin / per-leg / relaunch-flag probes) + the
+    # crash-fix-rounds § Changed-argv relaunch flag-fidelity mirror
+    "tests/test_issue_skill_dispatch_preflight_pin.py",
     # NEW (#1698) — experimenter.md Contract scope + fence-field derivation
     # prose pins (#1689 R8 launch-path fix). experimenter.md is
     # WORKFLOW_SURFACE, so this test file must live in WORKFLOW_INVARIANT to
