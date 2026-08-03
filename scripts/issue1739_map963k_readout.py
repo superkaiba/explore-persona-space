@@ -260,9 +260,15 @@ def apply_963k(payload, x: np.ndarray, device: str, *, chunk: int = 2048) -> np.
 
 def load_i1739_map(
     path: Path, layer_index: int
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """#1739's own u-full linear map at one layer: (w, x_mu, x_sd, y_mu)."""
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict]:
+    """#1739's own u-full linear map at one layer: (w, x_mu, x_sd, y_mu, meta).
+
+    ``meta`` is the payload's persisted meta dict (#1975: carries the
+    ``fit_space`` / input-space parity fields on re-persisted payloads; a
+    legacy payload's meta lacks them and the parity check warns loudly).
+    """
     with np.load(path, allow_pickle=True) as z:
+        meta = json.loads(str(z["meta"])) if "meta" in z.files else {}
         layers = list(z["layers"])
         li = layers.index(layer_index)
         return (
@@ -270,6 +276,7 @@ def load_i1739_map(
             z["x_mu"][li].astype(np.float64),
             z["x_sd"][li].astype(np.float64),
             z["y_mu"][li].astype(np.float64),
+            meta,
         )
 
 
@@ -439,6 +446,8 @@ def run_behavior(
     fitters: tuple[str, ...],
     device: str,
 ) -> dict:
+    from explore_persona_space.experiments.issue_1739 import fits
+
     dv = load_dv(dv_json)
     data = load_per_context(store_dir, dv)
     rb_sources = load_rb_sources(behavior, i1739_dir)
@@ -471,7 +480,22 @@ def run_behavior(
             preds: dict[str, np.ndarray] = {"raw_proj": z, "oracle_proj": t1}
 
             # --- #1739's own u-full linear map (arm6) + its shuffled control (arm13)
-            w, x_mu, x_sd, y_mu = load_i1739_map(i1739_map_path, layer)
+            w, x_mu, x_sd, y_mu, map_meta = load_i1739_map(i1739_map_path, layer)
+            # #1975 input-space parity: `z` is RAW per-context store summaries
+            # while the u-full map was FIT in the whitened main-grid space — a
+            # DELIBERATE cross-space reuse-validity read (module docstring;
+            # recon_quality reports the collapse per row, and
+            # issue1739_map963k_applycheck.py is the standalone probe).
+            # Declared, never silent (the #1739 incident class).
+            fits.assert_map_input_space(
+                map_meta,
+                z,
+                declared_mismatch=(
+                    "map963k_readout scores the whitened-fit u-full map on RAW per-context "
+                    "store summaries (disclosed reuse-validity read; see module docstring + "
+                    "issue1739_map963k_applycheck.py)"
+                ),
+            )
             preds["map_i1739_ufull"] = ((z - x_mu) / x_sd) @ w + y_mu
             preds["map_i1739_shuffled"] = ((z - x_mu) / x_sd) @ shuffle_rows(w, 0) + y_mu
             del w

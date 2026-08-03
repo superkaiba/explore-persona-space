@@ -78,7 +78,9 @@ def main(argv: list[str] | None = None) -> int:
     assert x.shape == y.shape, (x.shape, y.shape)
 
     # The COMMITTED loader + the COMMITTED line-469 expression, verbatim.
-    w, x_mu, x_sd, y_mu = load_i1739_map(args.map_npz, args.layer)
+    # (#1975 widened the loader's return with the payload meta; this probe's
+    # own behavior is unchanged — it keeps computing the same three forms.)
+    w, x_mu, x_sd, y_mu, _map_meta = load_i1739_map(args.map_npz, args.layer)
     committed = ((x - x_mu) / x_sd) @ w + y_mu
 
     # The hypothesised skipped-whitening forms, same rows.

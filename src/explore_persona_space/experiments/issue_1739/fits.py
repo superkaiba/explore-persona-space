@@ -424,6 +424,10 @@ class MapFit:
     kind: str = "linear"
     nl_payloads: tuple[dict, ...] = ()  # per-layer N1M apply_map payloads
     apply_device: str = "cpu"  # device the nonlinear per-layer apply runs on
+    # #1975 input-space parity metadata carried from a persisted payload
+    # (fit_space / whitening_provenance / train_input_norm_{mean,std});
+    # None for an in-process fit that was never persisted-and-reloaded.
+    space_meta: dict | None = None
 
     def __post_init__(self) -> None:
         if self.kind == "linear":
@@ -1217,3 +1221,268 @@ def shuffled_map_weights(w: np.ndarray, *, seed: int) -> np.ndarray:
         float(np.max(np.abs(norms - norms_shuf) / np.maximum(norms, 1e-30))),
     )
     return out
+
+
+# ---------------------------------------------------------------------------
+# Map input-space parity (#1975 — the #1739 whitened-fit / raw-apply incident)
+# ---------------------------------------------------------------------------
+
+# Recomputation-stable DISCRETE whitening-recipe fields (the recipe-form parity
+# key). Float matrices (mu / w) are NEVER part of the key: two `fit_whitening`
+# invocations on identical inputs are not byte-identical (device / BLAS
+# reduction order, and the natpv persist round-trips mu/w through fp32), so a
+# hash of recomputed float tensors could never match on the healthy path.
+# Gammas ARE included: they are grid-selected from a discrete set
+# (WHITEN_SHRINKAGE_GRID) under a seeded holdout split, so exact equality is
+# recomputation-stable — and a genuine gamma difference means the two
+# whitenings are materially DIFFERENT transforms.
+WHITENING_RECIPE_FIELDS = ("variant", "u_label", "whiten_seed", "n_u_rows", "gamma_per_layer")
+
+
+def whitening_provenance(
+    *,
+    whitening_file=None,
+    variant: str | None = None,
+    u_label: str | None = None,
+    whiten_seed: int | None = None,
+    n_u_rows: int | None = None,
+    gammas=None,
+) -> dict:
+    """Build the whitening PARITY OBJECT a map payload / consumer records (#1975).
+
+    Two forms, either or both (only provided fields are recorded):
+
+    - ARTIFACT form (preferred where a PERSISTED whitening file exists — the
+      natpv ``--phase whitening`` output): ``whitening_file_sha256`` of the
+      file bytes + ``whitening_path`` (informational). Both sides share the
+      artifact, so equality is exact and stable.
+    - RECIPE form (the fits-CLI fresh-fit case — whitening fit in-process,
+      nothing persisted): the recomputation-stable discrete tuple
+      ``{variant, u_label, whiten_seed, n_u_rows, gamma_per_layer}``.
+
+    Raises ``ValueError`` when NO field is provided (an empty provenance is a
+    silent-parity hole, never a valid record).
+    """
+    import hashlib
+    from pathlib import Path
+
+    prov: dict = {}
+    if whitening_file is not None:
+        p = Path(whitening_file)
+        h = hashlib.sha256()
+        with p.open("rb") as fh:
+            for chunk in iter(lambda: fh.read(1 << 22), b""):
+                h.update(chunk)
+        prov["whitening_file_sha256"] = h.hexdigest()
+        prov["whitening_path"] = str(p)
+    if variant is not None:
+        prov["variant"] = str(variant)
+    if u_label is not None:
+        prov["u_label"] = str(u_label)
+    if whiten_seed is not None:
+        prov["whiten_seed"] = int(whiten_seed)
+    if n_u_rows is not None:
+        prov["n_u_rows"] = int(n_u_rows)
+    if gammas is not None:
+        prov["gamma_per_layer"] = [float(g) for g in np.asarray(gammas).ravel()]
+    if not prov:
+        raise ValueError("whitening_provenance: at least one field is required")
+    return prov
+
+
+def map_space_meta(x_fit, *, fit_space: str, whitening_prov: dict | None) -> dict:
+    """Machine-checkable input-space metadata for a persisted map payload (#1975).
+
+    ``x_fit`` is the (Ly, n, d) array the map was ACTUALLY fit on (the
+    pre-standardization inputs). Records the fit-space tag, the whitening
+    provenance (see :func:`whitening_provenance`), and per-layer L2 row-norm
+    mean/std — the durable form of the ``issue1739_map963k_applycheck.py``
+    out-of-distribution norm signal, consumed by
+    :func:`assert_map_input_space` at apply/load time.
+    """
+    x = np.asarray(x_fit)
+    assert x.ndim == 3, f"x_fit must be (Ly, n, d); got {x.shape}"
+    means: list[float] = []
+    stds: list[float] = []
+    for li in range(x.shape[0]):
+        xl = np.asarray(x[li], dtype=np.float64)
+        # einsum avoids materializing an (n, d) squared temp (apply_whitening's
+        # per-layer memory discipline).
+        norms = np.sqrt(np.einsum("nd,nd->n", xl, xl))
+        means.append(float(norms.mean()))
+        stds.append(float(norms.std()))
+    return {
+        "fit_space": str(fit_space),
+        "whitening_provenance": whitening_prov,
+        "train_input_norm_mean": means,
+        "train_input_norm_std": stds,
+    }
+
+
+def assert_map_input_space(
+    meta,
+    x,
+    *,
+    declared_mismatch: str | None = None,
+    band: float = 2.0,
+    layer_indices=None,
+) -> None:
+    """Fail fast when apply-time inputs are not in the map's FIT space (#1975).
+
+    The durable gate for the #1739 incident (a whitened-fit map silently scored
+    RAW activations; the committed sycophancy headline 0.577 was corrected to
+    0.486 ~21 h later). Branches, in order:
+
+    1. ``meta`` carries no ``fit_space`` → LEGACY payload (pre-#1975): loud
+       warning naming the incident, return (never crash a healthy consumer of
+       an existing HF payload; re-persist via ``_save_map`` to gain the check).
+    2. ``declared_mismatch`` provided → a DELIBERATE, disclosed cross-space
+       read: loud warning carrying the verbatim reason, return. (Branches 1-2
+       never touch ``x`` — callers on these paths may pass ``x=None``.)
+    3. Else the norm-band check: per-layer mean L2 norm of ``x`` must sit
+       within ``[train_mean / band, train_mean * band]`` of the recorded
+       ``train_input_norm_mean``; any violation raises ``ValueError``.
+
+    ``x`` is (Ly, n, d), or (n, d) for a single layer. ``layer_indices`` maps
+    each layer slice of ``x`` onto an index into the payload's per-layer stats
+    (default: positional identity, requiring matching layer counts).
+
+    Band default 2.0: whitened inputs concentrate at ||x|| ~= sqrt(d) (~59.9 at
+    d=3584, within-space fluctuation ~O(1/sqrt(d)) ~ 2%), while raw
+    residual-stream summaries sit several-fold larger (the applycheck OOD
+    signal) — so 2.0 separates the two spaces with wide margin on both sides
+    (measured on synthetic realistic scale ratios in
+    ``tests/test_issue1739_map_space_parity.py``).
+    """
+    meta = meta or {}
+    fit_space = meta.get("fit_space")
+    if fit_space is None:
+        logger.warning(
+            "[fits] map payload carries NO fit_space metadata (LEGACY payload, pre-#1975): "
+            "input-space parity CANNOT be checked — the #1739 incident (a whitened-fit map "
+            "silently scored RAW activations; headline 0.577 -> 0.486) is exactly what this "
+            "check exists to catch. Re-persist the map via _save_map to gain the check."
+        )
+        return
+    if declared_mismatch is not None:
+        logger.warning(
+            "[fits] map input-space mismatch DECLARED (%s) — payload fit_space=%r; skipping "
+            "the norm-band parity check (disclosed deviation, #1975)",
+            declared_mismatch,
+            fit_space,
+        )
+        return
+    train_mean = meta.get("train_input_norm_mean")
+    if not train_mean:
+        logger.warning(
+            "[fits] map payload declares fit_space=%r but records no train_input_norm_mean "
+            "(PARTIAL #1975 metadata) — the norm-band parity check degrades to this warning; "
+            "re-persist via _save_map to gain the full check",
+            fit_space,
+        )
+        return
+    x = np.asarray(x)
+    if x.ndim == 2:
+        x = x[None]
+    assert x.ndim == 3, f"x must be (Ly, n, d) or (n, d); got {x.shape}"
+    if layer_indices is None:
+        if x.shape[0] != len(train_mean):
+            raise ValueError(
+                f"[fits] assert_map_input_space: x has {x.shape[0]} layers but the payload "
+                f"records {len(train_mean)} train_input_norm_mean entries — pass "
+                "layer_indices to align them"
+            )
+        layer_indices = range(x.shape[0])
+    layer_indices = [int(i) for i in layer_indices]
+    if len(layer_indices) != x.shape[0]:
+        raise ValueError(
+            f"[fits] assert_map_input_space: {len(layer_indices)} layer_indices for "
+            f"{x.shape[0]} x layers"
+        )
+    band = float(band)
+    assert band > 1.0, f"band must exceed 1.0; got {band}"
+    bad: list[tuple[int, float, float]] = []
+    for pos, li in enumerate(layer_indices):
+        xl = np.asarray(x[pos], dtype=np.float64)
+        obs = float(np.sqrt(np.einsum("nd,nd->n", xl, xl)).mean())
+        tr = float(train_mean[li])
+        if not (tr / band <= obs <= tr * band):
+            bad.append((li, obs, tr))
+    if bad:
+        detail = "; ".join(
+            f"layer_idx {li}: observed {obs:.3f} vs train {tr:.3f}" for li, obs, tr in bad
+        )
+        raise ValueError(
+            f"[fits] map input-space parity FAILED (#1739 incident class — a map fit in one "
+            f"space scored inputs from ANOTHER): payload fit_space={fit_space!r}; per-layer "
+            f"mean L2 input norm outside [train/{band:g}, train*{band:g}] at {len(bad)} "
+            f"layer(s): {detail}. A deliberate cross-space read must pass "
+            "declared_mismatch=<reason> (disclosed, never silent)."
+        )
+
+
+def check_whitening_parity(map_prov, loaded_prov, *, on_legacy_warn: bool = True) -> str:
+    """Compare a map payload's whitening provenance to a loaded whitening's (#1975).
+
+    Both arguments are :func:`whitening_provenance` dicts (or ``None`` /
+    missing for legacy artifacts). Returns the comparison grade —
+    ``"artifact-match"`` | ``"recipe-match"`` | ``"degraded-legacy"`` — and
+    RAISES ``ValueError`` on any mismatch of comparable fields:
+
+    - both sides carry ``whitening_file_sha256`` → exact sha equality
+      (artifact form);
+    - else the recipe fields present in BOTH sides
+      (:data:`WHITENING_RECIPE_FIELDS`) compare by exact equality — this is
+      also the MIXED-form fallback (one side artifact-only, other recipe);
+    - no shared comparable field (either side empty/legacy, or mixed with no
+      recipe overlap) → the DEGRADE path: loud warning (never silent, never a
+      crash of a healthy legacy consumer) unless ``on_legacy_warn=False``
+      (strict mode: raise instead — a caller that must not proceed unchecked).
+    """
+    map_prov = dict(map_prov or {})
+    loaded_prov = dict(loaded_prov or {})
+    sha_a = map_prov.get("whitening_file_sha256")
+    sha_b = loaded_prov.get("whitening_file_sha256")
+    if sha_a is not None and sha_b is not None:
+        if sha_a != sha_b:
+            raise ValueError(
+                f"[fits] whitening parity FAILED (#1739 incident class): map payload was fit "
+                f"under whitening artifact sha256 {sha_a} but the loaded whitening file is "
+                f"{sha_b} ({loaded_prov.get('whitening_path')}) — the map's inputs are NOT "
+                "this whitening's outputs"
+            )
+        return "artifact-match"
+    shared = [f for f in WHITENING_RECIPE_FIELDS if f in map_prov and f in loaded_prov]
+    if not shared:
+        msg = (
+            "[fits] whitening parity DEGRADED to a warning: no comparable provenance fields "
+            "between the map payload and the loaded whitening (legacy pre-#1975 artifact, or "
+            "mixed forms with no recipe overlap) — the #1739 fit-space mismatch cannot be "
+            "ruled out here. Possible causes: the payload predates #1975 fit-space metadata, "
+            "a regenerated whitening artifact, or a gamma-selection flip (near-tied held-out "
+            "NLL across devices/BLAS). Re-persist the map via _save_map to gain the check."
+        )
+        if not on_legacy_warn:
+            raise ValueError(msg)
+        logger.warning(msg)
+        return "degraded-legacy"
+    mismatches: list[str] = []
+    for field in shared:
+        a, b = map_prov[field], loaded_prov[field]
+        if field == "gamma_per_layer":
+            same = [float(v) for v in a] == [float(v) for v in b]
+        elif field in ("whiten_seed", "n_u_rows"):
+            same = int(a) == int(b)
+        else:
+            same = str(a) == str(b)
+        if not same:
+            mismatches.append(f"{field}: map={a!r} vs loaded={b!r}")
+    if mismatches:
+        raise ValueError(
+            "[fits] whitening parity FAILED (#1739 incident class) on recipe field(s): "
+            + "; ".join(mismatches)
+            + ". A gamma_per_layer mismatch can be a gamma-selection flip (near-tied held-out "
+            "NLL across devices/BLAS) — either way the persisted whitening is NOT the "
+            "transform the map was fit under; re-fit or re-persist, never widen tolerance."
+        )
+    return "recipe-match"

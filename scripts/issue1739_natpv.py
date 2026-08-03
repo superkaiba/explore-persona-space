@@ -564,6 +564,8 @@ def _map_projectors(variant: str, directions: dict, stage: Path):
         if local.is_file()
         else _stage_hf(f"{MAPS_PREFIX}{variant}__ufull.npz", stage / "inputs")
     )
+    from explore_persona_space.experiments.issue_1739 import fits
+
     with np.load(path, allow_pickle=False) as z:
         meta = json.loads(str(z["meta"]))
         if list(z["layers"]) != list(range(28)):
@@ -577,6 +579,13 @@ def _map_projectors(variant: str, directions: dict, stage: Path):
             wv[regime] = np.stack([np.asarray(w[ly], dtype=np.float64) @ v[ly] for ly in range(28)])
             ymuv[regime] = np.array([float(y_mu[ly, 0] @ v[ly]) for ly in range(28)])
         del w
+    # #1975 input-space parity: the raw path streams RAW rows through a map
+    # whose apply contract is WHITENED space — the #1739 incident seam, kept
+    # only as a DISCLOSED provisional read (module docstring + the cube meta
+    # "space" field). Declared, never silent; the whitened path is faithful.
+    fits.assert_map_input_space(
+        meta, None, declared_mismatch="--space raw provisional read (disclosed; natpv docstring)"
+    )
     logger.info("[map %s] apply=%r", variant, meta.get("apply"))
     return {"wv": wv, "ymuv": ymuv, "x_mu": x_mu, "x_sd": x_sd, "meta": meta, "path": str(path)}
 
@@ -752,12 +761,35 @@ def _whitened_projectors(args, directions: dict, stage: Path) -> tuple[dict, dic
         "oracle": ("context_end", None),
         ORACLE_PRE_READ: ("prefix_end", None),
     }
+    from explore_persona_space.experiments.issue_1739 import fits
+
     maps = {v: _map_projectors_raw(v, stage) for v in VARIANTS}
     out: dict[str, dict] = {r: {} for r in reads}
     prov: dict[str, dict] = {"map_meta": {v: maps[v]["meta"] for v in VARIANTS}}
     for variant in VARIANTS:
         mu, w_mat, wmeta = _load_whitening(args, variant)
         prov[variant] = {k: wmeta.get(k) for k in ("u_size", "n_u_rows", "seed", "recipe_source")}
+        # #1975 map<->whitening parity: the whitening THIS fold projects under
+        # must be the one the map payload was fit under. The loaded side's
+        # provenance is built from the persisted whitening file (artifact sha
+        # computable; seed/u_size in its meta dict, gammas in the npz `gamma`
+        # ARRAY — fp64, NOT the meta dict). Legacy payloads (no recorded
+        # provenance) degrade to a loud warning; a mismatch on comparable
+        # fields RAISES (fail fast, the #1739 incident class).
+        wpath = whitening_path(args, variant)
+        with np.load(wpath, allow_pickle=False) as z:
+            _gammas = np.asarray(z["gamma"], dtype=np.float64)
+        loaded_prov = fits.whitening_provenance(
+            whitening_file=wpath,
+            variant=variant,
+            u_label=wmeta.get("u_size"),
+            whiten_seed=wmeta.get("seed"),
+            n_u_rows=wmeta.get("n_u_rows"),
+            gammas=_gammas,
+        )
+        prov[variant]["map_whitening_parity"] = fits.check_whitening_parity(
+            (maps[variant]["meta"] or {}).get("whitening_provenance"), loaded_prov
+        )
         wants = [r for r, (wv, _) in reads.items() if wv == variant]
         for read in wants:
             map_variant = reads[read][1]
