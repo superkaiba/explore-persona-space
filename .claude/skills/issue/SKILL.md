@@ -2467,10 +2467,15 @@ else
 #     (pin tests import symbols from workflow_lint.py; syncing new pin
 #     tests against a stale linter is a collection ImportError — the
 #     2de5253e incident, 2026-07-26)
-#   FAMILY_guard: .claude/hooks <-> :(glob)tests/test_guard_*.py
+#   FAMILY_guard: .claude/hooks <-> :(glob)scripts/guard_*.sh
+#                                <-> :(glob)tests/test_guard_*.py
 #                                <-> tests/test_guard_lessons_edit.py
-#     (guard tests exercise the hook implementations; syncing tests
-#     against stale hooks fails behaviorally)
+#     (guard tests exercise the hook + guard-script implementations;
+#     syncing tests against stale hooks fails behaviorally, and the
+#     scripts/guard_*.sh PreToolUse implementations — e.g.
+#     guard_repo_root_branch.sh, guard_repo_root_pull.sh — are executed
+#     by the test_guard_* pins: syncing the tests without them red-flags
+#     main-green nodes on pure version skew — the #1860/#1862 half-sync)
 #
 # Everything else in SPECS is a singleton (its own family, no coupling):
 # .claude/agents, .claude/rules, CLAUDE.md.
@@ -2483,12 +2488,13 @@ FAMILY_OF["scripts/workflow_lint.py"]="lint"
 FAMILY_OF[":(glob)tests/test_workflow_lint*.py"]="lint"
 FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"    # test_codex_outage_docstring_pass_count_lint_stays_green imports check_asw_docstring_pass_count from workflow_lint
 FAMILY_OF[".claude/hooks"]="guard"
+FAMILY_OF[":(glob)scripts/guard_*.sh"]="guard"
 FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
 FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
 # Singletons: .claude/agents, .claude/rules, CLAUDE.md — each is its
 # own family key (set below in the pass-1 loop by defaulting to its own path).
 
-SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
+SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
 # Bounded freshness fetch (#1747 — the #1289/#1714 shape): local main can lag
 # origin on the shared root; a failed fetch degrades to last-fetched
 # origin/main — never a wedge, never a fallback to local main.
@@ -2582,7 +2588,12 @@ extend it further into `scripts/`, `tests/`, or `src/`.** The family
 exception (#1560: `scripts/workflow_lint.py`, `.claude/hooks`,
 `:(glob)tests/test_guard_*.py`, `:(glob)tests/test_workflow_lint*.py`;
 #1883 adds `:(glob)tests/test_issue_skill_*.py`, the prose-pin tests
-over `.claude/skills` content — the #1824 vintage skew)
+over `.claude/skills` content — the #1824 vintage skew; #1963 adds
+`:(glob)scripts/guard_*.sh` — the guard-script implementations the
+`:(glob)tests/test_guard_*.py` pins execute, PreToolUse hooks wired in
+`.claude/settings.json`: syncing the tests without them half-syncs the
+tree and red-flags main-green guard nodes on pure version skew, the
+#1860/#1862 incidents)
 exists because those files execute FROM the worktree tree on four
 surfaces — the Step 10d TG legs, worktree pytest / Step 9c, the hooks'
 own-tree `workflow_lint` import, and the inline gate invoked in a
@@ -2616,10 +2627,13 @@ skills content, #1883), lint
 (`scripts/workflow_lint.py` + `:(glob)tests/test_workflow_lint*.py`
 plus the explicit importers `tests/test_workflow_yaml.py` and
 `tests/test_autonomous_session_watch.py`), and guard (`.claude/hooks`
-+ `:(glob)tests/test_guard_*.py` + `tests/test_guard_lessons_edit.py`).
++ `:(glob)scripts/guard_*.sh` + `:(glob)tests/test_guard_*.py`
++ `tests/test_guard_lessons_edit.py`).
 Everything else in SPECS is a singleton (its own family). Everything ELSE keeps the original rationale: workflow-
 helper SCRIPTS are already resolved from the MAIN checkout (Step 0
-§ worktree spec-freshness: `"$REPO_ROOT"/scripts/...`), and blind-
+§ worktree spec-freshness: `"$REPO_ROOT"/scripts/...`) — except the
+guard-family `:(glob)scripts/guard_*.sh` implementations, synced +
+executed from the worktree by their pin tests (#1963) — and blind-
 syncing broader `tests/` is actively unsafe — main's newer workflow
 tests pin behavior implemented in main's newer `scripts/` + `src/`
 (e.g. `task_workflow.py`, `backends/`) that the branch predates, so a
@@ -2646,7 +2660,9 @@ landed on main after the branch point (e.g. `scripts/plan_patch.py`, #1631)
 and are absent from the stale worktree tree; the sync commit's own pre-commit
 hooks then run the (freshly-synced) `workflow_lint.py --check-references`
 against the WORKTREE tree. Rather than syncing those helpers in — banned
-above; nothing may execute `scripts/` copies from the worktree —
+above; nothing may execute `scripts/` copies from the worktree, except
+the guard-family `:(glob)scripts/guard_*.sh` implementations their
+synced pin tests execute (#1963) —
 `check_script_references` / `check_skill_references` degrade exactly that
 case to a `WARN:` on a non-main checkout (referenced target missing locally
 but present at `main`/`origin/main`), so the sync commit passes on files the
@@ -7820,6 +7836,12 @@ explicit eval-data path):
    and read its verdict; a CHANGED payload still waits for the live
    run's exit before relaunching.
 
+   Then the **Gate-fleet arbitration (#1962)** probe, per the Step 9c 1b
+   canonical paragraph:
+   `uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --fleet --exclude-issue <N>`
+   — exit 3 ⇒ bounded queue (sleep 60, elapsed cap 2700 s), then launch
+   anyway with the `[gate-fleet]` cap-expired line (fail-open).
+
    `scripts/inline_lint_gate.py` is the ONLY certifying entrypoint —
    running the component legs by hand (a manual no-flags
    `workflow_lint.py` + mapped pytest) does NOT write the
@@ -9764,6 +9786,35 @@ suite directly and posts an `epm:test-verdict` event with the result.
       "done" twice mid-run in #1606). The same probe-then-launch rule governs 1c, 1d
       (compare), both Step 10d gate blocks, and the Step 9a-ter § Inline
       payload lint gate — each names its site probe invocation in place.
+
+      **Gate-fleet arbitration (#1962) — after the per-issue probe, before
+      the launch, at every hooked gate site (9c 1b/1c/1d, both Step 10d
+      gate blocks, the Step 9a-ter inline payload lint gate; this paragraph
+      is the canonical text the other sites reference).** The single-flight
+      probe serializes THIS issue's gates only; concurrent FOREIGN-issue
+      gate trees are what stretch the ~9-12 min idle gate wall to 30-40 min
+      and feed the earlyoom/timeout kill regime (measured 2026-07-26). Run
+      `uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --fleet --exclude-issue <N>`
+      — exit 0 = under the cap, launch; exit 3 = >= `EPM_GATE_FLEET_MAX`
+      (default 2) FOREIGN issues have live gate trees (one
+      `issue=<M><TAB>pids=<k><TAB><sample argv>` line each; the ledger
+      refresh counts as pseudo-issue `refresh`). On exit 3, QUEUE via the
+      sanctioned bounded Monitor until-loop — the `--fleet` form's internal
+      signature union is FIXED and valid, so the loop can never spin on
+      exit 2:
+      `until uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --fleet --exclude-issue <N> >/dev/null || [ $SECONDS -gt 2700 ]; do sleep 60; done`
+      — then launch ANYWAY, printing one line
+      `[gate-fleet] cap-expired after 45 min — launching over cap` into the
+      gate transcript when the cap expired (FAIL-OPEN: the arbitration is a
+      politeness queue, never a hard block — the per-leg `timeout` wedge
+      bounds remain the wedge protection, and a wedged foreign gate is
+      bounded by its own leg timeouts). Record the wait outcome (launched
+      immediately / waited <n>s / cap-expired) in the gate transcript.
+      Accepted residual: two waiters can both observe a freed slot and
+      launch together — a brief overshoot back to the unarbitrated status
+      quo (the probe is read-only; no lock), and a foreign session's own
+      probe / `rm -f` wrapper argv can transiently over-count — at worst
+      one extra 60 s wait, the fail-safe direction.
       ```bash
       # Shell state does NOT persist across Bash calls — hard-guard the cd
       # INSIDE this same background call (never rely on a prior call's cwd;
@@ -9949,6 +10000,12 @@ suite directly and posts an `epm:test-verdict` event with the result.
       consuming the junit), means WAIT/reap per 1b BEFORE this launch: the
       compare-triplet `rm -f` below would clobber a live compare's outputs,
       and compare must never read a junit a live pytest is still writing.
+      Then the **Gate-fleet arbitration (#1962)** probe, per the 1b
+      canonical paragraph (compare's pristine pytest runs are the same
+      weight class):
+      `uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --fleet --exclude-issue <N>`
+      — exit 3 ⇒ bounded queue (sleep 60, elapsed cap 2700 s), then launch
+      anyway with the `[gate-fleet]` cap-expired line (fail-open).
       ```bash
       cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
       # earlyoom-protect the compare (#1045; FAIL-OPEN — never block the verdict on
@@ -11457,6 +11514,12 @@ tests BEFORE anything lands:
   wait on **process exit** (the probe exiting 0 — CLEAR), never on
   verdict-file existence alone (CLAUDE.md § Monitoring re-run discipline).
 
+  Then the **Gate-fleet arbitration (#1962)** probe, per the Step 9c 1b
+  canonical paragraph:
+  `uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --fleet --exclude-issue <N>`
+  — exit 3 ⇒ bounded queue (sleep 60, elapsed cap 2700 s), then launch
+  anyway with the `[gate-fleet]` cap-expired line (fail-open).
+
   ```bash
   # EXECUTABLE gate — forms (i) safe case and (ii) recovery share this block
   # ONE BACKGROUND Bash call (run_in_background=true) — see the bullet above.
@@ -12471,9 +12534,10 @@ else
     FAMILY_OF[":(glob)tests/test_workflow_lint*.py"]="lint"
     FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"
     FAMILY_OF[".claude/hooks"]="guard"
+    FAMILY_OF[":(glob)scripts/guard_*.sh"]="guard"
     FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
     FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
-    SPECS_10D=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
+    SPECS_10D=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
     MB_10D=$(git -C "$WT" merge-base HEAD origin/main)
     declare -A DIRTY_FAMILIES_10D
     for f in $SPECS_10D; do
@@ -13452,6 +13516,12 @@ Decision tree:
   A residual ambiguous hit that is neither this session's own gate nor a
   matching sibling gate: WAIT for exit, never kill — the same rule as this
   block's completion-read recovery arm.
+
+  Then the **Gate-fleet arbitration (#1962)** probe, per the Step 9c 1b
+  canonical paragraph:
+  `uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --fleet --exclude-issue <N>`
+  — exit 3 ⇒ bounded queue (sleep 60, elapsed cap 2700 s), then launch
+  anyway with the `[gate-fleet]` cap-expired line (fail-open).
 
   Then, from the **repo root on `main`** (never switch the branch
   there), checkout each path from the branch, stage by EXPLICIT PATH
