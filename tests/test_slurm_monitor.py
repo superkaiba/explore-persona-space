@@ -30,15 +30,18 @@ from explore_persona_space.backends.slurm import get_cluster_config
 from explore_persona_space.backends.slurm_monitor import (
     FRESHNESS_SKEW_MARGIN_SEC,
     SLURM_STATE_TO_STATUS,
+    STALL_CONSECUTIVE_TICKS,
     STALL_SEC,
     SlurmProbeError,
     _parse_scontrol_show_job,
     _parse_slurm_runtime,
+    _read_stall_streak,
     _scrub_secret_tokens,
     build_poll_result,
     fetch_started_evidence,
     query_by_name,
     query_slurm_state,
+    rsync_status_and_log,
 )
 
 
@@ -218,12 +221,15 @@ def test_build_poll_result_running_with_fresh_heartbeat(tmp_path: Path) -> None:
     assert "[phase=sft]" in poll.log_tail_excerpt
 
 
-def test_build_poll_result_stalled_when_heartbeat_stale(tmp_path: Path) -> None:
-    """SLURM RUNNING + heartbeat older than STALL_SEC ⇒ stalled."""
+def test_build_poll_result_running_when_heartbeat_stale_but_log_fresh(tmp_path: Path) -> None:
+    """#1969 log-freshness veto — the #1900 false-read replay: SLURM
+    RUNNING + heartbeat STALL_SEC+ stale while job.out is FRESH (the
+    job is demonstrably alive by its own log) ⇒ running, streak 0.
+    Pre-#1969 the heartbeat-only predicate read this tick stalled."""
     job_id = "9102"
     now = datetime.now(tz=UTC)
-    stale_ts = (now - timedelta(seconds=STALL_SEC + 60)).isoformat().replace("+00:00", "Z")
-    _seed_local_state(
+    stale_ts = (now - timedelta(seconds=STALL_SEC + 217)).isoformat().replace("+00:00", "Z")
+    local = _seed_local_state(
         tmp_path,
         job_id,
         status_json_body={
@@ -232,7 +238,7 @@ def test_build_poll_result_stalled_when_heartbeat_stale(tmp_path: Path) -> None:
             "gpu_busy": False,
             "exit_code": "",
         },
-        job_out_lines=["[phase=sft]"],
+        job_out_lines=["[phase=sft]", "INFO fresh progress line"],  # fresh mtime
     )
 
     poll = build_poll_result(
@@ -247,7 +253,9 @@ def test_build_poll_result_stalled_when_heartbeat_stale(tmp_path: Path) -> None:
         marker_poster=lambda **_kw: None,
         event_reader=lambda _issue: [],
     )
-    assert poll.status == "stalled"
+    assert poll.status == "running"
+    assert poll.stall_reason is None
+    assert not (local / "stall_streak.json").exists()
 
 
 def test_build_poll_result_pending_is_running_not_stalled(tmp_path: Path) -> None:
@@ -350,23 +358,33 @@ def test_build_poll_result_preflight_failure_shortcut(tmp_path: Path) -> None:
 
 
 def test_build_poll_result_missing_status_json_treats_as_stalled(tmp_path: Path) -> None:
-    """SLURM RUNNING + status.json absent ⇒ heartbeat infinitely old ⇒ stalled."""
+    """SLURM RUNNING + status.json absent ⇒ heartbeat infinitely old.
+    With the job.out ALSO stale, #1969 reads a suspect at tick 1 and
+    stalled at tick 2 (one extra tick vs the pre-#1969 predicate)."""
     job_id = "9106"
     now = datetime.now(tz=UTC)
-    _seed_local_state(tmp_path, job_id, status_json_body=None, job_out_lines=["random output"])
-    poll = build_poll_result(
-        issue=137,
-        job_id=job_id,
-        cluster=_nibi(),
-        scratch_dir="/scratch/tjiral/eps/issue-137",
-        log_path="/scratch/tjiral/eps/issue-137/job.out",
-        state_querier=lambda *, robot_alias, job_id: {"status": "RUNNING", "exit_code": None},
-        rsyncer=lambda **_: None,
-        now_fn=lambda: now.timestamp(),
-        marker_poster=lambda **_kw: None,
-        event_reader=lambda _issue: [],
+    local = _seed_local_state(
+        tmp_path, job_id, status_json_body=None, job_out_lines=["random output"]
     )
-    assert poll.status == "stalled"
+    old_epoch = now.timestamp() - 3600
+    os.utime(local / "job.out", (old_epoch, old_epoch))
+
+    def _tick(at: float):
+        return build_poll_result(
+            issue=137,
+            job_id=job_id,
+            cluster=_nibi(),
+            scratch_dir="/scratch/tjiral/eps/issue-137",
+            log_path="/scratch/tjiral/eps/issue-137/job.out",
+            state_querier=lambda *, robot_alias, job_id: {"status": "RUNNING", "exit_code": None},
+            rsyncer=lambda **_: None,
+            now_fn=lambda: at,
+            marker_poster=lambda **_kw: None,
+            event_reader=lambda _issue: [],
+        )
+
+    assert _tick(now.timestamp()).status == "running"  # suspect tick
+    assert _tick(now.timestamp() + STALL_SEC + 60).status == "stalled"
 
 
 # ---------------------------------------------------------------------------
@@ -538,11 +556,12 @@ def test_build_poll_result_pending_keeps_short_interval(tmp_path: Path) -> None:
 
 
 def test_build_poll_result_stalled_keeps_short_interval(tmp_path: Path) -> None:
-    """A stalled verdict (heartbeat older than STALL_SEC) never goes quiet."""
+    """Neither a suspect tick nor a stalled verdict ever goes quiet
+    (#1969: suspect via the lane anomaly; stalled via status)."""
     now = datetime.now(tz=UTC)
     kwargs = _quiet_poll_kwargs(tmp_path, "9306", now)
-    stale_ts = (now - timedelta(seconds=STALL_SEC + 60)).isoformat().replace("+00:00", "Z")
-    _seed_local_state(
+    stale_ts = (now - timedelta(seconds=3600)).isoformat().replace("+00:00", "Z")
+    local = _seed_local_state(
         tmp_path,
         "9306",
         status_json_body={
@@ -553,9 +572,16 @@ def test_build_poll_result_stalled_keeps_short_interval(tmp_path: Path) -> None:
         },
         job_out_lines=["step 100 loss=1.23"],
     )
-    poll = build_poll_result(**kwargs)
-    assert poll.status == "stalled"
-    assert poll.next_interval == POLL_INTERVAL_DEFAULT_SEC
+    old_epoch = now.timestamp() - 3600
+    os.utime(local / "job.out", (old_epoch, old_epoch))
+    first = build_poll_result(**kwargs)
+    assert first.status == "running"
+    assert first.stall_reason == "slurm_stall_suspect"
+    assert first.next_interval == POLL_INTERVAL_DEFAULT_SEC
+    kwargs["now_fn"] = lambda: now.timestamp() + STALL_SEC + 60
+    second = build_poll_result(**kwargs)
+    assert second.status == "stalled"
+    assert second.next_interval == POLL_INTERVAL_DEFAULT_SEC
 
 
 # ---------------------------------------------------------------------------
@@ -1155,7 +1181,8 @@ def test_monitor_ignores_prior_attempt_heartbeat_just_after_submit(tmp_path: Pat
 
 def test_monitor_still_stalls_long_after_submit_without_fresh_heartbeat(tmp_path: Path) -> None:
     """The floor only protects the young-job window: a job submitted
-    well past STALL_SEC ago with no fresh heartbeat is still stalled."""
+    well past STALL_SEC ago with no fresh heartbeat AND no log output is
+    still stalled — suspect at tick 1, stalled at tick 2 (#1969)."""
     job_id = "9602"
     now = datetime.now(tz=UTC)
     stale_ts = (now - timedelta(hours=2)).isoformat().replace("+00:00", "Z")
@@ -1165,20 +1192,26 @@ def test_monitor_still_stalls_long_after_submit_without_fresh_heartbeat(tmp_path
         status_json_body={"phase": "sft", "heartbeat_ts": stale_ts, "gpu_busy": False},
         job_out_lines=None,
     )
-    poll = build_poll_result(
-        issue=137,
-        job_id=job_id,
-        cluster=_nibi(),
-        scratch_dir="/scratch/tjiral/eps/issue-137",
-        log_path="/scratch/tjiral/eps/issue-137/job.out",
-        state_querier=lambda *, robot_alias, job_id: {"status": "RUNNING", "exit_code": None},
-        rsyncer=lambda **_: None,
-        now_fn=lambda: now.timestamp(),
-        marker_poster=lambda **_kw: None,
-        event_reader=lambda _issue: [],
-        submitted_at=now.timestamp() - (STALL_SEC + FRESHNESS_SKEW_MARGIN_SEC + 120),
-    )
-    assert poll.status == "stalled"
+
+    def _tick(at: float):
+        return build_poll_result(
+            issue=137,
+            job_id=job_id,
+            cluster=_nibi(),
+            scratch_dir="/scratch/tjiral/eps/issue-137",
+            log_path="/scratch/tjiral/eps/issue-137/job.out",
+            state_querier=lambda *, robot_alias, job_id: {"status": "RUNNING", "exit_code": None},
+            rsyncer=lambda **_: None,
+            now_fn=lambda: at,
+            marker_poster=lambda **_kw: None,
+            event_reader=lambda _issue: [],
+            submitted_at=now.timestamp() - (STALL_SEC + FRESHNESS_SKEW_MARGIN_SEC + 120),
+        )
+
+    first = _tick(now.timestamp())
+    assert first.status == "running"
+    assert first.stall_reason == "slurm_stall_suspect"
+    assert _tick(now.timestamp() + STALL_SEC + 60).status == "stalled"
 
 
 def test_monitor_ignores_prior_attempt_preflight_marker(tmp_path: Path) -> None:
@@ -1213,7 +1246,8 @@ def test_monitor_ignores_prior_attempt_preflight_marker(tmp_path: Path) -> None:
 
 def test_monitor_without_submitted_at_keeps_legacy_behavior(tmp_path: Path) -> None:
     """Back-compat: handles without a ``submitted_at`` stamp (pre-fix
-    sidecars, reconnect handles) keep the ungated stall semantics."""
+    sidecars, reconnect handles) keep the ungated C2 stall semantics —
+    still stalled once the #1969 streak reaches two ticks."""
     job_id = "9604"
     now = datetime.now(tz=UTC)
     stale_ts = (now - timedelta(seconds=STALL_SEC + 60)).isoformat().replace("+00:00", "Z")
@@ -1223,19 +1257,23 @@ def test_monitor_without_submitted_at_keeps_legacy_behavior(tmp_path: Path) -> N
         status_json_body={"phase": "sft", "heartbeat_ts": stale_ts, "gpu_busy": False},
         job_out_lines=None,
     )
-    poll = build_poll_result(
-        issue=137,
-        job_id=job_id,
-        cluster=_nibi(),
-        scratch_dir="/scratch/tjiral/eps/issue-137",
-        log_path="/scratch/tjiral/eps/issue-137/job.out",
-        state_querier=lambda *, robot_alias, job_id: {"status": "RUNNING", "exit_code": None},
-        rsyncer=lambda **_: None,
-        now_fn=lambda: now.timestamp(),
-        marker_poster=lambda **_kw: None,
-        event_reader=lambda _issue: [],
-    )
-    assert poll.status == "stalled"
+
+    def _tick(at: float):
+        return build_poll_result(
+            issue=137,
+            job_id=job_id,
+            cluster=_nibi(),
+            scratch_dir="/scratch/tjiral/eps/issue-137",
+            log_path="/scratch/tjiral/eps/issue-137/job.out",
+            state_querier=lambda *, robot_alias, job_id: {"status": "RUNNING", "exit_code": None},
+            rsyncer=lambda **_: None,
+            now_fn=lambda: at,
+            marker_poster=lambda **_kw: None,
+            event_reader=lambda _issue: [],
+        )
+
+    assert _tick(now.timestamp()).status == "running"  # suspect tick
+    assert _tick(now.timestamp() + STALL_SEC + 60).status == "stalled"
 
 
 # ---------------------------------------------------------------------------
@@ -1616,7 +1654,10 @@ def test_non_sentinel_drain_cluster_makes_no_ssh_call(tmp_path: Path) -> None:
     )
     assert poll.sentinels_processed == 0
     assert poll.gate is None
-    assert poll.status == "stalled"  # no heartbeat — base semantics untouched
+    # No heartbeat but a FRESH job.out — #1969's log-freshness veto reads
+    # running; the drain path left the base stall semantics untouched.
+    assert poll.status == "running"
+    assert poll.stall_reason is None
 
 
 def test_drain_shell_includes_scratch_fallback_glob(monkeypatch) -> None:
@@ -1971,3 +2012,274 @@ def test_done_evidence_predicate_matches_template_producer(tmp_path: Path) -> No
         now=now,
     )
     assert poll.status == "dead"
+
+
+# ---------------------------------------------------------------------------
+# #1969 — stall grace: log-freshness veto + consecutive-tick streak +
+# transport-degraded skip (plan pin tests; see slurm_monitor module
+# docstring § Stall semantics)
+# ---------------------------------------------------------------------------
+
+
+def _stall_kwargs(
+    job_id: str,
+    *,
+    at: float,
+    run_time_sec: int | None = 7200,
+    rsyncer=None,
+    marker_poster=None,
+    event_reader=None,
+) -> dict:
+    """build_poll_result kwargs for the #1969 stall pins: SLURM RUNNING,
+    RunTime past the early-run window (so the quiet interval is live and
+    the interval asserts are real pins), no gate / sentinel activity."""
+    state: dict = {"status": "RUNNING", "exit_code": None}
+    if run_time_sec is not None:
+        state["run_time_sec"] = run_time_sec
+    return {
+        "issue": 137,
+        "job_id": job_id,
+        "cluster": _nibi(),
+        "scratch_dir": "/scratch/tjiral/eps/issue-137",
+        "log_path": "/scratch/tjiral/eps/issue-137/job.out",
+        "state_querier": lambda *, robot_alias, job_id: dict(state),
+        "rsyncer": rsyncer or (lambda **_: None),
+        "now_fn": lambda: at,
+        "marker_poster": marker_poster or (lambda **_kw: None),
+        "event_reader": event_reader or (lambda _issue: []),
+    }
+
+
+def _seed_stale_both(tmp_path: Path, job_id: str, now: datetime, *, age_sec: int = 3600) -> Path:
+    """Seed status.json + job.out with BOTH signals ``age_sec`` stale.
+
+    The job.out carries NO ``[phase=...]`` line so ``new_milestone`` is
+    False and the quiet-interval asserts are real pins.
+    """
+    stale_ts = (now - timedelta(seconds=age_sec)).isoformat().replace("+00:00", "Z")
+    local = _seed_local_state(
+        tmp_path,
+        job_id,
+        status_json_body={
+            "phase": "sft",
+            "heartbeat_ts": stale_ts,
+            "gpu_busy": False,
+            "exit_code": "",
+        },
+        job_out_lines=["step 100 loss=1.23"],
+    )
+    old_epoch = now.timestamp() - age_sec
+    os.utime(local / "job.out", (old_epoch, old_epoch))
+    return local
+
+
+def test_stall_consecutive_ticks_constant_pinned() -> None:
+    """N=2: one tick is 540 s > STALL_SEC, so one silently-failed rsync
+    ages both artifacts past the threshold — a single tick must never
+    kill the run's orchestration (#1969 plan constant)."""
+    assert STALL_CONSECUTIVE_TICKS == 2
+
+
+def test_stall_suspect_first_tick_running_short_interval_streak_one(tmp_path: Path) -> None:
+    """Pin 2: hb stale + log stale, tick 1 ⇒ running with
+    stall_reason="slurm_stall_suspect", streak file == 1, and the SHORT
+    interval (the suspect anomaly vetoes the otherwise-quiet tick)."""
+    job_id = "9701"
+    now = datetime.now(tz=UTC)
+    _seed_stale_both(tmp_path, job_id, now)
+    poll = build_poll_result(**_stall_kwargs(job_id, at=now.timestamp()))
+    assert poll.status == "running"
+    assert poll.stall_reason == "slurm_stall_suspect"
+    assert _read_stall_streak(job_id) == (1, pytest.approx(now.timestamp()))
+    assert poll.new_milestone is False
+    assert poll.next_interval == POLL_INTERVAL_DEFAULT_SEC
+
+
+def test_stall_second_tick_after_stall_sec_reports_stalled(tmp_path: Path) -> None:
+    """Pin 3: the SAME condition on a second tick >= STALL_SEC later ⇒
+    stalled, with the machine-readable infra-routing reason."""
+    job_id = "9702"
+    now = datetime.now(tz=UTC)
+    _seed_stale_both(tmp_path, job_id, now)
+    first = build_poll_result(**_stall_kwargs(job_id, at=now.timestamp()))
+    assert first.status == "running"
+    second = build_poll_result(**_stall_kwargs(job_id, at=now.timestamp() + STALL_SEC + 60))
+    assert second.status == "stalled"
+    assert second.stall_reason == "slurm_heartbeat_and_log_stale"
+    assert second.pid_alive is False
+    assert second.next_interval == POLL_INTERVAL_DEFAULT_SEC
+
+
+def test_stall_rapid_second_poll_does_not_reach_stalled(tmp_path: Path) -> None:
+    """Pin 3b (time gate): a second poll SECONDS after the first — a
+    manual poll beside the cron tick — must NOT reach streak 2 on one
+    silently-failed rsync; still running/suspect, streak stays 1."""
+    job_id = "9703"
+    now = datetime.now(tz=UTC)
+    _seed_stale_both(tmp_path, job_id, now)
+    build_poll_result(**_stall_kwargs(job_id, at=now.timestamp()))
+    rapid = build_poll_result(**_stall_kwargs(job_id, at=now.timestamp() + 5))
+    assert rapid.status == "running"
+    assert rapid.stall_reason == "slurm_stall_suspect"
+    assert _read_stall_streak(job_id)[0] == 1
+
+
+def test_stall_healthy_tick_resets_streak(tmp_path: Path) -> None:
+    """Pin 4: a healthy tick after a suspect tick resets the streak to
+    0, so the NEXT stale tick is suspect again — never stalled."""
+    job_id = "9704"
+    now = datetime.now(tz=UTC)
+    _seed_stale_both(tmp_path, job_id, now)
+    build_poll_result(**_stall_kwargs(job_id, at=now.timestamp()))
+    assert _read_stall_streak(job_id)[0] == 1
+
+    # Healthy tick: fresh heartbeat + fresh log at t2.
+    t2 = now + timedelta(seconds=600)
+    fresh_ts = t2.isoformat().replace("+00:00", "Z")
+    _seed_local_state(
+        tmp_path,
+        job_id,
+        status_json_body={
+            "phase": "sft",
+            "heartbeat_ts": fresh_ts,
+            "gpu_busy": True,
+            "exit_code": "",
+        },
+        job_out_lines=["step 200 loss=1.10"],
+    )
+    local = tmp_path / f"slurm-{job_id}"
+    os.utime(local / "job.out", (t2.timestamp(), t2.timestamp()))
+    healthy = build_poll_result(**_stall_kwargs(job_id, at=t2.timestamp()))
+    assert healthy.status == "running"
+    assert healthy.stall_reason is None
+    assert _read_stall_streak(job_id)[0] == 0
+
+    # Stale again at t3: suspect (streak restarts at 1), NOT stalled.
+    t3 = t2 + timedelta(seconds=600)
+    again = build_poll_result(**_stall_kwargs(job_id, at=t3.timestamp()))
+    assert again.status == "running"
+    assert again.stall_reason == "slurm_stall_suspect"
+    assert _read_stall_streak(job_id)[0] == 1
+
+
+def test_stall_transport_degraded_skips_evaluation(tmp_path: Path) -> None:
+    """Pin 5: rsyncer returns False (transport-class failure) ⇒ NO stall
+    evaluation this tick — status per SLURM state, streak neither
+    incremented nor reset, short interval, and the cluster-poll note
+    records transport_degraded=true + the untouched streak."""
+    job_id = "9705"
+    now = datetime.now(tz=UTC)
+    _seed_stale_both(tmp_path, job_id, now)
+    # Pre-seed a live streak from a prior suspect tick.
+    local = tmp_path / f"slurm-{job_id}"
+    (local / "stall_streak.json").write_text(
+        json.dumps({"streak": 1, "updated_ts": now.timestamp() - 600})
+    )
+    captured: list[dict] = []
+    poll = build_poll_result(
+        **_stall_kwargs(
+            job_id,
+            at=now.timestamp(),
+            rsyncer=lambda **_: False,
+            marker_poster=_capture_markers(captured),
+        )
+    )
+    assert poll.status == "running"  # per SLURM state — no stall read
+    assert poll.stall_reason is None
+    assert _read_stall_streak(job_id) == (1, pytest.approx(now.timestamp() - 600))
+    assert poll.next_interval == POLL_INTERVAL_DEFAULT_SEC
+    polls = [m for m in captured if m.get("marker") == "epm:cluster-poll"]
+    assert polls, "first observation must post epm:cluster-poll"
+    body = json.loads(polls[0]["note"])
+    assert body["transport_degraded"] is True
+    assert body["stall_streak"] == 1
+
+
+def test_stall_legacy_none_rsyncer_evaluates_normally(tmp_path: Path) -> None:
+    """Pin 6 (back-compat): a legacy/stub rsyncer returning None is NOT
+    transport-degraded — the monitor-side check is ``ret is False`` —
+    so stall evaluation runs normally (streak file written)."""
+    job_id = "9706"
+    now = datetime.now(tz=UTC)
+    _seed_stale_both(tmp_path, job_id, now)
+    poll = build_poll_result(**_stall_kwargs(job_id, at=now.timestamp(), rsyncer=lambda **_: None))
+    assert poll.stall_reason == "slurm_stall_suspect"
+    assert (tmp_path / f"slurm-{job_id}" / "stall_streak.json").exists()
+
+
+def test_stall_both_artifacts_missing_stalls_at_second_tick(tmp_path: Path) -> None:
+    """Pin 7 (weakening preserved, +1 tick): a job writing nothing
+    anywhere — status.json AND job.out both missing — with run age past
+    STALL_SEC is suspect at tick 1 and stalled at tick 2."""
+    job_id = "9707"
+    now = datetime.now(tz=UTC)
+    _seed_local_state(tmp_path, job_id, status_json_body=None, job_out_lines=None)
+    first = build_poll_result(**_stall_kwargs(job_id, at=now.timestamp()))
+    assert first.status == "running"
+    assert first.stall_reason == "slurm_stall_suspect"
+    second = build_poll_result(**_stall_kwargs(job_id, at=now.timestamp() + STALL_SEC + 60))
+    assert second.status == "stalled"
+    assert second.stall_reason == "slurm_heartbeat_and_log_stale"
+
+
+def test_stall_young_job_both_missing_stays_running(tmp_path: Path) -> None:
+    """Pin 8 (C2 floor kept): a job that has only RUN for 60 s can be at
+    most 60 s stale — both artifacts missing reads running, streak 0."""
+    job_id = "9708"
+    now = datetime.now(tz=UTC)
+    _seed_local_state(tmp_path, job_id, status_json_body=None, job_out_lines=None)
+    poll = build_poll_result(**_stall_kwargs(job_id, at=now.timestamp(), run_time_sec=60))
+    assert poll.status == "running"
+    assert poll.stall_reason is None
+    assert not (tmp_path / f"slurm-{job_id}" / "stall_streak.json").exists()
+
+
+# ---------------------------------------------------------------------------
+# #1969 — rsync_status_and_log transport-verdict unit pins (plan test 9)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("rc", "expected"),
+    [
+        (0, True),
+        (23, True),  # source file missing — never-writing job, NOT transport
+        (24, True),  # source file vanished mid-transfer — same class
+        (255, False),  # ssh error
+        (30, False),  # rsync timeout in data send/receive
+        (12, False),  # protocol-stream error — the unlisted-rc DEFAULT pin
+        (1, False),  # any other non-zero rc defaults to transport-class
+    ],
+)
+def test_rsync_status_and_log_rc_verdicts(monkeypatch, tmp_path, rc: int, expected: bool) -> None:
+    """Plan test 9: rc → transport verdict, incl. the unlisted-rc
+    fail-closed default (rc 12 / rc 1 → False)."""
+    monkeypatch.setattr(subprocess, "run", _fake_run_factory([_proc(rc), _proc(rc)]))
+    ok = rsync_status_and_log(
+        robot_alias="nibi-robot", scratch_dir="/scratch/x/eps/issue-137", job_id="9801"
+    )
+    assert ok is expected
+
+
+def test_rsync_status_and_log_timeout_returns_false(monkeypatch, tmp_path) -> None:
+    """Plan test 9: a subprocess.TimeoutExpired is CAUGHT (pre-#1969 it
+    crashed the tick) and reads as transport-degraded."""
+
+    def _raise(argv, **_kw):
+        raise subprocess.TimeoutExpired(cmd=argv, timeout=30)
+
+    monkeypatch.setattr(subprocess, "run", _raise)
+    ok = rsync_status_and_log(
+        robot_alias="nibi-robot", scratch_dir="/scratch/x/eps/issue-137", job_id="9802"
+    )
+    assert ok is False
+
+
+def test_rsync_status_and_log_mixed_ok_then_transport_fails(monkeypatch, tmp_path) -> None:
+    """ANY transport-class failure among the pulls degrades the tick,
+    even when the other pull succeeded."""
+    monkeypatch.setattr(subprocess, "run", _fake_run_factory([_proc(0), _proc(255)]))
+    ok = rsync_status_and_log(
+        robot_alias="nibi-robot", scratch_dir="/scratch/x/eps/issue-137", job_id="9803"
+    )
+    assert ok is False

@@ -46,7 +46,7 @@ FailureClass = Literal["infra", "code"]
 # conservative `code` default. Each reason here is recoverable by an
 # experimenter respawn (NOT a code fix), so it belongs on the infra row of
 # the Step 7 routing table. Keep in sync with the `stall_reason` values
-# `poll_pipeline.py` can set.
+# `poll_pipeline.py` / `backends/slurm_monitor.py` can set.
 #   - "vllm_worker_dead_zombie_gpu": a CUDA-worker PID died but holds VRAM
 #     while the vLLM EngineCore main process stays alive (#664 r8); the
 #     experimenter respawn reaps the orphan by exact PID and relaunches on
@@ -62,8 +62,20 @@ FailureClass = Literal["infra", "code"]
 #     construction, so recovery kills them CONTAINER-side by
 #     distinctive-cmdline/session match (`pgrep -af` inside the pod),
 #     never by the nvidia-smi-reported host PID, then relaunches.
+#   - "slurm_heartbeat_and_log_stale": the SLURM monitor's stall verdict
+#     (#1969, `backends/slurm_monitor.build_poll_result`) — SLURM says
+#     RUNNING while the rsync'd status.json heartbeat AND job.out mtime
+#     are BOTH older than STALL_SEC for >= 2 consecutive ticks. A
+#     genuine cluster-side silent hang: its log tail carries no
+#     traceback/OOM pattern, so the regex fallback would misroute it to
+#     `code`; the recovery is an experimenter respawn (scancel +
+#     resubmit), not a code fix.
 STALL_REASON_INFRA: frozenset[str] = frozenset(
-    {"vllm_worker_dead_zombie_gpu", "persistent_wedge_veto_yield"}
+    {
+        "vllm_worker_dead_zombie_gpu",
+        "persistent_wedge_veto_yield",
+        "slurm_heartbeat_and_log_stale",
+    }
 )
 
 # Infra log patterns (regex, case-insensitive). This module is the source of
