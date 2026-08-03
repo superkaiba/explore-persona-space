@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2044,
+  "highest_id": 2045,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8089,6 +8089,13 @@
       "path": "tasks/proposed/2044",
       "status": "proposed",
       "title": "daily-fix: runbook markers carry verified-by ran|read"
+    },
+    "2045": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2045",
+      "status": "proposed",
+      "title": "daily-fix: projected-vs-realized + fallback-slice claims"
     },
     "205": {
       "has_clean_result": false,
