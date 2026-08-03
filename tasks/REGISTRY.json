@@ -7342,8 +7342,8 @@
     "1948": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1948",
-      "status": "proposed",
+      "path": "tasks/planning/1948",
+      "status": "planning",
       "title": "workflow-fix: round-unique inline lint-gate payload path"
     },
     "1949": {
