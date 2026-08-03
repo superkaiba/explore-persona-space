@@ -105,3 +105,37 @@ Requirements for this task:
 Free companion available now (0 GPU, activations already captured): refit the existing
 character pairs on their conv_id intersections (1,658 / 1,081 for the HELIOS pairs) to get a
 matched base-vs-instruct read at n~2,000 before the rebuild lands.
+
+### Matching, maximal form (user directive 2026-08-03: "make sure the newly running thing matches as much as possible")
+
+Beyond the five requirements above, match every remaining nuisance axis that can be matched:
+
+6. VERBATIM QUESTION across all framings. Already satisfied by the new scaffold generator
+   ("Use this question verbatim as the one question in the scene.",
+   scripts/issue1345_gen_scaffolds.py) and it FIXES a real defect in the old rig, whose
+   free-form prompt said "rephrase naturally; do not copy verbatim" — meaning chat and story
+   cells did not even share question text. Do not regress this.
+
+7. SHARED FOLD MAP. One conv_id -> fold assignment computed ONCE and reused by every cell in
+   the lattice, so held-out sets are identical across cells and a ceiling difference cannot
+   come from fold luck. Conversation-grouped as today; the map is an artifact of the run.
+
+8. EQUALIZE-DOWN n. After intersecting, every compared cell trains and evaluates on the SAME
+   row count. Discard surplus rather than let n vary per cell — n differences move both the
+   ceiling and the estimator regime, and the current corpus already varies 1,997-2,187.
+
+9. SHARED SEED across cells for every sampling decision (draw, fold, null draws).
+
+10. ANSWER-LENGTH parity REPORTED per cell. v_A is a token-mean over the answer span, so a
+    systematic length difference between inserted and on-policy answers changes the target's
+    pooling denominator. Report per-cell answer-token length distributions; if inserted and
+    on-policy differ materially, add a length-stratified companion read.
+
+11. OPTIONAL, RECOMMENDED — splice-reused on-policy answers as a framing control. True
+    on-policy means generating in situ per framing, which leaves framings unmatched on answer
+    text. Generating the on-policy answer ONCE per (conversation, character, model) and then
+    SPLICING it into every framing gives a byte-matched cross-framing read for the on-policy
+    condition too. Both variants are informative: in-situ answers the on-policy question,
+    spliced-reuse isolates framing. Cost is capture-only for the spliced variant since the
+    answers already exist. The planner decides whether the extra cells fit the budget and
+    states the decision either way.
