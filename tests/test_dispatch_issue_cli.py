@@ -72,6 +72,28 @@ from explore_persona_space.backends.issue_dispatch import (
     write_handle_sidecar,
 )
 
+
+@pytest.fixture(autouse=True)
+def _gcp_rollback_build_for_legacy_suite(request, monkeypatch):
+    """Run the legacy ``--backend gcp`` CLI suite under the #2028 rollback build.
+
+    GCP provisioning is disabled by policy (#2028,
+    ``router.GCP_PROVISIONING_DISABLED = True``); the gated launch paths this
+    module's ``--backend gcp`` tests thread flags through are KEPT and must
+    stay test-covered (the single-constant rollback lever), so this autouse
+    fixture runs every test with the gate OFF. Flag-ON production pins carry
+    ``@pytest.mark.gcp_policy_default``.
+    """
+    if request.node.get_closest_marker("gcp_policy_default"):
+        return
+    from explore_persona_space.backends import router as router_module
+
+    monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", False)
+    monkeypatch.setattr(
+        router_module, "DEFAULT_AUTO_LANE_ORDER", router_module._default_auto_lane_order()
+    )
+
+
 # ---------------------------------------------------------------------------
 # Mock backend + dependency factory
 # ---------------------------------------------------------------------------
@@ -895,11 +917,38 @@ def test_launch_unrelated_calledprocesserror_keeps_generic_rc4(monkeypatch, tmp_
 def test_exit_still_waiting_matches_pod_lifecycle() -> None:
     """The CLI mirrors ``pod_lifecycle.EXIT_STILL_WAITING`` rather than
     importing it (import-light contract) — pin the two equal so a future
-    renumbering on either side fails loudly here."""
+    renumbering on either side fails loudly here. #1603 adds a THIRD mirror
+    (``backends/runpod.py``, the router terminal rung's consumer) to the
+    same parity pin."""
+    from explore_persona_space.backends.runpod import EXIT_STILL_WAITING as runpod_code
     from scripts.dispatch_issue import EXIT_STILL_WAITING as cli_code
     from scripts.pod_lifecycle import EXIT_STILL_WAITING as pl_code
 
-    assert cli_code == pl_code == 75
+    assert cli_code == pl_code == runpod_code == 75
+
+
+def test_provision_still_waiting_accepts_pod_lifecycle_process_error_subclass() -> None:
+    """#1603 test 6: ``PodLifecycleProcessError`` (the #1465 stderr-tail relay
+    subclass — returncode + cmd ride verbatim) satisfies
+    ``_provision_still_waiting``'s TWO conjuncts end-to-end: returncode 75
+    AND a cmd naming ``pod_lifecycle.py`` + the exact part ``provision`` (the
+    real provision cmd shape). Each conjunct is also pinned individually:
+    the same real-shaped cmd at rc=1 is rejected, and rc=75 with a
+    non-provision cmd shape is rejected (an unrelated rc-75 subprocess from
+    another lane stays out of the still-waiting branch)."""
+    from explore_persona_space.backends.runpod import PodLifecycleProcessError
+    from scripts.dispatch_issue import _provision_still_waiting
+
+    real_cmd = [
+        "/usr/bin/python3",
+        "/repo/scripts/pod_lifecycle.py",
+        "provision",
+        "--issue",
+        "1603",
+    ]
+    assert _provision_still_waiting(PodLifecycleProcessError(75, real_cmd)) is True
+    assert _provision_still_waiting(PodLifecycleProcessError(1, real_cmd)) is False
+    assert _provision_still_waiting(PodLifecycleProcessError(75, ["x"])) is False
 
 
 def test_launch_hydra_args_threaded_into_spec(monkeypatch, tmp_path) -> None:
@@ -3753,6 +3802,152 @@ def test_finalize_fetch_results_crash_still_reaches_confirm_gate(monkeypatch, tm
 
 
 # ---------------------------------------------------------------------------
+# issue #1973 — typed FetchResultsError surfaces as a NON-ok finalize verdict
+# ---------------------------------------------------------------------------
+
+
+def test_finalize_typed_fetch_failure_exits_3_teardown_skipped_sidecar_kept(
+    monkeypatch, tmp_path
+) -> None:
+    """The #1768 fix: a TYPED ``FetchResultsError`` from ``fetch_results``
+    surfaces as exit 3 / ``reason: fetch_results_failed`` even though the
+    confirm gate PASSES (artifacts already durable from an earlier pull) —
+    teardown NOT called, sidecar NOT retired (finalize re-runnable)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 407, kind="nibi")
+    nibi = _MockBackend(kind="nibi", confirm_passes=True)
+
+    from explore_persona_space.backends.base import FetchResultsError
+
+    def typed_fetch(_handle):
+        nibi.call_sequence.append("fetch_results")
+        raise FetchResultsError("rsync pull exited 30 — staging kept for resume")
+
+    nibi.fetch_results = typed_fetch  # type: ignore[method-assign]
+    factory = _build_mock_factory(nibi=nibi)
+
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_upload_verification_currency_blocker", lambda _issue: None)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "finalize",
+                "--issue",
+                "407",
+                "--handle-file",
+                str(tmp_path / "issue-407-handle.json"),
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 3
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is False
+    assert body["phase"] == "fetch_results"
+    assert body["reason"] == "fetch_results_failed"
+    assert "rsync pull exited 30" in body["detail"]
+    assert body["chosen_kind"] == "nibi"
+    assert body["pod_name"] == "pod-407"
+    # The confirm gate STILL ran (evidence surfacing); teardown did NOT.
+    assert len(nibi.confirms) == 1
+    assert len(nibi.teardowns) == 0
+    # Sidecar NOT retired — finalize stays re-runnable against this handle.
+    assert (tmp_path / "issue-407-handle.json").exists()
+    assert not (tmp_path / "issue-407-handle.json.finalized").exists()
+
+
+def test_finalize_typed_fetch_failure_exits_3_even_with_skip_confirm_flag(
+    monkeypatch, tmp_path
+) -> None:
+    """``--skip-confirm-artifacts`` skips the confirm gate, NOT the typed
+    fetch-failure verdict — a partial pull never hides behind the skip
+    flag's forced teardown."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 408, kind="nibi")
+    nibi = _MockBackend(kind="nibi", confirm_passes=True)
+
+    from explore_persona_space.backends.base import FetchResultsError
+
+    def typed_fetch(_handle):
+        raise FetchResultsError("local merge exited 11 (disk-full class?)")
+
+    nibi.fetch_results = typed_fetch  # type: ignore[method-assign]
+    factory = _build_mock_factory(nibi=nibi)
+
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_upload_verification_currency_blocker", lambda _issue: None)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "finalize",
+                "--issue",
+                "408",
+                "--skip-confirm-artifacts",
+                "--handle-file",
+                str(tmp_path / "issue-408-handle.json"),
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 3
+    body = json.loads(buf.getvalue().strip())
+    assert body["reason"] == "fetch_results_failed"
+    assert len(nibi.confirms) == 0  # gate skipped by the flag
+    assert len(nibi.teardowns) == 0  # teardown still refused
+
+
+def test_finalize_generic_fetch_crash_with_confirm_pass_still_tears_down(
+    monkeypatch, tmp_path
+) -> None:
+    """Contrast pin: the pre-existing GENERIC-Exception fetch branch is
+    unchanged — an untyped fetch crash logs + continues, and a confirm
+    PASS proceeds to teardown (only the TYPED ``FetchResultsError``
+    blocks the ok verdict)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 409, kind="nibi")
+    nibi = _MockBackend(kind="nibi", confirm_passes=True)
+
+    def exploding_fetch(_handle):
+        raise OSError("scp transport refused")
+
+    nibi.fetch_results = exploding_fetch  # type: ignore[method-assign]
+    factory = _build_mock_factory(nibi=nibi)
+
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_upload_verification_currency_blocker", lambda _issue: None)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "finalize",
+                "--issue",
+                "409",
+                "--handle-file",
+                str(tmp_path / "issue-409-handle.json"),
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    assert body["phase"] == "teardown"
+    assert len(nibi.confirms) == 1
+    assert len(nibi.teardowns) == 1
+
+
+# ---------------------------------------------------------------------------
 # issue #909 — --execute-workload flag surface + CLI failure/success contracts
 # ---------------------------------------------------------------------------
 
@@ -4534,3 +4729,270 @@ def test_min_gpu_mem_gb_absent_leaves_extra_unset(monkeypatch, tmp_path) -> None
         )
     assert rc == 0
     assert "min_gpu_mem_gb" not in gcp.launches[0].extra
+
+
+# ---------------------------------------------------------------------------
+# issue #1609 — fellows reconnect threads the suffixed job name
+# ---------------------------------------------------------------------------
+
+
+def test_reconnect_fellows_threads_job_name_suffix(monkeypatch) -> None:
+    """#1609 rule 8: the dispatch ``_reconnect`` closure passes the
+    SUFFIXED job name to ``query_by_name`` for the fellows lane — the
+    SAME name the launch path stamped onto the sbatch. A missed
+    threading site would probe ``eps-issue-<N>`` while the live job is
+    named ``eps-issue-<N>-superkaiba`` (by-name reconnect broken; the
+    park/cancel chain would then double-submit)."""
+    import dataclasses
+
+    from explore_persona_space.backends import gcp as gcp_module
+    from explore_persona_space.backends import slurm as slurm_module
+    from explore_persona_space.backends import slurm_monitor as slurm_monitor_module
+    from scripts import dispatch_issue as di
+
+    captured: dict[str, Any] = {}
+
+    def _fake_query_by_name(*, robot_alias, job_name, timeout=30):  # type: ignore[no-untyped-def]
+        captured["robot_alias"] = robot_alias
+        captured["job_name"] = job_name
+        return None  # "no live job"
+
+    monkeypatch.setattr(slurm_monitor_module, "query_by_name", _fake_query_by_name)
+    monkeypatch.setattr(gcp_module, "reconnect_or_none", lambda **_kw: None)
+    monkeypatch.setattr(slurm_module, "mila_socket_alive", lambda: False)
+    # The fellows row ships dark-launched (available=False) until the live
+    # acceptance passes (#1609 §7); force it available at call time so
+    # ``_resolve_cluster_cfg`` resolves — flip-insensitive.
+    monkeypatch.setitem(
+        slurm_module.CLUSTER_CONFIGS,
+        "fellows",
+        dataclasses.replace(slurm_module.CLUSTER_CONFIGS["fellows"], available=True),
+    )
+
+    deps = di._build_production_backends()
+    spec = RunSpec(issue=1609, intent="debug", backend="fellows", cluster="fellows", extra={})
+    out = deps["reconnect_fn"](deps["free_backends"]["nibi"], "fellows", spec)
+    assert out is None, "patched query_by_name returns None (no live job)"
+    assert captured["job_name"] == "eps-issue-1609-superkaiba"
+    assert captured["robot_alias"] == "charmander"
+
+
+# ---------------------------------------------------------------------------
+# #1669 — --env-pin: threading + the parse-time guards (exit 2)
+# ---------------------------------------------------------------------------
+
+
+def _explode_factory():
+    raise AssertionError("backends must not be built when the --env-pin guard refuses")
+
+
+def test_env_pin_flag_threads_extra(monkeypatch, tmp_path) -> None:
+    """#1669: repeated ``--env-pin KEY=VALUE`` threads to
+    ``spec.extra['env_pins']`` — splitting on the FIRST '=' (implementer
+    note 4: a ``WANDB_TAGS=a=b`` value is legal)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "1586",
+                "--intent",
+                "lora-7b",
+                "--workload-cmd",
+                "bash scripts/issue1586_dispatch.sh",
+                "--env-pin",
+                "WANDB_PROJECT=issue1586_methodgen",
+                "--env-pin",
+                "WANDB_TAGS=a=b",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert nibi.launches[0].extra["env_pins"] == {
+        "WANDB_PROJECT": "issue1586_methodgen",
+        "WANDB_TAGS": "a=b",
+    }
+
+
+def test_env_pin_requires_workload_cmd_exit_2(monkeypatch, tmp_path) -> None:
+    """#1669: ``--env-pin`` on a hydra launch exits 2 at parse time (all
+    renderer insertion points are workload-cmd branches — a hydra pin
+    would silently no-op; the guard is also what keeps the GCP hydra
+    snapshot untouched by construction), BEFORE any backend is built."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    from scripts.dispatch_issue import main
+
+    with pytest.raises(SystemExit) as ei:
+        main(
+            [
+                "launch",
+                "--issue",
+                "304",
+                "--intent",
+                "lora-7b",
+                "--hydra",
+                "seed=42",
+                "--env-pin",
+                "WANDB_PROJECT=px",
+            ],
+            backends_factory=_explode_factory,
+        )
+    assert ei.value.code == 2
+
+
+def test_env_pin_rejects_non_allowlisted_key_exit_2(monkeypatch, tmp_path) -> None:
+    """#1669: a non-allowlisted key (e.g. WANDB_API_KEY — a secret key) and
+    a malformed no-'=' pair both exit 2 at parse time."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    from scripts.dispatch_issue import main
+
+    base = [
+        "launch",
+        "--issue",
+        "304",
+        "--intent",
+        "lora-7b",
+        "--workload-cmd",
+        "bash scripts/x.sh",
+    ]
+    with pytest.raises(SystemExit) as ei:
+        main([*base, "--env-pin", "WANDB_API_KEY=x"], backends_factory=_explode_factory)
+    assert ei.value.code == 2
+    with pytest.raises(SystemExit) as ei2:
+        main([*base, "--env-pin", "WANDB_PROJECT"], backends_factory=_explode_factory)
+    assert ei2.value.code == 2
+
+
+def test_env_pin_rejects_secret_shaped_value_exit_2(monkeypatch, tmp_path) -> None:
+    """#1669 belt-and-suspenders: a secret-shaped VALUE under an allowlisted
+    key (the ``--env-pin WANDB_PROJECT=$HF_TOKEN`` shell-expansion
+    accident) exits 2 at parse time."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    from scripts.dispatch_issue import main
+
+    secret_shaped = "hf_" + "A" * 20  # constructed at runtime — never a committed literal
+    with pytest.raises(SystemExit) as ei:
+        main(
+            [
+                "launch",
+                "--issue",
+                "304",
+                "--intent",
+                "lora-7b",
+                "--workload-cmd",
+                "bash scripts/x.sh",
+                "--env-pin",
+                f"WANDB_PROJECT={secret_shaped}",
+            ],
+            backends_factory=_explode_factory,
+        )
+    assert ei.value.code == 2
+
+
+# ---------------------------------------------------------------------------
+# #1835 — --extra-sync-path: threading + parse-time validation (exit 2)
+# ---------------------------------------------------------------------------
+
+
+def test_extra_sync_path_threads_extra_and_echoes_launch_json(monkeypatch, tmp_path) -> None:
+    """#1835: repeated ``--extra-sync-path`` threads NORMALIZED (dot-anchored,
+    deduped) paths to ``spec.extra['extra_sync_paths']`` as a LIST (the handle
+    sidecar JSON channel) and echoes them into the printed launch JSON line
+    (the gate->launch drift audit record)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "1835",
+                "--intent",
+                "lora-7b",
+                "--workload-cmd",
+                "bash scripts/issue1835_dispatch.sh",
+                "--extra-sync-path",
+                "eval_results/issue_1689/ladder",
+                "--extra-sync-path",
+                "./ood_eval_results/issue_5",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert nibi.launches[0].extra["extra_sync_paths"] == [
+        "./eval_results/issue_1689/ladder",
+        "./ood_eval_results/issue_5",
+    ]
+    payload = json.loads(buf.getvalue().strip().splitlines()[-1])
+    assert payload["extra_sync_paths"] == [
+        "./eval_results/issue_1689/ladder",
+        "./ood_eval_results/issue_5",
+    ]
+
+
+def test_extra_sync_path_accepted_without_workload_cmd(monkeypatch, tmp_path) -> None:
+    """#1835: UNLIKE --env-pin there is NO --workload-cmd requirement — the
+    knob is lane-scoped (consumed only by the SLURM prepare), so it rides a
+    hydra launch too (accepted on every lane, lane-inert elsewhere)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "1835",
+                "--intent",
+                "lora-7b",
+                "--hydra",
+                "seed=42",
+                "--extra-sync-path",
+                "eval_results/issue_1689/ladder",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert nibi.launches[0].extra["extra_sync_paths"] == ["./eval_results/issue_1689/ladder"]
+
+
+def test_extra_sync_path_invalid_exits_2(monkeypatch, tmp_path) -> None:
+    """#1835: an absolute path and a '..' traversal both exit 2 at parse time,
+    BEFORE any backend is built (mirrors the --env-pin guards)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    from scripts.dispatch_issue import main
+
+    base = [
+        "launch",
+        "--issue",
+        "1835",
+        "--intent",
+        "lora-7b",
+        "--workload-cmd",
+        "bash scripts/x.sh",
+    ]
+    with pytest.raises(SystemExit) as ei:
+        main([*base, "--extra-sync-path", "/abs/path"], backends_factory=_explode_factory)
+    assert ei.value.code == 2
+    with pytest.raises(SystemExit) as ei2:
+        main(
+            [*base, "--extra-sync-path", "eval_results/../secrets"],
+            backends_factory=_explode_factory,
+        )
+    assert ei2.value.code == 2

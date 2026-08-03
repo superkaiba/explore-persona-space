@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import re
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Literal
@@ -82,14 +83,133 @@ def validate_lane_suffix(suffix: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Launch env pins (#1669)
+# ---------------------------------------------------------------------------
+
+#: #1669: env-pin key ALLOWLIST — the only keys a launch may persist into the
+#: handle sidecar (``.claude/cache/issue-<N>-handle.json``) / render into lane
+#: launchers. Deliberately an allowlist, never a denylist: the sidecar is
+#: plain JSON in ``.claude/cache/``, handle fields ride ``epm:backend-selected``
+#: marker ``extra``, and GCP bakes the rendered startup script into instance
+#: metadata (readable via ``describe``), so a secret pin must be
+#: UNREPRESENTABLE, not merely discouraged. Extend by editing this frozenset
+#: (code review is the gate). Incident #1586: a wedge-failover pod rebooted
+#: with only the generic ``issue<N>`` WandB default and its runs landed in the
+#: wrong project — these keys are the launch-declared destinations a failover
+#: re-provision must inherit.
+ENV_PIN_ALLOWED_KEYS: frozenset[str] = frozenset(
+    {
+        "WANDB_PROJECT",
+        "WANDB_RUN_GROUP",
+        "WANDB_TAGS",
+        "EPM_PERSIST_ADAPTER_HF_REPO",
+        "EPM_PERSIST_ADAPTER_SUBFOLDER",
+        "EPM_UPLOAD_MERGED",
+        # #1803: the house runtime-tuning set (OOM / thread-cap remediation,
+        # incident #1739) — values stay validated single-line strings.
+        "MALLOC_ARENA_MAX",
+        "OMP_NUM_THREADS",
+        "MKL_NUM_THREADS",
+        "OPENBLAS_NUM_THREADS",
+        "NUMEXPR_NUM_THREADS",
+        # #1852: the CUDA allocator knob — gotchas.md CUDA-OOM remedy #1
+        # (expandable_segments:True; peak-resident caveat lives there too).
+        # Same runtime-tuning family as the #1803 set above.
+        "PYTORCH_CUDA_ALLOC_CONF",
+    }
+)
+
+#: Belt-and-suspenders screen against ``--env-pin WANDB_PROJECT=$HF_TOKEN``
+#: shell-expansion accidents: the ALLOWLIST is the primary secret defense
+#: (secret KEY names are unrepresentable); this regex additionally refuses a
+#: secret-shaped VALUE smuggled under an allowlisted key. Patterns mirror
+#: ``scripts/check_no_secret_shaped_strings.py``'s token families.
+_ENV_PIN_SECRET_VALUE_RE = re.compile(
+    r"(hf_[A-Za-z0-9]{16,}|ghp_[A-Za-z0-9]{16,}|github_pat_|sk-[A-Za-z0-9-]{16,}|AKIA[0-9A-Z]{16})"
+)
+
+#: Max env-pin value length — generous for WandB project/group/tag strings,
+#: tight enough that a pasted blob/credential dump cannot ride a pin.
+ENV_PIN_VALUE_MAX_LEN = 512
+
+
+def _env_pin_violation(key: object, value: object) -> str | None:
+    """Return a one-line violation reason for one (key, value) pin, or None.
+
+    Shared by the strict all-or-nothing :func:`validate_env_pins` (CLI +
+    renderer sites) and the per-key :func:`sanitize_env_pins` (failover
+    reconstructor sites, #1329 warn-only doctrine).
+    """
+    if not isinstance(key, str) or key not in ENV_PIN_ALLOWED_KEYS:
+        return f"key {key!r} not in ENV_PIN_ALLOWED_KEYS {sorted(ENV_PIN_ALLOWED_KEYS)}"
+    if not isinstance(value, str):
+        return f"{key}: value must be str, got {type(value).__name__}"
+    if not value:
+        return f"{key}: value must be non-empty"
+    if "\n" in value or "\r" in value or "\x00" in value:
+        return f"{key}: value must be single-line with no NUL"
+    if len(value) > ENV_PIN_VALUE_MAX_LEN:
+        return f"{key}: value exceeds {ENV_PIN_VALUE_MAX_LEN} chars ({len(value)})"
+    if _ENV_PIN_SECRET_VALUE_RE.search(value):
+        return f"{key}: value matches a secret-shaped token pattern"
+    return None
+
+
+def validate_env_pins(pins: Mapping[str, object] | None) -> dict[str, str]:
+    """Validate + normalize an env-pin mapping; raise ``ValueError`` on ANY violation.
+
+    Rules: key in :data:`ENV_PIN_ALLOWED_KEYS`; value a non-empty single-line
+    ``str`` (no NUL, len <= :data:`ENV_PIN_VALUE_MAX_LEN`) not matching the
+    secret-shaped-value regex. Returns ``{}`` for ``None``/empty. This is the
+    STRICT form for the CLI capture + renderer defense-in-depth sites; the
+    failover reconstructors use :func:`sanitize_env_pins` (per-key drop) so a
+    malformed pin in a hand-edited sidecar can never block a failover (#1669).
+    """
+    if pins is None:
+        return {}
+    if not isinstance(pins, Mapping):
+        raise ValueError(f"env_pins must be a mapping, got {type(pins).__name__}")
+    violations = [v for k, val in pins.items() if (v := _env_pin_violation(k, val))]
+    if violations:
+        raise ValueError("invalid env pin(s): " + "; ".join(violations))
+    return {str(k): str(v) for k, v in pins.items()}
+
+
+def sanitize_env_pins(pins: object) -> tuple[dict[str, str], list[str]]:
+    """Per-key drop-and-report variant of :func:`validate_env_pins` (#1669).
+
+    Returns ``(kept, dropped_reasons)``: every valid pin is KEPT, every
+    invalid entry is dropped with a one-line reason — so a hand-edited
+    sidecar with one stray key does not lose the valid ``WANDB_PROJECT``
+    too, and a failover is never blocked (the #1329 warn-only doctrine at
+    the ``backend_poll`` reconstructor sites). A non-mapping input drops
+    wholesale with one reason.
+    """
+    if not pins:
+        return {}, []
+    if not isinstance(pins, Mapping):
+        return {}, [f"env_pins is not a mapping: {type(pins).__name__}"]
+    kept: dict[str, str] = {}
+    dropped: list[str] = []
+    for key, value in pins.items():
+        reason = _env_pin_violation(key, value)
+        if reason is None:
+            kept[str(key)] = str(value)
+        else:
+            dropped.append(reason)
+    return kept, dropped
+
+
+# ---------------------------------------------------------------------------
 # Backend kind / cluster name typing
 # ---------------------------------------------------------------------------
 
 # ``BackendKind`` is the value of the task's ``backend:`` frontmatter. The
 # selector resolves this to a concrete :class:`ComputeBackend` instance.
 # ``cluster`` is the generic SLURM dispatch (per-cluster routing is done
-# inside the SLURM backend); ``nibi`` / ``fir`` / ``mila`` are per-cluster
-# aliases the selector accepts and maps onto ``cluster``. ``gcp``
+# inside the SLURM backend); ``nibi`` / ``fir`` / ``mila`` / ``fellows``
+# are per-cluster aliases the selector accepts and maps onto ``cluster``
+# (``fellows`` = the charmander H200 fellows cluster, #1609). ``gcp``
 # provisions an ephemeral GCE VM (intent → machine-type map inside
 # :class:`~backends.gcp.GcpBackend`) and is the auto-fallback target when
 # every free academic cluster fails the 10-minute park (router slice 5).
@@ -103,7 +223,7 @@ def validate_lane_suffix(suffix: str) -> str:
 # :func:`backends.selector._parse_backend_kind`; a caller that wants the
 # legacy RunPod default from a direct ``RunSpec()`` must set
 # ``backend="runpod"`` explicitly.
-BackendKind = Literal["runpod", "cluster", "nibi", "fir", "gcp", "mila", "auto"]
+BackendKind = Literal["runpod", "cluster", "nibi", "fir", "gcp", "mila", "fellows", "auto"]
 
 
 # ---------------------------------------------------------------------------
@@ -275,6 +395,27 @@ class BackendProbeError(RuntimeError):
 
 
 # ---------------------------------------------------------------------------
+# FetchResultsError — typed "results pull FAILED" signal for finalize
+# ---------------------------------------------------------------------------
+
+
+class FetchResultsError(RuntimeError):
+    """A backend's ``fetch_results`` pull FAILED (transfer error / timeout).
+
+    Raised when the results pull into the live ``eval_results/`` +
+    ``figures/`` trees could not complete — an interrupted network rsync,
+    a timeout kill, or a failed local staging merge.
+    ``scripts/dispatch_issue.py::_cmd_finalize`` catches this SPECIFICALLY
+    (before its generic fetch-crash handler) and converts it into a NON-ok
+    finalize verdict: exit 3, ``reason: fetch_results_failed``, teardown
+    SKIPPED, sidecar NOT retired — so a partial pull can never hide behind
+    an ``ok: true`` finalize (incident #1768 r3 / task #1973: an
+    interrupted 4.7 GB pull stranded a partial tree under ``eval_results/``
+    while finalize reported ok).
+    """
+
+
+# ---------------------------------------------------------------------------
 # PollResult — same shape as scripts/poll_pipeline.py::PollResult
 # ---------------------------------------------------------------------------
 
@@ -350,16 +491,22 @@ class PollResult:
     # Machine-readable reason a non-``running`` verdict landed (#664), mirroring
     # ``scripts/poll_pipeline.PollResult.stall_reason``. ``None`` on a healthy
     # ``running`` tick and on generic log+GPU+CPU stalls without a specific
-    # cause; currently set only for the zombie-GPU-allocation stall the RunPod
-    # lane detects (``"vllm_worker_dead_zombie_gpu"`` — a dead CUDA-worker PID
-    # still holding VRAM while the EngineCore main process keeps the
-    # session-CPU-advancing override alive, which would otherwise mask the hang
-    # as ``running`` forever). The RunPod lane copies this through from
-    # ``poll_once`` (``RunPodBackend.poll``); SLURM + GCP never set it, so the
-    # default keeps cross-lane serialization uniform. Declared LAST so existing
-    # positional PollResult constructions are unaffected. The poller
-    # (``scripts/backend_poll._serialize_poll_result``) reads it via ``getattr``
-    # so a mixed-version worktree degrades to ``None`` rather than crashing.
+    # cause. Set for the zombie-GPU-allocation stall the RunPod lane detects
+    # (``"vllm_worker_dead_zombie_gpu"`` — a dead CUDA-worker PID still holding
+    # VRAM while the EngineCore main process keeps the session-CPU-advancing
+    # override alive, which would otherwise mask the hang as ``running``
+    # forever), and by the SLURM lane (#1969, ``slurm_monitor.build_poll_result``):
+    # ``"slurm_heartbeat_and_log_stale"`` on a stalled verdict (heartbeat AND
+    # job.out both stale for >= STALL_CONSECUTIVE_TICKS ticks), and
+    # ``"slurm_stall_suspect"`` on a sub-threshold stall-condition tick — the
+    # one case where the field is non-``None`` WHILE ``status == "running"``
+    # (a suspect tick is running-with-suspicion, not a stall verdict). The
+    # RunPod lane copies this through from ``poll_once`` (``RunPodBackend.poll``);
+    # GCP never sets it, so the default keeps cross-lane serialization uniform.
+    # Declared LAST so existing positional PollResult constructions are
+    # unaffected. The poller (``scripts/backend_poll._serialize_poll_result``)
+    # reads it via ``getattr`` so a mixed-version worktree degrades to ``None``
+    # rather than crashing.
     stall_reason: str | None = None
     # The crash signature from the WIDE 500-line probe tail (#775), mirroring
     # ``scripts/poll_pipeline.PollResult.crash_signature``. The whole wide tail

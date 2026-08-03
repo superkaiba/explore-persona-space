@@ -188,7 +188,7 @@ test -s "$IMPL_MARKER_FILE" || {
     # genuine orchestration error (Step 5 should only fire after the
     # implementer posts). Fail loud.
     uv run python "$REPO_ROOT/scripts/task.py" post-marker <N> epm:failure \
-        --version 1 --by codex-code-reviewer \
+        --by codex-code-reviewer \
         --note "failure_class: orchestration, reason: no epm:experiment-implementation marker on main"
     exit 1
 }
@@ -280,7 +280,7 @@ else
     # envelope pattern as the implementation marker.
     test -s "$CANON_PLAN" || {
         uv run python "$REPO_ROOT/scripts/task.py" post-marker <N> epm:failure \
-            --version 1 --by codex-code-reviewer \
+            --by codex-code-reviewer \
             --note "failure_class: orchestration, reason: worktree plan absent-or-stale AND no canonical plan on main"
         exit 1
     }
@@ -419,6 +419,14 @@ both reviewers are graded against the same standard. Read
   data-repo Hub calls). Copy in full so Codex never
   re-derives a narrower check (incident #823: round-1 plan-adherence blessed
   the slow import while the body named the fast twin).
+- **Step 0.69 — Phase-idempotency + inter-phase-contract gate** — for every
+  multi-phase dispatcher in the diff, verify each phase (a) checks a
+  completion-sentinel / output-artifact at entry (or accepts `--force`) and
+  (b) any consumer phase asserts its input JSONL contract BEFORE model init.
+  BLOCKER (`phase-not-idempotent`) for paid-API / GPU-holding phases without
+  a skip/force; BLOCKER (`consumer-contract-post-init`) for post-init
+  contract asserts. CONCERN for the cheap-CPU or permissive variants.
+  Full rubric: inlined from `.claude/agents/code-reviewer.md` Step 0.69.
 - "Step 0.7: Mechanical-contract gates never short-circuit the diff" — the two
   hard rules (a FAIL must carry a genuine-absence blocker OR a substantive
   finding; always read the diff even when raising a 0.5 / 0.6 / 0.65
@@ -566,6 +574,34 @@ both reviewers are graded against the same standard. Read
   mechanizable check belongs in a workflow-surface verifier and is likely
   to recur, Codex notes it in plain English in the verdict body and the
   orchestrator decides.
+- "Step 4: Run / Verify Tests" (the mechanical pre-pass) — INCLUDING the
+  ruff-policy pin (#1716): when the diff touches any path in
+  `tests/test_ruff_policy.py`'s `LIVE_WORKFLOW_HELPERS` roster, the
+  composed prompt MUST instruct Codex to run
+  `uv run pytest tests/test_ruff_policy.py::test_live_workflow_helpers_clean_under_full_ruleset -x`
+  AND report both the bare-ruff result and the pin result — NEVER a bare
+  `ruff clean` verdict from bare `ruff check` alone on such a diff. Codex
+  cannot re-run pytest (no `uv` env), so it applies this as a
+  REPORT-review rubric: verify the implementer's `(c)` field carries the
+  pin's literal command + exit code alongside the bare-ruff result; a
+  passing bare-ruff with a failing pin is the #1672 shape and blocks the
+  round with a `substantive` blocker tag (NOT `marker-shape` — a real
+  lint violation is never strippable by Step 5c-bis). ALSO INCLUDING the
+  round-new-script no-flags lint duty (#1805): Codex cannot run the lint
+  (no `uv` env), so the composed prompt instructs the STATIC
+  diff-readable adaptation — flag any round-NEW `scripts/**/*.py` diff
+  hunk carrying `list_repo_files` / `list_repo_tree` / `file_exists` in
+  call OR bare-reference form — INCLUDING a `retry_transient(...)`-wrapped
+  call and a bare `inspect.signature(...)` reference (both #1092 incident
+  shapes; wrapping does NOT obviate the waiver) — with no
+  `# HUB_VERIFY_RETRY_EXEMPT: <reason>` waiver on the call's first
+  physical line or the immediately-preceding NON-BLANK line → a Critical
+  tagged `substantive`, with the waiver named as the remedy. The ONLY
+  no-waiver routes are the `orchestrate/hub.py` helper functions used IN
+  PLACE OF the bare target (`verify_repo_paths_uploaded`,
+  `list_hf_files_under_path`, `list_repo_files_complete`). The executable
+  no-flags coverage stays the Claude reviewer's duty (the Step 4.6
+  no-uv-adaptation pattern).
 - "Step 4.5: Regression-test presence for substantive BLOCKER fixes"
   VERBATIM. This is a test-PRESENCE check (grep the worktree for a committed
   pytest pinning the invariant), NOT a test-RUNNING check, so Codex CAN and
@@ -588,8 +624,10 @@ both reviewers are graded against the same standard. Read
   the inlined marker body must carry the `**Gate-scope check (#1288):**`
   line with the contract fields (selector `n_tests` + resolved base,
   locally-run files, pin-sweep fragments →
-  hit count + verbatim deduplicated hit-file list, deferred
-  invariant-only count; count-only / no list = present-but-terse);
+  hit count + verbatim deduplicated hit-file list + `sweep_scope:`
+  universe token, deferred
+  invariant-only count; count-only / no list / missing `sweep_scope:` =
+  present-but-terse);
   ABSENT entirely with marker `ts` ≥ 2026-07-15 → a single
   Critical tagged `marker-shape` whose body NAMES `Gate-scope check` (the
   orchestrator's Step 5c-bis strip is keyed PER BLOCKER on that name —
@@ -712,7 +750,7 @@ fine.)
 
 Follow this protocol:
 
-{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6, 0.65, 0.67, 0.68, 0.7, 0.8, 0.9, 1, 2, 3, 3.5, 3.6, 3.7, 3.8, 3.9, 4.5, 4.6, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher + work-conserving schedule)}}
+{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6, 0.65, 0.67, 0.68, 0.7, 0.8, 0.9, 1, 2, 3, 3.5, 3.6, 3.7, 3.8, 3.9, 4, 4.5, 4.6, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher + work-conserving schedule)}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no code
 fences around the marker, no commentary outside the marker tags:
@@ -826,7 +864,7 @@ Expected output file: /tmp/codex-code-reviewer-<N>-r<revision_round>-output.md
 Marker start tag: <!-- epm:code-review-codex v<revision_round> -->
 Marker end tag: <!-- /epm:code-review-codex -->
 Expected marker kind: epm:code-review-codex
-Expected marker version: <revision_round>
+Expected marker round (head sentinel): <revision_round> (posted top-level version: auto, max+1)
 Codex effort: high
 Codex write mode: false (read-only review)
 ```
@@ -843,8 +881,9 @@ Bash(run_in_background=true,
 
 When the harness notifies on bg-Bash completion, the orchestrator reads
 the output file, extracts the marker between the start/end tags, and
-posts via `task.py post-marker <N> epm:code-review-codex --version
-<revision_round>`. If the marker tags are missing in Codex's output the
+posts via `task.py post-marker <N> epm:code-review-codex` (OMIT
+`--version` — it auto-derives max+1; the round lives in the extracted
+block's head sentinel). If the marker tags are missing in Codex's output the
 orchestrator re-dispatches with a stricter retry prompt (cap retries at
 2 — same policy as before, just moved out of this agent). If the
 `epm:codex-task-failed` marker fires, the orchestrator treats this as a
@@ -917,8 +956,11 @@ Common failure modes and how to handle:
 - **Codex hallucinates line numbers that don't exist in the diff.** Not your
   problem — let it through. The `reconciler` (or the implementer reading both
   reviews) catches it.
-- **Codex emits the marker but with wrong `v<n>`.** Replace the version
-  string with the correct `revision_round` before posting.
+- **Codex emits the marker but with wrong `v<n>`.** The wrong `v<n>` here is
+  the SENTINEL round digit inside the marker tags (`<!-- epm:code-review-codex
+  v<n> -->` / the closing tag) — replace it with the correct `revision_round`
+  before posting (behavior unchanged; the posted top-level version is
+  auto-derived and untouched).
 - **Codex emits multiple markers (overzealous).** Take the LAST complete
   marker; discard prior partials.
 - **Codex output is empty / null.** Retry once. Then `epm:failure`.

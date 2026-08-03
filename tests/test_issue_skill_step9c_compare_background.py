@@ -1,7 +1,7 @@
 """Pin: Step 9c step-1d compare is a background + rc-file invocation (#1197).
 
 A foreground compare is the 600s-tool-cap kill class (#1129/#1098): one
-SLOW_TESTS pristine oracle run legitimately derives 640-1950s.
+SLOW_TESTS pristine oracle run legitimately derives 600-4950s.
 """
 
 from pathlib import Path

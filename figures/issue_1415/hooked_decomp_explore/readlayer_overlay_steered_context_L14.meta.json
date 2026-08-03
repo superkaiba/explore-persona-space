@@ -1,0 +1,421 @@
+{
+  "commit": "9c9dc0a19f",
+  "created": "2026-07-23T03:59:05Z",
+  "figsize": [
+    4.6,
+    3.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "y": 13.428729483059474,
+      "series": "read L17 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "y": 8.724392448152814,
+      "series": "read L17 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "y": 4.727531858852932,
+      "series": "read L17 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "y": 2.3693997178758894,
+      "series": "read L17 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "y": 1.5870702064463071,
+      "series": "read L17 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "y": 1.3983283245137759,
+      "series": "read L17 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "y": 1.3563780188560486,
+      "series": "read L17 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "y": 1.4234241555844034,
+      "series": "read L17 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "y": 1.2247703692742757,
+      "series": "read L17 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "y": 1.0773216310356344,
+      "series": "read L17 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "y": 1.1317992093307632,
+      "series": "read L17 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "y": 1.2257789011512483,
+      "series": "read L17 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "y": 2.9358594630445753,
+      "series": "read L17 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "y": 32.80245903560093,
+      "series": "read L20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "y": 23.236577817371913,
+      "series": "read L20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "y": 12.80786234991891,
+      "series": "read L20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "y": 6.3366362282208035,
+      "series": "read L20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "y": 4.407176618065153,
+      "series": "read L20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "y": 3.9425677912575856,
+      "series": "read L20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "y": 4.077834029282842,
+      "series": "read L20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "y": 3.938521134001868,
+      "series": "read L20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "y": 3.8356310789074217,
+      "series": "read L20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "y": 3.326741154704775,
+      "series": "read L20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "y": 3.6379896317209517,
+      "series": "read L20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "y": 4.076346210071018,
+      "series": "read L20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "y": 8.914768695831299,
+      "series": "read L20",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "y": 41.996522835322786,
+      "series": "read L21",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "y": 28.664290973118373,
+      "series": "read L21",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "y": 15.39598800454821,
+      "series": "read L21",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "y": 7.517177019800458,
+      "series": "read L21",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "y": 5.165952188628061,
+      "series": "read L21",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "y": 4.649189246552331,
+      "series": "read L21",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "y": 4.826879382133484,
+      "series": "read L21",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "y": 4.6533521711826324,
+      "series": "read L21",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "y": 4.56691637635231,
+      "series": "read L21",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "y": 3.919826473508562,
+      "series": "read L21",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "y": 4.393229131187711,
+      "series": "read L21",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 11.0,
+      "y": 4.983299110616956,
+      "series": "read L21",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 12.0,
+      "y": 11.449420826775688,
+      "series": "read L21",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "y": 80.60874489375523,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "y": 50.807299511773245,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "y": 27.560986246381486,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "y": 13.121600415025439,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "y": 8.922216628279005,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "y": 8.118131875991821,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "y": 8.247811130114965,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "y": 7.890066180910383,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "y": 7.78673733983721,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 9.0,
+      "y": 6.731216549873352,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 10.0,
+      "y": 7.487444715840476,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 11.0,
+      "y": 8.79780158826283,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 12.0,
+      "y": 21.70074360711234,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 52,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "direct magnitude by read layer \u2014 steered/context/L14",
+        "legend_labels": [
+          "read L17 (headline)",
+          "read L20",
+          "read L21",
+          "read L24"
+        ],
+        "xticklabels": [
+          "first",
+          "tok2_5",
+          "dec1",
+          "dec2",
+          "dec3",
+          "dec4",
+          "dec5",
+          "dec6",
+          "dec7",
+          "dec8",
+          "dec9",
+          "dec10",
+          "last"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$"
+        ]
+      }
+    ],
+    "series": [
+      "read L17 (headline)",
+      "read L20",
+      "read L21",
+      "read L24"
+    ]
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "phase": "pilot",
+  "trait": "evil",
+  "arm": "both",
+  "alpha": 1.0,
+  "layer": 20,
+  "pilot_batch": 8,
+  "n_draws": 10,
+  "max_new_tokens": 1024,
+  "n_samples": 80,
+  "elapsed_s": 242.05389954999993,
+  "s_per_sample": 3.0256737443749993,
+  "threshold_s_per_sample": 4.7,
+  "coherence_flags_row0": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "sweep_allowed": true,
+  "gate_enforced": true,
+  "repro": {
+    "git_commit": "468aaef532416e70d991f6ae12447b9543c05f49",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "timestamp": "2026-07-29T03:50:24.647778+00:00"
+  }
+}

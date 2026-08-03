@@ -1,0 +1,76 @@
+{
+  "epochs": 12,
+  "reference": {
+    "ridge_sae_ctx": {
+      "mean": 0.6901409540488584,
+      "max": 0.35888451827902956,
+      "frac": 0.5395329417404842
+    },
+    "mlp_sae_ctx_broken": {
+      "mean": -2107897883076.9233,
+      "max": -10178451246.74001,
+      "frac": -59395724118335.13
+    },
+    "mlp_sae_dense_in": {
+      "mean": 0.7387
+    }
+  },
+  "rows": [
+    {
+      "variant": "v0_baseline",
+      "pooling": "mean",
+      "pooled_r2": -2216355174785.7764,
+      "lr": 0.0003,
+      "width": 8192,
+      "epochs_ran": 12,
+      "batch": 4096,
+      "best_val_mse": 0.007686055660247802,
+      "n_cols_kept": 16384,
+      "wall_s": 103.0
+    },
+    {
+      "variant": "v1_activity_floor",
+      "pooling": "mean",
+      "pooled_r2": 0.6574387631706835,
+      "lr": 0.0003,
+      "width": 8192,
+      "epochs_ran": 12,
+      "batch": 4096,
+      "best_val_mse": 0.0058582530021667484,
+      "n_cols_kept": 8454,
+      "wall_s": 77.4
+    },
+    {
+      "variant": "v3_varfloor",
+      "pooling": "mean",
+      "pooled_r2": 0.6150926964470812,
+      "lr": 0.0003,
+      "width": 8192,
+      "epochs_ran": 12,
+      "batch": 4096,
+      "best_val_mse": 0.008951964378356934,
+      "n_cols_kept": 10612,
+      "wall_s": 82.3
+    },
+    {
+      "variant": "v2_lr_1e-4",
+      "pooling": "mean",
+      "pooled_r2": -2218823245175.049,
+      "lr": 0.0001,
+      "width": 8192,
+      "epochs_ran": 12,
+      "batch": 4096,
+      "best_val_mse": 0.007624619166056315,
+      "n_cols_kept": 16384,
+      "wall_s": 100.1
+    }
+  ],
+  "note": "short-epoch one-variable-at-a-time probe on the mean pooling; every variant calls the PARENT fitter unchanged",
+  "metadata": {
+    "git_commit": "51a41e99147ad11178cf54904808240c1032c1e7",
+    "timestamp_utc": "2026-07-30T18:39:15.735260Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all"
+  }
+}

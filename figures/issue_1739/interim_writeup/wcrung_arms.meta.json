@@ -1,0 +1,337 @@
+{
+  "commit": "82fa479c29",
+  "created": "2026-07-31T13:35:24Z",
+  "figsize": [
+    11.6,
+    6.4
+  ],
+  "points": [
+    {
+      "x": 0.0783,
+      "y": 0.15659940239839015,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.077885,
+      "y": 0.15576916013499797,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.040547,
+      "y": 0.08109327121306614,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.020939,
+      "y": 0.04187845802566634,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.020939,
+      "y": 0.04187845802566634,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": -0.018444,
+      "y": -0.03688746501886956,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.061045,
+      "y": 0.12208923716807271,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.042134,
+      "y": 0.08426817677603524,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.09508,
+      "y": 0.19015989341519268,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.00638,
+      "y": 0.012760244230850374,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.00638,
+      "y": 0.012760244230850374,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": -0.005623,
+      "y": -0.011246758117024249,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 0.055343,
+      "y": 0.1106850043455737,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 0.088813,
+      "y": 0.1776250067441395,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": -0.006276,
+      "y": -0.012551199670331255,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": -0.053283,
+      "y": -0.10656516179586661,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": -0.053283,
+      "y": -0.10656516179586661,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": -0.037234,
+      "y": -0.07446705314755472,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.040844,
+      "y": 0.08168819251553991,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.085822,
+      "y": 0.1716449542333964,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.023575,
+      "y": 0.047150634717658846,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.032609,
+      "y": 0.0652180812139317,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.035756,
+      "y": 0.0715118307542849,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.014044,
+      "y": 0.028087848616540467,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.042246,
+      "y": -0.08449120105480969,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.038051,
+      "y": 0.07610162871765053,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.018656,
+      "y": 0.03731242006091419,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.012766,
+      "y": 0.025532053181463017,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.002207,
+      "y": 0.0044148439282251355,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.009347,
+      "y": -0.018693946153949818,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.077336,
+      "y": 0.15467299748591137,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": 0.082746,
+      "y": 0.16549186253354312,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.00385,
+      "y": -0.007699771366182447,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.031817,
+      "y": -0.06363455858828869,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.031817,
+      "y": -0.06363455858828869,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "Spearman $\\rho$ vs judged expression": -0.008977,
+      "y": -0.017953189055749334,
+      "_kind": "bar",
+      "_group": 35
+    }
+  ],
+  "n_series": 36,
+  "total_points": 36,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil \u2014 context end state",
+        "annotations": [
+          "n=1987 rollout groups, frozen layer, single draw"
+        ],
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ],
+        "yticklabels": [
+          "map -> PV proj.",
+          "oracle: PV proj. on TRUE answer",
+          "direct ridge: context -> expression",
+          "PV proj. on context (paper method)",
+          "identity+bias -> PV proj.",
+          "control: shuffled map -> PV proj."
+        ]
+      },
+      {
+        "title_left": "sycophancy \u2014 context end state",
+        "annotations": [
+          "n=1982 rollout groups, frozen layer, single draw"
+        ],
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ]
+      },
+      {
+        "title_left": "hallucination \u2014 context end state",
+        "annotations": [
+          "n=1967 rollout groups, frozen layer, single draw"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ]
+      },
+      {
+        "title_left": "evil \u2014 prefix end state",
+        "xlabel": "Spearman $\\rho$ vs judged expression",
+        "annotations": [
+          "n=1987 rollout groups, frozen layer, single draw"
+        ],
+        "xticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ],
+        "yticklabels": [
+          "map -> PV proj.",
+          "oracle: PV proj. on TRUE answer",
+          "direct ridge: context -> expression",
+          "PV proj. on context (paper method)",
+          "identity+bias -> PV proj.",
+          "control: shuffled map -> PV proj."
+        ]
+      },
+      {
+        "title_left": "sycophancy \u2014 prefix end state",
+        "xlabel": "Spearman $\\rho$ vs judged expression",
+        "annotations": [
+          "n=1982 rollout groups, frozen layer, single draw"
+        ],
+        "xticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15"
+        ]
+      },
+      {
+        "title_left": "hallucination \u2014 prefix end state",
+        "xlabel": "Spearman $\\rho$ vs judged expression",
+        "annotations": [
+          "n=1967 rollout groups, frozen layer, single draw"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ]
+      }
+    ]
+  }
+}

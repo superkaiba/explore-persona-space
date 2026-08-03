@@ -22,6 +22,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from explore_persona_space.task_workflow import (
+    _breadcrumb_fields,
     executing_followup_label,
     followup_label_groups,
     followup_retro_close_evidence,
@@ -469,6 +470,43 @@ def test_version_stamp_anchoring_negatives():
     # stamp) and with the `; `-split.
     assert parse_followup_note_field("- v2. followup_label: y; source: z", "followup_label") == "y"
     assert parse_followup_note_field("- v2. followup_label: y; source: z", "source") == "z"
+
+
+def test_label_parse_dash_led_version_stamp_1900():
+    # VERBATIM #1900 v2 run-marker head shape (2026-08-01T03:30:56Z): the
+    # dash-led stamp form `v1 — ` (em-dash) live sessions actually emit —
+    # pre-#1984 the `v<k>. `-only stamp regex left the head unstripped, the
+    # explicit followup_label parsed None, and the corpus-replay invariant
+    # went red fleet-wide.
+    assert (
+        parse_followup_note_field(
+            "v1 — followup_label: tfmargin-validation-expand; source: proposer-9b-cheap; "
+            "round: 2; outcome: complete",
+            "followup_label",
+        )
+        == "tfmargin-validation-expand"
+    )
+    # ASCII-hyphen and en-dash variants parse identically (same char class).
+    assert parse_followup_note_field("v1 - followup_label: x; source: y", "followup_label") == "x"
+    assert parse_followup_note_field("v1 \u2013 followup_label: x", "followup_label") == "x"
+    # The #1900 v1 head shape (stamp before a `source:` first segment): the
+    # stamp strips and the first-segment field parses too.
+    assert (
+        parse_followup_note_field(
+            "v1 — source: proposer-9b-cheap; followup_label: offfloor-surface-race", "source"
+        )
+        == "proposer-9b-cheap"
+    )
+
+
+def test_dash_led_version_stamp_anchoring_negatives():
+    # No whitespace AFTER the dash → not a stamp (`v2-alpha` is a token, not
+    # decoration): nothing strips, the field sits mid-segment, parses None.
+    assert parse_followup_note_field("v2-alpha followup_label: x", "followup_label") is None
+    # Whitespace optional BEFORE the dash: `v1— field` still strips.
+    assert parse_followup_note_field("v1— followup_label: x", "followup_label") == "x"
+    # Composes with the bullet strip + `; `-split, like the dot form.
+    assert parse_followup_note_field("- v2 — followup_label: y; source: z", "source") == "z"
 
 
 def test_semicolon_split_anchoring_negatives():
@@ -1158,6 +1196,10 @@ def _run_labels(events: list[dict]) -> set[str]:
 # (#1092's `v1. `-stamp-led run note is deliberately NOT allowlisted — its
 # fields are explicit, and the parser strips the leading version stamp as
 # decoration; see `parse_followup_note_field`.)
+# (#1900's `v1 — `-dash-stamp-led run markers — incl. (1900,
+# "2026-08-01T03:30:56Z") — are likewise deliberately NOT allowlisted: their
+# fields are explicit, and the #1984-widened parser strips the dash-led
+# version stamp as decoration too.)
 KNOWN_MALFORMED_RUN_MARKERS = {(1090, "2026-07-07T09:54:27Z")}
 
 
@@ -1281,3 +1323,98 @@ def test_corpus_replay_retro_close_verdicts():
             )
     if 658 in by_task:  # the canonical ghost close must SURVIVE the narrowing
         assert followup_retro_close_evidence(by_task[658], "persona-vectors-style-rb") is not None
+
+
+# ─── #1828 hardening: prose-glued / empty key=value tokens (incident #1689) ──
+# The two note texts below are VERBATIM copies of task #1689's events.jsonl
+# epm:progress versions 110 (2026-07-29T08:28:32Z) and 115 (2026-07-29T12:59:08Z)
+# — string literals by design, never read from live task state.
+
+_REAL_1689_V110_NOTE = (
+    "stage-dispatch stage=followup-running round=1 label=wider-lambda-ceilings: detached "
+    "VM-CPU Stage-1 launched (2 processes, 1/model, 42 cell-arms each, threads=16, 32-core "
+    "saturation). pids: base=2756785 instruct=2757815 (pid-files "
+    "/tmp/issue1689-lr-{base,instruct}.pid, choom -600 applied). logs: "
+    "<WT>/logs/issue1689-lambda-recheck-{base,instruct}.log. "
+    "harvest=eval_results/issue_1689/wider-lambda-ceilings/percell_wide19/ (84 ckpts) then "
+    "--merge summary.json. Pilot basis: 290.6s/cell-arm grid19 (measured, production "
+    "entrypoint, epm:experiment-implementation v15); extrapolated ~2.75h at 2-concurrent; "
+    "fence 5.5h (>=2x). Completion key = both pids gone + 84 ckpts (never bare file "
+    "existence; pilot ckpt pre-exists and is skip-if-exists). Store: /mnt/eps-data staged "
+    "copy of issue1689_speaker_lattice/analysis_tensors @ d1010a25f8 (plan v6 pin)."
+)
+
+_REAL_1689_V115_NOTE = (
+    "stage-dispatch stage=followup-running round=1 label=wider-lambda-ceilings pid=2756785 "
+    "log=/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1689/logs/"
+    "issue1689-lambda-recheck-base.log choom=ok "
+    "harvest=eval_results/issue_1689/wider-lambda-ceilings/percell_wide19/ external-markers "
+    "triaged: none — corrective re-assertion of the v110 breadcrumb (its label= token was "
+    "prose-glued with a trailing colon, so executing_followup_label fell back to the "
+    "queue-head label derived-vs-free-answer-map; this breadcrumb restores correct round "
+    "resolution). NOT a new dispatch: the SAME detached Stage-1 run continues (second worker "
+    "pid=2757815, instruct log sibling path; 50/84 ckpts at 12:56Z). Completion key "
+    "unchanged: both pids gone + 84 ckpts + --merge summary.json."
+)
+
+
+def test_breadcrumb_fields_strips_glued_trailing_punctuation():
+    # VERBATIM #1689 v110 note: `label=wider-lambda-ceilings:` (prose-glued colon).
+    fields = _breadcrumb_fields(_REAL_1689_V110_NOTE)
+    assert fields["label"] == "wider-lambda-ceilings"
+    assert fields["stage"] == "followup-running"
+    assert fields["round"] == "1"
+    # A path value ending in `/` is untouched (the strip set is exactly ':;,.').
+    assert fields["harvest"] == "eval_results/issue_1689/wider-lambda-ceilings/percell_wide19/"
+    assert fields["base"] == "2756785"
+
+
+def test_breadcrumb_fields_ignores_empty_prose_rebind():
+    # VERBATIM #1689 v115 note: the later prose `label=` substring must not re-bind
+    # the canonical leading `label=wider-lambda-ceilings` to '' under last-wins.
+    fields = _breadcrumb_fields(_REAL_1689_V115_NOTE)
+    assert fields["label"] == "wider-lambda-ceilings"
+    # First-non-empty-wins also shields pid= from the later prose `pid=2757815,` token.
+    assert fields["pid"] == "2756785"
+    assert fields["choom"] == "ok"
+    assert fields["log"].endswith("issue1689-lambda-recheck-base.log")
+
+
+def test_breadcrumb_fields_first_nonempty_wins():
+    # Canonical fields lead the note by convention; a later same-key token is prose.
+    assert _breadcrumb_fields("stage-dispatch label=a prose label=b")["label"] == "a"
+    # An EMPTY binding never binds, so a later non-empty token still wins.
+    assert _breadcrumb_fields("stage-dispatch label= prose label=b")["label"] == "b"
+    # A lone `=`-bearing prose token (the #931 `success = [phase=done]` shape) previously
+    # bound fields[""] = ""; post-#1828 it never binds (no consumer reads key "").
+    # Bracketed prose tokens keep binding harmless unused keys — the strip set
+    # deliberately excludes `)`/`]` (the #931 parse-fidelity pin).
+    fields = _breadcrumb_fields("success = [phase=done]")
+    assert "" not in fields
+    assert fields["[phase"] == "done]"
+
+
+def test_executing_followup_label_survives_glued_and_prose_rebind_crumbs():
+    # End-to-end #1689 topology: a never-run user-chat label heads the queue while a
+    # proposer label is the round actually executing. Pre-fix, BOTH incident crumb
+    # shapes lost the label (glued colon / empty prose re-bind) and fell back to the
+    # queue head derived-vs-free-answer-map — the #1689 misroute.
+    scope_head = _scope(
+        "2026-07-28T00:00:00Z",
+        "followup_label: derived-vs-free-answer-map\nsource: user-chat",
+        version=1,
+    )
+    scope_exec = _scope(
+        "2026-07-28T01:00:00Z",
+        "followup_label: wider-lambda-ceilings\nsource: proposer-9b-cheap",
+        version=2,
+    )
+    crumb_v110 = _ev("epm:progress", "2026-07-29T08:28:32Z", _REAL_1689_V110_NOTE, version=110)
+    crumb_v115 = _ev("epm:progress", "2026-07-29T12:59:08Z", _REAL_1689_V115_NOTE, version=115)
+    for crumbs in ([crumb_v110], [crumb_v115], [crumb_v110, crumb_v115]):
+        group = executing_followup_label([scope_head, scope_exec, *crumbs])
+        assert group is not None and group["followup_label"] == "wider-lambda-ceilings"
+    # Sanity: with no crumb at all, the user-chat head resolves (the very fallback the
+    # pre-fix parser landed on WITH the crumbs present).
+    group = executing_followup_label([scope_head, scope_exec])
+    assert group is not None and group["followup_label"] == "derived-vs-free-answer-map"

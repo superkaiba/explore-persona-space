@@ -34,7 +34,10 @@ You are the PLANNER. Your job is to design a concrete, detailed plan for the fol
 
 **Canonical Goal (current at spawn; re-read before returning — planner.md
 § Goal-currency guard):** [GOAL TEXT or "no goal: frontmatter — use the
-body's ## Goal H2"]
+body's ## Goal H2"; TRIGGER-DENSE CARVE-OUT: when the Goal itself carries
+trigger-dense phrasing per the CLAUDE.md refusal-ladder clause (e)
+goal-channel clause, fill this slot with the task id + `body.md` path (or a
+mechanistic paraphrase) INSTEAD of the verbatim snapshot text]
 
 **If this is a `type:batch` issue (the body lists N independent items):**
 Structure your plan as N independent sections, one per body item. Each
@@ -84,7 +87,10 @@ the Goal snapshot when you spawn the planner —
 when that is empty (no `goal:` frontmatter — `kind: infra | batch | survey`),
 fall back to the body's `## Goal` H2 text (`jq -r '.body'` + the H2 slice), so
 the gate is non-vacuous on body-Goal tasks too. Inline the snapshot in the
-brief (template above). Immediately BEFORE every
+brief (template above); on a trigger-dense Goal the BRIEF instead renders
+the Goal by reference (the template's Goal-slot carve-out) — `GOAL_SNAP` is
+still captured orchestrator-side and this pre-persist equality gate is
+unchanged. Immediately BEFORE every
 `task.py new-plan-version` persist (Phase 1 initial draft, Phase 1.5.0
 mechanical-bounce redrafts, Phase 3 revisions), re-read the same field and
 compare to the snapshot (plain text equality). On ANY difference — the user
@@ -100,6 +106,39 @@ refresh `GOAL_SNAP`, then persist the redraft. A goal-currency WARN from
 verify_plan.py at Phase 1.5.0 (`c23_goal_currency`) is the same bounce
 trigger — the one WARN that bounces instead of riding into the critic
 briefs.
+
+**Edit-success gate (pre-persist; EVERY scripted plan edit feeding a
+`new-plan-version` call).** When the draft being persisted was produced or
+modified by a SCRIPTED edit (a python/sed patch of the plan file — Phase 1.5.0
+mechanical-bounce patches, Phase 3 revision edits, and the /issue Step 2b/3
+revise paths included), sequence edit → verify → persist as SEPARATE
+`&&`-chained commands: the `task.py new-plan-version` persist runs ONLY after
+the edit script exited 0 AND a verify step produced POSITIVE evidence the edit
+landed. Verify = grep the draft for the revised text
+(`grep -qF '<distinctive new text>' <draft>`) and/or — on a revision round —
+a non-empty diff vs the prior persisted version
+(`! diff -q <draft> "$(uv run python scripts/task.py find <N>)/plans/plan.md"`
+— the `plan.md` symlink still points at v<K-1> until the persist; identical
+bytes mean the edit silently no-oped); a bare exit 0 is NOT evidence. Run the
+EDIT step via the committed helper `uv run python scripts/plan_patch.py
+<draft> --anchor-file <a.txt> --replace-file <r.txt>` (exact-then-normalized
+anchor resolution — whitespace-collapsed, then case-tolerant —
+unique-match-only; fails loud with a nearest-match diff on a missing/ambiguous
+anchor; #1631) instead of improvising a per-turn python/sed anchor script —
+anchor byte-identity drift cost ≥4 re-derive rounds across 3 sessions on
+2026-07-22; prefer anchors carrying ≥1 full line of distinctive context, and
+let the verify step grep the helper's printed `PLAN-PATCH APPLIED` line and/or
+pass `--verify-contains` in addition to the draft grep. Never
+`;`-chain the edit and the persist, and never run the persist inside the same
+script before its asserts have executed. On ANY edit failure, abort LOUDLY
+without persisting — print `EDIT FAILED — not persisting`, Read the CURRENT
+draft and re-derive the anchor text from it (anchor-text mismatch is the
+common failure), re-apply, and only then persist. (#1565, 2026-07-20: an edit
+script died on an anchor-text `AssertionError` yet the same compound command
+still ran the persist — v2 landed as an UNMODIFIED copy of v1 under a log
+reading "Plan v2 written … PASS", silently lacking the critic-mandated
+revision; same shape in #1563. The Goal-currency gate above and this gate are
+the two pre-persist duties — run both before every persist.)
 
 **Strip the harness trailer before persisting.** An `Agent` tool result ends
 with harness-appended metadata — a final `agentId: <id> (use SendMessage ...)`
@@ -221,12 +260,18 @@ Run the structural verifier against the plan version just persisted:
   `N/A — no behavioral construct`
   (check 2), `N/A — no model training` / `N/A — no training hyperparameters` (check 1),
   `N/A — not a replication` (check 7), `N/A — no artifact reuse` (check 6),
-  `N/A — not a behavior-implantation` (check 4 — the implant/marker vocabulary hit is
+  `N/A — not a behavior-implantation` / `N/A — no behavior implantation`
+  (check 4 — the implant/marker vocabulary hit is
   incidental or quotes a sibling's design, not this plan's own implantation; a genuine
-  implantation plan instead names its contrastive-negative set or a named exemption),
+  implantation plan instead names its contrastive-negative set or a named exemption;
+  the "no behavior implantation" alias reads more naturally for measurement/geometry
+  plans — #1689/#1700),
   `N/A — no dry-run smoke` (check 11 — kind: infra|batch plans where a `--dry-run`
   mention is incidental, not the plan's own acceptance smoke), `N/A — no draw battery`
-  (check 12; also check 32's battery branch), `N/A — no empirical-null gate` (check 13),
+  (check 12, battery-class windows ONLY; also check 32's battery branch),
+  `N/A — no pool screen` (check 12, screen-class windows ONLY — the class-scoped
+  sibling for pool-quadratic candidate screens, the #1901 near-duplicate class),
+  `N/A — no empirical-null gate` (check 13),
   `N/A — no fail-loud acceptance claim` / `N/A — fail-loud claim not test-backable`
   (check 15 — kind: infra|batch plans where the vocabulary hit is bug narration, or
   the target is a doc/prose file no pytest can exercise),
@@ -302,6 +347,11 @@ Run the structural verifier against the plan version just persisted:
   into workflow_lint.py's no-flags default run; a plan whose bundling claim is
   genuinely false instead corrects it, naming the explicit invocation that
   runs the flag), and
+  `N/A — not bundled into no-flags` (check 37's proposed-new-check pin-test
+  arm — the plan's new `--check-*` is deliberately explicit-only, or the
+  proposed-flag bundling vocabulary is incidental; a plan genuinely adding a
+  bundled check instead names its test_<check>_bundled_in_no_flags pin test
+  in the test enumeration), and
   `N/A — no exit-0 acceptance criterion` (check 38 — the exit-0/green +
   repo-wide-command text quotes an incident or a sibling's criterion, not this
   plan's own gate; a plan whose own gate is genuinely unconditional instead
@@ -309,12 +359,33 @@ Run the structural verifier against the plan version just persisted:
   invocation), and
   `N/A — no off-pod phase` (check 39 — the off-pod / vm-side vocabulary is
   incidental, not a real off-pod phase of this plan; a plan with a genuine
-  off-pod phase instead declares the fenced `off_pod_phases:` block —
-  planner-section-reference.md § 9), and
+  cross-phase read (an off-pod phase, or a dispatched-lane phase consuming
+  VM-produced inputs, #1773) instead declares the fenced
+  `off_pod_phases:` block — planner-section-reference.md § 9), and
   `N/A — no regression anchors` (check 41 — the anchor/gate vocabulary is
   incidental or quotes a sibling/incident, not this plan's own anchor claim;
   a plan whose anchor is genuinely unexecuted instead names the exact pytest
-  command or maps it from a touched file).
+  command or maps it from a touched file), and
+  `no sentinel dependence — auto-safe` (check 43 — the
+  plan-compute-sizing.md § Sentinel-signaling-workloads escape, declared
+  standalone WITHOUT the N/A prefix; the `N/A — no sentinel dependence`
+  form is also accepted. Use it when the `/workspace/...` sentinel
+  vocabulary is quoted but nothing in the run posts through sentinels; a
+  genuinely sentinel-signaling plan instead pins a drained lane —
+  `backend: runpod` / `backend: fellows` (the fellows drain landed at
+  #1898; `backend: gcp` is REFUSED as of #2028)), and
+  `N/A — no committed outputs` (check 44 — the commit-to-git vocabulary is
+  incidental or quotes a sibling/incident, not this plan's own declared
+  committed outputs; a plan genuinely committing outputs under a
+  gitignore-matched path instead notes the force-add + staged-index
+  verification in the same section as the declaration, or relocates the
+  output out of the ignored root), and
+  `N/A — no base-side predictor vs change DV` (check 45 — the change-DV /
+  base-side-predictor vocabulary is incidental or quotes a sibling's
+  design, not this plan's own predictor race; a plan genuinely racing a
+  base-side predictor against a trained−base change DV instead registers a
+  level/change companion column AND states the winner sign convention —
+  signed Spearman ρ vs |ρ|).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
@@ -324,11 +395,36 @@ Run the structural verifier against the plan version just persisted:
   words, proceed anyway (verifier false positive), record `verdict: PASS-with-override`
   + the overridden check ids in the marker note, and emit a workflow-fix candidate
   against `scripts/verify_plan.py`.
-- **PASS (with WARNs) → proceed** — EXCEPT a `goal_currency` WARN
-  (`c23_goal_currency`), which instead triggers the mechanical redraft
-  bounce per § Goal-currency gate above (the one WARN that bounces);
-  copy any OTHER WARN lines verbatim into the fact-checker
-  brief (and later the critic briefs) as "mechanical pre-pass notes".
+- **PASS (with WARNs) → proceed with a per-WARN disposition** — EXCEPT a
+  `goal_currency` WARN (`c23_goal_currency`), which instead triggers the
+  mechanical redraft bounce per § Goal-currency gate above (the one WARN
+  that bounces). For every OTHER WARN, EITHER:
+  - **Resolve** it in the next plan revision (the planner amends the
+    plan and the WARN drops on the next `verify_plan.py` run), OR
+  - **Carry** it with a one-line reason naming WHY it cannot bite this
+    plan (the same specific-defect standard `verify_plan.py`'s own check
+    detail uses — e.g. "check c17 fires on the mind/behavior segment
+    quoting the #1345 incident, not this plan's own claim scope"; "check
+    c25 flags an html entity in a `<>`-wrapped anchor in prose text, not
+    a shell command").
+
+  The bare word `benign` is BANNED as a carried-WARN reason. "Benign" is
+  what session `6b3fca14` wrote when narrating both of the round's WARNs;
+  the same-file ratchet pressure one of those WARNs named
+  (`c34_ratchet_headroom`) then produced a `scripts/workflow_lint.py`
+  merge conflict roughly 12 min into the review round. A carried WARN
+  needs a mechanism-level reason, not an aesthetic verdict.
+
+  `c34_ratchet_headroom` is NEVER a carry candidate — it is the
+  deterministic predictor of a same-file cap collision, so it must be
+  resolved (raise the size ratchet in the same plan, or split the insert
+  across a second file). Every other WARN is a per-plan disposition call.
+
+  The dispositions ride the plan (a `## WARN dispositions` sub-block
+  under the Reproducibility Card §10 — one line per carried WARN, or a
+  standalone "no WARNs on this run" line when `n_warn=0`), not the
+  marker; they are what the fact-checker and critic briefs see when they
+  read the plan text.
 - **Post the marker** (VM-side; the adversarial-planner skill always runs in the
   orchestrator session, never on a pod):
   `uv run python scripts/task.py post-marker <N> epm:plan-verify --note '<verdict, n_fail, n_warn, failed/overridden check ids, plan version>'`
@@ -380,6 +476,19 @@ existence at `main` does not imply existence at the pin (incident #1345 — 2/4 
 returned 0 files at the plan's pinned revision after a default-branch probe read
 CONFIRMED). State the verdict per stem (CONFIRMED-at-pin / WRONG / UNVERIFIED).
 
+For a ROW-GRAIN-CONSUMING reuse row — a file whose row/line count feeds a plan
+floor, sizing arithmetic, per-mix quota, or subset draw — ALSO verify the REALIZED
+GRAIN: `hf_hub_download` the file at the pinned revision and COUNT its rows (a line
+count is seconds per file; one representative file per named family is acceptable,
+EXCEPT when the derived plan figure is a PER-FILE floor/minimum — then count ALL
+files in the family, since one representative cannot witness a heterogeneous-grain
+minimum). Compare the count against every plan figure derived from it; a
+floor/sizing/quota/draw figure resting on an ASSUMED range with no counted basis is
+UNVERIFIED — flag it (incident #1900: the plan assumed 50-300 positive rows/mix for
+the reused `delta_tf/<mix>/pos.jsonl`; realized grain was exactly 20 rows/mix, and a
+plan-derived 40-row hard floor killed the launch). State the verdict per counted
+file (GRAIN-CONFIRMED <n> rows / WRONG / UNVERIFIED).
+
 DO NOT trust the plan's reasoning. DO NOT trust your own training data for version-specific
 claims (API signatures, library features, default values). SEARCH and READ to verify.
 
@@ -401,6 +510,9 @@ Common traps to watch for:
   pin held only in a code constant (zero hex in the plan prose) is YOUR coverage, not
   the mechanical check's — instruction 2 ("read the actual code/config") resolves the
   constant, then probe at it
+- "The reused file has ~N rows" — for a count that feeds a floor / sizing / quota /
+  draw, download at the pin and COUNT; an assumed grain range is the #1900 crash
+  class (assumed 50-300/mix, realized 20)
 ```
 
 **After the Verifier returns:**
@@ -438,6 +550,22 @@ both; BLOCK / WARN / PASS semantics and the `epm:consistency v1` marker
 stay exactly as `/issue` Step 2b defines them — only the scheduling
 moved. Standalone `/adversarial-planner` invocations (no task context)
 skip it.
+
+**Parentless non-experiment precondition (added #1732).** SKIP the
+`consistency-checker` spawn entirely when the invoking task is
+`kind: infra | batch | survey` with no `parent_id` AND no unrun
+`epm:followup-scope v1` marker on the task — this shape carries no
+experimental recipe for the checker's five checks to bind to
+(`.claude/agents/consistency-checker.md` § Rules). The orchestrator
+(from `/issue` Step 2b Skipped branch) posts an
+`<!-- epm:consistency v1 -->` marker with `**Verdict: PASS**` whose
+first line reads `Skipped: kind:<X>, no parent experiment` (X = the
+actual `kind`) and whose per-check rows read `N/A — <reason>`, so the
+marker channel that answers "did the gate run?" is populated on both
+branches. `kind: experiment` with no parent keeps the standard-baseline
+RAN behavior; same-issue follow-ups (`epm:followup-scope v1`) still diff
+against the issue's own prior run. Standalone `/adversarial-planner`
+invocations (no task context) skip the checker as before.
 
 **Canonical-rubric anchor — REQUIRED in every Claude critic brief, default
 or adapted (#1282).** Each of the three lens templates below carries a
@@ -763,7 +891,24 @@ a_codex  = Agent(subagent_type="codex-critic", prompt="lens=alternatives\nplan_b
 # When invoked from /issue Step 2, ALSO add the consistency-checker to
 # this same parallel batch (7th spawn; BLOCK findings union into the
 # Phase 3 revise round — see /issue Step 2b for verdict semantics):
-c_check  = Agent(subagent_type="consistency-checker", prompt="Plan + related-task markers per /issue Step 2b:\n\n{corrected_plan}", run_in_background=True)
+# 4-pre-cc. Parentless-non-experiment pre-check (#1732):
+#    when the invoking task (from /issue Step 2) is
+#    kind: infra|batch|survey with no parent_id AND no unrun
+#    epm:followup-scope v1 marker, SKIP the c_check spawn below; the
+#    orchestrator posts the `epm:consistency v1` PASS-skipped marker
+#    directly (see /issue Step 2b's Skipped branch), and Phase 3
+#    proceeds as if PASS.
+task_kind = ...       # read from the task's frontmatter (kind:)
+task_parent_id = ...  # read from the task's frontmatter (parent_id:)
+has_followup_scope = ...  # scan events for an unrun epm:followup-scope v1
+if (invoked_from_issue
+        and task_kind in {"infra", "batch", "survey"}
+        and task_parent_id is None
+        and not has_followup_scope):
+    # Do NOT spawn; orchestrator posts the marker at /issue Step 2b.
+    c_check = None
+else:
+    c_check  = Agent(subagent_type="consistency-checker", prompt="Plan + related-task markers per /issue Step 2b:\n\n{corrected_plan}", run_in_background=True)
 # Wait for all spawns to complete.
 
 # 4b. Pick up each codex-critic's dispatch config and bg-dispatch
@@ -877,7 +1022,7 @@ review = Agent(subagent_type="reviewer", prompt="Verify this implementation matc
 | Critic — Statistics (Codex) | `codex-critic` | Thin Claude wrapper → Codex gpt-5.5. Measurement lens. |
 | Critic — Alternatives (Claude) | `critic` | Read-only + Bash. Fresh context, alternatives lens. |
 | Critic — Alternatives (Codex) | `codex-critic` | Thin Claude wrapper → Codex gpt-5.5. Alternatives lens. |
-| Consistency-checker (∥ critics, /issue-invoked only) | `consistency-checker` | Same Phase-2 spawn batch; needs only the corrected plan + parent recipe. BLOCK findings union into Phase 3 revise (verdict semantics per /issue Step 2b). |
+| Consistency-checker (∥ critics, /issue-invoked only) | `consistency-checker` | Same Phase-2 spawn batch; needs only the corrected plan + parent recipe. BLOCK findings union into Phase 3 revise (verdict semantics per /issue Step 2b). SKIPPED for parentless `kind: infra | batch | survey` (no unrun `epm:followup-scope v1`); orchestrator posts a PASS-skipped `epm:consistency v1` marker naming the reason (#1732). |
 | Codex bg-dispatch (×3, one per lens) | Manager (inline) | Bg-Bash `uv run python scripts/codex_task.py --prompt-file <prompt> --output-file <output> --effort high` for each codex-critic dispatch config returned in Step 4. WITHOUT this step, codex_out[lens] holds the dispatch-config text and the ensemble silently drops to single-Claude per lens. Subagents cannot bg-dispatch (no notification listener after they exit). |
 | Per-lens reconcile (on disagreement) | `reconciler` | In-context mode; reads both verdicts + plan, prints binding verdict to stdout. |
 | Cross-lens merge | Manager (inline) | Manager merges 3 lens verdicts after reconciliation: worst verdict wins, concatenate critique bodies with lens labels. |
@@ -923,5 +1068,6 @@ in as a post-park plan v2.
 - **Never skip the Implementation Critic.** The Implementation Critic catches what the implementer missed. The implementer is biased toward seeing success.
 - **Max 5 revision rounds (planning; the per-reviewer round cap — reconciler invocations don't count), max 2 fix rounds (implementation).** If it's not converging, surface the disagreement to the user.
 - **The user has final say.** Present the plan + critique + revision to the user before executing.
-- **Log the plan.** Register every plan revision via `uv run python scripts/task.py new-plan-version <N> --file <draft>.md`. This writes `tasks/<status>/<N>/plans/v<K>.md` and updates the `plans/plan.md` symlink. Downstream subagents read through the symlink.
+- **Log the plan.** Register every plan revision via `uv run python scripts/task.py new-plan-version <N> --file <draft>.md`. This writes `tasks/<status>/<N>/plans/v<K>.md` and updates the `plans/plan.md` symlink. Downstream subagents read through the symlink. The persist auto-aligns a self-declared `# Plan v<K>` first-heading version to the assigned version at write time (#1745), so a freshly-persisted plan cannot WARN on c40 for a stale header. Never re-persist a plan solely to retitle its header — that burns a plan version for zero content change (the #1715 churn loop); prefer version-neutral headers (`# Plan — task #<N>: …`) for new drafts. A scripted edit gates its persist on verified edit success — `&&`-chain edit
+→ verify → persist, abort loudly on failure (§ Edit-success gate).
 - **Read a Bash-materialized plan copy before Editing it.** When a revision round creates the draft via Bash (`cp plans/plan.md /tmp/...`, a heredoc, or a python writer), the harness requires an in-session `Read` of that file before any `Edit` — firing Edits straight at a just-copied file bounces every one with "File has not been read yet" (7 consecutive bounces in one 2026-07-04 session). Read once, then edit.

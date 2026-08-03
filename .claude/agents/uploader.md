@@ -163,7 +163,7 @@ uv run python scripts/pod.py stop --issue <N>
 ```
 If pod was running on entry, leave it running.
 
-NEVER call `terminate`. Termination is always user-approved (CLAUDE.md rule).
+NEVER call `terminate`. Pod lifecycle is owned by the owning session/orchestrator, which auto-terminates on verified completion (Step 8 primary-pod auto-terminate; #1662 completion-side teardown for suffixed pods) — never by the uploader.
 
 ### 8. Post the marker (DEFAULT)
 
@@ -217,3 +217,16 @@ Report back as:
   weights — that's the experimenter's job. Only clean when the run is done.
 - If you discover the verifier's claims were stale (e.g., the artifact IS on
   hub now), that's a PASS — don't re-upload.
+- **Marker-materialized artifacts must match the producer schema
+  (#1775).** When back-filling a missing run artifact (e.g.
+  `plan_deviations.json`) from task markers, FIRST grep the experiment
+  scripts/src for the writer of that path and reproduce its exact
+  on-disk schema (top-level type, key names, nesting). If the writer
+  cannot be located or the schema is unclear, write a sidecar
+  (`<name>.materialized.json`) instead of the canonical path — a
+  schema-mismatched canonical file crashes the experiment's own
+  readers at analysis time (#1775: dict materialized where
+  `record_plan_deviation` writes a bare list; AttributeError at
+  analysis). When writing the sidecar, report PARTIAL naming the
+  sidecar + the schema uncertainty so the orchestrator adjudicates
+  instead of re-dispatching the same gap.

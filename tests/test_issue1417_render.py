@@ -32,10 +32,13 @@ import issue1417_render as r1417  # noqa: E402
 # stop / generation param flips this hash — a must-ask plan deviation (plan
 # §"must-ask"), so the failure IS the surfacing. History: e90076475177f13a at
 # plan-v3 approval (the 5-cell registry; now r1417.PRIOR_RENDER_HASHES[0]);
-# c3e154d510dbe7b8 after the APPROVED milder-rude amendment (plan v6 §4.2 item
-# 1) appended the ADDITIVE c2_rude_mild cell — the five original cells stay
+# c3e154d510dbe7b8 after the plan-v6 §4.2 amendment appended the ATTEMPT-1
+# c2_rude_mild cell (milder-rude text, plan v6 §4.2 item 1);
+# 066334cf0dbbae80 after the ATTEMPT-2 C2_MILD_SYSTEM render revision (plan
+# v7 §4.3 — the round's single pre-registered retry; branch commit
+# ed74d0e5a5, merged in d6bf719ced) — the five original cells stay
 # byte-frozen (pinned by tests/test_issue1417_milder_render.py).
-RENDER_CONFIG_HASH_PIN = "c3e154d510dbe7b8"
+RENDER_CONFIG_HASH_PIN = "066334cf0dbbae80"
 
 
 def test_g1_anchor_registry_has_all_four_anchor_cells_with_explicit_formats():
@@ -95,7 +98,7 @@ def test_render_config_hash_pin():
     assert r1417.render_config_hash() == RENDER_CONFIG_HASH_PIN, (
         "render config changed — any render TEXT / stop / gen-param change is a "
         "MUST-ASK plan deviation (plan §'must-ask'); update the pin only with an "
-        "approved plan amendment (last: milder-rude amendment, plan v6)"
+        "approved plan amendment (last: attempt-2 render revision, plan v7 §4.3)"
     )
 
 

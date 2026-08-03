@@ -77,7 +77,12 @@ Exit codes
   ``reason: confirm_artifacts_no_declaration``. Exit 3 ALSO covers
   ``reason: keep_running_tag_unreadable`` (#1485): the keep-running
   tag state could not be read, so teardown is SKIPPED fail-closed
-  (sidecar kept; fix the task read and re-run finalize).
+  (sidecar kept; fix the task read and re-run finalize). Exit 3 ALSO
+  covers ``reason: fetch_results_failed`` (#1973): the backend's
+  ``fetch_results`` raised the typed ``FetchResultsError`` (an
+  interrupted / timed-out results pull, or a failed staging merge) —
+  teardown SKIPPED, sidecar kept, finalize re-runnable, even when the
+  confirm gate passed on already-durable artifacts.
 * ``4`` — unexpected exception. ``stderr`` carries the traceback.
 * ``75`` — still-waiting (EX_TEMPFAIL; mirrors
   ``pod_lifecycle.EXIT_STILL_WAITING``). TWO producers, same contract:
@@ -502,7 +507,7 @@ def _build_production_backends() -> dict[str, Any]:
         typed terminal instead of blind-submitting a duplicate
         (round-6 B1).
         """
-        if kind in {"nibi", "fir", "mila"}:
+        if kind in {"nibi", "fir", "mila", "fellows"}:
             # _resolve_cluster_cfg raises on a typo'd / unavailable
             # cluster — that's a real misconfiguration, NOT something to
             # paper over with a silent None fallback.
@@ -516,7 +521,10 @@ def _build_production_backends() -> dict[str, Any]:
                 scratch_dir_for,
             )
 
-            name = job_name(spec, plan_hash=spec.extra.get("plan_hash"))
+            # Thread the resolved cluster so a suffixed lane (fellows,
+            # #1609 rule 8) reconnects by the SAME name the launch path
+            # stamped onto the sbatch.
+            name = job_name(spec, plan_hash=spec.extra.get("plan_hash"), cluster=cluster)
             found_id = query_by_name(robot_alias=cluster.ssh_host, job_name=name)
             if not found_id:
                 return None
@@ -963,6 +971,171 @@ def _warn_workload_cmd_env_and_flag_marker(
     )
 
 
+def _warn_workload_cmd_inline_interpreter_and_flag_marker(
+    spec: Any, marker_poster: Callable[..., None]
+) -> Callable[..., None]:
+    """WARN-only #1576 arm of the #1329 workload-cmd lint family. Never blocks.
+
+    Flags an inline-interpreter one-liner BODY (``python -c`` / stdin
+    heredoc) per ``lint_workload_cmd_inline_interpreter``; the sanctioned
+    trailing ``write_completion_sentinel`` append is exempt (strip-then-scan).
+    Shares the family kill switch ``EPM_SKIP_WORKLOAD_CMD_ENV_LINT=1`` — a
+    silenced HIT logs one info line for operator symmetry with the family
+    gate. No strict upgrade: ``--strict-workload-cmd-env`` is lane-env-scoped
+    by contract (#1576 plan §11 D1) — this arm has NO refusal path at all.
+    """
+    from explore_persona_space.backends.issue_dispatch import (
+        lint_workload_cmd_inline_interpreter,
+    )
+
+    if not spec.workload_cmd:
+        return marker_poster
+    lint = lint_workload_cmd_inline_interpreter(spec.workload_cmd)
+    if not lint.flagged:
+        return marker_poster
+    log = logging.getLogger("dispatch_issue")
+    if os.environ.get("EPM_SKIP_WORKLOAD_CMD_ENV_LINT") == "1":
+        log.info(
+            "EPM_SKIP_WORKLOAD_CMD_ENV_LINT=1 — workload-cmd inline-interpreter "
+            "lint (#1576) silenced a %s hit.",
+            lint.shape,
+        )
+        return marker_poster
+    log.warning(
+        "--workload-cmd body is an inline interpreter one-liner (%s). Ad-hoc probe "
+        "workloads are committed scripts invoked by path (SKILL.md § Backend dispatch; "
+        "incident #1482: a placeholder-broken inline staging one-liner SyntaxError'd "
+        "post-b0 and spuriously failed over to RunPod) — inline bodies are un-lintable, "
+        "un-smokeable, and quoting-fragile. Rewrite as a committed branch script, push, "
+        "re-dispatch by path with --repo-branch. The trailing "
+        "write_completion_sentinel append is exempt%s. Launch continues; "
+        "epm:backend-selected carries extra.workload_cmd_inline_interpreter. Silence "
+        "with EPM_SKIP_WORKLOAD_CMD_ENV_LINT=1.",
+        lint.shape,
+        " (stripped before this scan)" if lint.sentinel_append_stripped else "",
+    )
+    return _wrap_marker_poster_with_override_flag(
+        marker_poster,
+        {
+            "workload_cmd_inline_interpreter": {
+                "shape": lint.shape,
+                "sentinel_append_stripped": lint.sentinel_append_stripped,
+            }
+        },
+    )
+
+
+#: First committed driver-script token in a ``--workload-cmd`` string
+#: (``bash scripts/<driver>.sh`` / ``uv run python scripts/<x>.py``) —
+#: the resolution anchor for the #1800 persist-evidence lint.
+_WORKLOAD_CMD_SCRIPT_TOKEN_RE = re.compile(r"scripts/[A-Za-z0-9_.\-/]+\.(?:sh|py)\b")
+
+
+def _resolve_workload_driver_script(
+    workload_cmd: str, repo_branch: str | None
+) -> tuple[str | None, str | None]:
+    """Fail-soft driver-script text resolution for the #1800 persist lint.
+
+    Extracts the FIRST ``scripts/<x>.sh|.py`` token from the workload
+    command and resolves its text in ladder order: ``git show
+    origin/<repo_branch>:<path>`` (the ref the gcp/runpod lanes actually
+    clone), the local ``<repo_branch>`` ref, then the invoking working
+    tree. Returns ``(path, text)``; ``(path, None)`` when the token
+    resolved NOWHERE (caller skips the lint with ONE note); ``(None,
+    None)`` when the command names no script token at all. Never raises —
+    an unresolvable script must never block a launch.
+    """
+    m = _WORKLOAD_CMD_SCRIPT_TOKEN_RE.search(workload_cmd or "")
+    if m is None:
+        return None, None
+    path = m.group(0)
+    refs = [f"origin/{repo_branch}", repo_branch] if repo_branch else []
+    for ref in refs:
+        try:
+            proc = subprocess.run(
+                ["git", "show", f"{ref}:{path}"],
+                capture_output=True,
+                text=True,
+                timeout=15,
+                check=False,
+                env={**os.environ},
+            )
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if proc.returncode == 0 and proc.stdout:
+            return path, proc.stdout
+    try:
+        p = Path(path)
+        if p.is_file():
+            return path, p.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        pass
+    return path, None
+
+
+def _warn_workload_cmd_persist_and_flag_marker(
+    spec: Any, marker_poster: Callable[..., None]
+) -> Callable[..., None]:
+    """WARN-only #1800 arm of the workload-cmd lint family. Never blocks.
+
+    Flags a workload chain with ZERO persist-evidence tokens (per
+    ``lint_workload_cmd_persist_evidence``) across the command + the
+    resolved driver-script text — the #1739 class: a run completes every
+    phase with no upload step wired anywhere and leaves zero artifacts on
+    HF. Fail-soft: an unresolvable driver script skips the lint with ONE
+    stderr note, never a refusal. Own kill switch
+    ``EPM_SKIP_WORKLOAD_CMD_PERSIST_LINT=1``. No strict upgrade:
+    ``--strict-workload-cmd-env`` is lane-env-scoped by contract (the
+    #1576 precedent) — this arm has NO refusal path at all. Hydra
+    launches (no ``--workload-cmd``) are exempt: ``train.py`` carries
+    built-in upload paths.
+    """
+    from explore_persona_space.backends.issue_dispatch import (
+        PERSIST_EVIDENCE_TOKENS,
+        lint_workload_cmd_persist_evidence,
+    )
+
+    if not spec.workload_cmd:
+        return marker_poster
+    log = logging.getLogger("dispatch_issue")
+    if os.environ.get("EPM_SKIP_WORKLOAD_CMD_PERSIST_LINT") == "1":
+        log.info(
+            "EPM_SKIP_WORKLOAD_CMD_PERSIST_LINT=1 — workload-cmd persist-evidence "
+            "lint (#1800) skipped."
+        )
+        return marker_poster
+    script_path, script_text = _resolve_workload_driver_script(
+        spec.workload_cmd, (spec.extra or {}).get("repo_branch")
+    )
+    lint = lint_workload_cmd_persist_evidence(spec.workload_cmd, script_text)
+    if lint.skipped:
+        log.info(
+            "workload-cmd persist-evidence lint (#1800) skipped — driver script %s "
+            "unresolvable (git show origin/<branch> / local branch / working tree). "
+            "Step 8 upload-verification remains the hard persist gate.",
+            script_path or "<none named in --workload-cmd>",
+        )
+        return marker_poster
+    if not lint.flagged:
+        return marker_poster
+    log.warning(
+        "--workload-cmd chain carries NO persist-evidence token (%s) in the command "
+        "or the resolved driver script %s — the #1739 class: the run can complete "
+        "every phase and leave ZERO artifacts on HF, forcing improvised recovery "
+        "uploads against the poweroff clock. Wire an upload/persist step (Upload "
+        "Policy: raw completions MUST upload before teardown; #779 "
+        "persist-by-default), or a plan-NAMED off-pod harvest+upload step. Launch "
+        "continues; epm:backend-selected carries "
+        "extra.workload_cmd_no_persist_evidence. Silence with "
+        "EPM_SKIP_WORKLOAD_CMD_PERSIST_LINT=1.",
+        ", ".join(PERSIST_EVIDENCE_TOKENS),
+        script_path,
+    )
+    return _wrap_marker_poster_with_override_flag(
+        marker_poster, {"workload_cmd_no_persist_evidence": True}
+    )
+
+
 def _workload_cmd_env_lint_gate(
     args: argparse.Namespace, spec: Any
 ) -> tuple[Any, dict[str, Any] | None]:
@@ -1235,6 +1408,28 @@ def _issue_worktree_git_root(issue: int) -> str | None:
     return str(wt) if wt.exists() else None
 
 
+def _parse_env_pins(pairs: list[str] | None) -> dict[str, str]:
+    """Parse repeated ``--env-pin KEY=VALUE`` pairs into a validated dict (#1669).
+
+    Splits each pair on the FIRST ``=`` (a ``WANDB_TAGS=a=b`` value is
+    legal); a pair with no ``=`` raises ``ValueError``. Validation is the
+    strict :func:`backends.base.validate_env_pins` (allowlisted key,
+    non-empty single-line non-secret-shaped value) — ``main()``'s
+    parse-time guard converts the raise to ``parser.error`` (exit 2).
+    """
+    from explore_persona_space.backends.base import validate_env_pins
+
+    if not pairs:
+        return {}
+    pins: dict[str, str] = {}
+    for pair in pairs:
+        key, sep, value = pair.partition("=")
+        if not sep:
+            raise ValueError(f"--env-pin {pair!r} is not KEY=VALUE (no '=')")
+        pins[key] = value
+    return validate_env_pins(pins)
+
+
 def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa: C901 — flat per-knob if-chain: one independent branch per launch CLI flag (#1468 added --min-gpu-mem-gb); extracting sub-helpers would obscure the knob-to-extra mapping (annotated-noqa precedent: gcp.py GcpBackend.launch).
     """Build ``spec.extra`` from the launch CLI's lane-specific knobs.
 
@@ -1281,6 +1476,34 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         # an undersized pod. GCP machine selection is unchanged (by intent);
         # inert on SLURM lanes.
         extra["min_ram_gb"] = int(args.min_ram_gb)
+    if getattr(args, "env_pin", None):
+        # #1669: launch env pins (WANDB_PROJECT et al.) — persisted into the
+        # handle sidecar so the failover reconstructors
+        # (backend_poll._runspec_from_*_handle) forward them into a fresh
+        # provision, and rendered as shell-escaped exports BEFORE each lane's
+        # WANDB_PROJECT:-issue<N> default (incident #1586). Set ONLY when
+        # non-empty (omit-when-absent — the #934 lane_suffix discipline: a
+        # None/empty-valued key would flip canonicalize_spec output and every
+        # live lease spec-hash). main()'s parse-time guard already rejected
+        # malformed / non-allowlisted pins and pins without --workload-cmd,
+        # so this re-parse cannot raise on the CLI path.
+        pins = _parse_env_pins(args.env_pin)
+        if pins:
+            extra["env_pins"] = pins
+    if getattr(args, "extra_sync_path", None):
+        # #1835: SLURM-lane extra rsync paths — validated + dot-anchored at
+        # parse time (main()'s guard; this re-validate cannot raise on the
+        # CLI path) and RE-validated by SlurmBackend.prepare (the handle
+        # sidecar JSON round-trips tuple -> list). Stored as a LIST so the
+        # sidecar serializes cleanly; set only when non-empty (the #934
+        # omit-when-absent discipline). Consumed ONLY by the SLURM lane's
+        # additive extra rsync; inert on GCP / RunPod (their git clones
+        # carry committed inputs already).
+        from explore_persona_space.backends.slurm import validate_extra_sync_paths
+
+        paths = list(validate_extra_sync_paths(args.extra_sync_path))
+        if paths:
+            extra["extra_sync_paths"] = paths
     if getattr(args, "min_gpu_mem_gb", None):
         # GCP A100-40 rung gate (#1468): read by gcp.a100_40_fallback_for_intent
         # — a declared per-GPU requirement strictly above gcp.A100_40_USABLE_GIB
@@ -1554,6 +1777,15 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
     # epm:backend-selected marker); exit-2 pre-route refusal only when the
     # crash is provably certain on the pinned lane (lint.certain) or under
     # --strict-workload-cmd-env. Kill switch: EPM_SKIP_WORKLOAD_CMD_ENV_LINT=1.
+    # A SECOND, WARN-only family arm (#1576, incident #1482) flags an
+    # inline-interpreter one-liner body (python -c / stdin heredoc; the
+    # sanctioned write_completion_sentinel append is exempt) via the
+    # marker-poster decoration below — never a refusal, and
+    # --strict-workload-cmd-env does NOT upgrade it. A THIRD, WARN-only
+    # arm (#1800, incident #1739) flags a chain with NO persist-evidence
+    # token in the command + the resolved driver script (kill switch:
+    # EPM_SKIP_WORKLOAD_CMD_PERSIST_LINT=1; unresolvable script → lint
+    # skipped with one note; never a refusal, no strict upgrade).
     env_lint, env_refusal = _workload_cmd_env_lint_gate(args, spec)
     if env_refusal is not None:
         print(json.dumps(env_refusal, sort_keys=True))
@@ -1561,6 +1793,8 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
 
     deps = backends_factory()
     marker_poster = _warn_workload_cmd_env_and_flag_marker(env_lint, deps["marker_poster"])
+    marker_poster = _warn_workload_cmd_inline_interpreter_and_flag_marker(spec, marker_poster)
+    marker_poster = _warn_workload_cmd_persist_and_flag_marker(spec, marker_poster)
     marker_poster = _check_runpod_override_frontmatter(int(args.issue), args.backend, marker_poster)
     marker_poster = _warn_default_boot_disk_ft_intent(spec, int(args.issue), marker_poster)
     try:
@@ -1726,6 +1960,16 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         "workload_pid": handle_extra.get("workload_pid"),
         "log_path": result.handle.log_path,
     }
+    if getattr(args, "extra_sync_path", None):
+        # #1835 gate->launch drift audit: echo the RESOLVED (normalized,
+        # dot-anchored) extra sync paths into the printed launch JSON line
+        # so the launched set is auditable against the Step 6a.5
+        # `verify_carryover_inputs.py --lane rsync` invocation. The
+        # epm:backend-selected marker is composed router-side with no clean
+        # dispatcher note seam, so the launch JSON line is the record.
+        from explore_persona_space.backends.slurm import validate_extra_sync_paths
+
+        body["extra_sync_paths"] = list(validate_extra_sync_paths(args.extra_sync_path))
     _annotate_launch_body_reconnect_and_lane(body, args=args, result=result)
     if outcome.sidecar_write_error is not None:
         # The launch SUCCEEDED (live VM / job) but the sidecar write
@@ -1881,6 +2125,46 @@ def _keep_running_tag_state_safe(issue: int) -> bool | None:
     return keep_running_tag_state(int(issue))
 
 
+def _fetch_results_for_finalize(backend: Any, handle: Any, issue: int) -> str | None:
+    """Run ``backend.fetch_results`` for finalize; return the TYPED failure.
+
+    Returns the ``FetchResultsError`` message when the results pull
+    failed TYPED — an interrupted / timed-out pull, or a failed staging
+    merge (#1973, incident #1768 r3): the caller (``_cmd_finalize``)
+    still runs the confirm gate for evidence, then surfaces the exit-3
+    ``fetch_results_failed`` verdict (teardown skipped, sidecar kept,
+    finalize re-runnable) — never an unqualified ``ok: true``. Returns
+    ``None`` on success. A NON-typed fetch CRASH keeps the legacy
+    fail-soft contract (#588): log loudly + continue to the confirm
+    gate — a missing local sentinel FAILs confirm with the right
+    surfacing (teardown skipped, evidence preserved), never a finalize
+    traceback.
+    """
+    from explore_persona_space.backends.base import FetchResultsError
+
+    try:
+        backend.fetch_results(handle)
+    except FetchResultsError as exc:
+        logging.getLogger("dispatch_issue").error(
+            "finalize: fetch_results FAILED (typed) for issue=%d: %s — running the "
+            "confirm gate for evidence, then surfacing a NON-ok finalize verdict "
+            "(teardown skipped, sidecar kept).",
+            issue,
+            exc,
+        )
+        return str(exc)
+    except Exception as exc:
+        logging.getLogger("dispatch_issue").error(
+            "finalize: fetch_results FAILED for issue=%d (%s: %s); continuing to the "
+            "confirm_artifacts gate — a missing local sentinel will FAIL confirm with "
+            "the right surfacing (teardown skipped, evidence preserved).",
+            issue,
+            type(exc).__name__,
+            exc,
+        )
+    return None
+
+
 def _cmd_finalize(
     args: argparse.Namespace, *, backends_factory: Callable[[], dict[str, Any]]
 ) -> int:
@@ -1935,6 +2219,15 @@ def _cmd_finalize(
     declaration never degrades — a real mechanical FAIL always exits 3.
     Either way the currency gate above already ran: the degrade can only
     execute when the blocker is None on the non-skip path.
+
+    Typed fetch-failure gate (#1973): a ``FetchResultsError`` raised by
+    ``backend.fetch_results`` (an interrupted / timed-out results pull,
+    or a failed staging merge) is recorded and — after the confirm gate
+    ran for evidence (or was skipped) — surfaces as exit 3 with
+    ``reason: fetch_results_failed``: teardown SKIPPED, sidecar NOT
+    retired, finalize re-runnable. A NON-typed fetch crash keeps the
+    legacy fail-soft behavior (log loudly + continue to the confirm
+    gate, whose own FAIL carries the surfacing).
 
     After a SUCCESSFUL teardown the sidecar is renamed to
     ``<name>.finalized`` (audit record, never deleted) so a later
@@ -2080,17 +2373,7 @@ def _cmd_finalize(
     # own two-tier contract — but wrap defensively: a fetch CRASH must
     # surface as the confirm FAIL (right surfacing, evidence preserved),
     # not as a finalize traceback.
-    try:
-        backend.fetch_results(handle)
-    except Exception as exc:
-        logging.getLogger("dispatch_issue").error(
-            "finalize: fetch_results FAILED for issue=%d (%s: %s); continuing to the "
-            "confirm_artifacts gate — a missing local sentinel will FAIL confirm with "
-            "the right surfacing (teardown skipped, evidence preserved).",
-            int(args.issue),
-            type(exc).__name__,
-            exc,
-        )
+    fetch_failed = _fetch_results_for_finalize(backend, handle, int(args.issue))
 
     confirm_degraded: str | None = None
     if not args.skip_confirm_artifacts:
@@ -2157,6 +2440,29 @@ def _cmd_finalize(
                 }
                 print(json.dumps(body, sort_keys=True))
                 return 3
+
+    # #1973: a typed fetch_results failure surfaces as a NON-ok verdict
+    # even when the confirm gate passed or was skipped — the declared
+    # artifacts may already be durable from an earlier pull while THIS
+    # pull left the live trees incomplete (the #1768 shape: confirm
+    # passed on already-durable artifacts, finalize reported ok, and the
+    # partial residue sat silent). Teardown SKIPPED + sidecar NOT
+    # retired — mirrors the confirm-fail semantics: evidence preserved,
+    # finalize re-runnable (SLURM teardown is a scancel no-op on a
+    # terminal job; the remote scratch + local staging both survive for
+    # the retry).
+    if fetch_failed is not None:
+        body = {
+            "ok": False,
+            "issue": int(args.issue),
+            "phase": "fetch_results",
+            "reason": "fetch_results_failed",
+            "detail": fetch_failed,
+            "chosen_kind": handle.backend,
+            "pod_name": handle.pod_name,
+        }
+        print(json.dumps(body, sort_keys=True))
+        return 3
 
     backend.teardown(handle)
 
@@ -2289,10 +2595,12 @@ def _build_argparser() -> argparse.ArgumentParser:
         default=None,
         help=(
             "Frontmatter ``backend:`` value verbatim (empty / absent → auto). "
-            "One of: runpod, nibi, fir, gcp, mila, cluster (legacy alias), auto."
+            "One of: runpod, nibi, fir, gcp, mila, fellows, cluster (legacy alias), auto."
         ),
     )
-    launch.add_argument("--cluster", type=str, default=None, help="SLURM cluster name (nibi/fir).")
+    launch.add_argument(
+        "--cluster", type=str, default=None, help="SLURM cluster name (nibi/fir/fellows)."
+    )
     launch.add_argument(
         "--gpus",
         type=int,
@@ -2415,6 +2723,61 @@ def _build_argparser() -> argparse.ArgumentParser:
         ),
     )
     launch.add_argument(
+        "--env-pin",
+        action="append",
+        default=None,
+        metavar="KEY=VALUE",
+        help=(
+            "Launch env pin (repeatable, #1669): an environment export the "
+            "workload must see on EVERY provision, incl. watcher/poller "
+            "failover re-provisions (incident #1586: a wedge-failover pod "
+            "rebooted with only the generic issue<N> WandB default and its "
+            "runs landed in the wrong project). KEY is restricted to "
+            "backends.base.ENV_PIN_ALLOWED_KEYS (WANDB_PROJECT / "
+            "WANDB_RUN_GROUP / WANDB_TAGS / EPM_PERSIST_ADAPTER_* / "
+            "EPM_UPLOAD_MERGED + the runtime-tuning set: "
+            "PYTORCH_CUDA_ALLOC_CONF / MALLOC_ARENA_MAX / *_NUM_THREADS — "
+            "#1803/#1852) — secret keys are unrepresentable by "
+            "construction. Splits on the FIRST '=' (WANDB_TAGS=a=b is "
+            "legal). Threads to spec.extra['env_pins'] -> the handle "
+            "sidecar; every lane's workload-cmd launcher exports the pins "
+            "(shell-escaped) BEFORE its WANDB_PROJECT:-issue<N> default, so "
+            "the pin wins over the generic default. Requires a non-empty "
+            "--workload-cmd (all renderer insertion points are workload-cmd "
+            "branches; a hydra launch has no pin consumer). ADOPTION (the "
+            "--boot-disk-gb pattern): launch composers SHOULD pass "
+            "--env-pin WANDB_PROJECT=<declared project> whenever the plan's "
+            "Reproducibility Card declares a non-default WandB project; a "
+            "flag-less launch keeps today's behavior. Runtime-tuning "
+            "example: --env-pin PYTORCH_CUDA_ALLOC_CONF="
+            "expandable_segments:True (the gotchas.md CUDA-OOM hot-fix "
+            "knob)."
+        ),
+    )
+    launch.add_argument(
+        "--extra-sync-path",
+        action="append",
+        default=None,
+        metavar="REPO_REL_PATH",
+        help=(
+            "Repo-relative path (repeatable, #1835) the SLURM rsync lane must "
+            "ADDITIONALLY stage to the cluster scratch — plan-cited committed "
+            "reference inputs (eval_results/issue_<M>/..., ood_eval_results/...) "
+            "that RSYNC_INCLUDE_PATHS omits and RSYNC_EXCLUDE_PATTERNS excludes "
+            "(incident #1689: fellows job 15188 died at first read on a "
+            "gate-certified committed input). Validated + dot-anchored at parse "
+            "time (backends.slurm.validate_extra_sync_paths: repo-relative only, "
+            "no '..'); threads to spec.extra['extra_sync_paths'] -> the handle "
+            "sidecar. Accepted on EVERY lane; consumed only by SlurmBackend."
+            "prepare's separate additive rsync (-a --relative --partial "
+            "--mkpath, NO --delete, NO excludes) — lane-inert elsewhere. Unlike "
+            "--env-pin there is NO --workload-cmd requirement (the knob is "
+            "lane-scoped, not command-scoped). Pass the SAME values to "
+            "scripts/verify_carryover_inputs.py --lane rsync (Step 6a.5) so the "
+            "gate-PASSing set and the launched set cannot drift."
+        ),
+    )
+    launch.add_argument(
         "--min-gpu-mem-gb",
         type=int,
         default=None,
@@ -2471,10 +2834,13 @@ def _build_argparser() -> argparse.ArgumentParser:
             "bootstrap. GCP lane: may be blocking or self-daemonizing — a detached "
             "(setsid-forked) workload MUST write its pid to a fresh file under "
             "/workspace/logs/*.pid; the GCP startup script waits on it before declaring "
-            "done (#601). SLURM lanes (nibi/fir/mila): the command MUST BLOCK until the "
+            "done (#601). SLURM lanes (nibi/fir/mila/fellows): the command MUST BLOCK until the "
             "workload finishes — the sbatch terminal block + job COMPLETED fire on command "
             "return and the job-exit cgroup teardown kills detached children (no /workspace "
-            "pid contract exists there; #601 follow-up). Mutually "
+            "pid contract exists there; #601 follow-up). An inline-interpreter one-liner "
+            "BODY (python -c / stdin heredoc) draws a WARN-only lint (#1576, incident "
+            "#1482; the trailing write_completion_sentinel append is exempt) — prefer a "
+            "committed branch script invoked by path. Mutually "
             "exclusive with --hydra; exactly one of the two is required (#588)."
         ),
     )
@@ -2642,6 +3008,37 @@ def main(
                 "--execute-workload requires a non-empty --workload-cmd "
                 "(it cannot execute a --hydra run)"
             )
+        # #1669: --env-pin is workload-cmd-only — every renderer insertion
+        # point (runpod launcher / gcp startup workload branch / slurm
+        # custom stage) is a workload-cmd branch, so a pin on a hydra
+        # launch would silently no-op; gating here is also what keeps the
+        # GCP hydra-branch render byte-identical by construction. Malformed
+        # / non-allowlisted / secret-shaped pins reject at parse time too
+        # (exit 2), BEFORE any backend is built (mirrors the
+        # --execute-workload guard above).
+        if getattr(args, "env_pin", None):
+            if not has_workload_cmd:
+                parser.error(
+                    "--env-pin requires a non-empty --workload-cmd "
+                    "(the lane launchers' pin exports are workload-cmd-only, #1669)"
+                )
+            try:
+                _parse_env_pins(args.env_pin)
+            except ValueError as exc:
+                parser.error(str(exc))
+        # #1835: --extra-sync-path validates at parse time (exit 2) —
+        # repo-relative, no '..', non-empty — BEFORE any backend is built.
+        # UNLIKE --env-pin there is deliberately NO --workload-cmd
+        # requirement: the knob is lane-scoped (consumed only by the SLURM
+        # prepare's additive rsync), not command-scoped, so it must ride
+        # hydra launches too.
+        if getattr(args, "extra_sync_path", None):
+            from explore_persona_space.backends.slurm import validate_extra_sync_paths
+
+            try:
+                validate_extra_sync_paths(args.extra_sync_path)
+            except ValueError as exc:
+                parser.error(str(exc))
     logging.basicConfig(
         stream=sys.stderr,
         level=logging.DEBUG if args.debug else logging.INFO,

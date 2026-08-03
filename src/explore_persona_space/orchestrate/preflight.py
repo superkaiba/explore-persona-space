@@ -38,6 +38,7 @@ import os
 import shutil
 import subprocess
 import sys
+import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -86,6 +87,12 @@ class PreflightReport:
     hf_storage_used_tb: float | None = None
     hf_storage_ceiling_tb: float | None = None
     hf_storage_basis: str = ""
+    # Zero-byte LFS batch-negotiation billing/quota probe (#1654). Empty =
+    # not checked; verdict in {"ok","billing-blocked","storage-blocked",
+    # "unknown","disabled"}. Set by ``check_hf_lfs_write_gate``.
+    hf_lfs_write_verdict: str = ""
+    hf_lfs_write_detail: str = ""
+    hf_lfs_write_probe_gb: float = 0.0
 
     def add_error(self, msg: str):
         self.errors.append(msg)
@@ -138,6 +145,14 @@ class PreflightReport:
             )
         else:
             lines.append(f"  HF storage: unknown ({self.hf_storage_basis or 'not checked'})")
+        if self.hf_lfs_write_verdict:
+            if self.hf_lfs_write_probe_gb > 0:
+                lines.append(
+                    f"  HF LFS write gate: {self.hf_lfs_write_verdict} "
+                    f"({self.hf_lfs_write_probe_gb:.0f} GB declared probe)"
+                )
+            else:
+                lines.append(f"  HF LFS write gate: {self.hf_lfs_write_verdict}")
         lines.append(f"  Git: {self.git_status}")
         lines.append(f"  Env synced: {'yes' if self.env_synced else 'NO'}")
         lines.append(f"{'=' * 60}\n")
@@ -533,16 +548,25 @@ def _probe_writable_bytes(check_path: str, probe_bytes: int) -> tuple[bool, str 
     Returns:
         (ok, fallback_reason). ``ok`` is True when the allocation succeeded.
         ``fallback_reason`` is set to a non-None string ONLY when the probe could
-        not run (filesystem does not support fallocate); in that case the caller
-        must fall back to ``shutil.disk_usage`` and ``ok`` is True. ``ok`` is
-        False when the allocation was actively refused (EDQUOT/ENOSPC), with
+        not run (filesystem does not support — or does not reliably support —
+        fallocate); in that case the caller must fall back to
+        ``shutil.disk_usage`` and ``ok`` is True. ``ok`` is False when the
+        allocation was actively refused (EDQUOT/ENOSPC), with
         ``fallback_reason`` left None.
 
     Asserts probe_bytes > 0 — a zero-byte probe never exercises the quota.
     """
     assert probe_bytes > 0, f"probe_bytes must be positive, got {probe_bytes}"
 
-    probe_path = Path(check_path) / ".preflight_disk_probe.tmp"
+    # Per-invocation unique filename: concurrent probes on a SHARED filesystem
+    # (e.g. 8 per-unit workers each calling assert_out_root_headroom at startup
+    # on a cluster share) must never open/fallocate/unlink one common path — a
+    # sibling's unlink/recreate invalidates this process's fd mid-fallocate,
+    # surfacing as OSError EBADF outside the handled errno sets (#1979 fellows
+    # job 16686: 5 of 8 workers died rc=1 at the startup headroom probe).
+    probe_path = (
+        Path(check_path) / f".preflight_disk_probe.{os.getpid()}.{uuid.uuid4().hex[:8]}.tmp"
+    )
     fd = None
     try:
         probe_path.parent.mkdir(parents=True, exist_ok=True)
@@ -551,10 +575,14 @@ def _probe_writable_bytes(check_path: str, probe_bytes: int) -> tuple[bool, str 
             os.posix_fallocate(fd, 0, probe_bytes)
         except OSError as e:
             if e.errno in (errno.ENOSPC, errno.EDQUOT):
+                # Real headroom/quota signals (MooseFS per-pod EDQUOT) — never
+                # swallowed into the fallback path.
                 return False, None
-            if e.errno in (errno.EOPNOTSUPP, errno.ENOSYS, errno.EINVAL):
+            if e.errno in (errno.EOPNOTSUPP, errno.ENOSYS, errno.EINVAL, errno.EBADF):
                 # Filesystem doesn't support fallocate (tmpfs, some overlay FS,
-                # macOS). Caller falls back to shutil.disk_usage.
+                # macOS). VAST/NFS-class mounts surface EBADF from fallocate on
+                # a just-opened valid fd (fellows /workspace, #1902 job 16139).
+                # Caller falls back to shutil.disk_usage.
                 return True, f"posix_fallocate unsupported (errno={e.errno})"
             raise
         return True, None
@@ -1128,6 +1156,72 @@ def check_hf_storage(report: PreflightReport, planned_upload_gb: float | None = 
         # live re-probe fits never blocks and adds no warning).
 
 
+def check_hf_lfs_write_gate(report: PreflightReport, planned_upload_gb: float | None = None):
+    """Billing/quota write-gate probe at declared production scale (#1654).
+
+    Runs ``hub.check_lfs_write_gate()`` — a zero-byte LFS batch-negotiation
+    probe declaring ~16 GB — because the Step 6a.6 1 KB text probe is
+    structurally FALSE-GREEN for quota/billing 403s, which fire only on the
+    LFS endpoint (#1586: a 2 MB probe passed while 15.2 GB FT checkpoints
+    403'd on "You need to setup automatic credit recharge").
+
+    Mirrors :func:`check_hf_storage`'s #1034 verdict semantics exactly:
+
+    * ``"disabled"``: silent; if ``planned_upload_gb`` is supplied, WARN that
+      the requested gate was not evaluated (kill switch wins, visibly).
+    * ``"ok"``: record fields, silent (the summary line carries the verdict).
+    * ``"billing-blocked"`` / ``"storage-blocked"`` (live-confirmed by
+      construction — the probe IS live): ``planned_upload_gb`` supplied ->
+      ERROR with the remediation message; else -> WARNING (same message).
+    * ``"unknown"``: WARN (fail-open — the reactive 403 backstop stays
+      authoritative).
+
+    Advisory by default: never raises — any helper exception (including the
+    deliberate ``ValueError`` on a non-parseable ``EPM_HF_BILLING_PROBE_GB``)
+    degrades to a warning here, matching the sibling gate.
+    """
+    try:
+        from explore_persona_space.orchestrate.hub import check_lfs_write_gate
+
+        probe = check_lfs_write_gate()
+    except Exception as e:
+        report.add_warning(f"HF LFS write-gate probe failed ({e}) — gate not evaluated")
+        return
+    report.hf_lfs_write_verdict = probe.verdict
+    report.hf_lfs_write_detail = probe.detail
+    report.hf_lfs_write_probe_gb = probe.probe_gb
+    if probe.verdict == "disabled":
+        if planned_upload_gb is not None:
+            report.add_warning(
+                "HF LFS write gate: gate requested but billing probe disabled "
+                "(EPM_HF_BILLING_PROBE=0) — gate not evaluated"
+            )
+        return
+    if probe.verdict == "unknown":
+        report.add_warning(
+            f"HF LFS write gate: probe inconclusive ({probe.detail}) — fail-open; "
+            f"the reactive 403 backstop stays authoritative"
+        )
+        return
+    if probe.verdict in {"billing-blocked", "storage-blocked"}:
+        msg = (
+            f"HF LFS write path BLOCKED at {probe.probe_gb:.0f} GB declared scale on "
+            f"{probe.repo_id} ({probe.verdict}): {probe.detail}. A KB-MB canary passes "
+            f"while GB-scale uploads 403 (#1586). Remediation (billing): enable automatic "
+            f"credit recharge at huggingface.co/settings/billing -> 'Billing' -> "
+            f"'Auto-recharge' (end-state: the toggle shows ON with a recharge amount + a "
+            f"valid payment method listed); (storage): free quota or see "
+            f".claude/rules/upload-policy.md § HF storage-quota 403 — the error excerpt "
+            f"above governs the exact path (e.g. a 'storage patterns' manual-review 403 "
+            f"names its own contact address). Account context: {probe.billing_context}."
+        )
+        if planned_upload_gb is not None:
+            report.add_error(msg)
+        else:
+            report.add_warning(msg)
+    # probe.verdict == "ok" -> silent (recorded fields + summary line only).
+
+
 def preflight_check(
     require_gpu: bool = True,
     min_disk_gb: float = 50.0,
@@ -1156,8 +1250,10 @@ def preflight_check(
         planned_upload_gb: Planned canonical-public LFS upload size in decimal GB
             (#1034). When supplied, the HF-storage check hard-FAILs on a
             LIVE-CONFIRMED insufficient headroom with overflow routing off
-            (WARNs when armed; fail-open on unknown/disabled). None (default)
-            => today's WARN-only behavior, so existing callers are unaffected.
+            (WARNs when armed; fail-open on unknown/disabled), AND the LFS
+            write-gate leg (#1654) hard-FAILs on a billing-blocked /
+            storage-blocked batch-negotiation probe. None (default) => WARN-only
+            behavior on both legs, so existing callers are unaffected.
 
     Returns:
         PreflightReport with pass/fail status and details.
@@ -1206,6 +1302,7 @@ def preflight_check(
     check_vllm_transformers_compat(report)
     check_connectivity(report)
     check_hf_storage(report, planned_upload_gb)
+    check_hf_lfs_write_gate(report, planned_upload_gb)
 
     return report
 
@@ -1259,7 +1356,8 @@ def main(argv: list[str] | None = None) -> int:
         help="Planned canonical-public LFS upload size in decimal GB (#1034); FAILs "
         "preflight when a LIVE-CONFIRMED headroom read says used + planned exceeds the "
         "soft ceiling and EPM_HF_OVERFLOW_ROUTING is off (WARNs when armed; fail-open "
-        "on unknown). Omit to keep the WARN-only advisory.",
+        "on unknown), and arms the #1654 LFS write-gate probe (billing/quota 403 at "
+        "declared ~16 GB scale) as a hard gate. Omit to keep the WARN-only advisory.",
     )
     parser.add_argument(
         "--per-pod-quota-gb",

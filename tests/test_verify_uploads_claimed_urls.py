@@ -302,6 +302,61 @@ class TestCheckClaimedUrlsResolve:
         assert "hf://org/ghost-repo/some/path" in result["detail"]
         assert "neither model nor dataset" in result["detail"]
 
+    def test_glob_claimed_url_counted_in_detail_ok_path(self, tmp_path):
+        """#1482: a glob-shaped claimed URL (planned-output shape) is skipped
+        by verify_artifacts_exist and the OK detail names the skipped count —
+        never a silently-clean OK."""
+        blob_path = tmp_path / "claimed-urls.txt"
+        blob_path.write_text(
+            json.dumps(
+                {
+                    "planned": "hf://datasets/org/repo/issue1482/pooled_l3_*.npz",
+                    "input": "https://huggingface.co/datasets/org/repo/tree/main/issue1482/in.json",
+                }
+            ),
+            encoding="utf-8",
+        )
+        api = _make_api_with_files(["issue1482/in.json"])
+        with patch("huggingface_hub.HfApi", return_value=api):
+            result = verify_uploads.check_claimed_urls_resolve(blob_path)
+        assert result["status"] == "OK", result
+        assert "1 glob-shaped claimed URL(s) not existence-checkable — skipped" in result["detail"]
+
+    def test_glob_clause_rides_fail_detail_too(self, tmp_path):
+        """#1482: the skipped-glob count is appended on the FAIL path too —
+        a genuine phantom beside a glob claim reports both."""
+        blob_path = tmp_path / "claimed-urls.txt"
+        blob_path.write_text(
+            json.dumps(
+                {
+                    "planned": "hf://datasets/org/repo/issue1482/pooled_l3_*.npz",
+                    "ghost": "https://huggingface.co/datasets/org/repo/tree/main/ghost_seed99",
+                }
+            ),
+            encoding="utf-8",
+        )
+        api = _make_api_with_files([])  # ghost path resolves to nothing
+        with patch("huggingface_hub.HfApi", return_value=api):
+            result = verify_uploads.check_claimed_urls_resolve(blob_path)
+        assert result["status"] == "FAIL", result
+        assert "ghost_seed99" in result["detail"]
+        assert "1 glob-shaped claimed URL(s) not existence-checkable — skipped" in result["detail"]
+        # The skipped glob claim is NOT itself reported as a phantom.
+        assert "pooled_l3_*" not in result["detail"]
+
+    def test_no_glob_claims_no_clause(self, tmp_path):
+        """N == 0 glob claims → the clause is omitted entirely."""
+        blob_path = tmp_path / "claimed-urls.txt"
+        blob_path.write_text(
+            '{"in": "https://huggingface.co/datasets/org/repo/tree/main/issue1482/in.json"}',
+            encoding="utf-8",
+        )
+        api = _make_api_with_files(["issue1482/in.json"])
+        with patch("huggingface_hub.HfApi", return_value=api):
+            result = verify_uploads.check_claimed_urls_resolve(blob_path)
+        assert result["status"] == "OK", result
+        assert "glob-shaped" not in result["detail"]
+
     def test_missing_file_is_error(self, tmp_path):
         result = verify_uploads.check_claimed_urls_resolve(tmp_path / "nope.txt")
         assert result["status"] == "ERROR"

@@ -145,7 +145,7 @@ compression default OFF for fp16→Xet) · 14 completion provenance
 (on-policy-first positives; standardized multi-behavior definition shape) ·
 15 data-source realism tier · 16 merge-disk budget vs per-pod quota ·
 17 persona-vectors extraction fidelity (a)–(e) · 18 persist-by-default /
-undeclared generation-discard.
+undeclared generation-discard / ephemeral-lane git-only text-JSON dest.
 
 Full rubric (every item definition, REVISE bar, N/A escape, and incident
 citation): `.claude/rules/critic-lens-reference.md` § Methodology lens — grep the
@@ -171,7 +171,8 @@ same-round re-cost of affected §9 rows
 for any power-raising recommendation · 13 OOD generalization folds
 (group-level fold for group-structured held-out DVs) · 14 fail-loud
 acceptance claims backed by committed tests (per claim; grep gates are not
-tests).
+tests) · 15 mapping-baselines pair for fitted representation maps
+(identity+bias baseline + kNN retrieval; both reads or a stated exemption).
 
 Full rubric (every item definition, REVISE bar, N/A escape, and incident
 citation): `.claude/rules/critic-lens-reference.md` § Statistics & Measurement lens — grep the

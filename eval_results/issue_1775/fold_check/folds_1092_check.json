@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "git_commit": "f74fdf19341820e7e010fe2c965f9c574dc15192",
+    "timestamp_utc": "2026-07-29T02:35:38.501764+00:00",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "python": "3.11.15",
+    "fold_seed": 0,
+    "n_folds": 6,
+    "step": "folds1092",
+    "smoke": false
+  },
+  "n_manifest_rows": 21193,
+  "n_rows_considered": 21193,
+  "n_trait_stratum_excluded_population": 19708,
+  "n_battery_excluded_fit_population": 17308,
+  "expected": {
+    "n_manifest_rows": 21193,
+    "n_trait_stratum_excluded": 19708,
+    "n_battery_excluded": 17308
+  },
+  "counts_match_expected": true,
+  "fold_checks": {
+    "prefix_id": {
+      "n_folds": 6,
+      "fold_sizes": [
+        2730,
+        2902,
+        2936,
+        2936,
+        2936,
+        2868
+      ],
+      "n_groups": 996,
+      "groups_in_multiple_folds": 0
+    },
+    "query_id": {
+      "n_folds": 6,
+      "fold_sizes": [
+        2407,
+        2888,
+        3279,
+        2676,
+        3345,
+        2713
+      ],
+      "n_groups": 1397,
+      "groups_in_multiple_folds": 0
+    }
+  }
+}

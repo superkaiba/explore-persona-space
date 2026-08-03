@@ -38,6 +38,30 @@ _CARD_608 = {
     },
 }
 
+# The #1586 fu card shape (the 2026-07-24 epm:results marker, #1664): the
+# card default is the OVERFLOW repo while two cells' adapters live on the
+# main repo (#1108 file-count-fallback split), declared per cell via
+# adapter_repo_overrides. Deliberately carries NO _card_provenance so
+# exact-string detail asserts stay stable.
+_CARD_1586 = {
+    "hf_model_repo": "superkaiba1/explore-persona-space-overflow",
+    "adapter_paths": {
+        "mk-pers-ft2e6-con-s42": ("issue1586/fu_caveatfix/mk-pers-ft2e6-con-s42/checkpoint-12"),
+        "mk-pers-ft5e6-con-s42": ("issue1586/fu_caveatfix/mk-pers-ft5e6-con-s42/checkpoint-24"),
+        "imp-pers-lora5e6-con-s42": (
+            "issue1586/fu_caveatfix/imp-pers-lora5e6-con-s42/checkpoint-310"
+        ),
+        "imp-pers-lora2e6-con-s42": (
+            "issue1586/fu_caveatfix/imp-pers-lora2e6-con-s42/checkpoint-155"
+        ),
+    },
+    "adapter_repo_overrides": {
+        "imp-pers-lora5e6-con-s42": "superkaiba1/explore-persona-space",
+        "imp-pers-lora2e6-con-s42": "superkaiba1/explore-persona-space",
+    },
+}
+
+
 # The real #608 note shape: orchestrator prose prefix, then the JSON payload.
 _NOTE_608 = (
     "[drained by orchestrator from pod sentinel "
@@ -333,6 +357,71 @@ class TestMergedResultsCard:
         assert card["wandb_run_names"] == {"seed42": "run42"}
         assert "wandb_run_names @ t0" in card["_card_provenance"]
 
+    def test_prose_pointer_does_not_shadow_older_structural_adapter_repo_overrides(self):
+        """The #1489 shadow mechanism for the third structured field (#1664):
+        a newer prose adapter_repo_overrides string defers to an older
+        per-cell dict — a prose win would silently reroute the override
+        cells back to the default repo, recreating the #1586 false-MISS one
+        merge layer up."""
+        events = [
+            {
+                "kind": "epm:results",
+                "ts": "t0",
+                "note": (
+                    '{"reproducibility_card": {"adapter_repo_overrides": '
+                    '{"cell-a": "superkaiba1/explore-persona-space"}}}'
+                ),
+            },
+            {
+                "kind": "epm:results",
+                "ts": "t1",
+                "note": ('{"reproducibility_card": {"adapter_repo_overrides": "unchanged"}}'),
+            },
+        ]
+        card = verify_uploads.merged_results_card(events)
+        assert card["adapter_repo_overrides"] == {"cell-a": "superkaiba1/explore-persona-space"}
+        assert "adapter_repo_overrides @ t0" in card["_card_provenance"]
+        assert "bypassed" in card["_card_provenance"]
+
+    def test_list_overrides_repost_wins_fold_but_consumer_treats_as_malformed(self):
+        """Merge pin (#1664): a LIST-valued adapter_repo_overrides re-post is
+        structurally accepted by _is_structural, so it SHADOWS an older dict
+        in the newest-wins fold; the consumer then treats the list as
+        malformed — default-repo checks + a visible NOTE, never a crash."""
+        events = [
+            {
+                "kind": "epm:results",
+                "ts": "t0",
+                "note": (
+                    '{"reproducibility_card": '
+                    '{"hf_model_repo": "superkaiba1/explore-persona-space-overflow", '
+                    '"adapter_paths": {"cell-a": "issue1664/a"}, '
+                    '"adapter_repo_overrides": {"cell-a": "superkaiba1/explore-persona-space"}}}'
+                ),
+            },
+            {
+                "kind": "epm:results",
+                "ts": "t1",
+                "note": (
+                    '{"reproducibility_card": '
+                    '{"adapter_repo_overrides": ["superkaiba1/explore-persona-space"]}}'
+                ),
+            },
+        ]
+        card = verify_uploads.merged_results_card(events)
+        assert card["adapter_repo_overrides"] == ["superkaiba1/explore-persona-space"]
+        calls = []
+
+        def fake_check(repo, path, repo_type="model", revision=None):
+            calls.append(repo)
+            return {"status": "OK", "url": "u", "file_count": 1}
+
+        with patch.object(verify_uploads, "check_hf_hub_path", side_effect=fake_check):
+            res = verify_uploads.check_hf_model_from_card(card)
+        assert res["status"] == "OK"
+        assert calls == ["superkaiba1/explore-persona-space-overflow"]
+        assert "not a per-cell dict" in res["detail"]
+
     def test_nonstructural_scalar_kept_as_last_resort(self):
         """An int-valued structured field with no structural sibling anywhere
         survives the merge unchanged (last resort, same as today's fold);
@@ -585,6 +674,264 @@ class TestCheckHfModelFromCard:
             res = verify_uploads.check_hf_model_from_card(card)
         assert res["status"] == "OK"
         assert "adapter_paths @ 2026-06-11T22:35:04Z" in res["detail"]
+
+    # ── adapter_repo_overrides (#1586 / #1664) ────────────────────────────────
+
+    def test_adapter_repo_overrides_route_cells_to_override_repo(self):
+        """#1586/#1664: cells named in adapter_repo_overrides existence-check
+        against the override repo; the remaining cells against the card's
+        default hf_model_repo. The detail names both repos."""
+        calls = []
+
+        def fake_check(repo, path, repo_type="model", revision=None):
+            calls.append((repo, path))
+            return {"status": "OK", "url": "u", "file_count": 2}
+
+        with patch.object(verify_uploads, "check_hf_hub_path", side_effect=fake_check):
+            res = verify_uploads.check_hf_model_from_card(_CARD_1586)
+        assert res["status"] == "OK"
+        by_repo: dict = {}
+        for repo, path in calls:
+            by_repo.setdefault(repo, set()).add(path)
+        assert by_repo == {
+            "superkaiba1/explore-persona-space-overflow": {
+                "issue1586/fu_caveatfix/mk-pers-ft2e6-con-s42/checkpoint-12",
+                "issue1586/fu_caveatfix/mk-pers-ft5e6-con-s42/checkpoint-24",
+            },
+            "superkaiba1/explore-persona-space": {
+                "issue1586/fu_caveatfix/imp-pers-lora5e6-con-s42/checkpoint-310",
+                "issue1586/fu_caveatfix/imp-pers-lora2e6-con-s42/checkpoint-155",
+            },
+        }
+        assert (
+            "superkaiba1/explore-persona-space-overflow (default) + override "
+            "repo(s): superkaiba1/explore-persona-space"
+        ) in res["detail"]
+
+    def test_missing_override_repo_path_still_misses(self):
+        """An override-repo path that does not resolve reads MISSING, and the
+        unresolved entry is repo-qualified so the report names WHICH repo
+        was checked."""
+
+        def fake_check(repo, path, repo_type="model", revision=None):
+            if repo == "superkaiba1/explore-persona-space":
+                return {"status": "MISSING", "url": "", "detail": "No files"}
+            return {"status": "OK", "url": "u", "file_count": 2}
+
+        with patch.object(verify_uploads, "check_hf_hub_path", side_effect=fake_check):
+            res = verify_uploads.check_hf_model_from_card(_CARD_1586)
+        assert res["status"] == "MISSING"
+        assert (
+            "superkaiba1/explore-persona-space/"
+            "issue1586/fu_caveatfix/imp-pers-lora5e6-con-s42/checkpoint-310 (No files)"
+        ) in res["detail"]
+
+    def test_card_without_overrides_byte_identical_detail(self):
+        """Backward-compat pin (#1664 acceptance 5): a card WITHOUT
+        adapter_repo_overrides produces the exact pre-#1664 OK detail
+        string — the no-override path must be untouched."""
+        with patch.object(
+            verify_uploads,
+            "check_hf_hub_path",
+            return_value={"status": "OK", "url": "u", "file_count": 3},
+        ):
+            res = verify_uploads.check_hf_model_from_card(_CARD_608)
+        assert res["detail"] == (
+            "all 2 model path(s) from the epm:results reproducibility_card "
+            "resolve on superkaiba1/explore-persona-space"
+        )
+
+    def test_card_without_overrides_byte_identical_missing_detail(self):
+        """Backward-compat pin, failure branch: the no-override MISSING
+        detail string is exactly the pre-#1664 form (no repo-qualified
+        labels, no '(default)' clause)."""
+
+        def fake_check(repo, path, repo_type="model", revision=None):
+            if path.endswith("comedian_seed42"):
+                return {"status": "MISSING", "url": "", "detail": "No files"}
+            return {"status": "OK", "url": "u", "file_count": 3}
+
+        with patch.object(verify_uploads, "check_hf_hub_path", side_effect=fake_check):
+            res = verify_uploads.check_hf_model_from_card(_CARD_608)
+        assert res["detail"] == (
+            "reproducibility_card declares 2 model path(s) under "
+            "superkaiba1/explore-persona-space; unresolved: "
+            "adapters/issue_608/posonly_epoch/comedian_seed42 (No files)"
+        )
+
+    def test_override_repo_prefix_strips_against_override_repo(self):
+        """#610 generalized: a path prefixed with the OVERRIDE repo's id is
+        stripped against that repo — stripping only the default repo's
+        prefix would recreate the #610 false-MISS for override cells."""
+        card = {
+            "hf_model_repo": "superkaiba1/explore-persona-space-overflow",
+            "adapter_paths": {
+                "cell-a": "superkaiba1/explore-persona-space/adapters/issue_1664/a",
+            },
+            "adapter_repo_overrides": {"cell-a": "superkaiba1/explore-persona-space"},
+        }
+        calls = []
+
+        def fake_check(repo, path, repo_type="model", revision=None):
+            calls.append((repo, path))
+            return {"status": "OK", "url": "u", "file_count": 1}
+
+        with patch.object(verify_uploads, "check_hf_hub_path", side_effect=fake_check):
+            res = verify_uploads.check_hf_model_from_card(card)
+        assert res["status"] == "OK"
+        assert calls == [("superkaiba1/explore-persona-space", "adapters/issue_1664/a")]
+
+    def test_orphan_override_key_noted(self):
+        """A stale/typo'd override key with no matching adapter_paths cell is
+        producer-side drift: nothing is checked for it, but the row NAMES
+        it in a NOTE (silence is the #612 anti-pattern)."""
+        card = {
+            "hf_model_repo": "superkaiba1/explore-persona-space-overflow",
+            "adapter_paths": {"real-cell": "issue1664/real-cell/ckpt"},
+            "adapter_repo_overrides": {"ghost-cell": "superkaiba1/explore-persona-space"},
+        }
+        calls = []
+
+        def fake_check(repo, path, repo_type="model", revision=None):
+            calls.append((repo, path))
+            return {"status": "OK", "url": "u", "file_count": 1}
+
+        with patch.object(verify_uploads, "check_hf_hub_path", side_effect=fake_check):
+            res = verify_uploads.check_hf_model_from_card(card)
+        assert res["status"] == "OK"
+        assert "no matching adapter_paths cell" in res["detail"]
+        assert "ghost-cell" in res["detail"]
+        assert calls == [("superkaiba1/explore-persona-space-overflow", "issue1664/real-cell/ckpt")]
+
+    def test_list_form_adapter_paths_ignores_overrides_with_note(self):
+        """LIST-form adapter_paths has no cell keys, so overrides cannot
+        match: every path checks against the default repo, with a visible
+        NOTE (never silent, never a crash)."""
+        card = {
+            "hf_model_repo": "superkaiba1/explore-persona-space-overflow",
+            "adapter_paths": ["issue1664/a", "issue1664/b"],
+            "adapter_repo_overrides": {"cell-a": "superkaiba1/explore-persona-space"},
+        }
+        calls = []
+
+        def fake_check(repo, path, repo_type="model", revision=None):
+            calls.append(repo)
+            return {"status": "OK", "url": "u", "file_count": 1}
+
+        with patch.object(verify_uploads, "check_hf_hub_path", side_effect=fake_check):
+            res = verify_uploads.check_hf_model_from_card(card)
+        assert res["status"] == "OK"
+        assert calls == ["superkaiba1/explore-persona-space-overflow"] * 2
+        assert "LIST" in res["detail"]
+
+    def test_non_dict_overrides_fall_through_with_note(self):
+        """A prose-string adapter_repo_overrides is malformed but not fatal:
+        the paths stay fully checkable against the default repo, with a
+        NOTE naming the malformed type (not a _prose_declaration_row-style
+        MISSING — that would over-fail cards whose paths all resolve)."""
+        card = dict(_CARD_608)
+        card["adapter_repo_overrides"] = "unchanged from v1"
+        calls = []
+
+        def fake_check(repo, path, repo_type="model", revision=None):
+            calls.append(repo)
+            return {"status": "OK", "url": "u", "file_count": 1}
+
+        with patch.object(verify_uploads, "check_hf_hub_path", side_effect=fake_check):
+            res = verify_uploads.check_hf_model_from_card(card)
+        assert res["status"] == "OK"
+        assert calls == ["superkaiba1/explore-persona-space"] * 2
+        assert "not a per-cell dict (str)" in res["detail"]
+
+    def test_non_dict_overrides_fail_toward_missing(self):
+        """With malformed (list-form) overrides the would-be override cells
+        check against the DEFAULT repo, so a path living only on the other
+        repo reads MISSING — fail-toward-MISSING, never a silent
+        false-OK."""
+        card = dict(_CARD_1586)
+        card["adapter_repo_overrides"] = ["superkaiba1/explore-persona-space"]
+
+        def fake_check(repo, path, repo_type="model", revision=None):
+            if "imp-pers" in path:  # these adapters live only on the main repo
+                return {"status": "MISSING", "url": "", "detail": "No files"}
+            return {"status": "OK", "url": "u", "file_count": 1}
+
+        with patch.object(verify_uploads, "check_hf_hub_path", side_effect=fake_check):
+            res = verify_uploads.check_hf_model_from_card(card)
+        assert res["status"] == "MISSING"
+        assert "not a per-cell dict (list)" in res["detail"]
+
+    def test_non_str_override_values_ignored_with_note(self):
+        """Non-string VALUES inside an otherwise-dict overrides are ignored
+        per cell (that cell checks against the default repo) with a NOTE;
+        string-valued entries keep routing."""
+        card = {
+            "hf_model_repo": "superkaiba1/explore-persona-space-overflow",
+            "adapter_paths": {"cell-a": "issue1664/a", "cell-b": "issue1664/b"},
+            "adapter_repo_overrides": {
+                "cell-a": 42,
+                "cell-b": "superkaiba1/explore-persona-space",
+            },
+        }
+        calls = []
+
+        def fake_check(repo, path, repo_type="model", revision=None):
+            calls.append((repo, path))
+            return {"status": "OK", "url": "u", "file_count": 1}
+
+        with patch.object(verify_uploads, "check_hf_hub_path", side_effect=fake_check):
+            res = verify_uploads.check_hf_model_from_card(card)
+        assert res["status"] == "OK"
+        assert calls == [
+            ("superkaiba1/explore-persona-space-overflow", "issue1664/a"),
+            ("superkaiba1/explore-persona-space", "issue1664/b"),
+        ]
+        assert "1 adapter_repo_overrides value(s) not a non-empty string" in res["detail"]
+
+    def test_same_path_under_two_repos_checked_twice(self):
+        """The dedup key is (repo, path): two cells sharing one path string
+        with one cell overridden = two distinct existence checks
+        (collapsing on the path alone would skip one repo's check)."""
+        card = {
+            "hf_model_repo": "superkaiba1/explore-persona-space-overflow",
+            "adapter_paths": {"cell-a": "issue1664/shared", "cell-b": "issue1664/shared"},
+            "adapter_repo_overrides": {"cell-b": "superkaiba1/explore-persona-space"},
+        }
+        calls = []
+
+        def fake_check(repo, path, repo_type="model", revision=None):
+            calls.append((repo, path))
+            return {"status": "OK", "url": "u", "file_count": 1}
+
+        with patch.object(verify_uploads, "check_hf_hub_path", side_effect=fake_check):
+            res = verify_uploads.check_hf_model_from_card(card)
+        assert res["status"] == "OK"
+        assert calls == [
+            ("superkaiba1/explore-persona-space-overflow", "issue1664/shared"),
+            ("superkaiba1/explore-persona-space", "issue1664/shared"),
+        ]
+
+    def test_override_equal_to_default_indistinguishable(self):
+        """An override naming the DEFAULT repo is a no-op: dedup collapses to
+        one check per path and the detail keeps the plain single-repo
+        form (the 'where' clause lists only repos that DIFFER)."""
+        card = {
+            "hf_model_repo": "superkaiba1/explore-persona-space",
+            "adapter_paths": {"cell-a": "issue1664/a"},
+            "adapter_repo_overrides": {"cell-a": "superkaiba1/explore-persona-space"},
+        }
+        with patch.object(
+            verify_uploads,
+            "check_hf_hub_path",
+            return_value={"status": "OK", "url": "u", "file_count": 1},
+        ) as mock_check:
+            res = verify_uploads.check_hf_model_from_card(card)
+        assert res["status"] == "OK"
+        mock_check.assert_called_once()
+        assert res["detail"] == (
+            "all 1 model path(s) from the epm:results reproducibility_card "
+            "resolve on superkaiba1/explore-persona-space"
+        )
 
 
 # ── check_wandb_from_card ─────────────────────────────────────────────────────

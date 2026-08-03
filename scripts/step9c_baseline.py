@@ -12,7 +12,7 @@ vouch for.
 
 Subcommands::
 
-    uv run python scripts/step9c_baseline.py refresh [--repo-root PATH] [--timeout-s 1800] [--json]
+    uv run python scripts/step9c_baseline.py refresh [--repo-root PATH] [--timeout-s 4350] [--json]
     uv run python scripts/step9c_baseline.py status  [--repo-root PATH] [--max-age-hours 24]
                                                      [--max-code-commits 150] [--json]
     uv run python scripts/step9c_baseline.py compare --junitxml PATH --pytest-rc INT [--base REF]
@@ -27,6 +27,8 @@ Subcommands::
                                                      [--no-scratch-fallback]
                                                      [--no-src-shadow] [--json]
     uv run python scripts/step9c_baseline.py tmproot
+    uv run python scripts/step9c_baseline.py probe   (--pattern REGEX | --issue N |
+                                                      --fleet [--exclude-issue N])
 
 Exit codes (pinned by ``tests/test_step9c_baseline.py``):
 
@@ -59,10 +61,56 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
              a misconfigured explicit ``EPM_STEP9C_TMPDIR`` override (#1408)
 ``tmproot``
   0          always — prints the resolved gate temp-write root, or nothing
+``probe``
+  0          CLEAR — no live FOREIGN ``/proc/*/cmdline`` match (safe to launch);
+             ``--fleet``: DISTINCT foreign gate-issue count < ``EPM_GATE_FLEET_MAX``
+  3          >=1 live foreign match (one ``pid<TAB>args`` line per match on stdout);
+             ``--fleet``: count >= ``EPM_GATE_FLEET_MAX`` (default 2; one
+             ``issue=<M><TAB>pids=<k><TAB><sample argv>`` line per foreign gate issue)
+  2          usage error (argparse: exactly one of ``--pattern``/``--issue``/``--fleet``
+             required; ``--exclude-issue`` without ``--fleet``) / bad ``--pattern`` regex
 ===========  ==========================================================================
 
+``probe`` (#1821) is the gate single-flight liveness check with MECHANICAL
+self- + ancestor-pid exclusion (``/proc/<pid>/status`` PPid walk to pid 1; a
+walk failure shrinks the exclusion set — fail toward a loud false LIVE, never
+a silent skip). It replaces the remembered "separate FOREGROUND call +
+bracketed pgrep" placement rule at the SKILL.md ``Single-flight probe
+(#1606)`` sites: the bracket idiom shields only the PATTERN text and is
+defeated whenever the enclosing call's argv carries the real unbracketed
+artifact path (#1742; 2026-07-26 session ``2b779905``). Exit semantics are
+deliberately INVERTED vs pgrep (0 = clear) so ``probe && launch`` composes;
+until-loop compositions use the fixed-regex ``--issue`` form only (an exit-2
+bad-regex inside an until-loop would otherwise wait forever). NO other
+exclusion classes: a transient concurrent foreign ``--pattern`` probe reads as
+a loud, self-resolving false LIVE — the fail-safe direction.
+
+``probe --fleet [--exclude-issue N]`` (#1962) is the FLEET-level arbitration
+arm on the same scanner: it matches the fixed internal union
+``FLEET_GATE_SIGNATURE_RE`` over the four gate artifact classes
+(``step9c-junit-issue-(\\d+)\\.xml`` | ``issue-(\\d+)-lint-gate-tree`` |
+``issue-(\\d+)-[^ ]*inline-payload\\.txt`` |
+``issue-(\\d+)-surgical-outcome\\.txt``) plus a ``step9c_baseline\\.py refresh``
+alternate mapped to the reserved pseudo-issue key ``refresh`` (the ledger
+refresh runs the heaviest pytest universe and its own flock bounds it to one
+fleet-wide — it counts as ONE gate). Per matched argv, ALL matched capture
+groups attribute (``finditer``, never ``group(1)`` alone — a wrapper argv
+referencing two issues' artifacts attributes to every matched issue); matches
+group by issue key, ``--exclude-issue N`` drops the caller's own issue, and
+the DISTINCT-foreign-issue count decides the exit: 3 when
+``count >= EPM_GATE_FLEET_MAX`` (env int, default 2), else 0. A malformed env
+value (non-int / < 1) falls back to the default with a stderr note — never a
+crash, never exit 2 (a wedged env var must not wedge gate launches). The
+internal union regex is FIXED and valid, so ``--fleet`` is until-loop-safe
+exactly like ``--issue`` (exit 2 stays argparse/usage-only for this form).
+The transient-foreign-probe note above extends to the fleet form: foreign
+sessions' own probe / ``rm -f`` / pgrep wrapper argvs momentarily carry gate
+signatures, so a fleet read can transiently over-count — at worst one extra
+60 s queue wait at the SKILL.md hook sites; the fail-safe direction.
+
 Safety invariants (plan #1022 v3 R1-R7): the refresh NEVER runs ``pytest tests/``
-wholesale (only the predictable 37-file Step 9c universe, timeout-bounded,
+wholesale (only the predictable Step 9c workflow-invariant universe — 61 files
+as of 2026-07-24 — timeout-bounded,
 thread-capped, process-group-killed on expiry); blind-strip requires a fresh,
 clean-rooted (``dirty_code_paths: false``) ledger AND a non-diff-linked node
 whose test file is unchanged on main since the ledger SHA — everything else is
@@ -133,6 +181,7 @@ import getpass
 import importlib.util
 import json
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -190,6 +239,17 @@ FILE_ANCHORED_SCAN_TESTS: frozenset[str] = frozenset(
         # REPO_ROOT = Path(__file__).resolve().parents[1] (:76); _iter_in_scope_files
         # globs REPO_ROOT only; pure ast/re on file text, stdlib-only imports.
         "tests/test_subprocess_env_explicit.py",
+        # _HELPER_PATH = Path(__file__).resolve().parents[1]/"scripts"/"select_step9c_tests.py"
+        # (:29) — the selector is importlib-loaded BY PATH from the test file's own tree;
+        # every live-tree read resolves via Path(sel.__file__).parents[1] / _HELPER_PATH
+        # (:137/:193/:567/:601/:1249/:1390/:1476/:1651/:1816+); real-git fixtures use
+        # throwaway tmp_path repos with explicit cwd; no repo_root()/task_workflow/cwd/env
+        # channel; conftest checked clean too (no root conftest.py; tests/conftest.py's only
+        # live-root autouse fixture is gated on `explore_persona_space.task_workflow` in
+        # sys.modules — never true in this member's scratch run, which imports the selector
+        # by path only) (#1649 audit; incident #1632: as the only non-anchored scan-set
+        # member it wedged compare at MF-4c exit 2 on any dirty shared root).
+        "tests/test_select_step9c_tests.py",
     }
 )
 
@@ -217,6 +277,15 @@ PYTEST_BASE_FLAGS: tuple[str, ...] = (
     "no:cacheprovider",
     "-o",
     "junit_family=xunit1",
+    # #1746: one collection-broken file must not abort the whole run (rc=2,
+    # unclassifiable — MF-1b refuses). With this flag pytest runs the surviving
+    # collected tests, reports each collect error as a junit <error> testcase
+    # keyed to the broken FILE (empirical shape, pytest 9.0.2 xunit1:
+    # file="tests/test_broken.py", classname="", name="tests.test_broken"),
+    # and exits rc=1 — inside the accepted {0,1} set — so compare's existing
+    # NEW-vs-pre-existing node subtraction classifies it. rc=2 is thereafter
+    # reserved for genuine interruption / internal error (MF-1b preserved).
+    "--continue-on-collection-errors",
 )
 
 
@@ -900,6 +969,16 @@ def parse_junit(path: Path) -> tuple[list[Node], dict]:
     failure, or a failing testcase without the per-case ``file`` attribute
     (pytest 9.0.2 xunit1 emits it — plan #1022 A3; the K2 short-summary
     fallback is a deliberate redesign, not a silent guess).
+
+    Collect-error absorb (#1746, ``--continue-on-collection-errors``): pytest
+    9.0.2 empirically emits the ``file`` attribute on a collect-error testcase
+    too (probe 2026-07-28: ``file="tests/test_broken.py"``, ``classname=""``,
+    ``name="tests.test_broken"``), so the broken file keys to a stable Node via
+    the normal path. As version-drift insurance, a testcase with an ``error``
+    child, NO ``file`` attr, and a ``name`` that is a plausible test-file path
+    (endswith ``.py``) derives ``file`` from ``name``
+    (``Node(file=name, classname="", name=name)``); every OTHER missing-file
+    shape keeps the hard JunitParseError (the xunit1 contract stays fail-loud).
     """
     if not path.exists():
         raise JunitParseError(
@@ -922,13 +1001,20 @@ def parse_junit(path: Path) -> tuple[list[Node], dict]:
         n_err += int(has_error)
         if has_failure or has_error:
             file_attr = tc.get("file")
+            name_attr = tc.get("name") or ""
+            if not file_attr and has_error and name_attr.endswith(".py"):
+                # Collect-error row keyed only through ``name`` (#1746 —
+                # version-drift fallback; see docstring): derive a stable
+                # per-file Node from the plausible test-file path in ``name``.
+                failing.append(Node(file=name_attr, classname="", name=name_attr))
+                continue
             if not file_attr:
                 raise JunitParseError(
                     f"failing testcase {tc.get('classname')}::{tc.get('name')} has no "
                     "file attribute — xunit1 contract violated (see plan #1022 K2 fallback)"
                 )
             failing.append(
-                Node(file=file_attr, classname=tc.get("classname") or "", name=tc.get("name") or "")
+                Node(file=file_attr, classname=tc.get("classname") or "", name=name_attr)
             )
     duration = 0.0
     for suite in tree.getroot().iter("testsuite"):
@@ -1070,7 +1156,7 @@ def present_on_disk(files: Iterable[str], root: Path) -> list[str]:
 
 
 def cmd_refresh(args: argparse.Namespace) -> int:
-    """Run the 37-file predictable Step 9c universe on main; write the ledger atomically."""
+    """Run the Step 9c workflow-invariant universe on main; write the ledger atomically."""
     root = Path(args.repo_root).resolve() if args.repo_root else main_repo_root()
     lock = acquire_refresh_lock(root / ".claude" / "cache" / "step9c-baseline.lock")
     if lock is None:
@@ -1269,8 +1355,10 @@ def derive_pristine_timeout_s(sel: object, test_file: str) -> float:
     Reads the #1046 constants off the LOADED selector module (``ctx.sel``) via
     ``getattr`` so a pre-#1046 worktree selector copy (deliberate version skew,
     #1022 §3.3) degrades to the legacy 600 s floor instead of crashing.
-    tests/test_workflow_lint.py -> 120 + 30 + 2*900 = 1950 s (~2.5x its ~780 s
-    measured pristine runtime, #1098); files without surcharge knowledge -> 600 s.
+    tests/test_workflow_lint.py -> 120 + 30 + 2*2400 = 4950 s (#1646: in-gate
+    walls median 789 s / max 1819 s over 330 junits 2026-07-13..24, ~2.7x the
+    worst measured; #1098 had measured ~780 s pristine at the old 900 surcharge);
+    files without surcharge knowledge -> 600 s.
     """
     base = float(getattr(sel, "TIMEOUT_BASE_S", 0))
     per_file = float(getattr(sel, "TIMEOUT_PER_FILE_S", 0))
@@ -1308,11 +1396,14 @@ def lint_verdict(root: Path, wt: Path, touched: list[str]) -> dict:
 
 
 def _pristine_command(root: Path, test_file: str) -> str:
-    """The copy-pasteable single-file pristine check printed on the no-run path."""
-    return (
-        f"(cd {root} && uv run pytest {test_file} -q --tb=no -p no:cacheprovider "
-        "-o junit_family=xunit1)"
-    )
+    """The copy-pasteable single-file pristine check printed on the no-run path.
+
+    Built from ``PYTEST_BASE_FLAGS`` (single source — #1746 Must-Fix 1: a
+    duplicated literal here would drop ``--continue-on-collection-errors`` and
+    make the printed manual-recovery command abort rc=2 on a collection-red
+    file instead of reproducing the oracle's flags).
+    """
+    return f"(cd {root} && uv run pytest {test_file} {' '.join(PYTEST_BASE_FLAGS)})"
 
 
 class _Indeterminate(RuntimeError):
@@ -1353,6 +1444,7 @@ class _CompareCtx:
     work_root: Path  # the invoking worktree (its sparse profile gates the scratch fallback)
     new: list[Node] = field(default_factory=list)
     stripped: list[dict] = field(default_factory=list)
+    urgent_park: list[str] = field(default_factory=list)  # #1742 <file>::<name> node ids
     pristine_bucket: list[Node] = field(default_factory=list)
     warns: list[str] = field(default_factory=list)
     live_dirty_paths: list[str] = field(default_factory=list)
@@ -1443,9 +1535,23 @@ def _ledger_view(root: Path, args: argparse.Namespace) -> _LedgerView:
 
 
 def _strip_node(ctx: _CompareCtx, node: Node, via: str) -> None:
-    """Strip *node* as pre-existing; EVERY scan-covered strip WARNs (MF-6)."""
+    """Strip *node* as pre-existing; EVERY scan-covered strip WARNs (MF-6).
+
+    A strip on a WORKFLOW_INVARIANT test additionally demands an urgent park
+    (#1713/#1742): the node id joins ``ctx.urgent_park`` (the JSON
+    ``urgent_park_required`` field) and a loud stderr demand line is emitted —
+    criterion single-sourced from the selector, never a hardcoded glob.
+    """
     ctx.stripped.append({**node._asdict(), "via": via})
     sel = ctx.sel
+    if node.file in getattr(sel, "WORKFLOW_INVARIANT", ()):
+        node_id = f"{node.file}::{node.name}"
+        ctx.urgent_park.append(node_id)
+        _log(
+            f"URGENT-PARK-REQUIRED: {node_id} — stripped pre-existing main-red on a "
+            "workflow-invariant test; emit (or verify existing) a routable "
+            "'urgency: main-red' workflow-fix-candidate (#1713/#1742)"
+        )
     if node.file in sel.GLOB_SCAN_TESTS:
         covered = [f for f in ctx.touched if sel._matches_any(f, sel.GLOB_SCAN_TESTS[node.file])]
         ctx.warns.append(
@@ -1759,6 +1865,7 @@ def _compare_impl(args: argparse.Namespace) -> dict:
         "pytest_rc": args.pytest_rc,
         "new": [n._asdict() for n in ctx.new],
         "stripped": ctx.stripped,
+        "urgent_park_required": ctx.urgent_park,  # #1742 stripped workflow-invariant node ids
         "warns": ctx.warns,
         "stale": lv.stale,
         "stale_reasons": lv.stale_reasons,
@@ -1794,6 +1901,7 @@ def _indeterminate_payload(
         "pytest_rc": pytest_rc,
         "new": [],
         "stripped": [],
+        "urgent_park_required": [],  # #1742 stable shape on the exit-2 payload
         "warns": list(warns or []),
         **(extra or {}),
     }
@@ -1851,6 +1959,8 @@ def cmd_compare(args: argparse.Namespace) -> int:
         )
         for n in result["new"]:
             print(f"  NEW: {n['file']}::{n['name']}")
+        for uid in result["urgent_park_required"]:
+            print(f"  URGENT-PARK-REQUIRED: {uid}")  # #1742 (stderr carries the full demand)
         for w in result["warns"]:
             print(f"  {w}")
     for w in result["warns"]:
@@ -1880,6 +1990,192 @@ def cmd_tmproot(args: argparse.Namespace) -> int:
     return 0
 
 
+# --- probe -----------------------------------------------------------------------
+
+# Fleet-arbitration signature union (#1962): the four gate artifact classes that
+# ride Step 9c / Step 10d / Step 9a-ter gate-launch argvs, plus the ledger
+# ``refresh`` invocation (the heaviest pytest universe; its own flock bounds it
+# to one fleet-wide, so it counts as ONE gate under the reserved pseudo-issue
+# key FLEET_REFRESH_KEY). FIXED and valid by construction, so ``probe --fleet``
+# is until-loop-safe (exit 2 stays argparse/usage-only for the fleet form).
+FLEET_GATE_SIGNATURE_RE: re.Pattern[str] = re.compile(
+    r"step9c-junit-issue-(\d+)\.xml"
+    r"|issue-(\d+)-lint-gate-tree"
+    r"|issue-(\d+)-[^ ]*inline-payload\.txt"
+    r"|issue-(\d+)-surgical-outcome\.txt"
+    r"|step9c_baseline\.py refresh"
+)
+FLEET_REFRESH_KEY = "refresh"  # pseudo-issue key for the group-less refresh alternate
+FLEET_MAX_ENV = "EPM_GATE_FLEET_MAX"
+FLEET_MAX_DEFAULT = 2
+FLEET_ARGV_SAMPLE_CHARS = 160  # summary-line argv truncation
+
+
+def _fleet_max() -> int:
+    """Resolve the fleet cap from ``EPM_GATE_FLEET_MAX`` (int >= 1; default 2).
+
+    A malformed value (non-int / < 1) falls back to the default with a stderr
+    note — NEVER a crash or exit 2: a wedged env var must not wedge gate
+    launches, and the ``--fleet`` form must stay until-loop-safe.
+    """
+    raw = os.environ.get(FLEET_MAX_ENV)
+    if raw is None or not raw.strip():
+        return FLEET_MAX_DEFAULT
+    try:
+        val = int(raw.strip())
+    except ValueError:
+        _log(f"probe --fleet: malformed {FLEET_MAX_ENV}={raw!r}; using default {FLEET_MAX_DEFAULT}")
+        return FLEET_MAX_DEFAULT
+    if val < 1:
+        _log(f"probe --fleet: {FLEET_MAX_ENV}={raw!r} < 1; using default {FLEET_MAX_DEFAULT}")
+        return FLEET_MAX_DEFAULT
+    return val
+
+
+def _fleet_gate_issues(exclude_issue: int | None) -> dict[str, list[tuple[int, str]]]:
+    """Group live FOREIGN gate processes by issue key (fleet arbitration, #1962).
+
+    Reuses the ``_probe_matches`` self-/ancestor-pid-excluding ``/proc`` scan
+    with the fixed ``FLEET_GATE_SIGNATURE_RE`` union — no second scanner. Per
+    matched argv, collects ALL matched capture groups (``finditer``) so a
+    wrapper argv referencing two issues' artifacts attributes to EVERY matched
+    issue; the group-less refresh alternate maps to ``FLEET_REFRESH_KEY``.
+    ``exclude_issue`` drops the caller's own issue key. Returns
+    ``{issue_key: [(pid, argv), ...]}`` for the remaining foreign gate issues.
+    """
+    grouped: dict[str, list[tuple[int, str]]] = {}
+    for pid, argv_text in _probe_matches(FLEET_GATE_SIGNATURE_RE):
+        keys: set[str] = set()
+        for m in FLEET_GATE_SIGNATURE_RE.finditer(argv_text):
+            issue = next((g for g in m.groups() if g is not None), None)
+            keys.add(issue if issue is not None else FLEET_REFRESH_KEY)
+        if exclude_issue is not None:
+            keys.discard(str(exclude_issue))
+        for key in keys:
+            grouped.setdefault(key, []).append((pid, argv_text))
+    return grouped
+
+
+def _cmd_probe_fleet(args: argparse.Namespace) -> int:
+    """Fleet-level gate-concurrency probe (#1962).
+
+    Prints one summary line per FOREIGN gate issue
+    (``issue=<M>\\tpids=<k>\\t<sample argv>``, argv truncated to
+    ``FLEET_ARGV_SAMPLE_CHARS``; the refresh pseudo-issue prints
+    ``issue=refresh``), then exits 3 when the DISTINCT foreign-issue count
+    reaches ``EPM_GATE_FLEET_MAX`` (default 2), else 0.
+    """
+    grouped = _fleet_gate_issues(args.exclude_issue)
+
+    def _order(key: str) -> tuple[int, int]:
+        return (1, 0) if key == FLEET_REFRESH_KEY else (0, int(key))
+
+    for key in sorted(grouped, key=_order):
+        rows = grouped[key]
+        print(f"issue={key}\tpids={len(rows)}\t{rows[0][1][:FLEET_ARGV_SAMPLE_CHARS]}")
+    return 3 if len(grouped) >= _fleet_max() else 0
+
+
+def _ancestor_pids() -> set[int]:
+    """Return this process's pid plus its full ancestor chain (PPid walk to pid 1).
+
+    Walks ``/proc/<pid>/status`` ``PPid:`` rows from ``os.getpid()`` upward. ANY
+    read/parse failure stops the walk — failing toward a SMALLER exclusion set
+    (a missed exclusion surfaces as a loud false LIVE at the probe, never a
+    silently skipped foreign match). Linux-only, like the probe itself.
+    """
+    pids: set[int] = set()
+    pid = os.getpid()
+    while pid >= 1 and pid not in pids:
+        pids.add(pid)
+        if pid == 1:
+            break
+        try:
+            status = Path(f"/proc/{pid}/status").read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            break
+        ppid: int | None = None
+        for line in status.splitlines():
+            if line.startswith("PPid:"):
+                try:
+                    ppid = int(line.split(":", 1)[1].strip())
+                except ValueError:
+                    ppid = None
+                break
+        if ppid is None or ppid < 1:
+            break
+        pid = ppid
+    return pids
+
+
+def _probe_matches(pattern: re.Pattern[str]) -> list[tuple[int, str]]:
+    """Scan ``/proc/*/cmdline`` for live FOREIGN processes matching ``pattern``.
+
+    Excludes exactly the prober's own pid + full ancestor chain (AC-1 of plan
+    #1821 — NO other exclusion classes: a concurrent foreign probe reads as a
+    loud, self-resolving false LIVE, the fail-safe direction). Empty cmdlines
+    (kernel threads / zombies) are skipped; ENOENT/permission races mid-scan
+    are tolerated. Returns ``(pid, space-joined argv)`` per match, pid-sorted.
+    """
+    excluded = _ancestor_pids()
+    matches: list[tuple[int, str]] = []
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdigit():
+            continue
+        pid = int(entry.name)
+        if pid in excluded:
+            continue
+        try:
+            raw = (entry / "cmdline").read_bytes()
+        except OSError:
+            continue  # ENOENT race (process exited mid-scan) / permission
+        if not raw:
+            continue  # kernel thread or zombie: empty cmdline
+        argv_text = raw.replace(b"\x00", b" ").decode("utf-8", errors="replace").strip()
+        if pattern.search(argv_text):
+            matches.append((pid, argv_text))
+    return sorted(matches)
+
+
+def cmd_probe(args: argparse.Namespace) -> int:
+    """Gate single-flight liveness probe with mechanical self-/ancestor-pid exclusion (#1821).
+
+    Replaces the remembered probe-placement rule (a separate FOREGROUND
+    ``pgrep`` call + bracket idiom) that #1742 re-hit: the bracket shields only
+    the PATTERN text and cannot help when the enclosing call's argv carries the
+    real unbracketed artifact path (the documented #1606 trap). Exit semantics
+    are DELIBERATELY inverted vs pgrep (0 = clear) so ``probe && launch``
+    composes naturally: 0 = CLEAR (no foreign match — safe to launch); 3 = >=1
+    live foreign match (one ``pid<TAB>args`` line each on stdout); 2 = bad
+    regex (argparse itself exits 2 on --pattern/--issue misuse). ``--issue N``
+    derives ``step9c-junit-issue-<N>\\.xml`` internally so the probe's own argv
+    never carries the junit filename; until-loops use the ``--issue`` form ONLY
+    (fixed, valid regex — an exit-2 inside an until-loop would wait forever).
+    ``--fleet [--exclude-issue N]`` (#1962) routes to ``_cmd_probe_fleet`` —
+    its internal union regex is fixed and valid too, so the fleet form is
+    equally until-loop-safe; ``--exclude-issue`` without ``--fleet`` is a
+    usage error (exit 2, matching argparse semantics).
+    """
+    if args.exclude_issue is not None and not args.fleet:
+        _log("probe: --exclude-issue is only meaningful with --fleet")
+        return 2
+    if args.fleet:
+        return _cmd_probe_fleet(args)
+    if args.issue is not None:
+        pattern_text = rf"step9c-junit-issue-{args.issue}\.xml"
+    else:
+        pattern_text = args.pattern
+    try:
+        pattern = re.compile(pattern_text)
+    except re.error as exc:
+        _log(f"probe: bad regex {pattern_text!r}: {exc}")
+        return 2
+    matches = _probe_matches(pattern)
+    for pid, argv_text in matches:
+        print(f"{pid}\t{argv_text}")
+    return 3 if matches else 0
+
+
 # --- CLI -------------------------------------------------------------------------
 
 
@@ -1890,7 +2186,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_refresh = sub.add_parser("refresh", help="run the Step 9c universe on main; write ledger")
     p_refresh.add_argument("--repo-root", default=None, help="main-root override (tests)")
-    p_refresh.add_argument("--timeout-s", type=float, default=1800.0)
+    # #1646: == recommended_timeout_s(WORKFLOW_INVARIANT) at current constants
+    # (120 + 30*61 + 2400); re-derive when SLOW_TESTS / the invariant set change.
+    p_refresh.add_argument("--timeout-s", type=float, default=4350.0)
     p_refresh.add_argument("--json", action="store_true")
     p_refresh.set_defaults(func=cmd_refresh)
 
@@ -1960,6 +2258,38 @@ def build_parser() -> argparse.ArgumentParser:
         help="print the resolved gate temp-write root (empty = no routing); always exit 0",
     )
     p_tmproot.set_defaults(func=cmd_tmproot)
+
+    p_probe = sub.add_parser(
+        "probe",
+        help="single-flight liveness probe (self-/ancestor-pid excluding): "
+        "0 = clear / 3 = live foreign match / 2 = bad regex",
+    )
+    probe_target = p_probe.add_mutually_exclusive_group(required=True)
+    probe_target.add_argument(
+        "--pattern",
+        help="extended regex matched (re.search) against space-joined /proc/<pid>/cmdline",
+    )
+    probe_target.add_argument(
+        "--issue",
+        type=int,
+        help=r"derive the Step 9c gate pattern step9c-junit-issue-<N>\.xml internally "
+        "(the probe's own argv never carries the junit filename)",
+    )
+    probe_target.add_argument(
+        "--fleet",
+        action="store_true",
+        help="fleet arbitration (#1962): count DISTINCT foreign issues with live gate "
+        "trees (fixed internal signature union incl. the ledger-refresh pseudo-issue); "
+        "exit 3 when count >= EPM_GATE_FLEET_MAX (default 2), else 0",
+    )
+    p_probe.add_argument(
+        "--exclude-issue",
+        type=int,
+        default=None,
+        help="(--fleet only) drop the caller's own issue from the foreign-gate count; "
+        "usage error (exit 2) without --fleet",
+    )
+    p_probe.set_defaults(func=cmd_probe)
     return parser
 
 

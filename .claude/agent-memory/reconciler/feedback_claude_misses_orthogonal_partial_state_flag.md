@@ -11,3 +11,9 @@ type: feedback
 **Code-stage recurrence (#546 code r1):** after the plan fix, the implementation re-suppressed the same modal case through a DIFFERENT inherited gate — the new verdict block ran only when `headline_status != "inconclusive_dynamic_range_failed"`, and the legacy gate computes `pstdev > 0.5` over per-(seed,persona) CELL MEANS (a different statistic from the selector's per-question `wrong_sd > 0.5`). **Decisive trick:** compute the disputed gate statistic ON THE PARENT'S REAL per-cell JSONs (cell-mean sds 0.373/0.425/0.369 — all < 0.5, modal case empirically fails the gate). Twin smells: implementer comment rationalizing the suppression + a test docstring ADMITTING it engineered seed spread to pass. Generalize: when two gates share a threshold NUMBER, check whether they share the threshold's UNIT/statistic.
 
 Companions: [[feedback_codex_unsatisfiable_plan_directive]] (inverse); [[feedback_claude_trusts_green_tests_over_verifier_semantics]].
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Claude misses orthogonal partial-state flag in inherited analyzer](feedback_claude_misses_orthogonal_partial_state_flag.md) — enumerate ALL terminal states inherited code emits; compute the disputed gate stat on the parent's real data; same threshold number ≠ same statistic. #546.

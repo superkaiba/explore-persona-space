@@ -1,0 +1,199 @@
+{
+  "commit": "011c7bef3c",
+  "created": "2026-07-31T10:39:23Z",
+  "figsize": [
+    7.0,
+    4.5
+  ],
+  "points": [
+    {
+      "pool size": 1000.0,
+      "acc@1 (euclid)": 0.805,
+      "series": "ridge (lmsys)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "pool size": 5000.0,
+      "acc@1 (euclid)": 0.69,
+      "series": "ridge (lmsys)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "pool size": 20000.0,
+      "acc@1 (euclid)": 0.648,
+      "series": "ridge (lmsys)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "pool size": 100000.0,
+      "acc@1 (euclid)": 0.544,
+      "series": "ridge (lmsys)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "pool size": 1000.0,
+      "acc@1 (euclid)": 0.532,
+      "series": "identity_bias (lmsys)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "pool size": 5000.0,
+      "acc@1 (euclid)": 0.384,
+      "series": "identity_bias (lmsys)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "pool size": 20000.0,
+      "acc@1 (euclid)": 0.302,
+      "series": "identity_bias (lmsys)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "pool size": 100000.0,
+      "acc@1 (euclid)": 0.213,
+      "series": "identity_bias (lmsys)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "pool size": 1000.0,
+      "acc@1 (euclid)": 0.8,
+      "series": "ridge (wildchat)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "pool size": 5000.0,
+      "acc@1 (euclid)": 0.763,
+      "series": "ridge (wildchat)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "pool size": 20000.0,
+      "acc@1 (euclid)": 0.723,
+      "series": "ridge (wildchat)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "pool size": 100000.0,
+      "acc@1 (euclid)": 0.63,
+      "series": "ridge (wildchat)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "pool size": 1000.0,
+      "acc@1 (euclid)": 0.527,
+      "series": "identity_bias (wildchat)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "pool size": 5000.0,
+      "acc@1 (euclid)": 0.425,
+      "series": "identity_bias (wildchat)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "pool size": 20000.0,
+      "acc@1 (euclid)": 0.323,
+      "series": "identity_bias (wildchat)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "pool size": 100000.0,
+      "acc@1 (euclid)": 0.222,
+      "series": "identity_bias (wildchat)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "pool size": 1000.0,
+      "acc@1 (euclid)": 0.001,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "pool size": 5000.0,
+      "acc@1 (euclid)": 0.0002,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "pool size": 20000.0,
+      "acc@1 (euclid)": 5e-05,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "pool size": 100000.0,
+      "acc@1 (euclid)": 1e-05,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 20,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Pool-size decay: LMSYS (solid) vs WildChat (dashed)",
+        "xlabel": "pool size",
+        "ylabel": "acc@1 (euclid)",
+        "legend_labels": [
+          "ridge (lmsys)",
+          "identity_bias (lmsys)",
+          "ridge (wildchat)",
+          "identity_bias (wildchat)",
+          "chance"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$",
+          "$\\mathdefault{10^{7}}$"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      }
+    ],
+    "series": [
+      "ridge (lmsys)",
+      "identity_bias (lmsys)",
+      "ridge (wildchat)",
+      "identity_bias (wildchat)",
+      "chance"
+    ]
+  }
+}

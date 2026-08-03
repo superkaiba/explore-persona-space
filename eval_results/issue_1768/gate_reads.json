@@ -1,0 +1,3895 @@
+{
+ "reads": {
+  "cas-pers-con-lr1e5-s42_L14": {
+   "arm_id": "cas-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.17652272025861662,
+    "p_value": 6.707657298150634e-115,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.00968301000286658,
+    "p_value": 0.2149883885236192,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-con-lr1e5-s42_L19": {
+   "arm_id": "cas-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.14321834745233178,
+    "p_value": 6.932691596480402e-76,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.03354558975296898,
+    "p_value": 1.732709787746604e-05,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-con-lr1e5-s42_L25": {
+   "arm_id": "cas-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.06478569060801641,
+    "p_value": 1.0006441335246321e-16,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.0036847509066625463,
+    "p_value": 0.6370381486133149,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-po-lr1e5-s42_L14": {
+   "arm_id": "cas-pers-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.1565029654036539,
+    "p_value": 1.987400397443741e-90,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.04536051454501247,
+    "p_value": 6.190493377591677e-09,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-po-lr1e5-s42_L19": {
+   "arm_id": "cas-pers-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.16416328243822256,
+    "p_value": 1.995207318302487e-99,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.07039558071827169,
+    "p_value": 1.7880523017040018e-19,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-po-lr1e5-s42_L25": {
+   "arm_id": "cas-pers-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.08657209647695921,
+    "p_value": 1.1644799701928918e-28,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.03789659085713984,
+    "p_value": 1.2068760382245109e-06,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-con-lr1e5-s137_L14": {
+   "arm_id": "cas-pers-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.17039750947269736,
+    "p_value": 4.397102010699166e-107,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.005446176285457487,
+    "p_value": 0.4855507011222409,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-con-lr1e5-s137_L19": {
+   "arm_id": "cas-pers-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.15812557814451544,
+    "p_value": 2.6905825126757664e-92,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.04069509659809689,
+    "p_value": 1.8553310810792655e-07,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-con-lr1e5-s137_L25": {
+   "arm_id": "cas-pers-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.07436551267395086,
+    "p_value": 1.4857417007666147e-21,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.014127858533118095,
+    "p_value": 0.07041977516150569,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-po-lr1e5-s137_L14": {
+   "arm_id": "cas-pers-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.16692092312233459,
+    "p_value": 8.915453826079796e-103,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.04466109977705049,
+    "p_value": 1.0538251054483587e-08,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-po-lr1e5-s137_L19": {
+   "arm_id": "cas-pers-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.17155188147123748,
+    "p_value": 1.5572179125604072e-108,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.08140726768966802,
+    "p_value": 1.598269254947743e-25,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-po-lr1e5-s137_L25": {
+   "arm_id": "cas-pers-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.09371442129614699,
+    "p_value": 2.567369779940501e-33,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.03999936186282566,
+    "p_value": 2.9899757772633506e-07,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-bare-con-lr1e5-s42_L14": {
+   "arm_id": "cas-bare-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.3763400176397638,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.40615183019111845,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-bare-con-lr1e5-s42_L19": {
+   "arm_id": "cas-bare-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.42345189514466036,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.38125108208861086,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-bare-con-lr1e5-s42_L25": {
+   "arm_id": "cas-bare-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.3139354601650995,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.2795463103191346,
+    "p_value": 4.094073139494123e-292,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-bare-po-lr1e5-s42_L14": {
+   "arm_id": "cas-bare-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.40764979409355306,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.4539402985562769,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-bare-po-lr1e5-s42_L19": {
+   "arm_id": "cas-bare-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.44696486930123824,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.43793457840175803,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-bare-po-lr1e5-s42_L25": {
+   "arm_id": "cas-bare-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.3384594677095798,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.3062740568338029,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-bare-con-lr1e5-s137_L14": {
+   "arm_id": "cas-bare-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.39168543495094366,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.3947344696140478,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-bare-con-lr1e5-s137_L19": {
+   "arm_id": "cas-bare-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.4401983705487514,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.39070733329217855,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-bare-con-lr1e5-s137_L25": {
+   "arm_id": "cas-bare-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.32316678758474326,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.27669963361034555,
+    "p_value": 5.341185432811761e-286,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-bare-po-lr1e5-s137_L14": {
+   "arm_id": "cas-bare-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.3962661436817153,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.42623997250286494,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-bare-po-lr1e5-s137_L19": {
+   "arm_id": "cas-bare-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.45636720996962,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.4209893289891274,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-bare-po-lr1e5-s137_L25": {
+   "arm_id": "cas-bare-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.3366528366669999,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.29919258925876424,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-conv-con-lr1e5-s42_L14": {
+   "arm_id": "cas-conv-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.05046424712025836,
+    "p_value": 1.0049529516454158e-10,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.09047991939113251,
+    "p_value": 3.665345626158421e-31,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-conv-con-lr1e5-s42_L19": {
+   "arm_id": "cas-conv-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.024156506917473355,
+    "p_value": 0.001976386851739532,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.009591568792343531,
+    "p_value": 0.2193513490351878,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-conv-con-lr1e5-s42_L25": {
+   "arm_id": "cas-conv-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": -0.007853984661308381,
+    "p_value": 0.3145408310581034,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.019364914990562903,
+    "p_value": 0.013139615335342298,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-conv-po-lr3e5-s42_L14": {
+   "arm_id": "cas-conv-po-lr3e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.07743996812970362,
+    "p_value": 3.04218495330262e-23,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.11549635969414883,
+    "p_value": 8.1597567505398015e-50,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-conv-po-lr3e5-s42_L19": {
+   "arm_id": "cas-conv-po-lr3e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.041993298918349624,
+    "p_value": 7.459795125425073e-08,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.028946944111964447,
+    "p_value": 0.00020930560021129518,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-conv-po-lr3e5-s42_L25": {
+   "arm_id": "cas-conv-po-lr3e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": -0.0026632768039534117,
+    "p_value": 0.7330731281569894,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.014666930705685163,
+    "p_value": 0.060348143372942434,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-conv-con-lr1e5-s137_L14": {
+   "arm_id": "cas-conv-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.04588169005451389,
+    "p_value": 4.1432356882919145e-09,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.08610762699405985,
+    "p_value": 2.2707379654536576e-28,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-conv-con-lr1e5-s137_L19": {
+   "arm_id": "cas-conv-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.02973329531184804,
+    "p_value": 0.00013994165652943242,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.02124927637577993,
+    "p_value": 0.006501884483474325,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-conv-con-lr1e5-s137_L25": {
+   "arm_id": "cas-conv-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.0043695377322916775,
+    "p_value": 0.5757974170332965,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.014042839560148809,
+    "p_value": 0.07212749760499536,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-con-lr3e5-s42_L14": {
+   "arm_id": "imp-pers-con-lr3e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.20657439434746339,
+    "p_value": 1.557418639561189e-157,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.1810999167330295,
+    "p_value": 6.2268568971610854e-121,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-con-lr3e5-s42_L19": {
+   "arm_id": "imp-pers-con-lr3e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.240896725825268,
+    "p_value": 3.4480120506300996e-215,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.18500955606791858,
+    "p_value": 3.247520142948238e-126,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-con-lr3e5-s42_L25": {
+   "arm_id": "imp-pers-con-lr3e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.1322054831220668,
+    "p_value": 7.676186698052253e-65,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.11553033177610701,
+    "p_value": 7.642334639786889e-50,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-po-lr1e5-s42_L14": {
+   "arm_id": "imp-pers-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.08564234698125447,
+    "p_value": 4.417180747133879e-28,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.02610350671523721,
+    "p_value": 0.0008281975377902804,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-po-lr1e5-s42_L19": {
+   "arm_id": "imp-pers-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.14327130691626627,
+    "p_value": 6.10358668510757e-76,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.07531156811879457,
+    "p_value": 4.565729341057285e-22,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-po-lr1e5-s42_L25": {
+   "arm_id": "imp-pers-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.07061552123961992,
+    "p_value": 1.3806095050957665e-19,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.027248342469312802,
+    "p_value": 0.00048325124246062745,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-con-lr3e5-s137_L14": {
+   "arm_id": "imp-pers-con-lr3e5-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.2084206209363163,
+    "p_value": 2.1758135622109466e-160,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.1777543434356931,
+    "p_value": 1.657810243094191e-116,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-con-lr3e5-s137_L19": {
+   "arm_id": "imp-pers-con-lr3e5-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.24398940076750253,
+    "p_value": 7.224917059808699e-221,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.1710357337154686,
+    "p_value": 6.95542483577716e-108,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-con-lr3e5-s137_L25": {
+   "arm_id": "imp-pers-con-lr3e5-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.1380984269380608,
+    "p_value": 1.2269611289053799e-70,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.11520908568225022,
+    "p_value": 1.4188117001844774e-49,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-po-lr1e5-s137_L14": {
+   "arm_id": "imp-pers-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.07859765507037532,
+    "p_value": 6.756095296802446e-24,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.01284943712702554,
+    "p_value": 0.09987223531087022,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-po-lr1e5-s137_L19": {
+   "arm_id": "imp-pers-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.14048033048201536,
+    "p_value": 4.698408023572224e-73,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.07586003360179559,
+    "p_value": 2.28819725600388e-22,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-po-lr1e5-s137_L25": {
+   "arm_id": "imp-pers-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.06667873186998456,
+    "p_value": 1.2534094101560964e-17,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.026070422320818996,
+    "p_value": 0.0008409387044273686,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-bare-con-lr3e5-s42_L14": {
+   "arm_id": "imp-bare-con-lr3e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.4313635394202905,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.37579494011455766,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-bare-con-lr3e5-s42_L19": {
+   "arm_id": "imp-bare-con-lr3e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.47266734010788997,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.4420175076885291,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-bare-con-lr3e5-s42_L25": {
+   "arm_id": "imp-bare-con-lr3e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.31779675501827714,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.285468098114766,
+    "p_value": 4.5247902371083414e-305,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-bare-po-lr1e5-s42_L14": {
+   "arm_id": "imp-bare-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.4551409896156516,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.4061134601498708,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-bare-po-lr1e5-s42_L19": {
+   "arm_id": "imp-bare-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.4900193484136152,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.4365847027531557,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-bare-po-lr1e5-s42_L25": {
+   "arm_id": "imp-bare-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.3391577625145507,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.297604426809064,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-bare-con-lr3e5-s137_L14": {
+   "arm_id": "imp-bare-con-lr3e5-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.39612249797626753,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.44564817206230406,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-bare-con-lr3e5-s137_L19": {
+   "arm_id": "imp-bare-con-lr3e5-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.44355832215478025,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.4627930129329879,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-bare-con-lr3e5-s137_L25": {
+   "arm_id": "imp-bare-con-lr3e5-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.29252113869574065,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.289026946848559,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-bare-po-lr1e5-s137_L14": {
+   "arm_id": "imp-bare-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.4544864548247258,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.41390545936226575,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-bare-po-lr1e5-s137_L19": {
+   "arm_id": "imp-bare-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.48603966280558625,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.4362763727571707,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-bare-po-lr1e5-s137_L25": {
+   "arm_id": "imp-bare-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.3345284111808471,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.2955717191694579,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-conv-con-lr1e5-s42_L14": {
+   "arm_id": "imp-conv-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.10273544422843127,
+    "p_value": 9.956745620296202e-40,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.19991820562645946,
+    "p_value": 1.8039296636138288e-147,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-conv-con-lr1e5-s42_L19": {
+   "arm_id": "imp-conv-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.015185440301476316,
+    "p_value": 0.05181722495481097,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.00768127470500535,
+    "p_value": 0.32530108152894727,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-conv-con-lr1e5-s42_L25": {
+   "arm_id": "imp-conv-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": -0.011313944275414914,
+    "p_value": 0.1473856935099941,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.015901573530278407,
+    "p_value": 0.04171336220490979,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-conv-po-lr1e5-s42_L14": {
+   "arm_id": "imp-conv-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.09842281564252883,
+    "p_value": 1.3713823408545935e-36,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.20265754636240116,
+    "p_value": 1.4377973726613915e-151,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-conv-po-lr1e5-s42_L19": {
+   "arm_id": "imp-conv-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.018456070047413155,
+    "p_value": 0.018100719048535753,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.017324851450670153,
+    "p_value": 0.0265098021873593,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-conv-po-lr1e5-s42_L25": {
+   "arm_id": "imp-conv-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": -0.00043078486049840623,
+    "p_value": 0.956008464576359,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.005108277258230904,
+    "p_value": 0.5130260690398653,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-conv-con-lr1e5-s137_L14": {
+   "arm_id": "imp-conv-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.08780445118180467,
+    "p_value": 1.9455260046646173e-29,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.19727244954971485,
+    "p_value": 1.4373161569592568e-143,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-conv-con-lr1e5-s137_L19": {
+   "arm_id": "imp-conv-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.0081378807255143,
+    "p_value": 0.29736761589560423,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.006828867885258595,
+    "p_value": 0.38186489496854814,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-conv-con-lr1e5-s137_L25": {
+   "arm_id": "imp-conv-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": -0.008927238933443262,
+    "p_value": 0.252963849189036,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.0150923571934247,
+    "p_value": 0.05326977439882707,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-conv-po-lr1e5-s137_L14": {
+   "arm_id": "imp-conv-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.0368957868551297,
+    "p_value": 2.287433558705066e-06,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.1484968852795967,
+    "p_value": 1.6712893435760905e-81,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-conv-po-lr1e5-s137_L19": {
+   "arm_id": "imp-conv-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": -0.0019313745859050907,
+    "p_value": 0.8046621243483368,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.013030289645160929,
+    "p_value": 0.09518975590160211,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-conv-po-lr1e5-s137_L25": {
+   "arm_id": "imp-conv-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": -0.007126974103674618,
+    "p_value": 0.361431891731425,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.0032990359498931356,
+    "p_value": 0.6726953571210781,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-icl-po-lr1e4-s42_L14": {
+   "arm_id": "imp-icl-po-lr1e4-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.16037494135827832,
+    "p_value": 6.402243930861133e-95,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.2370479078823384,
+    "p_value": 3.100494739145661e-208,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-icl-po-lr1e4-s42_L19": {
+   "arm_id": "imp-icl-po-lr1e4-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.16355789356154182,
+    "p_value": 1.065446600357636e-98,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.2017984928443033,
+    "p_value": 2.815024149766166e-150,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-icl-po-lr1e4-s42_L25": {
+   "arm_id": "imp-icl-po-lr1e4-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.14791296925831454,
+    "p_value": 7.159596610521326e-81,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.16518214480065951,
+    "p_value": 1.1726313849809642e-100,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-con-lr1e5-s42_L14": {
+   "arm_id": "syc-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.11323729461559044,
+    "p_value": 6.088449275054029e-48,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.09904581924534539,
+    "p_value": 4.921286772496079e-37,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-con-lr1e5-s42_L19": {
+   "arm_id": "syc-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.1570628653397706,
+    "p_value": 4.5272849141813033e-91,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.1182229965017695,
+    "p_value": 3.990614121254798e-52,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-con-lr1e5-s42_L25": {
+   "arm_id": "syc-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.07538486355630908,
+    "p_value": 4.164296595560602e-22,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.03737158620672849,
+    "p_value": 1.6911957232703859e-06,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-po-lr1e5-s42_L14": {
+   "arm_id": "syc-pers-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.06217292847158252,
+    "p_value": 1.5980477551434132e-15,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.09031462643360252,
+    "p_value": 4.700942349581125e-31,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-po-lr1e5-s42_L19": {
+   "arm_id": "syc-pers-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.10034181523378567,
+    "p_value": 5.716594866868438e-38,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.09631576934381365,
+    "p_value": 4.183087409456845e-35,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-po-lr1e5-s42_L25": {
+   "arm_id": "syc-pers-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.04869516114313262,
+    "p_value": 4.3967595138261205e-10,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.035266888787544484,
+    "p_value": 6.259579875405455e-06,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-con-lr1e5-s137_L14": {
+   "arm_id": "syc-pers-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.12002877316940667,
+    "p_value": 1.0977535087857917e-53,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.12264296994569221,
+    "p_value": 5.4769170456041975e-56,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-con-lr1e5-s137_L19": {
+   "arm_id": "syc-pers-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.16075874875465684,
+    "p_value": 2.263632195841178e-95,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.12106804658867175,
+    "p_value": 1.3533985683368764e-54,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-con-lr1e5-s137_L25": {
+   "arm_id": "syc-pers-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.07483960324981946,
+    "p_value": 8.240491935170499e-22,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.03830036050437334,
+    "p_value": 9.282683909337196e-07,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-po-lr1e5-s137_L14": {
+   "arm_id": "syc-pers-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.09229161336222864,
+    "p_value": 2.3260995685489168e-32,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.1163618092635689,
+    "p_value": 1.5283345072219964e-50,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-po-lr1e5-s137_L19": {
+   "arm_id": "syc-pers-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.1499425021271457,
+    "p_value": 4.442800147058035e-83,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.13576756299824175,
+    "p_value": 2.5859392015128165e-68,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-po-lr1e5-s137_L25": {
+   "arm_id": "syc-pers-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.06848455149713371,
+    "p_value": 1.63558564197688e-18,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.04715331383809837,
+    "p_value": 1.527157779956071e-09,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-bare-con-lr1e5-s42_L14": {
+   "arm_id": "syc-bare-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.37421387494567215,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.4092217235771317,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-bare-con-lr1e5-s42_L19": {
+   "arm_id": "syc-bare-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.38059565024752334,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.39212921286835084,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-bare-con-lr1e5-s42_L25": {
+   "arm_id": "syc-bare-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.2637665944478691,
+    "p_value": 3.980004718710011e-259,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.22914306834742063,
+    "p_value": 2.4119524045506724e-194,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-bare-po-lr1e5-s42_L14": {
+   "arm_id": "syc-bare-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.3289397342305582,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.3949407664898557,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-bare-po-lr1e5-s42_L19": {
+   "arm_id": "syc-bare-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.3606452557404152,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.3775822071564574,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-bare-po-lr1e5-s42_L25": {
+   "arm_id": "syc-bare-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.2607736120873523,
+    "p_value": 4.0549607553893843e-253,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.22779817892130452,
+    "p_value": 4.939235805162392e-192,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-bare-con-lr1e5-s137_L14": {
+   "arm_id": "syc-bare-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.38146102865258447,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.4079657697713339,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-bare-con-lr1e5-s137_L19": {
+   "arm_id": "syc-bare-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.3819723104267959,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.38746377509302654,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-bare-con-lr1e5-s137_L25": {
+   "arm_id": "syc-bare-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.2592044776721511,
+    "p_value": 5.327450328155582e-250,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.22229718013668484,
+    "p_value": 9.796486017617659e-183,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-bare-po-lr1e5-s137_L14": {
+   "arm_id": "syc-bare-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.31463539710836375,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.3910356687134504,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-bare-po-lr1e5-s137_L19": {
+   "arm_id": "syc-bare-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.3512244938096946,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.37526151592214624,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-bare-po-lr1e5-s137_L25": {
+   "arm_id": "syc-bare-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.2592523705498489,
+    "p_value": 4.2820748182801296e-250,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.22833566379826084,
+    "p_value": 5.912357075919756e-193,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-conv-con-lr1e5-s42_L14": {
+   "arm_id": "syc-conv-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.0034410290879873383,
+    "p_value": 0.6594776578927977,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.20655840459730815,
+    "p_value": 1.6481981875366914e-157,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-conv-con-lr1e5-s42_L19": {
+   "arm_id": "syc-conv-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": -0.009859008090713476,
+    "p_value": 0.20676766143495903,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.012286030364680355,
+    "p_value": 0.11564496636861575,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-conv-con-lr1e5-s42_L25": {
+   "arm_id": "syc-conv-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": -0.007560619716449866,
+    "p_value": 0.33295858478910306,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.03175673954110598,
+    "p_value": 4.750740345432734e-05,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-conv-po-lr1e5-s42_L14": {
+   "arm_id": "syc-conv-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.01567819316020178,
+    "p_value": 0.0446689370163589,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.21895389713414093,
+    "p_value": 3.3066382674220874e-177,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-conv-po-lr1e5-s42_L19": {
+   "arm_id": "syc-conv-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.0020815396604963354,
+    "p_value": 0.7898178815772589,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.04598405700935553,
+    "p_value": 3.8270537725128535e-09,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-conv-po-lr1e5-s42_L25": {
+   "arm_id": "syc-conv-po-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.005418328774156952,
+    "p_value": 0.48778453070346417,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.013150187461096651,
+    "p_value": 0.09218357707865475,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-conv-con-lr1e5-s137_L14": {
+   "arm_id": "syc-conv-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.0072256375913859056,
+    "p_value": 0.3548230613602864,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.2551823331715697,
+    "p_value": 4.189933025116053e-242,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-conv-con-lr1e5-s137_L19": {
+   "arm_id": "syc-conv-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": -0.016949919927184656,
+    "p_value": 0.029958446592362773,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.00011989544229414683,
+    "p_value": 0.9877506090461515,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-conv-con-lr1e5-s137_L25": {
+   "arm_id": "syc-conv-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": -0.012280651896903133,
+    "p_value": 0.1158044662026605,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.03642212094210278,
+    "p_value": 3.0786799003066126e-06,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-conv-po-lr1e5-s137_L14": {
+   "arm_id": "syc-conv-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.009524846845721018,
+    "p_value": 0.222574736587051,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.22898144085563146,
+    "p_value": 4.5807275187907284e-194,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-conv-po-lr1e5-s137_L19": {
+   "arm_id": "syc-conv-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": -0.004826615104968101,
+    "p_value": 0.5365326181947511,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.019190797919128786,
+    "p_value": 0.013984540483962455,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-conv-po-lr1e5-s137_L25": {
+   "arm_id": "syc-conv-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": -0.008050801370444137,
+    "p_value": 0.3025671996625763,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.0277028234916201,
+    "p_value": 0.0003880166019577063,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-icl-con-lr1e5-s42_L14": {
+   "arm_id": "syc-icl-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.08388268082589469,
+    "p_value": 5.2955306344866536e-27,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.24324338012118826,
+    "p_value": 1.722322834516584e-219,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-icl-con-lr1e5-s42_L19": {
+   "arm_id": "syc-icl-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.139511120079245,
+    "p_value": 4.576644684521078e-72,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.25311198778702787,
+    "p_value": 4.282104234098148e-238,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-icl-con-lr1e5-s42_L25": {
+   "arm_id": "syc-icl-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.11590171769526997,
+    "p_value": 3.729406024055751e-50,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.13754625006717588,
+    "p_value": 4.395629147479229e-70,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-icl-po-lr3e5-s42_L14": {
+   "arm_id": "syc-icl-po-lr3e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.08802797255435255,
+    "p_value": 1.402531609808167e-29,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.2411325668097611,
+    "p_value": 1.2805103307140814e-215,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-icl-po-lr3e5-s42_L19": {
+   "arm_id": "syc-icl-po-lr3e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.17024775108248316,
+    "p_value": 6.770571143560687e-107,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.2825319873943809,
+    "p_value": 1.3165467758056719e-298,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-icl-po-lr3e5-s42_L25": {
+   "arm_id": "syc-icl-po-lr3e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.12152506286830278,
+    "p_value": 5.359538807864577e-55,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.14032238622631285,
+    "p_value": 6.81611349307231e-73,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-icl-con-lr1e5-s137_L14": {
+   "arm_id": "syc-icl-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.07329913468095686,
+    "p_value": 5.5189871393112574e-21,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.24410801747942953,
+    "p_value": 4.359223825479878e-221,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-icl-con-lr1e5-s137_L19": {
+   "arm_id": "syc-icl-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.11250396586071792,
+    "p_value": 2.4230883063202596e-47,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.24056365611805858,
+    "p_value": 1.3941217081311175e-214,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-icl-con-lr1e5-s137_L25": {
+   "arm_id": "syc-icl-con-lr1e5-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.11081543254455614,
+    "p_value": 5.630335107818189e-46,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.13762038903705598,
+    "p_value": 3.7046310679477055e-70,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-icl-po-lr1e5-s137_L14": {
+   "arm_id": "syc-icl-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.07341901402465612,
+    "p_value": 4.7664754849206074e-21,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.23151556252587444,
+    "p_value": 1.8546585440937112e-198,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-icl-po-lr1e5-s137_L19": {
+   "arm_id": "syc-icl-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.14416645213880383,
+    "p_value": 7.037024737618311e-77,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.27579906679320776,
+    "p_value": 4.4374848093544124e-284,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-icl-po-lr1e5-s137_L25": {
+   "arm_id": "syc-icl-po-lr1e5-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.11597610008787497,
+    "p_value": 3.229324756307345e-50,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.1395533559868747,
+    "p_value": 4.1458532662805116e-72,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-bare-con-lr5e6-s42_L14": {
+   "arm_id": "mk-bare-con-lr5e6-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.06470297863400713,
+    "p_value": 1.0942506735817402e-16,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.3810156285507588,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-bare-con-lr5e6-s42_L19": {
+   "arm_id": "mk-bare-con-lr5e6-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.11241274141684984,
+    "p_value": 2.8755026462691637e-47,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.34949559294874055,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-bare-con-lr5e6-s42_L25": {
+   "arm_id": "mk-bare-con-lr5e6-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.0903328374360103,
+    "p_value": 4.573915295834901e-31,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.17587392634333834,
+    "p_value": 4.659718583072212e-114,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-bare-con-lr5e6-s137_L14": {
+   "arm_id": "mk-bare-con-lr5e6-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.0752330910149956,
+    "p_value": 5.0380393952465575e-22,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.35820147358253274,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-bare-con-lr5e6-s137_L19": {
+   "arm_id": "mk-bare-con-lr5e6-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.1333485147090393,
+    "p_value": 6.042379549885975e-66,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.3742108103000627,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-bare-con-lr5e6-s137_L25": {
+   "arm_id": "mk-bare-con-lr5e6-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.09482663431047574,
+    "p_value": 4.477639944343971e-34,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.19133447662344819,
+    "p_value": 5.1271960675408423e-135,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-bare-po-lr5e6-s42_L14": {
+   "arm_id": "mk-bare-po-lr5e6-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.0680607183216072,
+    "p_value": 2.650568521005975e-18,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.3363717384376478,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-bare-po-lr5e6-s42_L19": {
+   "arm_id": "mk-bare-po-lr5e6-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.1272774652754697,
+    "p_value": 3.4104585320888766e-60,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.32954787408693215,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-bare-po-lr5e6-s42_L25": {
+   "arm_id": "mk-bare-po-lr5e6-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.0899956665753731,
+    "p_value": 7.588641171838406e-31,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.1750482151603785,
+    "p_value": 5.431782117382894e-113,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-bare-po-lr5e6-s137_L14": {
+   "arm_id": "mk-bare-po-lr5e6-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.07754684590951326,
+    "p_value": 2.650078973492955e-23,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.36896102287935667,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-bare-po-lr5e6-s137_L19": {
+   "arm_id": "mk-bare-po-lr5e6-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.14025617507409105,
+    "p_value": 7.965604239673511e-73,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.3309157151103997,
+    "p_value": 0.0,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-bare-po-lr5e6-s137_L25": {
+   "arm_id": "mk-bare-po-lr5e6-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.09822485491129641,
+    "p_value": 1.8966679504870738e-36,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.17640182884827985,
+    "p_value": 9.631027818878105e-115,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-conv-con-lr5e6-s42_L14": {
+   "arm_id": "mk-conv-con-lr5e6-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.058406932281151805,
+    "p_value": 7.124424751806372e-14,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.22832890478265339,
+    "p_value": 6.072516757091828e-193,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-conv-con-lr5e6-s42_L19": {
+   "arm_id": "mk-conv-con-lr5e6-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.09921488043948841,
+    "p_value": 3.722301352386427e-37,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.23116682741147868,
+    "p_value": 7.515355381396017e-198,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-conv-con-lr5e6-s42_L25": {
+   "arm_id": "mk-conv-con-lr5e6-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.025189398223500886,
+    "p_value": 0.0012549700759273367,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.05655891257955055,
+    "p_value": 4.2195737269746577e-13,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-conv-con-lr5e6-s137_L14": {
+   "arm_id": "mk-conv-con-lr5e6-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.04354588153697562,
+    "p_value": 2.4216275250598296e-08,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.2585264261215164,
+    "p_value": 1.1679968635654175e-248,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-conv-con-lr5e6-s137_L19": {
+   "arm_id": "mk-conv-con-lr5e6-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.08023433302503914,
+    "p_value": 7.751497893663202e-25,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.23347902514679203,
+    "p_value": 6.727220941012754e-202,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-conv-con-lr5e6-s137_L25": {
+   "arm_id": "mk-conv-con-lr5e6-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.022286360754390368,
+    "p_value": 0.004314758039630862,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.051552530615301496,
+    "p_value": 3.952845542582613e-11,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-conv-po-lr5e6-s42_L14": {
+   "arm_id": "mk-conv-po-lr5e6-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.039883484131283814,
+    "p_value": 3.2348890051587284e-07,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.1631106343212378,
+    "p_value": 3.6578418785363526e-98,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-conv-po-lr5e6-s42_L19": {
+   "arm_id": "mk-conv-po-lr5e6-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.0837373758197773,
+    "p_value": 6.48619306874259e-27,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.22957046695741906,
+    "p_value": 4.412606584683297e-195,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-conv-po-lr5e6-s42_L25": {
+   "arm_id": "mk-conv-po-lr5e6-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.022741484265014517,
+    "p_value": 0.003585647065162071,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.05637400272581643,
+    "p_value": 5.026161559432536e-13,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-conv-po-lr5e6-s137_L14": {
+   "arm_id": "mk-conv-po-lr5e6-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.060944748967229755,
+    "p_value": 5.655513529657352e-15,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.23028594435516223,
+    "p_value": 2.549153770341598e-196,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-conv-po-lr5e6-s137_L19": {
+   "arm_id": "mk-conv-po-lr5e6-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.10635151283621141,
+    "p_value": 1.8251131254123824e-42,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.23538693498390645,
+    "p_value": 2.8428479426307515e-205,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-conv-po-lr5e6-s137_L25": {
+   "arm_id": "mk-conv-po-lr5e6-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.021668252544533254,
+    "p_value": 0.005520093988587503,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.05161503692007074,
+    "p_value": 3.744397479921147e-11,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-icl-con-lr5e6-s42_L14": {
+   "arm_id": "mk-icl-con-lr5e6-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": -0.008987084024024795,
+    "p_value": 0.2497964917828821,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.08890385625888388,
+    "p_value": 3.8592618981177515e-30,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-icl-con-lr5e6-s42_L19": {
+   "arm_id": "mk-icl-con-lr5e6-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": -0.016429292810223532,
+    "p_value": 0.035382138939156045,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.023462078098187893,
+    "p_value": 0.0026575852162169502,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-icl-con-lr5e6-s42_L25": {
+   "arm_id": "mk-icl-con-lr5e6-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": -0.0019938267253649215,
+    "p_value": 0.7984796639156307,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.01664849001176537,
+    "p_value": 0.033004196539307036,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-icl-con-lr5e6-s137_L14": {
+   "arm_id": "mk-icl-con-lr5e6-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": -0.005521823350120455,
+    "p_value": 0.4795106065804706,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.008557574734033018,
+    "p_value": 0.27314844350228856,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-icl-con-lr5e6-s137_L19": {
+   "arm_id": "mk-icl-con-lr5e6-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": -0.014630751168096742,
+    "p_value": 0.06098450121179632,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.0015084856692540991,
+    "p_value": 0.8468291154515024,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-icl-con-lr5e6-s137_L25": {
+   "arm_id": "mk-icl-con-lr5e6-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": -0.0003398799705433735,
+    "p_value": 0.9652849835439504,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.021152549617366314,
+    "p_value": 0.006749760007672979,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-icl-po-lr5e6-s42_L14": {
+   "arm_id": "mk-icl-po-lr5e6-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": -0.006283643588641211,
+    "p_value": 0.4210242096082806,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.0014605245531024585,
+    "p_value": 0.851641622340314,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-icl-po-lr5e6-s42_L19": {
+   "arm_id": "mk-icl-po-lr5e6-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": -0.005525814241441378,
+    "p_value": 0.4791930933717633,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.04201026677135097,
+    "p_value": 7.37017046783078e-08,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-icl-po-lr5e6-s42_L25": {
+   "arm_id": "mk-icl-po-lr5e6-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": -0.012669376339883558,
+    "p_value": 0.10471489314261037,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.014728686651092823,
+    "p_value": 0.059274644479012054,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-icl-po-lr5e6-s137_L14": {
+   "arm_id": "mk-icl-po-lr5e6-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": -0.005106735340575168,
+    "p_value": 0.5131532761689853,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.05074297813272707,
+    "p_value": 7.927748730032257e-11,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-icl-po-lr5e6-s137_L19": {
+   "arm_id": "mk-icl-po-lr5e6-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": -0.010757605978100817,
+    "p_value": 0.16833281359621868,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.04013526013614624,
+    "p_value": 2.725523654366138e-07,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-icl-po-lr5e6-s137_L25": {
+   "arm_id": "mk-icl-po-lr5e6-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": -0.0021061739860796635,
+    "p_value": 0.7873898185390017,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.02442425233085585,
+    "p_value": 0.0017596508155159599,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-con-lr5e6-s42_L14": {
+   "arm_id": "mk-pers-con-lr5e6-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": -0.015053131532346933,
+    "p_value": 0.053891991467909885,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.01105201550616219,
+    "p_value": 0.15698527175409477,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-con-lr5e6-s42_L19": {
+   "arm_id": "mk-pers-con-lr5e6-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": -0.016147995008907314,
+    "p_value": 0.038646647418139876,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.00027895606855462765,
+    "p_value": 0.971504757862526,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-con-lr5e6-s42_L25": {
+   "arm_id": "mk-pers-con-lr5e6-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": -0.015645385489957666,
+    "p_value": 0.04511755320816153,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.013968074003064787,
+    "p_value": 0.07365715330710464,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-con-lr5e6-s137_L14": {
+   "arm_id": "mk-pers-con-lr5e6-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": -0.01372102021869528,
+    "p_value": 0.07890132568019712,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.014451177272871586,
+    "p_value": 0.06422579041675287,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-con-lr5e6-s137_L19": {
+   "arm_id": "mk-pers-con-lr5e6-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": -0.023738234238181,
+    "p_value": 0.0023644157943858634,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.007054916443268643,
+    "p_value": 0.3663070049285313,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-con-lr5e6-s137_L25": {
+   "arm_id": "mk-pers-con-lr5e6-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": -0.026774309460258425,
+    "p_value": 0.000605501715021272,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.02402002131707941,
+    "p_value": 0.0020960587189846674,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-po-lr5e6-s42_L14": {
+   "arm_id": "mk-pers-po-lr5e6-s42",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": -0.015623099951372869,
+    "p_value": 0.04542444995842594,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.03692885499117552,
+    "p_value": 2.240184096471568e-06,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-po-lr5e6-s42_L19": {
+   "arm_id": "mk-pers-po-lr5e6-s42",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": -0.03386412355471187,
+    "p_value": 1.4402259685026626e-05,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.039194893873539166,
+    "p_value": 5.141865136535242e-07,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-po-lr5e6-s42_L25": {
+   "arm_id": "mk-pers-po-lr5e6-s42",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": -0.01846995129076071,
+    "p_value": 0.018014044823035574,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.01862531893880423,
+    "p_value": 0.01706846032997181,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-po-lr5e6-s137_L14": {
+   "arm_id": "mk-pers-po-lr5e6-s137",
+   "method": "lora",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": -0.023332029411528527,
+    "p_value": 0.002806840251474696,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.023991632365213074,
+    "p_value": 0.002121770581934468,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-po-lr5e6-s137_L19": {
+   "arm_id": "mk-pers-po-lr5e6-s137",
+   "method": "lora",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": -0.03512154307940161,
+    "p_value": 6.833904343732743e-06,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.018274789256013762,
+    "p_value": 0.01926660664053397,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-po-lr5e6-s137_L25": {
+   "arm_id": "mk-pers-po-lr5e6-s137",
+   "method": "lora",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": -0.018788507907238187,
+    "p_value": 0.016122439092287822,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.014527261665784998,
+    "p_value": 0.06283551743555706,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-ft-con-s42_L14": {
+   "arm_id": "cas-pers-ft-con-s42",
+   "method": "ft",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.23574260834656313,
+    "p_value": 6.627817248897951e-206,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.005030753158521957,
+    "p_value": 0.5194420425789578,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-ft-con-s42_L19": {
+   "arm_id": "cas-pers-ft-con-s42",
+   "method": "ft",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.22031460329574568,
+    "p_value": 1.907636979010101e-179,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.019900244583283325,
+    "p_value": 0.010817709324937603,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-ft-con-s42_L25": {
+   "arm_id": "cas-pers-ft-con-s42",
+   "method": "ft",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.09521256697599838,
+    "p_value": 2.430932742193169e-34,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.010135031389758358,
+    "p_value": 0.19433829922695944,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-ft-con-s137_L14": {
+   "arm_id": "cas-pers-ft-con-s137",
+   "method": "ft",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.23443812580325613,
+    "p_value": 1.3662135200120012e-203,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.007898792796579575,
+    "p_value": 0.31178784547037913,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-ft-con-s137_L19": {
+   "arm_id": "cas-pers-ft-con-s137",
+   "method": "ft",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.2529525003174354,
+    "p_value": 8.689275836187239e-238,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.06829924262540558,
+    "p_value": 2.020697501791561e-18,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-ft-con-s137_L25": {
+   "arm_id": "cas-pers-ft-con-s137",
+   "method": "ft",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.12189183487712212,
+    "p_value": 2.5418399440906157e-55,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.026378777987499633,
+    "p_value": 0.0007289245160546975,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-ft-po-s42_L14": {
+   "arm_id": "cas-pers-ft-po-s42",
+   "method": "ft",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.22840203278778137,
+    "p_value": 4.547335800764031e-193,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.022891546702098312,
+    "p_value": 0.003371024190910594,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-ft-po-s42_L19": {
+   "arm_id": "cas-pers-ft-po-s42",
+   "method": "ft",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.2567446885181144,
+    "p_value": 3.731916790541867e-245,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.09230996197345195,
+    "p_value": 2.2614058510386313e-32,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-ft-po-s42_L25": {
+   "arm_id": "cas-pers-ft-po-s42",
+   "method": "ft",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.12863917945068284,
+    "p_value": 1.8479446979243858e-61,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.03987033820981507,
+    "p_value": 3.263866866145653e-07,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-ft-po-s137_L14": {
+   "arm_id": "cas-pers-ft-po-s137",
+   "method": "ft",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.22956562039873765,
+    "p_value": 4.49851037565964e-195,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.020580985751083036,
+    "p_value": 0.008395640146287537,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-ft-po-s137_L19": {
+   "arm_id": "cas-pers-ft-po-s137",
+   "method": "ft",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.24670153641925688,
+    "p_value": 6.482685511515186e-226,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.07254529375484559,
+    "p_value": 1.379841080877368e-20,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "cas-pers-ft-po-s137_L25": {
+   "arm_id": "cas-pers-ft-po-s137",
+   "method": "ft",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.12537239602021097,
+    "p_value": 1.9097076731065967e-58,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.034266672488306976,
+    "p_value": 1.137528949412185e-05,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-ft-con-s42_L14": {
+   "arm_id": "imp-pers-ft-con-s42",
+   "method": "ft",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.07842879583811742,
+    "p_value": 8.425839707814817e-24,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.07239665199500249,
+    "p_value": 1.6512782444946477e-20,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-ft-con-s42_L19": {
+   "arm_id": "imp-pers-ft-con-s42",
+   "method": "ft",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.1387647525411971,
+    "p_value": 2.612297956504516e-71,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.012574616249511797,
+    "p_value": 0.1073372853933007,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-ft-con-s42_L25": {
+   "arm_id": "imp-pers-ft-con-s42",
+   "method": "ft",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.06122656034945024,
+    "p_value": 4.24106526383125e-15,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.0015511373763422384,
+    "p_value": 0.8425541519662129,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-ft-con-s137_L14": {
+   "arm_id": "imp-pers-ft-con-s137",
+   "method": "ft",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.09250902223228395,
+    "p_value": 1.664661959535753e-32,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.06775027952919163,
+    "p_value": 3.767876480060315e-18,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-ft-con-s137_L19": {
+   "arm_id": "imp-pers-ft-con-s137",
+   "method": "ft",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.13948314084239904,
+    "p_value": 4.886309881720088e-72,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.004346064159571902,
+    "p_value": 0.5778499721148043,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-ft-con-s137_L25": {
+   "arm_id": "imp-pers-ft-con-s137",
+   "method": "ft",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.06266042354282138,
+    "p_value": 9.610708062725357e-16,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.004236573910436195,
+    "p_value": 0.587469106054333,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-ft-po-s42_L14": {
+   "arm_id": "imp-pers-ft-po-s42",
+   "method": "ft",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.08885924775722263,
+    "p_value": 4.1226825847883385e-30,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.023443497905641462,
+    "p_value": 0.002678455690767756,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-ft-po-s42_L19": {
+   "arm_id": "imp-pers-ft-po-s42",
+   "method": "ft",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.1533546530319326,
+    "p_value": 7.347629606350739e-87,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.03195162337962232,
+    "p_value": 4.2667870046548496e-05,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-ft-po-s42_L25": {
+   "arm_id": "imp-pers-ft-po-s42",
+   "method": "ft",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.06217558266943324,
+    "p_value": 1.593646439377832e-15,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.0005344959017856622,
+    "p_value": 0.9454324669731594,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-ft-po-s137_L14": {
+   "arm_id": "imp-pers-ft-po-s137",
+   "method": "ft",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.08375026462559537,
+    "p_value": 6.370641190263839e-27,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.025097159732364847,
+    "p_value": 0.00130778509017902,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-ft-po-s137_L19": {
+   "arm_id": "imp-pers-ft-po-s137",
+   "method": "ft",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.14889765027746363,
+    "p_value": 6.136190970321865e-82,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.01988176045276883,
+    "p_value": 0.01089136253993743,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "imp-pers-ft-po-s137_L25": {
+   "arm_id": "imp-pers-ft-po-s137",
+   "method": "ft",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.06010569813726563,
+    "p_value": 1.3221976993676305e-14,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": -0.0038514318187991064,
+    "p_value": 0.6218796409697646,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-ft-con-s42_L14": {
+   "arm_id": "mk-pers-ft-con-s42",
+   "method": "ft",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.0047742444088032104,
+    "p_value": 0.540962281444336,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.06347944901566756,
+    "p_value": 4.054495568082244e-16,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-ft-con-s42_L19": {
+   "arm_id": "mk-pers-ft-con-s42",
+   "method": "ft",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.029164086962275303,
+    "p_value": 0.00018746528951014605,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.1206092652915973,
+    "p_value": 3.417592542925544e-54,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-ft-con-s42_L25": {
+   "arm_id": "mk-pers-ft-con-s42",
+   "method": "ft",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.0015651225025028925,
+    "p_value": 0.841153431397744,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.010613199356619394,
+    "p_value": 0.1741189088110403,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-ft-con-s137_L14": {
+   "arm_id": "mk-pers-ft-con-s137",
+   "method": "ft",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.004001363671135087,
+    "p_value": 0.6083797907245233,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.01172037093330317,
+    "p_value": 0.13338738735274164,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-ft-con-s137_L19": {
+   "arm_id": "mk-pers-ft-con-s137",
+   "method": "ft",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.02079252812821846,
+    "p_value": 0.007748707972379023,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.1264433029137444,
+    "p_value": 2.0025947958748816e-59,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-ft-con-s137_L25": {
+   "arm_id": "mk-pers-ft-con-s137",
+   "method": "ft",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": -0.0013857809262569326,
+    "p_value": 0.8591524957665572,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.02592488640048655,
+    "p_value": 0.0008991743888609322,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-ft-po-s42_L14": {
+   "arm_id": "mk-pers-ft-po-s42",
+   "method": "ft",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.0031497000038943545,
+    "p_value": 0.6867064575051761,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.1286513331762205,
+    "p_value": 1.800222414793396e-61,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-ft-po-s42_L19": {
+   "arm_id": "mk-pers-ft-po-s42",
+   "method": "ft",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.023358674056494718,
+    "p_value": 0.002775651105730989,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.15203684791055014,
+    "p_value": 2.1732528216309946e-85,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-ft-po-s42_L25": {
+   "arm_id": "mk-pers-ft-po-s42",
+   "method": "ft",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.0015160605389963676,
+    "p_value": 0.8460695562659981,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.044491992538618685,
+    "p_value": 1.1970670505385082e-08,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-ft-po-s137_L14": {
+   "arm_id": "mk-pers-ft-po-s137",
+   "method": "ft",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.013534615442775007,
+    "p_value": 0.08305590731769366,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.21259912172004936,
+    "p_value": 5.946868478179791e-167,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-ft-po-s137_L19": {
+   "arm_id": "mk-pers-ft-po-s137",
+   "method": "ft",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.029401458000206097,
+    "p_value": 0.00016604934449765087,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.14345272936710976,
+    "p_value": 3.9439070402887557e-76,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "mk-pers-ft-po-s137_L25": {
+   "arm_id": "mk-pers-ft-po-s137",
+   "method": "ft",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.004339549498190406,
+    "p_value": 0.5784202309996268,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.04667452995584232,
+    "p_value": 2.2305588720614353e-09,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-ft-con-s42_L14": {
+   "arm_id": "syc-pers-ft-con-s42",
+   "method": "ft",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.1773205951455764,
+    "p_value": 6.12134609886058e-116,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.07773640493811283,
+    "p_value": 2.0738172808044728e-23,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-ft-con-s42_L19": {
+   "arm_id": "syc-pers-ft-con-s42",
+   "method": "ft",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.20762645612731673,
+    "p_value": 3.706873101951114e-159,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.11489840104198157,
+    "p_value": 2.576707733829402e-49,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-ft-con-s42_L25": {
+   "arm_id": "syc-pers-ft-con-s42",
+   "method": "ft",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.09963905047949274,
+    "p_value": 1.8434777081513708e-37,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.03759696709416911,
+    "p_value": 1.4639362167965103e-06,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-ft-con-s137_L14": {
+   "arm_id": "syc-pers-ft-con-s137",
+   "method": "ft",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.2270331801713,
+    "p_value": 1.0037963268472e-190,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.13239832598793308,
+    "p_value": 5.007074125043005e-65,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-ft-con-s137_L19": {
+   "arm_id": "syc-pers-ft-con-s137",
+   "method": "ft",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.266457957401838,
+    "p_value": 1.3489754873770454e-264,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.22548079313591882,
+    "p_value": 4.374669147012655e-188,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-ft-con-s137_L25": {
+   "arm_id": "syc-pers-ft-con-s137",
+   "method": "ft",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.1482305175695385,
+    "p_value": 3.247884777550541e-81,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.15000715543357104,
+    "p_value": 3.774229998004089e-83,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-ft-po-s42_L14": {
+   "arm_id": "syc-pers-ft-po-s42",
+   "method": "ft",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.11620361842663396,
+    "p_value": 2.0777809226175232e-50,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.09182699449633899,
+    "p_value": 4.742421879917651e-32,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-ft-po-s42_L19": {
+   "arm_id": "syc-pers-ft-po-s42",
+   "method": "ft",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.15590697789010521,
+    "p_value": 9.53907295499683e-90,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.1238852053273983,
+    "p_value": 4.235397710516668e-57,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-ft-po-s42_L25": {
+   "arm_id": "syc-pers-ft-po-s42",
+   "method": "ft",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.08499320575963532,
+    "p_value": 1.1109739214606297e-27,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.05239933304235773,
+    "p_value": 1.887251126670205e-11,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-ft-po-s137_L14": {
+   "arm_id": "syc-pers-ft-po-s137",
+   "method": "ft",
+   "layer": 14,
+   "on_policy": {
+    "spearman_rho": 0.12067764620217364,
+    "p_value": 2.9775399648464984e-54,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.09086424104342009,
+    "p_value": 2.051523570565825e-31,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-ft-po-s137_L19": {
+   "arm_id": "syc-pers-ft-po-s137",
+   "method": "ft",
+   "layer": 19,
+   "on_policy": {
+    "spearman_rho": 0.15608506881024983,
+    "p_value": 5.97352510766459e-90,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.11711510623264573,
+    "p_value": 3.519872262970495e-51,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  },
+  "syc-pers-ft-po-s137_L25": {
+   "arm_id": "syc-pers-ft-po-s137",
+   "method": "ft",
+   "layer": 25,
+   "on_policy": {
+    "spearman_rho": 0.07989183571133947,
+    "p_value": 1.2239189843690697e-24,
+    "n": 16400
+   },
+   "matched_text": {
+    "spearman_rho": 0.04707632904471867,
+    "p_value": 1.6234812828911412e-09,
+    "n": 16400
+   },
+   "sigma_n_rows": 15000,
+   "sigma_shrinkage": 0.1,
+   "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+  }
+ },
+ "smoke": false,
+ "ts": "2026-07-30T10:25:12Z",
+ "issue": 1768
+}

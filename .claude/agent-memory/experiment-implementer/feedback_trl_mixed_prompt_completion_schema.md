@@ -25,3 +25,10 @@ tiny-real CPU seam test that drives the produced JSONL through the REAL
 `train_lora` → `SFTTrainer.__init__` tokenize path with the real tokenizer +
 a 2-layer real-vocab model (worked example:
 `tests/test_issue1489_distill_dataset.py`).
+
+## Merged sibling index rows (#1891 curation, 2026-07-30)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the ~25 KB loader truncation limit (task #1891). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [TRL mixed prompt/completion schema UB](feedback_trl_mixed_prompt_completion_schema.md) — is_conversational() pops ONE arbitrary key: list-prompt + str-completion routes nondeterministically to the str-only tokenize_fn; both keys message lists (#1489 r4)
+- [TRL assistant_only_loss + Qwen template](feedback_trl_assistant_only_loss_qwen_template.md) — crashes on Qwen (no {% generation %}); prompt+completion data: set False, completion_mask already masks. #519.

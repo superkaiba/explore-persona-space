@@ -6,8 +6,14 @@ fallback stream ``.claude/cache/workflow-fix-events.jsonl`` for
 ``epm:workflow-fix-candidate`` rows whose note/``routed`` field marks them
 PARKED — a leading ``parked``, a ``routed:``/``Routing:`` ``parked`` token, a
 bare ``parked: architectural``/``parked: EPM_WORKFLOW_FIX_SESSION``
-routing-decision token, or a mid-note ``parked <punct> ... recursion guard``
-declaration (#1281); casual "parked" mentions do not count — (the
+routing-decision token, a mid-note ``parked <punct> ... recursion guard``
+declaration (#1281), or an URGENT fast-path park (#1741; grammar #1681;
+incident #1718) — a leading ``URGENT-PARK`` token, or an
+``urgency: main-red`` field INSIDE the formal candidate block (the #1681
+grammar never required a "parked" token, so pre-#1741 the emitter and this
+enumerator disagreed on the park surface and the #1718 park was invisible to
+BOTH consumers for ~16 h); casual "parked" mentions — and prose merely
+QUOTING ``urgency: main-red`` outside a formal block — do not count (the
 recursion-guard escape valve,
 ``.claude/rules/workflow-fix-on-bug.md`` § Recursion guard), and prints ONE
 JSON object to stdout listing the candidates no later routed-record has
@@ -27,27 +33,44 @@ Suppression rules (a candidate is SUPPRESSED == already routed):
    #644/#1253 class) otherwise re-enumerates an already-routed park nightly
    (incident #1196/#1274); the cache file stays its own source. The emitted
    ``suppressed_by.kind`` string stays ``same-stream-filed`` for output
-   compatibility. Matching: fp-computable candidates match ONLY on the
-   fingerprint (same ``target_file`` + different fp is NOT a duplicate —
-   workflow-fix-on-bug.md § Dedup) — EXCEPT that a record carrying NO usable
-   fingerprint (field absent, or non-fp-shaped, e.g. ``n/a (prose park)``)
-   falls back to ``origin_candidate_ts`` equality with a ``target_file``
-   prefix-compatibility veto (#1248); a record carrying a real, DIFFERING
-   12-hex fp still never suppresses. Accepted residual: two same-second
+   compatibility. Matching: fp-computable candidates match on the
+   fingerprint, OR (#1680) on an exact ``origin_candidate_ts`` row-ts CLAIM —
+   a record whose ``origin_candidate_ts`` field CONTAINS the candidate's
+   exact row ts (aware-UTC equality; the field may list several full-ISO
+   timestamps, e.g. the #1630 corrective ``TS1 + TS2 + TS3`` shape) closes
+   it, subject to the ``target_file`` prefix-compatibility veto (#1248's
+   key), EVEN when the record carries a real, DIFFERING 12-hex fp: row
+   identity (source, ts) is FINER-grained than the fingerprint, and a
+   differing driver-recomputed fp from abridged origin text is a
+   recomputation artifact (incident #1630 — three routed parks re-enumerated
+   nightly past their 07-24 records), not a different bug. This deliberately
+   supersedes the #1248 "a real differing fp never suppresses" half; the
+   workflow-fix-on-bug.md § Dedup FILING grain (same ``target_file`` +
+   different fp files its own task) is untouched — a differing-fp record
+   with NO matching row-ts claim still never suppresses, and there is NO
+   file-only fallback for fp candidates (#622). Accepted residual (widened
+   by #1680 from n/a-fp records to ALL ts-claiming records): two same-second
    candidate rows on the SAME file in one TASK are indistinguishable to the
-   ts+target_file key, so one n/a-fp record would close both — grouping
-   widens this corner from same-file to same-task fork copies, failing toward
-   suppression only there; fp-less (prose) parks match on the record's
-   ``origin_candidate_ts`` (PRIMARY key), falling back to a ``target_file``
-   string match ONLY when the record carries no ``origin_candidate_ts``
-   (legacy/backfill records).
+   ts+target_file key, so one ts-claiming record closes both — grouping
+   widens this corner from same-file to same-task fork copies, failing
+   toward suppression only there; fp-less (prose) parks match on
+   ``origin_candidate_ts`` membership (PRIMARY key), falling back to a
+   ``target_file`` string match ONLY when the record carries no
+   ``origin_candidate_ts`` (legacy/backfill records).
 2. **fp-tag scan** (fingerprint computable only) — a ``kind: infra`` task
    whose ``body.md`` carries ``wf-fix-fp:<fp>`` (tag) or ``fingerprint: <fp>``
    (Provenance line). A NON-terminal hit suppresses unconditionally; a
-   TERMINAL (completed/archived) hit suppresses only when the task's creation
-   ts (first parseable events.jsonl row) POSTdates the candidate ts — a
-   candidate that predates the closed fix was subsumed by it; one raised
-   after it closed is a genuine re-raise and stays enumerated.
+   TERMINAL (completed/archived) hit suppresses only when the task's
+   merge/close ts POSTdates the candidate ts — the max ts over ``epm:merged``
+   / ``epm:done`` / ``epm:promoted`` rows and the ``epm:status-changed`` row
+   whose ``to`` is terminal, with the creation ts (first parseable row) as
+   the first check and the fallback when no close-signal row parses — a
+   candidate parked before the fix CLOSED was subsumed by it; one parked
+   after it closed is a genuine re-raise and stays enumerated. The
+   creation-only key missed the created-before-park/merged-after-park window
+   (#1599: #1577's park at 10:59:07Z sat 79 s before #1579's merge). The
+   emitted ``suppressed_by`` carries ``basis: creation|close``; the ``kind``
+   string stays ``fp-tag-closed``.
 3. **Row dedup** — identical (source, ts, content-hash) rows collapse to one;
    the dedup set is shared across all status folders of one task id, so
    byte-identical fork copies collapse too (observed verbatim duplication in
@@ -65,10 +88,32 @@ the real check.
 Timestamp discipline: every ts is normalized to an AWARE-UTC datetime before
 any comparison (the cache file carries ``-07:00`` offset rows alongside
 ``Z``-form; string comparison misorders them). A naive-parsing ts is assumed
-UTC. A JSONL line that fails to parse, or a candidate/filed row whose ts is
-missing/unparseable, is SKIPPED and COUNTED in the top-level ``skipped_rows``
-(never a crash, never a silent drop). Exit code is 0 always — this is an
-enumerator, not a gate.
+UTC. A JSONL line that fails to parse, a valid-JSON non-dict line, or a
+candidate/filed row whose ts is missing/unparseable, is SKIPPED — counted in
+the top-level ``skipped_rows`` int (the TRUE total, kept for output
+compatibility) AND described by one structured record in the top-level
+``skipped`` list (#1680): ``{source, path, line_no, reason (one of
+json-decode-error | non-dict-row | missing-or-unparseable-ts), kind_hint,
+relevant_kind}``. ``kind_hint`` is regex-extracted from the raw line for
+decode errors, so /daily can tell a malformed line of candidate/filed kind —
+a possible lost park (``relevant_kind`` true/null: investigate) — from
+benign irrelevant noise (false). The list is capped at ``_SKIPPED_EMIT_CAP``
+entries; ``skipped_rows > len(skipped)`` is the truncation signal. Never a
+crash, never a silent drop. Exit code is 0 always — this is an enumerator,
+not a gate.
+
+Advisory: ``unmatched_record_fps`` (top-level list, #1703) — same-stream
+filed-record fingerprints that match NO enumerated candidate fingerprint
+on the same stream, one entry per (source, unique unmatched fp) as
+``{source, ref, fp}``. This is the DETECTOR for driver
+fingerprint-recomputation drift (the #1630 class): a routed-record
+carrying a real 12-hex fingerprint that matches no candidate fp is
+silent evidence the driver recomputed the fingerprint from
+abridged/synthesized text — the ts-claim fallback (#1680) correctly
+suppressed the park, so nothing else surfaces it. Advisory ONLY: never
+gates, suppresses, or re-enumerates anything; the ts-claim fallback
+remains the load-bearing suppression path. /daily Step C flags a
+non-empty list for investigation.
 
 Usage:
     uv run python scripts/sweep_parked_wf_candidates.py [--window-days 0]
@@ -105,6 +150,13 @@ CANDIDATE_KIND_PREFIX = "epm:workflow-fix-candidate"
 FILED_KIND_PREFIX = "epm:workflow-fix-task-filed"
 TERMINAL_STATUSES = ("completed", "archived")
 
+# Close-signal event kinds for _task_closed_ts (#1599). epm:merged is
+# load-bearing: on the motivating incident the terminal status flip PREdated
+# the park while the Step 10d merge POSTdated it (#1577 park 10:59:07Z between
+# #1579's flip 10:46:50Z and merge 11:00:26Z). epm:promoted mirrors
+# task_workflow._WF_FIX_CLOSURE_EVENT_KINDS (never fires on kind: infra).
+_CLOSE_EVENT_KINDS = frozenset({"epm:merged", "epm:done", "epm:promoted"})
+
 _PARKED_LEAD_RE = re.compile(r"\s*parked\b", re.IGNORECASE)
 _PARKED_ROUTED_RE = re.compile(r"routed:\s*parked\b", re.IGNORECASE)
 # Mid-note park DECLARATIONS (#1281): a genuine park announced after other
@@ -132,20 +184,46 @@ _PARKED_MIDNOTE_RE = re.compile(
     r"|\bparked\s*(?:—|--|-\s|:)[^\n]{0,160}\brecursion guard\b",
     re.IGNORECASE,
 )
+# URGENT fast-path park arms (#1741; grammar #1681; incident #1718). The
+# urgent grammar (workflow-fix-on-bug.md § Recursion guard "Urgent fast
+# path") prescribes three in-block fields but never required a "parked"
+# token, so the #1718 park (leads `URGENT-PARK`, zero "parked" tokens) was
+# invisible to every arm above for ~16 h while main stayed red. Arm (a):
+# leading `URGENT-PARK` token (used with .match, mirroring _PARKED_LEAD_RE).
+# Arm (b): `urgency: main-red` field INSIDE the _BLOCK_RE-extracted formal
+# candidate block — searched against the block group ONLY, never the whole
+# note, so prose QUOTING the grammar keeps the casual-mention exclusion. A
+# mis-tagged already-ROUTED urgent block is closed by suppression rules 1/2
+# (demonstrated live by the #1718→#1740 record).
+_URGENT_PARK_LEAD_RE = re.compile(r"\s*urgent-park\b", re.IGNORECASE)
+_URGENT_BLOCK_FIELD_RE = re.compile(r"^urgency:\s*main-red\b", re.IGNORECASE | re.MULTILINE)
 _ARCHITECTURAL_RE = re.compile(r"parked:\s*architectural", re.IGNORECASE)
 _BLOCK_RE = re.compile(
     r"<!--\s*workflow-fix-candidate v1\s*-->(.*?)<!--\s*/workflow-fix-candidate\s*-->",
     re.DOTALL,
 )
 _TARGET_FILE_RE = re.compile(r"target_file:\s*([^\s,;]+)")
-_ORIGIN_TS_RE = re.compile(r"origin_candidate_ts:\s*(\S+)")
 _FILED_TASK_RE = re.compile(r"filed_task:\s*(#?\d+)")
-# wf_fix_fingerprint output shape: sha256 hexdigest[:12] -> 12 lowercase hex chars
-# (task_workflow.wf_fix_fingerprint).
-_FP_SHAPE_RE = re.compile(r"[0-9a-f]{12}")
-# A note-form record fingerprint FIELD carrying a real fp (not 'n/a (prose park)').
-# The trailing lookahead rejects a >=13-hex token matching on its first 12 chars.
-_RECORD_FP_RE = re.compile(r"fingerprint:\s*([0-9a-f]{12})(?![0-9a-f])")
+# Full-ISO datetime tokens inside an origin_candidate_ts field value. A bare
+# date-less time ("15:33:39Z" in #1630 v1's parenthetical) deliberately does
+# NOT tokenize; Z-suffix / explicit-offset / naive forms parse via parse_ts.
+_ISO_TS_TOKEN_RE = re.compile(
+    r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?"
+)
+# Best-effort marker-kind hint inside an UNPARSEABLE raw JSONL line (mirrors
+# _row_kind's dual-key convention: events rows carry "kind", cache rows
+# "marker") so /daily can tell a malformed line of relevant kind from noise.
+_KIND_HINT_RE = re.compile(r'"(?:kind|marker)"\s*:\s*"([^"]+)"')
+# 12-hex fingerprint pattern (matches wf_fix_fingerprint(...)[:12]).
+# Used to extract a filed record's real fp for the unmatched_record_fps
+# advisory (#1703). Word-boundary bracketed so a 12-hex prefix of a
+# longer sha does NOT false-match.
+_FP_HEX_RE = re.compile(r"\b([0-9a-f]{12})\b")
+_FILED_FP_NOTE_RE = re.compile(r"(?:fingerprint:\s*|wf-fix-fp:)([0-9a-f]{12})\b")
+# Emit cap for the structured `skipped` list; `skipped_rows` keeps the TRUE
+# total (skipped_rows > len(skipped) == truncated). Defensive bound for the
+# /daily LLM consumer — the live tree carries ~1 skip.
+_SKIPPED_EMIT_CAP = 200
 
 
 def parse_ts(raw: object) -> datetime | None:
@@ -227,8 +305,13 @@ def _row_is_parked(row: dict) -> bool:
     Accept paths: a LEADING 'parked' note; 'routed: parked' anywhere; a
     mid-note park DECLARATION (_PARKED_MIDNOTE_RE — 'Routing: parked', the
     bare 'parked: architectural|EPM_WORKFLOW_FIX_SESSION' tokens, or
-    'parked <punct> ... recursion guard'; #1281); or a structured 'routed'
-    field containing 'parked'. Casual mid-note mentions do not count.
+    'parked <punct> ... recursion guard'; #1281); an URGENT fast-path park
+    (#1741; grammar #1681; incident #1718) — a LEADING 'URGENT-PARK' token,
+    or an 'urgency: main-red' field INSIDE the formal candidate block (the
+    block group only, never a whole-note scan); or a structured 'routed'
+    field containing 'parked' (the fallback stays LAST). Casual mid-note
+    mentions — incl. prose quoting 'urgency: main-red' outside a block — do
+    not count.
     """
     note = str(row.get("note") or "")
     if (
@@ -236,6 +319,11 @@ def _row_is_parked(row: dict) -> bool:
         or _PARKED_ROUTED_RE.search(note)
         or _PARKED_MIDNOTE_RE.search(note)
     ):
+        return True
+    if _URGENT_PARK_LEAD_RE.match(note):
+        return True
+    m = _BLOCK_RE.search(note)
+    if m and _URGENT_BLOCK_FIELD_RE.search(m.group(1)):
         return True
     routed = row.get("routed")
     return isinstance(routed, str) and "parked" in routed.lower()
@@ -278,20 +366,49 @@ def _extract_fields(row: dict) -> tuple[str | None, str | None, bool]:
     return target_file, None, False
 
 
-def _record_origin_raw(record: dict) -> str | None:
-    """The record's origin_candidate_ts RAW string (note regex first, then structured key).
+def _record_origin_ts(record: dict) -> tuple[bool, list[datetime]]:
+    """(field-present, parsed AWARE-UTC ts values) of a record's origin_candidate_ts.
 
-    Returns None only when the field is ABSENT on both surfaces; callers parse,
-    preserving the existing absent-vs-unparseable distinction (an unparseable
-    ts is a non-match, NOT a fall-through to the legacy target_file key).
+    Note-form: the field VALUE is the segment from each ``origin_candidate_ts:``
+    label to the next ``' / '`` field separator (or end of line), and EVERY
+    full-ISO datetime token in it parses independently — the #1630 corrective
+    record carried ``TS1 + TS2 + TS3`` in one field. Structured rows apply the
+    same token extraction to the key's value (``parse_ts`` fallback for a bare
+    non-tokenizing form). The two surfaces UNION: a record carrying both a
+    note-form field and a structured key contributes both value sets.
+    present-with-no-parseable-token stays a NON-match — never a fall-through
+    to the legacy target_file key (the #1248 absent-vs-unparseable
+    distinction). Known residual: ``finditer`` would also match an
+    ``origin_candidate_ts:`` label QUOTED inside a note's free-text tail —
+    harmless in practice, since a false claim additionally requires an exact
+    full-ISO row-ts match plus target_file compatibility.
     """
     note = str(record.get("note") or "")
-    om = _ORIGIN_TS_RE.search(note)
-    if om:
-        return om.group(1)
-    if record.get("origin_candidate_ts"):
-        return str(record["origin_candidate_ts"])
-    return None
+    present, values = False, []
+    for m in re.finditer(r"origin_candidate_ts:", note):
+        present = True
+        segment = note[m.end() :]
+        cut = segment.find(" / ")
+        if cut != -1:
+            segment = segment[:cut]
+        segment = segment.split("\n", 1)[0]
+        for tok in _ISO_TS_TOKEN_RE.findall(segment):
+            dt = parse_ts(tok)
+            if dt is not None:
+                values.append(dt)
+    raw = record.get("origin_candidate_ts")
+    if raw:
+        present = True
+        toks = _ISO_TS_TOKEN_RE.findall(str(raw))
+        for tok in toks:
+            dt = parse_ts(tok)
+            if dt is not None:
+                values.append(dt)
+        if not toks:
+            dt = parse_ts(str(raw))
+            if dt is not None:
+                values.append(dt)
+    return present, values
 
 
 def _record_target_file(record: dict) -> str | None:
@@ -313,32 +430,28 @@ def _filed_record_matches(cand: Candidate, record: dict) -> bool:
             return True
         if cand.fingerprint in str(record.get("fingerprint") or ""):
             return True
-        # A record declaring a DIFFERENT real (12-hex) fp is a DIFFERENT bug
-        # (workflow-fix-on-bug.md § Dedup) -> never suppress on it.
-        if _RECORD_FP_RE.search(note) or _FP_SHAPE_RE.fullmatch(
-            str(record.get("fingerprint") or "")
-        ):
-            return False
-        # #1248 widening: a record with NO usable fp — field absent, or
-        # non-fp-shaped ('n/a (prose park)') — cannot DISAGREE on fingerprint;
-        # key on origin_candidate_ts (row-level, as precise as the fp), with a
-        # target_file compatibility veto for same-second sibling rows. Every
-        # failure below returns False (re-enumeration), never false suppression.
-        origin_raw = _record_origin_raw(record)
-        if origin_raw is None:
-            return False  # no row-level key; NO file-only fallback for fp candidates
-        origin_dt = parse_ts(origin_raw)
-        if origin_dt is None or origin_dt != cand.ts:
-            return False
-        rec_tf = _record_target_file(record)
-        if not cand.target_file or not rec_tf:
-            return True  # veto abstains when either side lacks a target_file; ts decided
-        return cand.target_file.startswith(rec_tf) or rec_tf.startswith(cand.target_file)
-    # fp-less (prose park): PRIMARY key = origin_candidate_ts equality.
-    origin_raw = _record_origin_raw(record)
-    if origin_raw is not None:
-        origin_dt = parse_ts(origin_raw)
-        return origin_dt is not None and origin_dt == cand.ts
+        # #1680: an exact origin_candidate_ts claim OVERRIDES a differing
+        # recomputed fp — a record naming this candidate's exact row ts is
+        # claiming to have routed THIS row; the fp difference is a driver
+        # recomputation artifact (abridged origin text, incident #1630), not
+        # a different bug. target_file prefix-compatibility veto retained for
+        # same-second sibling rows (deliberate partial supersession of the
+        # #1248 differing-fp veto; § Dedup is preserved because row identity
+        # (source, ts) is FINER-grained than the fingerprint).
+        present, origin_ts = _record_origin_ts(record)
+        if present and cand.ts in origin_ts:
+            rec_tf = _record_target_file(record)
+            if not cand.target_file or not rec_tf:
+                return True  # veto abstains when either side lacks a target_file; ts decided
+            return cand.target_file.startswith(rec_tf) or rec_tf.startswith(cand.target_file)
+        # No matching row-ts claim: a differing real fp is a DIFFERENT bug
+        # (workflow-fix-on-bug.md § Dedup), and a no-usable-fp record has no
+        # key left (no file-only fallback for fp candidates — #1248/#622).
+        return False
+    # fp-less (prose park): PRIMARY key = origin_candidate_ts membership.
+    present, origin_ts = _record_origin_ts(record)
+    if present:
+        return cand.ts in origin_ts
     # Legacy record with NO origin_candidate_ts: fall back to target_file match.
     if not cand.target_file:
         return False
@@ -355,6 +468,28 @@ def _filed_ref(record: dict) -> str:
     if filed:
         return str(filed) if str(filed).startswith("#") else f"#{filed}"
     return str(record.get("ts") or "")
+
+
+def _extract_filed_fp(record: dict) -> str | None:
+    """One 12-hex fingerprint from a filed record, or None (#1703).
+
+    Structured ``record["fingerprint"]`` key wins over note-embedded
+    values. Prose values (``n/a (prose park)``, ``n/a-fp``, empty string)
+    never yield a hit — the 12-hex word-boundary regex requires the exact
+    canonical shape ``wf_fix_fingerprint(...)[:12]`` produces.
+
+    Advisory use only: consumers must never gate on the return value.
+    """
+    raw = record.get("fingerprint")
+    if isinstance(raw, str):
+        m = _FP_HEX_RE.search(raw)
+        if m:
+            return m.group(1)
+    note = str(record.get("note") or "")
+    m = _FILED_FP_NOTE_RE.search(note)
+    if m:
+        return m.group(1)
+    return None
 
 
 def _load_task_bodies(tasks_root: Path) -> list[tuple[int, str, Path, str, dict]]:
@@ -403,15 +538,70 @@ def _task_creation_ts(task_dir: Path) -> datetime | None:
     return None
 
 
+def _task_closed_ts(task_dir: Path) -> datetime | None:
+    """Latest merge/close-signal ts in events.jsonl; None when no such row parses.
+
+    Max ts over rows whose kind is in _CLOSE_EVENT_KINDS plus
+    epm:status-changed rows whose structured ``to`` is terminal
+    (completed/archived). Max, never "the last row": marker order varies
+    (#1577 posted epm:done AFTER epm:merged; #1579 the reverse). Unreadable
+    file / no close-signal row / unparseable ts -> None; the caller falls
+    back to the creation-ts rule (fail-open toward ENUMERATION, never a
+    silent drop).
+    """
+    events = task_dir / "events.jsonl"
+    try:
+        # split("\n"), NEVER splitlines(): splitlines() splits on U+2028/U+2029
+        # etc. and shreds valid JSONL rows whose note strings carry them
+        # (.claude/rules/gotchas.md "splitlines shreds JSONL", #950).
+        lines = events.read_text(encoding="utf-8").split("\n")
+    except OSError:
+        return None
+    closed: datetime | None = None
+    for line in lines:
+        if not line.strip():
+            continue
+        # Cheap substring prefilter before json.loads (the task_workflow
+        # _wf_fix_closed_at pattern; live events files run to hundreds of rows).
+        if (
+            '"epm:merged"' not in line
+            and '"epm:done"' not in line
+            and '"epm:promoted"' not in line
+            and '"epm:status-changed"' not in line
+        ):
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(row, dict):
+            continue
+        kind = str(row.get("kind") or "")
+        if kind not in _CLOSE_EVENT_KINDS and not (
+            kind == "epm:status-changed" and row.get("to") in TERMINAL_STATUSES
+        ):
+            continue
+        dt = parse_ts(row.get("ts"))
+        if dt is not None and (closed is None or dt > closed):
+            closed = dt
+    return closed
+
+
 def _fp_tag_scan(
     bodies: list[tuple[int, str, Path, str, dict]], fp: str, cand_ts: datetime
 ) -> dict | None:
     """Suppression rule 2: an infra task carrying this fp (tag or Provenance line).
 
-    Non-terminal hit -> suppress unconditionally; terminal hit -> suppress only
-    when the task's creation ts POSTdates the candidate (the candidate was
-    subsumed by the fix). An unreadable creation ts fails toward ENUMERATION
-    (treated as a re-raise), never toward a silent drop.
+    Non-terminal hit -> suppress unconditionally; terminal hit -> suppress when
+    the candidate ts PREdates the task's merge/close time — the creation ts
+    (first parseable row; the pre-#1599 rule, checked first) or the close ts
+    (_task_closed_ts: max over epm:merged / epm:done / epm:promoted / the
+    terminal epm:status-changed). The creation-only key missed the
+    created-before-park/merged-after-park window (#1599: #1577's park at
+    10:59:07Z sat between #1579's creation and its 11:00:26Z merge). An
+    unreadable creation AND close ts fails toward ENUMERATION (treated as a
+    re-raise), never toward a silent drop. suppressed_by carries
+    basis: "creation" | "close" for auditability; kind stays "fp-tag-closed".
     """
     for tid, status, body_path, text, fm in bodies:
         if fm.get("kind") != "infra":
@@ -422,7 +612,10 @@ def _fp_tag_scan(
             return {"kind": "fp-tag-open", "ref": f"#{tid}"}
         created = _task_creation_ts(body_path.parent)
         if created is not None and created > cand_ts:
-            return {"kind": "fp-tag-closed", "ref": f"#{tid}"}
+            return {"kind": "fp-tag-closed", "ref": f"#{tid}", "basis": "creation"}
+        closed = _task_closed_ts(body_path.parent)
+        if closed is not None and closed > cand_ts:
+            return {"kind": "fp-tag-closed", "ref": f"#{tid}", "basis": "close"}
     return None
 
 
@@ -449,20 +642,41 @@ def _open_wf_fix_on_file(
     return None
 
 
+def _skip_record(source: str, path: Path, line_no: int, reason: str, kind_hint: str | None) -> dict:
+    """One structured skipped-line record for the top-level ``skipped`` list (#1680).
+
+    ``relevant_kind`` is True when the (hinted) kind is a candidate/filed
+    marker — a possible lost park, investigate; False is benign irrelevant
+    noise; None (no kind extractable) is unknown — investigate.
+    """
+    relevant: bool | None = None
+    if kind_hint is not None:
+        relevant = kind_hint.startswith((CANDIDATE_KIND_PREFIX, FILED_KIND_PREFIX))
+    return {
+        "source": source,
+        "path": str(path),
+        "line_no": line_no,
+        "reason": reason,
+        "kind_hint": kind_hint,
+        "relevant_kind": relevant,
+    }
+
+
 def _load_stream(
     path: Path, source: str, seen: set[tuple[str, str, str]] | None = None
-) -> tuple[list[tuple[dict, datetime, str]], int]:
+) -> tuple[list[tuple[dict, datetime, str]], list[dict]]:
     """Parse one JSONL stream into relevant (row, ts, raw_ts) tuples, row-deduped.
 
     Only candidate/filed-kind rows are kept (others are irrelevant, not
-    malformed). Returns (rows, skipped) where skipped counts unparseable JSON
-    lines and relevant rows with a missing/unparseable ts.
+    malformed). Returns (rows, skips) where skips carries one structured
+    ``_skip_record`` dict per skipped line: unparseable JSON, valid-JSON
+    non-dict lines, and relevant rows with a missing/unparseable ts.
 
     ``seen`` is the row-dedup set; pass ONE shared set across all events.jsonl
     paths of a single source (task id) so byte-identical copies in duplicate
     status folders collapse (#1274). None -> fresh per-call set.
     """
-    skipped = 0
+    skips: list[dict] = []
     rows: list[tuple[dict, datetime, str]] = []
     if seen is None:
         seen = set()
@@ -472,17 +686,22 @@ def _load_stream(
         # (.claude/rules/gotchas.md "splitlines shreds JSONL", #950).
         lines = path.read_text(encoding="utf-8").split("\n")
     except OSError:
-        return rows, skipped
-    for line in lines:
+        return rows, skips
+    for line_no, line in enumerate(lines, start=1):
         if not line.strip():
             continue
         try:
             row = json.loads(line)
         except json.JSONDecodeError:
-            skipped += 1
+            hint = _KIND_HINT_RE.search(line)
+            skips.append(
+                _skip_record(
+                    source, path, line_no, "json-decode-error", hint.group(1) if hint else None
+                )
+            )
             continue
         if not isinstance(row, dict):
-            skipped += 1
+            skips.append(_skip_record(source, path, line_no, "non-dict-row", None))
             continue
         kind = _row_kind(row)
         if not (kind.startswith(CANDIDATE_KIND_PREFIX) or kind.startswith(FILED_KIND_PREFIX)):
@@ -490,7 +709,7 @@ def _load_stream(
         ts_raw = str(row.get("ts") or "")
         ts = parse_ts(ts_raw)
         if ts is None:
-            skipped += 1
+            skips.append(_skip_record(source, path, line_no, "missing-or-unparseable-ts", kind))
             continue
         content = str(row.get("note") or "") or json.dumps(row, sort_keys=True)
         dedup_key = (source, ts_raw, hashlib.sha256(content.encode()).hexdigest())
@@ -498,7 +717,7 @@ def _load_stream(
             continue
         seen.add(dedup_key)
         rows.append((row, ts, ts_raw))
-    return rows, skipped
+    return rows, skips
 
 
 def sweep(
@@ -524,8 +743,9 @@ def sweep(
     if cache_file is not None and cache_file.exists():
         streams.append(("cache", [cache_file]))
 
-    skipped_rows = 0
+    skips: list[dict] = []
     candidates: list[Candidate] = []
+    unmatched_record_fps: list[dict] = []
     now = datetime.now(UTC)
     cutoff = now - timedelta(days=window_days) if window_days > 0 else None
     bodies: list[tuple[int, str, Path, str, dict]] | None = None  # loaded lazily, ONCE
@@ -534,10 +754,11 @@ def sweep(
         rows: list[tuple[dict, datetime, str]] = []
         seen: set[tuple[str, str, str]] = set()
         for path in paths:
-            path_rows, skipped = _load_stream(path, source, seen)
+            path_rows, path_skips = _load_stream(path, source, seen)
             rows.extend(path_rows)
-            skipped_rows += skipped
+            skips.extend(path_skips)
         filed = [(r, ts) for r, ts, _raw in rows if _row_kind(r).startswith(FILED_KIND_PREFIX)]
+        stream_candidate_start = len(candidates)
         for row, ts, ts_raw in rows:
             if not _row_kind(row).startswith(CANDIDATE_KIND_PREFIX):
                 continue
@@ -576,12 +797,47 @@ def sweep(
                 cand.open_wf_fix_on_file = _open_wf_fix_on_file(bodies or [], cand.target_file)
             candidates.append(cand)
 
+        # #1703 unmatched_record_fps advisory: enumerated candidate fps FOR
+        # THIS STREAM (fp-computable candidates only; fp-less prose parks
+        # contribute nothing to the enumerated set). Iterate filed records
+        # and record any real 12-hex fp that matches no enumerated candidate
+        # fp on this stream. This is the driver fingerprint-recomputation
+        # drift detector (#1630 class): the ts-claim fallback (#1680)
+        # correctly suppresses the park, but a recomputed fp is silent
+        # evidence the driver operated on abridged/synthesized origin text.
+        stream_enumerated_fps = {
+            c.fingerprint for c in candidates[stream_candidate_start:] if c.fingerprint is not None
+        }
+        # Track fps we've already emitted for THIS stream so a record-fp that
+        # appears in multiple filed records emits ONCE per stream (advisory
+        # dedup — the /daily consumer wants one investigation entry per
+        # drift, not one per repeated routed-record).
+        seen_unmatched: set[str] = set()
+        for record, _record_ts in filed:
+            rec_fp = _extract_filed_fp(record)
+            if rec_fp is None:
+                continue  # prose-park record / no extractable fp — nothing to detect
+            if rec_fp in stream_enumerated_fps:
+                continue  # matches an enumerated candidate on this stream — normal case
+            if rec_fp in seen_unmatched:
+                continue  # already listed this drift for the stream — dedup within stream
+            seen_unmatched.add(rec_fp)
+            unmatched_record_fps.append(
+                {
+                    "source": source,
+                    "ref": _filed_ref(record),
+                    "fp": rec_fp,
+                }
+            )
+
     candidates.sort(key=lambda c: (c.source, c.ts_raw))
     listed = candidates if include_routed else [c for c in candidates if not c.suppressed]
     return {
         "generated_at": now.isoformat(),
         "window_days": window_days,
-        "skipped_rows": skipped_rows,
+        "skipped_rows": len(skips),  # KEPT: the TRUE total, output-compat (#1274 precedent)
+        "skipped": skips[:_SKIPPED_EMIT_CAP],  # NEW (#1680): additive structured records
+        "unmatched_record_fps": unmatched_record_fps,  # NEW (#1703): additive advisory
         "candidates": [c.to_json() for c in listed],
     }
 

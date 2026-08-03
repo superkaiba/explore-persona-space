@@ -483,15 +483,23 @@ For each:
 - **Named by the plan but nowhere on the pod** → fold into the Step 2.7
   reasoning (the producing phase may have been silently skipped).
 
-**Off-pod phase reads (#1482/#1526/#1535).** The plan §9 `off_pod_phases:`
+**Cross-phase reads (#1482/#1526/#1535/#1773).** The plan §9 `off_pod_phases:`
 block is a FIRST-CLASS source of plan-named downstream inputs: for each
-declared phase, verify every `reads[].path` under the SAME verdict rule
+declared phase — EVERY `runs_on` value, the pod→off-pod direction and the
+inverse pod-gpu/gce/slurm-reads-VM direction (#1773) alike — verify every
+`reads[].path` under the SAME verdict rule
 above — reachable at its declared `source` (HF / git / VM-resident with the
-stated basis) → PASS recording the URL/basis; on the pod but not uploaded →
-FAIL with the exact upload command (the cheap-fix window — this is the
+stated basis) → PASS recording the URL/basis; on the PRODUCING machine but
+not uploaded →
+FAIL with the exact upload command (for a VM-produced read, the exact
+VM-side `upload_folder` command; the cheap-fix window — the
 #1482 class caught while the pod is alive); named but nowhere → fold into
-the Step 2.7 reasoning. This closes the un-plan-named-reads residual the
-`gotchas.md` off-pod bullet documents (#1482: pod-only scratch `.npz`
+the Step 2.7 reasoning. For the inverse direction this arm is POST-RUN
+reconciliation, not a runtime guard — a #1773-class crash precedes it at
+consumer launch; the load-bearing guards are the plan-time §9 declaration
++ the producer-upload / consumer-staging steps it mandates. This closes
+the un-plan-named-reads residual the
+`gotchas.md` cross-machine bullet documents (#1482: pod-only scratch `.npz`
 never in the P4 upload set killed the off-pod P5 judge at VM launch,
 after termination). A plan whose §9 names an off-pod / VM-side phase in
 prose but carries NO `off_pod_phases:` block → emit a WARN row
@@ -811,6 +819,13 @@ correct lifecycle state:
   (look under `scripts/` or `src/explore_persona_space/experiments/`).
   The script is your source of truth for what was supposed to be
   produced and where it was supposed to go.
+- **Remediation that materializes an artifact from markers must match
+  the producer schema (#1775).** When your Step-6 remediation list has
+  the next actor back-fill a run artifact from markers, name the
+  producer-schema duty (grep the experiment's writer; sidecar
+  `<name>.materialized.json` when unclear). A canonical-path file whose
+  schema mismatches the experiment's own writer is a GAP (FAIL), not a
+  verified artifact.
 
 ## v2 mode (`workflow: v2` tasks)
 

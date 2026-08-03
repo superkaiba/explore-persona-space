@@ -1,0 +1,41 @@
+{
+  "commit": "291b9cb961",
+  "created": "2026-07-24T11:50:37Z",
+  "figsize": [
+    8.2,
+    5.2
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Impolite contrastive reversal: factory learning-rate anchors (3e-5, executed)\nvs anchors retrained at the full-fine-tune rate (5e-6, dose-matched)",
+        "xlabel": "paired shift-norm difference, full FT minus LoRA\n(layer 14, response arm)",
+        "xticklabels": [
+          "\u22128",
+          "\u22127",
+          "\u22126",
+          "\u22125",
+          "\u22124",
+          "\u22123",
+          "\u22122",
+          "\u22121",
+          "0",
+          "1"
+        ],
+        "yticklabels": [
+          "factory-rate anchors s42",
+          "factory-rate anchors s137",
+          "factory-rate anchors pooled",
+          "matched-rate anchors s42",
+          "matched-rate anchors s137",
+          "matched-rate anchors pooled",
+          "matched-rate, shared text s42",
+          "matched-rate, shared text s137",
+          "matched-rate, shared text pooled"
+        ]
+      }
+    ]
+  }
+}

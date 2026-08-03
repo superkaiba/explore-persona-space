@@ -166,6 +166,25 @@ requires a zombie candidate holding >= ``ZOMBIE_GPU_MEM_MIN_MIB``
 (1024 MiB), structurally coupling candidacy to live allocations (the
 sub-floor freed-worker sticky holder drops out of scope).
 
+Persistent-wedge yield (#1840): the namespace veto is unbounded by
+construction — an ALIVE-but-WEDGED workload (workers futex-waiting with
+>= 1 GiB allocations held, host-unresolvable PIDs, frozen logs+outputs,
+every GPU idle) satisfies it on every tick, so #1768 stayed ``running``
+for ~16 h (~$375 idle burn). After ``WEDGE_VETO_YIELD_TICKS`` (env
+``EPM_POLL_WEDGE_VETO_YIELD_TICKS``, default 10; <= 0 disables)
+CONSECUTIVE namespace-vetoed ticks in the wedge regime — all logs AND
+issue-keyed outputs stale past the effective veto window, the current
+tick's GPU read all-idle, and no material CPU under the #951/#1477
+evidence classes — AND with the GPU-idle escalation already posted for
+this run (``gpu_idle_escalated_phases`` non-empty), the veto YIELDS:
+``status=stalled`` with the distinct
+``stall_reason=persistent_wedge_veto_yield`` (routes ``infra`` via
+``failure_classifier.STALL_REASON_INFRA``). Any non-qualifying tick —
+fresh log/output, a busy or unknown GPU read, material CPU, no
+candidate, a non-``running`` verdict — resets the ``wedge_veto_streak``
+sidecar counter, and every degraded read fails toward the veto holding
+(pre-#1840 behavior).
+
 Staleness folds in cell-log mtimes (incident #405 smoke-first): when the
 dispatcher is blocked in ``proc.wait()`` on a sequential smoke cell, the
 main sweep log goes silent for ~15-18 min while the smoke cell actively
@@ -179,9 +198,11 @@ On a workload declared trigger-dense (task tag ``trigger-dense``,
 #1556), ``log_tail_excerpt`` instead carries a bounded structural
 digest — pattern counts + status/phase/pid liveness + the log path,
 never raw tail lines — and the post-done phase lines are reduced to
-bare ``[phase=<token>]`` tokens (see ``_digest_tail_excerpt`` /
-``_issue_trigger_dense``; ``crash_signature`` stays raw — it is the
-in-process machine surface, never emitted to stdout).
+bare ``[phase=<token>]`` tokens (see the shared
+``explore_persona_space.backends.excerpt_digest`` module (#1574) behind
+the ``_digest_tail_excerpt`` / ``_issue_trigger_dense`` aliases;
+``crash_signature`` stays raw — it is the in-process machine surface,
+never emitted to stdout).
 
 Staleness ALSO folds in per-phase logs + GPU utilization (incident
 #468 multi-phase training-sweep): a launcher that writes
@@ -360,6 +381,7 @@ import json
 import logging
 import os
 import re
+import shlex
 import subprocess
 import sys
 import time
@@ -376,6 +398,7 @@ _SRC = _REPO_ROOT / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
+import explore_persona_space.backends.excerpt_digest as _excerpt_digest  # noqa: E402
 from explore_persona_space.task_workflow import (  # noqa: E402
     EVENT_NOTE_MAX,
     find_task_path,
@@ -452,6 +475,23 @@ DONE_QUOTED_NOISE_RE = re.compile(
 # trailing prose (see .claude/agents/experimenter.md "Post epm:run-launched").
 # `pid=<int>` is the resolved python child PID the experimenter posted.
 MARKER_PID_RE = re.compile(r"\bpid=(\d+)")
+# #1650: launch-signature fields on key=value-style markers. `cmd='<dispatch>'`
+# is the documented convention (experimenter.md "Post epm:run-launched");
+# `launcher_script=<path>` is live practice (#1092). Most live markers are
+# free prose carrying NEITHER field — every #1650 consumer is inert on an
+# empty parse, so partial adoption is safe by construction.
+MARKER_CMD_RE = re.compile(r"\bcmd='([^']*)'|\bcmd=\"([^\"]*)\"")
+MARKER_LAUNCHER_RE = re.compile(r"\blauncher_script=(\S+)")
+# Generic interpreter / wrapper basenames that discriminate nothing about the
+# launched workload — dropped from the launch signature (#1650).
+_SIG_GENERIC_TOKENS = frozenset(
+    {"bash", "sh", "python", "python3", "uv", "env", "nohup", "setsid", "timeout", "run"}
+)
+# Obvious log-READER executables: a straggler `tail -f`/`vim` on an
+# issue-keyed path must neither rescue liveness (pod-side comm filter in the
+# sig probe) nor classify as identity `match` (#1650 reviewer concern (c)).
+# The shell `case` list in `_ssh_probe`'s sig probe mirrors this set.
+_READER_COMMS = frozenset({"tail", "grep", "less", "more", "cat", "vi", "vim", "nano", "emacs"})
 
 # ── Adaptive bg-poll interval (anti-stall redesign §7) ──────────────────────
 #
@@ -463,7 +503,11 @@ MARKER_PID_RE = re.compile(r"\bpid=(\d+)")
 # quiet ``running`` tick far from any phase boundary recommends the long
 # QUIET interval; anything gate-adjacent, anomalous, recently-changed, or
 # early-run stays on the short DEFAULT — the long interval must never delay
-# a gate or mask a fresh failure.
+# a gate or mask a fresh failure. A 1800 recommendation is honored
+# orchestrator-side via the SKILL.md Step 6d.2 Monitor QUIET-WAIT branch —
+# ONE wait-then-poll wake per quiet cycle, ~2/3 fewer full-context turns on
+# quiet stretches (#1924); per-call bg-Bash sleeps stay clamped at 540s
+# (#1818).
 #
 # Risk bound: with the quiet interval an in-session stall can be noticed up
 # to 30 min later than the fixed 540s chain. Acceptable because
@@ -728,6 +772,16 @@ ZOMBIE_OVERRIDE_CPU_CORES_MIN = float(os.environ.get("EPM_ZOMBIE_OVERRIDE_CPU_CO
 # never binds there; it guards manual rapid re-polls and fast-smoke ticks.
 ZOMBIE_CPU_RATE_MIN_DT_SEC = int(os.environ.get("EPM_ZOMBIE_CPU_RATE_MIN_DT_SEC", "120"))
 
+# #1840: persistent-wedge yield on the namespace veto. After this many
+# CONSECUTIVE namespace-veto-suppressed ticks in the wedge regime (all
+# logs + outputs stale past the veto window, every GPU idle, no
+# material CPU) with the GPU-idle escalation already posted this run,
+# the veto yields -> stalled / persistent_wedge_veto_yield. <= 0
+# disables (veto holds forever — pre-#1840 behavior). Default 10
+# ticks is ~90 min at the 540 s orchestrator tick, ~3x the #813 29-min
+# quiet stretch.
+WEDGE_VETO_YIELD_TICKS = int(os.environ.get("EPM_POLL_WEDGE_VETO_YIELD_TICKS", "10"))
+
 # #1033: output-artifact mtime fold. Kill switch, default ON (unlike the #864
 # default-OFF namespace veto): the fold can only SUPPRESS false `stalled`
 # verdicts / zombie overrides, and a genuinely hung run writes no outputs, so
@@ -926,6 +980,28 @@ def _marker_pid(issue: int) -> int | None:
     return int(m.group(1)) if m else None
 
 
+def _marker_launch_fields(issue: int) -> tuple[int | None, str]:
+    """Return ``(pid, note_text)`` from the latest epm:run-launched marker.
+
+    #1650: the pid comes from the module-level :func:`_marker_pid` (so the
+    ~14 existing test sites that monkeypatch ``_marker_pid`` keep governing
+    the pid — plan #1650 §4 Step 1 test-compat shape (i)); the note text is
+    read in its OWN fail-soft branch (broad except -> ``""``), costing one
+    extra events read per tick, accepted. An empty note (missing task /
+    unreadable events / free-prose marker) leaves every downstream
+    signature consumer inert.
+    """
+    pid = _marker_pid(issue)
+    try:
+        ev = latest_event(issue, prefix="epm:run-launched")
+    except Exception as exc:
+        log.debug("could not read epm:run-launched note for #%d (ignored, #1650): %s", issue, exc)
+        return pid, ""
+    if ev is None:
+        return pid, ""
+    return pid, str(ev.get("note", "") or "")
+
+
 def _run_launched_age_sec(issue: int, now_epoch: float) -> float | None:
     """Seconds since the latest ``epm:run-launched`` marker, or None.
 
@@ -1032,6 +1108,216 @@ def _maybe_warn_stale_pid_file(
     except Exception as exc:
         log.debug("stale-pid-file-vs-marker check failed (ignored, #1156): %s", exc)
         return False
+
+
+def _pid_identity_enabled() -> bool:
+    """#1650 kill switch: ``EPM_POLL_PID_IDENTITY=0`` disables the
+    marker-signature identity + rescue arms (empty token derivation =>
+    no sig probe, no rescue, identities ``unknown``). The verdict-inert
+    cmdline capture lines in the probe heredoc are unconditional."""
+    return os.environ.get("EPM_POLL_PID_IDENTITY", "1") != "0"
+
+
+def _launch_signature_tokens(note: str, issue: int) -> tuple[str, ...]:
+    """Path-like basenames from the marker note's ``cmd='...'`` +
+    ``launcher_script=`` fields (#1650).
+
+    Splits each field on whitespace + shell metachars (``> < & ; |``),
+    keeps tokens containing ``/`` or ending in ``.sh``/``.py``, reduces to
+    ``os.path.basename``, and drops generic interpreter names
+    (:data:`_SIG_GENERIC_TOKENS`), short (<6 char) tokens, and output-file
+    basenames (``.log``/``.json``/``.pid``/``.txt`` — outputs, not launch
+    identity). Returns ``()`` when neither field parses (the common
+    free-prose marker) — every downstream consumer is inert on empty.
+    ``issue`` rides along for signature parity with the classifier (the
+    issue-token fallback lives there, not here). Pure; unit-tested with
+    no SSH.
+    """
+    del issue  # reserved: the issue-token read lives in _classify_pid_identity
+    fields: list[str] = []
+    m = MARKER_CMD_RE.search(note)
+    if m:
+        fields.append(m.group(1) or m.group(2) or "")
+    m2 = MARKER_LAUNCHER_RE.search(note)
+    if m2:
+        fields.append(m2.group(1))
+    tokens: list[str] = []
+    for field in fields:
+        for raw in re.split(r"[\s><&;|]+", field):
+            if not raw:
+                continue
+            if "/" not in raw and not raw.endswith((".sh", ".py")):
+                continue
+            base = os.path.basename(raw.rstrip("/"))
+            if len(base) < 6 or base.lower() in _SIG_GENERIC_TOKENS:
+                continue
+            if base.endswith((".log", ".json", ".pid", ".txt")):
+                continue
+            if base not in tokens:
+                tokens.append(base)
+    return tuple(tokens)
+
+
+def _classify_pid_identity(cmdline: str, tokens: tuple[str, ...], issue: int) -> str:
+    """``"unknown" | "match" | "mismatch"`` for a probed pid's cmdline (#1650).
+
+    ``unknown`` when the cmdline is blank (dead pid / ``ps`` unavailable) OR
+    the token set is empty (legacy free-prose marker). ``match`` when any
+    signature token is a substring of the cmdline OR the issue-token
+    fallback ``issue[-_]?<N>(?!\\d)`` hits (covers an exec'd workload like
+    ``python scripts/issue1092_dispatch.py`` whose cmdline shares no
+    basename with the ``cmd='...'`` launcher string; the ``(?!\\d)`` guard —
+    not ``\\b``, which a trailing ``_`` defeats — stops issue 109 matching
+    issue 1092 while still matching ``issue1092_dispatch.py``). An obvious log-READER
+    cmdline (:data:`_READER_COMMS` first token — a straggler ``tail -f`` /
+    ``vim`` on an issue-keyed path) classifies ``mismatch`` even when the
+    issue token appears in its args (reviewer concern (c)). Else
+    ``mismatch``. Pure; unit-tested with no SSH.
+    """
+    stripped = cmdline.strip()
+    if not stripped or not tokens:
+        return "unknown"
+    first = os.path.basename(stripped.split()[0])
+    if first in _READER_COMMS:
+        return "mismatch"
+    if any(tok in stripped for tok in tokens):
+        return "match"
+    if re.search(rf"issue[-_]?{issue}(?!\d)", stripped):
+        return "match"
+    return "mismatch"
+
+
+def _sig_pgrep_pattern(tokens: tuple[str, ...]) -> str | None:
+    """Bracketed ``pgrep -f`` pattern from the LONGEST usable token (#1650):
+    ``re.escape(tok[:-1]) + "[" + tok[-1] + "]"``. ``None`` when no token
+    ends in an alphanumeric char — the pod-side sig probe is then omitted
+    entirely. The bracket is the gotchas.md self-match idiom: the probing
+    remote shell's own cmdline carries the bracketed LITERAL, which the
+    regex does not match, so the probe can never count itself."""
+    usable = [t for t in tokens if t and t[-1].isalnum()]
+    if not usable:
+        return None
+    tok = max(usable, key=len)
+    return re.escape(tok[:-1]) + "[" + tok[-1] + "]"
+
+
+def _maybe_rescue_by_signature(
+    *,
+    pod: str,
+    sig_pattern: str | None,
+    sig_proc_count: int,
+    sig_proc_pids: str,
+    pidfile_pid_alive: bool,
+    marker_pid_alive: bool,
+) -> bool:
+    """#1650 alive-direction-only liveness rescue decision (+ its WARN).
+
+    True iff BOTH probed pids are dead AND live process(es) match the
+    marker-derived launch signature — the #1112 fresh-but-wrong-pid class,
+    where the same wrong pid populated the pid file AND the marker so the
+    #451/#521 marker-pid OR-probe could not rescue. The caller ORs the
+    result into ``pid_alive``: the rescue can only ADD liveness, never
+    remove it, so no false ``dead`` can be introduced. Inert on free-prose
+    markers (``sig_pattern is None``) and under ``EPM_POLL_PID_IDENTITY=0``
+    (no pattern is derived). Extracted from ``poll_once`` for C901
+    headroom (the #664/#826 `_apply_zombie_override` precedent).
+    """
+    rescue = (
+        sig_pattern is not None
+        and sig_proc_count > 0
+        and not pidfile_pid_alive
+        and not marker_pid_alive
+    )
+    if rescue:
+        log.warning(
+            "pid file pid AND marker pid dead on pod %s but %d live process(es) "
+            "(%s) match launch signature %r — rescuing liveness (#1650, the "
+            "#1112 fresh-but-wrong-pid class); pid-file launch-contract "
+            "violation: kill any straggler that is NOT the live workload, "
+            "rewrite the pid file with the live workload pid, and re-post "
+            "epm:run-launched (pod-side-reporting.md § Pid-file launch "
+            "contract items 1/1d).",
+            pod,
+            sig_proc_count,
+            sig_proc_pids.strip() or "?",
+            sig_pattern,
+        )
+    return rescue
+
+
+def _maybe_warn_pid_identity(
+    *,
+    issue: int,
+    pod: str,
+    pid_file: str,
+    probe: dict[str, str],
+    sig_tokens: tuple[str, ...],
+    pidfile_pid_alive: bool,
+    marker_pid: int | None,
+    marker_pid_alive: bool,
+    prev_state: dict[str, str] | None = None,
+) -> tuple[str, str]:
+    """Fail-soft #1650 cmdline-identity classifier; returns
+    ``(pid_identity, marker_pid_identity)``.
+
+    WARN + tick-JSON flag ONLY by contract: an identity mismatch NEVER
+    demotes ``pid_alive`` / changes ``status`` (#1650 plan §11 row 1 — a
+    demotion risks a false ``dead`` exactly when token derivation fails on
+    a healthy run, and the false-alive class it would fix already
+    self-corrects to ``stalled`` within ``stall_sec``). Classifies ONLY
+    alive pids (a dead pid's cmdline is empty => ``unknown``). Raw cmdline
+    text goes to the LOG only, never into PollResult / tick JSON
+    (trigger-dense hygiene). A repeat mismatch (same classification as the
+    previous tick, per ``prev_state``) logs at DEBUG instead of WARNING —
+    once-per-state-change dedup against alarm fatigue on generic exec'd
+    workloads (reviewer concern (a)). Whole body in try/except ->
+    ``log.debug`` + ``("unknown", "unknown")`` — a broken classifier must
+    never break a tick (#1156 precedent).
+    """
+    try:
+        pid_identity = "unknown"
+        marker_pid_identity = "unknown"
+        if sig_tokens:
+            if pidfile_pid_alive:
+                pid_identity = _classify_pid_identity(
+                    probe.get("pid_cmdline", ""), sig_tokens, issue
+                )
+            if marker_pid is not None and marker_pid_alive:
+                marker_pid_identity = _classify_pid_identity(
+                    probe.get("marker_pid_cmdline", ""), sig_tokens, issue
+                )
+        prev = prev_state or {}
+        for state_key, identity, cmdline_key, pid_label in (
+            ("pid_identity_last", pid_identity, "pid_cmdline", f"pid file {pid_file} pid"),
+            (
+                "marker_pid_identity_last",
+                marker_pid_identity,
+                "marker_pid_cmdline",
+                f"epm:run-launched marker pid {marker_pid}",
+            ),
+        ):
+            if identity != "mismatch":
+                continue
+            emit = log.warning if prev.get(state_key) != "mismatch" else log.debug
+            emit(
+                "%s on pod %s is ALIVE but its cmdline does not match the launch "
+                "signature derived from #%d's epm:run-launched marker "
+                "(identity=mismatch; tokens=%r, cmdline=%r) — possible "
+                "recycled/wrong pid (#1650, the #1112 class). WARN-only; status "
+                "verdict unchanged. Recovery: kill any straggler that is NOT the "
+                "live workload, rewrite the pid file with the live workload pid, "
+                "and re-post epm:run-launched (pod-side-reporting.md § Pid-file "
+                "launch contract items 1/1d).",
+                pid_label,
+                pod,
+                issue,
+                sig_tokens,
+                probe.get(cmdline_key, "")[:300],
+            )
+        return pid_identity, marker_pid_identity
+    except Exception as exc:
+        log.debug("pid-identity check failed (ignored, #1650): %s", exc)
+        return "unknown", "unknown"
 
 
 # Schema version the poller knows how to parse. Bump in lockstep with the
@@ -1146,8 +1432,10 @@ class PollResult:
     # The 5-line excerpt of the freshest log tail — REPLACED by a bounded
     # structural digest (pattern counts + status/phase/pid + log path; NO raw
     # line content) when the issue's workload is declared trigger-dense
-    # (task tag ``trigger-dense``; #1556 — see ``_digest_tail_excerpt``;
-    # ``log_tail_digested`` below records which form this tick carries).
+    # (task tag ``trigger-dense``; #1556 — see the shared
+    # ``backends/excerpt_digest.py`` implementation (#1574) behind the
+    # ``_digest_tail_excerpt`` alias; ``log_tail_digested`` below records
+    # which form this tick carries).
     log_tail_excerpt: str
     gate: str | None = None  # set when a drained sentinel carried a non-empty gate
     sentinels_processed: int = 0
@@ -1205,9 +1493,10 @@ class PollResult:
     # interval, anti-stall redesign §7 — see ``recommend_next_interval``).
     # ``POLL_INTERVAL_QUIET_SEC`` only on a healthy, quiet, post-early-run
     # ``running`` tick far from any phase boundary; the short
-    # ``POLL_INTERVAL_DEFAULT_SEC`` otherwise. The orchestrator's
-    # sleep-chain reads this from the tick JSON (540s fallback when
-    # absent/unparseable — SKILL.md Step 6d.2).
+    # ``POLL_INTERVAL_DEFAULT_SEC`` otherwise. The orchestrator BRANCHES
+    # on this from the tick JSON: a Monitor wait-then-poll quiet cycle at
+    # 1800 (#1924), the fixed 540s bg-Bash chain otherwise (540s fallback
+    # when absent/unparseable — SKILL.md Step 6d.2).
     next_interval: int = POLL_INTERVAL_DEFAULT_SEC
     # Machine-readable reason a non-``running`` verdict landed, surfaced in
     # the JSON line so the orchestrator can route differently per cause.
@@ -1256,6 +1545,19 @@ class PollResult:
     # only; status routing unchanged. Declared LAST with a default so
     # cross-backend PollResult(...) call sites need no change.
     log_tail_digested: bool = False
+    # #1650 pid-identity observability: cmdline classification of the probed
+    # pid-file pid / marker pid against the epm:run-launched launch signature
+    # ("match" | "mismatch" | "unknown"). A mismatch is WARN + flag ONLY —
+    # never a verdict change. ``sig_proc_rescue`` records whether the
+    # alive-direction signature rescue fired this tick (the ONLY
+    # verdict-affecting #1650 arm; it can only ADD liveness via the
+    # ``pid_alive`` OR). Raw cmdline text is deliberately LOG-ONLY
+    # (trigger-dense hygiene) — these fields are enums/bools. Declared LAST
+    # with defaults so cross-backend PollResult(...) call sites need no
+    # change.
+    pid_identity: str = "unknown"
+    marker_pid_identity: str = "unknown"
+    sig_proc_rescue: bool = False
 
 
 # Sums procps cumulative-CPU `time=` values (format [DD-]HH:MM:SS) for every
@@ -1309,6 +1611,7 @@ def _ssh_probe(
     marker_pid: int | None = None,
     *,
     stall_sec: int = DEFAULT_STALL_SEC,
+    sig_pattern: str | None = None,
 ) -> dict[str, str]:
     """One SSH round-trip — returns dict with keys pid_alive,
     marker_pid_alive, mtime_epoch, cell_mtime_epoch, log_tail,
@@ -1318,7 +1621,26 @@ def _ssh_probe(
     ``stall_sec`` sizes the output-artifact freshness window (#1033 —
     ``output_mtime_epoch`` below); it does NOT change any log probe.
 
+    ``sig_pattern`` (#1650) is the bracketed marker-derived launch-signature
+    ``pgrep -f`` pattern from :func:`_sig_pgrep_pattern`; ``None`` (the
+    common free-prose-marker case) omits the sig-probe block entirely.
+    All #1650 lines ride INSIDE the same single heredoc — no second SSH
+    round-trip per tick.
+
     Batches into a single heredoc to keep the SSH cost to one connection.
+
+    #1650 identity/signature keys (all default-inert on legacy replays /
+    SSH failure):
+    * ``pid_cmdline`` — ``ps -o args=`` (capped 300 chars) of the pid-file
+      pid; ``""`` when the pid is dead / the file is absent / ``ps``
+      errors => classification ``unknown``.
+    * ``marker_pid_cmdline`` — same capture for ``marker_pid``.
+    * ``sig_proc_count`` / ``sig_proc_pids`` — count + space-separated
+      pids of live processes whose cmdline matches ``sig_pattern``,
+      EXCLUDING obvious log-reader comms (``tail``/``grep``/``vim``/... —
+      the shell ``case`` list mirrors :data:`_READER_COMMS`) so a
+      straggler reader can never rescue liveness. ``"0"`` / ``""`` when
+      no pattern was supplied or nothing matches.
 
     Liveness keys:
     * ``pid_alive`` — liveness of the PID stored in ``pid_file``.
@@ -1441,6 +1763,30 @@ def _ssh_probe(
         marker_probe = (
             f"if ps -p {marker_pid} > /dev/null 2>&1; "
             f"then echo MARKER_PID_ALIVE=1; else echo MARKER_PID_ALIVE=0; fi; "
+            # #1650: cmdline of the marker pid for the identity check. A dead
+            # pid prints nothing => empty value => classification `unknown`.
+            f"MPC=$(ps -p {marker_pid} -o args= 2>/dev/null | head -c 300); "
+            f'echo "MARKER_PID_CMDLINE=$MPC"; '
+        )
+    # #1650 launch-signature pattern probe (built ONLY when the marker carried
+    # a parseable cmd='...'/launcher_script= field — sig_pattern is None on
+    # the common free-prose markers, omitting the block entirely). The
+    # bracketed pattern cannot match this remote shell's own cmdline (the
+    # gotchas.md self-match idiom), and obvious log-READER comms are filtered
+    # so a straggler `tail -f`/`vim` on an issue-keyed path never counts
+    # toward the alive-direction rescue (the case list mirrors
+    # _READER_COMMS).
+    sig_probe = ""
+    if sig_pattern is not None:
+        sig_probe = (
+            f"SIG_RAW=$(pgrep -f {shlex.quote(sig_pattern)} 2>/dev/null | head -20); "
+            'SIG_PIDS=""; for P in $SIG_RAW; do '
+            "C=$(ps -p $P -o comm= 2>/dev/null); "
+            'case "$C" in tail|grep|less|more|cat|vi|vim|nano|emacs) ;; '
+            '*) SIG_PIDS="$SIG_PIDS $P";; esac; done; '
+            "SIG_PIDS=$(echo $SIG_PIDS | head -c 200); "
+            'echo "SIG_PROC_PIDS=$SIG_PIDS"; '
+            'echo "SIG_PROC_COUNT=$(echo $SIG_PIDS | wc -w)"; '
         )
     # Cell-log probe: strip a trailing `.log` from log_path to get the
     # per-cell log directory (the dispatch_sweep convention used since
@@ -1757,8 +2103,12 @@ def _ssh_probe(
         f"  echo PID_FILE_MISSING=0; PID=$(cat {pid_file}); "
         f"  echo PID_FILE_MTIME_EPOCH=$(stat -c %Y {pid_file} 2>/dev/null || echo 0); "
         f"  if ps -p $PID > /dev/null 2>&1; then echo PID_ALIVE=1; else echo PID_ALIVE=0; fi; "
+        # #1650: cmdline of the pid-file pid for the identity check. A dead
+        # pid prints nothing => empty value => classification `unknown`.
+        f'  PIDC=$(ps -p $PID -o args= 2>/dev/null | head -c 300); echo "PID_CMDLINE=$PIDC"; '
         f"else echo PID_FILE_MISSING=1; echo PID_ALIVE=0; fi; "
         f"{marker_probe}"
+        f"{sig_probe}"
         f"if [ -f $LOG_PATH ]; then "
         f"  echo MTIME_EPOCH=$(stat -c %Y $LOG_PATH); "
         f"  echo TAIL_START; tail -500 $LOG_PATH; echo TAIL_END; "
@@ -1796,6 +2146,10 @@ def _ssh_probe(
             "pid_file_missing": "0",
             "pid_file_mtime_epoch": "0",
             "marker_pid_alive": "0",
+            "pid_cmdline": "",
+            "marker_pid_cmdline": "",
+            "sig_proc_count": "0",
+            "sig_proc_pids": "",
             "mtime_epoch": "0",
             "pod_now_epoch": "0",
             "cell_mtime_epoch": "0",
@@ -1829,6 +2183,10 @@ _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "PID_FILE_MISSING",
     "PID_FILE_MTIME_EPOCH",
     "MARKER_PID_ALIVE",
+    "PID_CMDLINE",
+    "MARKER_PID_CMDLINE",
+    "SIG_PROC_COUNT",
+    "SIG_PROC_PIDS",
     "MTIME_EPOCH",
     "POD_NOW_EPOCH",
     "CELL_MTIME_EPOCH",
@@ -1859,6 +2217,10 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
         "pid_file_missing": "0",
         "pid_file_mtime_epoch": "0",
         "marker_pid_alive": "0",
+        "pid_cmdline": "",
+        "marker_pid_cmdline": "",
+        "sig_proc_count": "0",
+        "sig_proc_pids": "",
         "mtime_epoch": "0",
         "pod_now_epoch": "0",
         "cell_mtime_epoch": "0",
@@ -1930,10 +2292,12 @@ def sentinel_drain_shell(issue: int, extra_globs: tuple[str, ...] = ()) -> str:
     and the GCP gcloud-ssh transport (``backends.gcp`` — which wraps it in
     ``sudo -n bash -c`` because the GCE startup script writes the sentinel
     tree as root, mode 600; incident #608) so the two lanes can never drift
-    on the loop shape. The SLURM lane deliberately has NO drain transport:
-    compute nodes have no ``/workspace`` and the robot forced-command
-    wrapper cannot execute this shell — see ``backends/slurm_monitor.py``
-    § "No sentinel drain on this lane" (#608 follow-up).
+    on the loop shape. The DRAC/Mila SLURM lanes have NO drain transport
+    (robot forced-command wrapper; compute nodes lack ``/workspace`` —
+    #608); the FELLOWS lane drains via
+    ``backends/slurm_monitor.drain_cluster_sentinels`` (#1898), which
+    shares this loop shape — see ``backends/slurm_monitor.py``
+    § "Sentinel drain: fellows only".
 
     ``extra_globs`` appends transport-specific fallback patterns to the
     canonical glob (incident #610: the issue-610 GCP dispatcher found
@@ -3823,6 +4187,13 @@ _TRIPWIRE_STATE_KEYS: tuple[str, ...] = (
 # "543 min" / #810 "486 min" on ~17-min-old instances, where the phase name
 # matched the stored one so the per-phase reset never fired). The pre-#1033
 # "idle keys untouched by the run-scope reset" contract was the bug.
+#
+# #1752: ``gpu_idle_escalation_counts`` is deliberately NOT in this set. The
+# #1033 rationale (a stale idle-minutes DISPLAY inherited across relaunches)
+# does not apply to a pure per-phase count, and SURVIVING relaunches is the
+# point — the repeat pathology (an identical escalation re-fired forever)
+# only manifests ACROSS run epochs (#1689). Pinned by
+# tests/test_poll_eta_tripwire.py.
 _RUN_SCOPED_STATE_KEYS: tuple[str, ...] = (
     *_TRIPWIRE_STATE_KEYS,
     "gpu_idle_since_epoch",
@@ -3904,6 +4275,59 @@ if 0 < _GPU_IDLE_ESCALATION_MIN_RAW < GPU_IDLE_ADVISORY_MIN:
     GPU_IDLE_ESCALATION_MIN = GPU_IDLE_ADVISORY_MIN
 else:
     GPU_IDLE_ESCALATION_MIN = _GPU_IDLE_ESCALATION_MIN_RAW
+
+# #1752: the per-phase escalation COUNT (inclusive) at which the escalation
+# switches KIND from the identical ``[gpu-idle-escalation]`` note to the
+# distinct ``[gpu-idle-width-reeval]`` note + width-re-eval push. The count is
+# tracked ACROSS run epochs / relaunches (state key
+# ``gpu_idle_escalation_counts``, deliberately NOT run-scope-cleared) because
+# the repeat pathology only manifests across relaunches: the #1033 run-scope
+# reset re-arms the per-phase dedup on every fresh ``epm:run-launched``, so a
+# phase idle across relaunches re-fires a byte-identical note forever (#1689:
+# ``fit_ladder`` escalated identically twice around a relaunch and rode ~14h
+# at 0% GPU). Under the default N=3 the switch comes on the THIRD fire —
+# one-more-chance semantics, intended. ``<= 0`` disables the width-re-eval
+# variant (identical notes forever, pre-#1752 behavior); 1/2 are honored
+# (escalate-in-kind sooner).
+GPU_IDLE_WIDTH_REEVAL_N = int(os.environ.get("EPM_GPU_IDLE_WIDTH_REEVAL_N", "3"))
+
+
+def _parse_escalation_counts(raw: str) -> dict[str, int]:
+    """Parse the ``gpu_idle_escalation_counts`` state value (#1752).
+
+    Format: comma-joined ``phase:count`` pairs (phase names match ``PHASE_RE``
+    ``[a-z0-9_]+``, so ``:`` / ``,`` are safe separators). Malformed entries
+    (missing ``:``, empty phase, non-integer / non-positive count) are DROPPED
+    — never raises into the poll tick: an unparsable count simply restarts at
+    0 for its phase (the cheap failure direction — one extra identical note,
+    never a suppressed one).
+    """
+    counts: dict[str, int] = {}
+    for entry in (raw or "").split(","):
+        entry = entry.strip()
+        if not entry or ":" not in entry:
+            continue
+        phase, _, count_raw = entry.rpartition(":")
+        if not phase:
+            continue
+        try:
+            count = int(count_raw)
+        except ValueError:
+            continue
+        if count > 0:
+            counts[phase] = count
+    return counts
+
+
+def _serialize_escalation_counts(counts: dict[str, int]) -> str:
+    """Serialize per-phase escalation counts to the comma-joined state value.
+
+    Inverse of :func:`_parse_escalation_counts`; sorted for a deterministic
+    state file. Shared by ``poll_once`` and the GCP mirror in
+    ``scripts/backend_poll.py`` (import-not-extract reuse, #730).
+    """
+    return ",".join(f"{phase}:{count}" for phase, count in sorted(counts.items()))
+
 
 # Phase-name substrings that mark a phase as GPU-REQUIRED (NOT escalated). The
 # escalation fails toward over-notifying (a loud notice is cheap; a missed leak
@@ -4049,25 +4473,36 @@ def _maybe_escalate_gpu_idle(
     idle_since_epoch: int,
     prev_state: dict[str, str],
     now_epoch: int,
-) -> tuple[set[str], bool]:
+) -> tuple[set[str], dict[str, int], bool]:
     """Escalation wiring for ``poll_once``: parse state, decide, maybe escalate.
 
     Called RIGHT AFTER ``_maybe_post_gpu_idle_advisory`` (so the advisory always
     fires first on the same span) and fed that pass's resolved
     ``idle_since_epoch`` so both tiers read the ONE shared span. Returns
-    ``(escalated_phases, escalated)`` for the caller to persist via
-    ``_save_state``.
+    ``(escalated_phases, escalation_counts, escalated)`` for the caller to
+    persist via ``_save_state`` / the GCP sibling state file.
 
-    On ``should_escalate``: post a LOUD ``[gpu-idle-escalation]`` ``epm:progress``
-    marker (``gpu_idle_escalation=True`` extra) AND fire a best-effort Telegram
-    push. NOTHING is stopped — the note states so explicitly. A marker-post
-    failure is logged and the phase is NOT recorded as escalated (next tick
-    retries), exactly like the advisory; a push failure is fail-soft and does
-    NOT block recording the escalation (the marker is the durable record).
+    On ``should_escalate``: post a LOUD ``epm:progress`` marker AND fire a
+    best-effort Telegram push. Escalations 1..N-1 for a phase (counted ACROSS
+    run epochs via ``gpu_idle_escalation_counts``, which deliberately survives
+    the #1033 run-scope reset) post the byte-identical ``[gpu-idle-escalation]``
+    note (``gpu_idle_escalation=True`` extra); the Nth
+    (N = ``GPU_IDLE_WIDTH_REEVAL_N``, default 3) and later switch KIND to a
+    distinct ``[gpu-idle-width-reeval]`` note naming the concrete downsize
+    recipe (extras ``gpu_idle_escalation=True`` + ``gpu_idle_width_reeval=True``
+    + ``escalation_repeat=n``) with a width-re-eval-worded push (#1752/#1689).
+    NOTHING is stopped on either form — the notes state so explicitly. A
+    marker-post failure is logged and NEITHER the phase NOR the count is
+    recorded (next tick retries), exactly like the advisory; a push failure is
+    fail-soft and does NOT block recording the escalation (the marker is the
+    durable record).
     """
     escalated_phases = {
         p for p in (prev_state.get("gpu_idle_escalated_phases", "") or "").split(",") if p
     }
+    escalation_counts = _parse_escalation_counts(
+        prev_state.get("gpu_idle_escalation_counts", "") or ""
+    )
     update = _gpu_idle_escalation_update(
         status=status,
         gpu_util=gpu_util,
@@ -4078,18 +4513,46 @@ def _maybe_escalate_gpu_idle(
         escalation_min=GPU_IDLE_ESCALATION_MIN,
     )
     if not update.should_escalate:
-        return escalated_phases, False
+        return escalated_phases, escalation_counts, False
     n_gpus = len([tok for tok in gpu_util.split(",") if tok.strip()])
     idle_min = update.idle_span_sec // 60
-    note = (
-        f"[gpu-idle-escalation] all {n_gpus} GPUs <= {GPU_IDLE_UTIL_THRESHOLD}% util for "
-        f"{idle_min} min on a MULTI-GPU pod in an upload/CPU-only phase "
-        f"(phase={current_phase}, gpu_util={gpu_util}). This is the #664 spend-leak class "
-        f"(an 8xH200 idle in a terminal upload phase burns ~$44/hr). REMEDY: route the "
-        f"upload off-pod / release the GPUs after a checkpoint — the FINAL upload phase is "
-        f"itself CPU-only (CLAUDE.md: CPU-only phases don't hold GPU pods). NOTHING was "
-        f"stopped — surfacing the spend leak for action."
-    )
+    n = escalation_counts.get(current_phase, 0) + 1
+    width_reeval = GPU_IDLE_WIDTH_REEVAL_N > 0 and n >= GPU_IDLE_WIDTH_REEVAL_N
+    extra: dict[str, Any] = {"gpu_idle_escalation": True}
+    if width_reeval:
+        note = (
+            f"[gpu-idle-width-reeval] escalation #{n} for phase={current_phase} counted "
+            f"ACROSS relaunches: all {n_gpus} GPUs <= {GPU_IDLE_UTIL_THRESHOLD}% util for "
+            f"{idle_min} min on a MULTI-GPU pod in an upload/CPU-only phase "
+            f"(gpu_util={gpu_util}). The identical [gpu-idle-escalation] note has produced "
+            f"no action {n - 1} time(s) — RE-EVALUATE the pod WIDTH instead: persist resume "
+            f"state / store off-pod -> terminate the wide pod -> re-provision narrow (the "
+            f"CLAUDE.md GPU-WIDTH right-sizing carve-out), or route the CPU phase off-pod "
+            f"entirely. NOTHING was stopped — the poller never stops the pod; this is a "
+            f"louder surfacing tier only."
+        )
+        extra["gpu_idle_width_reeval"] = True
+        extra["escalation_repeat"] = n
+        push_msg = (
+            f"[#{issue}] GPU-idle WIDTH RE-EVAL (escalation #{n} across relaunches): "
+            f"{n_gpus} GPUs idle {idle_min} min in phase={current_phase} on {pod} — "
+            f"persist off-pod, terminate the wide pod, re-provision narrow / route the "
+            f"CPU phase off-pod (nothing stopped)."
+        )
+    else:
+        note = (
+            f"[gpu-idle-escalation] all {n_gpus} GPUs <= {GPU_IDLE_UTIL_THRESHOLD}% util for "
+            f"{idle_min} min on a MULTI-GPU pod in an upload/CPU-only phase "
+            f"(phase={current_phase}, gpu_util={gpu_util}). This is the #664 spend-leak class "
+            f"(an 8xH200 idle in a terminal upload phase burns ~$44/hr). REMEDY: route the "
+            f"upload off-pod / release the GPUs after a checkpoint — the FINAL upload phase is "
+            f"itself CPU-only (CLAUDE.md: CPU-only phases don't hold GPU pods). NOTHING was "
+            f"stopped — surfacing the spend leak for action."
+        )
+        push_msg = (
+            f"[#{issue}] GPU-idle escalation: {n_gpus} GPUs idle {idle_min} min in "
+            f"phase={current_phase} on {pod} (#664 spend-leak class; nothing stopped)."
+        )
     try:
         post_event(
             issue,
@@ -4098,26 +4561,27 @@ def _maybe_escalate_gpu_idle(
             note=note,
             phase=current_phase,
             pod=pod,
-            gpu_idle_escalation=True,
+            **extra,
         )
     except Exception as exc:
         log.error("gpu-idle escalation post failed (next tick will retry): %s", exc)
-        return escalated_phases, False
+        return escalated_phases, escalation_counts, False
     # Fail-soft phone push — never blocks recording the escalation.
-    _telegram_push(
-        f"[#{issue}] GPU-idle escalation: {n_gpus} GPUs idle {idle_min} min in "
-        f"phase={current_phase} on {pod} (#664 spend-leak class; nothing stopped)."
-    )
+    _telegram_push(push_msg)
     log.warning(
-        "ESCALATED gpu-idle for #%d: %d GPUs idle %d min in upload/CPU phase=%s (pod=%s)",
+        "ESCALATED gpu-idle for #%d (repeat %d%s): %d GPUs idle %d min in "
+        "upload/CPU phase=%s (pod=%s)",
         issue,
+        n,
+        ", width-reeval" if width_reeval else "",
         n_gpus,
         idle_min,
         current_phase,
         pod,
     )
+    escalation_counts[current_phase] = n
     escalated_phases.add(current_phase)
-    return escalated_phases, True
+    return escalated_phases, escalation_counts, True
 
 
 # Minimum cumulative CPU-seconds delta between consecutive ticks before
@@ -4327,10 +4791,12 @@ def _apply_zombie_override(
     session_cpu_rate_cores: float | None = None,
     output_mtime_ago: float = float("inf"),
     session_pcpu_cores: float | None = None,
-) -> tuple[str, str | None, bool, int]:
-    """The #664/#826/#864/#951/#1033/#1477 zombie-GPU-allocation override —
-    returns the possibly overridden
-    ``(status, stall_reason, cpu_override_active, zombie_streak)``.
+    gpu_idle: bool = False,
+) -> tuple[str, str | None, bool, int, int]:
+    """The #664/#826/#864/#951/#1033/#1477/#1840 zombie-GPU-allocation
+    override — returns the possibly overridden
+    ``(status, stall_reason, cpu_override_active, zombie_streak,
+    wedge_veto_streak)``.
 
     A hung vLLM whose CUDA worker died leaves its model-shard VRAM orphaned
     (a compute-apps PID with no ``/proc`` entry) while the EngineCore main
@@ -4525,9 +4991,54 @@ def _apply_zombie_override(
     structurally couples candidacy to live allocations — the sticky
     sub-floor freed-worker state (S3=1 at 518 MiB in the gate's sticky
     probe) drops out of scope.
+
+    Persistent-wedge yield (#1840, inside the namespace-veto branch
+    ONLY): the namespace veto keys on mere EXISTENCE (alive
+    allocation-evidenced holders), which an ALIVE-but-WEDGED workload
+    satisfies indefinitely — #1768's HF-download wedge (workers
+    futex-waiting, host-unresolvable PIDs, >= 1 GiB allocations held,
+    all 8 GPUs at 0%, main log frozen) kept the verdict ``running`` for
+    ~16 h. A ``wedge_veto_streak`` sidecar counter (recomputed each
+    tick, exactly like ``zombie_streak``) INCREMENTS on a
+    namespace-vetoed tick iff ALL of: every workload log stale past the
+    effective veto window ``max(ZOMBIE_VETO_FRESH_SEC, stall_sec)`` AND
+    ``output_mtime_ago`` stale past the same window (the wedge regime —
+    a fresh log/output resets), AND the current tick's ``gpu_idle`` is
+    ``True`` (every GPU idle — the #1768 defining observable; the
+    keyword-only param defaults ``False`` so pre-#1840 callers are
+    byte-unchanged and fail-safe: unknown/absent resets the streak),
+    AND no material compute (neither the #951 both-ticks rate shape nor
+    the #1477 negative-rate+pcpu confirm shape — the same evidence
+    classes as the downstream vetoes, applied WITHIN the vetoed
+    regime). When the incremented streak reaches
+    ``WEDGE_VETO_YIELD_TICKS`` (env ``EPM_POLL_WEDGE_VETO_YIELD_TICKS``,
+    default 10; <= 0 disables the yield entirely) AND the GPU-idle
+    escalation has been posted for this run
+    (``prev_state["gpu_idle_escalated_phases"]`` non-empty —
+    absent/empty holds the veto), the veto YIELDS: ``status=stalled``,
+    ``stall_reason=persistent_wedge_veto_yield``,
+    ``cpu_override_active=False``, with a distinct ``log.error``
+    carrying the forensic counts. Below the conjunction the branch
+    behaves exactly as today (suppress + WARNING + ``zombie_streak``
+    0) while the incremented/reset ``wedge_veto_streak`` persists via
+    ``_save_state``. Every degraded read (missing/garbage
+    ``wedge_veto_streak`` key, absent escalation state, unknown
+    ``gpu_idle``) fails toward today's behavior — the veto holds.
+    Residual (ACCEPTED, run-scope): when ``run_age_sec`` is unreadable,
+    ``_tripwire_run_scope`` never clears the run-scoped keys, so a
+    PRIOR run's ``gpu_idle_escalated_phases`` can satisfy the
+    escalation conjunct — the fail direction is
+    fire-on-current-wedge-shape-only (the streak's own N-tick
+    frozen-logs + all-GPUs-idle + no-material-CPU conjunction must
+    independently hold on the CURRENT run for N consecutive ticks),
+    the same accepted-exposure register as the #951 residual above.
     """
     stall_reason: str | None = None
     zombie_streak = 0
+    # #1840: recomputed each tick like zombie_streak — only the
+    # namespace-veto branch below can set it non-zero, so any veto-free /
+    # candidate-free / non-running tick that reaches _save_state resets it.
+    wedge_veto_streak = 0
     if status == "running" and zombie_gpu_pids:
         if (
             ZOMBIE_NAMESPACE_VETO_ENABLED
@@ -4554,6 +5065,86 @@ def _apply_zombie_override(
             # has zero allocation-evidenced holders — allocation-free
             # coordinator/debug survivors included — and falls through to
             # the #826 stale-log + 2-tick logic below.
+            #
+            # #1840: persistent-wedge yield. An ALIVE-but-WEDGED workload
+            # (#1768: futex-waiting workers holding allocations, frozen
+            # logs+outputs, every GPU idle) satisfies this veto on every
+            # tick forever. Count CONSECUTIVE vetoed ticks in the wedge
+            # regime; after WEDGE_VETO_YIELD_TICKS of them with the
+            # GPU-idle escalation already posted for this run, yield the
+            # veto (see the docstring's "Persistent-wedge yield" section).
+            wedge_veto_sec = max(ZOMBIE_VETO_FRESH_SEC, stall_sec)
+            wedge_freshest_log_ago = min(last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago)
+            try:  # defensive parse, mirrors the prev_zombie_streak guard below
+                prev_wedge_streak = int(prev_state.get("wedge_veto_streak", "0") or 0)
+            except (TypeError, ValueError):
+                prev_wedge_streak = 0
+            # Same evidence classes as the downstream #951 / #1477 vetoes,
+            # applied WITHIN the namespace-vetoed regime: material compute
+            # on both ticks — or the negative-rate + material-pcpu confirm
+            # shape — refutes a wedge and resets the streak.
+            wedge_prev_cpu_rate = _parse_session_cpu(
+                prev_state.get("session_cpu_rate_cores", "unknown")
+            )
+            material_cpu_both_ticks = (
+                session_cpu_rate_cores is not None
+                and wedge_prev_cpu_rate is not None
+                and session_cpu_rate_cores >= ZOMBIE_OVERRIDE_CPU_CORES_MIN
+                and wedge_prev_cpu_rate >= ZOMBIE_OVERRIDE_CPU_CORES_MIN
+            )
+            negative_rate_pcpu_confirm = (
+                (
+                    (session_cpu_rate_cores is not None and session_cpu_rate_cores < 0)
+                    or (wedge_prev_cpu_rate is not None and wedge_prev_cpu_rate < 0)
+                )
+                and session_pcpu_cores is not None
+                and session_pcpu_cores >= ZOMBIE_OVERRIDE_CPU_CORES_MIN
+            )
+            if (
+                gpu_idle
+                and wedge_freshest_log_ago > wedge_veto_sec
+                and output_mtime_ago > wedge_veto_sec
+                and not material_cpu_both_ticks
+                and not negative_rate_pcpu_confirm
+            ):
+                wedge_veto_streak = prev_wedge_streak + 1
+            escalation_raw = prev_state.get("gpu_idle_escalated_phases", "") or ""
+            escalation_posted = any(p for p in escalation_raw.split(",") if p)
+            if (
+                WEDGE_VETO_YIELD_TICKS > 0
+                and wedge_veto_streak >= WEDGE_VETO_YIELD_TICKS
+                and escalation_posted
+            ):
+                rate_now_s = (
+                    "unknown" if session_cpu_rate_cores is None else f"{session_cpu_rate_cores:.2f}"
+                )
+                rate_prev_s = (
+                    "unknown" if wedge_prev_cpu_rate is None else f"{wedge_prev_cpu_rate:.2f}"
+                )
+                log.error(
+                    "persistent-wedge veto yield on pod %s (PID(s) %s): the namespace "
+                    "veto suppressed %d consecutive wedge-regime ticks (>= %d) with "
+                    "the GPU-idle escalation already posted — alive-but-wedged "
+                    "workers (%d/%d compute PIDs resolvable, %d allocation-evidenced "
+                    "holders), all logs stale %.0fs and outputs stale %.0fs (> %ds), "
+                    "every GPU idle, no material CPU (rate now=%s prev=%s cores, "
+                    "threshold %.2f) — yielding status=running -> stalled "
+                    "(#1840/#1768)",
+                    pod,
+                    ",".join(zombie_gpu_pids),
+                    wedge_veto_streak,
+                    WEDGE_VETO_YIELD_TICKS,
+                    gpu_pids_resolvable,
+                    gpu_pids_total,
+                    uvm_alloc_holders,
+                    wedge_freshest_log_ago,
+                    output_mtime_ago,
+                    wedge_veto_sec,
+                    rate_now_s,
+                    rate_prev_s,
+                    ZOMBIE_OVERRIDE_CPU_CORES_MIN,
+                )
+                return "stalled", "persistent_wedge_veto_yield", False, 0, wedge_veto_streak
             log.warning(
                 "zombie-GPU signature on pod %s (PID(s) %s) is a PID-namespace "
                 "artifact: 0/%d compute PIDs resolve in the container /proc while "
@@ -4565,7 +5156,7 @@ def _apply_zombie_override(
                 "?" if uvm_live_holders is None else uvm_live_holders,
                 uvm_alloc_holders,
             )
-            return status, stall_reason, cpu_override_active, 0
+            return status, stall_reason, cpu_override_active, 0, wedge_veto_streak
         zombie_veto_sec = max(ZOMBIE_VETO_FRESH_SEC, stall_sec)
         freshest_log_ago = min(last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago)
         try:  # defensive parse, mirrors _update_ssh_fail_tracking's ssh_fail_count guard
@@ -4694,7 +5285,7 @@ def _apply_zombie_override(
             stall_reason = "vllm_worker_dead_zombie_gpu"
             cpu_override_active = False
             zombie_streak = prev_zombie_streak + 1
-    return status, stall_reason, cpu_override_active, zombie_streak
+    return status, stall_reason, cpu_override_active, zombie_streak, wedge_veto_streak
 
 
 def _parse_output_mtime_epoch(raw: str | None) -> int:
@@ -4792,39 +5383,18 @@ def _log_staleness_secs(
     return last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago, output_mtime_ago
 
 
-# The task tag that declares a workload trigger-dense (#1556). Set at dispatch
-# per .claude/rules/trigger-dense-review.md's recognition heuristic via
-# `task.py add-tag <N> trigger-dense`; read fresh every tick (no caching), so a
-# mid-run add-tag takes effect on the next poll.
-_TRIGGER_DENSE_TAG = "trigger-dense"
-
-# Mirror of ``backend_poll.CUDA_IMA_SIGNATURE`` — ``backend_poll`` imports FROM
-# this module, so the reverse import would be circular; the compiled pattern is
-# mirrored here and pinned byte-in-sync by tests/test_poll_pipeline_digest.py::
-# test_digest_cuda_ima_flag_matches_backend_poll_signature (pattern + flags
-# equality). The digest's structural flag fires on the REAL signature family
-# (including the engine-dead alternatives), never a bare substring (#1556).
-_CUDA_IMA_SIGNATURE = re.compile(
-    r"CUDA error:\s*an illegal memory access was encountered"
-    r"|illegal memory access was encountered"
-    r"|EngineDeadError"
-    r"|Engine core proc \S+ died unexpectedly",
-    re.IGNORECASE,
-)
-
-# Case-insensitive per-line substring counts for the trigger-dense digest — the
-# trigger-dense-review.md item-1 pattern set ('error|traceback|killed|OOM')
-# plus the CUDA-IMA class as a human-facing count. The machine contract is the
-# ``_CUDA_IMA_SIGNATURE`` structural flag in ``_digest_tail_excerpt`` — the
-# ``cuda_ima`` COUNT and the flag may legitimately disagree (count=0 with the
-# flag present on an engine-dead-only tail); that is correct, not a bug.
-_DIGEST_PATTERNS: tuple[tuple[str, str], ...] = (
-    ("error", "error"),
-    ("traceback", "traceback"),
-    ("killed", "killed"),
-    ("oom", "oom"),
-    ("cuda_ima", "illegal memory access"),
-)
+# #1574: the trigger-dense structural-digest helpers (tag constant, CUDA-IMA
+# mirror, pattern set, digest builder, tag predicate) moved to the shared src
+# module ``explore_persona_space.backends.excerpt_digest`` — ONE implementation
+# for this RunPod-lane poller AND the GCP/SLURM lane monitors, which build
+# their own ``log_tail_excerpt`` strings. Assignment ALIASES (not
+# ``from X import Y`` — assignments cannot be stripped by an unused-import
+# autofix) keep every internal caller and the #1556 test surface
+# (tests/test_poll_pipeline_digest.py) green unchanged.
+_TRIGGER_DENSE_TAG = _excerpt_digest.TRIGGER_DENSE_TAG
+_CUDA_IMA_SIGNATURE = _excerpt_digest.CUDA_IMA_SIGNATURE_MIRROR
+_DIGEST_PATTERNS = _excerpt_digest.DIGEST_PATTERNS
+_digest_tail_excerpt = _excerpt_digest.digest_tail_excerpt
 
 
 def _issue_trigger_dense(issue: int) -> bool:
@@ -4834,32 +5404,14 @@ def _issue_trigger_dense(issue: int) -> bool:
     gated-content corpora, knowable before any read), or when the task EXISTS
     but its state is unreadable (fail SAFE toward digest, loudly).
 
-    A missing task (``FileNotFoundError`` — ad-hoc/synthetic polls; includes
-    ``StaleTaskPathError``, its subclass) has no declaration surface at all
-    -> False (raw excerpt, today's behavior). Fresh read every tick, no
-    caching: ``task.py add-tag <N> trigger-dense`` mid-run takes effect on the
-    next tick — a live mitigation lever during an unfolding incident. The
-    catch taxonomy mirrors the audited pod_lifecycle pre-terminate set
-    (FileNotFoundError = not in registry/on disk; RuntimeError = branch-guard;
-    ValueError = malformed frontmatter/registry; OSError = unreadable file);
-    anything else propagates (fail-fast).
+    Thin wrapper over the shared ``excerpt_digest.issue_trigger_dense``
+    (#1574 — body + exception taxonomy live there, verbatim #1556 semantics).
     """
-    try:
-        task = get_task(issue)
-    except FileNotFoundError:
-        log.info("trigger-dense check: task #%s not found (ad-hoc poll); raw excerpt", issue)
-        return False
-    except (RuntimeError, ValueError, OSError) as exc:
-        log.warning(
-            "trigger-dense tag read FAILED for issue %s (%s: %s); failing SAFE "
-            "toward digest-on-unknown (raw tail stays readable at the log path)",
-            issue,
-            type(exc).__name__,
-            exc,
-        )
-        return True
-    tags = (task.get("frontmatter") or {}).get("tags") or []
-    return _TRIGGER_DENSE_TAG in tags
+    # ``get_task`` resolves from THIS module's globals at call time, so the
+    # existing ``monkeypatch.setattr(pp, "get_task", ...)`` tests keep
+    # working; ``log`` is poll_pipeline's own "poll_pipeline" logger so the
+    # caplog INFO/WARNING assertions keep capturing.
+    return _excerpt_digest.issue_trigger_dense(issue, get_task_fn=get_task, log=log)
 
 
 def _phase_token_only(line: str) -> str:
@@ -4873,45 +5425,8 @@ def _phase_token_only(line: str) -> str:
     return f"[phase={m.group(1)}]" if m else "[phase=?]"
 
 
-def _digest_tail_excerpt(
-    wide_tail: str,
-    *,
-    status: str,
-    current_phase: str,
-    pid_alive: bool,
-    source: str,
-    log_path: str,
-    mtime_sec_ago: int,
-) -> str:
-    """Bounded structural digest replacing the raw excerpt on trigger-dense runs.
-
-    Pure + deterministic: pattern counts over the wide tail, the poller's own
-    verdict fields (status/phase/pid liveness — the exit-state information
-    this seam actually has; the workload's numeric rc lands in the sentinel
-    channel and in the log the script-side ``failure_classifier.py --log``
-    reads), the winning log source + path, and tail size/staleness. NO raw
-    log line content is inlined — inherently secret-safe (nothing to scrub).
-    The CUDA-IMA structural flag preserves the one content-coupled machine
-    contract (``backend_poll._prior_failure_marker_is_cuda_ima`` regex over
-    ``epm:failure`` notes — the #775 cross-pod fallback) on digested notes.
-    """
-    lines = wide_tail.splitlines()
-    low = [ln.lower() for ln in lines]
-    counts = {name: sum(1 for ln in low if pat in ln) for name, pat in _DIGEST_PATTERNS}
-    counts_s = " ".join(f"{k}={v}" for k, v in counts.items())
-    out = (
-        f"[trigger-dense digest] status={status} phase={current_phase} "
-        f"pid_alive={pid_alive} source={source} log={log_path} "
-        f"tail_lines={len(lines)} tail_bytes={len(wide_tail.encode('utf-8', 'replace'))} "
-        f"log_mtime_sec_ago={mtime_sec_ago} pattern_counts({counts_s}); "
-        f"raw tail NOT inlined (trigger-dense workload; classify via "
-        f"scripts/failure_classifier.py --log <path>)"
-    )
-    if _CUDA_IMA_SIGNATURE.search(wide_tail):
-        # Flag phrase chosen to MATCH signature alternative 2 so the #775
-        # cross-pod marker-note fallback keeps firing on digested notes.
-        out += " cuda_ima_flag: illegal memory access was encountered (structural flag)"
-    return out
+# (#1574) ``_digest_tail_excerpt`` is the assignment alias above — the body
+# lives in ``explore_persona_space.backends.excerpt_digest.digest_tail_excerpt``.
 
 
 def _freshest_wide_tail(
@@ -5019,9 +5534,17 @@ def poll_once(
     # the on-pod pidfile can hold the dead first-run PID while the live
     # python child runs under a new PID carried by the latest
     # epm:run-launched marker. Cross-check the marker pid so a healthy
-    # re-run is not misreported as dead.
-    marker_pid = _marker_pid(issue)
-    probe = _ssh_probe(pod, log_path, pid_file, issue, marker_pid, stall_sec=stall_sec)
+    # re-run is not misreported as dead. #1650 additionally derives a
+    # launch SIGNATURE from the same marker's cmd='...'/launcher_script=
+    # fields — empty on the common free-prose markers, leaving every
+    # signature consumer inert — feeding the cmdline identity check + the
+    # alive-direction pattern-probe rescue below.
+    marker_pid, marker_note = _marker_launch_fields(issue)
+    sig_tokens = _launch_signature_tokens(marker_note, issue) if _pid_identity_enabled() else ()
+    sig_pattern = _sig_pgrep_pattern(sig_tokens)
+    probe = _ssh_probe(
+        pod, log_path, pid_file, issue, marker_pid, stall_sec=stall_sec, sig_pattern=sig_pattern
+    )
 
     # ── #488 stale-port self-heal ────────────────────────────────────────
     # Track consecutive SSH-probe failures across ticks. When the live API
@@ -5044,7 +5567,31 @@ def poll_once(
 
     pidfile_pid_alive = probe["pid_alive"] == "1"
     marker_pid_alive = marker_pid is not None and probe["marker_pid_alive"] == "1"
-    pid_alive = pidfile_pid_alive or marker_pid_alive
+    # ── #1650 marker-signature liveness rescue (alive-direction ONLY) ────
+    # Decision + WARN live in `_maybe_rescue_by_signature` (its docstring
+    # carries the #1112 rationale); the OR below is the ONLY #1650
+    # verdict-affecting wiring — it can only ADD liveness.
+    sig_proc_rescue = _maybe_rescue_by_signature(
+        pod=pod,
+        sig_pattern=sig_pattern,
+        sig_proc_count=_parse_probe_count(probe.get("sig_proc_count")) or 0,
+        sig_proc_pids=probe.get("sig_proc_pids", ""),
+        pidfile_pid_alive=pidfile_pid_alive,
+        marker_pid_alive=marker_pid_alive,
+    )
+    pid_alive = pidfile_pid_alive or marker_pid_alive or sig_proc_rescue
+    # ── #1650 cmdline identity of the probed pids (WARN + flag ONLY) ─────
+    pid_identity, marker_pid_identity = _maybe_warn_pid_identity(
+        issue=issue,
+        pod=pod,
+        pid_file=pid_file,
+        probe=probe,
+        sig_tokens=sig_tokens,
+        pidfile_pid_alive=pidfile_pid_alive,
+        marker_pid=marker_pid,
+        marker_pid_alive=marker_pid_alive,
+        prev_state=prev_state,
+    )
     # Observability for the #521 false-dead diagnosis: surface "the pid
     # FILE was absent" (vs "the pid probed dead") in the tick JSON, and
     # warn when the epm:run-launched marker pid is the fallback standing
@@ -5253,23 +5800,26 @@ def poll_once(
     # ── #664/#826 zombie-GPU-allocation override ─────────────────────────
     # Extracted to `_apply_zombie_override` (both for C901 headroom and so
     # the firing predicate is documented in one place — see its docstring).
-    status, stall_reason, cpu_override_active, zombie_streak = _apply_zombie_override(
-        status=status,
-        zombie_gpu_pids=zombie_gpu_pids,
-        stall_sec=stall_sec,
-        last_mtime_ago=last_mtime_ago,
-        phase_log_mtime_ago=phase_log_mtime_ago,
-        shard_log_mtime_ago=shard_log_mtime_ago,
-        prev_state=prev_state,
-        pod=pod,
-        cpu_override_active=cpu_override_active,
-        gpu_pids_total=_parse_probe_count(probe.get("gpu_pids_total")),
-        gpu_pids_resolvable=_parse_probe_count(probe.get("gpu_pids_resolvable")),
-        uvm_live_holders=_parse_probe_count(probe.get("nvidia_uvm_live_holders")),
-        uvm_alloc_holders=_parse_probe_count(probe.get("nvidia_uvm_alloc_holders")),
-        session_cpu_rate_cores=session_cpu_rate,
-        output_mtime_ago=output_mtime_ago,
-        session_pcpu_cores=session_pcpu_cores,
+    status, stall_reason, cpu_override_active, zombie_streak, wedge_veto_streak = (
+        _apply_zombie_override(
+            status=status,
+            zombie_gpu_pids=zombie_gpu_pids,
+            stall_sec=stall_sec,
+            last_mtime_ago=last_mtime_ago,
+            phase_log_mtime_ago=phase_log_mtime_ago,
+            shard_log_mtime_ago=shard_log_mtime_ago,
+            prev_state=prev_state,
+            pod=pod,
+            cpu_override_active=cpu_override_active,
+            gpu_pids_total=_parse_probe_count(probe.get("gpu_pids_total")),
+            gpu_pids_resolvable=_parse_probe_count(probe.get("gpu_pids_resolvable")),
+            uvm_live_holders=_parse_probe_count(probe.get("nvidia_uvm_live_holders")),
+            uvm_alloc_holders=_parse_probe_count(probe.get("nvidia_uvm_alloc_holders")),
+            session_cpu_rate_cores=session_cpu_rate,
+            output_mtime_ago=output_mtime_ago,
+            session_pcpu_cores=session_pcpu_cores,
+            gpu_idle=gpu_idle,
+        )
     )
 
     # ── #873/#1033 run-scoped state anchor (AC #6) ───────────────────────
@@ -5335,15 +5885,17 @@ def poll_once(
     # pod). Reads the SAME idle span the advisory just resolved
     # (gpu_idle_since_epoch) — no second idle clock — and the SAME
     # run-scoped tripwire_state (#1033).
-    gpu_idle_escalated_phases, gpu_idle_escalation_posted = _maybe_escalate_gpu_idle(
-        issue=issue,
-        pod=pod,
-        status=status,
-        gpu_util=gpu_util,
-        current_phase=current_phase,
-        idle_since_epoch=gpu_idle_since_epoch,
-        prev_state=tripwire_state,
-        now_epoch=now_epoch,
+    gpu_idle_escalated_phases, gpu_idle_escalation_counts, gpu_idle_escalation_posted = (
+        _maybe_escalate_gpu_idle(
+            issue=issue,
+            pod=pod,
+            status=status,
+            gpu_util=gpu_util,
+            current_phase=current_phase,
+            idle_since_epoch=gpu_idle_since_epoch,
+            prev_state=tripwire_state,
+            now_epoch=now_epoch,
+        )
     )
 
     # ── #873 m-of-N GPU-width advisory ───────────────────────────────────
@@ -5524,6 +6076,13 @@ def poll_once(
             # #664 escalation tier per-phase de-dup (shares the idle span
             # above). Same comma-join contract as the advised set.
             "gpu_idle_escalated_phases": ",".join(sorted(gpu_idle_escalated_phases)),
+            # #1752: per-phase escalation COUNT across run epochs
+            # (phase:count pairs). Deliberately NOT in
+            # _RUN_SCOPED_STATE_KEYS: the #1033 rationale (stale
+            # idle-minutes DISPLAY) does not apply to a pure count, and
+            # cross-relaunch survival is the point — the repeat pathology
+            # (#1689) only manifests across run epochs.
+            "gpu_idle_escalation_counts": _serialize_escalation_counts(gpu_idle_escalation_counts),
             # Persist the current CPU sample (observability) so the JSON
             # line / next tick can read the latest probe. Stored as the
             # literal probe string (``"unknown"`` or a float-as-string) so
@@ -5552,6 +6111,13 @@ def poll_once(
             # verdict all write "0" — a one-tick transient never
             # accumulates across a healthy gap.
             "zombie_streak": str(zombie_streak),
+            # #1840 persistent-wedge streak on the namespace veto. Same
+            # recompute-each-tick contract as zombie_streak (only the
+            # namespace-veto branch can set it non-zero); deliberately NOT
+            # in _RUN_SCOPED_STATE_KEYS — a relaunch freshens logs, which
+            # resets the streak naturally on the next tick, and the kill
+            # tick itself resets it via the non-running verdict.
+            "wedge_veto_streak": str(wedge_veto_streak),
             # #873 m-of-N GPU-width advisory span + stable idle set +
             # per-phase de-dup (same comma-join contract as the idle sets).
             "gpu_width_since_epoch": str(gpu_width_since_epoch),
@@ -5569,6 +6135,11 @@ def poll_once(
             # #873 run-scope anchor: the epm:run-launched epoch the tripwire
             # dedup keys above belong to (AC #6). A fresh launch clears them.
             "tripwire_run_epoch": str(tripwire_run_epoch),
+            # #1650 identity WARN dedup: the previous tick's classifications,
+            # so a persistent mismatch WARNs once per state change (repeats
+            # demote to DEBUG) instead of every tick.
+            "pid_identity_last": pid_identity,
+            "marker_pid_identity_last": marker_pid_identity,
             # #983 post-done phase-consistency guard: the matched done
             # line's identity (truncated text), when + on which pod it was
             # accepted, and the once-per-episode dedup flag. Voided only by
@@ -5627,6 +6198,9 @@ def poll_once(
         pid_alive=pid_alive,
         pid_file_missing=pid_file_missing,
         pid_file_stale_vs_marker=pid_file_stale_vs_marker,
+        pid_identity=pid_identity,
+        marker_pid_identity=marker_pid_identity,
+        sig_proc_rescue=sig_proc_rescue,
         log_tail_excerpt=tail_excerpt,
         gate=gate,
         sentinels_processed=sentinels_processed,
@@ -5651,7 +6225,13 @@ def poll_once(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawTextHelpFormatter
+        description=__doc__,
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog=(
+            "NOTE: this poller is RunPod/SSH-signature (--pod/--log/--pid-file all required).\n"
+            "For GCP / handle-based runs use scripts/backend_poll.py --issue <N>\n"
+            "(reads .claude/cache/issue-<N>-handle.json)."
+        ),
     )
     parser.add_argument("--issue", type=int, required=True, help="Task / issue number.")
     parser.add_argument("--pod", required=True, help="SSH host alias (e.g. epm-issue-137).")
@@ -5708,6 +6288,11 @@ def main(argv: list[str] | None = None) -> int:
                 "pid_alive": result.pid_alive,
                 "pid_file_missing": result.pid_file_missing,
                 "pid_file_stale_vs_marker": result.pid_file_stale_vs_marker,
+                # #1650 pid-identity observability (enums/bools only — raw
+                # cmdline text is deliberately log-only, never in tick JSON).
+                "pid_identity": result.pid_identity,
+                "marker_pid_identity": result.marker_pid_identity,
+                "sig_proc_rescue": result.sig_proc_rescue,
                 "log_tail_excerpt": result.log_tail_excerpt,
                 # #1556: True when log_tail_excerpt is the trigger-dense
                 # structural digest, not raw tail lines (additive key;

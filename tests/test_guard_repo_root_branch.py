@@ -62,16 +62,20 @@ that shape; the former block fixture N1 moved to the masking allow list as
 M9). Any refused candidate leaves the input byte-identical, keeping today's
 disposition.
 As of #1463 both mechanisms gain a ``gcloud compute ssh`` head (optional
-literal ``timeout <num>[.frac][smhd]?`` wrapper, gcloud-arm only): a
+literal ``timeout <num>[.frac][smhd]?`` wrapper): a
 ``gcloud compute ssh <instance> --command='<payload>'`` clause executes its
 payload ON the GCE instance via the local ssh(1) wrapper (SDK 576.0.0 help +
 a live ``--dry-run`` argv probe), so the driver-loop waiver and the masking
 pre-pass treat it exactly like the clause-initial ``ssh`` head, under the
 identical fail-closed refusal arms (founding incident #825, 2026-07-16; the
-ssh variant was #1336, closed by #1413). Everything outside the narrow head —
-release tracks, non-timeout wrappers, ``timeout`` flag forms, redirect /
-expansion / proxy-token shapes, double-quoted multi-statement payloads —
-keeps today's blocked disposition (GN-series pins).
+ssh variant was #1336, closed by #1413). As of #1859 the SAME literal
+timeout wrapper is accepted on the bare ``ssh`` head too (the former
+N12/NM5 asymmetry pins flipped to positive fixtures S15/M10; founding
+incident: two #1769 failover-path false blocks). Everything outside the
+narrow heads — release tracks, non-timeout wrappers (nohup / env-prefix /
+abs-path / variable heads), ``timeout`` flag forms, redirect / expansion /
+proxy-token shapes — keeps today's blocked disposition (GN- and
+N36-N43-series pins).
 """
 
 from __future__ import annotations
@@ -303,6 +307,63 @@ def test_detach_to_real_tag_blocks(throwaway_tag):
 
 
 # ---------------------------------------------------------------------------
+# #1621 — hyphen-preceded verb tokens (a `--no-checkout` / `--checkout` FLAG)
+# no longer satisfy the checkout-detach clause (ERE \b matches between `-`
+# and a word char, so the flag spelling used to false-block the documented
+# scratch-worktree recipe — incident 552fa84d). Every real detach spelling
+# keeps a space/tab before the verb and still blocks (matrix above + the
+# flag-prefixed pin below). Red-before/green-after for each allow fixture
+# was confirmed at compose time against the origin/main guard (rc=2 -> 0).
+# ---------------------------------------------------------------------------
+_I1621_552F_SCRATCH_WORKTREE_RECIPE = (
+    "set -e\n"
+    "git fetch origin main\n"
+    "WT=/tmp/wt1092dash\n"
+    "git worktree remove --force $WT 2>/dev/null || true\n"
+    "git worktree add --no-checkout --detach $WT origin/main\n"
+    "git -C $WT sparse-checkout set --cone scripts tasks/awaiting_promotion/1092/artifacts\n"
+    "git -C $WT checkout --quiet\n"
+    "cp scripts/issue1092_divergence_dashboard.py $WT/scripts/\n"
+    "mkdir -p $WT/tasks/awaiting_promotion/1092/artifacts\n"
+    "cp tasks/awaiting_promotion/1092/artifacts/issue1092_divergence_dashboard.html"
+    " $WT/tasks/awaiting_promotion/1092/artifacts/\n"
+    "git -C $WT add scripts/issue1092_divergence_dashboard.py"
+    " tasks/awaiting_promotion/1092/artifacts/issue1092_divergence_dashboard.html\n"
+    "git -C $WT status --short | head -5"
+)
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "git worktree add --no-checkout --detach $WT origin/main",
+            id="WA1-no_checkout_detach_line_solo",
+        ),
+        pytest.param(
+            _I1621_552F_SCRATCH_WORKTREE_RECIPE,
+            id="WA2-552f_incident_verbatim",
+        ),
+        pytest.param(
+            "git worktree add --checkout --detach /tmp/wt1092dash origin/main",
+            id="WA3-sibling_checkout_flag",
+        ),
+    ],
+)
+def test_worktree_add_no_checkout_detach_allowed(cmd):
+    """#1621: the checkout-detach clause requires a non-hyphen char before the
+    verb token, so `--no-checkout` / `--checkout` flag spellings never match
+    and the scratch-worktree recipe passes."""
+    assert _run(cmd) == 0
+
+
+def test_flag_prefixed_checkout_detach_still_blocks():
+    """A real detach with a config flag before the verb keeps a space directly
+    before `checkout`, so the #1621 `[^-]` class still matches (blocks)."""
+    assert _run("git -c advice.detachedHead=false checkout --detach abc1234") == 2
+
+
+# ---------------------------------------------------------------------------
 # MUST BLOCK — existing branch-switch regression fence
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize("cmd", ["git checkout -b feature/x", "git switch fix/foo"])
@@ -424,21 +485,22 @@ def test_switch_return_to_main_still_allows(cmd):
     assert _run(cmd) == 0
 
 
-def test_note_text_git_verb_literal_trips_guard_known_limitation():
-    # KNOWN LIMITATION (documented in the script header): the guard scans the
-    # RAW command and does NOT strip quoted arguments, so a quoted git-verb
-    # literal buried in another command's argument (e.g. a marker note
-    # discussing the guard) DOES trip it. This is the deliberate trade-off for
-    # correctly parsing quoted git refs (test_quoted_detach_refs_still_block);
-    # the round-1 quote-strip that "fixed" this false positive leaked real
-    # quoted detach refs. The workaround is `--file` for such note text.
-    # Exit 2 pins the known behavior so a future re-attempt at a quote-strip
-    # (which would silently re-open the leak) trips this test.
+def test_note_text_git_verb_literal_double_quoted_now_allows():
+    # (#1710) The historical KNOWN LIMITATION — a git-verb literal in a
+    # DOUBLE-quoted `--note` argument tripped the guard because the taskpy
+    # mask covered single quotes only — is closed by the #1710 P7 extension
+    # that admits double-quoted spans under a no-expansion refusal ladder.
+    # A double-quoted note whose body carries no `$` / backtick / `\\`
+    # tokens is byte-identical to the same content single-quoted, so the
+    # taskpy mask replaces its body with the neutral __EPM_ARG_PAYLOAD__
+    # sentinel BEFORE the pre-filter regex scans for git-verb literals.
+    # The genuine repo-root mutation shapes still block — see
+    # test_taskpy_double_quoted_masking_refusal_ladder_blocks below.
     assert (
         _run(
             'uv run python scripts/task.py post-marker 796 epm:foo --note "test git switch string"'
         )
-        == 2
+        == 0
     )
 
 
@@ -783,19 +845,22 @@ def test_worktree_revert_shapes_block(cmd):
     assert _run(cmd) == 2
 
 
-def test_note_text_restore_literal_trips_guard_known_limitation():
-    # KNOWN LIMITATION (documented in the script header, mirror of
-    # test_note_text_git_verb_literal_trips_guard_known_limitation): a quoted
-    # FULL `git restore .`-class command literal inside another command's
-    # argument trips the raw scan. Workaround: `--file <path.md>` for notes,
-    # `git commit -F <file>` for commit messages. Exit 2 pins the deliberate
-    # trade-off so a future quote-strip re-attempt trips this test.
+def test_note_text_restore_literal_double_quoted_now_allows():
+    # (#1710) Sibling of test_note_text_git_verb_literal_double_quoted_now_allows:
+    # the taskpy mask's P7 double-quoted extension replaces a double-quoted
+    # `--note` body with the neutral __EPM_ARG_PAYLOAD__ sentinel BEFORE the
+    # pre-filter scans for git-verb literals. A note whose body carries no
+    # `$` / backtick / `\\` tokens (byte-identical-to-single-quoted content)
+    # therefore no longer trips the raw scan. The historical
+    # `--file <path.md>` / `git commit -F <file>` workaround is no longer
+    # required for these shapes. Genuine repo-root mutation shapes still
+    # block — see test_taskpy_double_quoted_masking_refusal_ladder_blocks.
     assert (
         _run(
             "uv run python scripts/task.py post-marker 897 epm:x "
             '--note "run git restore . to revert"'
         )
-        == 2
+        == 0
     )
 
 
@@ -979,6 +1044,13 @@ def test_bare_arg_resolving_to_nothing_keeps_status_quo_allow():
             'WT=".claude/worktrees/issue-9"; cd "$WT" && uv run pytest -q',
             id="R17-non_git_under_latch",
         ),
+        # #1861: relocated from the BLOCK battery — name generalization makes this
+        # fully-compliant arming latch; the prefix-collision half lives in
+        # X16-name_mismatch_prefix_collision
+        pytest.param(
+            'WT2=".claude/worktrees/issue-9"\ncd "$WT2" && git checkout main -- specs.md',
+            id="R12-wt2_name",
+        ),
     ],
 )
 def test_wt_variable_cd_latch_allows(cmd):
@@ -1048,10 +1120,6 @@ def test_wt_variable_cd_latch_allows(cmd):
         pytest.param(
             'WT=".claude/worktrees/issue-9"; cd "$WT/../.." && git restore .',
             id="R13-dotdot_escape",
-        ),
-        pytest.param(
-            'WT2=".claude/worktrees/issue-9"\ncd "$WT2" && git checkout main -- specs.md',
-            id="R12-wt2_name",
         ),
         pytest.param(
             'WT=".claude/worktrees/issue-779"\n'
@@ -1381,6 +1449,122 @@ def test_heredoc_shellout_body_blocks(cmd):
     assert _run(cmd) == 2
 
 
+# ---------------------------------------------------------------------------
+# #1621 — check (f) argv-list carve: argv-LIST-form call opens with NON-SHELL
+# first elements (`subprocess.run(["git", ...`) are deleted from a per-line
+# scan COPY before the shell-out refusal scan, so plan/doc heredoc bodies
+# embedding argv-form subprocess git TEXT strip cleanly (guard class (xi):
+# the argv form never classifies — comma-separated list tokens carry no
+# `git <verb>` bigram; incident abee1289). Two fail-closed arms pin the
+# loopholes the carve would otherwise open: an argv head naming a shell
+# (bare / path-qualified / env, incl. the literal backslash-n bracket-gap
+# spelling) refuses PRE-deletion, and a `shell=True` residual refuses
+# post-deletion. Red-before/green-after for each allow fixture was confirmed
+# at compose time against the origin/main guard (rc=2 -> 0).
+#
+# NOTE on the doc-line fixtures: they quote a BARE branch-create recipe (no
+# `git -C` prefix) because the pre-existing PATH-BLIND `-C` per-clause
+# waiver (#1128/#1193) waives a `-C`-prefixed checkout clause under BOTH
+# guards — a `-C`-spelled doc line cannot satisfy the red-before protocol.
+# ---------------------------------------------------------------------------
+# The incident's refusing body line carried FOUR argv-call opens on ONE
+# physical line, one with a literal backslash-n between paren and bracket
+# (a plan-patch python script whose replacement text embeds a test snippet).
+_I1621_ABEE_LINE51 = (
+    'snippet = \'subprocess.run(["git", "-C", wt, "fetch"], check=True); '
+    'subprocess.run(["git", "-C", wt, "status"], check=True); '
+    'subprocess.check_call(["git", "log"]); '
+    'subprocess.run(\\n    ["git", "-C", wt, "push"], check=True)\''
+)
+_I1621_ABEE_TRIMMED = (
+    "uv run python - <<'PY'\n"
+    + _I1621_ABEE_LINE51
+    + "\n"
+    + 'doc = f"git -C wtpath fetch origin && git checkout -B {branch} origin/main"\n'
+    + "PY"
+)
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "uv run python - <<'PY'\n"
+            'subprocess.run(["git", "-C", wt, "push"], check=True)\n'
+            'print("recipe: git checkout -B mybranch origin/main")\n'
+            "PY",
+            id="AV1-quoted_tag_argv_call_plus_doc_line",
+        ),
+        pytest.param(_I1621_ABEE_TRIMMED, id="AV2-abee_shaped_line51_multiplicity"),
+        pytest.param(
+            "uv run python - <<PY\n"
+            'subprocess.run(["git", "-C", "/tmp/w", "push"], check=True)\n'
+            'print("recipe: git checkout -B mybranch origin/main")\n'
+            "PY",
+            id="AV3-unquoted_tag_expansion_free",
+        ),
+    ],
+)
+def test_heredoc_argv_subprocess_body_strips(cmd):
+    """#1621: argv-list-form call text with non-shell heads no longer refuses
+    the strip; the stripped body's quoted recipe text never classifies."""
+    assert _run(cmd) == 0
+
+
+def test_heredoc_argv_shell_head_still_blocks():
+    """New arm 1: an argv LIST whose first element names a shell refuses the
+    strip PRE-deletion (no import line needed); the gated text classifies."""
+    cmd = 'uv run python - <<\'PY\'\nPopen(["bash", "-c", "git reset --hard"])\nPY'
+    assert _run(cmd) == 2
+
+
+def test_heredoc_argv_shell_true_still_blocks():
+    """New arm 2: a `shell=True` residual next to an argv call refuses the
+    strip post-deletion; the gated single-string argv classifies."""
+    cmd = "uv run python - <<'PY'\nrun([\"git checkout -b x\"], shell=True)\nPY"
+    assert _run(cmd) == 2
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            'uv run python - <<\'PY\'\nrun(["/bin/bash", "-c", "git checkout -b x"])\nPY',
+            id="SH1-path_qualified_head",
+        ),
+        pytest.param(
+            'uv run python - <<\'PY\'\nrun(["env", "bash", "-c", "git checkout -b x"])\nPY',
+            id="SH2-env_head",
+        ),
+    ],
+)
+def test_heredoc_argv_pathqualified_shell_head_still_blocks(cmd):
+    """Arm 1 r2 widening: path-qualified ("/bin/bash") and "env" argv heads
+    refuse the strip exactly like bare shell names."""
+    assert _run(cmd) == 2
+
+
+def test_heredoc_argv_newline_bracket_shell_head_still_blocks():
+    """Arm 1 r2 widening: a literal backslash-n between bracket and quoted
+    shell head cannot dodge the arm (its gap tolerance mirrors the deletion
+    regex, so no shape the carve strips escapes the shell-head refusal)."""
+    cmd = 'uv run python - <<\'PY\'\ns = \'Popen([\\n    "bash", "-c", "git reset --hard"])\'\nPY'
+    assert _run(cmd) == 2
+
+
+def test_heredoc_bare_shellout_mention_still_blocks():
+    """Fail-closed boundary: a BARE shell-out-word prose mention (no argv call
+    open to carve) still refuses the strip, so the co-occurring quoted recipe
+    classifies (the M4b two-line value-indirection block requires this)."""
+    cmd = (
+        "uv run python - <<'PY'\n"
+        'print("we call subprocess here")\n'
+        'print("recipe: git checkout -B mybranch origin/main")\n'
+        "PY"
+    )
+    assert _run(cmd) == 2
+
+
 # ==== #1098 — ssh remote-command / grep-family pattern-argument clause waiver ====
 #
 # A clause whose COMMAND WORD is ssh (remote execution — the command string
@@ -1431,6 +1615,20 @@ def test_heredoc_shellout_body_blocks(cmd):
             # covers it; pins the exemption beyond the glued S13 spelling.
             "ssh pod-779 'git reset --hard origin/main' 2> /dev/null",
             id="S14-spaced_dev_null_exempt",
+        ),
+        pytest.param(
+            # The former N12-wrapped_ssh_not_waived block fixture, flipped
+            # by #1859: the literal `timeout <num>` wrapper is accepted on
+            # the ssh head (parity with the gcloud arm's GS4).
+            "timeout 240 ssh pod-779 'git reset --hard'",
+            id="S15-timeout_wrapped_ssh_waived",
+        ),
+        pytest.param(
+            # Fractional + suffixed duration — pins the full
+            # `<num>[.frac][smhd]?` shape of the wrapper grammar on the
+            # ssh arm (#1859).
+            "timeout 1.5m ssh pod-779 'git reset --hard origin/main'",
+            id="S16-timeout_fractional_suffixed_wrapped_ssh_waived",
         ),
     ],
 )
@@ -1647,7 +1845,12 @@ def test_grep_pipe_unsafe_consumer_blocks(cmd):
         pytest.param("grep -f <(git clean -fd) x", id="N9-grep_procsub_in"),
         pytest.param("rg --pre 'git reset --hard' pat file", id="N10-rg_pre_local_exec"),
         pytest.param("ssh pod-779 'git status'; git reset --hard", id="N11-no_latch_local_tail"),
-        pytest.param("timeout 240 ssh pod-779 'git reset --hard'", id="N12-wrapped_ssh_not_waived"),
+        # N12-wrapped_ssh_not_waived MOVED (#1859) to the single-statement
+        # waiver allow list above as S15-timeout_wrapped_ssh_waived: the
+        # literal `timeout <num>[.frac][smhd]?` wrapper is now accepted on
+        # the ssh head (parity with the #1463 gcloud arm's GS4) — the flip
+        # is Goal-mandated, not a regression. Non-timeout wrappers keep
+        # their blocked disposition (N36-N43 below).
         pytest.param(
             "ssh -o PermitLocalCommand=yes -o LocalCommand='git reset --hard' host",
             id="N13-localcommand_local_exec",
@@ -1769,6 +1972,54 @@ def test_grep_pipe_unsafe_consumer_blocks(cmd):
             "ssh pod-779 'git reset --hard' > '/dev/null'",
             id="N35-single_quoted_dev_null_target_fail_closed",
         ),
+        # N36-N43 pin the #1859 ssh-arm timeout-wrapper boundaries (mirrors
+        # of the gcloud arm's GN-series pins): ONLY the literal
+        # `timeout <num>[.frac][smhd]?` prefix is tolerated, and the
+        # wrapper lifts NONE of the waiver's refusal arms.
+        pytest.param(
+            # Flag form NOT waived (mirror GN14).
+            "timeout --signal=KILL 120 ssh pod-779 'git reset --hard'",
+            id="N36-timeout_flag_form_not_waived",
+        ),
+        pytest.param(
+            # `-k` flag form NOT waived (mirror GN8's beyond-timeout class).
+            "timeout -k 5 240 ssh pod-779 'git reset --hard'",
+            id="N37-timeout_k_flag_form_not_waived",
+        ),
+        pytest.param(
+            # The wrapped head does NOT lift the consumer-independent
+            # PIPE-producer refusal (parity with N23 / GN7).
+            "timeout 240 ssh pod-779 'git reset --hard' | tail -5",
+            id="N38-wrapped_head_pipe_producer_still_blocks",
+        ),
+        pytest.param(
+            # The wrapped head does NOT lift the shared-repo-path
+            # never-waive (parity with N5).
+            "timeout 240 ssh vm 'git"
+            " --git-dir=/home/thomasjiralerspong/explore-persona-space/.git"
+            " reset --hard'",
+            id="N39-wrapped_head_repo_root_path_still_blocks",
+        ),
+        pytest.param(
+            # The wrapped head does NOT lift the ProxyCommand local-exec
+            # refusal (parity with N7/N16).
+            "timeout 240 ssh -o ProxyCommand='git reset --hard' host 'git status'",
+            id="N40-wrapped_head_proxycommand_still_blocks",
+        ),
+        pytest.param(
+            # The numeric group is REQUIRED — a bare `timeout ssh ...` head
+            # is not the literal wrapper shape.
+            "timeout ssh pod-779 'git reset --hard'",
+            id="N41-timeout_without_duration_not_waived",
+        ),
+        pytest.param(
+            "nohup ssh pod-779 'git reset --hard'",
+            id="N42-nohup_wrapped_ssh_not_waived",
+        ),
+        pytest.param(
+            "/usr/bin/ssh pod-779 'git reset --hard'",
+            id="N43-abs_path_ssh_single_statement_not_waived",
+        ),
     ],
 )
 def test_remote_waiver_fail_closed_blocks(cmd):
@@ -1789,9 +2040,10 @@ def test_remote_waiver_fail_closed_blocks(cmd):
 # R5 no quote char before the candidate; R6/R7 no cd + /tmp/ or
 # .claude/worktrees/ latch vocabulary in candidate/prefix; R8 no WT= text —
 # and ANY refusal leaves the input byte-identical, so every refused shape
-# keeps today's disposition (all 27 NM fixtures below were verified rc=2
+# keeps today's disposition (all 27 original NM fixtures were verified rc=2
 # against the UNMODIFIED guard before the mask landed — the pre-change
-# red-team gate). The allow side (a masked-and-waived clause) must pass in
+# red-team gate; NM5 flipped to the M10 positive at #1859).
+# The allow side (a masked-and-waived clause) must pass in
 # either repo state, matching the #1098 convention.
 # Where a predicate arm overlaps a #1098 ladder refusal, the block fixture
 # uses an allow-arm-anchored CONTAMINATION payload: a mid-payload
@@ -1847,6 +2099,14 @@ def test_remote_waiver_fail_closed_blocks(cmd):
             "ssh pod-779 'cd /workspace/explore-persona-space && git reset --hard origin/main'",
             id="M9-former_N1_residual_closed",
         ),
+        pytest.param(
+            # The former NM5-wrapped_ssh_multi_statement block fixture,
+            # flipped by #1859: the mask candidate head accepts the literal
+            # `timeout <num>` wrapper on the ssh arm (parity with the
+            # #1463 gcloud arm's GM fixtures).
+            "timeout 240 ssh pod-779 'cd /w && git reset --hard'",
+            id="M10-timeout_wrapped_multi_statement",
+        ),
     ],
 )
 def test_ssh_multi_statement_payload_masking_allows(cmd):
@@ -1857,12 +2117,11 @@ def test_ssh_multi_statement_payload_masking_allows(cmd):
 @pytest.mark.parametrize(
     "cmd",
     [
-        pytest.param(
-            # Double quotes never mask (escapes/expansion/nesting make the
-            # parse inexact) — documented residual.
-            'ssh pod-779 "cd /workspace/x && git reset --hard origin/main"',
-            id="NM1-double_quoted_multi_statement",
-        ),
+        # (#1710) The historical NM1 double-quoted-ssh block is REPLACED by
+        # the new NDS positive tests (double-quoted allow) + NDS_R* negative
+        # tests (double-quoted refusal ladder) added below. The
+        # double-quoted payload was documented as a residual under the
+        # #1413 mask; Arm 1's R9 no-expansion refusal admits it now.
         pytest.param(
             # Constraint-1 ambiguity (no closing quote) stays blocked.
             "ssh pod-779 'cd /workspace/x && git reset --hard origin/main",
@@ -1878,10 +2137,11 @@ def test_ssh_multi_statement_payload_masking_allows(cmd):
             "ssh vm 'cd /home/thomasjiralerspong/explore-persona-space && git reset --hard'",
             id="NM4-repo_path_literal_spelling",
         ),
-        pytest.param(
-            "timeout 240 ssh pod-779 'cd /w && git reset --hard'",
-            id="NM5-wrapped_ssh_multi_statement",
-        ),
+        # NM5-wrapped_ssh_multi_statement MOVED (#1859) to the masking
+        # allow list above as M10-timeout_wrapped_multi_statement — the
+        # literal `timeout <num>` wrapper is accepted on the ssh mask
+        # candidate head (parity with the #1463 gcloud arm). Non-timeout
+        # wrappers keep blocking (NM6/NM7 below; N36-N43 single-statement).
         pytest.param(
             "$SSHCMD pod-779 'cd /w && git reset --hard'",
             id="NM6-variable_ssh_multi_statement",
@@ -2160,16 +2420,18 @@ def test_merge_allowed_shapes_exit0(cmd):
     assert _run(cmd) == 0
 
 
-def test_note_text_merge_literal_trips_guard_known_limitation():
-    # KNOWN LIMITATION (header): a quoted FULL `git merge <ref>` command
-    # literal in --note/-m text trips the raw scan (#1128, mirror of the
-    # restore-literal pin). Workaround: --file <path.md> / git commit -F.
+def test_note_text_merge_literal_double_quoted_now_allows():
+    # (#1710) Sibling of test_note_text_git_verb_literal_double_quoted_now_allows:
+    # the taskpy mask's P7 double-quoted extension covers `git merge <ref>`
+    # prose inside a `--note` body under the same no-expansion refusal
+    # ladder. Workaround (--file / -F) still WORKS but is no longer
+    # REQUIRED for these shapes.
     assert (
         _run(
             "uv run python scripts/task.py post-marker 1128 epm:x "
             '--note "run git merge issue-1 next"'
         )
-        == 2
+        == 0
     )
 
 
@@ -2282,12 +2544,13 @@ def test_rebase_family_allowed_shapes_exit0(cmd):
         ),
     ],
 )
-def test_note_text_rebase_family_literal_trips_guard_known_limitation(note_cmd):
-    # KNOWN LIMITATION (header): a quoted FULL `git rebase <ref>` /
-    # `git cherry-pick <sha>` command literal in --note/-m text trips the raw
-    # scan (#1193, mirror of the merge-literal pin). Workaround: --file
-    # <path.md> / git commit -F.
-    assert _run(note_cmd) == 2
+def test_note_text_rebase_family_literal_double_quoted_now_allows(note_cmd):
+    # (#1710) Sibling of test_note_text_merge_literal_double_quoted_now_allows:
+    # the taskpy mask's P7 double-quoted extension covers
+    # `git rebase <ref>` / `git cherry-pick <sha>` prose inside a `--note`
+    # body under the same no-expansion refusal ladder. Workaround (--file /
+    # -F) still WORKS but is no longer REQUIRED for these shapes.
+    assert _run(note_cmd) == 0
 
 
 def test_man_git_rebase_allowed():
@@ -2403,12 +2666,13 @@ def test_revert_am_allowed_shapes_exit0(cmd):
         ),
     ],
 )
-def test_note_text_revert_am_literal_trips_guard_known_limitation(note_cmd):
-    # KNOWN LIMITATION (header): a quoted FULL `git revert <sha>` /
-    # `git am <path>` command literal in --note/-m text trips the raw scan
-    # (#1234, mirror of the #1128/#1193 pins). Workaround: --file <path.md> /
-    # git commit -F <file>.
-    assert _run(note_cmd) == 2
+def test_note_text_revert_am_literal_double_quoted_now_allows(note_cmd):
+    # (#1710) Sibling of test_note_text_rebase_family_literal_double_quoted_now_allows:
+    # the taskpy mask's P7 double-quoted extension covers `git revert <sha>` /
+    # `git am <path>` prose inside a `--note` body under the same
+    # no-expansion refusal ladder. Workaround (--file / -F) still WORKS but
+    # is no longer REQUIRED for these shapes.
+    assert _run(note_cmd) == 0
 
 
 def test_flag_chain_valid_git_am_prose_trips_guard_known_limitation():
@@ -2439,8 +2703,9 @@ def test_man_git_am_revert_allowed():
 # positionals land after the host in the constructed local ssh argv, i.e.
 # they ride as the REMOTE command). As of #1463 the driver-loop waiver
 # (cond (1)) and the mask pre-pass gain a `gcloud compute ssh` head — with
-# an optional literal `timeout <num>[.frac][smhd]?` wrapper, gcloud-arm
-# only — routed through the SAME ssh refusal arms (waiver conds
+# an optional literal `timeout <num>[.frac][smhd]?` wrapper, extended to
+# the bare `ssh` head by #1859 — routed through the SAME ssh refusal arms
+# (waiver conds
 # (2)/(3)/(3b)/(4); mask R1-R8). Founding incident: #825
 # (2026-07-16T13:18:53Z false block); #1336 hit the ssh variant pre-#1413.
 # The GN-series pins fail-closed dispositions (all verified rc=2 against
@@ -2652,12 +2917,12 @@ _GN1_VERBATIM_825 = (
             "timeout --signal=KILL 120 gcloud compute ssh pod --command='git reset --hard'",
             id="GN14-timeout_flag_form_not_waived",
         ),
-        pytest.param(
-            # NM1 mirror: the gcloud candidate head is single-quote-only too
-            # (double-quoted payloads admit escapes/expansion/nesting).
-            'gcloud compute ssh pod --command="cd /w && git reset --hard"',
-            id="GN15-double_quoted_multi_statement_not_waived",
-        ),
+        # (#1710) The historical GN15 gcloud-compute-ssh double-quoted-block
+        # is REPLACED by NDS3-double_quoted_gcloud_compute_ssh (positive) +
+        # NDS_R* refusal-ladder pins below. Arm 1's R9 no-expansion refusal
+        # admits the double-quoted payload the same way it admits the bare
+        # `ssh` head — the gcloud head is threaded through the SAME
+        # mask_ssh_payload_separators branch.
     ],
 )
 def test_gcloud_waiver_fail_closed_blocks(cmd):
@@ -3120,14 +3385,11 @@ def test_taskpy_payload_embedded_newline_rejoin_pinned():
             f'{_TASKPY} post-marker 1566 epm:progress --note "`{_TASKPY_PAYLOAD}`"',
             id="NPB4-backtick_payload",
         ),
-        pytest.param(
-            # DOUBLE-quoted payload with the SHARED trigger: the anti-vacuity
-            # twin — pins that the constant trips the guard when not
-            # single-quote-masked, AND that the existing double-quoted
-            # known-limitation disposition class is untouched.
-            f'{_TASKPY} post-marker 1566 epm:progress --note "{_TASKPY_PAYLOAD}"',
-            id="NPB5-double_quoted_shared_payload_twin",
-        ),
+        # (#1710) The historical NPB5 double-quoted-shared-payload block is
+        # REPLACED by NDP1-double_quoted_note_incident_3 (positive) +
+        # NDP_P7_* refusal-ladder pins below. Arm 2's P7 no-expansion
+        # refusal admits the double-quoted note body under the same
+        # exact-parse property the single-quoted mask requires.
         pytest.param(
             # UNQUOTED note text with the shared trigger — second twin.
             f"{_TASKPY} post-marker 1566 epm:progress --note {_TASKPY_PAYLOAD}",
@@ -3299,6 +3561,484 @@ def test_pinned_env_scrubs_ambient_git_vars(monkeypatch):
     """
     monkeypatch.setenv("GIT_OBJECT_DIRECTORY", "/nonexistent")
     assert _run(_SIDECAR_BLOCKED_SWITCH) == 2
+
+
+# ============================================================================
+# (#1710) Three added mask arms:
+#   Arm 1 — mask_ssh_payload_separators DOUBLE-quoted branch (R9 refusal)
+#   Arm 2 — mask_taskpy_arg_payloads DOUBLE-quoted span support (P7 refusal)
+#   Arm 3 — mask_python_c_string_literals (NEW mask; C4-C10 refusal ladder)
+#
+# Every new POSITIVE param carries a paraphrased incident-shape payload (no
+# destructive-command literal reproduced from the incident transcript); every
+# NEGATIVE param pins one specific refusal arm as the ONLY reason that shape
+# refuses (the anti-vacuity discipline the round-1 planner named).
+# ============================================================================
+
+# ---- Arm 1: SSH double-quoted payload waiver (occurrence 2 shape) -----------
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            # Occurrence 2 shape: pod-side git op inside a double-quoted
+            # payload — the payload runs on the POD, not the local repo.
+            'ssh pod-1689 "cd /workspace/x && git reset --hard origin/issue-1689"',
+            id="NDS1-double_quoted_multi_statement",
+        ),
+        pytest.param(
+            # A different pod-side git verb inside the double-quoted payload.
+            'ssh pod-1689 "cd /workspace && git switch main"',
+            id="NDS2-double_quoted_pod_side_git",
+        ),
+        pytest.param(
+            # gcloud compute ssh head + double-quoted payload — parity with
+            # #1463's gcloud allowance, extended to double quotes.
+            'gcloud compute ssh pod-1 --command "cd /w && git rebase main"',
+            id="NDS3-double_quoted_gcloud_compute_ssh",
+        ),
+        pytest.param(
+            # Additional pod-side git-verb variant inside the double-quoted
+            # payload (pins that a second verb class also waives).
+            'ssh pod-1 "cd /w && git checkout main"',
+            id="NDS4-double_quoted_second_verb_class",
+        ),
+        pytest.param(
+            # NDS_R6a anti-vacuity twin: double-quoted arm keeps the R4/R6
+            # repo-path / cd-latch refusals intact. This CLOSE variant uses
+            # /workspace/other (non-repo path) so it MUST pass — proving the
+            # R4/R6 refusals fire only on the repo-path/cd-latch content,
+            # not on any cd + double-quoted shape.
+            'ssh pod-1689 "cd /workspace/other && git fetch origin"',
+            id="NDS_R6a-double_quoted_repo_path_with_cd_latch",
+        ),
+    ],
+)
+def test_ssh_double_quoted_payload_masking_allows(cmd):
+    """Arm 1 positive pins (#1710): double-quoted ssh payloads waive under R9."""
+    assert _run(cmd) == 0
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            # R9: dollar expansion in the payload — refuse. Payload uses a
+            # BLOCKED verb (git reset --hard) so the fall-through classifier
+            # blocks after refusal.
+            'ssh pod-1 "cd $HOME && git reset --hard"',
+            id="NDS_R1-double_quoted_payload_with_dollar_expansion",
+        ),
+        pytest.param(
+            # R9: command substitution — refuse. Payload carries a BLOCKED
+            # verb so fall-through classifier blocks.
+            'ssh pod-1 "cd /w && $(git reset --hard)"',
+            id="NDS_R2-double_quoted_payload_with_command_sub",
+        ),
+        pytest.param(
+            # R9: backtick — refuse. Payload carries a BLOCKED verb so
+            # fall-through classifier blocks.
+            'ssh pod-1 "cd /w && `git reset --hard`"',
+            id="NDS_R3-double_quoted_payload_with_backtick",
+        ),
+        pytest.param(
+            # R9: any backslash in the payload — refuse (Python \xNN /
+            # ANSI-C \x1b escapes resolve unpredictably).
+            'ssh pod-1 "cd /w \\&& git reset --hard"',
+            id="NDS_R4-double_quoted_payload_with_backslash",
+        ),
+        pytest.param(
+            # No closing double-quote — refuse (C-parity with the
+            # single-quoted branch's constraint-1).
+            'ssh pod-1 "cd /w && git reset --hard',
+            id="NDS_R5-double_quoted_payload_unbalanced_quote",
+        ),
+        pytest.param(
+            # R4 repo-path spelling inside the double-quoted payload — still
+            # refuses (the cd-to-repo latch is unchanged for double quotes).
+            'ssh vm "cd $HOME/explore-persona-space && git reset --hard"',
+            id="NDS_R6-double_quoted_payload_repo_path",
+        ),
+        pytest.param(
+            # R1 pipe-producer position stays classifying (parity with NM8).
+            'ssh host "cd /w && git reset --hard" | bash',
+            id="NDS_R7-double_quoted_payload_pipe_producer",
+        ),
+    ],
+)
+def test_ssh_double_quoted_masking_refusal_ladder_blocks(cmd):
+    """Arm 1 negative pins (#1710): every R9/R4/R1 refusal shape stays blocked."""
+    assert _run(cmd) == 2
+
+
+# ---- Arm 2: task.py double-quoted --note / --title / positional waiver ------
+# (occurrence 3 shape)
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            # Occurrence 3 shape: a double-quoted --note whose PROSE names a
+            # destructive git phrase (`git reset --hard`) but carries no
+            # actual mutation. The old --file workaround is no longer needed.
+            f"{_TASKPY} post-marker 1689 epm:progress "
+            f'--note "run-launched: git reset --hard to origin/issue-1689 R8 HEAD"',
+            id="NDP1-double_quoted_note_incident_3",
+        ),
+        pytest.param(
+            # Same shape via --title.
+            f'{_TASKPY} set-title 1689 "git reset --hard prose only"',
+            id="NDP2-double_quoted_title",
+        ),
+        pytest.param(
+            # Same via --origin-prompt.
+            f'{_TASKPY} new --kind infra --title "x" --origin-prompt "git merge issue-1"',
+            id="NDP3-double_quoted_origin_prompt",
+        ),
+        pytest.param(
+            # Positional double-quoted set-goal payload (parity with NP5).
+            f'{_TASKPY} set-goal 1689 "prose citing git rebase origin/main context"',
+            id="NDP4-double_quoted_positional_set_goal",
+        ),
+        pytest.param(
+            # Multiple double-quoted spans in ONE clause (parity with NP4).
+            f'{_TASKPY} post-marker 1689 epm:x --note "first prose" --title "second prose"',
+            id="NDP5-multi_double_quoted_spans_one_clause",
+        ),
+    ],
+)
+def test_taskpy_double_quoted_arg_masking_allows(cmd):
+    """Arm 2 positive pins (#1710): double-quoted task.py args waive under P7."""
+    assert _run(cmd) == 0
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            # P7: dollar expansion — refuse. Note contains a BLOCKED verb so
+            # fall-through classifies as blocked.
+            f'{_TASKPY} post-marker 1689 epm:x --note "$VAR git reset --hard"',
+            id="NDP_P7_R1-double_quoted_dollar_expansion",
+        ),
+        pytest.param(
+            # P7: command substitution — refuse.
+            f'{_TASKPY} post-marker 1689 epm:x --note "$(git reset --hard)"',
+            id="NDP_P7_R2-double_quoted_command_sub",
+        ),
+        pytest.param(
+            # P7: backtick — refuse.
+            f'{_TASKPY} post-marker 1689 epm:x --note "`git reset --hard`"',
+            id="NDP_P7_R3-double_quoted_backtick",
+        ),
+        pytest.param(
+            # P7: backslash — refuse (escapes in double-quoted strings resolve
+            # at bash-parse time).
+            f'{_TASKPY} post-marker 1689 epm:x --note "text with \\backslash and git reset --hard"',
+            id="NDP_P7_R4-double_quoted_backslash",
+        ),
+        pytest.param(
+            # No closing double-quote — refuse.
+            f'{_TASKPY} post-marker 1689 epm:x --note "unbalanced git reset --hard',
+            id="NDP_P7_R5-double_quoted_unbalanced",
+        ),
+    ],
+)
+def test_taskpy_double_quoted_masking_refusal_ladder_blocks(cmd):
+    """Arm 2 negative pins (#1710): every P7 refusal shape stays blocked."""
+    assert _run(cmd) == 2
+
+
+# ==== #1710 — python -c string literal mask ==================================
+#
+# (occurrence 4 shape) A `python -c '<inert prose>'` / `uv run python -c
+# "<inert prose>"` payload whose Python STRING LITERAL merely quotes a
+# destructive-git phrase as PROSE (a fingerprint helper hashing a bug
+# description) now masks under C1-C10. The refusal ladder is STRICTER than
+# ssh/taskpy: a `python -c` payload is executable code by construction, so
+# `import subprocess` / `os.system` / any function-call shape refuses.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            # Occurrence 4 shape: single-quoted inert string literal that
+            # quotes a destructive-git phrase as prose only.
+            "python -c 'phrase mentioning git reset --hard as prose only'",
+            id="NPC1-python_c_single_quoted_inert_string",
+        ),
+        pytest.param(
+            # Same, double-quoted.
+            'python -c "phrase mentioning git reset --hard as prose only"',
+            id="NPC2-python_c_double_quoted_inert_string",
+        ),
+        pytest.param(
+            # The incident 4 helper shape: `uv run python -c '<inert>'`.
+            "uv run python -c 'phrase mentioning git rebase origin/main as prose'",
+            id="NPC3-uv_run_python_c_inert",
+        ),
+        pytest.param(
+            # Versioned python head (parity with the taskpy mask's head).
+            "python3.11 -c 'phrase mentioning git checkout -b main as prose'",
+            id="NPC4-python3_11_c_inert",
+        ),
+        pytest.param(
+            # Anti-vacuity twin: the SAME inert phrase blocks via the
+            # taskpy-mask + fall-through paths WITHOUT a python -c head.
+            # This proves the C1 head regex is NOT the only refusal — a
+            # `bash -c` version still blocks because `bash -c` is a
+            # shell-consumer head whose quoted args are executable code, and
+            # the fall-through does not mask a shell-consumer.
+            'bash -c "phrase mentioning git reset --hard"',
+            id="NPC_anti_vacuity_bash_c_still_blocks",
+        ),
+    ],
+)
+def test_python_c_string_literal_masking_allows(cmd):
+    """Arm 3 positive pins (#1710): python -c inert-prose literals waive."""
+    # NPC_anti_vacuity_bash_c_still_blocks pins that bash -c does NOT get
+    # the same waiver — the C1 head regex rejects it and the fall-through
+    # scans the whole command; the raw `git reset --hard` in the quoted arg
+    # trips the pre-filter.
+    expected = 2 if "bash -c" in cmd else 0
+    assert _run(cmd) == expected
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            # C7: payload contains `subprocess` — refuse.
+            "python -c 'import subprocess; git reset --hard'",
+            id="NPC_C4_R1-python_c_with_subprocess_import",
+        ),
+        pytest.param(
+            # C7: `os.system` — refuse. Payload also names a BLOCKED verb
+            # so the fall-through classifier keeps it blocked.
+            "python -c 'x = os.system(\"git reset --hard\")'",
+            id="NPC_C4_R2-python_c_with_os_system",
+        ),
+        pytest.param(
+            # Any function-call shape refuses (conservative arm). Payload
+            # also names a BLOCKED verb so fall-through blocks.
+            "python -c 'foo(x); git reset --hard'",
+            id="NPC_C4_R3-python_c_with_any_function_call",
+        ),
+        pytest.param(
+            # C5: backtick — refuse. Payload also names a BLOCKED verb.
+            "python -c '`inline` and git reset --hard'",
+            id="NPC_C4_R4-python_c_with_backtick",
+        ),
+        pytest.param(
+            # C6: dollar — refuse. Payload also names a BLOCKED verb.
+            "python -c 'text with $VAR and git reset --hard'",
+            id="NPC_C4_R5-python_c_with_dollar",
+        ),
+        pytest.param(
+            # C4: backslash — refuse. Payload also names a BLOCKED verb.
+            "python -c 'text with \\x1b and git reset --hard'",
+            id="NPC_C4_R6-python_c_with_backslash",
+        ),
+        pytest.param(
+            # C3: no closing quote — refuse.
+            "python -c 'text with git reset --hard as prose",
+            id="NPC_C4_R7-python_c_unbalanced_quote",
+        ),
+    ],
+)
+def test_python_c_string_literal_masking_refusal_ladder_blocks(cmd):
+    """Arm 3 negative pins (#1710): every C3-C10 refusal shape stays blocked."""
+    # Note: R1 - R5 above are C-tail / C4 / C5 / C6 / C4 refusals respectively;
+    # the raw command's trigger-vocab (git reset / git rebase) then hits the
+    # pre-filter and the command classifies to block. On refusals that also
+    # carry `subprocess` / `os.system` etc., the pre-filter's git-verb trigger
+    # is what classifies; the C7-C10 refusals block the MASKING but the raw
+    # command still tokenizes through the classifier normally.
+    assert _run(cmd) == 2
+
+
+# ---- Cross-arm compound composition — must not regress ----------------------
+
+
+def test_NCX2_real_mutation_after_python_c_mask_still_blocks():
+    """(#1710) NCX2: a waived python -c call followed by a bare real
+    mutation — the LATER mutation still blocks (clause-by-clause classify).
+    """
+    cmd = "python -c 'inert prose about git rebase main' && git switch issue-42"
+    assert _run(cmd) == 2
+
+
+def test_NCX3_real_mutation_before_taskpy_double_still_blocks():
+    """(#1710) NCX3: a bare real mutation followed by a double-quoted
+    task.py note — the EARLIER mutation still blocks.
+    """
+    cmd = f'git switch issue-42 && {_TASKPY} post-marker 1 epm:x --note "prose"'
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# #1861 — exit-guarded worktree cd => STICKY scope; name-generalized $VAR
+# latch; arming-separator restriction + cd-clause scope invalidation.
+#
+# MUST ALLOW: an exit-guarded worktree cd (`|| exit N`, or the brace-group
+# `|| { ...; exit N; }` form) PROVES every clause past the guard tail runs
+# with cwd inside the worktree — either the cd succeeded, or the shell exited
+# first — so later NL/;-separated gated ops are scoped. The `WT=` assignment
+# latch arms for ANY variable name (e.g. the SKILL.md Step 4a conventional
+# WORKTREE) under the same #1058 proof obligations.
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || exit 1\ngit checkout -- figures/x",
+            id="S1-exitguard_bare_literal_nl",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/issue-9; cd "$WT" || exit 1; git restore .',
+            id="S2-exitguard_bare_wt_seq",
+        ),
+        pytest.param(
+            'WORKTREE=.claude/worktrees/issue-9\ncd "$WORKTREE" || exit 1\n'
+            "git checkout main -- specs.md",
+            id="S3-exitguard_bare_generalized_name",
+        ),
+        pytest.param(
+            'cd .claude/worktrees/issue-9 || { echo "FATAL: cd failed" >&2; exit 1; }\n'
+            "git reset --hard origin/main",
+            id="S4-exitguard_group_literal",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/issue-9; cd "$WT" || { echo "FATAL: cd failed" >&2; exit 1; }\n'
+            "git checkout -- figures/x",
+            id="S5-exitguard_group_wt",
+        ),
+        pytest.param(
+            'WORKTREE=.claude/worktrees/issue-9; cd "$WORKTREE" && git checkout -- figures/x',
+            id="G1-worktree_var_name_and_chain",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || exit 1\nuv run pytest -q\ngit checkout -- x",
+            id="S6-sticky_survives_benign_clause",
+        ),
+        pytest.param(
+            "true && cd .claude/worktrees/issue-9 || exit 1\ngit restore .",
+            id="S7-and_preceded_cd_with_exitguard",
+        ),
+    ],
+)
+def test_1861_exitguard_sticky_and_generalized_name_allows(cmd):
+    """Exit-guarded worktree cds scope later clauses; any var name arms (#1861)."""
+    assert _run(cmd) == 0
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — #1861 fail-closed set. The sticky proof requires (a) the cd
+# clause provably executed in the parent shell (an OR- or PIPE-preceded cd
+# never arms), (b) a provably-exiting OR-tail (bare `exit [N]`, or a brace
+# group whose final pre-`}` clause is an unconditionally-reached exit — no
+# `return`, no non-exiting tail, no AND-guarded exit, no nested `{`), and
+# (c) a terminator not defused by a following PIPE/BG separator. The tail's
+# own clauses stay UNSCOPED (they run on the cd-failure path at the root),
+# and ANY later cwd-changing clause — including paren-prefixed subshell
+# spellings — voids both the plain latch and the sticky scope. The
+# name-generalized latch still requires the exact assigned name (no prefix
+# collision) and a non-command-substitution worktree-literal RHS.
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "cd .claude/worktrees/issue-9\ngit restore .",
+            id="X1-unguarded_nl_literal",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/issue-9\ncd "$WT"\ngit restore .',
+            id="X2-unguarded_nl_wt",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || echo oops\ngit restore .",
+            id="X3-nonexiting_tail_echo",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || { echo FATAL >&2; }\ngit restore .",
+            id="X4-group_without_exit",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || { test -f x && exit 1; }\ngit restore .",
+            id="X5-and_guarded_exit_in_group",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || { git reset --hard; exit 1; }",
+            id="X6-gated_op_inside_guard_group",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || return 1\ngit restore .",
+            id="X7-return_tail",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || exit 1 | tee /tmp/log\ngit restore .",
+            id="X8-exit_terminator_into_pipe",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || exit 1 & git restore .",
+            id="X9-exit_terminator_into_bg",
+        ),
+        pytest.param(
+            'cd .claude/worktrees/issue-9 || { echo "FATAL" >&2; exit 1; } | tee /tmp/log\n'
+            "git restore .",
+            id="X10-group_close_into_pipe",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || exit 1\n(cd /tmp/z && git reset --hard)",
+            id="X11-paren_subshell_cd_after_sticky",
+        ),
+        pytest.param(
+            "false || cd .claude/worktrees/issue-9 && git restore .",
+            id="X12-or_preceded_cd_never_arms",
+        ),
+        pytest.param(
+            "echo x | cd .claude/worktrees/issue-9 && git restore .",
+            id="X13-pipe_preceded_cd_never_arms",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || exit 1\ncd /home/user/elsewhere\ngit restore .",
+            id="X14-post_sticky_nonworktree_cd",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/issue-9; WT=$(mktemp -d); cd "$WT" && git restore .',
+            id="X15-reassign_command_substitution",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/issue-9\ncd "$WT2" && git checkout main -- specs.md',
+            id="X16-name_mismatch_prefix_collision",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || { { exit 1; }; }\ngit restore .",
+            id="X17-nested_brace_refusal",
+        ),
+    ],
+)
+def test_1861_sticky_fail_closed_blocks(cmd):
+    """Unproven guard tails / arming separators / voided scopes never allow (#1861)."""
+    assert _run(cmd) == 2
+
+
+def test_1861_sticky_arm_b_local_main_merge_still_blocked(monkeypatch):
+    """#1554 Arm B applies unchanged under sticky scope (#1861 acceptance 5).
+
+    A sticky worktree-scoped `git merge main` declines with the Arm B label —
+    the exit-guard grant must not widen the bare-local-main merge fence.
+    """
+    monkeypatch.delenv(_WT_LM_HATCH, raising=False)
+    proc = _run_full("cd .claude/worktrees/issue-9 || exit 1\ngit merge main")
+    assert proc.returncode == 2, proc.stderr
+    assert _WT_LM_ARM_B_LABEL in proc.stderr
+    assert _WT_LM_HATCH in proc.stderr
 
 
 def test_zz_production_sidecar_untouched_by_suite():

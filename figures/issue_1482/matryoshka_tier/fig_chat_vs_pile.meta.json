@@ -1,0 +1,109 @@
+{
+  "commit": "f4f3553df0",
+  "created": "2026-07-30T08:35:57Z",
+  "figsize": [
+    9.2,
+    3.6
+  ],
+  "points": [
+    {
+      "x": -0.175,
+      "median per-feature R\u00b2": 0.4345762931443276,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.825,
+      "median per-feature R\u00b2": 0.17386872874476017,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.825,
+      "median per-feature R\u00b2": 0.0429846164108893,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.175,
+      "median per-feature R\u00b2": 0.39007490792600175,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.175,
+      "median per-feature R\u00b2": 0.190501421508733,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.175,
+      "median per-feature R\u00b2": 0.07749962901935425,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "lmsys dictionary",
+      "round-trip FVE on chat tokens": 0.7971,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "pile dictionary",
+      "round-trip FVE on chat tokens": 0.7087,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "median per-feature R\u00b2",
+        "legend_labels": [
+          "lmsys dictionary",
+          "pile dictionary"
+        ],
+        "xticklabels": [
+          "tier 0 (general, ids <2k)",
+          "tier 1 (mid, 2k-16k)",
+          "tier 2 (specific)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      },
+      {
+        "ylabel": "round-trip FVE on chat tokens",
+        "xticklabels": [
+          "lmsys dictionary",
+          "pile dictionary"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      }
+    ],
+    "series": [
+      "lmsys dictionary",
+      "pile dictionary"
+    ]
+  }
+}

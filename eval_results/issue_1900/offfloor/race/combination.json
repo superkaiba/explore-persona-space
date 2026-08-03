@@ -1,0 +1,83 @@
+{
+ "meta": {
+  "ts": "2026-07-31T21:21:48Z",
+  "git_commit": "cd3112d001222e90fc7c6539a9663b55c88f2552",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "issue": 1900,
+  "seed": 1900,
+  "corpus_pin": "c07267285d2cdbf3e0401ddc3e3accae50e496a7"
+ },
+ "features": [
+  "p1",
+  "p2",
+  "p3a",
+  "p3b",
+  "p4",
+  "p5",
+  "p6",
+  "p7",
+  "p8a",
+  "p8b",
+  "p9"
+ ],
+ "headline_fold": "leave-one-ARM-out (group-level n = n_arms)",
+ "loao_spearman_per_held_arm": {
+  "cas-pers-con-lr1e5-s42": 0.6871192627680692,
+  "cas-pers-po-lr1e5-s42": 0.6972545133569757,
+  "cas-bare-con-lr1e5-s42": 0.6197633498928299,
+  "cas-pers-ft-con-s42": 0.6396200084504425,
+  "imp-pers-con-lr3e5-s42": 0.336364601227195,
+  "imp-pers-con-lr3e5-s137": 0.34318002037683726,
+  "imp-pers-po-lr1e5-s42": 0.4154031249042478,
+  "imp-pers-ft-con-s42": 0.3831274852950586,
+  "syc-bare-con-lr1e5-s42": 0.5559858913447394,
+  "syc-conv-con-lr1e5-s42": 0.6324553159043756,
+  "syc-pers-po-lr1e5-s42": 0.635111167759854,
+  "syc-pers-ft-con-s42": 0.5861860286802467
+ },
+ "lobo_spearman_per_held_arm": {
+  "cas-pers-con-lr1e5-s42": 0.6525248489110977,
+  "cas-pers-po-lr1e5-s42": 0.6701107111431301,
+  "cas-bare-con-lr1e5-s42": 0.586854247686824,
+  "cas-pers-ft-con-s42": 0.6095976879278657,
+  "imp-pers-con-lr3e5-s42": 0.33062732534891814,
+  "imp-pers-con-lr3e5-s137": 0.3369443287515178,
+  "imp-pers-po-lr1e5-s42": 0.41080242903430114,
+  "imp-pers-ft-con-s42": 0.3772601865880983,
+  "syc-bare-con-lr1e5-s42": 0.4402924586174242,
+  "syc-conv-con-lr1e5-s42": 0.5776509431010871,
+  "syc-pers-po-lr1e5-s42": 0.524058543532724,
+  "syc-pers-ft-con-s42": 0.4900554052202086
+ },
+ "corpus_transfer": {
+  "lmsys->wildchat": {
+   "cas-pers-con-lr1e5-s42": 0.6971509867606134,
+   "cas-pers-po-lr1e5-s42": 0.709161691965889,
+   "cas-bare-con-lr1e5-s42": 0.6403668385439628,
+   "cas-pers-ft-con-s42": 0.6530579843607266,
+   "imp-pers-con-lr3e5-s42": 0.24284651380318448,
+   "imp-pers-con-lr3e5-s137": 0.2219896583547398,
+   "imp-pers-po-lr1e5-s42": 0.3382771334715858,
+   "imp-pers-ft-con-s42": 0.3220527604589261,
+   "syc-bare-con-lr1e5-s42": 0.59819494471245,
+   "syc-conv-con-lr1e5-s42": 0.6849263005458817,
+   "syc-pers-po-lr1e5-s42": 0.6651329240378673,
+   "syc-pers-ft-con-s42": 0.6178778186897874
+  },
+  "wildchat->lmsys": {
+   "cas-pers-con-lr1e5-s42": 0.6750087705948074,
+   "cas-pers-po-lr1e5-s42": 0.6832817443542957,
+   "cas-bare-con-lr1e5-s42": 0.610082056632969,
+   "cas-pers-ft-con-s42": 0.6230746433126647,
+   "imp-pers-con-lr3e5-s42": 0.3807181507206584,
+   "imp-pers-con-lr3e5-s137": 0.392613524360101,
+   "imp-pers-po-lr1e5-s42": 0.46072779861751517,
+   "imp-pers-ft-con-s42": 0.4051807286549955,
+   "syc-bare-con-lr1e5-s42": 0.4951048762122465,
+   "syc-conv-con-lr1e5-s42": 0.587771481600433,
+   "syc-pers-po-lr1e5-s42": 0.5780498779106727,
+   "syc-pers-ft-con-s42": 0.5248032677792157
+  }
+ }
+}

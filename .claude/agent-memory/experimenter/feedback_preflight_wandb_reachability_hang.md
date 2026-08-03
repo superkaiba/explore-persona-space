@@ -65,3 +65,9 @@ Closed regressions: task #778 r1 launch (2026-07-01, autonomous
 strategy pivot from GCP `sweep-8g-h100` stockout to RunPod 8× H100 on
 `pod-778`) — resolved inline before posting `epm:failure`, kept the
 workload launch on the critical path.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Preflight wandb-reachability probe HANGS on fresh RunPod pod (no output before SSH-MCP cap)](feedback_preflight_wandb_reachability_hang.md) — orchestrate.preflight --json can produce ZERO output for 100s+ on a first-touch RunPod pod; the block is the WandB reachability probe, not a real failure. Distinct from the fetch-timeout false-negative — that one FAILs; this one HANGs. Kill the tree + verify substantive checks manually (git HEAD, nvidia-smi freeness, HF whoami, bare `curl -w %{http_code}` to api.wandb.ai, `. ./.env`); all pass → launch-clear (#778 r1)

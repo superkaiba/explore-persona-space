@@ -46,15 +46,19 @@ from workflow_lint import (  # noqa: E402
     SKILL_REF_FS_ROOTS,
     UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST,
     UPLOAD_PREFIX_CLOBBER_ALLOWLIST,
+    _head_is_main,
     _iter_ask_target_files,
     _live_skill_names,
     _other_worktree_prefix,
     _run_root_guard,
+    _tracked_on_main_ref,
     _values_equal,
     check_agent_model_pins,
+    check_agents_note_argv_verdict,
     check_asks,
     check_autonomous_asks,
     check_awk_elision_parity,
+    check_bare_commit_pathspec,
     check_batch_judge_client,
     check_compute_shape_review_lens,
     check_crash_fix_relaunch_contract,
@@ -549,6 +553,191 @@ def test_check_script_refs_repo_tree_is_clean():
         "committed .claude/ agents/skills reference scripts that do not "
         "exist under scripts/:\n" + "\n".join(errors)
     )
+
+
+# ---------------------------------------------------------------------------
+# Staleness-aware degrade for check_script_references / check_skill_references
+# (#1622/#1672): inside a stale non-``main`` worktree, a reference whose
+# target is missing locally but tracked at main/origin/main WARNs instead of
+# FAILing (the Step 5a sync deliberately never syncs scripts/ helpers).
+# Test notes: the two production-mode tests
+# ``test_check_script_refs_repo_tree_is_clean`` (above) and
+# ``test_check_skill_refs_repo_tree_is_clean`` (below) call the checks with
+# NO fixture args, so post-#1672 they become degrade-ACTIVE when Step 9c runs
+# them inside a worktree (a target missing locally but present on main WARNs
+# instead of FAILing) and stay fully strict on the main checkout — intended
+# behavior (#1672 plan §7 risk 1): merge-time strictness lives in the
+# Step 10d landing-tree gate (non-git tree ⇒ strict) plus the main-checkout
+# run of these same tests.
+# ---------------------------------------------------------------------------
+
+
+def test_check_script_refs_stale_tree_present_on_main_warns(tmp_path):
+    """A dangling ref whose target IS on main degrades to one WARN, no error
+    (#1622/#1672 stale-worktree tolerance); the WARN names the script, the
+    main ref, and the incident."""
+    scripts_dir = tmp_path / "scripts"
+    scripts_dir.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "SKILL.md").write_text("Run `uv run python scripts/plan_patch.py <draft>`.\n")
+    sink: list[str] = []
+    errors = check_script_references(
+        roots=[docs], scripts_dir=scripts_dir, main_probe=lambda n: True, warn_sink=sink
+    )
+    assert errors == [], f"expected WARN degrade, got errors: {errors}"
+    assert len(sink) == 1, f"expected exactly one WARN, got: {sink}"
+    assert "scripts/plan_patch.py" in sink[0]
+    assert "main" in sink[0]
+    assert "#1622" in sink[0]
+
+
+def test_check_script_refs_stale_tree_absent_on_main_fails(tmp_path):
+    """A dangling ref whose target is ALSO absent on main still FAILs with
+    the unchanged strict message — the degrade is not a bypass."""
+    scripts_dir = tmp_path / "scripts"
+    scripts_dir.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "SKILL.md").write_text("Run `scripts/zz_invented_helper.py --go`.\n")
+    sink: list[str] = []
+    errors = check_script_references(
+        roots=[docs], scripts_dir=scripts_dir, main_probe=lambda n: False, warn_sink=sink
+    )
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "scripts/zz_invented_helper.py" in errors[0]
+    assert "does not exist" in errors[0]
+    assert sink == [], f"expected no WARN, got: {sink}"
+
+
+def test_check_script_refs_fixture_mode_never_probes_ambiently(tmp_path):
+    """Fixture-scoped calls (scripts_dir set, no probe injected) stay strict
+    even when the referenced script exists on main and pytest runs inside a
+    non-main worktree: the ambient degrade is gated on production scope
+    (``scripts_dir is None``), keeping existing unit tests hermetic."""
+    scripts_dir = tmp_path / "scripts"
+    scripts_dir.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    # scripts/task.py exists on main — if the ambient probe fired in fixture
+    # mode this would WARN instead of erroring.
+    (docs / "SKILL.md").write_text("Run `uv run python scripts/task.py view 1`.\n")
+    errors = check_script_references(roots=[docs], scripts_dir=scripts_dir)
+    assert len(errors) == 1, f"expected one strict error (fixture mode), got: {errors}"
+    assert "scripts/task.py" in errors[0]
+
+
+def test_head_is_main_fail_safe_nongit(tmp_path):
+    """A non-git tree (the Step 10d /tmp landing-tree gate copy) reads as
+    'main' — i.e. the STRICT regime — by fail-safe."""
+    assert _head_is_main(tmp_path) is True
+
+
+def test_head_is_main_git_fixture(tmp_path):
+    """On a real git fixture: True on branch main, False on a feature branch."""
+
+    def git(*args: str) -> None:
+        subprocess.run(
+            ["git", "-C", str(tmp_path), "-c", "user.email=t@e.st", "-c", "user.name=t", *args],
+            check=True,
+            capture_output=True,
+        )
+
+    git("init", "-b", "main")
+    git("commit", "--allow-empty", "-m", "root")
+    assert _head_is_main(tmp_path) is True
+    git("checkout", "-b", "feature")
+    assert _head_is_main(tmp_path) is False
+
+
+def test_tracked_on_main_ref_git_fixture(tmp_path):
+    """A committed path on a fixture repo's main resolves True; a missing
+    path resolves False. Fresh tmp repo per test so the lru_cache key
+    (relpath, repo_root) never collides across tests."""
+    root = tmp_path / "repo"
+    root.mkdir()
+
+    def git(*args: str) -> None:
+        subprocess.run(
+            ["git", "-C", str(root), "-c", "user.email=t@e.st", "-c", "user.name=t", *args],
+            check=True,
+            capture_output=True,
+        )
+
+    git("init", "-b", "main")
+    (root / "scripts").mkdir()
+    (root / "scripts" / "x.py").write_text("# helper\n")
+    git("add", "scripts/x.py")
+    git("commit", "-m", "add x")
+    assert _tracked_on_main_ref("scripts/x.py", str(root)) is True
+    assert _tracked_on_main_ref("scripts/y.py", str(root)) is False
+
+
+def test_check_skill_refs_stale_tree_present_on_main_warns(tmp_path):
+    """A /skill token unresolved locally but present on main degrades to one
+    WARN, no error — the skill-refs sibling of the script-refs degrade."""
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text("Run `/ghost-skill` here.\n")
+    sink: list[str] = []
+    errors = check_skill_references(
+        roots=[docs],
+        skills_dir=skills,
+        allowlist=frozenset(),
+        main_probe=lambda r: True,
+        warn_sink=sink,
+    )
+    assert errors == [], f"expected WARN degrade, got errors: {errors}"
+    assert len(sink) == 1, f"expected exactly one WARN, got: {sink}"
+    assert "/ghost-skill" in sink[0]
+    assert "main" in sink[0]
+    assert "#1622" in sink[0]
+
+
+def test_check_skill_refs_stale_tree_absent_on_main_fails(tmp_path):
+    """A /skill token absent locally AND on main still FAILs with the
+    unchanged strict message."""
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text("Run `/ghost-skill` here.\n")
+    sink: list[str] = []
+    errors = check_skill_references(
+        roots=[docs],
+        skills_dir=skills,
+        allowlist=frozenset(),
+        main_probe=lambda r: False,
+        warn_sink=sink,
+    )
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "/ghost-skill" in errors[0]
+    assert "SKILL_REF_ALLOWLIST" in errors[0]
+    assert sink == [], f"expected no WARN, got: {sink}"
+
+
+def test_check_script_refs_ambient_wiring_degrade_active(tmp_path, monkeypatch, capsys):
+    """Pins the AMBIENT production wiring line (``main_probe is None and
+    scripts_dir is None and not _head_is_main(...)``): with a non-main HEAD
+    and a main-tracked target (both monkeypatched), a dangling ref in an
+    ambient call (scripts_dir=None) WARNs to stderr and returns no error —
+    so a later refactor cannot silently retire the degrade while every
+    injected-probe test stays green."""
+    import workflow_lint as wl
+
+    monkeypatch.setattr(wl, "_head_is_main", lambda _root: False)
+    monkeypatch.setattr(wl, "_tracked_on_main_ref", lambda _rel, _root: True)
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    # The fixture name must not exist under the real scripts/ dir.
+    (docs / "SKILL.md").write_text("Run `scripts/zz_nonexistent_1672.py` now.\n")
+    errors = check_script_references(roots=[docs])
+    assert errors == [], f"expected ambient WARN degrade, got errors: {errors}"
+    err = capsys.readouterr().err
+    assert "WARN:" in err
+    assert "scripts/zz_nonexistent_1672.py" in err
 
 
 # ---------------------------------------------------------------------------
@@ -2360,10 +2549,13 @@ def test_pipe_python_hook_subprocess_blocks_attached_arg():
 
 # ---------------------------------------------------------------------------
 # Unit tests for ``check_piped_git_push`` (incident class #957 / #1048: a
-# `git push` / `git merge` / `gh pr merge|create` piped into a filter masks
+# `git push` / `git merge` / `git commit` / `gh pr merge|create` piped into
+# a filter masks
 # the producer's non-zero exit code — bash makes the pipeline's status the
 # LAST stage's — so a rejected push reads as success; 4 sessions hit the
-# class on 2026-07-02 and #957's Step 10d push was masked 2026-07-04). Each
+# class on 2026-07-02 and #957's Step 10d push was masked 2026-07-04; the
+# commit verb was added by #1591 after #1584's piped commit was
+# SIGPIPE-killed mid-pre-commit-hook). Each
 # fixture case writes a tiny ``*.sh`` under ``tmp_path`` and calls
 # ``check_piped_git_push(scripts_dir=tmp_path)``. The hook/lint agreement
 # test drives the SHARED semantic subset through BOTH the
@@ -2385,7 +2577,7 @@ def test_check_piped_git_push_fail_simple_pipe(tmp_path):
 
 def test_check_piped_git_push_fail_gh_pr_merge(tmp_path):
     """FAIL — `gh pr merge ... | head` masks a failed merge the same way
-    (the prose rule's 'merge/PR command' clause)."""
+    (the prose rule's 'merge/PR/`git commit` command' clause)."""
     (tmp_path / "x.sh").write_text("gh pr merge 123 --squash | head\n")
     errors = check_piped_git_push(scripts_dir=tmp_path)
     assert len(errors) == 1, f"expected exactly one error, got: {errors}"
@@ -2490,11 +2682,35 @@ def test_check_piped_git_push_pass_no_files(tmp_path):
     assert check_piped_git_push(scripts_dir=tmp_path) == []
 
 
+def test_check_piped_git_push_fail_piped_commit(tmp_path):
+    """FAIL — a piped `git commit` (#1591): the masked-exit harm plus the
+    #1584 SIGPIPE-mid-pre-commit-hook kill."""
+    (tmp_path / "x.sh").write_text('#!/usr/bin/env bash\ngit commit -m "wip" 2>&1 | head -20\n')
+    errors = check_piped_git_push(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert "commit" in errors[0]
+
+
+def test_check_piped_git_push_pass_commit_dry_run(tmp_path):
+    """PASS — the verb-independent `--dry-run` span skip covers the commit
+    form (a dry-run commit lands nothing and runs no pre-commit hook)."""
+    (tmp_path / "x.sh").write_text("#!/usr/bin/env bash\ngit commit --dry-run 2>&1 | head -5\n")
+    assert check_piped_git_push(scripts_dir=tmp_path) == []
+
+
+def test_check_piped_git_push_pass_commit_as_consumer(tmp_path):
+    """PASS — a message piped INTO commit (`cat msg | git commit -F -`) is
+    producer-as-consumer/final stage: nothing is masked."""
+    (tmp_path / "x.sh").write_text("#!/usr/bin/env bash\ncat msg.txt | git commit -F -\n")
+    assert check_piped_git_push(scripts_dir=tmp_path) == []
+
+
 def test_check_piped_git_push_repo_tree_is_clean():
-    """The committed scripts/*.sh tree must carry no piped push/merge-class
-    commands — the regression lock (the plan #1048 §2 item-8 scan found the
-    tree clean: the sole `git push`+`|` hit, issue931_dispatch.sh:253, is an
-    `||` disjunction)."""
+    """The committed scripts/*.sh tree must carry no piped push/merge/
+    commit-class commands — the regression lock (the plan #1048 §2 item-8
+    scan found the tree clean: the sole `git push`+`|` hit,
+    issue931_dispatch.sh:253, is an `||` disjunction; the #1591 widened-verb
+    re-scan measured 0 commit-class hits too)."""
     errors = check_piped_git_push()
     assert errors == [], (
         "scripts/*.sh has piped git push/merge-class commands "
@@ -2548,11 +2764,16 @@ _PIPED_PUSH_SHARED = [
     ("gh pr merge 123 --squash | head", True),  # B3 gh producer
     ("git merge issue-x 2>&1 | tail -5", True),  # B7 git merge
     ("git push |& tail -5", True),  # B9 |& shorthand
+    ('git commit -m "wip" 2>&1 | head -20', True),  # B12 piped commit (#1584/#1591)
+    ('git commit -m "wip" |& head -3', True),  # B17 |& shorthand, commit form
     ('git push origin main || echo "push failed"', False),  # A7 || chain
     ("git merge-base --all main HEAD | head -1", False),  # A9 merge-base
     ("echo foo | git push", False),  # A14 producer as consumer
     ("git status | grep x && git push", False),  # A5 different segment
     ("git push --dry-run 2>&1 | head -5", False),  # A8 dry-run carve-out
+    ("cat msg.txt | git commit -F -", False),  # A21 commit as consumer/final stage
+    ("git commit --dry-run 2>&1 | head -5", False),  # A20 dry-run carve-out, commit form
+    ("git commit-tree HEAD^{tree} -m x | head -1", False),  # A22 verb-prefix word
 ]
 
 
@@ -6857,6 +7078,9 @@ _CRASH_FIX_CONFORMING: dict[str, str] = {
         "   brief's stale-checkpoint disposition before launch, confirming\n"
         "   the resume glob resolves as the disposition requires (empty /\n"
         "   the fresh path / exactly the RETAINED expected paths).\n"
+        "   On a MooseFS-backed pod (`/workspace` lane), ALSO run the MooseFS\n"
+        "   content read of every fix-touched path — `git hash-object -- <f>`\n"
+        "   vs `git rev-parse HEAD:<f>` (#1112).\n"
         "3. **Run preflight.**\n"
         "\n"
         "Decoy AFTER the span: the glob resolves EMPTY unconditionally.\n"
@@ -6891,11 +7115,13 @@ _CRASH_FIX_CONFORMING: dict[str, str] = {
     ),
 }
 
-# The three load-bearing pins (#1181 plan § deviations): the disposition trio,
-# the disposition-conditional confirm, and the fix_sha= note-token duty.
+# The four load-bearing pins (#1181 plan § deviations; MooseFS added by #1594):
+# the disposition trio, the disposition-conditional confirm, the fix_sha=
+# note-token duty, and the MooseFS content-read duty (#1112).
 _CRASH_FIX_TRIO_TOKEN = "empty / the fresh path / exactly the RETAINED expected paths"
 _CRASH_FIX_CONFIRM_TOKEN = "confirming the resume glob resolves as the disposition requires"
 _CRASH_FIX_SHA_TOKEN = "records `fix_sha=<sha>` and the executed disposition"
+_CRASH_FIX_MOOSEFS_TOKEN = "MooseFS content read"
 
 
 def _write_crash_fix_tree(tmp_path, bodies: dict[str, str] | None = None) -> None:
@@ -6993,12 +7219,19 @@ def test_crash_fix_relaunch_contract_fails_on_duplicate_anchor(tmp_path) -> None
             _CRASH_FIX_SHA_TOKEN,
             id="fix-sha-note-token",
         ),
+        pytest.param(
+            ".claude/agents/experimenter.md",
+            "ALSO run the MooseFS\n   content read of every fix-touched path",
+            "ALSO run a served-bytes\n   check of every fix-touched path",
+            _CRASH_FIX_MOOSEFS_TOKEN,
+            id="moosefs-content-read",
+        ),
     ],
 )
 def test_crash_fix_relaunch_contract_fails_on_missing_load_bearing_token(
     tmp_path, surface, old, new, token
 ) -> None:
-    """Deleting any of the THREE load-bearing pins from its fixture FAILs with
+    """Deleting any of the FOUR load-bearing pins from its fixture FAILs with
     a missing-token error naming that token — mutation-visibility for the
     surfaces table: an edit that drops one of these tokens from
     ``_CRASH_FIX_CONTRACT_SURFACES`` makes the corresponding case pass on the
@@ -7830,6 +8063,262 @@ def test_check_git_recipes_root_guard_fixture_build_failure_fails_loud(tmp_path,
     assert len(errors) == 1 and "fixture build failed" in errors[0], errors
 
 
+def _write_rg_selftest_aware_hook(hook: Path, fence_branch: str) -> None:
+    """Write a fake hook that passes BOTH self-test probes (blocked-probe
+    token -> exit 2, benign-probe token -> exit 0; the stdin-distinguishable
+    tokens of ``_ROOT_GUARD_SELFTEST_BLOCKED`` / ``_ROOT_GUARD_SELFTEST_BENIGN``)
+    and runs ``fence_branch`` (one-line bash) for every other stdin — i.e.
+    for fence probes. Hooks run as ``["bash", path]``; no exec bit needed."""
+    hook.write_text(
+        "#!/usr/bin/env bash\n"
+        "input=$(cat)\n"
+        'case "$input" in\n'
+        "  *__workflow_lint_root_guard_selftest__*) exit 2;;\n"
+        '  *"root-guard selftest"*) exit 0;;\n'
+        f"  *) {fence_branch};;\n"
+        "esac\n",
+        encoding="utf-8",
+    )
+
+
+def test_check_git_recipes_root_guard_unexpected_rc_warns_not_fails(tmp_path):
+    """A hook returning a persistent unexpected rc (3) on fence probes —
+    while passing both self-test probes — yields NO FAIL and ONE WARN
+    naming the fence + rc, after exactly one retry (the fence branch runs
+    exactly twice; #1610: a transient rc must not flip a clean gate)."""
+    _write_rg_skill(tmp_path, "x", "```bash\ngit status\n```\n")
+    counter = tmp_path / "fence_invocations.txt"
+    hook = tmp_path / "hook.sh"
+    _write_rg_selftest_aware_hook(hook, f'echo x >> "{counter}"; exit 3')
+    warns: list[str] = []
+    errors = check_git_recipes_root_guard(repo_root=tmp_path, hook_path=hook, warn_sink=warns)
+    assert errors == [], errors
+    assert len(warns) == 1, warns
+    assert "rc=3" in warns[0] and "SKILL.md:1" in warns[0], warns
+    # retried exactly once: the fence branch was invoked EXACTLY 2 times
+    assert len(counter.read_text(encoding="utf-8").splitlines()) == 2
+
+
+def test_check_git_recipes_root_guard_unexpected_rc_stderr_fallback(tmp_path, capsys):
+    """The production path (no ``warn_sink``) routes the persistent
+    unexpected-rc WARN to stderr with the ``WARN: `` prefix — never into
+    the returned FAIL list."""
+    _write_rg_skill(tmp_path, "x", "```bash\ngit status\n```\n")
+    hook = tmp_path / "hook.sh"
+    _write_rg_selftest_aware_hook(hook, "exit 3")
+    errors = check_git_recipes_root_guard(repo_root=tmp_path, hook_path=hook)
+    assert errors == [], errors
+    err = capsys.readouterr().err
+    assert "WARN: " in err and "rc=3" in err, err
+
+
+def test_check_git_recipes_root_guard_transient_rc_retry_recovers(tmp_path):
+    """A hook flaky on the FIRST fence invocation (rc 3) and clean (rc 0)
+    on the retry: the verdict follows the retry — no FAIL, no WARN.
+    Single fence per fixture => no cross-thread marker race."""
+    _write_rg_skill(tmp_path, "x", "```bash\ngit status\n```\n")
+    marker = tmp_path / "first_fence_probe_done"
+    hook = tmp_path / "hook.sh"
+    _write_rg_selftest_aware_hook(
+        hook, f'if [ ! -e "{marker}" ]; then touch "{marker}"; exit 3; fi; exit 0'
+    )
+    warns: list[str] = []
+    errors = check_git_recipes_root_guard(repo_root=tmp_path, hook_path=hook, warn_sink=warns)
+    assert errors == [], errors
+    assert warns == [], warns
+
+
+def test_check_git_recipes_root_guard_transient_rc_retry_blocked(tmp_path):
+    """Same flaky shape but the retry returns rc 2: the retry verdict is a
+    normal BLOCKED FAIL (the retry never launders a real block), no WARN."""
+    _write_rg_skill(tmp_path, "x", "```bash\ngit status\n```\n")
+    marker = tmp_path / "first_fence_probe_done"
+    hook = tmp_path / "hook.sh"
+    _write_rg_selftest_aware_hook(
+        hook, f'if [ ! -e "{marker}" ]; then touch "{marker}"; exit 3; fi; exit 2'
+    )
+    warns: list[str] = []
+    errors = check_git_recipes_root_guard(repo_root=tmp_path, hook_path=hook, warn_sink=warns)
+    assert len(errors) == 1, errors
+    assert "BLOCKED" in errors[0], errors
+    assert warns == [], warns
+
+
+# ---------------------------------------------------------------------------
+# --check-bare-commit-pathspec (#1648): a fenced `git commit` recipe with no
+# ` -- <pathspec>` tail sweeps the whole staged index at the always-concurrent
+# shared repo root (incident 7dbde267f1; #1630 fixed /daily per-file). All
+# git-commit literals below are Python STRING DATA (fixtures written via
+# tmp_path) — the check scans only workflow-surface .md files, so neither
+# this test file nor workflow_lint.py can self-flag.
+# ---------------------------------------------------------------------------
+
+
+def test_check_bare_commit_pathspec_flags_bare_commit(tmp_path):
+    """A bash fence with a pathspec-less `git commit -m` is exactly one error
+    naming file:line (fence opener + offset) + the remediation paths."""
+    _write_rg_skill(tmp_path, "x", '```bash\ngit add logs/x.md\ngit commit -m "x"\n```\n')
+    errors = check_bare_commit_pathspec(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "SKILL.md:3:" in errors[0], errors
+    assert "-- <pathspec>" in errors[0], errors
+    # remediation names both paths: append a pathspec, or the waiver sentinel
+    assert "allow-bare-commit-block" in errors[0], errors
+
+
+def test_check_bare_commit_pathspec_allows_exempt_forms(tmp_path):
+    """Every structural exemption in one fence passes; the sharp-edge
+    NEGATIVES (per-invocation -C, flag-less xargs, xargs after the commit)
+    each still flag exactly once."""
+    body = (
+        "```bash\n"
+        'git commit -m "x" -- logs/x.md\n'
+        'git -C "$WT" commit -m "x"\n'
+        'xargs -r -a f.txt git commit -m "x" --\n'
+        'git commit --dry-run -m "x"\n'
+        '# git commit -m "x"\n'
+        "```\n"
+    )
+    _write_rg_skill(tmp_path, "x", body)
+    assert check_bare_commit_pathspec(repo_root=tmp_path) == []
+
+    # (i) per-invocation -C: the FIRST invocation's -C (and its pathspec)
+    # must not waive the SECOND, bare invocation on the same line.
+    _write_rg_skill(
+        tmp_path, "x", '```bash\ngit -C "$WT" commit -m "a" -- x && git commit -m "b"\n```\n'
+    )
+    errors = check_bare_commit_pathspec(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+
+    # (ii) flag-less xargs runs the command ONCE on empty input
+    # (whole-index sweep) -> NOT exempt without -r/--no-run-if-empty.
+    _write_rg_skill(tmp_path, "x", '```bash\nxargs -a f.txt git commit -m "x" --\n```\n')
+    errors = check_bare_commit_pathspec(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+
+    # (iii) xargs AFTER the commit never waives it (prefix-bounded search).
+    _write_rg_skill(
+        tmp_path, "x", '```bash\ngit commit -m "x" && xargs -r -a f.txt git rm --\n```\n'
+    )
+    errors = check_bare_commit_pathspec(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+
+
+def test_check_bare_commit_pathspec_multiline_quoted_message(tmp_path):
+    """Quote-balance joining classifies multi-line `-m "..."` messages on the
+    full command; backslash continuations join per bash semantics; errors
+    report the FIRST line of the joined logical line."""
+    # (a) -C form + (b) the xargs form with a multi-line message and a
+    # trailing ` --` (the issue/SKILL.md additive-checkout shape) -> clean.
+    body = (
+        "```bash\n"
+        'git -C "$WT" commit -m "line1\n'
+        'line2"\n'
+        'xargs -r -a f.txt git commit -m "issue: line1\n'
+        "line2\n"
+        'line3" --\n'
+        "```\n"
+    )
+    _write_rg_skill(tmp_path, "x", body)
+    assert check_bare_commit_pathspec(repo_root=tmp_path) == []
+
+    # (c) a BARE commit with a multi-line message and no pathspec still
+    # flags (quote-joining must not hide bare commits), at the first line.
+    _write_rg_skill(tmp_path, "x", '```bash\ngit commit -m "line1\nline2"\n```\n')
+    errors = check_bare_commit_pathspec(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "SKILL.md:2:" in errors[0], errors
+
+    # (d) backslash continuation: a compliant commit whose ` -- <paths>`
+    # sits on the continuation line is clean ...
+    _write_rg_skill(tmp_path, "x", '```bash\ngit commit -m "x" \\\n  -- logs/x.md\n```\n')
+    assert check_bare_commit_pathspec(repo_root=tmp_path) == []
+
+    # ... and a bare backslash-continued commit flags at the FIRST line of
+    # the joined logical (pins the continuation join + line arithmetic).
+    _write_rg_skill(tmp_path, "x", '```bash\ngit commit \\\n  -m "x"\necho done\n```\n')
+    errors = check_bare_commit_pathspec(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "SKILL.md:2:" in errors[0], errors
+
+
+def test_check_bare_commit_pathspec_fence_sentinel_waives(tmp_path):
+    """A sentinel with a NON-EMPTY reason on the immediately-preceding
+    non-blank line waives the fence; an EMPTY-reason sentinel does NOT
+    (mirrors the root-guard empty-reason discipline)."""
+    _write_rg_skill(
+        tmp_path,
+        "x",
+        "<!-- workflow-lint: allow-bare-commit-block: deliberate anti-pattern example -->\n"
+        '```bash\ngit commit -m "x"\n```\n',
+    )
+    assert check_bare_commit_pathspec(repo_root=tmp_path) == []
+
+    _write_rg_skill(
+        tmp_path,
+        "x",
+        '<!-- workflow-lint: allow-bare-commit-block: -->\n```bash\ngit commit -m "x"\n```\n',
+    )
+    errors = check_bare_commit_pathspec(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+
+
+def test_check_bare_commit_pathspec_ignores_non_bash_fences(tmp_path):
+    """Only bash/sh/shell-tagged fences are scanned: an untagged fence, a
+    python-tagged fence, and prose inline code never flag — and the check's
+    docstring must NAME the residual classes so the disclosure is durable
+    (root-guard known_miss_residuals style)."""
+    body = (
+        '- Then run `git commit -m "x"` at the repo root.\n'
+        "\n"
+        "```\n"
+        'git commit -m "x"\n'
+        "```\n"
+        "\n"
+        "```python\n"
+        "cmd = 'git commit -m x'\n"
+        "```\n"
+    )
+    _write_rg_skill(tmp_path, "x", body)
+    assert check_bare_commit_pathspec(repo_root=tmp_path) == []
+    doc = check_bare_commit_pathspec.__doc__ or ""
+    assert "untagged" in doc, "docstring must name the untagged-fence residual"
+    assert "inline-code" in doc, "docstring must name the prose inline-code residual"
+    assert "heredoc" in doc, "docstring must name the heredoc-body residual"
+    assert "scripts/**" in doc, "docstring must name the shell-script out-of-scope residual"
+
+
+def test_check_bare_commit_pathspec_live_tree_passes():
+    """The real post-disposition tree PASSES (the ``test_live_trees_pass``
+    invariant): locks in the #1648 dispositions — the ideation / weekly /
+    issue-v2 pathspec fixes — and fails loud on any future bare-commit
+    recipe landing in the workflow docs."""
+    assert check_bare_commit_pathspec() == []
+
+
+def test_check_bare_commit_pathspec_bundled_in_no_flags(tmp_path, capsys, monkeypatch) -> None:
+    """The no-flags default run actually DISPATCHES the #1648 check —
+    deleting its ``or no_flags`` branch must fail this test
+    (mutation-visible), closing the present-but-never-runs class. Follows
+    the ``test_vm_thread_cap_guidance_bundled_in_no_flags`` house pattern:
+    one offender fixture, ``_REPO_ROOT`` monkeypatched, ``main([])``
+    in-process. Other bundled checks contribute unrelated errors on the
+    minimal tree, so the assertion keys on the #1648 diagnostic + the
+    offending file path."""
+    import workflow_lint as wl
+
+    _write_rg_skill(tmp_path, "x", '```bash\ngit add logs/x.md\ngit commit -m "x"\n```\n')
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on an offender tree:\n{err}"
+    assert "allow-bare-commit-block" in err and "skills/x/SKILL.md" in err, (
+        f"the #1648 bare-commit diagnostic (naming the fixture skill) is missing "
+        f"from the no-flags default run's stderr — the check is not bundled "
+        f"into no_flags:\n{err}"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Unit tests for ``check_skill_bang_backtick`` (incident class #1243/#1266:
 # a bang directly against a backtick in preprocessor-loaded skill markdown
@@ -7975,6 +8464,93 @@ def test_check_skill_bang_backtick_bundled_in_no_flags():
     ), "check_skill_bang_backtick is not dispatched on the no-flags branch"
     assert "or args.check_skill_bang_backtick" in src, (
         "--check-skill-bang-backtick is missing from the no_flags detection tuple"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_agents_note_argv_verdict`` (#1743/#1785): no agent
+# spec under .claude/agents/ may prescribe posting a verdict/marker body
+# through an argv-prose ``--note`` command substitution (the #1722/#1756
+# incident family; the fix channel is ``post-marker --file``). The fixture
+# files below carry the REAL banned literals verbatim — tests/ sits outside
+# every scan root of the check, so the fixtures never trip it on the
+# committed tree.
+# ---------------------------------------------------------------------------
+
+
+def test_check_agents_note_argv_verdict_fail_p1(tmp_path):
+    """FAIL — P1, the #1743 acceptance-grep pattern: a --note body opened
+    as a command substitution around cat."""
+    (tmp_path / "some-agent.md").write_text(
+        "Post the verdict via:\n"
+        '`task.py post-marker <N> epm:code-review --note "$(cat /tmp/v.md)"`\n'
+    )
+    errors = check_agents_note_argv_verdict(agents_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "some-agent.md:2" in errors[0]
+    assert "#1743" in errors[0]
+    assert "--file" in errors[0]
+
+
+def test_check_agents_note_argv_verdict_fail_p2(tmp_path):
+    """FAIL — P2, the #1743 reviewer's broader variant: any --note opening
+    directly into a command substitution (not just cat)."""
+    (tmp_path / "agent.md").write_text(
+        'run `task.py post-marker 7 epm:results --note "$(uv run python gen.py)"`\n'
+    )
+    errors = check_agents_note_argv_verdict(agents_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "agent.md:1" in errors[0]
+
+
+def test_check_agents_note_argv_verdict_pass_clean_spec(tmp_path):
+    """PASS — a clean spec prescribing the sanctioned --file channel."""
+    (tmp_path / "agent.md").write_text(
+        "## Reporting\n\nCompose the report body with the Write tool, then post it via\n"
+        "`uv run python scripts/task.py post-marker <N> epm:results --file /tmp/r.md`.\n"
+    )
+    assert check_agents_note_argv_verdict(agents_dir=tmp_path) == []
+
+
+def test_check_agents_note_argv_verdict_pass_note_without_substitution(tmp_path):
+    """PASS — the sanctioned variable form: command substitutions resolved
+    into a shell variable FIRST, then the variable passed as the note (no
+    substitution opener adjacent to the note token). The check must never
+    be "fixed" into flagging this shape."""
+    (tmp_path / "agent.md").write_text(
+        'Resolve every substitution into a variable first, e.g. NOTE="round 3 done",\n'
+        'then run `task.py post-marker 5 epm:progress --note "$NOTE"`.\n'
+    )
+    assert check_agents_note_argv_verdict(agents_dir=tmp_path) == []
+
+
+def test_check_agents_note_argv_verdict_live_tree_clean():
+    """The committed .claude/agents/ tree must carry no argv-prose --note
+    verdict-post prescription — the #1743 acceptance grep as a standing
+    regression tripwire (production default, no kwarg; baseline verified
+    clean 2026-07-29)."""
+    errors = check_agents_note_argv_verdict()
+    assert errors == [], (
+        "agent specs prescribe the #1743-banned argv-prose --note "
+        "verdict post (use the post-marker --file channel):\n" + "\n".join(errors)
+    )
+
+
+def test_check_agents_note_argv_verdict_bundled_in_no_flags():
+    """NON-VACUOUS no-flags bundling pin (the
+    ``test_pipe_python_bundled_in_no_flags_source_pin`` shape):
+    ``check_agents_note_argv_verdict`` must be dispatched by the BARE
+    ``workflow_lint.py`` run — source-inspection assert on the dispatch
+    branch + the no_flags detection-tuple membership (the #1385/#1648
+    silent-unbundling class)."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_agents_note_argv_verdict or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_agents_note_argv_verdict\(\)\)",
+        src,
+    ), "check_agents_note_argv_verdict is not dispatched on the no-flags branch"
+    assert "or args.check_agents_note_argv_verdict" in src, (
+        "--check-agents-note-argv-verdict is missing from the no_flags detection tuple"
     )
 
 
@@ -8323,3 +8899,308 @@ def test_regen_flag_early_dispatch_and_not_in_no_flags_tuple():
     assert "--regen-hf-routing-snapshot" in src[fn_start:fn_end], (
         "the live-hf-retry-routing FAIL message must name --regen-hf-routing-snapshot"
     )
+
+
+# ---------------------------------------------------------------------------
+# --check-bare-list-repo-files (#1624): data-repo full-listing wedge
+# ---------------------------------------------------------------------------
+
+
+def test_check_bare_list_repo_files_flags_attribute_call(tmp_path):
+    from workflow_lint import check_bare_list_repo_files
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "def fetch():\n"
+        "    return HfApi().list_repo_files('org/repo')\n",
+        encoding="utf-8",
+    )
+    errors = check_bare_list_repo_files(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "[bare-list-repo-files]" in errors[0]
+    assert "scripts/new_tool.py:3" in errors[0]
+    assert "list_hf_files_under_path" in errors[0]
+
+
+def test_check_bare_list_repo_files_flags_imported_name_alias(tmp_path):
+    from workflow_lint import check_bare_list_repo_files
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from huggingface_hub import list_repo_files as lrf\n"
+        "def fetch():\n"
+        "    return lrf('org/repo')\n",
+        encoding="utf-8",
+    )
+    errors = check_bare_list_repo_files(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "scripts/new_tool.py:3" in errors[0]
+
+
+def test_check_bare_list_repo_files_flags_imported_name_unaliased(tmp_path):
+    """The plain (un-aliased) `from huggingface_hub import list_repo_files`
+    + bare `list_repo_files(...)` form — the asname-aware Name leg's
+    default branch."""
+    from workflow_lint import check_bare_list_repo_files
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from huggingface_hub import list_repo_files\n"
+        "def fetch():\n"
+        "    return list_repo_files('org/repo')\n",
+        encoding="utf-8",
+    )
+    errors = check_bare_list_repo_files(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "scripts/new_tool.py:3" in errors[0]
+
+
+def test_check_bare_list_repo_files_src_scope_covered(tmp_path):
+    """The scope delta vs --check-hub-verify-retry (#1202, scripts/ only):
+    src/explore_persona_space/ offenders ARE flagged."""
+    from workflow_lint import check_bare_list_repo_files
+
+    root = _hf_routing_root(tmp_path)
+    (root / "src" / "explore_persona_space" / "new_mod.py").write_text(
+        "from huggingface_hub import HfApi\nx = HfApi().list_repo_files('org/repo')\n",
+        encoding="utf-8",
+    )
+    errors = check_bare_list_repo_files(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "src/explore_persona_space/new_mod.py:2" in errors[0]
+
+
+def test_check_bare_list_repo_files_waiver_passes(tmp_path):
+    from workflow_lint import check_bare_list_repo_files
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "def fetch():\n"
+        "    # LIST_REPO_FILES_EXEMPT: small model repo, full listing is the point\n"
+        "    return HfApi().list_repo_files('org/small-repo')\n",
+        encoding="utf-8",
+    )
+    assert check_bare_list_repo_files(repo_root=root) == []
+
+
+def test_check_bare_list_repo_files_waiver_on_hit_line_passes(tmp_path):
+    """Waiver placement on the HIT line itself (the plan tests only the
+    preceding-line placement; the helper honors both)."""
+    from workflow_lint import check_bare_list_repo_files
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "x = HfApi().list_repo_files('org/r')  # LIST_REPO_FILES_EXEMPT: tiny repo by design\n",
+        encoding="utf-8",
+    )
+    assert check_bare_list_repo_files(repo_root=root) == []
+
+
+def test_check_bare_list_repo_files_short_waiver_reason_still_flags(tmp_path):
+    from workflow_lint import check_bare_list_repo_files
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "# LIST_REPO_FILES_EXEMPT: ok\n"
+        "x = HfApi().list_repo_files('org/r')\n",
+        encoding="utf-8",
+    )
+    errors = check_bare_list_repo_files(repo_root=root)
+    assert len(errors) == 1, errors
+
+
+def test_check_bare_list_repo_files_frozen_snapshot_skipped(tmp_path):
+    from workflow_lint import LIST_REPO_FILES_FROZEN_SNAPSHOT, check_bare_list_repo_files
+
+    frozen_member = "scripts/dispatch_neg_geometry_504.py"
+    assert frozen_member in LIST_REPO_FILES_FROZEN_SNAPSHOT
+    root = _hf_routing_root(tmp_path)
+    (root / frozen_member).write_text(
+        "from huggingface_hub import HfApi\nx = HfApi().list_repo_files('org/repo')\n",
+        encoding="utf-8",
+    )
+    assert check_bare_list_repo_files(repo_root=root) == []
+
+
+def test_check_bare_list_repo_files_prose_mentions_never_flag(tmp_path):
+    """The AST-invisibility guarantee: docstring / comment / f-string
+    mentions are ast.Constant nodes and can never match — no
+    pattern-string exclusion constants exist for this check by design."""
+    from workflow_lint import check_bare_list_repo_files
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "prose_only.py").write_text(
+        '"""Docstring naming list_repo_files( for reference."""\n'
+        "# comment naming list_repo_files( too\n"
+        "def msg(repo):\n"
+        "    return f'HF list_repo_files({repo}) timed out'\n",
+        encoding="utf-8",
+    )
+    assert check_bare_list_repo_files(repo_root=root) == []
+
+
+def test_check_bare_list_repo_files_monkeypatch_targets_exempt_load_save_flagged(tmp_path):
+    """Inherited #1482/#1561 semantics: Store/Del patch/restore targets are
+    exempt; the Load-ctx bare-reference SAVE still flags (a saved alias
+    later called still wedges) and takes the waiver."""
+    from workflow_lint import check_bare_list_repo_files
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "patcher.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "def patch(fake):\n"
+        "    orig = HfApi.list_repo_files\n"
+        "    HfApi.list_repo_files = fake\n"
+        "    return orig\n",
+        encoding="utf-8",
+    )
+    errors = check_bare_list_repo_files(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "scripts/patcher.py:3" in errors[0]
+
+
+def test_check_bare_list_repo_files_scoped_helpers_invisible(tmp_path):
+    """The scoped recipes are structurally invisible (different attr/name
+    strings): list_repo_files_complete / list_hf_files_under_path /
+    api.list_repo_tree never match the narrowed target set."""
+    from workflow_lint import check_bare_list_repo_files
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "scoped.py").write_text(
+        "from explore_persona_space.orchestrate.hub import (\n"
+        "    list_hf_files_under_path,\n"
+        "    list_repo_files_complete,\n"
+        ")\n"
+        "def fetch(api):\n"
+        "    a = list_repo_files_complete(api, 'org/repo', path_in_repo='x')\n"
+        "    b = list_hf_files_under_path(api, 'org/repo', 'prefix')\n"
+        "    c = api.list_repo_tree('org/repo', path_in_repo='p', recursive=True)\n"
+        "    d = api.file_exists('org/repo', 'p/file.json')\n"
+        "    return a, b, c, d\n",
+        encoding="utf-8",
+    )
+    assert check_bare_list_repo_files(repo_root=root) == []
+
+
+def test_check_bare_list_repo_files_live_tree_passes():
+    """Acceptance criterion 1 (#1624): the committed tree carries ZERO bare
+    list_repo_files sites outside the frozen snapshot (the
+    test_live_trees_pass idiom). A NEW bare call in scripts/ or src/ fails
+    this test."""
+    from workflow_lint import check_bare_list_repo_files
+
+    assert check_bare_list_repo_files() == []
+
+
+def test_check_bare_list_repo_files_registered_in_no_flags_default_run():
+    """The check is bundled into the no-flags default run (#1624): the flag
+    is in the no_flags detection tuple AND dispatched on the no-flags
+    branch."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_bare_list_repo_files or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_bare_list_repo_files\(\)\)",
+        src,
+    ), "check_bare_list_repo_files is not dispatched on the no-flags branch"
+    assert "or args.check_bare_list_repo_files" in src, (
+        "--check-bare-list-repo-files is missing from the no_flags detection tuple"
+    )
+
+
+def test_workflow_lint_check_bare_list_repo_files_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-bare-list-repo-files")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-bare-list-repo-files failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_regen_list_repo_files_snapshot_lists_offenders_and_diff(tmp_path, capsys):
+    """The regen walker applies the same bare/waived predicate as the check
+    (snapshot-blind), prints the paste-ready literal on stdout, and the +/-
+    diff summary vs the compiled-in constant on stderr (#1568 idiom)."""
+    from workflow_lint import LIST_REPO_FILES_FROZEN_SNAPSHOT, regen_list_repo_files_snapshot
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "bare.py").write_text(
+        "from huggingface_hub import HfApi\nx = HfApi().list_repo_files('org/repo')\n",
+        encoding="utf-8",
+    )
+    (root / "scripts" / "waived.py").write_text(
+        "from huggingface_hub import HfApi\n"
+        "# LIST_REPO_FILES_EXEMPT: small repo, full listing deliberate\n"
+        "x = HfApi().list_repo_files('org/small')\n",
+        encoding="utf-8",
+    )
+    (root / "scripts" / "scoped.py").write_text(
+        "def fetch(api):\n    return api.list_repo_tree('org/repo', path_in_repo='p')\n",
+        encoding="utf-8",
+    )
+    assert regen_list_repo_files_snapshot(repo_root=root) == 0
+    captured = capsys.readouterr()
+    lines = captured.out.splitlines()
+    assert lines[0] == "LIST_REPO_FILES_FROZEN_SNAPSHOT: frozenset[str] = frozenset("
+    assert lines[1] == "    {"
+    assert lines[-2] == "    }"
+    assert lines[-1] == ")"
+    entries = re.findall(r'^        "([^"]+)",$', captured.out, flags=re.MULTILINE)
+    assert entries == ["scripts/bare.py"], entries
+    assert f"+1 added, -{len(LIST_REPO_FILES_FROZEN_SNAPSHOT)} removed" in captured.err
+    assert "# + scripts/bare.py" in captured.err
+
+
+def test_hub_verify_bare_hits_default_targets_unchanged():
+    """Parametrization regression (#1624 plan §4e test 14): with no
+    `targets` kwarg the walker still matches the full
+    HUB_VERIFY_BARE_TARGETS set (protects check_hub_verify_retry), and the
+    narrowed call matches list_repo_files only."""
+    import ast
+
+    from workflow_lint import _hub_verify_bare_hits
+
+    tree = ast.parse(
+        "from huggingface_hub import file_exists\n"
+        "def f(api):\n"
+        "    a = api.list_repo_tree('org/r', path_in_repo='p')\n"
+        "    b = file_exists('org/r', 'x')\n"
+        "    c = api.list_repo_files('org/r')\n"
+    )
+    default_patterns = sorted(p for _, p in _hub_verify_bare_hits(tree))
+    assert default_patterns == [".list_repo_files(", ".list_repo_tree(", "file_exists("]
+    narrowed = _hub_verify_bare_hits(tree, targets=frozenset({"list_repo_files"}))
+    assert narrowed == [(5, ".list_repo_files(")]
+
+
+def test_check_inline_round_duty_mirror_symbol_and_argparse_pin() -> None:
+    """#1713 lost-update regression pin. Fails if a future whole-file
+    snapshot of scripts/workflow_lint.py silently drops the
+    check_inline_round_duty_mirror function OR unregisters the flag.
+
+    Complements tests/test_workflow_lint_inline_round_duty_mirror.py by
+    firing at import + argparse layer, so a delete of THAT test file
+    still leaves this pin.
+    """
+    import contextlib
+    import io
+
+    from workflow_lint import check_inline_round_duty_mirror, main
+
+    assert callable(check_inline_round_duty_mirror)
+
+    buf = io.StringIO()
+    rc = None
+    with contextlib.redirect_stdout(buf):
+        try:
+            main(["--help"])
+        except SystemExit as e:
+            rc = e.code
+    help_text = buf.getvalue()
+    assert "--check-inline-round-duty-mirror" in help_text, (
+        "flag missing from argparse; #1701 restoration incomplete"
+    )
+    assert rc == 0

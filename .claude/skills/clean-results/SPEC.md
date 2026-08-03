@@ -617,7 +617,13 @@ file AND state the omission with an explicit exemption phrase — "not
 embedded: <reason>" or "superseded by <the embedded view>" — in the same
 paragraph as the filename; a bare provenance mention ("committed at the
 same pin") does not count, and `verify_task_body.py` check 31 WARNs
-`companion-named-not-embedded`.
+`companion-named-not-embedded`. Conversely, a `### <result>` embedding
+MORE THAN ONE inline figure with pair evidence in neither the figure
+basenames (a per-unit companion stem) nor the figures' alt text /
+blockquote captions (a per-unit / raw-alongside / companion declaration)
+draws `verify_task_body.py` check 49's WARN — the mechanical backstop of
+the one-result-one-figure rule (#1879): declare the pair in the
+caption/alt, or split the extra analysis into its own `### <result>`.
 
 **Raw alongside processed** (the transformed-figure special case). When a
 result's figure plots a residualized / partialled / binned /
@@ -943,7 +949,9 @@ Otherwise identical to v3:
 - **Never write `byte identical` or `byte-identical`** — nor the `bit`/`bitwise`
   forms or the `-equal`/`-exact` synonyms (`bit-identical`, `byte-equal`,
   `bit exact`, `bitwise identical`), nor the reduplicated
-  `bit-for-bit`/`byte-for-byte` — anywhere.
+  `bit-for-bit`/`byte-for-byte` — anywhere. (Allowlisted: `bit-deterministic` /
+  `bit-determinism` — determinism-of-computation vocabulary, not this
+  family; #1614.)
 - **Statistical-framing discipline** carries over (enforced by
   `audit_clean_results_body_discipline.py` + clean-result-critic): no
   pre-registration mentions, no effect-size names in prose, no named
@@ -1073,11 +1081,42 @@ Forward-only: each check branches on the sentinel. The v4 checks
     (Numbered 39 because 37–38 are taken by the footer-reuse-pin and
     linked-not-embedded WARN checks, #1421; incident #1005 claimed
     `Disclosure: 8 of 2,400` while showing 6.)
+48. **Figure-less quantitative result** (`check_v4_quant_result_figure`,
+    v4 only, WARN — NEVER FAIL): a `### <result>` block with zero inline
+    `![...]` images that is QUANTITATIVE — ≥3 standalone numeric tokens in
+    non-code content (inline code + link targets masked; fenced code +
+    `<details>` bodies excluded), or any GFM table row — draws a WARN
+    naming the section and its basis (token count / table). Check 21's
+    figure-less exemption is unchanged: a figure-less QUALITATIVE result
+    still passes both checks, and the clean-result-critic keeps the
+    ship/no-ship judgment call. (Numbered 48 because 40–47 are taken by
+    the generation-agnostic + issue-dispatched checks, #1832; incident
+    #1769 Result 5 shipped its H1-carrying three-treatment lattice as a
+    `> **Figure.**`-captioned GFM table with zero inline images, and only
+    the round-1 LM REVISE caught it.)
+49. **Unpaired multi-figure result** (`check_v4_result_figure_cardinality`,
+    v4 only, WARN — NEVER FAIL): a `### <result>` block embedding MORE
+    THAN ONE inline figure (markdown `![...]` plus HTML `<img>` embeds;
+    fenced code + `<details>` bodies excluded) with NO pair evidence —
+    no embedded basename matching the per-unit companion naming
+    convention, and no declared-pair idiom (per-unit vocabulary,
+    raw-alongside, unbinned/low-level, companion/counterpart) in the
+    figures' alt text or the section's blockquote caption lines — draws
+    a WARN naming the H3, the figure count, and the figure basenames.
+    General section prose deliberately does NOT count as pair evidence
+    (the origin section's what-is-plotted beat says "per-question" as
+    routine disclosure prose, so whole-section matching would silence
+    the incident shape); the clean-result-critic Lens 9
+    one-result-one-figure rule stays the substantive owner. (#1879;
+    incident: #1769's fu1 re-gate shipped the dose ladder + the α=3
+    lattice — two distinct analyses — under one `### <result>`, and only
+    the LM critic caught it.)
 
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches
 (check 22), HF-URL-resolves (check 23), figure-sidecar opaque
 config-code tokens (check 28, WARN: `@L<digits>` layer pins + regime-code
-slugs + bare hypothesis codes (`H3`) + slot-family codes (`f16`/`l16`) in
+slugs + bare hypothesis codes (`H3`/`H1c`) + slot-family codes
+(`f16`/`l16`) + bare candidate/panel codes (`P7`/`M4`) in
 figure-sidecar-carried text — plain-English condition names only;
 slugs stay in the Repro config row; sidecar-carried strings, not full
 PNG-pixel coverage), and figure prose-numerics vs sidecar plotted values
@@ -1684,7 +1723,7 @@ generations; the snake_case-slug category is v4-only):
   + bare unbackticked slugs stay LM-critic territory) — v4-only (#1372)
 - Math-style subscripts/superscripts in prose
 - GCG / PAIR / `H_a` / `REJECTED` / letter labels / `Bin A/B/C`
-- **`byte identical` / `byte-identical` (incl. `bit`/`bitwise`, `-equal`/`-exact`, and `bit-for-bit`/`byte-for-byte` variants)** — banned phrasing.
+- **`byte identical` / `byte-identical` (incl. `bit`/`bitwise`, `-equal`/`-exact`, and `bit-for-bit`/`byte-for-byte` variants)** — banned phrasing. Allowlisted: `bit-deterministic`/`bit-determinism` (#1614).
 
 Exemption: blockquoted lines inside the `## Reproducibility`
 `**Context:**` row are NOT scanned (the verbatim originating-prompt /

@@ -105,7 +105,8 @@ def ridge_fit_predict_fast(
     *,
     lambdas: np.ndarray | None = None,
     device: str = "cpu",
-) -> np.ndarray:
+    return_info: bool = False,
+) -> np.ndarray | tuple[np.ndarray, dict]:
     """Torch-eigh Gram-space ridge — fast APPROXIMATE twin of
     :func:`ridge_fit_predict` (same standardize-X / center-Y / GCV-lambda-select /
     un-center recipe). PARITY IS SIZE-DEPENDENT: the #779 Read-1 gate measured
@@ -155,6 +156,7 @@ def ridge_fit_predict_fast(
     # dof = sum_k f_k (hat-matrix trace); GCV = RSS / (ntr - dof)^2.
     best_lam = float(lambdas[0])
     best_gcv = float("inf")
+    best_dof = float("nan")
     for lam in lambdas:
         filt = w / (w + lam)
         rss = tot - float(((2 * filt - filt**2) * sqVtY).sum())
@@ -164,9 +166,15 @@ def ridge_fit_predict_fast(
         if gcv < best_gcv:
             best_gcv = gcv
             best_lam = float(lam)
+            best_dof = dof
     filt = 1.0 / (w + best_lam)
     pred = (KevV * filt) @ VtY + ymu
-    return pred.cpu().numpy()
+    out = pred.cpu().numpy()
+    if return_info:
+        # additive, backward-compatible: internal GCV selection surfaced for
+        # lambda-discipline reporting (df(lambda*) per fit — #1775 round 2 Minor-c)
+        return out, {"best_lambda": best_lam, "dof": best_dof, "gcv": best_gcv}
+    return out
 
 
 def ridge_fit_predict_fast_layer_batched(
@@ -177,7 +185,8 @@ def ridge_fit_predict_fast_layer_batched(
     lambdas: np.ndarray | None = None,
     device: str = "cpu",
     return_weights: bool = False,
-) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+    return_info: bool = False,
+) -> np.ndarray | tuple:
     """LAYER-BATCHED Gram-eigh ridge — one batched eigh over a leading axis.
 
     Vectorizes :func:`ridge_fit_predict_fast` over a leading layer/cell axis
@@ -204,9 +213,16 @@ def ridge_fit_predict_fast_layer_batched(
         return_weights: also return standardized-input-space primal weights
             ``W`` (L, d, d_out) reconstructed from the dual coefficients
             (descriptive weight-space reads ONLY — the #1332 settled decision).
+        return_info: also return the per-slice GCV selection record
+            ``{"best_lambda": (L,), "dof": (L,)}`` as CPU numpy — the batched
+            twin of ``ridge_fit_predict_fast(return_info=True)`` (#1775
+            lambda-discipline; #1902 plan §10 option (a): best_lam/dof are
+            already computed in-body). Additive + backward-compatible: with
+            both flags the return is ``(preds, W, info)``.
 
     Returns:
-        preds (L, n_ev, d_out) as CPU numpy; optionally (preds, W).
+        preds (L, n_ev, d_out) as CPU numpy; optionally (preds, W) /
+        (preds, info) / (preds, W, info).
     """
     if lambdas is None:
         lambdas = np.logspace(-2, 4, 13)
@@ -246,10 +262,19 @@ def ridge_fit_predict_fast_layer_batched(
     filt = 1.0 / (w + best_lam[:, None])  # (L, n_tr)
     alpha = V @ (filt[:, :, None] * VtY)  # (L, n_tr, d_out) dual coefficients
     preds = Kev @ alpha + ymu  # (L, n_ev, d_out)
-    if not return_weights:
-        return preds.cpu().numpy()
-    W = Xtr_n.transpose(1, 2) @ alpha  # (L, d, d_out) standardized-input-space weights
-    return preds.cpu().numpy(), W.cpu().numpy()
+    out: list = [preds.cpu().numpy()]
+    if return_weights:
+        W = Xtr_n.transpose(1, 2) @ alpha  # (L, d, d_out) standardized-input-space weights
+        out.append(W.cpu().numpy())
+    if return_info:
+        dof = (w / (w + best_lam[:, None])).sum(dim=1)  # hat-trace at the selected lambda
+        out.append(
+            {
+                "best_lambda": best_lam.cpu().numpy(),
+                "dof": dof.cpu().numpy(),
+            }
+        )
+    return out[0] if len(out) == 1 else tuple(out)
 
 
 # ── MLP (batched multi-head, train->eval application) ─────────────────────────

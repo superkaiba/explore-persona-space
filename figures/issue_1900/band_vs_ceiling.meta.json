@@ -1,0 +1,325 @@
+{
+  "commit": "5f2b220a42",
+  "created": "2026-07-31T13:39:29Z",
+  "figsize": [
+    7.5,
+    3.8
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Spearman rho": 0.6081321239471436,
+      "series": "observed max-selected rho",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.6626960635185242,
+      "series": "observed max-selected rho",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "Spearman rho": 0.6212086081504822,
+      "series": "observed max-selected rho",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "Spearman rho": 0.6586830019950867,
+      "series": "observed max-selected rho",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "Spearman rho": 0.3100943863391876,
+      "series": "observed max-selected rho",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "Spearman rho": 0.3263792097568512,
+      "series": "observed max-selected rho",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "Spearman rho": 0.32255423069000244,
+      "series": "observed max-selected rho",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "Spearman rho": 0.3408893048763275,
+      "series": "observed max-selected rho",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "Spearman rho": 0.40781450271606445,
+      "series": "observed max-selected rho",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "Spearman rho": 0.3193788528442383,
+      "series": "observed max-selected rho",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "Spearman rho": 0.22997823357582092,
+      "series": "observed max-selected rho",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "Spearman rho": 0.39234113693237305,
+      "series": "observed max-selected rho",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "Spearman rho": 0.382032573223114,
+      "series": "observed max-selected rho",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 13.0,
+      "Spearman rho": 0.38454174995422363,
+      "series": "observed max-selected rho",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 14.0,
+      "Spearman rho": 0.6421952843666077,
+      "series": "observed max-selected rho",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 15.0,
+      "Spearman rho": 0.7280901670455933,
+      "series": "observed max-selected rho",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 16.0,
+      "Spearman rho": 0.6477050185203552,
+      "series": "observed max-selected rho",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 17.0,
+      "Spearman rho": 0.7133911848068237,
+      "series": "observed max-selected rho",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.043860532343387604,
+      "series": "permutation max-selected band (p97.5)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.04488084465265274,
+      "series": "permutation max-selected band (p97.5)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Spearman rho": 0.04570924863219261,
+      "series": "permutation max-selected band (p97.5)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "Spearman rho": 0.04627130553126335,
+      "series": "permutation max-selected band (p97.5)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "Spearman rho": 0.043807413429021835,
+      "series": "permutation max-selected band (p97.5)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "Spearman rho": 0.04349261149764061,
+      "series": "permutation max-selected band (p97.5)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "Spearman rho": 0.04564550518989563,
+      "series": "permutation max-selected band (p97.5)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "Spearman rho": 0.043967898935079575,
+      "series": "permutation max-selected band (p97.5)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "Spearman rho": 0.04181419685482979,
+      "series": "permutation max-selected band (p97.5)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "Spearman rho": 0.0405559204518795,
+      "series": "permutation max-selected band (p97.5)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "Spearman rho": 0.041709206998348236,
+      "series": "permutation max-selected band (p97.5)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "Spearman rho": 0.04141196981072426,
+      "series": "permutation max-selected band (p97.5)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "Spearman rho": 0.043719615787267685,
+      "series": "permutation max-selected band (p97.5)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 13.0,
+      "Spearman rho": 0.042575906962156296,
+      "series": "permutation max-selected band (p97.5)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 14.0,
+      "Spearman rho": 0.045448459684848785,
+      "series": "permutation max-selected band (p97.5)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 15.0,
+      "Spearman rho": 0.04252920672297478,
+      "series": "permutation max-selected band (p97.5)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "Spearman rho": 0.0427626334130764,
+      "series": "permutation max-selected band (p97.5)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 17.0,
+      "Spearman rho": 0.04354985058307648,
+      "series": "permutation max-selected band (p97.5)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 1.0,
+      "series": "achievable ceiling (rho = 1)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 1.0,
+      "series": "achievable ceiling (rho = 1)",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 38,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Selection-symmetric null band vs achievable ceiling, per arm",
+        "ylabel": "Spearman rho",
+        "legend_labels": [
+          "observed max-selected rho",
+          "permutation max-selected band (p97.5)",
+          "achievable ceiling (rho = 1)"
+        ],
+        "xticklabels": [
+          "casual writing / bare / contrastive (s42)",
+          "casual writing / persona / contrastive (s42)",
+          "casual writing / persona / contrastive full-FT (s42)",
+          "casual writing / persona / positive-only (s42)",
+          "impoliteness / persona / contrastive (s137)",
+          "impoliteness / persona / contrastive (s42)",
+          "impoliteness / persona / contrastive full-FT (s42)",
+          "impoliteness / persona / positive-only (s42)",
+          "marker / bare / contrastive (s42)",
+          "marker / conversation / contrastive (s42)",
+          "marker / ICL / contrastive (s42)",
+          "marker / persona / contrastive (s42)",
+          "marker / persona / contrastive full-FT (s42)",
+          "marker / persona / positive-only (s42)",
+          "sycophancy / bare / contrastive (s42)",
+          "sycophancy / conversation / contrastive (s42)",
+          "sycophancy / persona / contrastive full-FT (s42)",
+          "sycophancy / persona / positive-only (s42)"
+        ],
+        "yticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      }
+    ],
+    "series": [
+      "achievable ceiling (rho = 1)",
+      "observed max-selected rho",
+      "permutation max-selected band (p97.5)"
+    ]
+  }
+}

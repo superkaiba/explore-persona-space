@@ -78,7 +78,7 @@ Now it's same-turn (the file + spawn is non-blocking).
   `audit_clean_results_body_discipline.py`,
   `redact_for_gist.py`, `check_no_secret_shaped_strings.py`,
   `codex_task.py`,
-  `poll_pipeline.py`, `dispatch_issue.py`, `backend_poll.py`,
+  `plan_patch.py`, `poll_pipeline.py`, `dispatch_issue.py`, `backend_poll.py`,
   `failure_classifier.py`, `gh_project.py`,
   `pm_queue_report.py`,
   `recent_clean_results.py`, `task_state.py`,
@@ -223,6 +223,16 @@ related_task: <task ID this surfaced on, e.g. #391, or n/a>
 <!-- /workflow-fix-candidate -->
 ```
 
+**Urgent subclass (OPTIONAL fields — parked candidates only, #1681).** A
+PARKING session (recursion guard / `AUTO_REVIEW_DISABLED`) with direct
+evidence its bug is a currently-failing test on origin/main MAY add three
+lines inside the block — `urgency: main-red`, `failing_test: <ONE pytest
+node id>`, `wf_fix: true|false` — making the park mechanically routable by
+the watcher's urgent-park router within ~one 10-min tick instead of the
+nightly sweep. Grammar + verification + bounds: § Recursion guard "Urgent
+fast path" below. Non-parked (auto-routed) candidates never need these
+fields.
+
 **Before emitting: grep the workflow surface for the pattern.** When the
 bug is identifiable by grep (a literal string, a specific regex, a
 frontmatter line — e.g. a stale model pin, a deprecated marker field, a
@@ -338,6 +348,10 @@ top-level loop), UNLESS running under the recursion guard
    # files #N (tags wf-fix + wf-fix-fp:<fp> applied at creation), then attempts
    # spawn-issue --issue N --auto
    ```
+   Session-suffix the body path (e.g. `/tmp/wf-fix-body-<slug>-$$.md`): hot
+   target files draw same-slug candidates from concurrent sessions, and a
+   stale sibling's file at the bare path blocks the Write (2 cross-session
+   collisions on 2026-08-02).
    The spawn NO-OPS cleanly (the task stays filed at `proposed` for the
    backstop, exit 0) when the Happy daemon is unreachable OR the shared
    5-session infra cap is full / occupancy is unreadable — the watcher's
@@ -517,11 +531,81 @@ filing-time drop; every task was created WITH the tag, and a
 deliberate 2026-07-17 user-directed mass remove-tag — one commit per
 task, e.g. eaa4e10a67 / 1bd90f800e for #1140/#1472 — explained every
 absence; archived as a false-premise filing).
+(f) **marker-existence** — a claim that "no marker was posted" / "no
+record exists" / "nothing was noted" on task #M's events stream (or on
+its comments / markers / plans folder) is verified at compose time with
+`uv run python scripts/task.py view <M> --json | jq -r '.events[] | select(.kind == "<kind>") | "\(.ts) \(.note // .summary // "")"' | grep -iE '<sentinel|phrase the claim denies>'`
+(the exact `jq` filter is illustrative — use the kind + sentinel the
+claim actually denies; a plain `... | jq '.events'` scan is also
+acceptable when the claim does not name a specific kind). A found
+marker refutes the claim: re-scope before filing — the real defect is
+almost certainly a triage / read-back miss by the owning session, not
+the absence of the marker itself. Half a filing whose primary claim is
+refuted collapses to a verify-only fix; the other half (the triage
+gap) is the real workflow-fix candidate. (#1667: session `203baf55`
+filed "no failover marker was posted on #1586" while
+`epm:progress v146` at 05:42:00Z carried the exact
+`[autonomous_session_watch:runpod-noport-wedge-failover]` sentinel;
+the clarifier found it, and the task collapsed to verify-only.)
+
+(g) **call-hop target tracing** — before naming `target_file` for a
+misbehavior claim ("the fix belongs in `<path>`"), trace the failing
+behavior ONE call-hop past the observed symptom: name the site that
+CONSTRUCTS the wrong value, not the caller that consumes / propagates
+/ reports it. The compose-time probe is a bounded `grep -rn` from the
+symptom back to its source
+(`grep -rn '<wrong_value_field_or_symbol>' src/ scripts/`), reading
+each hit's context, until the construction site is found. Record BOTH
+the symptom site and the construction site in the body — and re-run
+the dedup fingerprint against the corrected `target_file`, since the
+dedup key is `(target_file, fingerprint)` and a mis-target silently
+weakens dedup. A filing whose planning round rediscovers this hop is a
+filing whose `target_file` was wrong at compose time (#1669: session
+`7457e1a3` named `scripts/autonomous_session_watch.py` — the watcher
+that READ a `RunSpec` field written by
+`scripts/backend_poll.py::_runspec_from_runpod_handle` +
+`src/explore_persona_space/backends/runpod.py` (launcher render) +
+`backends/issue_dispatch.py` (handle writer); the shipped 13-file
+diff touched NONE of the named target).
+
+(h) **suppression-predicate** — a claim that a candidate / park / record
+/ event was DROPPED or LOST by a downstream tool binds only after
+enumerating the documented suppression predicates that tool applies.
+The compose-time probe is `grep -n 'suppress\|skip\|dedup\|routed'`
+against the tool's own source or `SKILL.md`, listing every predicate
+that could legitimately have suppressed the record, and checking each
+against the specific record's fields. A correctly-suppressed record
+refutes the claim: the real workflow-fix candidate is then
+observability (counter opacity, missing sidecar row, unlogged
+suppression outcome), not "record lost". Worked example for Step C:
+the routed-record scan reads a verbatim-fp key AND the #1680
+`origin_candidate_ts` exact-match fallback; a park suppressed by the
+ts-fallback reads as "lost" only when the fallback path is not
+enumerated (#1680: session `5277f92c` filed "the #1642 parked
+candidate was lost by Step C"; the park was correctly suppressed by
+the `origin_candidate_ts` fp-less primary key, and the real gap was
+counter opacity — the session re-scoped mid-flight).
 Lineage: #1221/#1229/#1249 — three filings in two
 days carried grep-refutable claims (nonexistent call sites, overcounted
 "unguarded sites", an improvised path); each burned a spawned session's
 verification rounds. There is NO mechanical injector or lint for this line —
 it is a compose-time duty.
+
+**Unverified-premise labeling (#1677).** The `n/a — <reason>` escape
+covers the LINE; it
+does not license asserting the unverifiable claim itself as fact. Any
+claim in the body the filer could not mechanically verify or read from
+the named artifact at compose time — timings / wall-time figures,
+incident root-cause mechanisms, API- or tool-behavior assumptions — is
+written as `unverified hypothesis — verify at plan time: <claim>`
+(recall source named where known), never as bare fact: the spawned
+session's planner inherits body claims as premises, and in the
+2026-07-24 wave 4 of 6 filed bodies carried refutable bare-fact
+premises (#1655/#1662/#1646/#1660), each burning a fact-checker or
+critic correction round. Verified claims are unaffected — state them
+as fact with their evidence; do not blanket-label (over-labeling
+dilutes the signal). Binds route-2 AND route-3 /daily filings and
+manual/orchestrator filings alike.
 
 ## Dedup
 
@@ -557,13 +641,22 @@ normalize(s) = s.lower(), collapse internal whitespace to single spaces, strip
 - **FALLBACK (documented, WORKING):** the body's `## Provenance`
   `workflow_fix_target: <path>` line (written verbatim by `--body-file`)
   — grepped when the title/tag surfaces are insufficient.
+- **Tag-vs-body-line authority on the /daily route-2 channel (#1580):** the
+  `wf-fix-fp` tag is manifest-computed and AUTHORITATIVE; since #1580 the
+  driver (`daily_drive_filings.ensure_wf_fix_provenance`) reconciles the body's
+  anchored `- fingerprint:` line to the tag value, preserving a differing
+  candidate-block fp as a labeled substring (`(tag-authoritative; supersedes
+  body-carried fingerprint: <old>)`). Pre-#1580 landed bodies (#1554–#1571,
+  #1579) may carry a differing body fp — both values remain individually
+  matchable by the tag-OR-body-line predicates, so neither is dead as a key.
 - **NEVER** route any dedup key through `set_body` — it strips leading
   frontmatter except `paper`/`abstract`.
 
 **Dedup predicate (exact):** a candidate is a duplicate iff there exists a
 task with `kind: infra` AND a `workflow-fix:` or `daily-fix:` title prefix
-(`task_workflow.WF_FIX_TITLE_PREFIXES`) AND a
-`wf-fix-fp:<fp>` tag matching the candidate's fingerprint AND a
+(`task_workflow.WF_FIX_TITLE_PREFIXES`) AND the candidate's fingerprint
+(matched via the `wf-fix-fp:<fp>` tag OR a body `fingerprint: <fp>` line —
+the canonical code's OR, `task_workflow.is_open_workflow_fix_task`) AND a
 `## Provenance` `workflow_fix_target:` line EXACTLY string-matching the
 candidate's `target_file` AND whose status is NOT in the terminal set
 `{completed, archived}`. Same file + DIFFERENT fingerprint is NOT a
@@ -573,32 +666,69 @@ is the canonical, tested implementation (`tests/test_workflow_fix_dedup.py`).
 A closed (`completed`/`archived`) workflow-fix task does NOT block a
 re-raise of the same bug. (The /daily Step C parked-candidate sweep applies
 this temporally: a swept PARKED candidate that PREdates a closed matching fix
-task's creation is treated as subsumed by it — suppressed, pure churn to
+task's merge/close time — the latest of its `epm:merged` / terminal
+`epm:status-changed` / `epm:done` markers, creation-time fallback (#1599) —
+is treated as subsumed by it — suppressed, pure churn to
 re-route — while a candidate parked AFTER the fix closed is a genuine
 re-raise and stays enumerated; see
 `scripts/sweep_parked_wf_candidates.py`.)
 
-**Recently-closed-sibling ADVISORY (#1399 — advisory only, never a block).**
+**Recently-closed-sibling SUSPECT probe (#1399/#1711/#1735 — blocking on the
+composite target+title arm, advisory on bare-target or bare-title).**
 The predicate above is exact-`(target_file, fingerprint)` over OPEN tasks, so
 a JUST-MERGED sibling with different wording is invisible by design
 (2026-07-15: #1350 was filed 25 min after #1329 merged the same fix, and
 #1330 duplicated #1309's already-landed guidance — two pipeline sessions
-burned). At filing time `scripts/file_infra_task.py` therefore prints a
-stderr advisory listing recently-closed (completed/archived, last ~7 days)
-siblings that overlap the candidate: `workflow-fix:`/`daily-fix:`-prefixed
-tasks by `workflow_fix_target:` path token or by informative title token,
-and — since #1446 — ordinary (non-prefixed) `kind: infra` tasks by ≥2
-shared informative title tokens (`infra-title:`) or by a candidate target
-path appearing in the task body (`infra-target`)
+burned). At filing time `scripts/file_infra_task.py` prints a stderr advisory
+listing recently-closed (completed/archived, last ~7 days) siblings that
+overlap the candidate: `workflow-fix:`/`daily-fix:`-prefixed tasks by
+`workflow_fix_target:` path token or by informative title token, and — since
+#1446 — ordinary (non-prefixed) `kind: infra` tasks by ≥2 shared informative
+title tokens (`infra-title:`) or by a candidate target path appearing in the
+task body (`infra-target`)
 (`task_workflow.recent_closed_workflow_fix_tasks`) — capped at the 10 most
 recent. The filer eyeballs the list before letting the spawned session run.
-ADVISORY ONLY: it never blocks the filing, never changes exit codes, and
-fails soft with a printed diagnostic — the rule above is unchanged (a closed
-fix still never blocks a genuine re-raise). Because the wrapper's stderr
-arrives after it has already filed and best-effort-spawned, an agent consumer
-that spots a just-merged duplicate in the list applies the post-hoc remedy:
-archive the just-filed task (`task.py set-status <id> archived`) and stop its
-spawned session (`spawn_session.py stop --session-id <sid>`).
+The stderr advisory arm is FAIL-SOFT (informational output only, filer
+exit code untouched, fails soft with a printed diagnostic on error) —
+this is the FILER's stderr advisory arm; the driver-level probe (below)
+carries the real blocking contract. The exact-`(target_file,
+fingerprint)` OPEN dedup predicate above is unchanged (a closed fix
+still never suppresses a genuine re-raise there). Because the wrapper's stderr arrives after it has already
+filed and best-effort-spawned, an agent consumer that spots a just-merged
+duplicate in the list applies the post-hoc remedy: archive the just-filed
+task (`task.py set-status <id> archived`) and stop its spawned session
+(`spawn_session.py stop --session-id <sid>`).
+
+In ADDITION, when the manifest-driven daily driver (`scripts/daily_drive_filings.py`)
+processes an item, it re-runs the same recently-closed-sibling scan through
+the `find_closed_sibling_suspects` pre-filing probe (#1711), whose arm
+partition is the load-bearing suppression contract: a hit BLOCKS the
+filing — records a terminal `landed-fix-suspect` ledger row (with
+`suspects[0].kind == "closed-sibling"`), prints `CLOSED-SIBLING-SUSPECT` on
+stdout, and does NOT run the filer — ONLY when it satisfies the #1735
+composite arm predicate: BOTH a path-family arm (`target` / `infra-target`)
+AND a title-family arm (`title:*` / `infra-title:*`) whose shared
+informative tokens are not exclusively driver-scoped stopwords
+(`scripts/daily_drive_filings.py` `_CLOSED_SIBLING_TITLE_ARMS` +
+`CLOSED_SIBLING_TITLE_STOPWORDS`, calibrated on task #1735's ORIGINAL
+2026-07-26 measured false-positive shape — the generic workflow vocabulary
+attested at ≥3-as-sole-informative-token frequency across 21/24 blocked
+items on this repo's hot workflow-surface files). Bare-target hits and
+bare-title hits (composite predicate not satisfied) are ADVISORY: one
+`CLOSED-SIBLING-ADVISORY` stderr line per hit, no ledger row, no
+suppression — the shared hot-file signal alone is not evidence of
+duplication on this repo's workflow surface (task #1735: 21/24 measured
+false positives on a single nightly batch dominated by bare-`target` and
+`target`+stopword-title matches). A driver-level SUSPECT block is
+overridable via `--retry-suspects` (the operator has eyeballed the sibling
+and wants to re-drive the filing anyway) — the driver short-circuits BOTH
+the #1711 closed-sibling probe AND the sibling #1674 landed-fix-sha probe
+for a slug that already carries a `landed-fix-suspect` ledger row under
+that flag. At the end of every driver run a terminal `SUMMARY` stderr line
++ a `filed.jsonl` `outcome=daily-drive-summary` row report the outcome
+counts (`closed-sibling-suspects` / `landed-fix-suspects` split by probe
+source) so a mass suppression can never masquerade as a clean batch (#1735
+§4.4).
 
 **Open-sibling arm (#1502 — same advisory contract).** The same filing-time
 advisory ALSO lists OPEN (non-terminal — the dedup predicate's own
@@ -660,6 +790,74 @@ as `AUTO_REVIEW_DISABLED`-suppressed candidates are. The cost is a
 one-cycle delay, not a dropped bug. The recursion-guard predicate is
 executable-tested (`tests/test_workflow_fix_dedup.py`
 `test_is_workflow_fix_session_true_on_provenance_line`).
+
+**Brief-composers under the guard: candidate emission stays ON (#1754).**
+The guard binds the ORCHESTRATOR'S ROUTING of a received candidate (park +
+log instead of file/spawn), never a SUBAGENT'S EMISSION. A recursion-guarded
+session composing any subagent brief (implementer, code-reviewer, critic,
+analyzer, ...) MUST NOT instruct the subagent to withhold
+`<!-- workflow-fix-candidate v1 -->` blocks or to report workflow concerns
+"in prose only": subagents emit candidate blocks NORMALLY, the orchestrator
+parks each one as `epm:workflow-fix-candidate v1` (note: `parked — ...`),
+and the nightly /daily Step C sweep
+(`scripts/sweep_parked_wf_candidates.py`) enumerates exactly those parked
+markers. Report prose is NOT enumerable by the sweep, so an emission ban
+silently converts the escape valve above into a lost record. Two boundary
+clauses: this paragraph governs CLAUDE subagent briefs — Codex twins keep
+their existing no-block contract (hard rule 3 in § How to emit a candidate:
+they write plain prose notes in their verdict body for the orchestrator to
+triage), and nothing here contradicts rule 3; and it does not override the
+§ Composition-with-other-rules `AUTO_REVIEW_DISABLED` clause — that
+sentinel's per-turn emission suppression is a distinct, subagent-side
+mechanism, while this paragraph governs what a GUARDED SESSION may instruct
+in its briefs. (Incident 2026-07-27: the #1732 implementer + code-reviewer
+briefs said "Do NOT emit any workflow-fix-candidate blocks; log surfaced
+concerns in your report prose only", and the #1730 session misread the
+guard the same way.)
+
+**Urgent fast path — "main is red" (#1681).** A parked candidate whose bug
+is a CURRENTLY-FAILING test on origin/main has fleet-wide per-hour cost
+(every intervening session's Step 9c gate must re-classify the red;
+incident #1643: an 07:08Z park's red lived ~11.5h to #1666's merge). When
+the parking session has direct evidence of a live red — its own Step 9c
+gate has classified the node pre-existing-red against the baseline
+ledger — it MUST park in the MECHANICALLY ROUTABLE form (the three
+fields below); a prose "noted for /daily follow-up" terminal
+disposition is banned in this evidence-strong case (SKILL.md Step 9c
+"Verdict" block, #1713). Sessions WITHOUT direct Step 9c evidence
+retain the SHOULD form (their claim cannot be verified within a tick
+without a bounded pytest run; the router still verifies before
+filing). The routable form is the formal candidate block PLUS three
+fields inside it —
+
+```
+urgency: main-red
+failing_test: <ONE pytest node id, e.g. tests/test_x.py::test_y>
+wf_fix: true|false   # target_file on the workflow surface, or not
+```
+
+The parking session leads the candidate marker note with `URGENT-PARK`
+(or a `parked (urgent): ...` lead) so pre-#1741 sweep copies in stale
+worktrees also match; the #1741 predicate
+(`scripts/sweep_parked_wf_candidates.py`) accepts either surface — the
+leading token or the in-block `urgency: main-red` field (incident #1718:
+a token-less urgent park was invisible to the sweep for ~16 h).
+
+Labeling is not routing: the parking session still NEVER files or spawns.
+The watcher's urgent-park router pass (`autonomous_session_watch.py`
+`urgent_wf_park_pass`, every 10 min — an independent, non-guarded actor)
+detects the token, VERIFIES the claim (fresh step9c baseline-ledger hit
+whose `refreshed_at` postdates the park, else one bounded pytest run of
+the named node at the main checkout — rc==1 confirmed, rc==0 refuted, any
+other rc indeterminate), and on confirmation files + dispatches through
+the standard path (`scripts/file_infra_task.py`) and posts the standard
+`epm:workflow-fix-task-filed` routed-record (`source:
+watcher-urgent-park-router`, sweep-reported fingerprint verbatim +
+`origin_candidate_ts`) that closes the park for the nightly sweep.
+Bounds: `EPM_URGENT_WF_PARK_ROUTES_PER_DAY` (default 2) per UTC day; kill
+switch `EPM_DISABLE_URGENT_WF_PARK_PASS=1`. Anything missing, malformed,
+refuted, or unverifiable falls back to the nightly /daily Step C sweep
+unchanged — the router never guesses and never synthesizes fields.
 
 **A `daily-fix:` session for a NON-workflow-surface fix is intentionally
 outside this guard.** A `/daily` route-2 item filed with `wf_fix: false`
@@ -825,6 +1023,11 @@ homepage rendering of the fallback is unimplemented.)
 | Accept a verbatim-literal 0-hit grep as absence evidence for a TEXT-MATCHING guard (#1386 filed+spawned ~9h after #1360 landed the shorter `'queue size reached'` substring; the grep searched the full `'maximum queue size'`) | Semantic probe (clause (a')): run the predicate against the claimed text and/or grep fragments/substrings of it repo-wide, PLUS `git log --oneline --since='7 days ago' -- <target_file>` for a just-landed fix — open-task dedup stays blind to an ordinary landed infra fix by design, and the advisory's widened pass (#1446) covers ordinary closed infra tasks only window-bounded + overlap-matched, so the git-log landed-fix check remains the backstop |
 | Cite a mined hex token as a commit SHA without rev-parse-verifying it at compose time (#1414: transcript basename `fc2b61b7` filed as "the fix commit"; the spawned session's fact-checker burned a round proving the real commit was `5a02359cc8`) | Clause (d): rev-parse every cited-as-commit token at body-compose time; a non-resolving token is re-derived (`git log` on the target file) or cited as a transcript/session reference, never a commit |
 | Read post-mutation artifact state as filing-time evidence — a tag/field absent from a cited task's body.md filed as "dropped at filing" with no git-history check (#1497: needs-human absent from every cited task was a deliberate 2026-07-17 user-directed mass remove-tag — one commit per task, e.g. eaa4e10a67/1bd90f800e; archived as a false-premise filing) | Clause (e) artifact-state mutation check: `git log --follow --format='%h %s' -- <body.md>` (path via `task.py find <M>`) at compose time — a `remove-tag <value>` commit explaining the absence, or a create-commit diff carrying the value, refutes the drop claim |
+| Assert a timing / incident root-cause / API-behavior premise as bare fact when it could not be mechanically verified (or read from the named artifact) at compose time (#1677: 4 of 6 bodies in the 2026-07-24 wave — #1655/#1662/#1646/#1660 — each burned a correction round) | Label it `unverified hypothesis — verify at plan time: <claim>` with the recall source; the spawned planner treats it as an assumption to verify, not a premise |
+| Assert "no marker was posted / no record exists" on task #M without running the compose-time events-scan probe (#1667: filed "no failover marker on #1586" while `epm:progress v146` at 05:42:00Z carried the exact `[autonomous_session_watch:runpod-noport-wedge-failover]` sentinel; task collapsed to verify-only after the clarifier found it) | Clause (f) marker-existence: `uv run python scripts/task.py view <M> --json \| jq '.events'` (or the matching kind+sentinel `jq`/`grep` at compose time) — a found marker refutes the claim; re-scope before filing (the real defect is a triage miss, not an absent marker) |
+| Name `target_file` at the site that consumes / propagates / reports the wrong value instead of the site that CONSTRUCTS it (#1669: filed `scripts/autonomous_session_watch.py` — the caller — while the real fix surface was `scripts/backend_poll.py::_runspec_from_runpod_handle` + `src/explore_persona_space/backends/runpod.py` (launcher render) + `backends/issue_dispatch.py` (handle writer); the shipped 13-file diff touched none of the named target) | Clause (g) call-hop target tracing: `grep -rn '<wrong-value-field>' src/ scripts/` from the symptom back to its construction site; record both sites, re-run the dedup fingerprint against the corrected target (dedup key is `(target_file, fingerprint)`) |
+| Claim "a candidate / park / record was dropped or lost" without enumerating the downstream tool's documented suppression predicates (#1680: filed "the #1642 park was lost by Step C" while the park was correctly suppressed by the `origin_candidate_ts` fp-less primary key; the real gap was counter opacity) | Clause (h) suppression-predicate: enumerate every predicate the owning tool applies (`grep -n 'suppress\|skip\|dedup\|routed' <tool>`) and check each against the specific record; a correctly-suppressed record refutes the claim — the workflow-fix candidate is then observability (missing counter, unlogged suppression outcome), not "record lost" |
+| A recursion-guarded session's subagent brief bans candidate blocks ("do NOT emit; prose only" — #1732/#1730, 2026-07-27) | The guard changes routing, not emission: brief subagents to emit candidate blocks normally; the orchestrator parks them as `epm:workflow-fix-candidate v1`, which the nightly sweep enumerates |
 
 ## Composition with other rules
 

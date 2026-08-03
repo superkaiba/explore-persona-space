@@ -32,6 +32,8 @@ from peft import LoraConfig, get_peft_model
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import SFTConfig, SFTTrainer
 
+from explore_persona_space.train.compat import DEFAULT_DDP_TIMEOUT_S
+
 # Ensure NCCL works on pods
 os.environ.setdefault("NCCL_CUMEM_ENABLE", "0")
 torch.backends.cuda.matmul.allow_tf32 = True
@@ -235,6 +237,7 @@ def main():
         logging_steps=10,
         save_strategy="no",
         seed=seed,
+        ddp_timeout=int(cfg.get("ddp_timeout", DEFAULT_DDP_TIMEOUT_S)),
         report_to=report_to,
         run_name=wandb_run_name,
         max_seq_length=max_seq_length,

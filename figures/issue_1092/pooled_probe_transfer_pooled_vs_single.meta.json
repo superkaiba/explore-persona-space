@@ -1,0 +1,175 @@
+{
+  "commit": "8fdd61efa1",
+  "created": "2026-07-23T22:10:58Z",
+  "figsize": [
+    10.4,
+    4.6
+  ],
+  "points": [
+    {
+      "best single-source held-out r": 0.030027107497584696,
+      "pooled (LODO) held-out r": 0.16751695308037184,
+      "series": "#1092 persona / L14",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "best single-source held-out r": -0.02545939298938081,
+      "pooled (LODO) held-out r": 0.13162504356751406,
+      "series": "PV-rig pass_a / L14",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "best single-source held-out r": 0.001622271010640709,
+      "pooled (LODO) held-out r": 0.0017465095458447277,
+      "series": "LMSYS / L14",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "best single-source held-out r": 0.1160214694385593,
+      "pooled (LODO) held-out r": 0.173505700092225,
+      "series": "#1092 persona / L19",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "best single-source held-out r": 0.3127430789407068,
+      "pooled (LODO) held-out r": -0.11900823122192287,
+      "series": "PV-rig pass_a / L19",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "best single-source held-out r": -0.010269956376765196,
+      "pooled (LODO) held-out r": -0.009940928134426501,
+      "series": "LMSYS / L19",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "best single-source held-out r": -0.06080967751125125,
+      "pooled (LODO) held-out r": -0.10177581563836717,
+      "series": "#1092 persona / L14",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "best single-source held-out r": 0.43894817145593634,
+      "pooled (LODO) held-out r": 0.2977291619038375,
+      "series": "PV-rig pass_a / L14",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "best single-source held-out r": -0.01076088450779744,
+      "pooled (LODO) held-out r": -0.009062022360223746,
+      "series": "LMSYS / L14",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "best single-source held-out r": 0.04860024081590675,
+      "pooled (LODO) held-out r": 0.07187810222369187,
+      "series": "#1092 persona / L19",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "best single-source held-out r": 0.5482639529696486,
+      "pooled (LODO) held-out r": 0.021624962855898062,
+      "series": "PV-rig pass_a / L19",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "best single-source held-out r": -0.017869404817005774,
+      "pooled (LODO) held-out r": -0.017171712960384482,
+      "series": "LMSYS / L19",
+      "_kind": "scatter",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Does pooling beat single-corpus training?",
+        "xlabel": "best single-source held-out r",
+        "ylabel": "pooled (LODO) held-out r",
+        "legend_labels": [
+          "#1092 persona / L14",
+          "PV-rig pass_a / L14",
+          "LMSYS / L14",
+          "#1092 persona / L19",
+          "PV-rig pass_a / L19",
+          "LMSYS / L19"
+        ],
+        "annotations": [
+          "points above the y=x line = pooling improves held-out transfer"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "sycophancy",
+        "xlabel": "best single-source held-out r",
+        "ylabel": "pooled (LODO) held-out r",
+        "legend_labels": [
+          "#1092 persona / L14",
+          "PV-rig pass_a / L14",
+          "LMSYS / L14",
+          "#1092 persona / L19",
+          "PV-rig pass_a / L19",
+          "LMSYS / L19"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "#1092 persona / L14",
+      "PV-rig pass_a / L14",
+      "LMSYS / L14",
+      "#1092 persona / L19",
+      "PV-rig pass_a / L19",
+      "LMSYS / L19"
+    ]
+  }
+}

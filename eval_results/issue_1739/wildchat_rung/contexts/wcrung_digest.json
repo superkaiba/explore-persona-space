@@ -1,0 +1,78 @@
+{
+  "drops": {
+    "duplicate_final_query_within_sample": 19,
+    "held_out_overlap_with_1092": 28,
+    "over_prompt_budget": 18
+  },
+  "git_commit": "651461edd7521be239f536d9b88be4d1f7f5a1a2",
+  "holdout": {
+    "contributions": {
+      "prefix_first_user_turn": 646,
+      "prefix_natural_query": 1000,
+      "query_text": 1500
+    },
+    "mechanism": "content hashes of #1092 prefix first-user-turns + prefix natural_queries + query texts (exact AND whitespace/case-normalized); NOT prefix_conv_id/query_conv_id, which are run-local positional counters",
+    "n_exact_hashes": 2130,
+    "n_normalized_hashes": 2127
+  },
+  "n_contexts": 2000,
+  "n_prefix_turns_hist": {
+    "0": 987,
+    "2": 349,
+    "4": 198,
+    "6": 152,
+    "8": 80,
+    "10": 50,
+    "12": 41,
+    "14": 31,
+    "16": 28,
+    "18": 12,
+    "20": 16,
+    "22": 10,
+    "24": 12,
+    "26": 8,
+    "28": 3,
+    "30": 7,
+    "32": 3,
+    "34": 4,
+    "38": 2,
+    "42": 1,
+    "44": 1,
+    "48": 1,
+    "50": 2,
+    "54": 1,
+    "108": 1
+  },
+  "n_requested": 2000,
+  "n_single_turn": 987,
+  "n_streamed_kept": 3000,
+  "prompt_token_budget": 7168,
+  "rung": "wcrung",
+  "single_turn_frac": 0.4935,
+  "split": "eval",
+  "stream": {
+    "lang_filter": "en",
+    "repo": "allenai/WildChat-1M",
+    "revision": "7d6490e462285cf85d91eabea0f9a954fbddcd1f",
+    "row_limit": 3000,
+    "seed": 0,
+    "stats": {
+      "kept": 3000,
+      "rejects": {
+        "duplicate": 361,
+        "empty_conversation": 0,
+        "language": 3875,
+        "moderation": 0,
+        "redacted": 42,
+        "structure": 61,
+        "token_budget": 41,
+        "toxic": 0
+      },
+      "resumed_from_cache": false,
+      "streamed": 7380
+    },
+    "stream_limit": 400000
+  },
+  "token_len_max": 7009,
+  "token_len_min": 31
+}

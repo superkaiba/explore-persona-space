@@ -1,0 +1,12 @@
+{
+  "n_holdout": 20000,
+  "fve_u_top16_mean": 0.9807325601577759,
+  "fve_u_median": 0.2237643301486969,
+  "fve_j_median": 0.9495187997817993,
+  "n_active_features": 16384,
+  "git_commit": "ea2b645d99ea9d03399b8b16a63584ae6d0224f8",
+  "timestamp_utc": "2026-08-01T12:14:30.425919Z",
+  "python_version": "3.11.10",
+  "platform": "Linux-6.8.0-90-generic-x86_64-with-glibc2.35",
+  "cuda_visible_devices": "all"
+}

@@ -324,8 +324,22 @@ def lobo_readout(
 # ── per-method within-condition + CI ──────────────────────────────────────────
 
 
-def method_metrics(x: np.ndarray, mat: dict, *, n_boot: int, seed: int) -> dict:
-    """Within-condition r + bootstrap CI per mode + overall r for one monitor x."""
+def method_metrics(
+    x: np.ndarray,
+    mat: dict,
+    *,
+    n_boot: int,
+    seed: int,
+    replicates_out: dict | None = None,
+    per_condition_out: dict | None = None,
+) -> dict:
+    """Within-condition r + bootstrap CI per mode + overall r for one monitor x.
+
+    Optional out-params (#779 n1m-readout; default ``None`` — behavior
+    unchanged): ``replicates_out[mode]`` receives the finite bootstrap
+    replicate r values; ``per_condition_out[mode]`` receives the kept
+    per-condition r list (the point estimate's inputs).
+    """
     res = {}
     for mode in ("system", "many_shot"):
         cx, cy = _group_by_condition(x, mat["y"], mat["cond"], mat["mode"], mode)
@@ -336,7 +350,14 @@ def method_metrics(x: np.ndarray, mat: dict, *, n_boot: int, seed: int) -> dict:
             if m.sum() >= 3:
                 cx2.append(xi[m])
                 cy2.append(yi[m])
-        ci = M.bootstrap_within_condition_ci(cx2, cy2, n_boot=n_boot, seed=seed)
+        reps: list | None = [] if replicates_out is not None else None
+        ci = M.bootstrap_within_condition_ci(
+            cx2, cy2, n_boot=n_boot, seed=seed, replicates_out=reps
+        )
+        if replicates_out is not None:
+            replicates_out[mode] = reps
+        if per_condition_out is not None:
+            per_condition_out[mode] = M.within_condition_pearson(cx2, cy2)["per_condition_r"]
         res[mode] = ci
     finite = np.isfinite(x) & np.isfinite(mat["y"])
     res["overall_r"] = M.overall_pearson(x[finite], mat["y"][finite])

@@ -1,0 +1,250 @@
+{
+  "commit": "e3f78097b",
+  "created": "2026-07-23T04:26:00Z",
+  "figsize": [
+    14.399999999999999,
+    5.2
+  ],
+  "points": [
+    {
+      "delta within-condition r vs raw": 0.2301038687136006,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "delta within-condition r vs raw": 0.20578159990941097,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "delta within-condition r vs raw": 0.3102777486155864,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "delta within-condition r vs raw": 0.273100873128514,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "delta within-condition r vs raw": 0.24780982931260592,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "delta within-condition r vs raw": 0.05,
+      "y": 0.0,
+      "series": "+0.05 pre-registered bar",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "delta within-condition r vs raw": 0.05,
+      "y": 1.0,
+      "series": "+0.05 pre-registered bar",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "delta within-condition r vs raw": -0.061043716889119914,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "delta within-condition r vs raw": -0.006105448480581588,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "delta within-condition r vs raw": 0.03509335203911568,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "delta within-condition r vs raw": 0.03796373464671299,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "delta within-condition r vs raw": -0.02100835753485819,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "delta within-condition r vs raw": 0.14272934630682121,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "delta within-condition r vs raw": 0.12605614403191545,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "delta within-condition r vs raw": 0.11993832377933078,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "delta within-condition r vs raw": 0.11668405016861172,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "delta within-condition r vs raw": 0.10547911593298365,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "delta within-condition r vs raw": 0.05,
+      "y": 0.0,
+      "series": "+0.05 pre-registered bar",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "delta within-condition r vs raw": 0.05,
+      "y": 1.0,
+      "series": "+0.05 pre-registered bar",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "delta within-condition r vs raw": 0.010806351059671204,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "delta within-condition r vs raw": 0.018046269356425948,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "delta within-condition r vs raw": 0.011627096561748484,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "delta within-condition r vs raw": 0.03662496158367179,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "delta within-condition r vs raw": 0.042386013572708214,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "delta within-condition r vs raw": 0.05,
+      "y": 0.0,
+      "series": "+0.05 pre-registered bar",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "delta within-condition r vs raw": 0.05,
+      "y": 1.0,
+      "series": "+0.05 pre-registered bar",
+      "_kind": "line",
+      "_group": 22
+    }
+  ],
+  "n_series": 23,
+  "total_points": 26,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil (L26 re-read)",
+        "xlabel": "delta within-condition r vs raw",
+        "legend_labels": [
+          "+0.05 pre-registered bar"
+        ],
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ],
+        "yticklabels": [
+          "many-shot: 5k linear map",
+          "many-shot: 963k ridge",
+          "many-shot: 963k MLP (w=8192)",
+          "many-shot: 963k MLP (w=32768)",
+          "many-shot: 963k kernel (Nystr\u00f6m)"
+        ]
+      },
+      {
+        "title_left": "sycophancy (L26 re-read)",
+        "xlabel": "delta within-condition r vs raw",
+        "xticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ],
+        "yticklabels": [
+          "system: 5k linear map",
+          "system: 963k ridge",
+          "system: 963k MLP (w=8192)",
+          "system: 963k MLP (w=32768)",
+          "system: 963k kernel (Nystr\u00f6m)",
+          "many-shot: 5k linear map",
+          "many-shot: 963k ridge",
+          "many-shot: 963k MLP (w=8192)",
+          "many-shot: 963k MLP (w=32768)",
+          "many-shot: 963k kernel (Nystr\u00f6m)"
+        ]
+      },
+      {
+        "title_left": "hallucination (L26 re-read)",
+        "xlabel": "delta within-condition r vs raw",
+        "xticklabels": [
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08"
+        ],
+        "yticklabels": [
+          "many-shot: 5k linear map",
+          "many-shot: 963k ridge",
+          "many-shot: 963k MLP (w=8192)",
+          "many-shot: 963k MLP (w=32768)",
+          "many-shot: 963k kernel (Nystr\u00f6m)"
+        ]
+      }
+    ],
+    "series": [
+      "+0.05 pre-registered bar"
+    ]
+  }
+}

@@ -100,6 +100,19 @@ for the gaps that remain:
    discoverable. `Grep` for the symbol/module the issue mentions before asking
    "which files are in scope".
 
+6. **Guard/hook file reads — WINDOWED, never wholesale.** When the issue body
+   names a target under `.claude/hooks/` or `scripts/guard_*.sh`, do NOT
+   wholesale-`Read` the file. `Grep` for the anchor (function name, error
+   string, blocked pattern) first, then `Read` with `offset=<line>`
+   `limit=~120`. The `guard_trigger_dense_read.sh` PreToolUse hook
+   mechanically blocks unbounded reads of those targets at runtime; a
+   wholesale attempt wastes a tool call (incident #1676 clarifier turn: a
+   whole-file `Read` of `guard_root_code_commit.sh` was BLOCKED by the
+   hook). Counts/structure only (`wc -l`, `grep -c`, `git diff --stat`)
+   never trip. Full rule: `.claude/rules/trigger-dense-review.md`
+   § Orchestrator ordinary turns (windowed-read discipline 3, generalized
+   here to context-gathering).
+
 After this pass, write a short internal note (NOT posted to the issue unless
 the user asks for it) of the form:
 

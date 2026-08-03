@@ -24,3 +24,9 @@ consuming loop (verified: rc goes 134 → 0). Do NOT reach for `os._exit(0)`
 (masks genuine finalize failures). Worked example:
 `run_952.phase0_verify` + `issue952_stats._reconstruct_lmsys_prompts`
 (#952 commit 3a95b2e7a8).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [HF datasets streaming shutdown SIGABRT](feedback_hf_datasets_streaming_shutdown_sigabrt.md) — a streaming IterableDataset surviving to interpreter shutdown SIGABRTs rc=134 AFTER all work completed; del+gc.collect() at the call site (never os._exit); #952 r2.

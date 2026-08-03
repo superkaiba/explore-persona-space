@@ -1,0 +1,1192 @@
+{
+  "meta": {
+    "git_commit": "926b322ee9f208ceab23eb5e2493ff09d8585958",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "timestamp_utc": "2026-07-29T06:00:53.142740+00:00",
+    "store_rev": "e590170619e7691c1a95c7b1bb20bda5fd4065ad",
+    "rb_rev": "037fcbb210bc52c459959b0746cc268fe08bae96",
+    "script": "issue1774_fit_battery.py --step q1a"
+  },
+  "layer": 14,
+  "stitch_r2_per_context_oof": 0.7540814682631943,
+  "stitch_knn": {
+    "euclidean": {
+      "metric": "euclidean",
+      "n": 17308,
+      "n_pool": 17308,
+      "acc_at_k": {
+        "1": 0.08539403743933441,
+        "5": 0.2921192512133118,
+        "10": 0.5202218627224405
+      },
+      "chance_at_k": {
+        "1": 5.777675063554426e-05,
+        "5": 0.0002888837531777213,
+        "10": 0.0005777675063554426
+      },
+      "median_rank": 10.0,
+      "mrr": 0.20509280390419973
+    },
+    "cosine": {
+      "metric": "cosine",
+      "n": 17308,
+      "n_pool": 17308,
+      "acc_at_k": {
+        "1": 0.08620291194823203,
+        "5": 0.29495031199445343,
+        "10": 0.5247862260226485
+      },
+      "chance_at_k": {
+        "1": 5.777675063554426e-05,
+        "5": 0.0002888837531777213,
+        "10": 0.0005777675063554426
+      },
+      "median_rank": 10.0,
+      "mrr": 0.20637948849484006
+    }
+  },
+  "identity_bias": "inapplicable \u2014 stitch input 7168 != output 3584 (stated)",
+  "observed": {
+    "raw_cosine": 0.4741727357531993,
+    "procrustes_cosine": 0.7550224109904775,
+    "in_angles_k48": [
+      0.28274463003209327,
+      0.3358220301937624,
+      0.3751821846534496,
+      0.3936804630130548,
+      0.4161346974618468,
+      0.47617557979848835,
+      0.4870047312260159,
+      0.49987410745314975,
+      0.530595470172818,
+      0.5443892325920523,
+      0.5677139136774455,
+      0.5723014735955058,
+      0.6055439710144525,
+      0.6144429698862295,
+      0.6395395554068635,
+      0.662778817881462,
+      0.6807489807127848,
+      0.6993605525638236,
+      0.7081391187521194,
+      0.7505324369826203,
+      0.7807365248633451,
+      0.8004876392205684,
+      0.827540460812432,
+      0.8560057844621742,
+      0.8662486955754443,
+      0.8823431741795971,
+      0.9312850448103108,
+      0.956459474154136,
+      0.9832995843439962,
+      1.011083266918585,
+      1.022626907660827,
+      1.0538713805871667,
+      1.0685179098878943,
+      1.1068504677254654,
+      1.1288415774497977,
+      1.146075966598988,
+      1.1875988400765993,
+      1.25801624402115,
+      1.2870628533113233,
+      1.3001336604961449,
+      1.3201919658989238,
+      1.3430525627252599,
+      1.3498102095576678,
+      1.4509286482446972,
+      1.4669326704421002,
+      1.5206376339949192,
+      1.5319860653312964,
+      1.5515010776740545
+    ],
+    "out_angles_k48": [
+      0.18397128889254405,
+      0.22277843641424366,
+      0.28651207771307463,
+      0.29958071055663793,
+      0.33044397957715077,
+      0.36781757865196774,
+      0.37163862119946967,
+      0.3993612939721996,
+      0.41438834043174705,
+      0.4435087867641544,
+      0.4787799379716226,
+      0.501631091987081,
+      0.5244135792122725,
+      0.5270298999701105,
+      0.551753477892714,
+      0.5627893231839122,
+      0.5652482266808793,
+      0.611617768605036,
+      0.6335288611231502,
+      0.6419213727867316,
+      0.686674765881855,
+      0.6979888137582752,
+      0.706938607919258,
+      0.7291303158201679,
+      0.7472662571011872,
+      0.7675014242717099,
+      0.8365022439718245,
+      0.867244319322771,
+      0.8845673087640501,
+      0.9069437247467571,
+      0.9316744123494507,
+      0.9713701906210888,
+      0.9810162743882579,
+      1.0079395634155777,
+      1.075427328617733,
+      1.1354257781961636,
+      1.205657276549565,
+      1.233067497641345,
+      1.253870146214844,
+      1.2712111831243844,
+      1.3123439245194393,
+      1.3616861533437554,
+      1.3685887152063123,
+      1.4110612123915096,
+      1.4573710283133046,
+      1.4859869121872578,
+      1.505578084174105,
+      1.5618880695434048
+    ]
+  },
+  "fold_jackknife_marginal": [
+    {
+      "fold": 0,
+      "raw_cosine_vs_pooled": 0.875619817223082,
+      "procrustes_cosine_vs_pooled": 0.8778949552650328
+    },
+    {
+      "fold": 1,
+      "raw_cosine_vs_pooled": 0.8411606625924056,
+      "procrustes_cosine_vs_pooled": 0.8439540376268696
+    },
+    {
+      "fold": 2,
+      "raw_cosine_vs_pooled": 0.8624146961751374,
+      "procrustes_cosine_vs_pooled": 0.8648473828981202
+    },
+    {
+      "fold": 3,
+      "raw_cosine_vs_pooled": 0.8657411562097944,
+      "procrustes_cosine_vs_pooled": 0.8680931971121473
+    },
+    {
+      "fold": 4,
+      "raw_cosine_vs_pooled": 0.8633346258550509,
+      "procrustes_cosine_vs_pooled": 0.8657486951845731
+    },
+    {
+      "fold": 5,
+      "raw_cosine_vs_pooled": 0.8583401637237645,
+      "procrustes_cosine_vs_pooled": 0.8608971656671344
+    }
+  ],
+  "shuffle_fit_null": {
+    "n_draws": 200,
+    "convention": "row-level pairing permutation; same-\u03bb refits via shared fp32 PressRidge factors; Procrustes cosine + angles from a rank-64 sketch of the factored operator (nuc under-estimated by the recorded truncation, the _procrustes_null_band convention)",
+    "draws": [
+      {
+        "raw_cosine": 0.0029728897656360466,
+        "procrustes_cosine_trunc": 0.21657763268997454,
+        "mean_out_angle_k48": 1.020075577000777
+      },
+      {
+        "raw_cosine": -0.005688547229723555,
+        "procrustes_cosine_trunc": 0.2091683657931176,
+        "mean_out_angle_k48": 1.028902432570855
+      },
+      {
+        "raw_cosine": 0.0065971389598190175,
+        "procrustes_cosine_trunc": 0.21238826327195542,
+        "mean_out_angle_k48": 1.01628973086675
+      },
+      {
+        "raw_cosine": -0.016433748379805505,
+        "procrustes_cosine_trunc": 0.21811605591166272,
+        "mean_out_angle_k48": 1.0148473177105188
+      },
+      {
+        "raw_cosine": 0.0009433852293908684,
+        "procrustes_cosine_trunc": 0.2224656028667736,
+        "mean_out_angle_k48": 1.0142271295189857
+      },
+      {
+        "raw_cosine": -0.0024835973703419816,
+        "procrustes_cosine_trunc": 0.2140248075049441,
+        "mean_out_angle_k48": 1.0237779809782903
+      },
+      {
+        "raw_cosine": 0.023488821136107552,
+        "procrustes_cosine_trunc": 0.21202501600326926,
+        "mean_out_angle_k48": 1.0197423888991277
+      },
+      {
+        "raw_cosine": -0.003081768749451472,
+        "procrustes_cosine_trunc": 0.20452641088360596,
+        "mean_out_angle_k48": 1.0214644018560648
+      },
+      {
+        "raw_cosine": 0.00296462422622553,
+        "procrustes_cosine_trunc": 0.2143399188959252,
+        "mean_out_angle_k48": 1.0309878593931596
+      },
+      {
+        "raw_cosine": 0.0015137307032331388,
+        "procrustes_cosine_trunc": 0.2155992562217428,
+        "mean_out_angle_k48": 1.0234519727528095
+      },
+      {
+        "raw_cosine": -0.006574964594040005,
+        "procrustes_cosine_trunc": 0.21882463183546919,
+        "mean_out_angle_k48": 1.0261104796081781
+      },
+      {
+        "raw_cosine": -0.008249271623463885,
+        "procrustes_cosine_trunc": 0.21121219422125995,
+        "mean_out_angle_k48": 1.0238504447042942
+      },
+      {
+        "raw_cosine": 0.00866234838486951,
+        "procrustes_cosine_trunc": 0.21913960160523224,
+        "mean_out_angle_k48": 1.013197993238767
+      },
+      {
+        "raw_cosine": 0.002857609569165664,
+        "procrustes_cosine_trunc": 0.20777483834507995,
+        "mean_out_angle_k48": 1.0189449569831293
+      },
+      {
+        "raw_cosine": 0.003341004087868501,
+        "procrustes_cosine_trunc": 0.21807160674099452,
+        "mean_out_angle_k48": 1.0248720689366262
+      },
+      {
+        "raw_cosine": 0.005639913521631837,
+        "procrustes_cosine_trunc": 0.21227258974956267,
+        "mean_out_angle_k48": 1.0274233942230542
+      },
+      {
+        "raw_cosine": 0.006702818909844504,
+        "procrustes_cosine_trunc": 0.21229265681024562,
+        "mean_out_angle_k48": 1.0221608548114698
+      },
+      {
+        "raw_cosine": 0.004944899861926692,
+        "procrustes_cosine_trunc": 0.2129461579753419,
+        "mean_out_angle_k48": 1.0243687499314547
+      },
+      {
+        "raw_cosine": 0.005610796132295795,
+        "procrustes_cosine_trunc": 0.21767077210077998,
+        "mean_out_angle_k48": 1.024104985408485
+      },
+      {
+        "raw_cosine": -0.005489488590653888,
+        "procrustes_cosine_trunc": 0.212300085309352,
+        "mean_out_angle_k48": 1.0221242656310399
+      },
+      {
+        "raw_cosine": 0.0054195167706766936,
+        "procrustes_cosine_trunc": 0.21977013733435785,
+        "mean_out_angle_k48": 1.023497957115372
+      },
+      {
+        "raw_cosine": -0.006048350971764751,
+        "procrustes_cosine_trunc": 0.20909263187590613,
+        "mean_out_angle_k48": 1.0229077264666557
+      },
+      {
+        "raw_cosine": -0.003288503976408353,
+        "procrustes_cosine_trunc": 0.22271672132616374,
+        "mean_out_angle_k48": 1.0229835888991754
+      },
+      {
+        "raw_cosine": 0.008221293642047682,
+        "procrustes_cosine_trunc": 0.21214997048408318,
+        "mean_out_angle_k48": 1.019136096040408
+      },
+      {
+        "raw_cosine": -0.0016079831479113506,
+        "procrustes_cosine_trunc": 0.21908823990342194,
+        "mean_out_angle_k48": 1.025383157034715
+      },
+      {
+        "raw_cosine": 0.008467586798043455,
+        "procrustes_cosine_trunc": 0.21114483637974746,
+        "mean_out_angle_k48": 1.0243953671306372
+      },
+      {
+        "raw_cosine": 0.016057223244706074,
+        "procrustes_cosine_trunc": 0.2155242873858396,
+        "mean_out_angle_k48": 1.018663575872779
+      },
+      {
+        "raw_cosine": 0.004246539188012608,
+        "procrustes_cosine_trunc": 0.20967035702919232,
+        "mean_out_angle_k48": 1.0102301966398954
+      },
+      {
+        "raw_cosine": 0.0008826663015338735,
+        "procrustes_cosine_trunc": 0.21683678127507036,
+        "mean_out_angle_k48": 1.0279745409886043
+      },
+      {
+        "raw_cosine": -0.0012220668404825214,
+        "procrustes_cosine_trunc": 0.20926164463147387,
+        "mean_out_angle_k48": 1.0245346513887246
+      },
+      {
+        "raw_cosine": -0.01469700874018911,
+        "procrustes_cosine_trunc": 0.21621722003322896,
+        "mean_out_angle_k48": 1.0239115102837484
+      },
+      {
+        "raw_cosine": -0.012409234348809603,
+        "procrustes_cosine_trunc": 0.21301180738568434,
+        "mean_out_angle_k48": 1.0119792986661196
+      },
+      {
+        "raw_cosine": 0.0004745175411258258,
+        "procrustes_cosine_trunc": 0.21373593862943513,
+        "mean_out_angle_k48": 1.0259089066336553
+      },
+      {
+        "raw_cosine": -0.008297854467067106,
+        "procrustes_cosine_trunc": 0.21192228072220554,
+        "mean_out_angle_k48": 1.0229138148327668
+      },
+      {
+        "raw_cosine": 0.0016979292309397425,
+        "procrustes_cosine_trunc": 0.21392146368656081,
+        "mean_out_angle_k48": 1.0258425312737625
+      },
+      {
+        "raw_cosine": 0.0048355046544411185,
+        "procrustes_cosine_trunc": 0.2192328269454864,
+        "mean_out_angle_k48": 1.0109187265237172
+      },
+      {
+        "raw_cosine": 0.004620984425466157,
+        "procrustes_cosine_trunc": 0.21109601996181573,
+        "mean_out_angle_k48": 1.0256773419678211
+      },
+      {
+        "raw_cosine": 0.002760522667732653,
+        "procrustes_cosine_trunc": 0.21751038446101664,
+        "mean_out_angle_k48": 1.0274993696560462
+      },
+      {
+        "raw_cosine": -0.0008127666706887677,
+        "procrustes_cosine_trunc": 0.2109652349551293,
+        "mean_out_angle_k48": 1.0167775594939787
+      },
+      {
+        "raw_cosine": -0.009041319641519772,
+        "procrustes_cosine_trunc": 0.2138572826998638,
+        "mean_out_angle_k48": 1.0243982287744682
+      },
+      {
+        "raw_cosine": -0.005628194476914395,
+        "procrustes_cosine_trunc": 0.21984775169110382,
+        "mean_out_angle_k48": 1.0165938933690388
+      },
+      {
+        "raw_cosine": 0.006327368187687039,
+        "procrustes_cosine_trunc": 0.221516968510232,
+        "mean_out_angle_k48": 1.0220237045238416
+      },
+      {
+        "raw_cosine": 0.0035286230189946325,
+        "procrustes_cosine_trunc": 0.20629458527867367,
+        "mean_out_angle_k48": 1.0266704528282087
+      },
+      {
+        "raw_cosine": -0.0081949502581301,
+        "procrustes_cosine_trunc": 0.20912097909880684,
+        "mean_out_angle_k48": 1.0187111360331376
+      },
+      {
+        "raw_cosine": 0.008848581874724905,
+        "procrustes_cosine_trunc": 0.21472184571713976,
+        "mean_out_angle_k48": 1.021660728380084
+      },
+      {
+        "raw_cosine": -0.011329755523262104,
+        "procrustes_cosine_trunc": 0.21439029413503344,
+        "mean_out_angle_k48": 1.022855478649338
+      },
+      {
+        "raw_cosine": -0.004670115430214017,
+        "procrustes_cosine_trunc": 0.21751422084168653,
+        "mean_out_angle_k48": 1.0184385093549888
+      },
+      {
+        "raw_cosine": -0.011675230016997114,
+        "procrustes_cosine_trunc": 0.21949217783999758,
+        "mean_out_angle_k48": 1.021813082198302
+      },
+      {
+        "raw_cosine": 0.00985612060604629,
+        "procrustes_cosine_trunc": 0.21754772937859954,
+        "mean_out_angle_k48": 1.02083243864278
+      },
+      {
+        "raw_cosine": -0.0006558863615277506,
+        "procrustes_cosine_trunc": 0.21949375654758235,
+        "mean_out_angle_k48": 1.0249440260231495
+      },
+      {
+        "raw_cosine": -0.01344029411367838,
+        "procrustes_cosine_trunc": 0.21763492616482086,
+        "mean_out_angle_k48": 1.0247028339654207
+      },
+      {
+        "raw_cosine": 0.00041869472984425025,
+        "procrustes_cosine_trunc": 0.2182732278139693,
+        "mean_out_angle_k48": 1.0144686611990135
+      },
+      {
+        "raw_cosine": -0.002764357974165292,
+        "procrustes_cosine_trunc": 0.21364303353130107,
+        "mean_out_angle_k48": 1.0273125699410837
+      },
+      {
+        "raw_cosine": -0.002426200880417129,
+        "procrustes_cosine_trunc": 0.21497654367542313,
+        "mean_out_angle_k48": 1.0280328864852588
+      },
+      {
+        "raw_cosine": 0.0018483539606559594,
+        "procrustes_cosine_trunc": 0.2136204480449256,
+        "mean_out_angle_k48": 1.0277183800935745
+      },
+      {
+        "raw_cosine": -0.00780279944307241,
+        "procrustes_cosine_trunc": 0.2100180187956778,
+        "mean_out_angle_k48": 1.0221066744998097
+      },
+      {
+        "raw_cosine": -0.005726512377478819,
+        "procrustes_cosine_trunc": 0.21556223934401042,
+        "mean_out_angle_k48": 1.0221024261166651
+      },
+      {
+        "raw_cosine": 0.0011524869740353206,
+        "procrustes_cosine_trunc": 0.2159864812613903,
+        "mean_out_angle_k48": 1.0252348501235247
+      },
+      {
+        "raw_cosine": -0.006665479172587155,
+        "procrustes_cosine_trunc": 0.2118606248271271,
+        "mean_out_angle_k48": 1.0225435917576153
+      },
+      {
+        "raw_cosine": 0.00036197064359959796,
+        "procrustes_cosine_trunc": 0.21535208826582183,
+        "mean_out_angle_k48": 1.0233979957799118
+      },
+      {
+        "raw_cosine": -0.0003287321559839274,
+        "procrustes_cosine_trunc": 0.20628512832708565,
+        "mean_out_angle_k48": 1.0250018071383238
+      },
+      {
+        "raw_cosine": 0.005081680070759399,
+        "procrustes_cosine_trunc": 0.21191269419927464,
+        "mean_out_angle_k48": 1.0265166287620862
+      },
+      {
+        "raw_cosine": -0.007476618888658991,
+        "procrustes_cosine_trunc": 0.214480950803923,
+        "mean_out_angle_k48": 1.0267369945844014
+      },
+      {
+        "raw_cosine": -0.010677930563698099,
+        "procrustes_cosine_trunc": 0.21604249937736555,
+        "mean_out_angle_k48": 1.01895952783525
+      },
+      {
+        "raw_cosine": -0.0038300961889068245,
+        "procrustes_cosine_trunc": 0.21589093538817497,
+        "mean_out_angle_k48": 1.0178268334517877
+      },
+      {
+        "raw_cosine": 0.00012822404179790454,
+        "procrustes_cosine_trunc": 0.2126070251328212,
+        "mean_out_angle_k48": 1.015562346825997
+      },
+      {
+        "raw_cosine": 0.00329060854659869,
+        "procrustes_cosine_trunc": 0.22417736349991466,
+        "mean_out_angle_k48": 1.0303540769964457
+      },
+      {
+        "raw_cosine": -0.002165089111180407,
+        "procrustes_cosine_trunc": 0.2134672996275826,
+        "mean_out_angle_k48": 1.0222771397481363
+      },
+      {
+        "raw_cosine": -0.006865032381760881,
+        "procrustes_cosine_trunc": 0.21894116733960925,
+        "mean_out_angle_k48": 1.0164570926378171
+      },
+      {
+        "raw_cosine": -0.009611028808185658,
+        "procrustes_cosine_trunc": 0.21783199401435144,
+        "mean_out_angle_k48": 1.0201101265847683
+      },
+      {
+        "raw_cosine": -0.0015008487725101554,
+        "procrustes_cosine_trunc": 0.212145881282011,
+        "mean_out_angle_k48": 1.020876534904043
+      },
+      {
+        "raw_cosine": -0.0014732061443826433,
+        "procrustes_cosine_trunc": 0.21463394251982984,
+        "mean_out_angle_k48": 1.0231107609967391
+      },
+      {
+        "raw_cosine": -0.007310190426372926,
+        "procrustes_cosine_trunc": 0.21944656439305146,
+        "mean_out_angle_k48": 1.0319156187276046
+      },
+      {
+        "raw_cosine": 0.005068420382574626,
+        "procrustes_cosine_trunc": 0.21611205032627018,
+        "mean_out_angle_k48": 1.029045185695092
+      },
+      {
+        "raw_cosine": -0.00752384444154229,
+        "procrustes_cosine_trunc": 0.2126627973598564,
+        "mean_out_angle_k48": 1.0216597355902195
+      },
+      {
+        "raw_cosine": -0.004537382684659687,
+        "procrustes_cosine_trunc": 0.21403172426007908,
+        "mean_out_angle_k48": 1.0209425215919812
+      },
+      {
+        "raw_cosine": 0.014867126919860403,
+        "procrustes_cosine_trunc": 0.21363468784317924,
+        "mean_out_angle_k48": 1.0328854999194543
+      },
+      {
+        "raw_cosine": -0.007837928684161515,
+        "procrustes_cosine_trunc": 0.2147732599379789,
+        "mean_out_angle_k48": 1.0220371708273888
+      },
+      {
+        "raw_cosine": -0.002840957822129088,
+        "procrustes_cosine_trunc": 0.21378803007353378,
+        "mean_out_angle_k48": 1.022381813575824
+      },
+      {
+        "raw_cosine": 0.0033834929699458082,
+        "procrustes_cosine_trunc": 0.21058656927496516,
+        "mean_out_angle_k48": 1.027123175561428
+      },
+      {
+        "raw_cosine": 0.014576435571781038,
+        "procrustes_cosine_trunc": 0.2153968983627935,
+        "mean_out_angle_k48": 1.0285393918553989
+      },
+      {
+        "raw_cosine": 0.0005580752555188304,
+        "procrustes_cosine_trunc": 0.21817517047940407,
+        "mean_out_angle_k48": 1.0158703047782183
+      },
+      {
+        "raw_cosine": 0.004971234807414164,
+        "procrustes_cosine_trunc": 0.21144570469697158,
+        "mean_out_angle_k48": 1.0246603786945343
+      },
+      {
+        "raw_cosine": 0.0019927043374392763,
+        "procrustes_cosine_trunc": 0.2068533738707608,
+        "mean_out_angle_k48": 1.0241867993026972
+      },
+      {
+        "raw_cosine": -0.0006444089783825409,
+        "procrustes_cosine_trunc": 0.2135807387428123,
+        "mean_out_angle_k48": 1.0217479473600786
+      },
+      {
+        "raw_cosine": 0.00768037385218028,
+        "procrustes_cosine_trunc": 0.2108550591228023,
+        "mean_out_angle_k48": 1.0193896386772394
+      },
+      {
+        "raw_cosine": 0.007566517066194462,
+        "procrustes_cosine_trunc": 0.21891248443940256,
+        "mean_out_angle_k48": 1.0120283352832
+      },
+      {
+        "raw_cosine": 0.000880279189411687,
+        "procrustes_cosine_trunc": 0.2156436327052086,
+        "mean_out_angle_k48": 1.022986772780617
+      },
+      {
+        "raw_cosine": -0.009549460179577161,
+        "procrustes_cosine_trunc": 0.21457298258978527,
+        "mean_out_angle_k48": 1.0263684603075187
+      },
+      {
+        "raw_cosine": 7.493121738417909e-05,
+        "procrustes_cosine_trunc": 0.21021640287905408,
+        "mean_out_angle_k48": 1.0315606882795691
+      },
+      {
+        "raw_cosine": 0.005078273650532743,
+        "procrustes_cosine_trunc": 0.21338320116713702,
+        "mean_out_angle_k48": 1.0218351278454065
+      },
+      {
+        "raw_cosine": -0.0033361965558036423,
+        "procrustes_cosine_trunc": 0.2172779375109653,
+        "mean_out_angle_k48": 1.0233556156357129
+      },
+      {
+        "raw_cosine": -0.0028204868800005005,
+        "procrustes_cosine_trunc": 0.21532386098807604,
+        "mean_out_angle_k48": 1.0306367507825296
+      },
+      {
+        "raw_cosine": -0.0031367810364677866,
+        "procrustes_cosine_trunc": 0.22082311121129666,
+        "mean_out_angle_k48": 1.0204240574191015
+      },
+      {
+        "raw_cosine": 0.012841217065674872,
+        "procrustes_cosine_trunc": 0.22001506035712737,
+        "mean_out_angle_k48": 1.0309702046215534
+      },
+      {
+        "raw_cosine": -0.003831024460351599,
+        "procrustes_cosine_trunc": 0.22097731835519538,
+        "mean_out_angle_k48": 1.019970980162422
+      },
+      {
+        "raw_cosine": 0.01262423448823808,
+        "procrustes_cosine_trunc": 0.21738540165312548,
+        "mean_out_angle_k48": 1.025657997156183
+      },
+      {
+        "raw_cosine": 0.001416526995875735,
+        "procrustes_cosine_trunc": 0.2144331547870374,
+        "mean_out_angle_k48": 1.0238275062292814
+      },
+      {
+        "raw_cosine": 0.003426364688284368,
+        "procrustes_cosine_trunc": 0.2141280970166993,
+        "mean_out_angle_k48": 1.0260776840150356
+      },
+      {
+        "raw_cosine": 0.004151165274894452,
+        "procrustes_cosine_trunc": 0.20872303716361426,
+        "mean_out_angle_k48": 1.0275671904285748
+      },
+      {
+        "raw_cosine": -0.004205744800427332,
+        "procrustes_cosine_trunc": 0.21448983120530413,
+        "mean_out_angle_k48": 1.0221947742005189
+      },
+      {
+        "raw_cosine": -0.01296163601424566,
+        "procrustes_cosine_trunc": 0.22167815130944482,
+        "mean_out_angle_k48": 1.0233527645468712
+      },
+      {
+        "raw_cosine": -0.012400879260574359,
+        "procrustes_cosine_trunc": 0.22083769081470928,
+        "mean_out_angle_k48": 1.0198875926434994
+      },
+      {
+        "raw_cosine": -0.0015970039019558516,
+        "procrustes_cosine_trunc": 0.21208205472004615,
+        "mean_out_angle_k48": 1.0253351634989183
+      },
+      {
+        "raw_cosine": -0.007682408701612718,
+        "procrustes_cosine_trunc": 0.2139163244138676,
+        "mean_out_angle_k48": 1.0297999984274309
+      },
+      {
+        "raw_cosine": 0.00622256623824057,
+        "procrustes_cosine_trunc": 0.21521106341185725,
+        "mean_out_angle_k48": 1.0268283349772294
+      },
+      {
+        "raw_cosine": -0.004018872766408769,
+        "procrustes_cosine_trunc": 0.21544465610907051,
+        "mean_out_angle_k48": 1.0339403208345175
+      },
+      {
+        "raw_cosine": 0.0011422583551672933,
+        "procrustes_cosine_trunc": 0.21499955855054842,
+        "mean_out_angle_k48": 1.028203800941507
+      },
+      {
+        "raw_cosine": -0.005320497255152126,
+        "procrustes_cosine_trunc": 0.22226049677796034,
+        "mean_out_angle_k48": 1.0170199784139793
+      },
+      {
+        "raw_cosine": 0.010160001806133091,
+        "procrustes_cosine_trunc": 0.21387767707450445,
+        "mean_out_angle_k48": 1.0290504551182191
+      },
+      {
+        "raw_cosine": 0.005987305405426971,
+        "procrustes_cosine_trunc": 0.20786623077084576,
+        "mean_out_angle_k48": 1.031212257842223
+      },
+      {
+        "raw_cosine": -0.0028618538658121955,
+        "procrustes_cosine_trunc": 0.22097782834406463,
+        "mean_out_angle_k48": 1.0180286752680938
+      },
+      {
+        "raw_cosine": 0.0009119667040945583,
+        "procrustes_cosine_trunc": 0.2135704373636846,
+        "mean_out_angle_k48": 1.0214726130167644
+      },
+      {
+        "raw_cosine": 0.009350010750435433,
+        "procrustes_cosine_trunc": 0.21978509816887354,
+        "mean_out_angle_k48": 1.0158686007683475
+      },
+      {
+        "raw_cosine": 0.008442012191861253,
+        "procrustes_cosine_trunc": 0.22264765312345539,
+        "mean_out_angle_k48": 1.0249905958771706
+      },
+      {
+        "raw_cosine": -0.001155204407555147,
+        "procrustes_cosine_trunc": 0.21773395002382429,
+        "mean_out_angle_k48": 1.0244010295718908
+      },
+      {
+        "raw_cosine": 0.007725975014334981,
+        "procrustes_cosine_trunc": 0.2096220973325454,
+        "mean_out_angle_k48": 1.0203079512963693
+      },
+      {
+        "raw_cosine": -0.0038305284761467736,
+        "procrustes_cosine_trunc": 0.22215114135343864,
+        "mean_out_angle_k48": 1.016150771950682
+      },
+      {
+        "raw_cosine": 0.017688434773705637,
+        "procrustes_cosine_trunc": 0.21990712438135254,
+        "mean_out_angle_k48": 1.0305997785180807
+      },
+      {
+        "raw_cosine": -0.0026838546673317383,
+        "procrustes_cosine_trunc": 0.21372521226175098,
+        "mean_out_angle_k48": 1.0216320101171732
+      },
+      {
+        "raw_cosine": 0.019549585212003846,
+        "procrustes_cosine_trunc": 0.2170229697481568,
+        "mean_out_angle_k48": 1.0226095623026292
+      },
+      {
+        "raw_cosine": 0.007090638057362054,
+        "procrustes_cosine_trunc": 0.21743798276301818,
+        "mean_out_angle_k48": 1.0213508817056816
+      },
+      {
+        "raw_cosine": 0.008413840467827866,
+        "procrustes_cosine_trunc": 0.21552364371217617,
+        "mean_out_angle_k48": 1.02037405098478
+      },
+      {
+        "raw_cosine": 0.0005501859268789399,
+        "procrustes_cosine_trunc": 0.21799178236241876,
+        "mean_out_angle_k48": 1.0274140344311793
+      },
+      {
+        "raw_cosine": 0.010129425442163375,
+        "procrustes_cosine_trunc": 0.21260857551967177,
+        "mean_out_angle_k48": 1.027915067349871
+      },
+      {
+        "raw_cosine": 0.008657927679347569,
+        "procrustes_cosine_trunc": 0.2154941808623655,
+        "mean_out_angle_k48": 1.0229709980388482
+      },
+      {
+        "raw_cosine": 0.014715901680865565,
+        "procrustes_cosine_trunc": 0.215636585824134,
+        "mean_out_angle_k48": 1.0190202078471582
+      },
+      {
+        "raw_cosine": -0.0033272248145844,
+        "procrustes_cosine_trunc": 0.21858217148227468,
+        "mean_out_angle_k48": 1.026577988639474
+      },
+      {
+        "raw_cosine": -0.001693949453077043,
+        "procrustes_cosine_trunc": 0.21091733867631565,
+        "mean_out_angle_k48": 1.0241918147852023
+      },
+      {
+        "raw_cosine": -0.0009168549741632743,
+        "procrustes_cosine_trunc": 0.21520332986387708,
+        "mean_out_angle_k48": 1.025209579616785
+      },
+      {
+        "raw_cosine": 0.008458403129132876,
+        "procrustes_cosine_trunc": 0.2169928832377456,
+        "mean_out_angle_k48": 1.0220728168884914
+      },
+      {
+        "raw_cosine": 0.001051977188336885,
+        "procrustes_cosine_trunc": 0.2093716178607451,
+        "mean_out_angle_k48": 1.0301468440641959
+      },
+      {
+        "raw_cosine": -0.00015124104203098482,
+        "procrustes_cosine_trunc": 0.21725156126347286,
+        "mean_out_angle_k48": 1.0203705641130607
+      },
+      {
+        "raw_cosine": -0.0013861398576589924,
+        "procrustes_cosine_trunc": 0.21063957892168086,
+        "mean_out_angle_k48": 1.0263469989101093
+      },
+      {
+        "raw_cosine": -0.018799834283281837,
+        "procrustes_cosine_trunc": 0.21491525161534905,
+        "mean_out_angle_k48": 1.0198476848502953
+      },
+      {
+        "raw_cosine": 0.010094932449021297,
+        "procrustes_cosine_trunc": 0.21162342224711164,
+        "mean_out_angle_k48": 1.0250227836271126
+      },
+      {
+        "raw_cosine": 0.009567069688655188,
+        "procrustes_cosine_trunc": 0.20958145131969252,
+        "mean_out_angle_k48": 1.028023274615407
+      },
+      {
+        "raw_cosine": 0.009144041121117346,
+        "procrustes_cosine_trunc": 0.21065464848040602,
+        "mean_out_angle_k48": 1.0228458438068628
+      },
+      {
+        "raw_cosine": 0.0021143109469992263,
+        "procrustes_cosine_trunc": 0.212755417558238,
+        "mean_out_angle_k48": 1.020641212662061
+      },
+      {
+        "raw_cosine": 0.01664453864520276,
+        "procrustes_cosine_trunc": 0.220321829054695,
+        "mean_out_angle_k48": 1.0297834159185488
+      },
+      {
+        "raw_cosine": 0.01206770170570916,
+        "procrustes_cosine_trunc": 0.2121923648412295,
+        "mean_out_angle_k48": 1.0197376739233732
+      },
+      {
+        "raw_cosine": 0.009538418936093475,
+        "procrustes_cosine_trunc": 0.2198311340122973,
+        "mean_out_angle_k48": 1.0287811644375324
+      },
+      {
+        "raw_cosine": -0.0027111110567600975,
+        "procrustes_cosine_trunc": 0.21781003824862696,
+        "mean_out_angle_k48": 1.012267442420125
+      },
+      {
+        "raw_cosine": 0.001119860894139481,
+        "procrustes_cosine_trunc": 0.21803698640422597,
+        "mean_out_angle_k48": 1.0258787261943023
+      },
+      {
+        "raw_cosine": 0.00046265947553616896,
+        "procrustes_cosine_trunc": 0.21452210750138564,
+        "mean_out_angle_k48": 1.0241438715408246
+      },
+      {
+        "raw_cosine": 0.0017637586941889813,
+        "procrustes_cosine_trunc": 0.2169491299718328,
+        "mean_out_angle_k48": 1.020895577346285
+      },
+      {
+        "raw_cosine": 0.003209029726531576,
+        "procrustes_cosine_trunc": 0.21788069584488298,
+        "mean_out_angle_k48": 1.0273332900057237
+      },
+      {
+        "raw_cosine": 0.005768372210688965,
+        "procrustes_cosine_trunc": 0.21690244881452073,
+        "mean_out_angle_k48": 1.032124028230707
+      },
+      {
+        "raw_cosine": -0.00681113631981216,
+        "procrustes_cosine_trunc": 0.2103052082941611,
+        "mean_out_angle_k48": 1.0241425472001235
+      },
+      {
+        "raw_cosine": 0.0004356019056045653,
+        "procrustes_cosine_trunc": 0.21703104242687352,
+        "mean_out_angle_k48": 1.022123882547021
+      },
+      {
+        "raw_cosine": -0.007730289723545392,
+        "procrustes_cosine_trunc": 0.21661342916477933,
+        "mean_out_angle_k48": 1.022426115969817
+      },
+      {
+        "raw_cosine": -0.0021223268028852374,
+        "procrustes_cosine_trunc": 0.2205419930199797,
+        "mean_out_angle_k48": 1.0183556123326223
+      },
+      {
+        "raw_cosine": 0.0006261798164192909,
+        "procrustes_cosine_trunc": 0.21211418321366346,
+        "mean_out_angle_k48": 1.0299757365137339
+      },
+      {
+        "raw_cosine": -0.002832702106979793,
+        "procrustes_cosine_trunc": 0.21930271638808713,
+        "mean_out_angle_k48": 1.017805525412162
+      },
+      {
+        "raw_cosine": 0.0041283317790153954,
+        "procrustes_cosine_trunc": 0.2144801200756407,
+        "mean_out_angle_k48": 1.0212878069529931
+      },
+      {
+        "raw_cosine": 0.0023679303506532368,
+        "procrustes_cosine_trunc": 0.21761598930443848,
+        "mean_out_angle_k48": 1.038443233196934
+      },
+      {
+        "raw_cosine": -0.007155486559620405,
+        "procrustes_cosine_trunc": 0.21408969493424965,
+        "mean_out_angle_k48": 1.025188531105717
+      },
+      {
+        "raw_cosine": -0.008688894783620088,
+        "procrustes_cosine_trunc": 0.2154546225079922,
+        "mean_out_angle_k48": 1.009374759470423
+      },
+      {
+        "raw_cosine": 0.005099009780495391,
+        "procrustes_cosine_trunc": 0.21058342199595956,
+        "mean_out_angle_k48": 1.0312141552567482
+      },
+      {
+        "raw_cosine": -0.0020549520523828976,
+        "procrustes_cosine_trunc": 0.21861293810132315,
+        "mean_out_angle_k48": 1.0214639181892078
+      },
+      {
+        "raw_cosine": 0.006260073171157456,
+        "procrustes_cosine_trunc": 0.2073531538514953,
+        "mean_out_angle_k48": 1.0237372561047475
+      },
+      {
+        "raw_cosine": 0.006420991915304623,
+        "procrustes_cosine_trunc": 0.2217639289551807,
+        "mean_out_angle_k48": 1.0205364506691694
+      },
+      {
+        "raw_cosine": -0.0041215960352554235,
+        "procrustes_cosine_trunc": 0.21177078877625877,
+        "mean_out_angle_k48": 1.0194587086637814
+      },
+      {
+        "raw_cosine": -0.002323619803693074,
+        "procrustes_cosine_trunc": 0.20951220838884987,
+        "mean_out_angle_k48": 1.024213860432307
+      },
+      {
+        "raw_cosine": 0.00892733164739465,
+        "procrustes_cosine_trunc": 0.2101170095684461,
+        "mean_out_angle_k48": 1.0209094130744536
+      },
+      {
+        "raw_cosine": -0.0030366430416314287,
+        "procrustes_cosine_trunc": 0.2164847621291137,
+        "mean_out_angle_k48": 1.0150634379436572
+      },
+      {
+        "raw_cosine": 0.003110560138846461,
+        "procrustes_cosine_trunc": 0.21460439890746627,
+        "mean_out_angle_k48": 1.0259884720047314
+      },
+      {
+        "raw_cosine": -0.00026865421537239186,
+        "procrustes_cosine_trunc": 0.21820995414672623,
+        "mean_out_angle_k48": 1.0283368583768606
+      },
+      {
+        "raw_cosine": 0.002832512170703733,
+        "procrustes_cosine_trunc": 0.21654410404794885,
+        "mean_out_angle_k48": 1.0310867155591648
+      },
+      {
+        "raw_cosine": 0.005047501663175578,
+        "procrustes_cosine_trunc": 0.218622985656175,
+        "mean_out_angle_k48": 1.0260544680058956
+      },
+      {
+        "raw_cosine": 0.005131829107681498,
+        "procrustes_cosine_trunc": 0.2186126429871016,
+        "mean_out_angle_k48": 1.023148683210214
+      },
+      {
+        "raw_cosine": -0.007680910168755111,
+        "procrustes_cosine_trunc": 0.21845791995427333,
+        "mean_out_angle_k48": 1.0264835090686877
+      },
+      {
+        "raw_cosine": -0.009341414617015854,
+        "procrustes_cosine_trunc": 0.21627643471989064,
+        "mean_out_angle_k48": 1.021125763033827
+      },
+      {
+        "raw_cosine": 0.002415694765664087,
+        "procrustes_cosine_trunc": 0.2203954878400481,
+        "mean_out_angle_k48": 1.0129774523278077
+      },
+      {
+        "raw_cosine": 0.0003497151079933533,
+        "procrustes_cosine_trunc": 0.2124297129383759,
+        "mean_out_angle_k48": 1.0243039224296808
+      },
+      {
+        "raw_cosine": -0.005819729343283061,
+        "procrustes_cosine_trunc": 0.2188846129591869,
+        "mean_out_angle_k48": 1.0298604294657707
+      },
+      {
+        "raw_cosine": -0.0033793951592075546,
+        "procrustes_cosine_trunc": 0.21368938406003019,
+        "mean_out_angle_k48": 1.0281556049982707
+      },
+      {
+        "raw_cosine": 0.006979173989041416,
+        "procrustes_cosine_trunc": 0.21316970442667366,
+        "mean_out_angle_k48": 1.018699257945021
+      },
+      {
+        "raw_cosine": 0.0014548955848468403,
+        "procrustes_cosine_trunc": 0.2155123236264985,
+        "mean_out_angle_k48": 1.0242369882762432
+      },
+      {
+        "raw_cosine": -0.008088366394943796,
+        "procrustes_cosine_trunc": 0.21139777040709304,
+        "mean_out_angle_k48": 1.0197991840541363
+      },
+      {
+        "raw_cosine": 0.0019280489154881373,
+        "procrustes_cosine_trunc": 0.2195289462270373,
+        "mean_out_angle_k48": 1.0200516134500504
+      },
+      {
+        "raw_cosine": 0.006663193655289734,
+        "procrustes_cosine_trunc": 0.2129334070163477,
+        "mean_out_angle_k48": 1.029236065223813
+      },
+      {
+        "raw_cosine": 0.007133984359779357,
+        "procrustes_cosine_trunc": 0.21261839560261767,
+        "mean_out_angle_k48": 1.0269479043781757
+      },
+      {
+        "raw_cosine": -0.00830048256667778,
+        "procrustes_cosine_trunc": 0.21589589844910761,
+        "mean_out_angle_k48": 1.0175488305588563
+      },
+      {
+        "raw_cosine": -0.007011844558427448,
+        "procrustes_cosine_trunc": 0.20807753113404356,
+        "mean_out_angle_k48": 1.0312606636434793
+      },
+      {
+        "raw_cosine": 0.012228820696099785,
+        "procrustes_cosine_trunc": 0.21172799052178493,
+        "mean_out_angle_k48": 1.015806355824073
+      },
+      {
+        "raw_cosine": -0.009806300873289165,
+        "procrustes_cosine_trunc": 0.21396034560050242,
+        "mean_out_angle_k48": 1.0237755632648866
+      },
+      {
+        "raw_cosine": -0.002799851256982791,
+        "procrustes_cosine_trunc": 0.21348310592447658,
+        "mean_out_angle_k48": 1.0268052803973358
+      },
+      {
+        "raw_cosine": -0.006135484404296537,
+        "procrustes_cosine_trunc": 0.21814727086204752,
+        "mean_out_angle_k48": 1.0295348937312763
+      },
+      {
+        "raw_cosine": 0.010361986088630417,
+        "procrustes_cosine_trunc": 0.2112781510808665,
+        "mean_out_angle_k48": 1.0331366086999576
+      },
+      {
+        "raw_cosine": 0.0020562187785267663,
+        "procrustes_cosine_trunc": 0.20678288057794295,
+        "mean_out_angle_k48": 1.0225398819893599
+      },
+      {
+        "raw_cosine": -0.011077917705262853,
+        "procrustes_cosine_trunc": 0.20980408868763567,
+        "mean_out_angle_k48": 1.0220702402293682
+      },
+      {
+        "raw_cosine": 0.022630273303095853,
+        "procrustes_cosine_trunc": 0.22061656520114414,
+        "mean_out_angle_k48": 1.0196706503629684
+      },
+      {
+        "raw_cosine": 0.009239390354193118,
+        "procrustes_cosine_trunc": 0.2169394740385312,
+        "mean_out_angle_k48": 1.0265914220362902
+      },
+      {
+        "raw_cosine": 0.0010280650255864764,
+        "procrustes_cosine_trunc": 0.20464429508464752,
+        "mean_out_angle_k48": 1.0267419163137674
+      },
+      {
+        "raw_cosine": -0.0036951450847611455,
+        "procrustes_cosine_trunc": 0.21999637604236555,
+        "mean_out_angle_k48": 1.0195909862716992
+      },
+      {
+        "raw_cosine": -0.00804755549686626,
+        "procrustes_cosine_trunc": 0.21280384898311397,
+        "mean_out_angle_k48": 1.020981129258871
+      },
+      {
+        "raw_cosine": 0.022640344784881535,
+        "procrustes_cosine_trunc": 0.21539900467147816,
+        "mean_out_angle_k48": 1.0246160825093586
+      },
+      {
+        "raw_cosine": -9.403638083895327e-05,
+        "procrustes_cosine_trunc": 0.21950251618866035,
+        "mean_out_angle_k48": 1.0175972959647577
+      },
+      {
+        "raw_cosine": -0.0055867242049383314,
+        "procrustes_cosine_trunc": 0.21820007257092408,
+        "mean_out_angle_k48": 1.028198813398679
+      }
+    ]
+  }
+}

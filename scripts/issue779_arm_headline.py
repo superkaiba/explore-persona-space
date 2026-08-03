@@ -271,13 +271,21 @@ def _mode_metrics(x: np.ndarray, mat: dict, n_boot: int, seed: int) -> dict:
 
 
 def _delta_vs(
-    x_a: np.ndarray, x_b: np.ndarray, mat: dict, mode: str, n_boot: int, seed: int
+    x_a: np.ndarray,
+    x_b: np.ndarray,
+    mat: dict,
+    mode: str,
+    n_boot: int,
+    seed: int,
+    replicates_out: list | None = None,
 ) -> dict:
     cx_a, cy = S1._group_by_condition(x_a, mat["y"], mat["cond"], mat["mode"], mode)
     cx_b, _ = S1._group_by_condition(x_b, mat["y"], mat["cond"], mat["mode"], mode)
     if not cx_a or not cx_b:
         return {"delta": float("nan"), "lo": float("nan"), "hi": float("nan")}
-    return M.bootstrap_delta_ci(cx_a, cx_b, cy, n_boot=n_boot, seed=seed)
+    return M.bootstrap_delta_ci(
+        cx_a, cx_b, cy, n_boot=n_boot, seed=seed, replicates_out=replicates_out
+    )
 
 
 def heldout_recon_multi(

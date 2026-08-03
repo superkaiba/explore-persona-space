@@ -1,0 +1,230 @@
+{
+  "fired": false,
+  "g0": {
+    "fired": false,
+    "mismatches": []
+  },
+  "g1": {
+    "fired": false,
+    "n_cells": 12,
+    "n_bad": 0,
+    "n_warn": 0,
+    "halt_cos": 0.995,
+    "warn_cos": 0.9999,
+    "max_bad": 2,
+    "cells": [
+      {
+        "cell_id": "gen1c/context/cross_00_evil_to_sycophancy/L14/a4",
+        "steer_layer": 14,
+        "min_cos": 0.9999996423721313,
+        "n_comparisons": 39
+      },
+      {
+        "cell_id": "gen1c/prefix/cross_00_evil_to_sycophancy/L14/a4",
+        "steer_layer": 14,
+        "min_cos": 0.9999997615814209,
+        "n_comparisons": 39
+      },
+      {
+        "cell_id": "gen1c/context/cross_00_evil_to_sycophancy/L20/a4",
+        "steer_layer": 20,
+        "min_cos": 0.9999995827674866,
+        "n_comparisons": 65
+      },
+      {
+        "cell_id": "gen1c/prefix/cross_00_evil_to_sycophancy/L20/a4",
+        "steer_layer": 20,
+        "min_cos": 0.9999995827674866,
+        "n_comparisons": 65
+      },
+      {
+        "cell_id": "gen1c/context/cross_01_evil_to_hallucination/L20/a4",
+        "steer_layer": 20,
+        "min_cos": 0.9999994039535522,
+        "n_comparisons": 65
+      },
+      {
+        "cell_id": "gen1c/prefix/cross_01_evil_to_hallucination/L20/a4",
+        "steer_layer": 20,
+        "min_cos": 0.9999994039535522,
+        "n_comparisons": 65
+      },
+      {
+        "cell_id": "gen1c/context/cross_02_sycophancy_to_evil/L20/a4",
+        "steer_layer": 20,
+        "min_cos": 0.9999997019767761,
+        "n_comparisons": 65
+      },
+      {
+        "cell_id": "gen1c/prefix/cross_02_sycophancy_to_evil/L20/a4",
+        "steer_layer": 20,
+        "min_cos": 0.9999995827674866,
+        "n_comparisons": 65
+      },
+      {
+        "cell_id": "gen1c/context/cross_03_sycophancy_to_hallucination/L20/a4",
+        "steer_layer": 20,
+        "min_cos": 0.9999997615814209,
+        "n_comparisons": 65
+      },
+      {
+        "cell_id": "gen1c/prefix/cross_03_sycophancy_to_hallucination/L20/a4",
+        "steer_layer": 20,
+        "min_cos": 0.9999996423721313,
+        "n_comparisons": 65
+      },
+      {
+        "cell_id": "gen1c/context/cross_04_hallucination_to_evil/L20/a4",
+        "steer_layer": 20,
+        "min_cos": 0.9999997019767761,
+        "n_comparisons": 65
+      },
+      {
+        "cell_id": "gen1c/prefix/cross_04_hallucination_to_evil/L20/a4",
+        "steer_layer": 20,
+        "min_cos": 0.999999463558197,
+        "n_comparisons": 65
+      }
+    ]
+  },
+  "g2": {
+    "fired": false,
+    "cos_min": 0.99,
+    "norm_ratio_band": [
+      0.9,
+      1.1
+    ],
+    "n_cells": 12,
+    "n_bad": 0,
+    "cells": [
+      {
+        "cell_id": "gen1c/context/cross_00_evil_to_sycophancy/L14/a4",
+        "delta_arm": "context",
+        "steer_layer": 14,
+        "cos_d_delta": 0.9999867081642151,
+        "norm_ratio": 0.9999096393585205,
+        "ctx_vec_max_dev": 1.4379057884216309,
+        "cross_arm_delta_cos": 0.35593777894973755,
+        "passed": true
+      },
+      {
+        "cell_id": "gen1c/prefix/cross_00_evil_to_sycophancy/L14/a4",
+        "delta_arm": "prefix",
+        "steer_layer": 14,
+        "cos_d_delta": 0.9999716877937317,
+        "norm_ratio": 1.0000190734863281,
+        "ctx_vec_max_dev": 1.7486441135406494,
+        "cross_arm_delta_cos": 0.35593777894973755,
+        "passed": true
+      },
+      {
+        "cell_id": "gen1c/context/cross_00_evil_to_sycophancy/L20/a4",
+        "delta_arm": "context",
+        "steer_layer": 20,
+        "cos_d_delta": 0.9999893307685852,
+        "norm_ratio": 1.0000783205032349,
+        "ctx_vec_max_dev": 1.8777484893798828,
+        "cross_arm_delta_cos": 0.23046760261058807,
+        "passed": true
+      },
+      {
+        "cell_id": "gen1c/prefix/cross_00_evil_to_sycophancy/L20/a4",
+        "delta_arm": "prefix",
+        "steer_layer": 20,
+        "cos_d_delta": 0.9999715685844421,
+        "norm_ratio": 1.0000771284103394,
+        "ctx_vec_max_dev": 1.7130088806152344,
+        "cross_arm_delta_cos": 0.23046760261058807,
+        "passed": true
+      },
+      {
+        "cell_id": "gen1c/context/cross_01_evil_to_hallucination/L20/a4",
+        "delta_arm": "context",
+        "steer_layer": 20,
+        "cos_d_delta": 0.9999877214431763,
+        "norm_ratio": 0.9998195171356201,
+        "ctx_vec_max_dev": 0.0,
+        "cross_arm_delta_cos": 0.24590790271759033,
+        "passed": true
+      },
+      {
+        "cell_id": "gen1c/prefix/cross_01_evil_to_hallucination/L20/a4",
+        "delta_arm": "prefix",
+        "steer_layer": 20,
+        "cos_d_delta": 0.999968945980072,
+        "norm_ratio": 0.9997946619987488,
+        "ctx_vec_max_dev": 0.0,
+        "cross_arm_delta_cos": 0.24590790271759033,
+        "passed": true
+      },
+      {
+        "cell_id": "gen1c/context/cross_02_sycophancy_to_evil/L20/a4",
+        "delta_arm": "context",
+        "steer_layer": 20,
+        "cos_d_delta": 0.9999903440475464,
+        "norm_ratio": 1.000383734703064,
+        "ctx_vec_max_dev": 1.6747970581054688,
+        "cross_arm_delta_cos": 0.2119600474834442,
+        "passed": true
+      },
+      {
+        "cell_id": "gen1c/prefix/cross_02_sycophancy_to_evil/L20/a4",
+        "delta_arm": "prefix",
+        "steer_layer": 20,
+        "cos_d_delta": 0.9999692440032959,
+        "norm_ratio": 1.0003684759140015,
+        "ctx_vec_max_dev": 1.5945789813995361,
+        "cross_arm_delta_cos": 0.2119600474834442,
+        "passed": true
+      },
+      {
+        "cell_id": "gen1c/context/cross_03_sycophancy_to_hallucination/L20/a4",
+        "delta_arm": "context",
+        "steer_layer": 20,
+        "cos_d_delta": 0.9999897480010986,
+        "norm_ratio": 1.0005457401275635,
+        "ctx_vec_max_dev": 1.4826236963272095,
+        "cross_arm_delta_cos": 0.19453230500221252,
+        "passed": true
+      },
+      {
+        "cell_id": "gen1c/prefix/cross_03_sycophancy_to_hallucination/L20/a4",
+        "delta_arm": "prefix",
+        "steer_layer": 20,
+        "cos_d_delta": 0.9999752044677734,
+        "norm_ratio": 1.000022053718567,
+        "ctx_vec_max_dev": 1.3578088283538818,
+        "cross_arm_delta_cos": 0.19453230500221252,
+        "passed": true
+      },
+      {
+        "cell_id": "gen1c/context/cross_04_hallucination_to_evil/L20/a4",
+        "delta_arm": "context",
+        "steer_layer": 20,
+        "cos_d_delta": 0.9999901652336121,
+        "norm_ratio": 1.0002111196517944,
+        "ctx_vec_max_dev": 1.797605037689209,
+        "cross_arm_delta_cos": 0.21108542382717133,
+        "passed": true
+      },
+      {
+        "cell_id": "gen1c/prefix/cross_04_hallucination_to_evil/L20/a4",
+        "delta_arm": "prefix",
+        "steer_layer": 20,
+        "cos_d_delta": 0.9999751448631287,
+        "norm_ratio": 0.999631404876709,
+        "ctx_vec_max_dev": 1.5733288526535034,
+        "cross_arm_delta_cos": 0.21108542382717133,
+        "passed": true
+      }
+    ]
+  },
+  "repro": {
+    "git_commit": "59f2d4df05a8d790afa7f54a7788b7323acc3566",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "timestamp": "2026-07-23T03:46:46.765425+00:00"
+  }
+}

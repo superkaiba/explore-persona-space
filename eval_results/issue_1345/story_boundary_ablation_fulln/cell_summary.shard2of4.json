@@ -1,0 +1,3477 @@
+{
+  "metadata": {
+    "git_commit": "unknown",
+    "timestamp": "2026-08-02T22:20:48Z",
+    "seed": 0,
+    "n": 11,
+    "script": "scripts/issue1345_boundary_ablation_fits.py",
+    "pinned_parent_revision": "7159e5804d"
+  },
+  "round": "story_boundary_ablation",
+  "layer": 19,
+  "null_draws": 40,
+  "n_boot": 1000,
+  "arm_readme": {
+    "v1_boundary_present": "boundary-present anchor (REUSED from conversation_paired_stories_assistant, not re-generated): single exchange, labeled attribution Assistant replied: \"<verbatim answer>\" immediately before the answer.",
+    "v2_boundary_absent": "boundary-ABSENT: identical narrative recipe and the SAME verbatim answer, but no speaker label, no attribution phrase and no quotes at the slot \u2014 the answer continues as its own paragraph. Isolates whether the map needs ANY explicit answer boundary at all.",
+    "v3_label_stripped": "label-stripped boundary: the attribution SLOT is kept but carries no speaker identity (The reply came: \"<verbatim answer>\"). Isolates the SLOT from the LABEL \u2014 a collapse here implicates the speaker identity, not the boundary.",
+    "v4_established_structure": "established structure: 2-3 prior LABELED question->answer exchanges precede the SAME final Assistant replied: \"<verbatim answer>\" boundary. Isolates exchange-count / established turn structure with the final boundary held fixed.",
+    "v5_bare_label": "bare turn label: identical narrative recipe to V1/V3, but the answer is introduced by a BARE script-style turn label on its own line (Assistant: <verbatim answer>) \u2014 no attribution verb, no quotes around the answer. This transplants the no-template comparator's boundary INTO a story, so V5-vs-V1 isolates the boundary FORM (prose attribution vs pretraining-familiar turn syntax) while V5-vs-no_template isolates the residual story cost at MATCHED boundary syntax. NOTE the one forced deviation from the shared closing instruction: the never-a-script clause is narrowed to exempt that single label line (the arm's construction requires it) \u2014 see _SHARED_CLOSE_V5."
+  },
+  "cells": {
+    "R_instruct_bnd_no_template_prefix__ymean": {
+      "cell": {
+        "cell_id": "R_instruct_bnd_no_template_prefix__ymean",
+        "model_key": "instruct",
+        "format_key": "bnd_ntpl",
+        "track": "s",
+        "slot_index": 0,
+        "target_turn_index": 0,
+        "regime": "bnd_ntpl",
+        "bnd_arm": "no_template",
+        "provenance": "injected",
+        "measured_model": "instruct",
+        "slot": "prefix",
+        "y_target": "answer",
+        "arm": "prefix"
+      },
+      "layer": 19,
+      "r2": 0.07187445030728679,
+      "ci": {
+        "r2": 0.07271086049239062,
+        "ci_lo": 0.06440173633307504,
+        "ci_hi": 0.08058339964919342,
+        "n_rows": 4618,
+        "n_groups": 4618,
+        "unit": "conversation"
+      },
+      "null_p975": -0.0021243440084487584,
+      "mean_baseline_r2": -0.0014094117725509392,
+      "skill_over_mean": 0.07328386207983772,
+      "baselines": {
+        "identity_bias": {
+          "r2": -0.11788380824137001,
+          "ci_lo": -0.14187800662355493,
+          "ci_hi": -0.09658005114234977,
+          "n_rows": 4618,
+          "n_groups": 4618,
+          "unit": "conversation",
+          "b_norm": 116.31071365162296
+        },
+        "knn_identity_bias": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0019488956258120397
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 2306.0,
+            "mrr": 0.001929908307017103
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0019488956258120397
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 2311.5,
+            "mrr": 0.0019148844462554668
+          }
+        },
+        "knn_ridge": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.00043308791684711995,
+              "5": 0.0023819835426591596,
+              "10": 0.0064963187527068
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 1938.75,
+            "mrr": 0.003530998154074533
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.00043308791684711995,
+              "5": 0.0019488956258120397,
+              "10": 0.006929406669553919
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 1899.5,
+            "mrr": 0.0035589548989975813
+          }
+        }
+      },
+      "r2_reduced_basis": -2887804.6393087674,
+      "companions": {
+        "folds": {
+          "n_folds": 5,
+          "seed": 0,
+          "n_train_min": 3694
+        },
+        "d_in": 3584,
+        "underdetermined_ambient": false,
+        "reduced_basis": {
+          "k": 1024,
+          "k_rule": "min(1024, floor(n_train_min/2), d_in)",
+          "pca_fit": "per-fold TRAIN rows only, centering only (no held-out leakage)",
+          "pca_coords_standardized_by_prep_fold": true,
+          "r2_heldout": -2887804.6393087674,
+          "gcv_lambda_per_fold": [
+            316.2277660168379,
+            316.2277660168379,
+            316.2277660168379,
+            316.2277660168379,
+            316.2277660168379
+          ],
+          "knn": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 4618,
+              "n_pool": 4618,
+              "acc_at_k": {
+                "1": 0.00043308791684711995,
+                "5": 0.0023819835426591596,
+                "10": 0.0064963187527068
+              },
+              "chance_at_k": {
+                "1": 0.00021654395842355997,
+                "5": 0.0010827197921178,
+                "10": 0.0021654395842356
+              },
+              "median_rank": 1941.5,
+              "mrr": 0.0035365702662138706
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 4618,
+              "n_pool": 4618,
+              "acc_at_k": {
+                "1": 0.00043308791684711995,
+                "5": 0.0023819835426591596,
+                "10": 0.00714595062797748
+              },
+              "chance_at_k": {
+                "1": 0.00021654395842355997,
+                "5": 0.0010827197921178,
+                "10": 0.0021654395842356
+              },
+              "median_rank": 1906.0,
+              "mrr": 0.0036034593565998905
+            }
+          }
+        },
+        "forced_lambda": {
+          "lambda_1e+02": {
+            "lambda": 100.0,
+            "r2_heldout": 0.07166574443054341,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.00043308791684711995,
+                  "5": 0.0023819835426591596,
+                  "10": 0.0064963187527068
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 1940.5,
+                "mrr": 0.00354868349588597
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.00043308791684711995,
+                  "5": 0.0021654395842356,
+                  "10": 0.0067128627111303595
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 1901.0,
+                "mrr": 0.0035792801984643164
+              }
+            }
+          },
+          "lambda_1e+03": {
+            "lambda": 1000.0,
+            "r2_heldout": 0.07182787997529638,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.00043308791684711995,
+                  "5": 0.0023819835426591596,
+                  "10": 0.0064963187527068
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 1938.0,
+                "mrr": 0.0035452291393692783
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.00043308791684711995,
+                  "5": 0.0021654395842356,
+                  "10": 0.006929406669553919
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 1902.5,
+                "mrr": 0.003582322066698801
+              }
+            }
+          },
+          "lambda_1e+04": {
+            "lambda": 10000.0,
+            "r2_heldout": 0.07130780179546936,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.00043308791684711995,
+                  "5": 0.0023819835426591596,
+                  "10": 0.0064963187527068
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 1943.5,
+                "mrr": 0.003469526173067061
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.00043308791684711995,
+                  "5": 0.0019488956258120397,
+                  "10": 0.00714595062797748
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 1905.0,
+                "mrr": 0.003530322624278544
+              }
+            }
+          }
+        },
+        "forced_lambda_selection_bearing": true,
+        "forced_lambda_note": "best-of-grid held-out estimate; diagnostic only \u2014 cite the reduced-basis read for any headline",
+        "probe_reference": {
+          "source": "eval_results/issue_1345/story_context_info_probe/{summary.json,forced_lambda_probe.json} @ 3ffc51d581 / 9f0fb74d4a",
+          "story_vC_to_story_vA": {
+            "ambient_gcv_r2": -0.306,
+            "reduced_basis_r2_on_policy": 0.262,
+            "reduced_basis_r2_teacher_forced": 0.367,
+            "forced_lambda_1e2_r2": 0.1605,
+            "forced_lambda_1e3_r2": 0.4075,
+            "forced_lambda_1e4_r2": 0.418
+          },
+          "story_vC_to_chat_vC": {
+            "forced_lambda_1e3_r2": 0.4359,
+            "forced_lambda_1e4_r2": 0.4403
+          },
+          "note": "ambient GCV picks the lambda-grid floor 0.01 in 5/5 folds at n_train<d; the committed V1 anchor -0.3056 is the ARTIFACT-BEARING read",
+          "citation_guidance": "for a single UNSELECTED headline figure cite the reduced-basis leg (per-fold GCV in a train-fold-only basis, no post-hoc selection); the forced-lambda sweep is a best-of-grid HELD-OUT estimate and carries selection"
+        }
+      }
+    },
+    "R_instruct_bnd_no_template_prefix__ybnd": {
+      "cell": {
+        "cell_id": "R_instruct_bnd_no_template_prefix__ybnd",
+        "model_key": "instruct",
+        "format_key": "bnd_ntpl",
+        "track": "s",
+        "slot_index": 0,
+        "target_turn_index": 1,
+        "regime": "bnd_ntpl",
+        "bnd_arm": "no_template",
+        "provenance": "injected",
+        "measured_model": "instruct",
+        "slot": "prefix",
+        "y_target": "y_boundary",
+        "arm": "prefix"
+      },
+      "layer": 19,
+      "r2": 0.054631536686379545,
+      "ci": {
+        "r2": 0.055460426406609864,
+        "ci_lo": 0.04965931078364625,
+        "ci_hi": 0.060549256532397955,
+        "n_rows": 4618,
+        "n_groups": 4618,
+        "unit": "conversation"
+      },
+      "null_p975": -0.0024250962558822475,
+      "mean_baseline_r2": -0.0013711558297428983,
+      "skill_over_mean": 0.05600269251612244,
+      "baselines": {
+        "identity_bias": {
+          "r2": -0.09875821528884177,
+          "ci_lo": -0.1189516102706157,
+          "ci_hi": -0.08056181617408968,
+          "n_rows": 4618,
+          "n_groups": 4618,
+          "unit": "conversation",
+          "b_norm": 104.90061761181339
+        },
+        "knn_identity_bias": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0008661758336942399,
+              "10": 0.0021654395842356
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 2303.5,
+            "mrr": 0.0019364147241204665
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0019488956258120397
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 2308.0,
+            "mrr": 0.001943357404185952
+          }
+        },
+        "knn_ridge": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0034647033347769596,
+              "10": 0.009094846253789519
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 1832.5,
+            "mrr": 0.004456350624319019
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0032481593763534,
+              "10": 0.010177566045907319
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 1837.5,
+            "mrr": 0.004269798993336837
+          }
+        }
+      },
+      "r2_reduced_basis": -1387647.8547414658,
+      "companions": {
+        "folds": {
+          "n_folds": 5,
+          "seed": 0,
+          "n_train_min": 3694
+        },
+        "d_in": 3584,
+        "underdetermined_ambient": false,
+        "reduced_basis": {
+          "k": 1024,
+          "k_rule": "min(1024, floor(n_train_min/2), d_in)",
+          "pca_fit": "per-fold TRAIN rows only, centering only (no held-out leakage)",
+          "pca_coords_standardized_by_prep_fold": true,
+          "r2_heldout": -1387647.8547414658,
+          "gcv_lambda_per_fold": [
+            1000.0,
+            1000.0,
+            1000.0,
+            316.2277660168379,
+            1000.0
+          ],
+          "knn": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 4618,
+              "n_pool": 4618,
+              "acc_at_k": {
+                "1": 0.00021654395842355997,
+                "5": 0.0034647033347769596,
+                "10": 0.00931139021221308
+              },
+              "chance_at_k": {
+                "1": 0.00021654395842355997,
+                "5": 0.0010827197921178,
+                "10": 0.0021654395842356
+              },
+              "median_rank": 1834.0,
+              "mrr": 0.004508219205451917
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 4618,
+              "n_pool": 4618,
+              "acc_at_k": {
+                "1": 0.00021654395842355997,
+                "5": 0.0030316154179298397,
+                "10": 0.010177566045907319
+              },
+              "chance_at_k": {
+                "1": 0.00021654395842355997,
+                "5": 0.0010827197921178,
+                "10": 0.0021654395842356
+              },
+              "median_rank": 1844.0,
+              "mrr": 0.004275608427001449
+            }
+          }
+        },
+        "forced_lambda": {
+          "lambda_1e+02": {
+            "lambda": 100.0,
+            "r2_heldout": 0.05432040434118934,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0032481593763534,
+                  "10": 0.00931139021221308
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 1832.0,
+                "mrr": 0.00441780487849769
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0030316154179298397,
+                  "10": 0.010177566045907319
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 1838.0,
+                "mrr": 0.004288513482468477
+              }
+            }
+          },
+          "lambda_1e+03": {
+            "lambda": 1000.0,
+            "r2_heldout": 0.05450128393547338,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0032481593763534,
+                  "10": 0.009094846253789519
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 1832.0,
+                "mrr": 0.004404314080741152
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0030316154179298397,
+                  "10": 0.010177566045907319
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 1838.0,
+                "mrr": 0.004273825337563088
+              }
+            }
+          },
+          "lambda_1e+04": {
+            "lambda": 10000.0,
+            "r2_heldout": 0.05427211793965803,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0034647033347769596,
+                  "10": 0.009094846253789519
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 1835.5,
+                "mrr": 0.0045637106512440555
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.00281507145950628,
+                  "10": 0.00996102208748376
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 1843.5,
+                "mrr": 0.004247163867196826
+              }
+            }
+          }
+        },
+        "forced_lambda_selection_bearing": true,
+        "forced_lambda_note": "best-of-grid held-out estimate; diagnostic only \u2014 cite the reduced-basis read for any headline",
+        "probe_reference": {
+          "source": "eval_results/issue_1345/story_context_info_probe/{summary.json,forced_lambda_probe.json} @ 3ffc51d581 / 9f0fb74d4a",
+          "story_vC_to_story_vA": {
+            "ambient_gcv_r2": -0.306,
+            "reduced_basis_r2_on_policy": 0.262,
+            "reduced_basis_r2_teacher_forced": 0.367,
+            "forced_lambda_1e2_r2": 0.1605,
+            "forced_lambda_1e3_r2": 0.4075,
+            "forced_lambda_1e4_r2": 0.418
+          },
+          "story_vC_to_chat_vC": {
+            "forced_lambda_1e3_r2": 0.4359,
+            "forced_lambda_1e4_r2": 0.4403
+          },
+          "note": "ambient GCV picks the lambda-grid floor 0.01 in 5/5 folds at n_train<d; the committed V1 anchor -0.3056 is the ARTIFACT-BEARING read",
+          "citation_guidance": "for a single UNSELECTED headline figure cite the reduced-basis leg (per-fold GCV in a train-fold-only basis, no post-hoc selection); the forced-lambda sweep is a best-of-grid HELD-OUT estimate and carries selection"
+        }
+      }
+    },
+    "R_instruct_bnd_no_template_ctx_qend__ymean": {
+      "cell": {
+        "cell_id": "R_instruct_bnd_no_template_ctx_qend__ymean",
+        "model_key": "instruct",
+        "format_key": "bnd_ntpl",
+        "track": "s",
+        "slot_index": 1,
+        "target_turn_index": 0,
+        "regime": "bnd_ntpl",
+        "bnd_arm": "no_template",
+        "provenance": "injected",
+        "measured_model": "instruct",
+        "slot": "ctx_qend",
+        "y_target": "answer",
+        "arm": "context"
+      },
+      "layer": 19,
+      "r2": 0.4930079348597656,
+      "ci": {
+        "r2": 0.49346482716636253,
+        "ci_lo": 0.4842050222628348,
+        "ci_hi": 0.5016261277334781,
+        "n_rows": 4618,
+        "n_groups": 4618,
+        "unit": "conversation"
+      },
+      "null_p975": -0.04347289538871471,
+      "mean_baseline_r2": -0.0014094117725509392,
+      "skill_over_mean": 0.4944173466323165,
+      "baselines": {
+        "identity_bias": {
+          "r2": -3.188939438180249,
+          "ci_lo": -3.240454045573313,
+          "ci_hi": -3.1418395128913112,
+          "n_rows": 4618,
+          "n_groups": 4618,
+          "unit": "conversation",
+          "b_norm": 36.909319993189655
+        },
+        "knn_identity_bias": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.3412732784755305,
+              "5": 0.46491987873538326,
+              "10": 0.5136422693806842
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 9.0,
+            "mrr": 0.4014854227095872
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.3510177566045907,
+              "5": 0.4844088349935037,
+              "10": 0.533997401472499
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 6.5,
+            "mrr": 0.4139685859584105
+          }
+        },
+        "knn_ridge": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.1866608921611087,
+              "5": 0.3852317020355132,
+              "10": 0.4772628843655262
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 13.0,
+            "mrr": 0.28620352445574354
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.21546123863144218,
+              "5": 0.406019922044175,
+              "10": 0.4997834560415764
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 10.5,
+            "mrr": 0.31144759092431584
+          }
+        }
+      },
+      "r2_reduced_basis": 0.4723886714773099,
+      "companions": {
+        "folds": {
+          "n_folds": 5,
+          "seed": 0,
+          "n_train_min": 3694
+        },
+        "d_in": 3584,
+        "underdetermined_ambient": false,
+        "reduced_basis": {
+          "k": 1024,
+          "k_rule": "min(1024, floor(n_train_min/2), d_in)",
+          "pca_fit": "per-fold TRAIN rows only, centering only (no held-out leakage)",
+          "pca_coords_standardized_by_prep_fold": true,
+          "r2_heldout": 0.4723886714773099,
+          "gcv_lambda_per_fold": [
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0
+          ],
+          "knn": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 4618,
+              "n_pool": 4618,
+              "acc_at_k": {
+                "1": 0.21069727154612386,
+                "5": 0.4021221307925509,
+                "10": 0.498051104374188
+              },
+              "chance_at_k": {
+                "1": 0.00021654395842355997,
+                "5": 0.0010827197921178,
+                "10": 0.0021654395842356
+              },
+              "median_rank": 11.0,
+              "mrr": 0.30772393964843997
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 4618,
+              "n_pool": 4618,
+              "acc_at_k": {
+                "1": 0.24556084885231702,
+                "5": 0.4356864443482027,
+                "10": 0.5214378518839324
+              },
+              "chance_at_k": {
+                "1": 0.00021654395842355997,
+                "5": 0.0010827197921178,
+                "10": 0.0021654395842356
+              },
+              "median_rank": 9.0,
+              "mrr": 0.33953221172439363
+            }
+          }
+        },
+        "forced_lambda": {
+          "lambda_1e+02": {
+            "lambda": 100.0,
+            "r2_heldout": 0.03253165120559287,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.22368990905153746,
+                  "5": 0.45084452143785186,
+                  "10": 0.5355132091814638
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 8.0,
+                "mrr": 0.33472951566800496
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.2407968817669987,
+                  "5": 0.4714161974880901,
+                  "10": 0.5556517973148549
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 7.0,
+                "mrr": 0.3530820953182936
+              }
+            }
+          },
+          "lambda_1e+03": {
+            "lambda": 1000.0,
+            "r2_heldout": 0.4418269925208088,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.2397141619748809,
+                  "5": 0.4519272412299697,
+                  "10": 0.5456907752273712
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 8.0,
+                "mrr": 0.34590864836381247
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.2602858380251191,
+                  "5": 0.4737981810307492,
+                  "10": 0.5610653962754439
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 7.0,
+                "mrr": 0.3645413130709518
+              }
+            }
+          },
+          "lambda_1e+04": {
+            "lambda": 10000.0,
+            "r2_heldout": 0.4826516667560109,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.10632308358596795,
+                  "5": 0.2602858380251191,
+                  "10": 0.3479861411866609
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 30.0,
+                "mrr": 0.1873901539412445
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.12732784755305326,
+                  "5": 0.2932005197055002,
+                  "10": 0.375487223906453
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 26.0,
+                "mrr": 0.21231137357126523
+              }
+            }
+          }
+        },
+        "forced_lambda_selection_bearing": true,
+        "forced_lambda_note": "best-of-grid held-out estimate; diagnostic only \u2014 cite the reduced-basis read for any headline",
+        "probe_reference": {
+          "source": "eval_results/issue_1345/story_context_info_probe/{summary.json,forced_lambda_probe.json} @ 3ffc51d581 / 9f0fb74d4a",
+          "story_vC_to_story_vA": {
+            "ambient_gcv_r2": -0.306,
+            "reduced_basis_r2_on_policy": 0.262,
+            "reduced_basis_r2_teacher_forced": 0.367,
+            "forced_lambda_1e2_r2": 0.1605,
+            "forced_lambda_1e3_r2": 0.4075,
+            "forced_lambda_1e4_r2": 0.418
+          },
+          "story_vC_to_chat_vC": {
+            "forced_lambda_1e3_r2": 0.4359,
+            "forced_lambda_1e4_r2": 0.4403
+          },
+          "note": "ambient GCV picks the lambda-grid floor 0.01 in 5/5 folds at n_train<d; the committed V1 anchor -0.3056 is the ARTIFACT-BEARING read",
+          "citation_guidance": "for a single UNSELECTED headline figure cite the reduced-basis leg (per-fold GCV in a train-fold-only basis, no post-hoc selection); the forced-lambda sweep is a best-of-grid HELD-OUT estimate and carries selection"
+        }
+      }
+    },
+    "R_instruct_bnd_no_template_ctx_qend__ybnd": {
+      "cell": {
+        "cell_id": "R_instruct_bnd_no_template_ctx_qend__ybnd",
+        "model_key": "instruct",
+        "format_key": "bnd_ntpl",
+        "track": "s",
+        "slot_index": 1,
+        "target_turn_index": 1,
+        "regime": "bnd_ntpl",
+        "bnd_arm": "no_template",
+        "provenance": "injected",
+        "measured_model": "instruct",
+        "slot": "ctx_qend",
+        "y_target": "y_boundary",
+        "arm": "context"
+      },
+      "layer": 19,
+      "r2": 0.47609562188276744,
+      "ci": {
+        "r2": 0.47655497609101327,
+        "ci_lo": 0.4676099792132586,
+        "ci_hi": 0.4842661460423178,
+        "n_rows": 4618,
+        "n_groups": 4618,
+        "unit": "conversation"
+      },
+      "null_p975": -0.04296647048638076,
+      "mean_baseline_r2": -0.0013711558297428983,
+      "skill_over_mean": 0.47746677771251034,
+      "baselines": {
+        "identity_bias": {
+          "r2": -3.029587664740781,
+          "ci_lo": -3.061901069327415,
+          "ci_hi": -2.9953292120500996,
+          "n_rows": 4618,
+          "n_groups": 4618,
+          "unit": "conversation",
+          "b_norm": 61.77763564330651
+        },
+        "knn_identity_bias": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.17951494153313122,
+              "5": 0.2849718492854049,
+              "10": 0.3315288003464703
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 69.0,
+            "mrr": 0.23302997530859063
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.18731052403637938,
+              "5": 0.2862711130359463,
+              "10": 0.33261152013858813
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 71.0,
+            "mrr": 0.23844572854653057
+          }
+        },
+        "knn_ridge": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.24447812906019922,
+              "5": 0.4575573841489822,
+              "10": 0.5413598960589
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 7.0,
+            "mrr": 0.3489025921055843
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.24750974447812907,
+              "5": 0.44997834560415767,
+              "10": 0.5348635773061932
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 8.0,
+            "mrr": 0.3477196400059846
+          }
+        }
+      },
+      "r2_reduced_basis": 0.44112006363455636,
+      "companions": {
+        "folds": {
+          "n_folds": 5,
+          "seed": 0,
+          "n_train_min": 3694
+        },
+        "d_in": 3584,
+        "underdetermined_ambient": false,
+        "reduced_basis": {
+          "k": 1024,
+          "k_rule": "min(1024, floor(n_train_min/2), d_in)",
+          "pca_fit": "per-fold TRAIN rows only, centering only (no held-out leakage)",
+          "pca_coords_standardized_by_prep_fold": true,
+          "r2_heldout": 0.44112006363455636,
+          "gcv_lambda_per_fold": [
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0
+          ],
+          "knn": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 4618,
+              "n_pool": 4618,
+              "acc_at_k": {
+                "1": 0.23473365093113902,
+                "5": 0.4419662191424859,
+                "10": 0.5350801212646167
+              },
+              "chance_at_k": {
+                "1": 0.00021654395842355997,
+                "5": 0.0010827197921178,
+                "10": 0.0021654395842356
+              },
+              "median_rank": 8.0,
+              "mrr": 0.3359266564283927
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 4618,
+              "n_pool": 4618,
+              "acc_at_k": {
+                "1": 0.2379818103074924,
+                "5": 0.44131658726721523,
+                "10": 0.5262018189692508
+              },
+              "chance_at_k": {
+                "1": 0.00021654395842355997,
+                "5": 0.0010827197921178,
+                "10": 0.0021654395842356
+              },
+              "median_rank": 8.5,
+              "mrr": 0.3372678855856549
+            }
+          }
+        },
+        "forced_lambda": {
+          "lambda_1e+02": {
+            "lambda": 100.0,
+            "r2_heldout": -0.027473484380550417,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.23235166738847987,
+                  "5": 0.4737981810307492,
+                  "10": 0.5656128194023387
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 6.5,
+                "mrr": 0.3495166207349951
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.23993070593330446,
+                  "5": 0.4718492854049372,
+                  "10": 0.5597661325249026
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 7.0,
+                "mrr": 0.3525028587328625
+              }
+            }
+          },
+          "lambda_1e+03": {
+            "lambda": 1000.0,
+            "r2_heldout": 0.4111023938747683,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.27241229969683844,
+                  "5": 0.5041143352100477,
+                  "10": 0.5928973581637073
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 5.0,
+                "mrr": 0.3841428722173691
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.2708964919878735,
+                  "5": 0.49155478562148114,
+                  "10": 0.5838025119099177
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 6.0,
+                "mrr": 0.379032125369318
+              }
+            }
+          },
+          "lambda_1e+04": {
+            "lambda": 10000.0,
+            "r2_heldout": 0.4771985890525945,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.16825465569510611,
+                  "5": 0.35058466868774363,
+                  "10": 0.447812906019922
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 15.0,
+                "mrr": 0.262055751410374
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.17540060632308357,
+                  "5": 0.35058466868774363,
+                  "10": 0.44023386747509746
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 16.0,
+                "mrr": 0.26492277077133375
+              }
+            }
+          }
+        },
+        "forced_lambda_selection_bearing": true,
+        "forced_lambda_note": "best-of-grid held-out estimate; diagnostic only \u2014 cite the reduced-basis read for any headline",
+        "probe_reference": {
+          "source": "eval_results/issue_1345/story_context_info_probe/{summary.json,forced_lambda_probe.json} @ 3ffc51d581 / 9f0fb74d4a",
+          "story_vC_to_story_vA": {
+            "ambient_gcv_r2": -0.306,
+            "reduced_basis_r2_on_policy": 0.262,
+            "reduced_basis_r2_teacher_forced": 0.367,
+            "forced_lambda_1e2_r2": 0.1605,
+            "forced_lambda_1e3_r2": 0.4075,
+            "forced_lambda_1e4_r2": 0.418
+          },
+          "story_vC_to_chat_vC": {
+            "forced_lambda_1e3_r2": 0.4359,
+            "forced_lambda_1e4_r2": 0.4403
+          },
+          "note": "ambient GCV picks the lambda-grid floor 0.01 in 5/5 folds at n_train<d; the committed V1 anchor -0.3056 is the ARTIFACT-BEARING read",
+          "citation_guidance": "for a single UNSELECTED headline figure cite the reduced-basis leg (per-fold GCV in a train-fold-only basis, no post-hoc selection); the forced-lambda sweep is a best-of-grid HELD-OUT estimate and carries selection"
+        }
+      }
+    },
+    "R_instruct_bnd_no_template_op_prefix__ymean": {
+      "cell": {
+        "cell_id": "R_instruct_bnd_no_template_op_prefix__ymean",
+        "model_key": "instruct",
+        "format_key": "bnd_ntpl_op",
+        "track": "s",
+        "slot_index": 0,
+        "target_turn_index": 0,
+        "regime": "bnd_ntpl_op",
+        "bnd_arm": "no_template",
+        "provenance": "onpolicy",
+        "measured_model": "instruct",
+        "slot": "prefix",
+        "y_target": "answer",
+        "arm": "prefix"
+      },
+      "layer": 19,
+      "r2": 0.008699255140989792,
+      "ci": {
+        "r2": 0.009454982433416914,
+        "ci_lo": 0.006668976847222077,
+        "ci_hi": 0.011780808581660867,
+        "n_rows": 4618,
+        "n_groups": 4618,
+        "unit": "conversation"
+      },
+      "null_p975": -0.001757169782211521,
+      "mean_baseline_r2": -0.0011921232251750347,
+      "skill_over_mean": 0.009891378366164827,
+      "baselines": {
+        "identity_bias": {
+          "r2": -0.15906297783162304,
+          "ci_lo": -0.19140063682086894,
+          "ci_hi": -0.1296776836600831,
+          "n_rows": 4618,
+          "n_groups": 4618,
+          "unit": "conversation",
+          "b_norm": 115.66952321800561
+        },
+        "knn_identity_bias": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0008661758336942399,
+              "10": 0.0019488956258120397
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 2301.5,
+            "mrr": 0.0019310481183760593
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.0,
+              "5": 0.0008661758336942399,
+              "10": 0.0019488956258120397
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 2305.0,
+            "mrr": 0.0017434867863320162
+          }
+        },
+        "knn_ridge": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 2253.5,
+            "mrr": 0.0020350824960797755
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.0,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 2252.5,
+            "mrr": 0.001904775417596245
+          }
+        }
+      },
+      "r2_reduced_basis": -33606.7782919729,
+      "companions": {
+        "folds": {
+          "n_folds": 5,
+          "seed": 0,
+          "n_train_min": 3694
+        },
+        "d_in": 3584,
+        "underdetermined_ambient": false,
+        "reduced_basis": {
+          "k": 1024,
+          "k_rule": "min(1024, floor(n_train_min/2), d_in)",
+          "pca_fit": "per-fold TRAIN rows only, centering only (no held-out leakage)",
+          "pca_coords_standardized_by_prep_fold": true,
+          "r2_heldout": -33606.7782919729,
+          "gcv_lambda_per_fold": [
+            3162.2776601683795,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0
+          ],
+          "knn": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 4618,
+              "n_pool": 4618,
+              "acc_at_k": {
+                "1": 0.00021654395842355997,
+                "5": 0.0010827197921178,
+                "10": 0.0021654395842356
+              },
+              "chance_at_k": {
+                "1": 0.00021654395842355997,
+                "5": 0.0010827197921178,
+                "10": 0.0021654395842356
+              },
+              "median_rank": 2250.5,
+              "mrr": 0.0020352382206512932
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 4618,
+              "n_pool": 4618,
+              "acc_at_k": {
+                "1": 0.0,
+                "5": 0.0010827197921178,
+                "10": 0.0021654395842356
+              },
+              "chance_at_k": {
+                "1": 0.00021654395842355997,
+                "5": 0.0010827197921178,
+                "10": 0.0021654395842356
+              },
+              "median_rank": 2247.5,
+              "mrr": 0.0019081392645203955
+            }
+          }
+        },
+        "forced_lambda": {
+          "lambda_1e+02": {
+            "lambda": 100.0,
+            "r2_heldout": 0.008185738297665002,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 2249.0,
+                "mrr": 0.0020394134010820364
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.0,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 2243.0,
+                "mrr": 0.0019038150284795346
+              }
+            }
+          },
+          "lambda_1e+03": {
+            "lambda": 1000.0,
+            "r2_heldout": 0.008306174286872303,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 2249.5,
+                "mrr": 0.0020389098637334396
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.0,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 2243.0,
+                "mrr": 0.0019034406545422361
+              }
+            }
+          },
+          "lambda_1e+04": {
+            "lambda": 10000.0,
+            "r2_heldout": 0.008699255079295476,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 2253.5,
+                "mrr": 0.0020350824960797755
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.0,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 2252.5,
+                "mrr": 0.001904775417596245
+              }
+            }
+          }
+        },
+        "forced_lambda_selection_bearing": true,
+        "forced_lambda_note": "best-of-grid held-out estimate; diagnostic only \u2014 cite the reduced-basis read for any headline",
+        "probe_reference": {
+          "source": "eval_results/issue_1345/story_context_info_probe/{summary.json,forced_lambda_probe.json} @ 3ffc51d581 / 9f0fb74d4a",
+          "story_vC_to_story_vA": {
+            "ambient_gcv_r2": -0.306,
+            "reduced_basis_r2_on_policy": 0.262,
+            "reduced_basis_r2_teacher_forced": 0.367,
+            "forced_lambda_1e2_r2": 0.1605,
+            "forced_lambda_1e3_r2": 0.4075,
+            "forced_lambda_1e4_r2": 0.418
+          },
+          "story_vC_to_chat_vC": {
+            "forced_lambda_1e3_r2": 0.4359,
+            "forced_lambda_1e4_r2": 0.4403
+          },
+          "note": "ambient GCV picks the lambda-grid floor 0.01 in 5/5 folds at n_train<d; the committed V1 anchor -0.3056 is the ARTIFACT-BEARING read",
+          "citation_guidance": "for a single UNSELECTED headline figure cite the reduced-basis leg (per-fold GCV in a train-fold-only basis, no post-hoc selection); the forced-lambda sweep is a best-of-grid HELD-OUT estimate and carries selection"
+        }
+      }
+    },
+    "R_instruct_bnd_no_template_op_ctx_qend__ymean": {
+      "cell": {
+        "cell_id": "R_instruct_bnd_no_template_op_ctx_qend__ymean",
+        "model_key": "instruct",
+        "format_key": "bnd_ntpl_op",
+        "track": "s",
+        "slot_index": 1,
+        "target_turn_index": 0,
+        "regime": "bnd_ntpl_op",
+        "bnd_arm": "no_template",
+        "provenance": "onpolicy",
+        "measured_model": "instruct",
+        "slot": "ctx_qend",
+        "y_target": "answer",
+        "arm": "context"
+      },
+      "layer": 19,
+      "r2": 0.3293568620765446,
+      "ci": {
+        "r2": 0.32986813308376783,
+        "ci_lo": 0.321818675711548,
+        "ci_hi": 0.33742511492702226,
+        "n_rows": 4618,
+        "n_groups": 4618,
+        "unit": "conversation"
+      },
+      "null_p975": -0.04237140815789479,
+      "mean_baseline_r2": -0.0011921232251750347,
+      "skill_over_mean": 0.3305489853017196,
+      "baselines": {
+        "identity_bias": {
+          "r2": -4.704467356844148,
+          "ci_lo": -4.780603153494647,
+          "ci_hi": -4.632829659801117,
+          "n_rows": 4618,
+          "n_groups": 4618,
+          "unit": "conversation",
+          "b_norm": 37.38834421753336
+        },
+        "knn_identity_bias": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.24101342572542225,
+              "5": 0.3555651797314855,
+              "10": 0.4094846253789519
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 33.0,
+            "mrr": 0.29953632835926064
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.2611520138588133,
+              "5": 0.370073624945864,
+              "10": 0.42291035080121264
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 27.0,
+            "mrr": 0.31692474483995653
+          }
+        },
+        "knn_ridge": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.03919445647466436,
+              "5": 0.11022087483759203,
+              "10": 0.1617583369423993
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 138.0,
+            "mrr": 0.0825134787175352
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.048722390645301,
+              "5": 0.13793850151580772,
+              "10": 0.18969250757903855
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 94.0,
+            "mrr": 0.09869415185004589
+          }
+        }
+      },
+      "r2_reduced_basis": 0.30169835982818616,
+      "companions": {
+        "folds": {
+          "n_folds": 5,
+          "seed": 0,
+          "n_train_min": 3694
+        },
+        "d_in": 3584,
+        "underdetermined_ambient": false,
+        "reduced_basis": {
+          "k": 1024,
+          "k_rule": "min(1024, floor(n_train_min/2), d_in)",
+          "pca_fit": "per-fold TRAIN rows only, centering only (no held-out leakage)",
+          "pca_coords_standardized_by_prep_fold": true,
+          "r2_heldout": 0.30169835982818616,
+          "gcv_lambda_per_fold": [
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0
+          ],
+          "knn": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 4618,
+              "n_pool": 4618,
+              "acc_at_k": {
+                "1": 0.08055435253356431,
+                "5": 0.18103074924209614,
+                "10": 0.23841489822433953
+              },
+              "chance_at_k": {
+                "1": 0.00021654395842355997,
+                "5": 0.0010827197921178,
+                "10": 0.0021654395842356
+              },
+              "median_rank": 82.0,
+              "mrr": 0.13565814710606558
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 4618,
+              "n_pool": 4618,
+              "acc_at_k": {
+                "1": 0.09484625378951927,
+                "5": 0.21849285404937202,
+                "10": 0.28432221741013425
+              },
+              "chance_at_k": {
+                "1": 0.00021654395842355997,
+                "5": 0.0010827197921178,
+                "10": 0.0021654395842356
+              },
+              "median_rank": 56.0,
+              "mrr": 0.15973077124869983
+            }
+          }
+        },
+        "forced_lambda": {
+          "lambda_1e+02": {
+            "lambda": 100.0,
+            "r2_heldout": -0.3747726271872953,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.07340840190558684,
+                  "5": 0.1808142052836726,
+                  "10": 0.24101342572542225
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 87.0,
+                "mrr": 0.13156025743500238
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.08683412732784755,
+                  "5": 0.19943698570809876,
+                  "10": 0.26158510177566047
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 69.5,
+                "mrr": 0.14700412099989668
+              }
+            }
+          },
+          "lambda_1e+03": {
+            "lambda": 1000.0,
+            "r2_heldout": 0.22590300580689526,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.09831095712429623,
+                  "5": 0.2089649198787354,
+                  "10": 0.27241229969683844
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 60.5,
+                "mrr": 0.15910340332536782
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.11216977046340407,
+                  "5": 0.23928107405803378,
+                  "10": 0.3079255088783023
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 44.0,
+                "mrr": 0.1803247675576055
+              }
+            }
+          },
+          "lambda_1e+04": {
+            "lambda": 10000.0,
+            "r2_heldout": 0.32935686204235537,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.03919445647466436,
+                  "5": 0.11022087483759203,
+                  "10": 0.1617583369423993
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 138.0,
+                "mrr": 0.0825134787175352
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.048722390645301,
+                  "5": 0.13793850151580772,
+                  "10": 0.18969250757903855
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 94.0,
+                "mrr": 0.09869415185004589
+              }
+            }
+          }
+        },
+        "forced_lambda_selection_bearing": true,
+        "forced_lambda_note": "best-of-grid held-out estimate; diagnostic only \u2014 cite the reduced-basis read for any headline",
+        "probe_reference": {
+          "source": "eval_results/issue_1345/story_context_info_probe/{summary.json,forced_lambda_probe.json} @ 3ffc51d581 / 9f0fb74d4a",
+          "story_vC_to_story_vA": {
+            "ambient_gcv_r2": -0.306,
+            "reduced_basis_r2_on_policy": 0.262,
+            "reduced_basis_r2_teacher_forced": 0.367,
+            "forced_lambda_1e2_r2": 0.1605,
+            "forced_lambda_1e3_r2": 0.4075,
+            "forced_lambda_1e4_r2": 0.418
+          },
+          "story_vC_to_chat_vC": {
+            "forced_lambda_1e3_r2": 0.4359,
+            "forced_lambda_1e4_r2": 0.4403
+          },
+          "note": "ambient GCV picks the lambda-grid floor 0.01 in 5/5 folds at n_train<d; the committed V1 anchor -0.3056 is the ARTIFACT-BEARING read",
+          "citation_guidance": "for a single UNSELECTED headline figure cite the reduced-basis leg (per-fold GCV in a train-fold-only basis, no post-hoc selection); the forced-lambda sweep is a best-of-grid HELD-OUT estimate and carries selection"
+        }
+      }
+    },
+    "R_instruct_bnd_no_template_op_ctx_qend__ybnd": {
+      "cell": {
+        "cell_id": "R_instruct_bnd_no_template_op_ctx_qend__ybnd",
+        "model_key": "instruct",
+        "format_key": "bnd_ntpl_op",
+        "track": "s",
+        "slot_index": 1,
+        "target_turn_index": 1,
+        "regime": "bnd_ntpl_op",
+        "bnd_arm": "no_template",
+        "provenance": "onpolicy",
+        "measured_model": "instruct",
+        "slot": "ctx_qend",
+        "y_target": "y_boundary",
+        "arm": "context"
+      },
+      "layer": 19,
+      "r2": 0.2537413985146053,
+      "ci": {
+        "r2": 0.2543218681013065,
+        "ci_lo": 0.24746238889018957,
+        "ci_hi": 0.26095477148368135,
+        "n_rows": 4618,
+        "n_groups": 4618,
+        "unit": "conversation"
+      },
+      "null_p975": -0.04320324434833965,
+      "mean_baseline_r2": -0.001216303063070523,
+      "skill_over_mean": 0.25495770157767583,
+      "baselines": {
+        "identity_bias": {
+          "r2": -3.163083482247746,
+          "ci_lo": -3.202357715178727,
+          "ci_hi": -3.131137260483937,
+          "n_rows": 4618,
+          "n_groups": 4618,
+          "unit": "conversation",
+          "b_norm": 62.86095675996317
+        },
+        "knn_identity_bias": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.09138155045474232,
+              "5": 0.16262451277609355,
+              "10": 0.2007362494586401
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 318.0,
+            "mrr": 0.12937088760930177
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.10047639670853183,
+              "5": 0.17431788653096578,
+              "10": 0.21719359029883067
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 294.0,
+            "mrr": 0.1401205507965072
+          }
+        },
+        "knn_ridge": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.03594629709831096,
+              "5": 0.12256388046773495,
+              "10": 0.1816803811173668
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 124.0,
+            "mrr": 0.08560793124588133
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.04569077522737116,
+              "5": 0.14270246860112604,
+              "10": 0.20528367258553487
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 108.0,
+            "mrr": 0.0994987544712433
+          }
+        }
+      },
+      "r2_reduced_basis": 0.19462179792639023,
+      "companions": {
+        "folds": {
+          "n_folds": 5,
+          "seed": 0,
+          "n_train_min": 3694
+        },
+        "d_in": 3584,
+        "underdetermined_ambient": false,
+        "reduced_basis": {
+          "k": 1024,
+          "k_rule": "min(1024, floor(n_train_min/2), d_in)",
+          "pca_fit": "per-fold TRAIN rows only, centering only (no held-out leakage)",
+          "pca_coords_standardized_by_prep_fold": true,
+          "r2_heldout": 0.19462179792639023,
+          "gcv_lambda_per_fold": [
+            3162.2776601683795,
+            3162.2776601683795,
+            3162.2776601683795,
+            3162.2776601683795,
+            3162.2776601683795
+          ],
+          "knn": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 4618,
+              "n_pool": 4618,
+              "acc_at_k": {
+                "1": 0.024252923343438718,
+                "5": 0.07600692940666956,
+                "10": 0.11628410567345171
+              },
+              "chance_at_k": {
+                "1": 0.00021654395842355997,
+                "5": 0.0010827197921178,
+                "10": 0.0021654395842356
+              },
+              "median_rank": 305.5,
+              "mrr": 0.05709531724555737
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 4618,
+              "n_pool": 4618,
+              "acc_at_k": {
+                "1": 0.036379385015158076,
+                "5": 0.09809441316587267,
+                "10": 0.13663923776526635
+              },
+              "chance_at_k": {
+                "1": 0.00021654395842355997,
+                "5": 0.0010827197921178,
+                "10": 0.0021654395842356
+              },
+              "median_rank": 271.0,
+              "mrr": 0.07239185310317253
+            }
+          }
+        },
+        "forced_lambda": {
+          "lambda_1e+02": {
+            "lambda": 100.0,
+            "r2_heldout": -0.6386545063303724,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.04417496751840624,
+                  "5": 0.1466002598527501,
+                  "10": 0.20853183196188826
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 129.5,
+                "mrr": 0.09870057913997657
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.04634040710264184,
+                  "5": 0.1494153313122564,
+                  "10": 0.2100476396708532
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 124.0,
+                "mrr": 0.10187642001961711
+              }
+            }
+          },
+          "lambda_1e+03": {
+            "lambda": 1000.0,
+            "r2_heldout": 0.09523580695838185,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.06409701169337376,
+                  "5": 0.18536162841056736,
+                  "10": 0.2555218709398008
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 73.0,
+                "mrr": 0.12791774973467143
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.06972715461238631,
+                  "5": 0.19792117799913383,
+                  "10": 0.265266349068861
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 67.0,
+                "mrr": 0.13680046044534802
+              }
+            }
+          },
+          "lambda_1e+04": {
+            "lambda": 10000.0,
+            "r2_heldout": 0.2537413985804555,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.03594629709831096,
+                  "5": 0.12256388046773495,
+                  "10": 0.1816803811173668
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 124.0,
+                "mrr": 0.08560793124588133
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.04569077522737116,
+                  "5": 0.14270246860112604,
+                  "10": 0.20528367258553487
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 108.0,
+                "mrr": 0.0994987544712433
+              }
+            }
+          }
+        },
+        "forced_lambda_selection_bearing": true,
+        "forced_lambda_note": "best-of-grid held-out estimate; diagnostic only \u2014 cite the reduced-basis read for any headline",
+        "probe_reference": {
+          "source": "eval_results/issue_1345/story_context_info_probe/{summary.json,forced_lambda_probe.json} @ 3ffc51d581 / 9f0fb74d4a",
+          "story_vC_to_story_vA": {
+            "ambient_gcv_r2": -0.306,
+            "reduced_basis_r2_on_policy": 0.262,
+            "reduced_basis_r2_teacher_forced": 0.367,
+            "forced_lambda_1e2_r2": 0.1605,
+            "forced_lambda_1e3_r2": 0.4075,
+            "forced_lambda_1e4_r2": 0.418
+          },
+          "story_vC_to_chat_vC": {
+            "forced_lambda_1e3_r2": 0.4359,
+            "forced_lambda_1e4_r2": 0.4403
+          },
+          "note": "ambient GCV picks the lambda-grid floor 0.01 in 5/5 folds at n_train<d; the committed V1 anchor -0.3056 is the ARTIFACT-BEARING read",
+          "citation_guidance": "for a single UNSELECTED headline figure cite the reduced-basis leg (per-fold GCV in a train-fold-only basis, no post-hoc selection); the forced-lambda sweep is a best-of-grid HELD-OUT estimate and carries selection"
+        }
+      }
+    },
+    "R_instruct_bnd_no_template_op_ctx_preans__ymean": {
+      "cell": {
+        "cell_id": "R_instruct_bnd_no_template_op_ctx_preans__ymean",
+        "model_key": "instruct",
+        "format_key": "bnd_ntpl_op",
+        "track": "s",
+        "slot_index": 3,
+        "target_turn_index": 0,
+        "regime": "bnd_ntpl_op",
+        "bnd_arm": "no_template",
+        "provenance": "onpolicy",
+        "measured_model": "instruct",
+        "slot": "ctx_preans",
+        "y_target": "answer",
+        "arm": "context"
+      },
+      "layer": 19,
+      "r2": 0.4284640589479227,
+      "ci": {
+        "r2": 0.42889977466393314,
+        "ci_lo": 0.42044411165322143,
+        "ci_hi": 0.4366267498634033,
+        "n_rows": 4618,
+        "n_groups": 4618,
+        "unit": "conversation"
+      },
+      "null_p975": -0.03306168745516216,
+      "mean_baseline_r2": -0.0011921232251750347,
+      "skill_over_mean": 0.42965618217309776,
+      "baselines": {
+        "identity_bias": {
+          "r2": -1.7248025372545985,
+          "ci_lo": -1.7582690289552763,
+          "ci_hi": -1.695384415352664,
+          "n_rows": 4618,
+          "n_groups": 4618,
+          "unit": "conversation",
+          "b_norm": 46.4575311257202
+        },
+        "knn_identity_bias": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.22368990905153746,
+              "5": 0.35578172368990907,
+              "10": 0.4192291035080121
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 25.0,
+            "mrr": 0.2903128357088189
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.2650498051104374,
+              "5": 0.41251624079688176,
+              "10": 0.48029449978345606
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 13.0,
+            "mrr": 0.3392003571641897
+          }
+        },
+        "knn_ridge": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.16327414465136422,
+              "5": 0.32178432221741016,
+              "10": 0.40666955391944565
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 21.0,
+            "mrr": 0.24395017320049253
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4618,
+            "n_pool": 4618,
+            "acc_at_k": {
+              "1": 0.1931572109138155,
+              "5": 0.3750541359896059,
+              "10": 0.45495885664789953
+            },
+            "chance_at_k": {
+              "1": 0.00021654395842355997,
+              "5": 0.0010827197921178,
+              "10": 0.0021654395842356
+            },
+            "median_rank": 15.0,
+            "mrr": 0.2820962267696521
+          }
+        }
+      },
+      "r2_reduced_basis": 0.3909812064350401,
+      "companions": {
+        "folds": {
+          "n_folds": 5,
+          "seed": 0,
+          "n_train_min": 3694
+        },
+        "d_in": 3584,
+        "underdetermined_ambient": false,
+        "reduced_basis": {
+          "k": 1024,
+          "k_rule": "min(1024, floor(n_train_min/2), d_in)",
+          "pca_fit": "per-fold TRAIN rows only, centering only (no held-out leakage)",
+          "pca_coords_standardized_by_prep_fold": true,
+          "r2_heldout": 0.3909812064350401,
+          "gcv_lambda_per_fold": [
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0
+          ],
+          "knn": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 4618,
+              "n_pool": 4618,
+              "acc_at_k": {
+                "1": 0.15396275443915114,
+                "5": 0.30402771762667824,
+                "10": 0.37202252057167606
+              },
+              "chance_at_k": {
+                "1": 0.00021654395842355997,
+                "5": 0.0010827197921178,
+                "10": 0.0021654395842356
+              },
+              "median_rank": 27.0,
+              "mrr": 0.23015006619648648
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 4618,
+              "n_pool": 4618,
+              "acc_at_k": {
+                "1": 0.1888263317453443,
+                "5": 0.3633607622347336,
+                "10": 0.4441316587267215
+              },
+              "chance_at_k": {
+                "1": 0.00021654395842355997,
+                "5": 0.0010827197921178,
+                "10": 0.0021654395842356
+              },
+              "median_rank": 17.0,
+              "mrr": 0.2733800371886612
+            }
+          }
+        },
+        "forced_lambda": {
+          "lambda_1e+02": {
+            "lambda": 100.0,
+            "r2_heldout": 0.07269472212212469,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.18796015591165008,
+                  "5": 0.3609787786920745,
+                  "10": 0.4372022520571676
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 17.0,
+                "mrr": 0.27244386025156514
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.20809874404504114,
+                  "5": 0.39627544391511477,
+                  "10": 0.47661325249025555
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 13.0,
+                "mrr": 0.298503450125431
+              }
+            }
+          },
+          "lambda_1e+03": {
+            "lambda": 1000.0,
+            "r2_heldout": 0.3889946177913415,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.19618882633174534,
+                  "5": 0.3728886964053703,
+                  "10": 0.46123863144218274
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 15.0,
+                "mrr": 0.2839665491494555
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.2310524036379385,
+                  "5": 0.4172802078822001,
+                  "10": 0.5021654395842357
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 10.0,
+                "mrr": 0.32201011046861194
+              }
+            }
+          },
+          "lambda_1e+04": {
+            "lambda": 10000.0,
+            "r2_heldout": 0.42594562134237735,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.10480727587700303,
+                  "5": 0.23559982676483326,
+                  "10": 0.3096578605456908
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 37.0,
+                "mrr": 0.17647614408233883
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4618,
+                "n_pool": 4618,
+                "acc_at_k": {
+                  "1": 0.12624512776093547,
+                  "5": 0.28042442615851015,
+                  "10": 0.36292767431788653
+                },
+                "chance_at_k": {
+                  "1": 0.00021654395842355997,
+                  "5": 0.0010827197921178,
+                  "10": 0.0021654395842356
+                },
+                "median_rank": 28.0,
+                "mrr": 0.20471307402342284
+              }
+            }
+          }
+        },
+        "forced_lambda_selection_bearing": true,
+        "forced_lambda_note": "best-of-grid held-out estimate; diagnostic only \u2014 cite the reduced-basis read for any headline",
+        "probe_reference": {
+          "source": "eval_results/issue_1345/story_context_info_probe/{summary.json,forced_lambda_probe.json} @ 3ffc51d581 / 9f0fb74d4a",
+          "story_vC_to_story_vA": {
+            "ambient_gcv_r2": -0.306,
+            "reduced_basis_r2_on_policy": 0.262,
+            "reduced_basis_r2_teacher_forced": 0.367,
+            "forced_lambda_1e2_r2": 0.1605,
+            "forced_lambda_1e3_r2": 0.4075,
+            "forced_lambda_1e4_r2": 0.418
+          },
+          "story_vC_to_chat_vC": {
+            "forced_lambda_1e3_r2": 0.4359,
+            "forced_lambda_1e4_r2": 0.4403
+          },
+          "note": "ambient GCV picks the lambda-grid floor 0.01 in 5/5 folds at n_train<d; the committed V1 anchor -0.3056 is the ARTIFACT-BEARING read",
+          "citation_guidance": "for a single UNSELECTED headline figure cite the reduced-basis leg (per-fold GCV in a train-fold-only basis, no post-hoc selection); the forced-lambda sweep is a best-of-grid HELD-OUT estimate and carries selection"
+        }
+      }
+    },
+    "R_base_bnd_no_template_op_prefix__ybnd": {
+      "cell": {
+        "cell_id": "R_base_bnd_no_template_op_prefix__ybnd",
+        "model_key": "pretrained",
+        "format_key": "bnd_ntpl_op",
+        "track": "s",
+        "slot_index": 0,
+        "target_turn_index": 1,
+        "regime": "bnd_ntpl_op",
+        "bnd_arm": "no_template",
+        "provenance": "onpolicy",
+        "measured_model": "pretrained",
+        "slot": "prefix",
+        "y_target": "y_boundary",
+        "arm": "prefix"
+      },
+      "layer": 19,
+      "r2": 0.020696740073504305,
+      "ci": {
+        "r2": 0.021536296383069642,
+        "ci_lo": 0.018208070678775928,
+        "ci_hi": 0.024098576432755207,
+        "n_rows": 4267,
+        "n_groups": 4267,
+        "unit": "conversation"
+      },
+      "null_p975": -0.0021581961934975524,
+      "mean_baseline_r2": -0.0013406681451688662,
+      "skill_over_mean": 0.02203740821867317,
+      "baselines": {
+        "identity_bias": {
+          "r2": -0.11846173032678142,
+          "ci_lo": -0.14276958456197664,
+          "ci_hi": -0.09590448042400938,
+          "n_rows": 4267,
+          "n_groups": 4267,
+          "unit": "conversation",
+          "b_norm": 113.47155040588476
+        },
+        "knn_identity_bias": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4267,
+            "n_pool": 4267,
+            "acc_at_k": {
+              "1": 0.00023435669088352472,
+              "5": 0.0011717834544176236,
+              "10": 0.002343566908835247
+            },
+            "chance_at_k": {
+              "1": 0.00023435669088352472,
+              "5": 0.0011717834544176236,
+              "10": 0.002343566908835247
+            },
+            "median_rank": 2131.0,
+            "mrr": 0.0020930613225826427
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4267,
+            "n_pool": 4267,
+            "acc_at_k": {
+              "1": 0.00023435669088352472,
+              "5": 0.0011717834544176236,
+              "10": 0.0021092102179517225
+            },
+            "chance_at_k": {
+              "1": 0.00023435669088352472,
+              "5": 0.0011717834544176236,
+              "10": 0.002343566908835247
+            },
+            "median_rank": 2130.0,
+            "mrr": 0.002086626234187464
+          }
+        },
+        "knn_ridge": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4267,
+            "n_pool": 4267,
+            "acc_at_k": {
+              "1": 0.00046871338176704945,
+              "5": 0.0014061401453011485,
+              "10": 0.0037497070541363956
+            },
+            "chance_at_k": {
+              "1": 0.00023435669088352472,
+              "5": 0.0011717834544176236,
+              "10": 0.002343566908835247
+            },
+            "median_rank": 1923.0,
+            "mrr": 0.0026890197348008217
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4267,
+            "n_pool": 4267,
+            "acc_at_k": {
+              "1": 0.00023435669088352472,
+              "5": 0.0014061401453011485,
+              "10": 0.003515350363252871
+            },
+            "chance_at_k": {
+              "1": 0.00023435669088352472,
+              "5": 0.0011717834544176236,
+              "10": 0.002343566908835247
+            },
+            "median_rank": 1914.0,
+            "mrr": 0.002635752226024654
+          }
+        }
+      },
+      "r2_reduced_basis": -239866.95978045787,
+      "companions": {
+        "folds": {
+          "n_folds": 5,
+          "seed": 0,
+          "n_train_min": 3413
+        },
+        "d_in": 3584,
+        "underdetermined_ambient": true,
+        "reduced_basis": {
+          "k": 1024,
+          "k_rule": "min(1024, floor(n_train_min/2), d_in)",
+          "pca_fit": "per-fold TRAIN rows only, centering only (no held-out leakage)",
+          "pca_coords_standardized_by_prep_fold": true,
+          "r2_heldout": -239866.95978045787,
+          "gcv_lambda_per_fold": [
+            1000.0,
+            1000.0,
+            1000.0,
+            3162.2776601683795,
+            1000.0
+          ],
+          "knn": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 4267,
+              "n_pool": 4267,
+              "acc_at_k": {
+                "1": 0.00046871338176704945,
+                "5": 0.0018748535270681978,
+                "10": 0.00398406374501992
+              },
+              "chance_at_k": {
+                "1": 0.00023435669088352472,
+                "5": 0.0011717834544176236,
+                "10": 0.002343566908835247
+              },
+              "median_rank": 1924.0,
+              "mrr": 0.0028554450673421803
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 4267,
+              "n_pool": 4267,
+              "acc_at_k": {
+                "1": 0.00023435669088352472,
+                "5": 0.0018748535270681978,
+                "10": 0.003515350363252871
+              },
+              "chance_at_k": {
+                "1": 0.00023435669088352472,
+                "5": 0.0011717834544176236,
+                "10": 0.002343566908835247
+              },
+              "median_rank": 1914.0,
+              "mrr": 0.0027471457310646757
+            }
+          }
+        },
+        "forced_lambda": {
+          "lambda_1e+02": {
+            "lambda": 100.0,
+            "r2_heldout": 0.020024944496539243,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4267,
+                "n_pool": 4267,
+                "acc_at_k": {
+                  "1": 0.00046871338176704945,
+                  "5": 0.0018748535270681978,
+                  "10": 0.00398406374501992
+                },
+                "chance_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0011717834544176236,
+                  "10": 0.002343566908835247
+                },
+                "median_rank": 1910.0,
+                "mrr": 0.002880070890292685
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4267,
+                "n_pool": 4267,
+                "acc_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0018748535270681978,
+                  "10": 0.003515350363252871
+                },
+                "chance_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0011717834544176236,
+                  "10": 0.002343566908835247
+                },
+                "median_rank": 1902.0,
+                "mrr": 0.00277908137297978
+              }
+            }
+          },
+          "lambda_1e+03": {
+            "lambda": 1000.0,
+            "r2_heldout": 0.020237126344794465,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4267,
+                "n_pool": 4267,
+                "acc_at_k": {
+                  "1": 0.00046871338176704945,
+                  "5": 0.0018748535270681978,
+                  "10": 0.00398406374501992
+                },
+                "chance_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0011717834544176236,
+                  "10": 0.002343566908835247
+                },
+                "median_rank": 1910.0,
+                "mrr": 0.002876701251671099
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4267,
+                "n_pool": 4267,
+                "acc_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0018748535270681978,
+                  "10": 0.0032809936723693462
+                },
+                "chance_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0011717834544176236,
+                  "10": 0.002343566908835247
+                },
+                "median_rank": 1901.0,
+                "mrr": 0.0027459495355008057
+              }
+            }
+          },
+          "lambda_1e+04": {
+            "lambda": 10000.0,
+            "r2_heldout": 0.02069674005885802,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4267,
+                "n_pool": 4267,
+                "acc_at_k": {
+                  "1": 0.00046871338176704945,
+                  "5": 0.0014061401453011485,
+                  "10": 0.0037497070541363956
+                },
+                "chance_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0011717834544176236,
+                  "10": 0.002343566908835247
+                },
+                "median_rank": 1923.0,
+                "mrr": 0.0026890197348008217
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4267,
+                "n_pool": 4267,
+                "acc_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0014061401453011485,
+                  "10": 0.003515350363252871
+                },
+                "chance_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0011717834544176236,
+                  "10": 0.002343566908835247
+                },
+                "median_rank": 1914.0,
+                "mrr": 0.002635752226024654
+              }
+            }
+          }
+        },
+        "forced_lambda_selection_bearing": true,
+        "forced_lambda_note": "best-of-grid held-out estimate; diagnostic only \u2014 cite the reduced-basis read for any headline",
+        "probe_reference": {
+          "source": "eval_results/issue_1345/story_context_info_probe/{summary.json,forced_lambda_probe.json} @ 3ffc51d581 / 9f0fb74d4a",
+          "story_vC_to_story_vA": {
+            "ambient_gcv_r2": -0.306,
+            "reduced_basis_r2_on_policy": 0.262,
+            "reduced_basis_r2_teacher_forced": 0.367,
+            "forced_lambda_1e2_r2": 0.1605,
+            "forced_lambda_1e3_r2": 0.4075,
+            "forced_lambda_1e4_r2": 0.418
+          },
+          "story_vC_to_chat_vC": {
+            "forced_lambda_1e3_r2": 0.4359,
+            "forced_lambda_1e4_r2": 0.4403
+          },
+          "note": "ambient GCV picks the lambda-grid floor 0.01 in 5/5 folds at n_train<d; the committed V1 anchor -0.3056 is the ARTIFACT-BEARING read",
+          "citation_guidance": "for a single UNSELECTED headline figure cite the reduced-basis leg (per-fold GCV in a train-fold-only basis, no post-hoc selection); the forced-lambda sweep is a best-of-grid HELD-OUT estimate and carries selection"
+        }
+      }
+    },
+    "R_base_bnd_no_template_op_ctx_qend__ybnd": {
+      "cell": {
+        "cell_id": "R_base_bnd_no_template_op_ctx_qend__ybnd",
+        "model_key": "pretrained",
+        "format_key": "bnd_ntpl_op",
+        "track": "s",
+        "slot_index": 1,
+        "target_turn_index": 1,
+        "regime": "bnd_ntpl_op",
+        "bnd_arm": "no_template",
+        "provenance": "onpolicy",
+        "measured_model": "pretrained",
+        "slot": "ctx_qend",
+        "y_target": "y_boundary",
+        "arm": "context"
+      },
+      "layer": 19,
+      "r2": 0.19121509413089255,
+      "ci": {
+        "r2": 0.19190846511073734,
+        "ci_lo": 0.1853285709961337,
+        "ci_hi": 0.1980751170477309,
+        "n_rows": 4267,
+        "n_groups": 4267,
+        "unit": "conversation"
+      },
+      "null_p975": -0.042076131713590516,
+      "mean_baseline_r2": -0.0013406681451688662,
+      "skill_over_mean": 0.19255576227606142,
+      "baselines": {
+        "identity_bias": {
+          "r2": -3.3178789083535882,
+          "ci_lo": -3.35956067927314,
+          "ci_hi": -3.2806240632196273,
+          "n_rows": 4267,
+          "n_groups": 4267,
+          "unit": "conversation",
+          "b_norm": 64.16825341748668
+        },
+        "knn_identity_bias": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4267,
+            "n_pool": 4267,
+            "acc_at_k": {
+              "1": 0.11108507147879072,
+              "5": 0.18795406608858684,
+              "10": 0.22615420670260136
+            },
+            "chance_at_k": {
+              "1": 0.00023435669088352472,
+              "5": 0.0011717834544176236,
+              "10": 0.002343566908835247
+            },
+            "median_rank": 217.0,
+            "mrr": 0.15216330641776157
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4267,
+            "n_pool": 4267,
+            "acc_at_k": {
+              "1": 0.12327161940473401,
+              "5": 0.20318725099601595,
+              "10": 0.24044996484649636
+            },
+            "chance_at_k": {
+              "1": 0.00023435669088352472,
+              "5": 0.0011717834544176236,
+              "10": 0.002343566908835247
+            },
+            "median_rank": 223.0,
+            "mrr": 0.1652495913116081
+          }
+        },
+        "knn_ridge": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4267,
+            "n_pool": 4267,
+            "acc_at_k": {
+              "1": 0.030935083196625263,
+              "5": 0.09585188657136161,
+              "10": 0.13217717365830794
+            },
+            "chance_at_k": {
+              "1": 0.00023435669088352472,
+              "5": 0.0011717834544176236,
+              "10": 0.002343566908835247
+            },
+            "median_rank": 241.0,
+            "mrr": 0.0667877895360937
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4267,
+            "n_pool": 4267,
+            "acc_at_k": {
+              "1": 0.038434497304898056,
+              "5": 0.10733536442465433,
+              "10": 0.15561284274666043
+            },
+            "chance_at_k": {
+              "1": 0.00023435669088352472,
+              "5": 0.0011717834544176236,
+              "10": 0.002343566908835247
+            },
+            "median_rank": 229.0,
+            "mrr": 0.07764920708186175
+          }
+        }
+      },
+      "r2_reduced_basis": 0.13509913386429595,
+      "companions": {
+        "folds": {
+          "n_folds": 5,
+          "seed": 0,
+          "n_train_min": 3413
+        },
+        "d_in": 3584,
+        "underdetermined_ambient": true,
+        "reduced_basis": {
+          "k": 1024,
+          "k_rule": "min(1024, floor(n_train_min/2), d_in)",
+          "pca_fit": "per-fold TRAIN rows only, centering only (no held-out leakage)",
+          "pca_coords_standardized_by_prep_fold": true,
+          "r2_heldout": 0.13509913386429595,
+          "gcv_lambda_per_fold": [
+            3162.2776601683795,
+            3162.2776601683795,
+            3162.2776601683795,
+            3162.2776601683795,
+            3162.2776601683795
+          ],
+          "knn": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 4267,
+              "n_pool": 4267,
+              "acc_at_k": {
+                "1": 0.013358331380360909,
+                "5": 0.045933911413170846,
+                "10": 0.0681977970471057
+              },
+              "chance_at_k": {
+                "1": 0.00023435669088352472,
+                "5": 0.0011717834544176236,
+                "10": 0.002343566908835247
+              },
+              "median_rank": 521.0,
+              "mrr": 0.034231174412335946
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 4267,
+              "n_pool": 4267,
+              "acc_at_k": {
+                "1": 0.01781110850714788,
+                "5": 0.05437075228497774,
+                "10": 0.08741504569955472
+              },
+              "chance_at_k": {
+                "1": 0.00023435669088352472,
+                "5": 0.0011717834544176236,
+                "10": 0.002343566908835247
+              },
+              "median_rank": 539.0,
+              "mrr": 0.04263402157379377
+            }
+          }
+        },
+        "forced_lambda": {
+          "lambda_1e+02": {
+            "lambda": 100.0,
+            "r2_heldout": -0.7724746060733474,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4267,
+                "n_pool": 4267,
+                "acc_at_k": {
+                  "1": 0.026951019451605343,
+                  "5": 0.0890555425357394,
+                  "10": 0.132645887040075
+                },
+                "chance_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0011717834544176236,
+                  "10": 0.002343566908835247
+                },
+                "median_rank": 306.0,
+                "mrr": 0.06322188415389446
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4267,
+                "n_pool": 4267,
+                "acc_at_k": {
+                  "1": 0.030466369814858216,
+                  "5": 0.09796109678931333,
+                  "10": 0.14178579798453245
+                },
+                "chance_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0011717834544176236,
+                  "10": 0.002343566908835247
+                },
+                "median_rank": 298.0,
+                "mrr": 0.06813889875469888
+              }
+            }
+          },
+          "lambda_1e+03": {
+            "lambda": 1000.0,
+            "r2_heldout": 0.013369788475066757,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4267,
+                "n_pool": 4267,
+                "acc_at_k": {
+                  "1": 0.0445277712678697,
+                  "5": 0.13311460042184203,
+                  "10": 0.1877197093977033
+                },
+                "chance_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0011717834544176236,
+                  "10": 0.002343566908835247
+                },
+                "median_rank": 153.0,
+                "mrr": 0.09322922512823766
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4267,
+                "n_pool": 4267,
+                "acc_at_k": {
+                  "1": 0.053433325521443635,
+                  "5": 0.14647293180220294,
+                  "10": 0.20131239746894775
+                },
+                "chance_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0011717834544176236,
+                  "10": 0.002343566908835247
+                },
+                "median_rank": 146.0,
+                "mrr": 0.10321970196090827
+              }
+            }
+          },
+          "lambda_1e+04": {
+            "lambda": 10000.0,
+            "r2_heldout": 0.19121509410867543,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4267,
+                "n_pool": 4267,
+                "acc_at_k": {
+                  "1": 0.030935083196625263,
+                  "5": 0.09585188657136161,
+                  "10": 0.13217717365830794
+                },
+                "chance_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0011717834544176236,
+                  "10": 0.002343566908835247
+                },
+                "median_rank": 241.0,
+                "mrr": 0.0667877895360937
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4267,
+                "n_pool": 4267,
+                "acc_at_k": {
+                  "1": 0.038434497304898056,
+                  "5": 0.10733536442465433,
+                  "10": 0.15561284274666043
+                },
+                "chance_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0011717834544176236,
+                  "10": 0.002343566908835247
+                },
+                "median_rank": 229.0,
+                "mrr": 0.07764920708186175
+              }
+            }
+          }
+        },
+        "forced_lambda_selection_bearing": true,
+        "forced_lambda_note": "best-of-grid held-out estimate; diagnostic only \u2014 cite the reduced-basis read for any headline",
+        "probe_reference": {
+          "source": "eval_results/issue_1345/story_context_info_probe/{summary.json,forced_lambda_probe.json} @ 3ffc51d581 / 9f0fb74d4a",
+          "story_vC_to_story_vA": {
+            "ambient_gcv_r2": -0.306,
+            "reduced_basis_r2_on_policy": 0.262,
+            "reduced_basis_r2_teacher_forced": 0.367,
+            "forced_lambda_1e2_r2": 0.1605,
+            "forced_lambda_1e3_r2": 0.4075,
+            "forced_lambda_1e4_r2": 0.418
+          },
+          "story_vC_to_chat_vC": {
+            "forced_lambda_1e3_r2": 0.4359,
+            "forced_lambda_1e4_r2": 0.4403
+          },
+          "note": "ambient GCV picks the lambda-grid floor 0.01 in 5/5 folds at n_train<d; the committed V1 anchor -0.3056 is the ARTIFACT-BEARING read",
+          "citation_guidance": "for a single UNSELECTED headline figure cite the reduced-basis leg (per-fold GCV in a train-fold-only basis, no post-hoc selection); the forced-lambda sweep is a best-of-grid HELD-OUT estimate and carries selection"
+        }
+      }
+    },
+    "R_base_bnd_no_template_op_context__ybnd": {
+      "cell": {
+        "cell_id": "R_base_bnd_no_template_op_context__ybnd",
+        "model_key": "pretrained",
+        "format_key": "bnd_ntpl_op",
+        "track": "s",
+        "slot_index": 2,
+        "target_turn_index": 1,
+        "regime": "bnd_ntpl_op",
+        "bnd_arm": "no_template",
+        "provenance": "onpolicy",
+        "measured_model": "pretrained",
+        "slot": "context",
+        "y_target": "y_boundary",
+        "arm": "context"
+      },
+      "layer": 19,
+      "r2": 0.24906550895663548,
+      "ci": {
+        "r2": 0.24970928481740473,
+        "ci_lo": 0.24256321748833276,
+        "ci_hi": 0.2566046911898452,
+        "n_rows": 4267,
+        "n_groups": 4267,
+        "unit": "conversation"
+      },
+      "null_p975": -0.032814487359005086,
+      "mean_baseline_r2": -0.0013406681451688662,
+      "skill_over_mean": 0.25040617710180435,
+      "baselines": {
+        "identity_bias": {
+          "r2": -0.6444404917905238,
+          "ci_lo": -0.6581096355443365,
+          "ci_hi": -0.631688552753114,
+          "n_rows": 4267,
+          "n_groups": 4267,
+          "unit": "conversation",
+          "b_norm": 65.21568293767301
+        },
+        "knn_identity_bias": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4267,
+            "n_pool": 4267,
+            "acc_at_k": {
+              "1": 0.06187016639325053,
+              "5": 0.11413170846027654,
+              "10": 0.14858214202015468
+            },
+            "chance_at_k": {
+              "1": 0.00023435669088352472,
+              "5": 0.0011717834544176236,
+              "10": 0.002343566908835247
+            },
+            "median_rank": 375.0,
+            "mrr": 0.09262596526867328
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4267,
+            "n_pool": 4267,
+            "acc_at_k": {
+              "1": 0.07991563159128193,
+              "5": 0.15209749238340756,
+              "10": 0.1877197093977033
+            },
+            "chance_at_k": {
+              "1": 0.00023435669088352472,
+              "5": 0.0011717834544176236,
+              "10": 0.002343566908835247
+            },
+            "median_rank": 351.0,
+            "mrr": 0.11772848142568153
+          }
+        },
+        "knn_ridge": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 4267,
+            "n_pool": 4267,
+            "acc_at_k": {
+              "1": 0.08858682915397234,
+              "5": 0.20599953128661824,
+              "10": 0.2711506913522381
+            },
+            "chance_at_k": {
+              "1": 0.00023435669088352472,
+              "5": 0.0011717834544176236,
+              "10": 0.002343566908835247
+            },
+            "median_rank": 79.0,
+            "mrr": 0.14823534780531658
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 4267,
+            "n_pool": 4267,
+            "acc_at_k": {
+              "1": 0.10756972111553785,
+              "5": 0.22966955706585424,
+              "10": 0.29036794000468713
+            },
+            "chance_at_k": {
+              "1": 0.00023435669088352472,
+              "5": 0.0011717834544176236,
+              "10": 0.002343566908835247
+            },
+            "median_rank": 74.0,
+            "mrr": 0.16735651497304802
+          }
+        }
+      },
+      "r2_reduced_basis": 0.1760794324128615,
+      "companions": {
+        "folds": {
+          "n_folds": 5,
+          "seed": 0,
+          "n_train_min": 3413
+        },
+        "d_in": 3584,
+        "underdetermined_ambient": true,
+        "reduced_basis": {
+          "k": 1024,
+          "k_rule": "min(1024, floor(n_train_min/2), d_in)",
+          "pca_fit": "per-fold TRAIN rows only, centering only (no held-out leakage)",
+          "pca_coords_standardized_by_prep_fold": true,
+          "r2_heldout": 0.1760794324128615,
+          "gcv_lambda_per_fold": [
+            3162.2776601683795,
+            3162.2776601683795,
+            3162.2776601683795,
+            3162.2776601683795,
+            3162.2776601683795
+          ],
+          "knn": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 4267,
+              "n_pool": 4267,
+              "acc_at_k": {
+                "1": 0.03187250996015936,
+                "5": 0.09163346613545817,
+                "10": 0.13100539020389032
+              },
+              "chance_at_k": {
+                "1": 0.00023435669088352472,
+                "5": 0.0011717834544176236,
+                "10": 0.002343566908835247
+              },
+              "median_rank": 316.0,
+              "mrr": 0.06615994995660254
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 4267,
+              "n_pool": 4267,
+              "acc_at_k": {
+                "1": 0.048511835012889616,
+                "5": 0.12584954300445278,
+                "10": 0.16639325052730256
+              },
+              "chance_at_k": {
+                "1": 0.00023435669088352472,
+                "5": 0.0011717834544176236,
+                "10": 0.002343566908835247
+              },
+              "median_rank": 291.0,
+              "mrr": 0.08865131706634698
+            }
+          }
+        },
+        "forced_lambda": {
+          "lambda_1e+02": {
+            "lambda": 100.0,
+            "r2_heldout": -0.29969315453871737,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4267,
+                "n_pool": 4267,
+                "acc_at_k": {
+                  "1": 0.09046168268104054,
+                  "5": 0.20342160768689946,
+                  "10": 0.26505741738926647
+                },
+                "chance_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0011717834544176236,
+                  "10": 0.002343566908835247
+                },
+                "median_rank": 96.0,
+                "mrr": 0.14903419314500121
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4267,
+                "n_pool": 4267,
+                "acc_at_k": {
+                  "1": 0.09936723693461448,
+                  "5": 0.21443637215842512,
+                  "10": 0.27935317553316147
+                },
+                "chance_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0011717834544176236,
+                  "10": 0.002343566908835247
+                },
+                "median_rank": 91.0,
+                "mrr": 0.1595751690289208
+              }
+            }
+          },
+          "lambda_1e+03": {
+            "lambda": 1000.0,
+            "r2_heldout": 0.16127041779459805,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4267,
+                "n_pool": 4267,
+                "acc_at_k": {
+                  "1": 0.12772439653152098,
+                  "5": 0.26505741738926647,
+                  "10": 0.3252870869463323
+                },
+                "chance_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0011717834544176236,
+                  "10": 0.002343566908835247
+                },
+                "median_rank": 56.0,
+                "mrr": 0.19647523399750005
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4267,
+                "n_pool": 4267,
+                "acc_at_k": {
+                  "1": 0.14764471525662057,
+                  "5": 0.28286852589641437,
+                  "10": 0.3475509725802672
+                },
+                "chance_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0011717834544176236,
+                  "10": 0.002343566908835247
+                },
+                "median_rank": 53.0,
+                "mrr": 0.21571065907564954
+              }
+            }
+          },
+          "lambda_1e+04": {
+            "lambda": 10000.0,
+            "r2_heldout": 0.24906550895469137,
+            "knn": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 4267,
+                "n_pool": 4267,
+                "acc_at_k": {
+                  "1": 0.08858682915397234,
+                  "5": 0.20599953128661824,
+                  "10": 0.2711506913522381
+                },
+                "chance_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0011717834544176236,
+                  "10": 0.002343566908835247
+                },
+                "median_rank": 79.0,
+                "mrr": 0.14823534780531658
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 4267,
+                "n_pool": 4267,
+                "acc_at_k": {
+                  "1": 0.10756972111553785,
+                  "5": 0.22966955706585424,
+                  "10": 0.29036794000468713
+                },
+                "chance_at_k": {
+                  "1": 0.00023435669088352472,
+                  "5": 0.0011717834544176236,
+                  "10": 0.002343566908835247
+                },
+                "median_rank": 74.0,
+                "mrr": 0.16735651497304802
+              }
+            }
+          }
+        },
+        "forced_lambda_selection_bearing": true,
+        "forced_lambda_note": "best-of-grid held-out estimate; diagnostic only \u2014 cite the reduced-basis read for any headline",
+        "probe_reference": {
+          "source": "eval_results/issue_1345/story_context_info_probe/{summary.json,forced_lambda_probe.json} @ 3ffc51d581 / 9f0fb74d4a",
+          "story_vC_to_story_vA": {
+            "ambient_gcv_r2": -0.306,
+            "reduced_basis_r2_on_policy": 0.262,
+            "reduced_basis_r2_teacher_forced": 0.367,
+            "forced_lambda_1e2_r2": 0.1605,
+            "forced_lambda_1e3_r2": 0.4075,
+            "forced_lambda_1e4_r2": 0.418
+          },
+          "story_vC_to_chat_vC": {
+            "forced_lambda_1e3_r2": 0.4359,
+            "forced_lambda_1e4_r2": 0.4403
+          },
+          "note": "ambient GCV picks the lambda-grid floor 0.01 in 5/5 folds at n_train<d; the committed V1 anchor -0.3056 is the ARTIFACT-BEARING read",
+          "citation_guidance": "for a single UNSELECTED headline figure cite the reduced-basis leg (per-fold GCV in a train-fold-only basis, no post-hoc selection); the forced-lambda sweep is a best-of-grid HELD-OUT estimate and carries selection"
+        }
+      }
+    }
+  }
+}

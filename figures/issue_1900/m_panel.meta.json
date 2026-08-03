@@ -1,0 +1,55 @@
+{
+  "commit": "5f2b220a42",
+  "created": "2026-07-31T13:39:27Z",
+  "figsize": [
+    13.799999999999999,
+    4.2
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Mechanistic panel (explains, never the headline race)",
+        "xticklabels": [
+          "casual writing / bare / contrastive (s42)",
+          "casual writing / persona / contrastive (s42)",
+          "casual writing / persona / contrastive full-FT (s42)",
+          "casual writing / persona / positive-only (s42)",
+          "impoliteness / persona / contrastive (s137)",
+          "impoliteness / persona / contrastive (s42)",
+          "impoliteness / persona / contrastive full-FT (s42)",
+          "impoliteness / persona / positive-only (s42)",
+          "marker / bare / contrastive (s42)",
+          "marker / conversation / contrastive (s42)",
+          "marker / ICL / contrastive (s42)",
+          "marker / persona / contrastive (s42)",
+          "marker / persona / contrastive full-FT (s42)",
+          "marker / persona / positive-only (s42)",
+          "sycophancy / bare / contrastive (s42)",
+          "sycophancy / conversation / contrastive (s42)",
+          "sycophancy / persona / contrastive full-FT (s42)",
+          "sycophancy / persona / positive-only (s42)"
+        ],
+        "yticklabels": [
+          "Post-FT context sim",
+          "Post-FT answer sim",
+          "Delta-context sim",
+          "Delta-answer sim (matched text)",
+          "Through-map sim (post)",
+          "Write magnitude"
+        ]
+      },
+      {
+        "ylabel": "Spearman rho (per context)",
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

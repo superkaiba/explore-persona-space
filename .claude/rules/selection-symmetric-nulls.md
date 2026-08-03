@@ -396,3 +396,12 @@ caveat).
 null battery is that rule's many-draw compute incident (per-draw pool
 re-reduction → ~70× batched subset-sum GEMM); a permutation-battery plan
 typically fires both.
+
+**Primary vs record-only labeling.** When a writeup reports a known-broken /
+diagnostic-only convention ALONGSIDE the valid one (e.g. a shared-baseline
+statistic kept visible for the record next to the disjoint-convention
+primary), label them explicitly — the valid read is **primary**, the broken
+one **record-only (known-invalid, kept for comparability)** — never a
+co-equal presentation. (2026-07-22, #1415: a writeup co-headlined the broken
+shared-baseline convention with the disjoint one; two user challenges were
+needed before the primary/record-only split was stated.)

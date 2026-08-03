@@ -70,6 +70,25 @@ from explore_persona_space.backends.router import (
 )
 from explore_persona_space.backends.runpod import RunPodBackend, _runpod_pid_file_path
 
+
+@pytest.fixture(autouse=True)
+def _gcp_rollback_build_for_legacy_suite(request, monkeypatch):
+    """Run the legacy dispatch suite under the #2028 rollback build (flag OFF).
+
+    GCP provisioning is disabled by policy (#2028) but the gated dispatch
+    paths stay test-covered — the single-constant rollback lever. Flag-ON
+    production pins carry ``@pytest.mark.gcp_policy_default``.
+    """
+    if request.node.get_closest_marker("gcp_policy_default"):
+        return
+    from explore_persona_space.backends import router as router_module
+
+    monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", False)
+    monkeypatch.setattr(
+        router_module, "DEFAULT_AUTO_LANE_ORDER", router_module._default_auto_lane_order()
+    )
+
+
 # ---------------------------------------------------------------------------
 # Section 1 — RunPod backend wiring (characterization tests)
 # ---------------------------------------------------------------------------
@@ -457,6 +476,8 @@ def test_gcp_fetch_results_skips_when_handle_missing_attempt_id(tmp_path) -> Non
         ("fir", "fir"),
         ("gcp", "gcp"),
         ("mila", "mila"),
+        ("fellows", "fellows"),  # #1609 charmander lane
+        ("  FELLOWS  ", "fellows"),  # case + whitespace tolerant
         ("cluster", "nibi"),  # legacy alias normalization
         ("  CLUSTER  ", "nibi"),  # case + whitespace tolerant
     ],
@@ -890,6 +911,11 @@ def _real_slurm_backend(tmp_path, *, job_id: str = "7777"):
         src_root=tmp_path,
         submitter=lambda *, robot_alias, sbatch_script: job_id,
         rsyncer=lambda **_kw: None,
+        # #1913: prepare now materializes a snapshot via git_cloner and verifies
+        # the sync — fake both (returning src_root keeps the launch-side
+        # sentinel-path assertions on tmp_path unchanged).
+        rsync_verifier=lambda **_kw: None,
+        git_cloner=lambda *, src_root, branch, issue: src_root,
         marker_poster=lambda **_kw: None,
         secrets_pusher=lambda **_kw: None,
         runtime_clearer=lambda **_kw: None,
@@ -1288,6 +1314,11 @@ def test_backend_poll_script_produces_legacy_poll_pipeline_json_shape(
         # (Pin update landed with #909's green-gate pass: #873 added the
         # emitter without updating this shape test — pre-existing on main.)
         "gcp_gpu_width_advisory_posted",
+        # #1786 WARN-only handle-staleness flags — always emitted by
+        # backend_poll.main on the NORMAL tick-JSON tail, default False;
+        # never verdict-bearing (WARN-only observability).
+        "handle_stale_vs_live",
+        "handle_older_than_relaunch",
     }
     # Values were correctly threaded through.
     assert decoded["status"] == "done"
@@ -1820,3 +1851,139 @@ def test_on_launched_early_write_carries_reconnect_merge(
     assert recovered.extra["repo_branch"] == "issue-1122"
     for key in ("gpus", "time_budget_hours", "gpu_count", "boot_disk_gb"):
         assert recovered.extra[key] == _PRIOR_EXTRA_1122[key], key
+
+
+# ---------------------------------------------------------------------------
+# #1669 — launch env pins: reconnect carry-forward + validator rules
+# ---------------------------------------------------------------------------
+
+
+def test_reconnect_carry_forward_includes_env_pins(tmp_path) -> None:
+    """#1669: ``env_pins`` is a RECONNECT_CARRY_FORWARD_EXTRA_KEYS member
+    and the sidecar snapshot keeps a non-empty pins dict (the
+    ``v not in (None, "", [])`` filter keeps a dict — plan assumption 8 —
+    and skips an absent key on a legacy sidecar)."""
+    from explore_persona_space.backends.issue_dispatch import (
+        RECONNECT_CARRY_FORWARD_EXTRA_KEYS,
+        _prior_sidecar_failover_extras,
+        write_handle_sidecar,
+    )
+
+    assert "env_pins" in RECONNECT_CARRY_FORWARD_EXTRA_KEYS
+
+    pins = {"WANDB_PROJECT": "issue1586_methodgen"}
+    sidecar = tmp_path / "issue-1669-handle.json"
+    write_handle_sidecar(
+        RunHandle(
+            backend="gcp",
+            cluster=None,
+            job_id="gce-1",
+            pod_name="eps-issue-1669",
+            scratch_dir="/s",
+            log_path="/l",
+            extra={"workload_cmd": "bash scripts/x.sh", "hydra_args": [], "env_pins": pins},
+        ),
+        sidecar,
+    )
+    prior = _prior_sidecar_failover_extras(sidecar)
+    assert prior is not None
+    assert prior["extra"]["env_pins"] == pins
+
+    # Legacy sidecar (no env_pins key): the snapshot omits it.
+    sidecar2 = tmp_path / "issue-1669-legacy-handle.json"
+    write_handle_sidecar(
+        RunHandle(
+            backend="gcp",
+            cluster=None,
+            job_id="gce-2",
+            pod_name="eps-issue-1669",
+            scratch_dir="/s",
+            log_path="/l",
+            extra={"workload_cmd": "bash scripts/x.sh", "hydra_args": []},
+        ),
+        sidecar2,
+    )
+    prior2 = _prior_sidecar_failover_extras(sidecar2)
+    assert prior2 is not None
+    assert "env_pins" not in prior2["extra"]
+
+
+@pytest.mark.parametrize(
+    ("pins", "ok"),
+    [
+        ({"WANDB_PROJECT": "issue1586_methodgen"}, True),
+        ({"WANDB_TAGS": "a=b", "WANDB_RUN_GROUP": "g 1"}, True),
+        ({"MALLOC_ARENA_MAX": "2", "OMP_NUM_THREADS": "8"}, True),  # #1803 runtime-tuning keys
+        (None, True),  # None → {}
+        ({}, True),  # empty → {}
+        ({"WANDB_API_KEY": "x"}, False),  # non-allowlisted (secret) key
+        ({"wandb_project": "x"}, False),  # case-sensitive allowlist
+        ({"WANDB_PROJECT": ""}, False),  # empty value
+        ({"WANDB_PROJECT": "a\nb"}, False),  # multi-line value
+        ({"WANDB_PROJECT": 42}, False),  # non-str value
+        ({"WANDB_PROJECT": "x" * 513}, False),  # over ENV_PIN_VALUE_MAX_LEN
+        ("WANDB_PROJECT=x", False),  # non-mapping input
+    ],
+)
+def test_validate_env_pins_allowlist_and_value_rules(pins, ok) -> None:
+    """#1669: the strict validator's allowlist + value rules (the CLI +
+    renderer defense); the secret-shaped-value case is covered separately
+    below (runtime-constructed token, never a committed literal)."""
+    from explore_persona_space.backends.base import validate_env_pins
+
+    if ok:
+        out = validate_env_pins(pins)
+        assert out == (dict(pins) if pins else {})
+    else:
+        with pytest.raises(ValueError):
+            validate_env_pins(pins)
+
+
+def test_validate_env_pins_rejects_secret_shaped_value_and_sanitize_splits() -> None:
+    """#1669: a secret-shaped VALUE is rejected by the strict validator,
+    and ``sanitize_env_pins`` (the reconstructor-side per-key variant)
+    keeps valid entries while reporting each dropped one."""
+    from explore_persona_space.backends.base import sanitize_env_pins, validate_env_pins
+
+    secret_shaped = "sk-" + "A" * 20  # constructed at runtime
+    with pytest.raises(ValueError, match="secret-shaped"):
+        validate_env_pins({"WANDB_PROJECT": secret_shaped})
+
+    kept, dropped = sanitize_env_pins(
+        {"WANDB_PROJECT": "ok", "WANDB_RUN_GROUP": secret_shaped, "HF_TOKEN": "x"}
+    )
+    assert kept == {"WANDB_PROJECT": "ok"}
+    assert len(dropped) == 2
+    # Non-mapping input drops wholesale with one reason, never raises.
+    kept2, dropped2 = sanitize_env_pins(["WANDB_PROJECT=x"])
+    assert kept2 == {} and len(dropped2) == 1
+
+
+def test_env_pin_allowlist_keeps_runtime_tuning_keys() -> None:
+    """#1803: the house runtime-tuning set (OOM / thread-cap remediation,
+    incident #1739) stays in ``ENV_PIN_ALLOWED_KEYS`` — a silent drop in a
+    future allowlist rewrite turns this membership pin red.
+    #1852 adds the CUDA allocator knob (gotchas.md CUDA-OOM remedy #1)."""
+    from explore_persona_space.backends.base import ENV_PIN_ALLOWED_KEYS, sanitize_env_pins
+
+    runtime_tuning = {
+        "MALLOC_ARENA_MAX",
+        "OMP_NUM_THREADS",
+        "MKL_NUM_THREADS",
+        "OPENBLAS_NUM_THREADS",
+        "NUMEXPR_NUM_THREADS",
+        "PYTORCH_CUDA_ALLOC_CONF",
+    }
+    assert runtime_tuning <= ENV_PIN_ALLOWED_KEYS
+
+    # #1852: the CUDA allocator knob round-trips ``sanitize_env_pins`` with
+    # the gotchas.md hot-fix value (colon is a legal single-line char).
+    pin = {"PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"}
+    kept, dropped = sanitize_env_pins(pin)
+    assert kept == pin
+    assert dropped == []
+    # Comma-bearing multi-option value survives too (free coverage).
+    pin_multi = {"PYTORCH_CUDA_ALLOC_CONF": "max_split_size_mb:128,expandable_segments:True"}
+    kept2, dropped2 = sanitize_env_pins(pin_multi)
+    assert kept2 == pin_multi
+    assert dropped2 == []

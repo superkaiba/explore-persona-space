@@ -34,3 +34,9 @@ Caught me on task #475 round 1 — `run_issue475_cot_install.py` docstring
 had `"- subsets data to 10% (~600 rows)"`; `--help` crashed with the
 TypeError. Fixed by switching to `RawDescriptionHelpFormatter` + clean
 short description for all 3 scripts (dispatcher, eval, data-gen).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [argparse description=__doc__ + literal % crashes](feedback_argparse_doc_percent.md) — docstring goes through % interpolation; RawDescriptionHelpFormatter + clean description.

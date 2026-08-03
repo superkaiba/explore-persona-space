@@ -1,0 +1,668 @@
+{
+  "commit": "0e20aeb95a",
+  "created": "2026-07-31T00:08:48Z",
+  "figsize": [
+    11.0,
+    8.4
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Share of held-out squared residual": 0.09950048279980492,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "Share of held-out squared residual": 0.05318952812972715,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "Share of held-out squared residual": 0.08768775050493406,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "Share of held-out squared residual": 0.1273869029504111,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "Share of held-out squared residual": 0.08349051226835622,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "Share of held-out squared residual": 0.10108877667947147,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "Share of held-out squared residual": 0.14088639124453484,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "Share of held-out squared residual": 0.08460400020748578,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "Share of held-out squared residual": 0.10456015380694851,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "Share of held-out squared residual": 0.11988768812407102,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "Share of held-out squared residual": 0.08904933910445179,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "Share of held-out squared residual": 0.11474294281644004,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Share of held-out squared residual": 0.04965643913044701,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Share of held-out squared residual": 0.06931782309339216,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Share of held-out squared residual": 0.06011759450771509,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "Share of held-out squared residual": 0.05674882596036859,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "Share of held-out squared residual": 0.09057927486136519,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "Share of held-out squared residual": 0.07509025285655244,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "Share of held-out squared residual": 0.04676899058231307,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "Share of held-out squared residual": 0.0893929477196535,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "Share of held-out squared residual": 0.07046064123843429,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "Share of held-out squared residual": 0.044463572167594195,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "Share of held-out squared residual": 0.05017897986310929,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "Share of held-out squared residual": 0.042168900952323896,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Share of held-out squared residual": 0.850843078069748,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Share of held-out squared residual": 0.8774926487768806,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Share of held-out squared residual": 0.8521946549873509,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "Share of held-out squared residual": 0.8158642710892203,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "Share of held-out squared residual": 0.8259302128702786,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "Share of held-out squared residual": 0.8238209704639761,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "Share of held-out squared residual": 0.8123446181731522,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "Share of held-out squared residual": 0.8260030520728607,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "Share of held-out squared residual": 0.8249792049546172,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "Share of held-out squared residual": 0.8356487397083348,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "Share of held-out squared residual": 0.8607716810324388,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 11.0,
+      "Share of held-out squared residual": 0.843088156231236,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 9.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 10.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 11.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "category": "Context\nlayer 14 ridge",
+      "Share of held-out squared residual": 0.1538863945227612,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Prefix\nlayer 14 ridge",
+      "Share of held-out squared residual": 0.13738234473986136,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Bare-query\nlayer 14 ridge",
+      "Share of held-out squared residual": 0.14261576131936243,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Context\nlayer 19 ridge",
+      "Share of held-out squared residual": 0.1584453492729171,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Prefix\nlayer 19 ridge",
+      "Share of held-out squared residual": 0.13687753913962886,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Bare-query\nlayer 19 ridge",
+      "Share of held-out squared residual": 0.14402079495902062,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Context\nlayer 19 MLP",
+      "Share of held-out squared residual": 0.17760570909218673,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Prefix\nlayer 19 MLP",
+      "Share of held-out squared residual": 0.14560087589506582,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Bare-query\nlayer 19 MLP",
+      "Share of held-out squared residual": 0.15224196785156285,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Context\nlayer 26 ridge",
+      "Share of held-out squared residual": 0.16056262660371984,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Prefix\nlayer 26 ridge",
+      "Share of held-out squared residual": 0.10681276448337634,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Bare-query\nlayer 26 ridge",
+      "Share of held-out squared residual": 0.14959900263838904,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Context\nlayer 14 ridge",
+      "Share of held-out squared residual": 0.022240841829096386,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Prefix\nlayer 14 ridge",
+      "Share of held-out squared residual": 0.012347946381589758,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Bare-query\nlayer 14 ridge",
+      "Share of held-out squared residual": 0.0190178628861494,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Context\nlayer 19 ridge",
+      "Share of held-out squared residual": 0.02039848054911725,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Prefix\nlayer 19 ridge",
+      "Share of held-out squared residual": 0.012941579124058217,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Bare-query\nlayer 19 ridge",
+      "Share of held-out squared residual": 0.02168814027236146,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Context\nlayer 19 MLP",
+      "Share of held-out squared residual": 0.01822334310814372,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Prefix\nlayer 19 MLP",
+      "Share of held-out squared residual": 0.012619213174937333,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Bare-query\nlayer 19 MLP",
+      "Share of held-out squared residual": 0.02116474342644173,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Context\nlayer 26 ridge",
+      "Share of held-out squared residual": 0.011408187529599101,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Prefix\nlayer 26 ridge",
+      "Share of held-out squared residual": 0.007225222730985303,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Bare-query\nlayer 26 ridge",
+      "Share of held-out squared residual": 0.007460648343271731,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Context\nlayer 14 ridge",
+      "Share of held-out squared residual": 0.8238727636481424,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Prefix\nlayer 14 ridge",
+      "Share of held-out squared residual": 0.8502697088785489,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Bare-query\nlayer 14 ridge",
+      "Share of held-out squared residual": 0.8383663757944881,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Context\nlayer 19 ridge",
+      "Share of held-out squared residual": 0.8211561701779656,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Prefix\nlayer 19 ridge",
+      "Share of held-out squared residual": 0.850180881736313,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Bare-query\nlayer 19 ridge",
+      "Share of held-out squared residual": 0.8342910647686179,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Context\nlayer 19 MLP",
+      "Share of held-out squared residual": 0.8041709477996695,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Prefix\nlayer 19 MLP",
+      "Share of held-out squared residual": 0.8417799109299968,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Bare-query\nlayer 19 MLP",
+      "Share of held-out squared residual": 0.8265932887219953,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Context\nlayer 26 ridge",
+      "Share of held-out squared residual": 0.8280291858666811,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Prefix\nlayer 26 ridge",
+      "Share of held-out squared residual": 0.8859620127856385,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Bare-query\nlayer 26 ridge",
+      "Share of held-out squared residual": 0.8429403490183394,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 9.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 10.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 11.0,
+      "Share of held-out squared residual": 0.06248821155067478,
+      "series": "Context share expected from pure noise at this (n, k)",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 96,
+  "text": {
+    "suptitle": "Where the context-to-answer map's error lives (variance components, k=16 answer directions)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Raw squared residual (high-variance answer directions dominate by construction)",
+        "ylabel": "Share of held-out squared residual",
+        "legend_labels": [
+          "Context share expected from pure noise at this (n, k)",
+          "Context (which conversation)",
+          "Direction (which answer axis)",
+          "Interaction (this context x this direction)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Per-direction normalized (error relative to what there was to predict)",
+        "ylabel": "Share of held-out squared residual",
+        "xticklabels": [
+          "Context\nlayer 14 ridge",
+          "Prefix\nlayer 14 ridge",
+          "Bare-query\nlayer 14 ridge",
+          "Context\nlayer 19 ridge",
+          "Prefix\nlayer 19 ridge",
+          "Bare-query\nlayer 19 ridge",
+          "Context\nlayer 19 MLP",
+          "Prefix\nlayer 19 MLP",
+          "Bare-query\nlayer 19 MLP",
+          "Context\nlayer 26 ridge",
+          "Prefix\nlayer 26 ridge",
+          "Bare-query\nlayer 26 ridge"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Context share expected from pure noise at this (n, k)",
+      "Context (which conversation)",
+      "Direction (which answer axis)",
+      "Interaction (this context x this direction)"
+    ]
+  }
+}

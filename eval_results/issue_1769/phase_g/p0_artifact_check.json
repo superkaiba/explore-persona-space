@@ -1,0 +1,56 @@
+{
+  "phase": "p0",
+  "traits": {
+    "evil": {
+      "rb_path": "issue779_monitoring/r_b/evil.pt",
+      "rb_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+      "rb_shape": [
+        28,
+        3584
+      ],
+      "rb_row_indexing": "row L = model layer L (issue1415_run_phase1.rb_delta contract)",
+      "n_eval_questions": 20,
+      "n_extraction_questions": 20,
+      "eval_extraction_overlap": [],
+      "eval_questions_provenance": "original",
+      "rubric_sha256_prefix": "94dba5a9df6c0bc3"
+    },
+    "sycophancy": {
+      "rb_path": "issue779_monitoring/r_b/sycophancy.pt",
+      "rb_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+      "rb_shape": [
+        28,
+        3584
+      ],
+      "rb_row_indexing": "row L = model layer L (issue1415_run_phase1.rb_delta contract)",
+      "n_eval_questions": 20,
+      "n_extraction_questions": 20,
+      "eval_extraction_overlap": [],
+      "eval_questions_provenance": "regenerated",
+      "rubric_sha256_prefix": "c9ebbe49d1d5eae6"
+    },
+    "hallucination": {
+      "rb_path": "issue779_monitoring/r_b/hallucination.pt",
+      "rb_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+      "rb_shape": [
+        28,
+        3584
+      ],
+      "rb_row_indexing": "row L = model layer L (issue1415_run_phase1.rb_delta contract)",
+      "n_eval_questions": 20,
+      "n_extraction_questions": 20,
+      "eval_extraction_overlap": [],
+      "eval_questions_provenance": "regenerated",
+      "rubric_sha256_prefix": "8af03795dcded8bf"
+    }
+  },
+  "note": "sycophancy/hallucination eval questions are post-hoc REGENERATED (the #922 incident) \u2014 pre-registered disposition, carried as a clean-result data-provenance caveat, NOT a gate failure (plan \u00a74)",
+  "repro": {
+    "git_commit": "468aaef532416e70d991f6ae12447b9543c05f49",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "timestamp": "2026-07-29T03:45:08.943961+00:00"
+  }
+}

@@ -229,7 +229,7 @@ After writing the file, commit it so the dashboard picks it up:
 
 ```bash
 git add logs/weekly/YYYY-Www.md
-git commit -m "logs: weekly stub for YYYY-Www"
+git commit -m "logs: weekly stub for YYYY-Www" -- logs/weekly/YYYY-Www.md
 ```
 
 Do not push.

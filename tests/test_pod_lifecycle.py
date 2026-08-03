@@ -1591,6 +1591,109 @@ def test_bootstrap_failure_hint_carries_name_suffix(isolated_state, monkeypatch,
     assert "terminate --issue 779 --name-suffix b" in capsys.readouterr().err
 
 
+def _bootstrap_tail_ns(*, no_bootstrap: bool = False) -> argparse.Namespace:
+    """Namespace for driving _provision_wait_register_bootstrap directly (#1931)."""
+    return argparse.Namespace(issue=779, name_suffix=None, ttl_days=7, no_bootstrap=no_bootstrap)
+
+
+def _stub_provision_tail(monkeypatch, info, rcs: list[int]) -> list[str]:
+    """Stub the provision tail's collaborators; _bootstrap pops rcs per call.
+
+    Returns the (mutable) list of recorded _bootstrap call targets so tests can
+    assert the exact call count.
+    """
+    calls: list[str] = []
+
+    def fake_bootstrap(name, intent_label):
+        calls.append(name)
+        return rcs[len(calls) - 1]
+
+    monkeypatch.setattr(pod_lifecycle, "wait_for_ssh", lambda pod_id, timeout=600: info)
+    monkeypatch.setattr(pod_lifecycle, "note_ssh_wait_outcome", lambda *a, **k: None)
+    monkeypatch.setattr(pod_lifecycle, "_upsert_pods_conf", lambda pod: None)
+    monkeypatch.setattr(pod_lifecycle, "_bootstrap", fake_bootstrap)
+    return calls
+
+
+def test_provision_bootstrap_retries_once_then_succeeds(isolated_state, monkeypatch, capsys):
+    """A transient first-attempt bootstrap failure (rc=100) retries EXACTLY once;
+    the retry's rc=0 completes provision (no SystemExit) with the retry line on
+    stderr and the BOOTSTRAP-OK verdict token emitted (#1931 acceptance 1+2)."""
+    _write_metadata_file({})
+    info = _info("pod-779", pod_id="live-779")
+    calls = _stub_provision_tail(monkeypatch, info, [100, 0])
+
+    pod_lifecycle._provision_wait_register_bootstrap(
+        _bootstrap_tail_ns(), "pod-779", info, "lora-7b"
+    )
+
+    assert calls == ["pod-779", "pod-779"]  # exactly 2 calls: first try + one retry
+    captured = capsys.readouterr()
+    assert "[bootstrap-retry] bootstrap exited rc=100 on pod-779" in captured.err
+    assert "BOOTSTRAP-OK pod=pod-779" in captured.out
+    assert "BOOTSTRAP-OK pod=pod-779" in captured.err  # stream-consistent with FAILED
+    assert "BOOTSTRAP-FAILED" not in captured.out + captured.err
+
+
+def test_provision_bootstrap_fails_loud_after_retry(isolated_state, monkeypatch, capsys):
+    """Both bootstrap attempts failing (rc=100 twice) keeps the sys.exit(rc)
+    contract AND emits the machine-greppable BOOTSTRAP-FAILED verdict as the
+    last stderr line before exit (#1931 acceptance 1+3)."""
+    _write_metadata_file({})
+    info = _info("pod-779", pod_id="live-779")
+    calls = _stub_provision_tail(monkeypatch, info, [100, 100])
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle._provision_wait_register_bootstrap(
+            _bootstrap_tail_ns(), "pod-779", info, "lora-7b"
+        )
+
+    assert exc.value.code == 100
+    assert calls == ["pod-779", "pod-779"]  # never more than one retry
+    captured = capsys.readouterr()
+    assert "[bootstrap-retry]" in captured.err
+    assert "BOOTSTRAP-FAILED pod=pod-779 rc=100" in captured.err
+    assert captured.err.rstrip().splitlines()[-1] == "BOOTSTRAP-FAILED pod=pod-779 rc=100"
+    assert "BOOTSTRAP-OK" not in captured.out + captured.err
+
+
+def test_provision_bootstrap_success_no_retry(isolated_state, monkeypatch, capsys):
+    """A clean first-attempt bootstrap (rc=0) never retries: one _bootstrap
+    call, no [bootstrap-retry] line, BOOTSTRAP-OK present (#1931 acceptance 4)."""
+    _write_metadata_file({})
+    info = _info("pod-779", pod_id="live-779")
+    calls = _stub_provision_tail(monkeypatch, info, [0])
+
+    pod_lifecycle._provision_wait_register_bootstrap(
+        _bootstrap_tail_ns(), "pod-779", info, "lora-7b"
+    )
+
+    assert calls == ["pod-779"]
+    captured = capsys.readouterr()
+    assert "[bootstrap-retry]" not in captured.err
+    assert "BOOTSTRAP-OK pod=pod-779" in captured.out
+    assert "Done. SSH with: ssh pod-779" in captured.out
+
+
+def test_provision_no_bootstrap_skips_retry_and_verdict(isolated_state, monkeypatch, capsys):
+    """--no-bootstrap semantics unchanged (#1931 acceptance 5): _bootstrap is
+    never invoked and neither verdict token is printed — the skip message stays."""
+    _write_metadata_file({})
+    info = _info("pod-779", pod_id="live-779")
+    calls = _stub_provision_tail(monkeypatch, info, [])
+
+    pod_lifecycle._provision_wait_register_bootstrap(
+        _bootstrap_tail_ns(no_bootstrap=True), "pod-779", info, "lora-7b"
+    )
+
+    assert calls == []  # _bootstrap never called
+    captured = capsys.readouterr()
+    assert "Skipping bootstrap (--no-bootstrap)" in captured.out
+    assert "BOOTSTRAP-OK" not in captured.out + captured.err
+    assert "BOOTSTRAP-FAILED" not in captured.out + captured.err
+    assert "[bootstrap-retry]" not in captured.err
+
+
 def _epod(name: str, issue: int) -> pod_lifecycle.EphemeralPod:
     return pod_lifecycle.EphemeralPod(metadata=_meta(name, issue=issue), info=_info(name))
 

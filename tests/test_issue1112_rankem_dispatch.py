@@ -56,6 +56,16 @@ def test_normalize_phases_aliases_and_unknown() -> None:
         D.normalize_phases("bogus")
 
 
+def test_p3_judge_import_path_resolves() -> None:
+    """Review r1 B1 regression: the ladder judge instrument imports via
+    _ensure_scripts_on_syspath() + `import issue1090_fu1` (scripts module, not a
+    package) and exposes _judge_fu1 — the exact form run_ladder_unit uses."""
+    D._ensure_scripts_on_syspath()
+    import issue1090_fu1 as fu1
+
+    assert callable(fu1._judge_fu1)
+
+
 def test_resolve_cells() -> None:
     assert D.resolve_cells(None, False) == R.ALL_CELLS
     assert D.resolve_cells(f"{R.A1},{R.B2}", False) == (R.A1, R.B2)
@@ -215,28 +225,44 @@ def test_phase_upload_capture_tensors_and_self_finalizing_revs(tmp_path, monkeyp
     import json
 
     cfg = _cfg(tmp_path, upload=True, dry_run=False, cells=(R.A1, R.B2))
-    # Own-text capture tensors for two cells (no result JSONs -> that block skips).
+    # Own-text capture tensors + rollout text for two cells (no result JSONs).
     for cell in ("a1_lora_r1", "b2_fullft_em"):
         d = cfg.out_root / "capture" / cell / "selected"
         d.mkdir(parents=True, exist_ok=True)
         (d / "pooled.pt").write_bytes(b"\x00")
+        (d / "raw_rows.json").write_text("[]")
+    # One installed cell with a selected checkpoint -> overflow adapter upload.
+    a1 = cfg.out_root / "a1_lora_r1"
+    (a1 / "train" / "checkpoint-12").mkdir(parents=True, exist_ok=True)
+    (a1 / "selection.json").write_text(json.dumps({"installed": True, "selected_step": 12}))
+    (a1 / "build_result.json").write_text(json.dumps({"adapter_root": str(a1 / "train")}))
 
     from explore_persona_space.orchestrate import hub
 
-    calls: dict = {}
+    folder_calls: list[dict] = []
+    upload_calls: list[dict] = []
     monkeypatch.setattr(
         hub,
         "_upload_folder_filtered",
-        lambda local_dir, repo, rt, path_in_repo, allow_patterns, expected_repo_paths: calls.update(
-            expected=expected_repo_paths, path_in_repo=path_in_repo, allow=allow_patterns
+        lambda local_dir, repo, rt, path_in_repo, allow_patterns, expected_repo_paths: (
+            folder_calls.append(
+                {
+                    "expected": expected_repo_paths,
+                    "path_in_repo": path_in_repo,
+                    "allow": allow_patterns,
+                }
+            )
         ),
     )
-    monkeypatch.setattr(
-        hub,
-        "_upload",
-        lambda p, r, rt, pir, upload_as_file=False: calls.update(revs_path_in_repo=pir),
+
+    def _fake_upload(p, r, rt, pir, upload_as_file=False, private=False):
+        upload_calls.append({"path_in_repo": pir, "repo": r, "private": private})
+        return f"https://hf/{r}/{pir}"
+
+    monkeypatch.setattr(hub, "_upload", _fake_upload)
+    monkeypatch.setattr(  # signature-conformant: the real helper REQUIRES what= (#1332 class)
+        hub, "retry_transient", lambda fn, *, what, **kw: fn()
     )
-    monkeypatch.setattr(hub, "retry_transient", lambda fn: fn())
     monkeypatch.setattr(
         hub, "upload_raw_completions_to_data_repo", lambda experiment_name, eval_results_dir: None
     )
@@ -254,15 +280,103 @@ def test_phase_upload_capture_tensors_and_self_finalizing_revs(tmp_path, monkeyp
 
     D.phase_upload(cfg)
 
+    by_prefix = {c["path_in_repo"]: c for c in folder_calls}
     # Capture tensors land at the exact layout the cosine's _fetch_one reads.
-    assert set(calls["expected"]) == {
+    assert set(by_prefix[f"{R.DATA_PREFIX}/analysis_tensors"]["expected"]) == {
         f"{R.DATA_PREFIX}/analysis_tensors/capture/a1_lora_r1/selected/pooled.pt",
         f"{R.DATA_PREFIX}/analysis_tensors/capture/b2_fullft_em/selected/pooled.pt",
     }
-    assert calls["path_in_repo"] == f"{R.DATA_PREFIX}/analysis_tensors"
-    # Self-finalizing revs written locally (orchestrator commits it -> cosine reads it).
+    # Rollout text (#779) lands under raw_completions/capture/.
+    assert set(by_prefix[f"{R.DATA_PREFIX}/raw_completions"]["expected"]) == {
+        f"{R.DATA_PREFIX}/raw_completions/capture/a1_lora_r1/selected/raw_rows.json",
+        f"{R.DATA_PREFIX}/raw_completions/capture/b2_fullft_em/selected/raw_rows.json",
+    }
+    # Self-finalizing revs written locally + uploaded.
     revs = json.loads((cfg.out_root / "capture_revs.json").read_text())
     assert revs["data_repo_rev"] == "deadbeefcafe"
     assert sorted(revs["captured_cells"]) == ["a1_lora_r1", "b2_fullft_em"]
-    assert revs["n_capture_files"] == 2
-    assert calls["revs_path_in_repo"] == f"{R.DATA_PREFIX}/capture_revs.json"
+    # Selected adapter -> PRIVATE overflow repo at the checkpoint path.
+    adapter = [c for c in upload_calls if c["repo"] == R.OVERFLOW_REPO]
+    assert adapter and adapter[0]["private"] is True
+    assert adapter[0]["path_in_repo"] == f"issue1112_{R.RANKEM_SLUG}/a1_lora_r1/checkpoint-12"
+
+
+def test_arm_b_default_context_organism_constructs_with_no_default_panel() -> None:
+    """Regression (#1112 rankem smoke crash): the Arm B install-rate organism uses the
+    bare `default` context, so it must thread the no-default panel — the default panel
+    contains `default` and the disjointness invariant refuses (the #1090 fu5 seam).
+    Executes the REAL ModelOrganism __post_init__ (the actual crash path)."""
+    from explore_persona_space.artifacts.negatives import (
+        DEFAULT_PANEL_NAME,
+        ISSUE664_PANEL_NAME,
+    )
+    from explore_persona_space.artifacts.organisms import ModelOrganism
+
+    behavior, context_id = D._behavior_context("b1_lora_em")
+    assert context_id == "default"
+    assert D._organism_negatives(context_id) == ISSUE664_PANEL_NAME
+    organism = ModelOrganism(
+        behavior=behavior,
+        context_id=context_id,
+        negatives=D._organism_negatives(context_id),
+        seed=42,
+    )
+    assert "default" not in organism.panel
+
+    # Arm A keeps the default panel (persona source, disjoint by construction).
+    _behavior_a, context_a = D._behavior_context("a1_lora_r1")
+    assert D._organism_negatives(context_a) == DEFAULT_PANEL_NAME
+
+
+def test_base_rate_reads_base_side_no_adapter(tmp_path, monkeypatch) -> None:
+    """Regression (#1112 rankem smoke crash 2): the base-rate leg calls the
+    generation seam with side='base', side_path=None — never the bare model id
+    as a checkpoint path (vLLM then dies with 'No adapter found')."""
+    import explore_persona_space.artifacts.organisms as org
+
+    calls: dict = {}
+
+    def fake_gen_factory(base_model, **kw):
+        def gen(side_path, messages_list, *, n, temperature):
+            raise AssertionError("gen must only be reached via _generate_and_persist")
+
+        gen.close = lambda: calls.setdefault("closed", True)
+        return gen
+
+    def fake_gap(gen_fn, side, side_path, ctx, questions, *, n, temperature, out_dir, base_model):
+        calls["side"] = side
+        calls["side_path"] = side_path
+        return [["hello"] * n for _ in questions]
+
+    class _Cell:
+        rate = 0.25
+
+    def fake_rate_for_cell(
+        behavior, predicate, judge_fn, n_judge_draws, side, ctx, questions, completions, judge_root
+    ):
+        calls["judge_side"] = side
+        return _Cell()
+
+    monkeypatch.setattr(org, "_default_vllm_generate_fn", fake_gen_factory)
+    monkeypatch.setattr(org, "_generate_and_persist", fake_gap)
+    monkeypatch.setattr(org, "_rate_for_cell", fake_rate_for_cell)
+
+    cfg = _cfg(tmp_path)
+    rate = D._base_rate(cfg, "b1_lora_em")
+    assert rate == 0.25
+    assert calls["side"] == "base"
+    assert calls["side_path"] is None
+    assert calls["judge_side"] == "base"
+    assert calls.get("closed") is True
+
+
+def test_arma_dose_extension_knobs_default_byte_exact(tmp_path) -> None:
+    """Dose-extension knobs: defaults preserve the original regime dict exactly
+    (resume compatibility); set knobs enter the regime key and thread the ceiling."""
+    base = _cfg(tmp_path)
+    assert "arma_max_steps" not in base.regime_key()
+    assert "arma_eval_grid" not in base.regime_key()
+    ext = _cfg(tmp_path, arma_max_steps=300, arma_eval_grid=(60, 100, 300))
+    rk = ext.regime_key()
+    assert rk["arma_max_steps"] == 300
+    assert rk["arma_eval_grid"] == [60, 100, 300]

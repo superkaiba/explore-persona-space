@@ -1,0 +1,123 @@
+{
+  "dv": "Per-context reciprocal rank of the best content token (chain composition, 5d)",
+  "question": "is the chain MRR gain broad across the 999 WildChat contexts?",
+  "variants": {
+    "mprime_x50k": {
+      "n_ctx": 999,
+      "mrr": 0.011360393650052317,
+      "null_mrr_pooled": 0.001325698229225045,
+      "frac_ctx_beating_own_null_p95": 0.2912912912912913,
+      "frac_ctx_beating_own_null_p975": 0.1921921921921922,
+      "per_ctx_null_percentile_quantiles": {
+        "5": 0.3354709418837675,
+        "25": 0.6753507014028056,
+        "50": 0.8517034068136272,
+        "75": 0.9649298597194389,
+        "90": 0.9899799599198397,
+        "95": 0.996993987975952,
+        "99": 1.0
+      },
+      "per_ctx_rr_quantiles": {
+        "5": 2.2178741461331132e-05,
+        "25": 0.00010487127080378541,
+        "50": 0.00031338138514572234,
+        "75": 0.0019324122479462285,
+        "90": 0.009634055265123231,
+        "95": 0.032365591397849364,
+        "99": 0.2009999999999991
+      },
+      "frac_rank1": 0.004004004004004004,
+      "frac_best_in_top50": 0.06506506506506507,
+      "median_best_rank_identity": 3191.0,
+      "median_best_rank_null": 9587.0,
+      "share_of_sum_rr_top_1pct": 0.5580504691675431,
+      "share_of_sum_rr_top_5pct": 0.8392225565250321,
+      "share_of_sum_rr_top_10pct": 0.9159979939376652,
+      "mrr_excluding_top10_ctx": 0.004818705685610649,
+      "mrr_excluding_top50_ctx": 0.001887602971067876,
+      "mrr_excluding_top100_ctx": 0.0010496471885893899,
+      "aggregate_mrr_reproduced": 0.011360393650052324,
+      "aggregate_recall_at_k": 0.0010728074601721283,
+      "n_ctx_used": 999,
+      "committed_mrr": 0.011360393650052324,
+      "committed_null_mrr_mean": 0.0013061650315259097,
+      "input_layer": 14,
+      "df_cap": 0.5,
+      "topk": 50
+    },
+    "m_shipped": {
+      "n_ctx": 999,
+      "mrr": 0.01393092529194922,
+      "null_mrr_pooled": 0.0013171873459941134,
+      "frac_ctx_beating_own_null_p95": 0.3183183183183183,
+      "frac_ctx_beating_own_null_p975": 0.22122122122122123,
+      "per_ctx_null_percentile_quantiles": {
+        "5": 0.34729458917835676,
+        "25": 0.6863727454909819,
+        "50": 0.8667334669338678,
+        "75": 0.968436873747495,
+        "90": 0.9949899799599199,
+        "95": 0.9979959919839679,
+        "99": 1.0
+      },
+      "per_ctx_rr_quantiles": {
+        "5": 2.508371779249126e-05,
+        "25": 0.00011113580932998088,
+        "50": 0.0003661662394727206,
+        "75": 0.0021929930026210113,
+        "90": 0.01760651629072683,
+        "95": 0.043478260869565216,
+        "99": 0.25
+      },
+      "frac_rank1": 0.005005005005005005,
+      "frac_best_in_top50": 0.09309309309309309,
+      "median_best_rank_identity": 2731.0,
+      "median_best_rank_null": 9412.0,
+      "share_of_sum_rr_top_1pct": 0.46705487038012194,
+      "share_of_sum_rr_top_5pct": 0.80065009644856,
+      "share_of_sum_rr_top_10pct": 0.9030474565131614,
+      "mrr_excluding_top10_ctx": 0.007246708156377424,
+      "mrr_excluding_top50_ctx": 0.002877632480347202,
+      "mrr_excluding_top100_ctx": 0.001481013190970281,
+      "aggregate_mrr_reproduced": 0.013930925291949229,
+      "aggregate_recall_at_k": 0.002075683125046031,
+      "n_ctx_used": 999,
+      "committed_mrr": 0.013930925291949229,
+      "committed_null_mrr_mean": 0.0013329772688974242,
+      "input_layer": 19,
+      "df_cap": 0.5,
+      "topk": 50
+    }
+  },
+  "stage_record": {
+    "revision": "2291864da2b836e58e65580a5c9372f755536f4e",
+    "verified_sha256": {
+      "issue779_monitoring/analysis_tensors/pass_b/train_context_vectors.pt": "46c06e89c513ca598bc83be1c87689694a47bfc927a81d0d738a54df769dbf9a",
+      "issue1776_jacobian/analysis_tensors/jac_full/J_last.pt": "a171c4c2716aba52b5ecfdf369e42961558957ca93ede1620284710916ef5e9c",
+      "issue1776_jacobian/analysis_tensors/jac_full/J_ctx.pt": "eff84670632eb3151b08d72150d593a976cd682a199d4e7b6050654e6bdd67f0",
+      "issue1776_jacobian/analysis_tensors/jac_full/J_prefix.pt": "0ccbee52ead1206ed87c6fb38c330ac1b93a4c1cd27a0c4b7985cc9199af808d",
+      "issue1776_jacobian/analysis_tensors/comparator/m_ridge_x50k.pt": "6174269d6c7cd96ced06735136c35a7c2bf4d4fc6d90126fcd5b9ca622fa3f79",
+      "issue1776_jacobian/analysis_tensors/comparator/m_ridge_lmsys50k.pt": "a2b89e8c966a6d4c81cb398bfa6189f167d5afeb90746572cb2f88b4ec99383c",
+      "issue1776_jacobian/analysis_tensors/dictionaries/dictionary_l19.pt": "d9fe456cd42b9d32401d0793007497ab1c8f3dcce177980cf333c8f5e8b03915",
+      "issue779_monitoring/n1m_readout/weights/L19/ridge.pt": "188486f8afd9d95221e32492f3a0be2a3bdb2098cbe7fadfecf1d46433567909",
+      "issue1776_jacobian/wildchat_fresh/final_token_capture/shard00_chunk0000.pt": "fc377b75b049ab53f2ea3a50e3825718dbaec7e5b39a4fa72d77197379dcea94",
+      "issue1776_jacobian/wildchat_fresh/final_token_capture/shard01_chunk0000.pt": "702ba378424a1c5fe980b66bac014428b06f454692c49dba3800667760983562",
+      "issue1776_jacobian/wildchat_fresh/final_token_capture/shard02_chunk0000.pt": "871a8e6513dce72be51297f27b95d2da5cd7e513ac70f9cd18c64077bfa81e8f",
+      "issue1776_jacobian/wildchat_fresh/final_token_capture/shard03_chunk0000.pt": "f97ced04b57ad660c85f90a166993a335b0094248296039af5ee45f12ed6003c",
+      "issue1776_jacobian/wildchat_fresh/final_token_capture/shard04_chunk0000.pt": "090a997239f92163edee007586af838240666ecbf46d3d3007953b41c8a14aaf",
+      "issue1776_jacobian/wildchat_fresh/final_token_capture/shard05_chunk0000.pt": "2dd3fc789a1803de469732e5bb6bc539dd2974736883692467c441a714f9a4c1",
+      "issue1776_jacobian/wildchat_fresh/final_token_capture/shard06_chunk0000.pt": "2790924f587da1b13daaf4d6ca8c2d20528fcdabc9cd7cf1c6b010ee014a811e",
+      "issue1776_jacobian/wildchat_fresh/final_token_capture/shard07_chunk0000.pt": "be916cd26c1c76c3a8b833ff01099619dcb7df492550d39a890e11b7266de099"
+    },
+    "staged_at_utc": "2026-07-30T03:49:59Z"
+  },
+  "repro": {
+    "issue": 1776,
+    "git_commit": "79db3472460808dde70cbc9b6cdcdfd22fd1f919",
+    "jlens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+    "timestamp_utc": "2026-07-30T03:59:33Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "python_version": "3.11.15"
+  }
+}

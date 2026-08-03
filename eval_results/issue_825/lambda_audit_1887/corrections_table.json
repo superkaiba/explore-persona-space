@@ -1,0 +1,102 @@
+{
+  "metadata": {
+    "control_tol": 0.05,
+    "forced_lambda_role": "diagnostic only (post-hoc-selected best-of-sweep)",
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "headline_read": "corrected_reduced_basis_r2 (unselected)",
+    "issue": 1887,
+    "replay_gate_tol": 0.001,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "stable_tol": 0.1,
+    "ts": "2026-07-31T07:03:29Z"
+  },
+  "replay_gate": {
+    "gate": "PASS",
+    "n_cells_with_reference": 1,
+    "n_replay_failed": 0,
+    "n_unrefittable": 0,
+    "pass_fraction": 1.0
+  },
+  "rows": [
+    {
+      "cell_id": "control__S_instruct_chat",
+      "ci_survival": "point-estimate-only \u2014 committed CI machinery not re-run",
+      "committed_r2": 0.6730940896676356,
+      "committed_selector": {
+        "gcv_dof_cap": null,
+        "lambda_selection": "gcv",
+        "legacy_unguarded": true
+      },
+      "control": true,
+      "control_max_abs_delta": 0.022610116473384956,
+      "control_pass": true,
+      "corrected_gcv_capped_r2": 0.6730940896675953,
+      "corrected_inner_cv_r2": 0.6957042061410206,
+      "corrected_reduced_basis_r2": 0.6764103079079304,
+      "d": 3584,
+      "forced_lambda_r2": {
+        "1e+02": 0.5838534064994134,
+        "1e+03": 0.6935026836671148,
+        "1e+04": 0.6718666316748714
+      },
+      "issue": 825,
+      "knn_at_1": null,
+      "knn_chance": null,
+      "mapping_baseline_note": "identity+learned-bias baseline is selector-invariant (no lambda enters it) \u2014 the parents' committed values carry over unchanged (stated exemption)",
+      "n_train": 4000,
+      "null_rerun": "false \u2014 committed nulls selector-matched to the committed read only",
+      "published_claim_ref": "banked S1@5000 unguarded L19 (issue825_trackm_settle_battery docstring / trackm_settle outputs)",
+      "reduced_basis_fold_se": 0.004959093887824505,
+      "reduced_basis_k": 1024,
+      "replay_delta": -4.030109579389318e-14,
+      "replay_r2": 0.6730940896675953,
+      "tripwire": {
+        "d": 3584,
+        "estimator_degenerate_suspect": false,
+        "n_train": 4000,
+        "reasons": []
+      },
+      "variant": "n_gt_d_control",
+      "verdict_label": "indeterminate (within fold SE)"
+    },
+    {
+      "cell_id": "control__S_pretrained_chat",
+      "ci_survival": "point-estimate-only \u2014 committed CI machinery not re-run",
+      "committed_r2": null,
+      "committed_selector": {
+        "gcv_dof_cap": null,
+        "lambda_selection": "gcv",
+        "legacy_unguarded": true
+      },
+      "control": true,
+      "corrected_gcv_capped_r2": 0.5876803039140205,
+      "corrected_inner_cv_r2": 0.5968879714270809,
+      "corrected_reduced_basis_r2": 0.5639110804429559,
+      "d": 3584,
+      "forced_lambda_r2": {
+        "1e+02": 0.4163547407356024,
+        "1e+03": 0.5876803039140205,
+        "1e+04": 0.5719536711413009
+      },
+      "issue": 825,
+      "knn_at_1": null,
+      "knn_chance": null,
+      "mapping_baseline_note": "identity+learned-bias baseline is selector-invariant (no lambda enters it) \u2014 the parents' committed values carry over unchanged (stated exemption)",
+      "n_train": 4000,
+      "null_rerun": "false \u2014 committed nulls selector-matched to the committed read only",
+      "published_claim_ref": "banked S1@5000 unguarded L19 (issue825_trackm_settle_battery docstring / trackm_settle outputs)",
+      "reduced_basis_fold_se": 0.0065628801835522325,
+      "reduced_basis_k": 1024,
+      "replay_delta": null,
+      "replay_r2": 0.5876803039140205,
+      "tripwire": {
+        "d": 3584,
+        "estimator_degenerate_suspect": false,
+        "n_train": 4000,
+        "reasons": []
+      },
+      "variant": "n_gt_d_control",
+      "verdict_label": "no-committed-reference"
+    }
+  ]
+}

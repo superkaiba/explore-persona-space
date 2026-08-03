@@ -1,0 +1,35 @@
+{
+  "subsample_seed": 14823,
+  "s_fit": {
+    "n": 24000,
+    "n_lmsys": 13180,
+    "n_wildchat": 10820
+  },
+  "s_score": {
+    "n": 6000,
+    "n_lmsys": 3295,
+    "n_wildchat": 2705
+  },
+  "s_fit_sha256": "9e397255da497a27dd136d639b35fb0126f618f1781ac30845b2368ee539d02d",
+  "s_score_sha256": "338310fa55fbea9c738520c26cb7dd029d48a8c981132aab2eddcae3621c1747",
+  "parent_pool_shas": {
+    "sae_fit_sha256": "88d344675fbbca3a717cd8a0c6aa4fd893241a17098bd3173f6ae00b4d9a0fb8",
+    "holdout_sha256": "7957d689748eca218055f213082c1df444603ec2f1faa3f04b4004cee6f58622"
+  },
+  "lmsys_frac": {
+    "sae_fit": 0.5491583333333333,
+    "holdout": 0.54915
+  },
+  "requested": {
+    "n_fit": 24000,
+    "n_score": 6000
+  },
+  "max_chunks": 0,
+  "metadata": {
+    "git_commit": "f1d1386abd3d1a332e28f4854ebef987870f858b",
+    "timestamp_utc": "2026-07-29T14:32:47.761476Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1064-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all"
+  }
+}

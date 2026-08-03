@@ -1,0 +1,62 @@
+{
+ "cas-pers-ft-con-s137": {
+  "raw": 0.7989949748743719,
+  "zeroed": 0.7085427135678392,
+  "excluded": 0.7921348314606742
+ },
+ "cas-pers-ft-con-s42": {
+  "raw": 0.64,
+  "zeroed": 0.6,
+  "excluded": 0.6349206349206349
+ },
+ "cas-pers-ft-po-s137": {
+  "raw": 0.6,
+  "zeroed": 0.565,
+  "excluded": 0.6042780748663101
+ },
+ "cas-pers-ft-po-s42": {
+  "raw": 0.655,
+  "zeroed": 0.585,
+  "excluded": 0.6358695652173914
+ },
+ "imp-pers-ft-con-s137": {
+  "raw": 0.6432160804020101,
+  "zeroed": 0.6030150753768844,
+  "excluded": 0.6417112299465241
+ },
+ "imp-pers-ft-con-s42": {
+  "raw": 0.66,
+  "zeroed": 0.63,
+  "excluded": 0.6666666666666666
+ },
+ "imp-pers-ft-po-s137": {
+  "raw": 0.6884422110552764,
+  "zeroed": 0.6482412060301508,
+  "excluded": 0.6898395721925134
+ },
+ "imp-pers-ft-po-s42": {
+  "raw": 0.695,
+  "zeroed": 0.67,
+  "excluded": 0.708994708994709
+ },
+ "syc-pers-ft-con-s137": {
+  "raw": 0.56,
+  "zeroed": 0.535,
+  "excluded": 0.5661375661375662
+ },
+ "syc-pers-ft-con-s42": {
+  "raw": 0.605,
+  "zeroed": 0.57,
+  "excluded": 0.6063829787234043
+ },
+ "syc-pers-ft-po-s137": {
+  "raw": 0.81,
+  "zeroed": 0.75,
+  "excluded": 0.8021390374331551
+ },
+ "syc-pers-ft-po-s42": {
+  "raw": 0.82,
+  "zeroed": 0.785,
+  "excluded": 0.8219895287958116
+ }
+}

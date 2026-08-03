@@ -1,0 +1,4004 @@
+{
+ "rows": [
+  {
+   "group": "top50_by_variance",
+   "pc": 0,
+   "variance_share": 0.11751579103536658,
+   "r2_ridge": 0.8729903074143788,
+   "r2_mlp": 0.8911883945903798,
+   "sae_feat": 47030,
+   "abs_cos": 0.6308768391609192,
+   "own_desc": "Tokens representing technical terminology, formal vocabulary, or neutral informational language across multiple languages, typically appearing in professional, academic, or instructional contexts rather than casual or inappropriate discourse.",
+   "logit_lens": [
+    "\u6211\u771f\u7684",
+    " subparagraph",
+    "\u8fd9\u4e2a\u804c\u4e1a",
+    "\u5e94\u8be5\u600e\u4e48",
+    " emailAddress",
+    " sublic",
+    "\u8fd9\u79cd\u4e8b\u60c5",
+    " b\u00e9n\u00e9fic"
+   ],
+   "tuned_lens": [
+    "?>>",
+    "');\n\n\n\n",
+    ":<?",
+    ")=='",
+    ":System",
+    ".\"&",
+    ":\".$",
+    ".AF"
+   ],
+   "jlens": [
+    "Youtube",
+    ":\\\"",
+    ":<?",
+    ":\".$",
+    "Tumblr",
+    "\"|",
+    ".MM",
+    ".Sin"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 1,
+   "variance_share": 0.08835063056701888,
+   "r2_ridge": 0.8972428789386087,
+   "r2_mlp": 0.9097403205456109,
+   "sae_feat": 5808,
+   "abs_cos": 0.31224578619003296,
+   "own_desc": "Common word fragments, short function words, or technical terms that appear in formal, technical, or informational content across multiple languages, including code variables, language particles, and word components in specialized vocabulary.",
+   "logit_lens": [
+    " raping",
+    "documento",
+    "/MPL",
+    "alties",
+    "0",
+    "2",
+    "\u8981\u597d\u597d",
+    " maxX"
+   ],
+   "tuned_lens": [
+    " ?>\n\n\n",
+    " ()->",
+    " (){",
+    "/MPL",
+    " Ayr\u0131ca",
+    "\u8d8a\u4f86",
+    " RequestMethod",
+    " \u00d6n"
+   ],
+   "jlens": [
+    " ?>\n\n\n",
+    "\ud83d\udc46",
+    " =",
+    "\u261d",
+    "/MPL",
+    " \u751f\u547d\u5468\u671f",
+    " (",
+    " +"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 2,
+   "variance_share": 0.06516252812768056,
+   "r2_ridge": 0.8693889490850002,
+   "r2_mlp": 0.8836161295018048,
+   "sae_feat": 73221,
+   "abs_cos": 0.3578651547431946,
+   "own_desc": "Tokens that continue or complete words, phrases, or semantic units within naturally flowing text, particularly mid-word completions, phrase continuations, and tokens that maintain coherent meaning in multi-token expressions across various languages.",
+   "logit_lens": [
+    "alties",
+    " unmist",
+    "UGC",
+    "rippling",
+    "antity",
+    "letics",
+    ":<?",
+    "'icon"
+   ],
+   "tuned_lens": [
+    "rippling",
+    " data",
+    " file",
+    " if",
+    " is",
+    " based",
+    " context",
+    " or"
+   ],
+   "jlens": [
+    "UGC",
+    " MethodInfo",
+    "\ud83d\udc47",
+    " DeepCopy",
+    " FileInfo",
+    "NFL",
+    "rippling",
+    " ApiResponse"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 3,
+   "variance_share": 0.05502836222643961,
+   "r2_ridge": 0.9018345172929152,
+   "r2_mlp": 0.9171764512022896,
+   "sae_feat": 51126,
+   "abs_cos": 0.4832744598388672,
+   "own_desc": "Content-bearing morphemes, words, or characters across multiple languages that carry lexical or semantic meaning rather than purely grammatical function, often appearing as substantive nouns, verbs, adjectives, or meaningful word parts.",
+   "logit_lens": [
+    " rekl",
+    "\u54ea\u5bb6\u597d",
+    "\u5c42\u51fa\u4e0d",
+    " \u0441\u0434\u0435\u043b\u0430",
+    " uda",
+    "\u7248\u6743\u5f52",
+    "\u4ec5\u4ee3\u8868",
+    "/umd"
+   ],
+   "tuned_lens": [
+    " to",
+    " just",
+    " now",
+    " that",
+    " here",
+    " each",
+    " only",
+    " still"
+   ],
+   "jlens": [
+    ":\".$",
+    ":'.$",
+    "').\"",
+    "');\n\n\n\n",
+    " n\u00e4chste",
+    "\";//",
+    "');//",
+    " everyone"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 4,
+   "variance_share": 0.033743116242964756,
+   "r2_ridge": 0.890639871522667,
+   "r2_mlp": 0.9080455916423558,
+   "sae_feat": 124889,
+   "abs_cos": 0.4013005495071411,
+   "own_desc": "The first token immediately following opening delimiters, punctuation marks, or formatting markers (such as quotation marks, parentheses, colons, asterisks, line breaks with formatting) that introduce or open new content segments in structured or formatted text.",
+   "logit_lens": [
+    "\u65e5\u62a5\u793e",
+    " masturbating",
+    "\u8bf4\u5230\u8fd9\u91cc",
+    "\u4e0d\u5f97\u4e0d\u8bf4",
+    "-Cs",
+    "\u4e3b\u8981\u96c6\u4e2d",
+    " erotica",
+    " Parenthood"
+   ],
+   "tuned_lens": [
+    "\u6768\u6b22",
+    "flen",
+    " masturbating",
+    " helicopt",
+    "\u043b\u044c\u0446",
+    " !***",
+    "kr\u00e4fte",
+    " disappe"
+   ],
+   "jlens": [
+    " F\u00f6rder",
+    " Gesch\u00e4fts",
+    "ynos",
+    " F\u00fchrung",
+    "/rand",
+    "odzi",
+    "aniu",
+    "uida"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 5,
+   "variance_share": 0.02742832145583593,
+   "r2_ridge": 0.8661185575965226,
+   "r2_mlp": 0.8839976158046186,
+   "sae_feat": 86620,
+   "abs_cos": 0.4243825078010559,
+   "own_desc": "Tokens appearing in formal, detailed, or technically-specified text, including professional descriptors, technical specifications, quality indicators, and formatting elements in well-structured content across multiple languages.",
+   "logit_lens": [
+    " libertin",
+    " userEmail",
+    " extrad",
+    "\u7d20\u6674",
+    " Pornhub",
+    "\u266e",
+    "\u2019B",
+    "-valu"
+   ],
+   "tuned_lens": [
+    "\u2019B",
+    " libertin",
+    "\u266e",
+    " extrad",
+    "GBT",
+    " userEmail",
+    "%f",
+    " WHETHER"
+   ],
+   "jlens": [
+    " ++\n",
+    " Congratulations",
+    " Training",
+    "\u2764",
+    " &\n",
+    " Highlights",
+    " Customer",
+    " Welcome"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 6,
+   "variance_share": 0.024954515191269937,
+   "r2_ridge": 0.8524295886444054,
+   "r2_mlp": 0.868352654869081,
+   "sae_feat": 37744,
+   "abs_cos": 0.2932656705379486,
+   "own_desc": "Common structural and functional tokens including punctuation marks, list markers, frequent conjunctions, prepositions, and grammatical particles that organize or connect text segments across multiple languages.",
+   "logit_lens": [
+    " deltaTime",
+    "\u5b63\u540e",
+    "\u8bcb",
+    "\u8a79\u59c6",
+    "\u5176\u5b83\u95ee\u9898",
+    "\u7cbc",
+    "\u5982\u679c\u73a9\u5bb6",
+    "\u7ce8"
+   ],
+   "tuned_lens": [
+    " issue",
+    "\u5b63\u540e",
+    " issues",
+    "\u8bcb",
+    " request",
+    "\u8c29",
+    " client",
+    " deltaTime"
+   ],
+   "jlens": [
+    " necessary",
+    " requests",
+    " required",
+    " request",
+    " requirements",
+    " issues",
+    " pending",
+    " additional"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 7,
+   "variance_share": 0.023234190162022023,
+   "r2_ridge": 0.8241582775385246,
+   "r2_mlp": 0.8458018292544891,
+   "sae_feat": 55389,
+   "abs_cos": 0.5961083769798279,
+   "own_desc": "Tokens that appear at syntactic boundaries, structural delimiters, or within formatted/code content, including punctuation marks, numeric/character parts of technical notation, and characters at language transition points in multilingual text.",
+   "logit_lens": [
+    "\u6709\u671f\u5f92",
+    "\u5efa\u6863\u7acb",
+    "\u5b59\u609f",
+    "\u62dc\u5e08\u5b66",
+    "\u963d",
+    "\u8487",
+    "\u5f88\u5f00\u5fc3",
+    "FOUNDATION"
+   ],
+   "tuned_lens": [
+    "\u6709\u671f\u5f92",
+    "\u5efa\u6863\u7acb",
+    " Home",
+    "\u4f1a\u8ba9\u4f60",
+    "\u8d8a\u6765\u8d8a\u597d",
+    "\u62dc\u5e08\u5b66",
+    " Cloud",
+    " Best"
+   ],
+   "jlens": [
+    " Gesch\u00e4",
+    "\u7684\u5e26\u9886",
+    " Website",
+    "\u7596",
+    " \u0627\u0644\u062a\u0639\u0627",
+    " Steam",
+    "SizePolicy",
+    " Worldwide"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 8,
+   "variance_share": 0.019540001265735987,
+   "r2_ridge": 0.8195019565905626,
+   "r2_mlp": 0.846125906777666,
+   "sae_feat": 121718,
+   "abs_cos": 0.3649841547012329,
+   "own_desc": "",
+   "logit_lens": [
+    " bigot",
+    "(iOS",
+    " assh",
+    " libertine",
+    "::$_",
+    "\u261d",
+    "[\".",
+    " sodom"
+   ],
+   "tuned_lens": [
+    "\u8d22\u8fd0",
+    "\u606b",
+    " -------------------------------------------------------------------------",
+    "\u261d",
+    "\u597d\u5417",
+    "\u5b17",
+    " maneu",
+    " sodom"
+   ],
+   "jlens": [
+    "\u7bb4",
+    "SMART",
+    "Comfort",
+    "Outdoor",
+    "Tips",
+    "nice",
+    "\u00f8j",
+    "Arduino"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 9,
+   "variance_share": 0.017509762327013022,
+   "r2_ridge": 0.7236982509885113,
+   "r2_mlp": 0.757272279868733,
+   "sae_feat": 74750,
+   "abs_cos": 0.3464500904083252,
+   "own_desc": "",
+   "logit_lens": [
+    "\u73a9\u5bb6\u670b\u53cb",
+    "\u4e0d\u826f\u4fe1\u606f",
+    "\u5728\u73a9\u5bb6\u4e2d",
+    "\u6e38\u620f\u4ee3",
+    "\u8bc2",
+    "\u4e2a\u767e\u5206",
+    "\u65b0\u4eba\u73a9\u5bb6",
+    " Erotic"
+   ],
+   "tuned_lens": [
+    " d\u00e9marche",
+    " Erotic",
+    " \u0130n",
+    "\u5e76\u4e0d\u610f\u5473",
+    " agr\u00e9",
+    " Erot",
+    " difficult\u00e9",
+    "\u5176\u5b83\u95ee\u9898"
+   ],
+   "jlens": [
+    " ideas",
+    " education",
+    " moral",
+    " etc",
+    " mental",
+    " questions",
+    " hobbies",
+    " interpersonal"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 10,
+   "variance_share": 0.014699525711073065,
+   "r2_ridge": 0.7979800564596167,
+   "r2_mlp": 0.8349937318227943,
+   "sae_feat": 122601,
+   "abs_cos": 0.3444693088531494,
+   "own_desc": "Functional words, technical terminology, and structural elements that serve connective, organizational, or transitional purposes in formal, technical, or academic writing across multiple languages.",
+   "logit_lens": [
+    ":<?",
+    ":numel",
+    ":\".$",
+    " Pornhub",
+    "$__",
+    ";;;;;;;;",
+    "',//",
+    " pornstar"
+   ],
+   "tuned_lens": [
+    " \u0e18",
+    " memorandum",
+    " callee",
+    "1",
+    "\u7f17",
+    " January",
+    " fiscal",
+    "'Connor"
+   ],
+   "jlens": [
+    " Mitarbeiter",
+    "verst\u00e4ndlich",
+    " W\u00e4h",
+    " Veranst",
+    " Mitar",
+    ";;;;;;;;",
+    ".RequestMethod",
+    " Gesch\u00e4fts"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 11,
+   "variance_share": 0.014419349694740655,
+   "r2_ridge": 0.7990250250188184,
+   "r2_mlp": 0.8229218678301093,
+   "sae_feat": 98568,
+   "abs_cos": 0.36651259660720825,
+   "own_desc": "Common grammatical function words and punctuation that connect clauses or modify relationships between concepts in technical, academic, or instructional text across multiple languages (Russian, Chinese, English, German, Italian, Spanish).",
+   "logit_lens": [
+    "\ud83d\udcd0",
+    " \u0441\u043e\u0447\u0435\u0442\u0430",
+    " sucht",
+    "\u2697",
+    " dumpsters",
+    "\u1e8d",
+    " \u30c8\u30e9\u30c3\u30af",
+    " Jackets"
+   ],
+   "tuned_lens": [
+    "\u2697",
+    "\ud83d\udcd0",
+    "alborg",
+    "arhus",
+    "\u2302",
+    " dumpsters",
+    " \u0441\u043e\u0447\u0435\u0442\u0430",
+    "\ud83d\udcd9"
+   ],
+   "jlens": [
+    " possibly",
+    " Possibly",
+    " or",
+    " Official",
+    " Cash",
+    " official",
+    " Report",
+    " Private"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 12,
+   "variance_share": 0.013144287100932133,
+   "r2_ridge": 0.7578426753214391,
+   "r2_mlp": 0.7883722253256202,
+   "sae_feat": 119405,
+   "abs_cos": 0.25378063321113586,
+   "own_desc": "",
+   "logit_lens": [
+    "\u73a9\u5bb6\u670b\u53cb",
+    "\u6709\u7684\u73a9\u5bb6",
+    "\u4f20\u5947\u6e38\u620f",
+    "\u9b54\u6cd5\u5e08\u548c",
+    "\u5728\u73a9\u5bb6\u4e2d",
+    "\u4e2d\u56fd\u7f51\u6e38",
+    "\u2216",
+    "\u7f51\u9996\u9875"
+   ],
+   "tuned_lens": [
+    "\u4f20\u5947\u6e38\u620f",
+    "\u73a9\u5bb6\u670b\u53cb",
+    "\u65b0\u4eba\u73a9\u5bb6",
+    ";';\n",
+    "\u6709\u7684\u73a9\u5bb6",
+    "\u4e2d\u56fd\u7f51\u6e38",
+    "#ga",
+    "\u6e38\u620f\u6280\u5de7"
+   ],
+   "jlens": [
+    "Ngu\u1ed3n",
+    ".Sin",
+    ":Event",
+    "\u0392",
+    "\u2630",
+    " Gr\u00fcnde",
+    "@student",
+    "/tos"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 13,
+   "variance_share": 0.012245851270752823,
+   "r2_ridge": 0.7474729586421454,
+   "r2_mlp": 0.7774457246952797,
+   "sae_feat": 58888,
+   "abs_cos": 0.3153408467769623,
+   "own_desc": "",
+   "logit_lens": [
+    " disadv",
+    " semiclass",
+    " tumblr",
+    " resembl",
+    "\u65b0\u578b\u51a0",
+    " fontStyle",
+    " brawl",
+    " screenHeight"
+   ],
+   "tuned_lens": [
+    " centerX",
+    " RoundedRectangle",
+    " createStackNavigator",
+    "\u65b0\u6d6a\u5fae\u535a",
+    "\u5fae\u4fe1\u516c\u4f17",
+    " fontStyle",
+    " imageData",
+    " yOffset"
+   ],
+   "jlens": [
+    " description",
+    " characters",
+    " inspiration",
+    " character",
+    " names",
+    " art",
+    " artistic",
+    " artist"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 14,
+   "variance_share": 0.0116622942864525,
+   "r2_ridge": 0.8122333932347463,
+   "r2_mlp": 0.843728875101357,
+   "sae_feat": 110362,
+   "abs_cos": 0.3657452464103699,
+   "own_desc": "Word-completing token fragments that form meaningful suffixes, word endings, or mid-word continuations across multiple languages and writing systems, particularly activating on morphological boundaries.",
+   "logit_lens": [
+    " iht",
+    "\u6215",
+    "_unset",
+    " assaulting",
+    " felon",
+    "_insn",
+    "\u72f0",
+    "pr\u00e9sent"
+   ],
+   "tuned_lens": [
+    ".BASELINE",
+    ":\"-",
+    " request",
+    ".Selenium",
+    "\u1e20",
+    "\u6215",
+    " be\u011fen",
+    "\u1e21"
+   ],
+   "jlens": [
+    " bindActionCreators",
+    "\u2630",
+    " info",
+    " \u81ea\u52a8\u751f\u6210",
+    ".rar",
+    " stuff",
+    "\u2503",
+    "=-=-=-=-"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 15,
+   "variance_share": 0.011270982656532418,
+   "r2_ridge": 0.8478312503147984,
+   "r2_mlp": 0.8727759911795743,
+   "sae_feat": 60254,
+   "abs_cos": 0.5941479206085205,
+   "own_desc": "Small subword tokens (1-3 characters) that are fragments within words, primarily in non-English languages including Chinese, Russian, Polish, Arabic, Vietnamese, and other non-Latin script languages, appearing in technical or instructional contexts.",
+   "logit_lens": [
+    " d\u00e9march",
+    " nomine",
+    " Sexo",
+    " filmy",
+    "\u3053\u3068\u3082\u3042\u308a\u307e\u3059",
+    "\u524d\u63d0\u662f",
+    "/Area",
+    "\u5e74\u5e74\u5e95"
+   ],
+   "tuned_lens": [
+    " d\u00e9march",
+    "\u0443",
+    "\"w",
+    " nomine",
+    "\u043c",
+    "\u0435",
+    "\u0441\u0442",
+    "\u0434"
+   ],
+   "jlens": [
+    "}->{",
+    "='\".$_",
+    "\"math",
+    "}->",
+    ":\n\n",
+    "'http",
+    "\u6709\u610f\u601d\u7684",
+    "\\modules"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 16,
+   "variance_share": 0.010482298440889262,
+   "r2_ridge": 0.7771684573548865,
+   "r2_mlp": 0.8037381003709276,
+   "sae_feat": 110362,
+   "abs_cos": 0.35077932476997375,
+   "own_desc": "Word-completing token fragments that form meaningful suffixes, word endings, or mid-word continuations across multiple languages and writing systems, particularly activating on morphological boundaries.",
+   "logit_lens": [
+    " =",
+    " userEmail",
+    " searchData",
+    " emailAddress",
+    "/",
+    "z",
+    " createSelector",
+    " playerId"
+   ],
+   "tuned_lens": [
+    " people",
+    " popular",
+    " someone",
+    " \"",
+    " sometimes",
+    " kind",
+    " talk",
+    " ideas"
+   ],
+   "jlens": [
+    " someone",
+    " pretty",
+    " things",
+    "\u6216",
+    " stuff",
+    " maybe",
+    " people",
+    " really"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 17,
+   "variance_share": 0.00978365581013042,
+   "r2_ridge": 0.7681276942759845,
+   "r2_mlp": 0.8026650573135236,
+   "sae_feat": 26077,
+   "abs_cos": 0.3284555673599243,
+   "own_desc": "Common structural or transitional tokens that serve as connectors, punctuation, or generic descriptive terms in assistant-generated text, often appearing in boilerplate phrases, list continuations, or bridging contexts across multiple languages.",
+   "logit_lens": [
+    "\u754c\u7b2c\u4e00",
+    " \"-\";\n",
+    "\u221c",
+    " vegas",
+    "\u4e1c\u65b9\u8d22\u5bcc",
+    "\u515a\u603b",
+    "\u7f8e\u5a92",
+    "\"><?=$"
+   ],
+   "tuned_lens": [
+    " addCriterion",
+    "\u2697",
+    "\ud83d\udcd0",
+    "|;\n",
+    " safezone",
+    " },{",
+    "BOSE",
+    " POLITICO"
+   ],
+   "jlens": [
+    "<fieldset",
+    "\u5bf9\u4eba\u4f53",
+    "<Texture",
+    "\u79c1\u81ea",
+    "=localhost",
+    "\u97ed",
+    "\u53ef\u4ee5\u66f4\u597d",
+    " decorative"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 18,
+   "variance_share": 0.008865732098918852,
+   "r2_ridge": 0.7452349933278598,
+   "r2_mlp": 0.7820319904038822,
+   "sae_feat": 51991,
+   "abs_cos": 0.2877533733844757,
+   "own_desc": "Technical or functional content words in formal instructional, procedural, or technical documentation contexts across multiple languages, typically serving as key nouns, verbs, or connectors that carry semantic weight in explaining systems, processes, or components.",
+   "logit_lens": [
+    "\u66b4\u8dcc",
+    "\u60bb",
+    "\u5927\u8dcc",
+    "\u70ed\u641c",
+    "our",
+    "\u60f4",
+    "\u5c31\u591f",
+    " valueType"
+   ],
+   "tuned_lens": [
+    "\u60bb",
+    "\u66b4\u8dcc",
+    "\u5021",
+    " vegan",
+    "\u53cd\u8150\u5021\u5ec9",
+    " lifestyle",
+    " healthy",
+    "\u8dcc\u7834"
+   ],
+   "jlens": [
+    " healthier",
+    " affordable",
+    " veggies",
+    " wholesome",
+    " vegan",
+    " safer",
+    " veg",
+    " healthy"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 19,
+   "variance_share": 0.008171262025040437,
+   "r2_ridge": 0.7443680356366948,
+   "r2_mlp": 0.7778680585597565,
+   "sae_feat": 71593,
+   "abs_cos": 0.3598047196865082,
+   "own_desc": "Tokens that continue or complete ongoing descriptions, explanations, or narratives in the middle of sentences or phrases, often representing the natural forward flow of text rather than the introduction of new semantic concepts.",
+   "logit_lens": [
+    "/Internal",
+    "/vendors",
+    " maneu",
+    " setFrame",
+    " whiteColor",
+    "-peer",
+    "{return",
+    " safezone"
+   ],
+   "tuned_lens": [
+    " our",
+    " letter",
+    "/vendors",
+    "@Setter",
+    " my",
+    " full",
+    " will",
+    " word"
+   ],
+   "jlens": [
+    " herein",
+    " our",
+    " hereby",
+    " unto",
+    " upon",
+    " exact",
+    " ours",
+    " ___"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 20,
+   "variance_share": 0.007822946304694591,
+   "r2_ridge": 0.7511537332739534,
+   "r2_mlp": 0.7843248378510062,
+   "sae_feat": 4406,
+   "abs_cos": 0.30615317821502686,
+   "own_desc": "",
+   "logit_lens": [
+    "\u4e3b\u8981\u96c6\u4e2d",
+    "\u7f8e\u5a92",
+    "1",
+    " cosplay",
+    " giveaways",
+    " hairst",
+    "\u4e0d\u826f\u4fe1\u606f",
+    "2"
+   ],
+   "tuned_lens": [
+    "\u4e3b\u8425\u4e1a",
+    "\u7f8e\u5a92",
+    "\u5e94\u6536\u8d26",
+    "\u4e3b\u8981\u96c6\u4e2d",
+    "\u7654",
+    "\u4e0d\u826f\u4fe1\u606f",
+    "\u6ce8\u660e\u6765\u6e90",
+    "\u6963"
+   ],
+   "jlens": [
+    " river",
+    " land",
+    " map",
+    " maps",
+    " forts",
+    " forests",
+    "//\n\n\n",
+    "\u4f5a"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 21,
+   "variance_share": 0.007189818210569764,
+   "r2_ridge": 0.7568828321423057,
+   "r2_mlp": 0.79553123816206,
+   "sae_feat": 109470,
+   "abs_cos": 0.2771132290363312,
+   "own_desc": "",
+   "logit_lens": [
+    "\u7f51\u7ad9\u9996\u9875",
+    "\u5956\u5b66",
+    "\u7eaa\u59d4\u76d1",
+    "\u4e09\u5927\u804c\u4e1a",
+    ")throws",
+    "\u73a9\u5bb6\u670b\u53cb",
+    "\u89e3\u653e\u601d\u60f3",
+    "LoggedIn"
+   ],
+   "tuned_lens": [
+    " addCriterion",
+    "T\u00dc",
+    " \u0434\u0430\u0436",
+    "\u76d1\u542c\u9875\u9762",
+    " \u043f\u043e\u0447\u0435\u043c",
+    " \u043e\u0441\u0442\u0430\u043b\u044c\u043d",
+    "\u7fb0",
+    ".Designer"
+   ],
+   "jlens": [
+    " emphasis",
+    " mainly",
+    " largely",
+    "\u4e3b\u8981\u662f",
+    "\u5c24\u5176\u662f\u5728",
+    " particularly",
+    " chiefly",
+    "\u00e1n\u00ed"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 22,
+   "variance_share": 0.006810840933475328,
+   "r2_ridge": 0.7234767264513778,
+   "r2_mlp": 0.7648033796536422,
+   "sae_feat": 27242,
+   "abs_cos": 0.3186250329017639,
+   "own_desc": "Tokens that begin or appear early in cooperative AI assistant responses, including acknowledgment words ('Certainly', 'I'), transitional words ('Here', 'However'), and function words that introduce explanations or assistance across multiple languages.",
+   "logit_lens": [
+    "\u5c42\u51fa\u4e0d",
+    "\u2630",
+    " vid\u00e9os",
+    ":mysql",
+    ".omg",
+    "<textarea",
+    "<=(",
+    "\u4e0e\u65f6\u4ff1"
+   ],
+   "tuned_lens": [
+    " saddened",
+    " professional",
+    " role",
+    "\u77a0",
+    " detailed",
+    "\u53ca\u76f8\u5173",
+    " \ubc14\ub78d\ub2c8\ub2e4",
+    "INT"
+   ],
+   "jlens": [
+    "\u77a0",
+    "Prosec",
+    "\u8bbe\u8ba1\u65b9\u6848",
+    " \u00c1rea",
+    "borah",
+    " getRequest",
+    "/design",
+    "\u6d89\u53ca\u5230"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 23,
+   "variance_share": 0.006218127600726391,
+   "r2_ridge": 0.6802513052737875,
+   "r2_mlp": 0.7188646496471669,
+   "sae_feat": 31997,
+   "abs_cos": 0.2548930048942566,
+   "own_desc": "",
+   "logit_lens": [
+    "\u4e00\u81f4\u597d\u8bc4",
+    "\u6362\u53e5\u8bdd",
+    "\u8fd9\u4e2a\u804c\u4e1a",
+    "\u52e0",
+    " d\u00e9march",
+    "\u5284",
+    "\u65b0\u5c40\u9762",
+    "\u8981\u4e0d\u7136"
+   ],
+   "tuned_lens": [
+    " d\u00e9march",
+    " input",
+    "\u4e00\u81f4\u597d\u8bc4",
+    " m\u00e9g",
+    "\u8981\u4e0d\u7136",
+    " timestamp",
+    "\u57fa\u8f85",
+    " Ng\u00e0i"
+   ],
+   "jlens": [
+    "\u5973\u6027\u670b\u53cb",
+    "\u5478",
+    "ESPN",
+    "\u771f\u7231",
+    "memcmp",
+    "\u4f3c\u4e4e\u662f",
+    "acam",
+    "-thumbnails"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 24,
+   "variance_share": 0.006091319566331839,
+   "r2_ridge": 0.7084589426429319,
+   "r2_mlp": 0.7524631015305914,
+   "sae_feat": 92136,
+   "abs_cos": 0.29526373744010925,
+   "own_desc": "",
+   "logit_lens": [
+    "\u4f5c\u8005\u672c\u4eba",
+    "\u73ed\u5b50\u6210\u5458",
+    "\u6c11\u4e3b\u751f\u6d3b",
+    "\u7ec4\u7ec7\u751f\u6d3b",
+    "\u6b63\u5e38\u4f7f\u7528",
+    "\u5e72\u90e8\u804c\u5de5",
+    "\u515a\u603b",
+    "\u5c42\u51fa\u4e0d"
+   ],
+   "tuned_lens": [
+    "\u5c42\u51fa\u4e0d",
+    "\u7ef4\u62a4",
+    " value",
+    " =>'",
+    " services",
+    "isbury",
+    " (!((",
+    " configuration"
+   ],
+   "jlens": [
+    " protected",
+    " always",
+    " protection",
+    " configurable",
+    " either",
+    "\u7cd6\u5c3f",
+    " any",
+    " default"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 25,
+   "variance_share": 0.0056863753688028585,
+   "r2_ridge": 0.7277942701959762,
+   "r2_mlp": 0.7652700627988731,
+   "sae_feat": 106672,
+   "abs_cos": 0.2705325186252594,
+   "own_desc": "",
+   "logit_lens": [
+    " Hindered",
+    " ",
+    " \"\";\r\n\r\n",
+    ":green",
+    "\u94ac",
+    "++;\r\n\r\n",
+    "\u82a4",
+    "URLException"
+   ],
+   "tuned_lens": [
+    "++;\r\n\r\n",
+    "ToWorld",
+    " Hindered",
+    "ecimal",
+    "','=",
+    "ntag",
+    "regunta",
+    "URLException"
+   ],
+   "jlens": [
+    "ertainment",
+    "\u6bcf\u5929",
+    "icipants",
+    " tourists",
+    " entertainment",
+    " daily",
+    " everyday",
+    "','="
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 26,
+   "variance_share": 0.0052561847402583335,
+   "r2_ridge": 0.6512579761463148,
+   "r2_mlp": 0.692856297311566,
+   "sae_feat": 48775,
+   "abs_cos": 0.30406370759010315,
+   "own_desc": "Tokens appearing in the middle of well-formed, fluent sentences across multiple languages and domains, representing typical word continuations in coherent technical, narrative, or descriptive prose.",
+   "logit_lens": [
+    " \u82e5\u8981",
+    "<fieldset",
+    "[])\r\n",
+    "\u623e",
+    "ofday",
+    "#aa",
+    ".ToShort",
+    "<message"
+   ],
+   "tuned_lens": [
+    "%!",
+    "#ad",
+    ".ToShort",
+    "rippling",
+    "<fieldset",
+    "[])\r\n",
+    ":normal",
+    "#ab"
+   ],
+   "jlens": [
+    " thereby",
+    " both",
+    " ingenious",
+    " perfectly",
+    " even",
+    " successfully",
+    " beautifully",
+    " furthermore"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 27,
+   "variance_share": 0.005144445702088578,
+   "r2_ridge": 0.6742393982573245,
+   "r2_mlp": 0.7152573039204625,
+   "sae_feat": 94118,
+   "abs_cos": 0.2449849545955658,
+   "own_desc": "Technical or informational vocabulary tokens that appear in formal, academic, or technical contexts discussing data systems, information management, digital content, networks, or structured documentation across multiple languages.",
+   "logit_lens": [
+    " =\"\";\n",
+    "\u7684\u5e26\u9886",
+    "=@\"",
+    "\u7eb0",
+    "=fopen",
+    " Erotic",
+    "\u4ec5\u6b21",
+    "\u261f"
+   ],
+   "tuned_lens": [
+    " =\"\";\n",
+    "\u7684\u5e26\u9886",
+    " v\u00f6",
+    "\u7eb0",
+    "\u76d1\u542c\u9875\u9762",
+    "\u261f",
+    "\u6709\u610f\u601d\u7684",
+    " Kardash"
+   ],
+   "jlens": [
+    "\u7814\u7a76\u5458",
+    "\u666e\u67e5",
+    "\u7814\u7a76\u4eba\u5458",
+    "\u52d8\u63a2",
+    "\u63a2\u5bfb",
+    " =\"\";\n",
+    "research",
+    "\u8c03\u7814"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 28,
+   "variance_share": 0.0049148592885302315,
+   "r2_ridge": 0.7003513299960249,
+   "r2_mlp": 0.752559564967521,
+   "sae_feat": 53139,
+   "abs_cos": 0.2982543706893921,
+   "own_desc": "",
+   "logit_lens": [
+    "\u7855\u58eb\u7814\u7a76",
+    " \u81ea\u52a8\u751f\u6210",
+    "-UA",
+    "EdgeInsets",
+    "\u62dc\u5e08\u5b66",
+    " Wroc",
+    " maneu",
+    "UNET"
+   ],
+   "tuned_lens": [
+    "\u7855\u58eb\u7814\u7a76",
+    " sales",
+    " customer",
+    " customers",
+    " sale",
+    "EFR",
+    " market",
+    " \u81ea\u52a8\u751f\u6210"
+   ],
+   "jlens": [
+    " sales",
+    " market",
+    " advertising",
+    " marketing",
+    " customers",
+    " customer",
+    " revenue",
+    " merchandise"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 29,
+   "variance_share": 0.004649333412910297,
+   "r2_ridge": 0.6680764738806426,
+   "r2_mlp": 0.7165843452482061,
+   "sae_feat": 79779,
+   "abs_cos": 0.24025321006774902,
+   "own_desc": "Mid-word or mid-phrase continuation tokens that complete technical terms, compound words, proper nouns, or multi-token concepts across various languages and contexts, typically not at the beginning of a semantic unit.",
+   "logit_lens": [
+    "/Dk",
+    ":;\n",
+    "');//",
+    "[\".",
+    "\ud504\ub85c\uadf8",
+    "',//",
+    "rippling",
+    "'&&"
+   ],
+   "tuned_lens": [
+    "strcasecmp",
+    " planning",
+    " plan",
+    "\u5c8c",
+    " sort",
+    " implement",
+    "strncmp",
+    " plans"
+   ],
+   "jlens": [
+    "\u90a3\u8fb9",
+    "\ufffd\u5efa",
+    "\u5206\u5de5",
+    "ultur",
+    "\u5c8c",
+    "\u6027\u4ef7",
+    "\u5e03\u7f6e",
+    "\u7684\u8bbe\u8ba1"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 30,
+   "variance_share": 0.004542990028830664,
+   "r2_ridge": 0.684355805813846,
+   "r2_mlp": 0.727834644350364,
+   "sae_feat": 71513,
+   "abs_cos": 0.21700111031532288,
+   "own_desc": "Subword token fragments representing incomplete morphological units within words, particularly common in inflected or compound words where the tokenizer has split mid-word.",
+   "logit_lens": [
+    "\u5bf9\u5176\u771f\u5b9e",
+    ".Fat",
+    "\u4f4f\u623f\u516c\u79ef",
+    "}elseif",
+    "\u8131\u9896",
+    "*ft",
+    " taxp",
+    "(___"
+   ],
+   "tuned_lens": [
+    " Decompiled",
+    "\u5bf9\u5176\u771f\u5b9e",
+    " b\u00e9n\u00e9ficie",
+    "m\u00f6glich",
+    " session",
+    " afternoon",
+    " event",
+    " during"
+   ],
+   "jlens": [
+    " events",
+    " event",
+    " Events",
+    " episode",
+    " scheduled",
+    " during",
+    " subsequent",
+    " observation"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 31,
+   "variance_share": 0.004372136486959786,
+   "r2_ridge": 0.618599980794168,
+   "r2_mlp": 0.6709045846189408,
+   "sae_feat": 69114,
+   "abs_cos": 0.22196142375469208,
+   "own_desc": "Common grammatical function words, articles, prepositions, conjunctions, verbal particles, and morphological endings across multiple natural languages that serve structural or connective roles in sentences.",
+   "logit_lens": [
+    "\u822f",
+    " HuffPost",
+    "\u60dc",
+    "\u822d",
+    " Gors",
+    " Briggs",
+    "\u5080",
+    " clever"
+   ],
+   "tuned_lens": [
+    " HuffPost",
+    "\u822f",
+    ":<?",
+    "/lg",
+    "\ud83d\udd51",
+    " *</",
+    "\ud83d\ude42",
+    ".\"]"
+   ],
+   "jlens": [
+    "(EXPR",
+    "\u62dc\u5e08\u5b66",
+    "printStats",
+    "@endif",
+    ".ManyToMany",
+    "\u4e0d\u6613",
+    " t\u00fc",
+    " NSK"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 32,
+   "variance_share": 0.0042860608330240685,
+   "r2_ridge": 0.6954534110484194,
+   "r2_mlp": 0.7423202344003557,
+   "sae_feat": 111899,
+   "abs_cos": 0.245975062251091,
+   "own_desc": "",
+   "logit_lens": [
+    "ughs",
+    " Palestin",
+    " burge",
+    "hores",
+    " WIFI",
+    "\u3092\u76ee",
+    " Nights",
+    " gangbang"
+   ],
+   "tuned_lens": [
+    " libertin",
+    " ohio",
+    " tablesp",
+    "ughs",
+    " incons",
+    "\u5c31\u591f",
+    " safezone",
+    " choose"
+   ],
+   "jlens": [
+    " cunning",
+    " \u043c\u0430\u0441\u0442\u0435\u0440",
+    "\u547d\u540d\u4e3a",
+    "\u5956\u52b1",
+    " unsuccessful",
+    "\u5931\u8d25",
+    " skill",
+    " plagiar"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 33,
+   "variance_share": 0.004091573825075173,
+   "r2_ridge": 0.6452159733919276,
+   "r2_mlp": 0.6928953938093061,
+   "sae_feat": 23125,
+   "abs_cos": 0.3650917112827301,
+   "own_desc": "Tokens appearing in general-purpose, formulaic, or template-like text across diverse languages and contexts, often in descriptive passages about commercial topics, services, industries, or standard documentation rather than highly specialized technical content.",
+   "logit_lens": [
+    ".za",
+    "#ga",
+    "\")));",
+    "-Methods",
+    ":<?",
+    ";br",
+    "twor",
+    ",eg"
+   ],
+   "tuned_lens": [
+    "FontAwesomeIcon",
+    "\u2109",
+    ".va",
+    "cz\u0119",
+    "\ud83d\ude4f",
+    " Forums",
+    ".datab",
+    "\u0698"
+   ],
+   "jlens": [
+    "%\"><",
+    "ipop",
+    "<path",
+    "emean",
+    "\uac31",
+    "alink",
+    "=\";\n",
+    ".datab"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 34,
+   "variance_share": 0.003991472680398577,
+   "r2_ridge": 0.7071161412839853,
+   "r2_mlp": 0.7509101270631047,
+   "sae_feat": 61951,
+   "abs_cos": 0.26987841725349426,
+   "own_desc": "",
+   "logit_lens": [
+    "\u4e0b\u9762\u5c0f\u7f16",
+    " cocci",
+    "\u4e86\u597d\u51e0",
+    "\u4eca\u5929\u5c0f\u7f16",
+    " d\u00e9march",
+    "\u4e86\u597d\u591a",
+    " \"','",
+    "\u5454"
+   ],
+   "tuned_lens": [
+    " cocci",
+    " ancest",
+    " d\u00e9march",
+    " libertin",
+    "\u5454",
+    "\u4e0b\u9762\u5c0f\u7f16",
+    "int\u00e9r",
+    " cler"
+   ],
+   "jlens": [
+    " F\u00e4lle",
+    "\u6362\u53e5\u8bdd",
+    "boss",
+    "\u518d\u4e5f\u6ca1\u6709",
+    "\u4e0d\u7ba1\u4f60",
+    "Sexy",
+    "\u5f88\u591a\u65f6\u5019",
+    "\u7167\u6837"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 35,
+   "variance_share": 0.003921112689483282,
+   "r2_ridge": 0.658248743812681,
+   "r2_mlp": 0.7148244885302432,
+   "sae_feat": 785,
+   "abs_cos": 0.21456605195999146,
+   "own_desc": "",
+   "logit_lens": [
+    "\u8084",
+    "\u4e25\u683c\u6309\u7167",
+    " offseason",
+    "apeut",
+    " slee",
+    " many",
+    "\u55eb",
+    " all"
+   ],
+   "tuned_lens": [
+    "\u5658",
+    "\u64e4",
+    " all",
+    " files",
+    " summaries",
+    "\n",
+    "\u55eb",
+    " Kushner"
+   ],
+   "jlens": [
+    " every",
+    " many",
+    " copies",
+    " books",
+    " documents",
+    " written",
+    " libraries",
+    " all"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 36,
+   "variance_share": 0.0038396813253238175,
+   "r2_ridge": 0.6732837099968052,
+   "r2_mlp": 0.7252373711014857,
+   "sae_feat": 110965,
+   "abs_cos": 0.206409752368927,
+   "own_desc": "Technical terms, formatting symbols, or common words appearing in multilingual technical documentation, programming contexts, structured data, formal instructions, or content requiring precise terminology across different languages.",
+   "logit_lens": [
+    "\u56fd\u9645\u5728\u7ebf",
+    "\u515a\u603b",
+    "/Instruction",
+    " holland",
+    " scaleY",
+    " ++;\n",
+    ")){\n\n",
+    "\u7248\u6743\u6240\u6709"
+   ],
+   "tuned_lens": [
+    "plusplus",
+    " ++;\n",
+    "\u8019",
+    "*time",
+    ");$",
+    " USHORT",
+    "\u539f\u6587\u5730\u5740",
+    "atab"
+   ],
+   "jlens": [
+    "\u53c8\u597d\u53c8\u5feb",
+    " ApplicationException",
+    "\u21d4",
+    "Nobody",
+    "\uff03",
+    "\u0645\u0644\u0627\u0628",
+    ",},\n",
+    "\u7aa0"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 37,
+   "variance_share": 0.0036226249721192107,
+   "r2_ridge": 0.662867824248914,
+   "r2_mlp": 0.7111516467018407,
+   "sae_feat": 100360,
+   "abs_cos": 0.2920098900794983,
+   "own_desc": "Subword tokens or morphemes that appear as internal components of larger words, particularly mid-word segments in multi-language text including syllables, character sequences, or morphological fragments that are not standalone words.",
+   "logit_lens": [
+    " earthqu",
+    " rekl",
+    "=admin",
+    "\u9f83",
+    "<source",
+    "acades",
+    "%;\"",
+    "\u8e14"
+   ],
+   "tuned_lens": [
+    " earthqu",
+    "-INF",
+    "\u52e0",
+    ")();\n",
+    "=\\\"/",
+    ".rpm",
+    "\u8e05",
+    "fwrite"
+   ],
+   "jlens": [
+    " prices",
+    "\ufffd\u5355",
+    " price",
+    " priced",
+    "\u4e0e\u5426",
+    "\u8bc4\u5b9a",
+    " either",
+    "=\\\"/"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 38,
+   "variance_share": 0.0034414970727053794,
+   "r2_ridge": 0.6503250161996061,
+   "r2_mlp": 0.7063322523552581,
+   "sae_feat": 74737,
+   "abs_cos": 0.2104942798614502,
+   "own_desc": "Common, high-frequency tokens across multiple languages including function words, punctuation, abbreviations, technical terms, and standard formatting elements that appear frequently in general text corpora.",
+   "logit_lens": [
+    "YPD",
+    ",readonly",
+    "Occurred",
+    "ksz",
+    "hlen",
+    "egend",
+    "\u4f94",
+    "ayment"
+   ],
+   "tuned_lens": [
+    "\u5bf9\u5176\u771f\u5b9e",
+    ",readonly",
+    "YPD",
+    "\u2697",
+    "oriously",
+    " (~(",
+    "BootApplication",
+    "\ud83d\udea9"
+   ],
+   "jlens": [
+    "\u6216",
+    "_Texture",
+    " info",
+    "h\u00e4",
+    "/avatar",
+    " IHttp",
+    "/contact",
+    ".http"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 39,
+   "variance_share": 0.0033952571050616534,
+   "r2_ridge": 0.6695737372469193,
+   "r2_mlp": 0.7216116334283622,
+   "sae_feat": 42425,
+   "abs_cos": 0.25952276587486267,
+   "own_desc": "Tokens that are parts of words in non-English languages (particularly Romance languages, Slavic languages, Chinese, Vietnamese, Arabic) or common English function words and technical terms appearing in multilingual or technical contexts.",
+   "logit_lens": [
+    " Kardash",
+    " mouseClicked",
+    "\\",
+    " pestic",
+    " dreaded",
+    "\u4e4b\u591c",
+    "\u6f74",
+    "\u76b2"
+   ],
+   "tuned_lens": [
+    "\u5374\u53d1\u73b0",
+    "erguson",
+    "\u6e38\u620f\u4ee3",
+    "\u5374\u662f",
+    ".ManyToMany",
+    " book",
+    "\u5a23",
+    "\u4e66"
+   ],
+   "jlens": [
+    " \u201c",
+    " rather",
+    " instead",
+    " often",
+    "\u800c\u975e",
+    " or",
+    "\u201c",
+    "\ufffd\u5355"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 40,
+   "variance_share": 0.003372285618877472,
+   "r2_ridge": 0.6910029138351275,
+   "r2_mlp": 0.7437182404253972,
+   "sae_feat": 78270,
+   "abs_cos": 0.28654301166534424,
+   "own_desc": "",
+   "logit_lens": [
+    ":\".$",
+    "-NLS",
+    "s\u00e3o",
+    " Clintons",
+    "[\".",
+    "\u4e60\u8fd1\u5e73\u65b0",
+    "\u515a\u7684\u5341",
+    " Ivanka"
+   ],
+   "tuned_lens": [
+    "s\u00e3o",
+    " P\u00e5",
+    " \u0130zmir",
+    "\u515a\u7684\u5341",
+    " cocci",
+    " Ivanka",
+    " ragaz",
+    "\u00fasqueda"
+   ],
+   "jlens": [
+    " difficulty",
+    " average",
+    " usually",
+    " number",
+    " prices",
+    " many",
+    " price",
+    " is"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 41,
+   "variance_share": 0.003177489520153205,
+   "r2_ridge": 0.6959592023135273,
+   "r2_mlp": 0.7363776267691722,
+   "sae_feat": 47617,
+   "abs_cos": 0.22343049943447113,
+   "own_desc": "",
+   "logit_lens": [
+    "\u59d4\u7ec4\u7ec7\u90e8",
+    "\u7f51\u9996\u9875",
+    "\u529b\u8fd8\u662f",
+    " newSize",
+    "\u8fc7\u7a0b\u5f53\u4e2d",
+    "\u54c8\u54c8\u54c8\u54c8",
+    "\u50a5",
+    "\u6b63\u5f0f\u542f\u52a8"
+   ],
+   "tuned_lens": [
+    "\u59d4\u7ec4\u7ec7\u90e8",
+    " newSize",
+    "\u96c6\u88c5",
+    "ifiant",
+    "\u61d2\u5f97",
+    "\u7eb0",
+    " Vivo",
+    "\u5c46"
+   ],
+   "jlens": [
+    "\u8dbf",
+    "\u6216",
+    " \u6216",
+    " monet",
+    " MERCHANTABILITY",
+    "\u67d0\u79cd",
+    "\u6216\u8005\u662f",
+    " financial"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 42,
+   "variance_share": 0.0030985794665149505,
+   "r2_ridge": 0.6227731665342613,
+   "r2_mlp": 0.6741655830524337,
+   "sae_feat": 53071,
+   "abs_cos": 0.209463968873024,
+   "own_desc": "",
+   "logit_lens": [
+    " semiclass",
+    "hores",
+    " Seamless",
+    " NSInteger",
+    " appropriately",
+    "\u5892",
+    "\u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d",
+    "\u4e0a\u8c03"
+   ],
+   "tuned_lens": [
+    "\u5541",
+    " activeClassName",
+    ".handleClick",
+    "\u52a0\u5f3a\u5bf9",
+    "<=(",
+    "\u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d",
+    " shall",
+    "\u4f5c\u98ce\u5efa\u8bbe"
+   ],
+   "jlens": [
+    " amongst",
+    "\u4ed6\u5988",
+    " respective",
+    " tactical",
+    " cornerback",
+    "\u6709\u9488\u5bf9\u6027",
+    " wherever",
+    " targeting"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 43,
+   "variance_share": 0.0030655707175414773,
+   "r2_ridge": 0.6567317430156634,
+   "r2_mlp": 0.7159049391082757,
+   "sae_feat": 31125,
+   "abs_cos": 0.24036559462547302,
+   "own_desc": "",
+   "logit_lens": [
+    "\u96c6\u88c5",
+    ".masksToBounds",
+    " roma",
+    "\u94a3",
+    "\u5f88\u6f02\u4eae",
+    "\u5de5\u4f5c\u4f5c\u98ce",
+    " v\u00eddeos",
+    " inflamm"
+   ],
+   "tuned_lens": [
+    "\u5f88\u6f02\u4eae",
+    "\u5efa\u6863\u7acb",
+    "**)&",
+    "milliseconds",
+    "\u82b1\u6735",
+    "anford",
+    "\uffe0",
+    "\u96c6\u88c5"
+   ],
+   "jlens": [
+    " Foto",
+    " photographers",
+    " photos",
+    " \u043f\u0440\u0430\u0432\u0438\u043b\u044c\u043d\u043e",
+    "iswa",
+    "izzer",
+    "strstr",
+    "qli"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 44,
+   "variance_share": 0.002935922586926867,
+   "r2_ridge": 0.6338487283303493,
+   "r2_mlp": 0.6906912875545294,
+   "sae_feat": 5413,
+   "abs_cos": 0.2051198035478592,
+   "own_desc": "",
+   "logit_lens": [
+    "\"';",
+    ".Experimental",
+    "offsetof",
+    " (;;",
+    " Ubisoft",
+    "/--",
+    ".localized",
+    ");\\\n"
+   ],
+   "tuned_lens": [
+    "\u5b89\u5168\u9690\u60a3",
+    "Ngu\u1ed3n",
+    " dikke",
+    "MUX",
+    " m\u00e4dchen",
+    "\u5386\u53f2\u65b0",
+    "\u4ec5\u6709",
+    "\u7f51\u6295"
+   ],
+   "jlens": [
+    " \uc624\ud788\ub824",
+    "\u7f3a\u5e2d",
+    "\u5b89\u5168\u9690\u60a3",
+    "\u90e8\u5206\u5185\u5bb9",
+    "CastException",
+    " lacks",
+    "\u4e22\u5931",
+    "\u8d91"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 45,
+   "variance_share": 0.0028144564208006373,
+   "r2_ridge": 0.6521147101195104,
+   "r2_mlp": 0.7026986412123637,
+   "sae_feat": 81063,
+   "abs_cos": 0.20801764726638794,
+   "own_desc": "",
+   "logit_lens": [
+    " TextAlign",
+    " TableCell",
+    " ninete",
+    " Dems",
+    "/Linux",
+    " TableRow",
+    "\ud504\ub85c\uadf8",
+    " finns"
+   ],
+   "tuned_lens": [
+    " TextAlign",
+    " fkk",
+    "tra\u00ee",
+    " \",\");\n",
+    "\ud83d\udcd0",
+    "?option",
+    "NavController",
+    "/Linux"
+   ],
+   "jlens": [
+    " cheap",
+    " labour",
+    " possibly",
+    " perhaps",
+    " probably",
+    " likely",
+    " expensive",
+    " negoci"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 46,
+   "variance_share": 0.0027802056092813207,
+   "r2_ridge": 0.6272847951453878,
+   "r2_mlp": 0.6852288170035947,
+   "sae_feat": 67139,
+   "abs_cos": 0.20856912434101105,
+   "own_desc": "",
+   "logit_lens": [
+    " Erotic",
+    " Prostit",
+    " v\u00f6",
+    " enthus",
+    " erotica",
+    "\ufe64",
+    " nostalg",
+    " libertin"
+   ],
+   "tuned_lens": [
+    " homosex",
+    "\u4e92\u8054",
+    "PRINTF",
+    "\u00e4lle",
+    " GetComponent",
+    " consc",
+    " luxe",
+    " lekker"
+   ],
+   "jlens": [
+    " repairs",
+    " troubleshooting",
+    ":\n\n",
+    " Plans",
+    "unfinished",
+    " repair",
+    " improvements",
+    " improvement"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 47,
+   "variance_share": 0.0027050578640254903,
+   "r2_ridge": 0.6106202868283468,
+   "r2_mlp": 0.6645932136231169,
+   "sae_feat": 58446,
+   "abs_cos": 0.22383935749530792,
+   "own_desc": "Tokens that are either non-English language fragments/words, code/markup syntax elements, common functional English words, or technical abbreviations, as opposed to proper nouns or uncommon English vocabulary.",
+   "logit_lens": [
+    "\u4e94\u5206\u949f",
+    "_crossentropy",
+    "=@\"",
+    "increments",
+    "\u561e",
+    "\u590d\u5de5\u590d",
+    "\u6b83",
+    "\u5d1b"
+   ],
+   "tuned_lens": [
+    " BaseType",
+    "_crossentropy",
+    ",strlen",
+    "=@\"",
+    "_Enter",
+    "aycast",
+    " ServiceException",
+    "serter"
+   ],
+   "jlens": [
+    " **",
+    " opposing",
+    " dominant",
+    " opposite",
+    " oppos",
+    "marginTop",
+    "\u8bf1",
+    " opposition"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 48,
+   "variance_share": 0.0026592242176978927,
+   "r2_ridge": 0.5933192686729034,
+   "r2_mlp": 0.6523124054555217,
+   "sae_feat": 53751,
+   "abs_cos": 0.22342297434806824,
+   "own_desc": "",
+   "logit_lens": [
+    " earthqu",
+    " addCriterion",
+    "\u5e94\u6536\u8d26",
+    " :\";\n",
+    "GtkWidget",
+    "\u6240\u6709\u60c5\u8282",
+    "\u4e60\u8fd1\u5e73\u603b",
+    "\u6765\u770b\u770b\u5427"
+   ],
+   "tuned_lens": [
+    ".AppCompatActivity",
+    " input",
+    "ylie",
+    " output",
+    " practical",
+    " laboratory",
+    " user",
+    " training"
+   ],
+   "jlens": [
+    " training",
+    " teaching",
+    " translation",
+    " literacy",
+    " lingu",
+    " grammar",
+    " academic",
+    " youth"
+   ]
+  },
+  {
+   "group": "top50_by_variance",
+   "pc": 49,
+   "variance_share": 0.002526927600704307,
+   "r2_ridge": 0.6037541766595287,
+   "r2_mlp": 0.6602929064069932,
+   "sae_feat": 13250,
+   "abs_cos": 0.2083035111427307,
+   "own_desc": "Tokens appearing in creative, imaginative, or instructional content such as story prompts, image generation commands, educational materials, and fictional narratives, particularly those with whimsical, magical, or child-friendly themes.",
+   "logit_lens": [
+    "\"<?",
+    " )\n\n\n\n\n\n\n\n",
+    "/Instruction",
+    "].'",
+    "asurer",
+    "[\".",
+    "entifier",
+    "\u6709\u671f\u5f92"
+   ],
+   "tuned_lens": [
+    "1",
+    "\u6709\u671f\u5f92",
+    " families",
+    " additions",
+    " users",
+    " contribute",
+    "9",
+    " p\u00e4"
+   ],
+   "jlens": [
+    " families",
+    " each",
+    " these",
+    " additions",
+    " Families",
+    " community",
+    " Each",
+    " communities"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3534,
+   "variance_share": 1.3941356605463808e-06,
+   "r2_ridge": -0.3648256516516062,
+   "r2_mlp": -1.800265685720055,
+   "sae_feat": 98912,
+   "abs_cos": 0.0672580674290657,
+   "own_desc": "Descriptive adjectives and modifying phrases that specify the type, category, scope, domain, or property of a concept, often distinguishing between different variants or classifications of the same general concept.",
+   "logit_lens": [
+    "WithMany",
+    " }}\"><",
+    " SetLastError",
+    "(Collider",
+    "().'/",
+    "\ud83d\udcd0",
+    "/WebAPI",
+    "\u2697"
+   ],
+   "tuned_lens": [
+    " :\";\n",
+    " }}\"><",
+    "\u2697",
+    "(Collider",
+    "\u5510\u5b87",
+    "senal",
+    " ucwords",
+    " bindActionCreators"
+   ],
+   "jlens": [
+    ":CGRect",
+    "a\u0142",
+    "NewProp",
+    "rzy",
+    " }}\"><",
+    "\u00fab",
+    "igth",
+    "efs"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3535,
+   "variance_share": 1.3892331379271415e-06,
+   "r2_ridge": -0.38912836591410005,
+   "r2_mlp": -2.1879402145441893,
+   "sae_feat": 81203,
+   "abs_cos": 0.06566361337900162,
+   "own_desc": "",
+   "logit_lens": [
+    "\u3092\u96c6\u3081",
+    " vej",
+    " Decompiled",
+    "ByPrimaryKey",
+    "\u622a",
+    " ><?",
+    "\ud83d\ude42",
+    "osti"
+   ],
+   "tuned_lens": [
+    "\")));",
+    ":\";\r\n",
+    ";');\n",
+    "efeller",
+    " fitte",
+    " Decompiled",
+    "GuidId",
+    "l\u00e8ve"
+   ],
+   "jlens": [
+    "baum",
+    "oldem",
+    " ParseException",
+    "redni",
+    "odia",
+    "iazza",
+    "\u5783",
+    "ulumi"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3536,
+   "variance_share": 1.381856290643667e-06,
+   "r2_ridge": -0.3535924703704998,
+   "r2_mlp": -1.8826448606137998,
+   "sae_feat": 99105,
+   "abs_cos": 0.07931903749704361,
+   "own_desc": "",
+   "logit_lens": [
+    "\u0431\u043b\u0430\u0433\u043e",
+    ".EventQueue",
+    "_redirected",
+    " \u062a\u0631\u0627\u0645",
+    ".toJSON",
+    " Fr",
+    " commodo",
+    "InMillis"
+   ],
+   "tuned_lens": [
+    "\u0431\u043b\u0430\u0433\u043e",
+    "Ngu\u1ed3n",
+    "/Dk",
+    ":CGRect",
+    "\u5229\u7528\u60a8\u7684",
+    "\u0432\u0440\u0435\u043c\u0435\u043d\u043d\u043e",
+    "\"';",
+    "NgModule"
+   ],
+   "jlens": [
+    "ubern",
+    ":\n",
+    "();)",
+    "\u3059\u3053\u3068",
+    "ewise",
+    "extr\u00eame",
+    "\u00e4s",
+    " election"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3537,
+   "variance_share": 1.3785258894222343e-06,
+   "r2_ridge": -0.38645162116055287,
+   "r2_mlp": -1.9156530360268649,
+   "sae_feat": 66708,
+   "abs_cos": 0.0652511715888977,
+   "own_desc": "Anaphoric pronouns and noun phrases that refer back to previously mentioned entities or concepts in the discourse, serving as backward-pointing references in narrative or explanatory text.",
+   "logit_lens": [
+    " v\u00e5",
+    ".getWriter",
+    "\u7ad6",
+    "jes",
+    ".KeyEvent",
+    "\u58e4",
+    "\u8bf8",
+    "vari"
+   ],
+   "tuned_lens": [
+    ",",
+    " and",
+    " at",
+    " v\u00e5",
+    "\u58e4",
+    " by",
+    " createStore",
+    " in"
+   ],
+   "jlens": [
+    "/Peak",
+    "\u5176\u5b83\u95ee\u9898",
+    "Calibri",
+    "])**",
+    "****\n",
+    ";\\\n",
+    "ocaly",
+    "}$/"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3538,
+   "variance_share": 1.3736993680905524e-06,
+   "r2_ridge": -0.37344827369210676,
+   "r2_mlp": -1.8705760261418858,
+   "sae_feat": 42713,
+   "abs_cos": 0.0645483136177063,
+   "own_desc": "Tokens that complete referential or summarizing phrases which look back to previously mentioned concepts, often appearing after expressions like 'by following these', 'despite the', 'given the', or 'without', serving to conclude explanatory statements.",
+   "logit_lens": [
+    ".MouseAdapter",
+    "m\u00eame",
+    "onestly",
+    "p\u00e9ri",
+    "\u9528",
+    "agon",
+    "vez",
+    " fitte"
+   ],
+   "tuned_lens": [
+    "1",
+    "2",
+    " ",
+    "3",
+    "7",
+    "0",
+    "8",
+    "9"
+   ],
+   "jlens": [
+    "m\u00eame",
+    "onestly",
+    "`.`",
+    "i\u1ebft",
+    "\u5b3f",
+    "@Id",
+    ",},\n",
+    "ENTA"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3539,
+   "variance_share": 1.367558400760959e-06,
+   "r2_ridge": -0.39096450652708215,
+   "r2_mlp": -1.8378838317491155,
+   "sae_feat": 95799,
+   "abs_cos": 0.07209345698356628,
+   "own_desc": "Punctuation marks and special characters functioning as separators, operators, or structural delimiters in technical contexts such as code, formatting commands, compound words, ranges, or specifications.",
+   "logit_lens": [
+    "printStats",
+    " ?\");\n",
+    "iets",
+    "flate",
+    "efs",
+    "+'_",
+    "\u80f3",
+    " Inflate"
+   ],
+   "tuned_lens": [
+    ",eg",
+    ",\");\n",
+    "printStats",
+    " Inflate",
+    "flate",
+    "iets",
+    "kiye",
+    "tra\u00ee"
+   ],
+   "jlens": [
+    " Again",
+    "again",
+    ",\");\n",
+    "\n\n",
+    "\u518d\u6b21",
+    "ife",
+    " ?\");\n",
+    " again"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3540,
+   "variance_share": 1.3609487364309504e-06,
+   "r2_ridge": -0.3735082493829389,
+   "r2_mlp": -1.9310444504747526,
+   "sae_feat": 20751,
+   "abs_cos": 0.0685487613081932,
+   "own_desc": "",
+   "logit_lens": [
+    " ><?",
+    " Wend",
+    "\ufffd",
+    "\u6a66",
+    "\u9876",
+    "IVA",
+    "/ion",
+    "HING"
+   ],
+   "tuned_lens": [
+    " Leigh",
+    " Wend",
+    "\n\n",
+    " end",
+    "\u9876",
+    "\ufffd",
+    ":\n\n",
+    "\u6da1"
+   ],
+   "jlens": [
+    " [",
+    " ____",
+    "____",
+    "().__",
+    " ([",
+    "([",
+    ":[",
+    "\u3010"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3541,
+   "variance_share": 1.3586193413974456e-06,
+   "r2_ridge": -0.3668081729380599,
+   "r2_mlp": -1.7522156104505666,
+   "sae_feat": 95569,
+   "abs_cos": 0.06097697094082832,
+   "own_desc": "Tokens that immediately follow punctuation marks or delimiters, marking the continuation or beginning of a new syntactic element after a clause boundary or pause in the text structure.",
+   "logit_lens": [
+    "\u30d3\u30e5\u30fc",
+    "isArray",
+    "(exports",
+    "\u7fca",
+    " (){",
+    ".setToolTip",
+    "\u65b9\u5706",
+    "ed"
+   ],
+   "tuned_lens": [
+    ".",
+    ",",
+    "4",
+    "1",
+    ".\n",
+    " and",
+    " .",
+    "6"
+   ],
+   "jlens": [
+    "(exports",
+    "o\u00e0i",
+    ".\n",
+    "ActionTypes",
+    " .\n",
+    "(QL",
+    " :\n",
+    " zwi\u0105zku"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3542,
+   "variance_share": 1.3525076971574362e-06,
+   "r2_ridge": -0.35813511165864087,
+   "r2_mlp": -1.976530884254951,
+   "sae_feat": 121726,
+   "abs_cos": 0.06678981333971024,
+   "own_desc": "",
+   "logit_lens": [
+    ",strlen",
+    "agonal",
+    "malink",
+    "phinx",
+    "\ufffd",
+    " Klo",
+    "\ud83e\udd57",
+    "cul"
+   ],
+   "tuned_lens": [
+    ",strlen",
+    "cul",
+    "\u53e3\u6c34",
+    "phinx",
+    " b\u00e9n\u00e9ficie",
+    " Klo",
+    "-FIRST",
+    "\ufffd"
+   ],
+   "jlens": [
+    "...\n",
+    "\u0434\u043e\u0431\u0430\u0432",
+    " \n",
+    " ><?",
+    ".PostMapping",
+    "<=(",
+    ".MenuItem",
+    "\u8fd9\u5bb6\u516c\u53f8"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3543,
+   "variance_share": 1.347088954474981e-06,
+   "r2_ridge": -0.3498997603498899,
+   "r2_mlp": -2.2160734000410702,
+   "sae_feat": 34200,
+   "abs_cos": 0.06494824588298798,
+   "own_desc": "",
+   "logit_lens": [
+    "odi",
+    "DataExchange",
+    " tantra",
+    "});\n\n\n\n",
+    "ypsum",
+    "\u547c",
+    "\u6115",
+    " SAND"
+   ],
+   "tuned_lens": [
+    "odi",
+    " \"",
+    ".",
+    "\n",
+    "\u547c",
+    " ",
+    " by",
+    "DataExchange"
+   ],
+   "jlens": [
+    "\u2026\n\n",
+    " \u2026\n\n",
+    "\u2026\n\n\n",
+    "..<",
+    "\u2026\u2026\n\n",
+    "uebas",
+    "\u2026.\n\n",
+    "ostringstream"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3544,
+   "variance_share": 1.342589309651831e-06,
+   "r2_ridge": -0.39500044304475224,
+   "r2_mlp": -1.935132396439553,
+   "sae_feat": 29315,
+   "abs_cos": 0.07594726979732513,
+   "own_desc": "",
+   "logit_lens": [
+    "rvine",
+    "/Branch",
+    "ollah",
+    "\u8012",
+    "abler",
+    " DISCLAIMER",
+    "\u626e",
+    "\".\n\n\n\n"
+   ],
+   "tuned_lens": [
+    "/Branch",
+    "rvine",
+    " },{",
+    "\".\n\n\n\n",
+    "inerary",
+    "DDS",
+    "/ay",
+    "erture"
+   ],
+   "jlens": [
+    "rvine",
+    "\"...",
+    " {...",
+    ")...",
+    " ...",
+    "DDS",
+    ".....",
+    "/fixtures"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3545,
+   "variance_share": 1.3410389964658166e-06,
+   "r2_ridge": -0.4076158620454362,
+   "r2_mlp": -2.0022937466105044,
+   "sae_feat": 17020,
+   "abs_cos": 0.05847999081015587,
+   "own_desc": "",
+   "logit_lens": [
+    "orton",
+    ")did",
+    ".ActionListener",
+    "uibModal",
+    "hausen",
+    "';\n\n\n\n",
+    "izabeth",
+    "(strpos"
+   ],
+   "tuned_lens": [
+    "(strpos",
+    ".ActionListener",
+    ")did",
+    " disappe",
+    "orton",
+    " orchestr",
+    ".Mapping",
+    "hausen"
+   ],
+   "jlens": [
+    " ...\n",
+    " ..\n",
+    "';\n\n\n\n",
+    "\u2026\n\n\n",
+    "...\n\n\n",
+    "...\n",
+    "\u2026\n",
+    "};\n\n\n\n"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3546,
+   "variance_share": 1.3342809359658728e-06,
+   "r2_ridge": -0.34780630769702703,
+   "r2_mlp": -2.098970567014955,
+   "sae_feat": 4693,
+   "abs_cos": 0.07480622828006744,
+   "own_desc": "",
+   "logit_lens": [
+    "__);",
+    "').'",
+    "<source",
+    "\u80da",
+    "\u2105",
+    "-fr",
+    "\u7526",
+    "VO"
+   ],
+   "tuned_lens": [
+    " come",
+    "-fr",
+    " x\u1ee9",
+    " RaycastHit",
+    "<source",
+    "come",
+    "\u00e4tig",
+    "\u80da"
+   ],
+   "jlens": [
+    " McD",
+    " Flatten",
+    "akh",
+    " Ment",
+    " Con",
+    " Return",
+    " Measures",
+    " Purchase"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3547,
+   "variance_share": 1.3307564220503177e-06,
+   "r2_ridge": -0.4008683501818997,
+   "r2_mlp": -2.017608538660709,
+   "sae_feat": 22249,
+   "abs_cos": 0.07372403144836426,
+   "own_desc": "Punctuation marks, conjunctions, operators, and formatting symbols that serve structural or grammatical functions rather than conveying primary semantic content, appearing across natural language text, code, mathematical notation, and structured formats.",
+   "logit_lens": [
+    "\u5145",
+    "\u624d\u7b97",
+    "acons",
+    "eland",
+    "uebas",
+    " Pace",
+    ".ErrorCode",
+    " b\u00e9n\u00e9fic"
+   ],
+   "tuned_lens": [
+    "\u5145",
+    " \u2018",
+    "})}\n",
+    "\u6211\u7231\u4f60",
+    "\u624d\u7b97",
+    " chicken",
+    "qli",
+    "usses"
+   ],
+   "jlens": [
+    "Ngu\u1ed3n",
+    "\u5965\u6797",
+    "Wik",
+    "\u5fcc",
+    " Wikimedia",
+    "exampleInputEmail",
+    "\u64ba",
+    "\u51fa\u624b"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3548,
+   "variance_share": 1.3204694637841572e-06,
+   "r2_ridge": -0.3396205148976208,
+   "r2_mlp": -1.9638777368954106,
+   "sae_feat": 130520,
+   "abs_cos": 0.0654575303196907,
+   "own_desc": "Technical identifiers, keywords, constants, literals, and structured data values in programming code, markup languages, configuration files, or technical documentation contexts.",
+   "logit_lens": [
+    "odus",
+    "\u65d7",
+    " gameOver",
+    "gie",
+    " mime",
+    "appe",
+    ".Preference",
+    "\u307e\u307e"
+   ],
+   "tuned_lens": [
+    "\ufffd\ufffd",
+    " ));",
+    ">\";",
+    "\u3042\u308a\u304c\u3068\u3046\u3054\u3056",
+    "akin",
+    "\u250f",
+    "_CF",
+    "\ufffd"
+   ],
+   "jlens": [
+    " __",
+    " _",
+    " ____",
+    " ___",
+    " \n",
+    " _____",
+    " ______",
+    ".FindGameObjectWithTag"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3549,
+   "variance_share": 1.3187961089085e-06,
+   "r2_ridge": -0.3830733263222805,
+   "r2_mlp": -1.8993545038186714,
+   "sae_feat": 24645,
+   "abs_cos": 0.06771612912416458,
+   "own_desc": "",
+   "logit_lens": [
+    "macen",
+    "\u5f81",
+    ".rm",
+    "Erreur",
+    "\tmysqli",
+    "\u5b9d",
+    "\u8c05",
+    "\u822a"
+   ],
+   "tuned_lens": [
+    "macen",
+    "')==",
+    ".rar",
+    "__;",
+    " backpage",
+    "},\r\n\r\n",
+    "\u1409",
+    "\ufffd"
+   ],
+   "jlens": [
+    "\n",
+    " ...\n",
+    " ...",
+    "zel",
+    "*\n",
+    "...\n",
+    " ...,",
+    "ale"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3550,
+   "variance_share": 1.3166728745106771e-06,
+   "r2_ridge": -0.37731563909302435,
+   "r2_mlp": -1.8777833865597109,
+   "sae_feat": 28847,
+   "abs_cos": 0.07388423383235931,
+   "own_desc": "",
+   "logit_lens": [
+    ".AsyncTask",
+    "IEnumerator",
+    "\u6765\u770b\u770b\u5427",
+    "\u9a73",
+    "\u6fe1",
+    " Mo\u017cna",
+    "son",
+    " EXEMPLARY"
+   ],
+   "tuned_lens": [
+    "\u4f4f\u623f\u516c\u79ef",
+    "UILDER",
+    ">tag",
+    "ivic",
+    ".AsyncTask",
+    "\u0e43\u0e19\u0e10\u0e32\u0e19",
+    "forgettable",
+    "ilestone"
+   ],
+   "jlens": [
+    " [",
+    " '",
+    " however",
+    " {",
+    " {'",
+    "\"",
+    "',",
+    " PMID"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3551,
+   "variance_share": 1.3092900203679277e-06,
+   "r2_ridge": -0.40000406664274313,
+   "r2_mlp": -2.0298675997320177,
+   "sae_feat": 34822,
+   "abs_cos": 0.06369835138320923,
+   "own_desc": "Abbreviations, acronyms, and shortened forms of technical terms, proper nouns, or standardized notation used in formal, technical, or educational contexts.",
+   "logit_lens": [
+    "reactstrap",
+    " sk",
+    " fore",
+    ".findIndex",
+    " Log",
+    " mix",
+    "imize",
+    " Nass"
+   ],
+   "tuned_lens": [
+    "reactstrap",
+    "','');\n",
+    " sk",
+    "issent",
+    " routing",
+    "elay",
+    "\u6c99\u53d1\u4e0a",
+    "connexion"
+   ],
+   "jlens": [
+    ">NN",
+    "paramref",
+    "n\u0131",
+    "\u62dc\u5e08\u5b66",
+    "\u4fe3",
+    "~-~-",
+    "ixture",
+    " \"\\\","
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3552,
+   "variance_share": 1.307091133644957e-06,
+   "r2_ridge": -0.3694273169801432,
+   "r2_mlp": -1.9313444264448894,
+   "sae_feat": 64605,
+   "abs_cos": 0.0645831972360611,
+   "own_desc": "Abstract or technical terms describing properties, attributes, categories, classifications, or conceptual relationships across various domains (financial, technical, medical, legal, structural, psychological, etc.).",
+   "logit_lens": [
+    "auty",
+    "ain",
+    "\u6574\u7406",
+    "\uafc8",
+    "\u72c4",
+    "\u8d66",
+    "ubb",
+    " Beard"
+   ],
+   "tuned_lens": [
+    "\"urls",
+    "auty",
+    "Salir",
+    "\u90c3",
+    "tributes",
+    "quivos",
+    "idepress",
+    "\u6574\u7406"
+   ],
+   "jlens": [
+    "\u201c",
+    ".\u201c",
+    " \u201c",
+    "\u2019",
+    " Liu",
+    "auty",
+    " (;;",
+    " luck"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3553,
+   "variance_share": 1.298305879578067e-06,
+   "r2_ridge": -0.37269284340451003,
+   "r2_mlp": -1.9699063904297724,
+   "sae_feat": 10279,
+   "abs_cos": 0.07546548545360565,
+   "own_desc": "",
+   "logit_lens": [
+    "urlencode",
+    "\".\n\n\n\n",
+    "@brief",
+    " rowspan",
+    ">manual",
+    "-haspopup",
+    "_IDS",
+    "\ub310"
+   ],
+   "tuned_lens": [
+    " rowspan",
+    " berth",
+    "urlencode",
+    "\u9774",
+    " Bald",
+    "\ub310",
+    ".writeHead",
+    "-haspopup"
+   ],
+   "jlens": [
+    " ...\n\n",
+    " ...",
+    " )\n\n\n\n\n\n\n\n",
+    "\\xe",
+    " \u00e2",
+    " (...)",
+    "byss",
+    "urlencode"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3554,
+   "variance_share": 1.2973107327758955e-06,
+   "r2_ridge": -0.3618347608454382,
+   "r2_mlp": -2.0713197255229394,
+   "sae_feat": 128855,
+   "abs_cos": 0.08077094703912735,
+   "own_desc": "",
+   "logit_lens": [
+    "(strpos",
+    ":'.$",
+    "ovenant",
+    "}elseif",
+    "stants",
+    "CHOOL",
+    "kich",
+    "createForm"
+   ],
+   "tuned_lens": [
+    "\".\n\n\n\n",
+    "stants",
+    ":'.$",
+    " +=\n",
+    "%!",
+    "entiful",
+    "CHOOL",
+    "%@\","
+   ],
+   "jlens": [
+    "zbek",
+    "cba",
+    "stdarg",
+    " M\u00e9todo",
+    "\u00e9mon",
+    " \u30c8\u30e9\u30c3\u30af",
+    "contri",
+    " GetById"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3555,
+   "variance_share": 1.2892141373788167e-06,
+   "r2_ridge": -0.40255340885008906,
+   "r2_mlp": -2.1353953145803115,
+   "sae_feat": 66896,
+   "abs_cos": 0.07267852127552032,
+   "own_desc": "",
+   "logit_lens": [
+    " Erotic",
+    "feof",
+    "/fontawesome",
+    "\u5fae",
+    "\u5e74\u4e4b\u4e45",
+    " Seas",
+    "ynth",
+    "='<?"
+   ],
+   "tuned_lens": [
+    ",",
+    ".",
+    " ",
+    ":",
+    " in",
+    " y",
+    "?",
+    " or"
+   ],
+   "jlens": [
+    "\u201d\n\n",
+    "\n\n\n",
+    ".\u201d\n\n",
+    "\"\n\n",
+    " \n\n\n",
+    "\n\n",
+    " ",
+    "**\n\n"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3556,
+   "variance_share": 1.2874755771474093e-06,
+   "r2_ridge": -0.418100012849014,
+   "r2_mlp": -1.8785036908187878,
+   "sae_feat": 121390,
+   "abs_cos": 0.05712084099650383,
+   "own_desc": "",
+   "logit_lens": [
+    "\u5efa\u6863\u7acb",
+    "actionDate",
+    ":[[",
+    "\u5343\u65b9",
+    ".Fat",
+    "\u86df",
+    "\u57b2",
+    " Gr\u00fcnde"
+   ],
+   "tuned_lens": [
+    " bloginfo",
+    ":''",
+    " Gr\u00fcnde",
+    "\u7ad9\u957f",
+    "\u5efa\u6863\u7acb",
+    "actionDate",
+    "\u5343\u65b9",
+    "\u232b"
+   ],
+   "jlens": [
+    " ...\\",
+    "...\\",
+    "...\n",
+    " ...\n",
+    "...\r\n",
+    "...\n\n",
+    "...",
+    "...\n\n\n\n"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3557,
+   "variance_share": 1.2773736247736423e-06,
+   "r2_ridge": -0.38653323445923915,
+   "r2_mlp": -1.9123854728084595,
+   "sae_feat": 101955,
+   "abs_cos": 0.0691525936126709,
+   "own_desc": "",
+   "logit_lens": [
+    " CircularProgress",
+    "iban",
+    "eeper",
+    "elry",
+    "ANDARD",
+    "\u5c6f",
+    " '\">",
+    "stantiate"
+   ],
+   "tuned_lens": [
+    " -",
+    " Lo",
+    "-",
+    "\u00a0",
+    ":",
+    " CircularProgress",
+    " :",
+    "\u0435\u0445"
+   ],
+   "jlens": [
+    "\u00a0\n",
+    "\u00a0",
+    "\u00a0\u00a0",
+    "\u00a0\u00a0\u00a0",
+    "\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0",
+    "\n\n\n\n\n",
+    " \u2192\n\n",
+    "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3558,
+   "variance_share": 1.2747832489900933e-06,
+   "r2_ridge": -0.385419763218519,
+   "r2_mlp": -1.8589183323775362,
+   "sae_feat": 106422,
+   "abs_cos": 0.06710763275623322,
+   "own_desc": "",
+   "logit_lens": [
+    "yleft",
+    "fter",
+    "itech",
+    "IPH",
+    "RITE",
+    "\u9093",
+    "id\u00e9e",
+    "xdf"
+   ],
+   "tuned_lens": [
+    "IPH",
+    "xdf",
+    "\u2571",
+    "PAL",
+    "ATS",
+    "PTH",
+    "Ltd",
+    " \u8f93"
+   ],
+   "jlens": [
+    "yleft",
+    "zure",
+    "...\\",
+    "NSDate",
+    ".kode",
+    "ampionship",
+    "enschaft",
+    "g\u00f3"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3559,
+   "variance_share": 1.2685290005110965e-06,
+   "r2_ridge": -0.37203382238811833,
+   "r2_mlp": -2.041576399346423,
+   "sae_feat": 92787,
+   "abs_cos": 0.09423541277647018,
+   "own_desc": "Commas and conjunctions that separate items in lists, enumerations, or compound phrases, particularly when connecting parallel elements or clauses in technical, descriptive, or informational text.",
+   "logit_lens": [
+    "acas",
+    "ucson",
+    "orb",
+    "\u624b\u7eed",
+    "adan",
+    "msgid",
+    "]!='",
+    "\u0432\u0448\u0438\u0435"
+   ],
+   "tuned_lens": [
+    ".",
+    "\n",
+    ".\n",
+    ",",
+    "2",
+    ":",
+    "orb",
+    ".I"
+   ],
+   "jlens": [
+    "\uff1a\n",
+    ":\n\n\n",
+    " _|",
+    " $__",
+    ":\n",
+    ":\"-\"`\n",
+    "\u7ea4",
+    "\uff1f\n"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3560,
+   "variance_share": 1.2660116328773503e-06,
+   "r2_ridge": -0.35933343275359353,
+   "r2_mlp": -1.928527483619129,
+   "sae_feat": 3897,
+   "abs_cos": 0.08105117827653885,
+   "own_desc": "",
+   "logit_lens": [
+    "getMock",
+    ".listFiles",
+    " Tamb\u00e9m",
+    " Ap\u00f3s",
+    " omas",
+    " Al\u00e9m",
+    " Emblem",
+    "iri"
+   ],
+   "tuned_lens": [
+    "getMock",
+    "'Connor",
+    ".listFiles",
+    "crollView",
+    " Michaels",
+    "\u4e32",
+    "TERN",
+    " ach"
+   ],
+   "jlens": [
+    "...\n",
+    "...\n\n",
+    "?\n",
+    "\n",
+    " ...\n",
+    "?\n\n",
+    " ?\n",
+    " ?\n\n"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3561,
+   "variance_share": 1.2588241953142218e-06,
+   "r2_ridge": -0.40476043544749185,
+   "r2_mlp": -2.3176323743344667,
+   "sae_feat": 83419,
+   "abs_cos": 0.06515078246593475,
+   "own_desc": "",
+   "logit_lens": [
+    " fkk",
+    "=findViewById",
+    "ORB",
+    "aload",
+    "-END",
+    "\u00f6ffent",
+    " difficolt",
+    ":;\n"
+   ],
+   "tuned_lens": [
+    "aload",
+    " fkk",
+    ")\n\n\n\n\n\n\n\n",
+    "abcdefgh",
+    "__[",
+    " all",
+    "/gin",
+    " grade"
+   ],
+   "jlens": [
+    "\u2026\n",
+    " ...\n",
+    "...\n",
+    " [\u2026",
+    " :\n",
+    "\uff1a\n",
+    " her",
+    " \u2026"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3562,
+   "variance_share": 1.2540008541008165e-06,
+   "r2_ridge": -0.39467990088253124,
+   "r2_mlp": -2.013345558138219,
+   "sae_feat": 119085,
+   "abs_cos": 0.07955659925937653,
+   "own_desc": "",
+   "logit_lens": [
+    "mostat",
+    "\u4e00\u53e3",
+    " Incontri",
+    "\ubc30",
+    "\u8087",
+    "StandardItem",
+    "|array",
+    "()==\""
+   ],
+   "tuned_lens": [
+    "4",
+    "3",
+    "ki",
+    "mostat",
+    "\u4e00\u53e3",
+    " econ\u00f3mico",
+    "1",
+    "6"
+   ],
+   "jlens": [
+    " **",
+    " _",
+    "**\n",
+    "\\_",
+    " ```",
+    " ``",
+    " \\",
+    " _\n"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3563,
+   "variance_share": 1.2505726406949687e-06,
+   "r2_ridge": -0.40412398808060934,
+   "r2_mlp": -1.90620602124303,
+   "sae_feat": 39263,
+   "abs_cos": 0.07380194216966629,
+   "own_desc": "",
+   "logit_lens": [
+    "gregar",
+    "mount",
+    "\u7f72",
+    "?>\n\n\n",
+    "bjerg",
+    "xea",
+    "Modificar",
+    "Salir"
+   ],
+   "tuned_lens": [
+    " Dresses",
+    " ?>\n\n\n",
+    ",No",
+    "xea",
+    "Modificar",
+    " honda",
+    "?>\n\n\n",
+    "\ud83d\udcdd"
+   ],
+   "jlens": [
+    " ''",
+    " second",
+    " per",
+    " Second",
+    " available",
+    " subject",
+    " issue",
+    " \u00e2"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3564,
+   "variance_share": 1.2394275500167165e-06,
+   "r2_ridge": -0.44210719649389274,
+   "r2_mlp": -2.6411455372303947,
+   "sae_feat": 17679,
+   "abs_cos": 0.06118263676762581,
+   "own_desc": "",
+   "logit_lens": [
+    ")){\n\n",
+    "\u4e00\u81f4\u597d\u8bc4",
+    "<article",
+    "\u769b",
+    "\u239d",
+    "\u5bb6\u55bb",
+    ":\"-",
+    ".KeyCode"
+   ],
+   "tuned_lens": [
+    ")){\n\n",
+    "<article",
+    "\u5224\u5904",
+    "packed",
+    " \u00f6d",
+    "xfff",
+    "\uc92c",
+    "8"
+   ],
+   "jlens": [
+    " \n\n",
+    "  \n\n",
+    "  ",
+    " _(",
+    " \n    \n",
+    "\n  \n",
+    "    ",
+    " FixedUpdate"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3565,
+   "variance_share": 1.233709255659921e-06,
+   "r2_ridge": -0.4286586273712438,
+   "r2_mlp": -2.327054480622785,
+   "sae_feat": 7813,
+   "abs_cos": 0.06532058864831924,
+   "own_desc": "Common or generic tokens that appear in technical documentation, programming code, or multilingual text, including basic syntax elements, standard identifiers, numbers, operators, and high-frequency vocabulary in technical/structured contexts.",
+   "logit_lens": [
+    "/Dk",
+    ">manual",
+    "\u266a\n\n",
+    " IonicPage",
+    "chedulers",
+    ":';\n",
+    "\u9b54\u6cd5\u5e08\u548c",
+    "----</"
+   ],
+   "tuned_lens": [
+    "\n",
+    " s",
+    " a",
+    ",",
+    " P",
+    " on",
+    " o",
+    " exped"
+   ],
+   "jlens": [
+    " \n",
+    "\u6587\u5316\u8282",
+    " and",
+    "\n",
+    " .\n",
+    "axies",
+    "-fi",
+    "addtogroup"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3566,
+   "variance_share": 1.2264787300591474e-06,
+   "r2_ridge": -0.3843822381038686,
+   "r2_mlp": -2.1667806728538346,
+   "sae_feat": 15905,
+   "abs_cos": 0.08676069229841232,
+   "own_desc": "",
+   "logit_lens": [
+    "/Dk",
+    "spiracy",
+    "moil",
+    "\u5f52",
+    "\u00e3n",
+    "\u4e00\u81f4\u597d\u8bc4",
+    "\u73cd\u73e0",
+    "zoek"
+   ],
+   "tuned_lens": [
+    "moil",
+    "quartered",
+    "\u00e3n",
+    "GLenum",
+    "categorie",
+    "\">\u00d7</",
+    "\u5f52",
+    "ookie"
+   ],
+   "jlens": [
+    " ``",
+    " ...\n",
+    " ,",
+    " .\n",
+    " instead",
+    "...\n",
+    " ;",
+    " ...\n\n"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3567,
+   "variance_share": 1.2233067240563633e-06,
+   "r2_ridge": -0.40468555093900727,
+   "r2_mlp": -2.231325769010145,
+   "sae_feat": 38136,
+   "abs_cos": 0.05714748054742813,
+   "own_desc": "",
+   "logit_lens": [
+    "\ufffd\u043e\u0442",
+    "///\r\n",
+    "olesale",
+    ".tsv",
+    "\u00fcrnberg",
+    " withStyles",
+    "\u5e90",
+    "ARIO"
+   ],
+   "tuned_lens": [
+    "alborg",
+    "\ufffd\u043e\u0442",
+    " FAG",
+    " bindActionCreators",
+    "///\r\n",
+    "olesale",
+    "prar",
+    "uforia"
+   ],
+   "jlens": [
+    "\uff1f\n",
+    "orget",
+    "\uff1a\n",
+    "\u00fcrnberg",
+    "etsk",
+    "ilate",
+    "etu",
+    "ngo"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3568,
+   "variance_share": 1.214623964705088e-06,
+   "r2_ridge": -0.45846793188973933,
+   "r2_mlp": -2.0924777238930283,
+   "sae_feat": 104300,
+   "abs_cos": 0.07250547409057617,
+   "own_desc": "",
+   "logit_lens": [
+    "uxtap",
+    ".EventQueue",
+    "CanBe",
+    "#ga",
+    "eda",
+    ".pagination",
+    "});\n\n\n\n",
+    ")\":"
+   ],
+   "tuned_lens": [
+    "\u53e6\u4e00\u534a",
+    " is",
+    "eda",
+    "\u9650\u5ea6",
+    "\u6f0f\u6c34",
+    " and",
+    " \"/\";\n",
+    " Cardiff"
+   ],
+   "jlens": [
+    " \u2026",
+    " ...\n\n\n\n",
+    " \u2026\n\n",
+    " ar",
+    " Cair",
+    " aren",
+    "\uff65\uff65",
+    "\u30fb\u30fb\u30fb\n\n"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3569,
+   "variance_share": 1.2140323920695299e-06,
+   "r2_ridge": -0.37992787557826313,
+   "r2_mlp": -2.06563278494097,
+   "sae_feat": 82573,
+   "abs_cos": 0.07145000994205475,
+   "own_desc": "",
+   "logit_lens": [
+    "AllowAnonymous",
+    "\ub480",
+    "\u683d",
+    "Sdk",
+    " Bra",
+    " \u05e2\u05d1\u05e8",
+    "\u0128",
+    "erialized"
+   ],
+   "tuned_lens": [
+    "\u7248\u6743\u5f52\u539f",
+    "\u6765\u770b\u770b\u5427",
+    "\u88ab\u8a89",
+    "ools",
+    " ApiController",
+    " useMemo",
+    "\u27f9",
+    "\u55d0"
+   ],
+   "jlens": [
+    "...\n\n\n\n",
+    "\u88ab\u8a89",
+    " ...\\",
+    "...\n\n\n",
+    "Nama",
+    "\u2026\n\n\n\n",
+    " \\\"",
+    "...\\"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3570,
+   "variance_share": 1.2049752076385784e-06,
+   "r2_ridge": -0.44644230207172075,
+   "r2_mlp": -2.084858115616353,
+   "sae_feat": 126088,
+   "abs_cos": 0.06724469363689423,
+   "own_desc": "",
+   "logit_lens": [
+    " },\n\n\n",
+    "ilha",
+    "paque",
+    "\".\n\n\n\n",
+    "eyed",
+    "zte",
+    "\u00dcR",
+    ".'_"
+   ],
+   "tuned_lens": [
+    " },\n\n\n",
+    " ';\n\n",
+    "ilha",
+    "soever",
+    ".'_",
+    "\".\n\n\n\n",
+    "/inet",
+    "(*)("
+   ],
+   "jlens": [
+    " ``",
+    " ...",
+    " *",
+    " [...]",
+    " },\n\n\n",
+    " \\\\",
+    " ......",
+    " \\"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3571,
+   "variance_share": 1.1918156469592836e-06,
+   "r2_ridge": -0.4007446904967691,
+   "r2_mlp": -2.121682409953701,
+   "sae_feat": 2729,
+   "abs_cos": 0.06687358021736145,
+   "own_desc": "Vocabulary terms and common nouns appearing in multilingual text or technical documentation, particularly in non-English languages or in code-related contexts where precise terminology is being used or defined.",
+   "logit_lens": [
+    "INavigation",
+    "\u253c",
+    " \u00e4ven",
+    "ueue",
+    "uestion",
+    " --------------------------------------------------------------------------\n",
+    "\u6c99\u9f99",
+    ",{\n"
+   ],
+   "tuned_lens": [
+    "INavigation",
+    "ueue",
+    "SimpleName",
+    "mojom",
+    "oggler",
+    "'order",
+    ".SwingConstants",
+    ".Guid"
+   ],
+   "jlens": [
+    "...\n",
+    "\u5bb6\u90fd\u77e5\u9053",
+    "stantiateViewController",
+    " Publi",
+    " ...\n",
+    "...\n\n",
+    "exampleInputEmail",
+    "...\\"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3572,
+   "variance_share": 1.1822844107638821e-06,
+   "r2_ridge": -0.39170971314616754,
+   "r2_mlp": -2.122147835157609,
+   "sae_feat": 23293,
+   "abs_cos": 0.06342880427837372,
+   "own_desc": "",
+   "logit_lens": [
+    "/***************************************************************************\n",
+    "geois",
+    " Xperia",
+    "heimer",
+    ".EventSystems",
+    "\u508d",
+    " JsonRequest",
+    "\u5386\u53f2\u4e0a"
+   ],
+   "tuned_lens": [
+    "\u672f",
+    "\u5386\u53f2\u4e0a",
+    "opportunit\u00e0",
+    "webElementProperties",
+    " godt",
+    "heimer",
+    "\u508d",
+    "\u6709\u591a"
+   ],
+   "jlens": [
+    "-vers",
+    " versus",
+    "vers",
+    " vs",
+    " springfox",
+    "foreach",
+    " _______,",
+    "-pills"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3573,
+   "variance_share": 1.1746957545461927e-06,
+   "r2_ridge": -0.3716773605276513,
+   "r2_mlp": -2.1856847639042045,
+   "sae_feat": 39263,
+   "abs_cos": 0.08492099493741989,
+   "own_desc": "",
+   "logit_lens": [
+    "cas",
+    "*>(&",
+    "\u0baf",
+    "cket",
+    "-scalable",
+    "\u8bd3",
+    "\u27a1",
+    ".Invariant"
+   ],
+   "tuned_lens": [
+    "pson",
+    "iffany",
+    "3",
+    "zers",
+    "rire",
+    "*>(&",
+    "cket",
+    "/goto"
+   ],
+   "jlens": [
+    "panse",
+    "\\/",
+    ".flink",
+    "(loop",
+    " (!((",
+    "TTY",
+    "\\<",
+    "etAddress"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3574,
+   "variance_share": 1.1720992302803153e-06,
+   "r2_ridge": -0.4706897134747343,
+   "r2_mlp": -2.6152385089198122,
+   "sae_feat": 93468,
+   "abs_cos": 0.06898657977581024,
+   "own_desc": "",
+   "logit_lens": [
+    "\u626b\u9ed1",
+    "ByName",
+    "LOPT",
+    "nik",
+    "n\u00e7",
+    "\u062a\u0643\u0648",
+    "\u73d1",
+    "Ef"
+   ],
+   "tuned_lens": [
+    " is",
+    "\u6551\u62a4",
+    "\u4e00\u58f0",
+    " as",
+    " analog",
+    "\u626b\u9ed1",
+    "auen",
+    " pin"
+   ],
+   "jlens": [
+    "uthor",
+    "anyl",
+    "lox",
+    "]-'",
+    "\u64e0",
+    "roach",
+    "@(",
+    "\ufffd\ufffd"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3575,
+   "variance_share": 1.16678778761078e-06,
+   "r2_ridge": -0.4300086596330803,
+   "r2_mlp": -2.165262083354495,
+   "sae_feat": 66019,
+   "abs_cos": 0.06184316799044609,
+   "own_desc": "Common descriptive words and phrases that express moderate, standard, or straightforward concepts, typically adjectives or nouns indicating simplicity, safety, complexity, or other routine qualitative assessments in various languages.",
+   "logit_lens": [
+    "Calibri",
+    "apper",
+    "berra",
+    "FLICT",
+    "emplace",
+    "icensing",
+    " Bet",
+    " vitae"
+   ],
+   "tuned_lens": [
+    ".",
+    "1",
+    " e",
+    "it",
+    " vitae",
+    ".\n",
+    "9",
+    "7"
+   ],
+   "jlens": [
+    " */\r\n\r\n\r\n",
+    "|;\n",
+    "Calibri",
+    " \u751f\u547d\u5468\u671f",
+    "paralleled",
+    "})();\n\n",
+    "\t\t\t\r\n\t\t\t\r\n",
+    "]='"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3576,
+   "variance_share": 1.1630732230003163e-06,
+   "r2_ridge": -0.39050198259803026,
+   "r2_mlp": -2.6791260658283966,
+   "sae_feat": 2441,
+   "abs_cos": 0.06442350149154663,
+   "own_desc": "",
+   "logit_lens": [
+    ")\n\n\n\n\n\n\n\n",
+    "ushman",
+    ".DeepEqual",
+    " ********************************************************************************",
+    "\u00e9coute",
+    "-reader",
+    "',{\n",
+    ")(((("
+   ],
+   "tuned_lens": [
+    ")\n\n\n\n\n\n\n\n",
+    " a",
+    " at",
+    " channelId",
+    " tang",
+    "\u6e05",
+    "\u884d",
+    " in"
+   ],
+   "jlens": [
+    ",...\n\n",
+    " #+#",
+    "impse",
+    "@student",
+    ":\\\"",
+    "zsche",
+    "]:\n\n",
+    "\\:"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3577,
+   "variance_share": 1.1441550278844358e-06,
+   "r2_ridge": -0.385997811720985,
+   "r2_mlp": -2.0460049822666853,
+   "sae_feat": 92787,
+   "abs_cos": 0.08660117536783218,
+   "own_desc": "Commas and conjunctions that separate items in lists, enumerations, or compound phrases, particularly when connecting parallel elements or clauses in technical, descriptive, or informational text.",
+   "logit_lens": [
+    ".EventSystems",
+    "\u25c0",
+    "seau",
+    " Continental",
+    "abit",
+    "errupted",
+    " ValidationResult",
+    "|--------------------------------------------------------------------------\n"
+   ],
+   "tuned_lens": [
+    "\u25c0",
+    "roys",
+    ".EventSystems",
+    " \u30c8\u30e9\u30c3\u30af",
+    "|--------------------------------------------------------------------------\n",
+    "\u239b",
+    "\u7279\u8272\u793e\u4f1a",
+    "errupted"
+   ],
+   "jlens": [
+    " Sil",
+    " ...\n",
+    ",...\n",
+    " silent",
+    "='{$",
+    "venge",
+    "...\n",
+    " ...\\"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3578,
+   "variance_share": 1.1401856623228224e-06,
+   "r2_ridge": -0.41282652639626294,
+   "r2_mlp": -2.2175158008123135,
+   "sae_feat": 15905,
+   "abs_cos": 0.07736565172672272,
+   "own_desc": "",
+   "logit_lens": [
+    "\u7855",
+    "tes",
+    "AMES",
+    "\u836f\u5e97",
+    "\u795d",
+    " World",
+    "Badge",
+    " tack"
+   ],
+   "tuned_lens": [
+    "\u63e1",
+    " quotes",
+    " tack",
+    "\u6c76",
+    "\u82b1",
+    "\u5c0f\u9f99",
+    "tro",
+    "\u7855"
+   ],
+   "jlens": [
+    " rencont",
+    "\t\t\t\r\n\t\t\t\r\n",
+    " neg\u00f3",
+    "kaar",
+    "\ufffd\ufffd\u4f5c",
+    "uania",
+    "endforeach",
+    "ENDOR"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3579,
+   "variance_share": 1.1363851429979252e-06,
+   "r2_ridge": -0.4612137541004506,
+   "r2_mlp": -2.2165574717594434,
+   "sae_feat": 39263,
+   "abs_cos": 0.07220017164945602,
+   "own_desc": "",
+   "logit_lens": [
+    "\ufffd",
+    "rox",
+    "xbf",
+    "xda",
+    "iga",
+    "orgeous",
+    "omanip",
+    " Preis"
+   ],
+   "tuned_lens": [
+    "atk",
+    ")frame",
+    "reactstrap",
+    "xda",
+    " IonicPage",
+    "ilarity",
+    "iga",
+    "\\L"
+   ],
+   "jlens": [
+    "**",
+    "**(",
+    "_[",
+    "[",
+    "```",
+    " ____",
+    "***",
+    "jis"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3580,
+   "variance_share": 1.1221284627569893e-06,
+   "r2_ridge": -0.3868750165864143,
+   "r2_mlp": -2.0955182317278744,
+   "sae_feat": 3737,
+   "abs_cos": 0.07086220383644104,
+   "own_desc": "Grammatical or morphological completion tokens including suffixes, function words, punctuation, and particles that complete words, phrases, or technical expressions across multiple languages.",
+   "logit_lens": [
+    ":''",
+    "iland",
+    " b\u00e9n\u00e9ficie",
+    " kald\u0131",
+    "\u6800",
+    "\u6df1\u6e0a",
+    "/UIKit",
+    " Ton"
+   ],
+   "tuned_lens": [
+    ":''",
+    "@dynamic",
+    " createState",
+    "\u8653",
+    "@student",
+    "__':\r\n",
+    "\u6633",
+    "\u5fde"
+   ],
+   "jlens": [
+    "\u5bb6\u90fd\u77e5\u9053",
+    " ...\n\n\n\n",
+    " Garr",
+    " like",
+    " Warehouse",
+    " nevertheless",
+    ">\n\n\n\n\n",
+    " triangular"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3581,
+   "variance_share": 1.10962895946711e-06,
+   "r2_ridge": -0.40228310680247303,
+   "r2_mlp": -2.199329375293266,
+   "sae_feat": 103048,
+   "abs_cos": 0.0625305324792862,
+   "own_desc": "",
+   "logit_lens": [
+    " Em",
+    " m\u00f6chten",
+    " Hick",
+    "\u062a\u0633\u0645",
+    "Em",
+    " zmq",
+    "BarItem",
+    "\u6817"
+   ],
+   "tuned_lens": [
+    "@student",
+    "arranty",
+    ".liferay",
+    ".ua",
+    " the",
+    "atego",
+    "\u062a\u0633\u0645",
+    ".ie"
+   ],
+   "jlens": [
+    " )\n\n\n\n\n\n\n\n",
+    " .\n",
+    " \n",
+    " like",
+    " same",
+    " ;\n",
+    " continued",
+    " similarly"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3582,
+   "variance_share": 1.033414884718685e-06,
+   "r2_ridge": -0.3635006583089746,
+   "r2_mlp": -2.2563028973638763,
+   "sae_feat": 91990,
+   "abs_cos": 0.0584849938750267,
+   "own_desc": "",
+   "logit_lens": [
+    " paramName",
+    "#ab",
+    "'&&",
+    "azo",
+    " \u0432\u044b\u0440\u0430\u0436\u0435\u043d",
+    " OnCollision",
+    "\u30f3\u30b0",
+    "otor"
+   ],
+   "tuned_lens": [
+    ",",
+    ".",
+    "0",
+    " paramName",
+    "3",
+    "7",
+    "5",
+    "4"
+   ],
+   "jlens": [
+    "...\n",
+    " \n",
+    "\u2026\n",
+    "\n",
+    "\u5165\u573a",
+    " ...\n",
+    "...\r\n",
+    "...\\"
+   ]
+  },
+  {
+   "group": "bottom50_by_variance",
+   "pc": 3583,
+   "variance_share": 9.324983856733733e-07,
+   "r2_ridge": -0.3473781577141897,
+   "r2_mlp": -3.0719230156251482,
+   "sae_feat": 59678,
+   "abs_cos": 0.06684434413909912,
+   "own_desc": "",
+   "logit_lens": [
+    "\u01da",
+    "robe",
+    "\u00ecn",
+    ".ExecuteScalar",
+    "&action",
+    "?option",
+    "gnore",
+    "okable"
+   ],
+   "tuned_lens": [
+    "?option",
+    "/Dk",
+    "robe",
+    "\u00ecn",
+    " muj",
+    "apest",
+    ".GetSize",
+    "idas"
+   ],
+   "jlens": [
+    "T\u00dc",
+    "UGC",
+    "PURE",
+    "\ud504\ub85c\uadf8",
+    ".rar",
+    "\u00f3wn",
+    "Nike",
+    "ESPN"
+   ]
+  }
+ ]
+}

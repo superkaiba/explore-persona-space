@@ -1,0 +1,198 @@
+{
+  "countries_12": [
+    "France",
+    "Germany",
+    "Spain",
+    "Italy",
+    "Japan",
+    "Brazil",
+    "China",
+    "Russia",
+    "Egypt",
+    "India",
+    "Canada",
+    "Mexico"
+  ],
+  "alt_words": [
+    "Germany",
+    "Spain",
+    "Italy",
+    "Japan",
+    "Brazil",
+    "China",
+    "Russia",
+    "Egypt",
+    "blue",
+    "table",
+    "run",
+    "love",
+    "music",
+    "seven",
+    "dog",
+    "very"
+  ],
+  "ctx_templates": [
+    "My sister has always wanted to visit {W}",
+    "The cheese they served reminded him of {W}",
+    "After the war, my grandparents emigrated from {W}",
+    "The documentary last night was all about {W}",
+    "Her accent suggests she grew up in {W}",
+    "The best wine I ever had came from {W}",
+    "They spent their honeymoon driving through {W}",
+    "The painting was on loan from a museum in {W}",
+    "His favourite football team plays in {W}",
+    "The recipe is a classic from the south of {W}",
+    "We changed planes on our way to {W}",
+    "The novel is set in a small village in {W}",
+    "She studied art history for a year in {W}",
+    "The company just opened a new office in {W}",
+    "The cyclists crossed the border into {W}",
+    "My neighbour retired and moved to {W}",
+    "The exchange student we hosted was from {W}",
+    "That style of bread is traditional in {W}",
+    "The conference next spring will be held in {W}",
+    "He collects old railway posters from {W}",
+    "The weather report mentioned storms across {W}",
+    "Most of the lavender is imported from {W}",
+    "Her grandmother still owns a farmhouse in {W}",
+    "The orchestra is touring three cities in {W}",
+    "The startup ships its products mainly to {W}",
+    "I learned to ski on a school trip to {W}",
+    "The cathedral is one of the oldest in {W}",
+    "The chef trained for a decade in {W}",
+    "Their new car was manufactured in {W}",
+    "The film festival takes place every year in {W}",
+    "The two presidents met at a summit in {W}",
+    "Those apples were grown in the north of {W}",
+    "The language course includes a month in {W}",
+    "The museum acquired a sculpture from {W}",
+    "My oldest friend now teaches school in {W}",
+    "The marathon route passes through the centre of {W}",
+    "The cheese cave we toured was deep in {W}",
+    "The sailing race finishes on the coast of {W}",
+    "Most of the perfume industry is based in {W}",
+    "The history lecture focused on medieval {W}"
+  ],
+  "noun_ctx_templates": [
+    "The first word the child learned to read was {W}",
+    "The crossword answer turned out to be {W}",
+    "Her favourite picture book has a drawing of {W}",
+    "The riddle's answer was {W}",
+    "The old folk song is all about {W}",
+    "The kindergarten class drew pictures of {W}",
+    "The poem she recited mentions {W}",
+    "The charades clue he acted out was {W}",
+    "The museum exhibit featured {W}",
+    "The tattoo on his arm shows {W}",
+    "The story my grandmother told was about {W}",
+    "The photograph on the wall shows {W}",
+    "The first thing she thought of was {W}",
+    "The spelling bee word was {W}",
+    "The flashcard showed a picture of {W}",
+    "His favourite stamp has a picture of {W}",
+    "The proverb she quoted mentions {W}",
+    "The dream he described was about {W}",
+    "The painting in the hallway depicts {W}",
+    "The word scrawled on the chalkboard was {W}"
+  ],
+  "idiom_pairs": [
+    [
+      "bread",
+      "butter"
+    ],
+    [
+      "salt",
+      "pepper"
+    ],
+    [
+      "thunder",
+      "lightning"
+    ],
+    [
+      "lock",
+      "key"
+    ],
+    [
+      "cat",
+      "mouse"
+    ],
+    [
+      "fish",
+      "chips"
+    ],
+    [
+      "needle",
+      "thread"
+    ],
+    [
+      "bow",
+      "arrow"
+    ],
+    [
+      "hammer",
+      "nail"
+    ],
+    [
+      "knife",
+      "fork"
+    ],
+    [
+      "sun",
+      "moon"
+    ],
+    [
+      "spider",
+      "web"
+    ]
+  ],
+  "scrambled_pairs": [
+    [
+      "bread",
+      "chips"
+    ],
+    [
+      "salt",
+      "thread"
+    ],
+    [
+      "thunder",
+      "arrow"
+    ],
+    [
+      "lock",
+      "nail"
+    ],
+    [
+      "cat",
+      "fork"
+    ],
+    [
+      "fish",
+      "moon"
+    ],
+    [
+      "needle",
+      "web"
+    ],
+    [
+      "bow",
+      "butter"
+    ],
+    [
+      "hammer",
+      "pepper"
+    ],
+    [
+      "knife",
+      "lightning"
+    ],
+    [
+      "sun",
+      "key"
+    ],
+    [
+      "spider",
+      "mouse"
+    ]
+  ]
+}

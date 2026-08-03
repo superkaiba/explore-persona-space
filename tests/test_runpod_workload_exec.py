@@ -35,6 +35,7 @@ All CPU, mocked SSH — no live pod.
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 
@@ -103,16 +104,28 @@ def _spec(*, extra: dict | None = None, workload_cmd: str = WORKLOAD, **override
 
 
 def test_launch_executes_workload_when_opted_in(monkeypatch):
+    # #1698 Item 1(b): a non-main repo_branch fires the post-bootstrap
+    # branch-assert SSH probe BEFORE _execute_workload_on_pod runs its
+    # own 3-call sequence. Prepend the branch-verify output so the
+    # scripted fake covers all 4 SSH calls.
     ssh = _wire_exec_leg(
         monkeypatch,
-        ["SYNC-OK abc123\n", "WRAPPER-STARTED 4242\n", "LAUNCH-OK pid=777\n"],
+        [
+            "issue-909\n",  # #1698 branch assertion: `git rev-parse --abbrev-ref HEAD`
+            "SYNC-OK abc123\n",
+            "WRAPPER-STARTED 4242\n",
+            "LAUNCH-OK pid=777\n",
+        ],
     )
     handle = RP.RunPodBackend().launch(
         _spec(extra={"execute_workload": True, "repo_branch": "issue-909"})
     )
-    # Exactly 3 SSH calls, in order: sync -> detach -> verify.
-    assert len(ssh.calls) == 3
-    sync_cmd, launch_cmd, verify_cmd = ssh.calls
+    # 4 SSH calls: the #1698 branch-assert probe then the 3-call
+    # execution-leg sequence (sync -> detach -> verify). The branch-assert
+    # probe is the FIRST call.
+    assert len(ssh.calls) == 4
+    branch_probe_cmd, sync_cmd, launch_cmd, verify_cmd = ssh.calls
+    assert "git rev-parse --abbrev-ref HEAD" in branch_probe_cmd, branch_probe_cmd
     assert "refs/heads/issue-909" in sync_cmd
     assert "git reset --hard" in sync_cmd
     assert "SYNC-MISMATCH" in sync_cmd  # HEAD == FETCH_HEAD verification present
@@ -218,7 +231,23 @@ def test_launch_dead_pid_raises(monkeypatch):
 
 
 def test_branch_sync_mismatch_raises(monkeypatch):
-    _wire_exec_leg(monkeypatch, ["SYNC-MISMATCH head=aaa fetch=bbb\n"])
+    # #1698 Item 1(b): the branch-assert SSH probe fires BEFORE
+    # _execute_workload_on_pod's own SYNC probe when repo_branch is
+    # non-`main`. Prepend the branch-verify output so the SYNC-MISMATCH
+    # output reaches the second SSH call — the one _execute_workload_on_pod
+    # actually issues. #1858: a first sync failure now runs the git
+    # kill-and-reap + EXACTLY ONE retry, so a persistent mismatch consumes
+    # sync → reap → sync before the terminal raise (which carries both
+    # failure summaries + the REAP-OK evidence).
+    _wire_exec_leg(
+        monkeypatch,
+        [
+            "issue-909\n",
+            "SYNC-MISMATCH head=aaa fetch=bbb\n",
+            REAP_CLEAN,
+            "SYNC-MISMATCH head=aaa fetch=bbb\n",
+        ],
+    )
     with pytest.raises(RP.RunPodWorkloadStartError) as ei:
         RP.RunPodBackend().launch(
             _spec(extra={"execute_workload": True, "repo_branch": "issue-909"})
@@ -226,6 +255,7 @@ def test_branch_sync_mismatch_raises(monkeypatch):
     msg = str(ei.value)
     assert "pod-909" in msg and "issue-909" in msg
     assert "SYNC-MISMATCH" in msg
+    assert "sync retry after reap failed" in msg
 
 
 def test_missing_pods_conf_row_raises(monkeypatch):
@@ -315,6 +345,7 @@ def _rendered_scripts(workload_cmd: str = WORKLOAD) -> list[str]:
             log_path="/workspace/logs/issue-909.log",
             pid_file="/workspace/logs/issue-909.pid",
         ),
+        RP._render_sync_reap_script(),
     ]
 
 
@@ -328,9 +359,10 @@ def test_remote_scripts_never_shell_task_py():
 
 
 def test_rendered_scripts_bash_n(tmp_path):
-    """All three remote scripts parse under ``bash -n``, including a
-    quoting-stress workload_cmd carrying a single quote, ``$VAR``, and
-    ``&&`` (the GCP ``test_render_startup_script_is_valid_bash`` precedent)."""
+    """All four remote scripts (sync / launch / verify / #1858 reap) parse
+    under ``bash -n``, including a quoting-stress workload_cmd carrying a
+    single quote, ``$VAR``, and ``&&`` (the GCP
+    ``test_render_startup_script_is_valid_bash`` precedent)."""
     stress = "VAR=1 bash scripts/x.sh --note 'it'\\''s fine' && echo \"$VAR done\""
     for i, script in enumerate(_rendered_scripts(workload_cmd=stress)):
         path = tmp_path / f"script_{i}.sh"
@@ -344,6 +376,179 @@ def test_rendered_scripts_bash_n(tmp_path):
 def test_branch_sync_script_rejects_suspicious_branch():
     with pytest.raises(RP.RunPodWorkloadStartError, match="suspicious branch"):
         RP._render_branch_sync_script("issue-909; rm -rf /")
+
+
+# ---------------------------------------------------------------------------
+# #1858 — branch-sync kill-and-reap + bounded retry (MooseFS-hung git; the
+# incident-#1769-fu1 class: local ssh timeout orphaned a REMOTE git holding
+# .git/index.lock, and the old conditional reap could never fire against it)
+# ---------------------------------------------------------------------------
+
+REAP_CLEAN = "REAP-OK killed=0 survivors=0 lock_removed=yes\n"
+
+
+def test_branch_sync_script_per_op_remote_timeouts():
+    """#1858 acceptance 1: the three git MUTATION ops self-bound with per-op
+    remote ``timeout -k 10`` (120/20/20; worst case incl. the KILL grace
+    190 s, strictly under the local ssh bound so the remote bounds fire
+    first and the hung lock-holder dies REMOTELY); the rev-parse
+    verification lines stay bare (ref reads, not FUSE-heavy ops)."""
+    script = RP._render_branch_sync_script("issue-909")
+    assert 'timeout -k 10 120 git fetch origin "refs/heads/issue-909"' in script
+    assert 'timeout -k 10 20 git checkout -q -f -B "issue-909" FETCH_HEAD' in script
+    assert "timeout -k 10 20 git reset --hard -q FETCH_HEAD" in script
+    for line in script.splitlines():
+        if "rev-parse" in line:
+            assert "timeout" not in line, line
+    # Keep the pre-existing opening conditional lock-reap line.
+    assert "pgrep -x git >/dev/null 2>&1 || rm -f .git/index.lock" in script
+    # Summed worst case (every TERM needing the -k 10 KILL grace) stays
+    # strictly under the local ssh bound.
+    assert RP.SYNC_SSH_TIMEOUT_SECONDS > (120 + 10) + (20 + 10) + (20 + 10)
+
+
+def test_sync_first_failure_reap_then_retry_succeeds(monkeypatch):
+    """#1858 acceptance 5(i): FIRST sync failure (a local-TimeoutExpired-
+    shaped RunPodWorkloadStartError) → reap (clean) → EXACTLY ONE retry →
+    the launch proceeds. Recorded SSH sequence: sync, reap, sync, launch,
+    verify."""
+    ssh = _wire_exec_leg(
+        monkeypatch,
+        [
+            RP.RunPodWorkloadStartError(
+                "branch sync of pod-909 to 'main': ssh to 1.2.3.4:22222 failed "
+                "(TimeoutExpired: Command timed out)"
+            ),
+            REAP_CLEAN,
+            "SYNC-OK abc123\n",
+            "WRAPPER-STARTED 1\n",
+            "LAUNCH-OK pid=777\n",
+        ],
+    )
+    handle = RP.RunPodBackend().launch(_spec(extra={"execute_workload": True}))
+    assert len(ssh.calls) == 5
+    sync1, reap, sync2, launch_cmd, verify_cmd = ssh.calls
+    assert "refs/heads/main" in sync1
+    assert "REAP-OK" in reap and "pgrep -x git" in reap
+    assert sync2 == sync1  # the retry re-renders the identical sync script
+    assert "launch_issue_909.sh" in launch_cmd
+    assert "LAUNCH-OK" in verify_cmd
+    assert handle.extra["workload_executed"] is True
+    assert handle.extra["workload_pid"] == 777
+    assert handle.extra["synced_sha"] == "abc123"
+
+
+def test_sync_reap_survivors_raises_without_retry(monkeypatch):
+    """#1858 acceptance 5(ii): ``survivors>0`` (git pids outliving SIGKILL —
+    the mount-level D-state wedge) → immediate typed raise carrying the
+    REAP-OK evidence, and NO second sync attempt."""
+    ssh = _wire_exec_leg(
+        monkeypatch,
+        [
+            "some sync output with no confirmation line\n",
+            "REAP-OK killed=2 survivors=1 lock_removed=yes\n",
+        ],
+    )
+    with pytest.raises(RP.RunPodWorkloadStartError) as ei:
+        RP.RunPodBackend().launch(_spec(extra={"execute_workload": True}))
+    msg = str(ei.value)
+    assert "unkillable git survivors (moosefs D-state signature)" in msg
+    assert "REAP-OK killed=2 survivors=1 lock_removed=yes" in msg
+    assert "did not confirm SYNC-OK" in msg  # the first-failure summary rides along
+    assert len(ssh.calls) == 2  # sync, reap — and nothing after
+
+
+def test_sync_retry_failure_raises_with_reap_evidence(monkeypatch):
+    """#1858 acceptance 5(iii): clean reap but the retried sync ALSO fails →
+    raise carrying BOTH failure summaries + the REAP-OK line."""
+    ssh = _wire_exec_leg(
+        monkeypatch,
+        [
+            "some sync output with no confirmation line\n",
+            REAP_CLEAN,
+            RP.RunPodWorkloadStartError(
+                "branch sync of pod-909 to 'main': remote command exited rc=124"
+            ),
+        ],
+    )
+    with pytest.raises(RP.RunPodWorkloadStartError) as ei:
+        RP.RunPodBackend().launch(_spec(extra={"execute_workload": True}))
+    msg = str(ei.value)
+    assert "sync retry after reap failed" in msg
+    assert "REAP-OK killed=0 survivors=0 lock_removed=yes" in msg
+    assert "did not confirm SYNC-OK" in msg  # first failure summary
+    assert "rc=124" in msg  # retry failure summary
+    assert len(ssh.calls) == 3  # sync, reap, sync — never a third sync
+
+
+def test_sync_reap_ssh_failure_raises_without_retry(monkeypatch):
+    """The reap probe ITSELF failing (pod-level wedge) raises with both
+    summaries and never retries the sync."""
+    ssh = _wire_exec_leg(
+        monkeypatch,
+        [
+            "some sync output with no confirmation line\n",
+            RP.RunPodWorkloadStartError(
+                "git kill-and-reap on pod-909: ssh to 1.2.3.4:22222 failed"
+            ),
+        ],
+    )
+    with pytest.raises(RP.RunPodWorkloadStartError) as ei:
+        RP.RunPodBackend().launch(_spec(extra={"execute_workload": True}))
+    msg = str(ei.value)
+    assert "kill-and-reap probe ALSO failed" in msg
+    assert len(ssh.calls) == 2
+
+
+def test_sync_reap_missing_reap_ok_line_raises_without_retry(monkeypatch):
+    """A reap that exits 0 WITHOUT the REAP-OK report line is unverified —
+    raise with the reap output tail, no retry."""
+    ssh = _wire_exec_leg(
+        monkeypatch,
+        [
+            "some sync output with no confirmation line\n",
+            "garbage reap output\n",
+        ],
+    )
+    with pytest.raises(RP.RunPodWorkloadStartError) as ei:
+        RP.RunPodBackend().launch(_spec(extra={"execute_workload": True}))
+    msg = str(ei.value)
+    assert "did not confirm REAP-OK" in msg
+    assert "garbage reap output" in msg
+    assert len(ssh.calls) == 2
+
+
+def test_reap_script_real_bash_zero_git_branch(tmp_path):
+    """#1858 acceptance 5(vi): REAL-BASH execution of the RENDERED reap
+    script on the MODAL zero-git branch. PATH-shimmed STUB ``pgrep`` (exit
+    1 = no match) + stub ``kill`` — NEVER live pgrep/kill on the shared VM
+    (``kill`` is additionally a bash builtin; the zero-git branch never
+    reaches it, which ``killed=0`` asserts). The renderer's ``clone_dir``
+    seam points the script's cd at a tmp fake clone with a pre-created
+    ``.git/index.lock``. Asserts rc=0, the exact REAP-OK line, and the
+    lock removed."""
+    clone = tmp_path / "clone"
+    (clone / ".git").mkdir(parents=True)
+    lock = clone / ".git" / "index.lock"
+    lock.write_text("", encoding="utf-8")
+    shim = tmp_path / "bin"
+    shim.mkdir()
+    (shim / "pgrep").write_text("#!/bin/bash\nexit 1\n", encoding="utf-8")
+    (shim / "pgrep").chmod(0o755)
+    (shim / "kill").write_text("#!/bin/bash\nexit 0\n", encoding="utf-8")
+    (shim / "kill").chmod(0o755)
+    script_path = tmp_path / "reap.sh"
+    script_path.write_text(
+        RP._render_sync_reap_script(clone_dir=str(clone)) + "\n", encoding="utf-8"
+    )
+    env = dict(os.environ)
+    env["PATH"] = f"{shim}:{env['PATH']}"
+    proc = subprocess.run(
+        ["bash", str(script_path)], capture_output=True, text=True, env=env, check=False
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "REAP-OK killed=0 survivors=0 lock_removed=yes" in proc.stdout
+    assert not lock.exists()  # removed UNCONDITIONALLY
 
 
 # ---------------------------------------------------------------------------
@@ -606,6 +811,14 @@ def test_end_to_end_failover_spec_flows_through_execution_leg(monkeypatch, tmp_p
     )
 
     _noop_provision(monkeypatch)
+    # #1698 Item 1(b): no-op the post-bootstrap branch assertion — this
+    # test uses `_execute_workload_on_pod` as a stub, not the real SSH
+    # fake, so the branch-assert SSH call would try to resolve
+    # pod-909's endpoint from a real (empty) pods.conf and fail. The
+    # branch-assertion body has its own direct tests in
+    # `tests/test_runpod_backend.py`; here we exercise the failover +
+    # execution-leg dispatch specifically.
+    monkeypatch.setattr(RP, "_assert_pod_on_branch", lambda pod_name, expected_branch: None)
     executed: list = []
 
     def _fake_exec(spec, *, pod_name, log_path, pid_file, sentinel_path, attempt_id):
@@ -698,7 +911,11 @@ def test_launch_attaches_partial_handle_on_workload_start_error(monkeypatch):
     error carries a PARTIAL handle matching the success-path handle shape
     except ``workload_executed is False`` + ``workload_start_error`` — and the
     SUCCESS-path handle ``extra`` stays byte-identical (no new keys)."""
-    _wire_exec_leg(monkeypatch, [])
+    # #1698 Item 1(b): supply the branch-assert SSH output; the SSH fake
+    # is otherwise scripted with an empty output list so the execution
+    # leg's own SSH calls (never reached because _execute_workload_on_pod
+    # is stubbed to raise) do not draw from it.
+    _wire_exec_leg(monkeypatch, ["issue-909\n"])
 
     def _fake_exec(spec, **kwargs):
         raise RP.RunPodWorkloadStartError("branch sync of pod-909 timed out (ssh TimeoutExpired)")
@@ -890,6 +1107,140 @@ def test_launch_fractional_boot_disk_gb_raises_named_valueerror(monkeypatch):
     with pytest.raises(ValueError, match="boot_disk_gb"):
         RP.RunPodBackend().launch(_cpu_spec("lora-7b", {"boot_disk_gb": 575.5}))
     assert argvs == []
+
+
+# ---------------------------------------------------------------------------
+# #1669 — launch env pins: handle persist + launcher render + end-to-end
+# ---------------------------------------------------------------------------
+
+_PINS_1669 = {"WANDB_PROJECT": "issue1586_methodgen"}
+
+
+def test_launch_handle_extra_carries_env_pins(monkeypatch):
+    """#1669 (mirror of test_launch_handle_extra_carries_boot_disk_gb): a
+    pinned spec's handle extra carries ``env_pins`` verbatim; a pin-less
+    spec OMITS the key (the omit-when-absent contract the
+    ``_PRE_954_SUCCESS_EXTRA_KEYS`` exact-set tests pin)."""
+    _wire_exec_leg(monkeypatch, [])
+    handle = RP.RunPodBackend().launch(_spec(extra={"env_pins": dict(_PINS_1669)}))
+    assert handle.extra["env_pins"] == _PINS_1669
+
+    _wire_exec_leg(monkeypatch, [])
+    handle2 = RP.RunPodBackend().launch(_spec())
+    assert "env_pins" not in handle2.extra
+
+
+def test_launch_with_env_pins_renders_pin_export_before_default(monkeypatch):
+    """#1669 END-TO-END incident-path test (#1586): pinned launch → handle →
+    sidecar roundtrip → ``_runspec_from_runpod_handle`` → the router's
+    ``execute_workload`` opt-in (the ``router.py`` failover ``replace``
+    shape) → a REAL ``launch()`` through ``_wire_exec_leg`` (only
+    ``_ssh_pod_run`` faked, so ``_execute_workload_on_pod`` runs for real)
+    — and the RECORDED launcher body carries the pin export at an index
+    BEFORE the ``${WANDB_PROJECT:-issue<N>}`` default line. This is the
+    ONLY test spanning the renderer call-site kwarg thread: without it, an
+    implementer who adds the renderer kwarg but forgets the call-site
+    thread goes green while the failover pod boots with the generic
+    default."""
+    from dataclasses import replace
+
+    from explore_persona_space.backends.issue_dispatch import (
+        deserialize_handle,
+        serialize_handle,
+    )
+    from scripts import backend_poll as bp
+
+    # (1) The pinned launch persists env_pins into the handle sidecar.
+    _wire_exec_leg(monkeypatch, [])
+    handle = RP.RunPodBackend().launch(_spec(extra={"env_pins": dict(_PINS_1669)}))
+    roundtripped = deserialize_handle(serialize_handle(handle))
+    # (2) The failover reconstructor forwards them.
+    spec2 = bp._runspec_from_runpod_handle(roundtripped, 909)
+    assert spec2.extra["env_pins"] == _PINS_1669
+    # (3) The failover opts into the execution leg (router.py's
+    #     `replace(spec, extra={**dict(spec.extra or {}), "execute_workload": True})`).
+    spec3 = replace(spec2, extra={**dict(spec2.extra or {}), "execute_workload": True})
+    ssh = _wire_exec_leg(
+        monkeypatch,
+        ["SYNC-OK abc123\n", "WRAPPER-STARTED 4242\n", "LAUNCH-OK pid=777\n"],
+    )
+    handle2 = RP.RunPodBackend().launch(spec3)
+    assert handle2.extra["workload_executed"] is True
+    body = ssh.calls[1]  # sync -> DETACH (the launcher heredoc) -> verify
+    pin_idx = body.index("export WANDB_PROJECT=issue1586_methodgen")
+    default_idx = body.index('WANDB_PROJECT="${WANDB_PROJECT:-')
+    assert pin_idx < default_idx, "pin export must precede the :-default line"
+
+
+def test_render_launch_script_exports_shell_escaped_env_pins():
+    """#1669: a pin value with a space + single-quote renders shlex-quoted,
+    sorted, and positioned BEFORE the WANDB_PROJECT:-default line."""
+    import shlex as _shlex
+
+    tricky_value = "fu lora's group"  # space + single-quote → must shlex-quote
+    body = RP._render_launch_script(
+        issue=909,
+        workload_cmd=WORKLOAD,
+        log_path="/workspace/logs/issue-909.log",
+        pid_file="/workspace/logs/issue-909.pid",
+        sentinel_path="/workspace/eval_results/issue_909/att/s.json",
+        attempt_id=ATTEMPT,
+        env_pins={"WANDB_RUN_GROUP": tricky_value, "WANDB_PROJECT": "px"},
+    )
+    lines = body.splitlines()
+    group_line = f"export WANDB_RUN_GROUP={_shlex.quote(tricky_value)}"
+    assert group_line in lines
+    proj_idx = lines.index("export WANDB_PROJECT=px")
+    group_idx = lines.index(group_line)
+    default_idx = next(i for i, ln in enumerate(lines) if 'WANDB_PROJECT="${WANDB_PROJECT:-' in ln)
+    # Sorted (WANDB_PROJECT < WANDB_RUN_GROUP) and both before the default.
+    assert proj_idx < group_idx < default_idx
+
+
+def test_render_launch_script_no_pins_byte_identical():
+    """#1669 (implementer note 2 — NO circular post-change fixture): a
+    pin-less render carries NO pin export for any allowlisted key — the
+    only ``export WANDB_PROJECT`` line is the ``:-`` default — and
+    ``env_pins=None`` renders identically to ``env_pins={}`` (both take
+    the no-pin path). Structural launcher content intact."""
+    from explore_persona_space.backends.base import ENV_PIN_ALLOWED_KEYS
+
+    kwargs = dict(
+        issue=909,
+        workload_cmd=WORKLOAD,
+        log_path="/workspace/logs/issue-909.log",
+        pid_file="/workspace/logs/issue-909.pid",
+        sentinel_path="/workspace/eval_results/issue_909/att/s.json",
+        attempt_id=ATTEMPT,
+    )
+    body_default = RP._render_launch_script(**kwargs)
+    body_none = RP._render_launch_script(**kwargs, env_pins=None)
+    body_empty = RP._render_launch_script(**kwargs, env_pins={})
+    assert body_default == body_none == body_empty
+    lines = body_default.splitlines()
+    wandb_project_lines = [ln for ln in lines if ln.startswith("export WANDB_PROJECT")]
+    assert wandb_project_lines == ['export WANDB_PROJECT="${WANDB_PROJECT:-issue909}"']
+    for key in sorted(ENV_PIN_ALLOWED_KEYS - {"WANDB_PROJECT"}):
+        assert not any(ln.startswith(f"export {key}=") for ln in lines), key
+    # Structural content intact (heredoc + detach + pidfile echo).
+    assert "EPSEOF" in body_default
+    assert "setsid" in body_default
+    assert "echo $$ > /workspace/logs/issue-909.pid" in body_default
+
+
+def test_render_launch_script_rejects_non_allowlisted_pin_key():
+    """#1669 defense in depth: the renderer re-validates independently of
+    the CLI — a non-allowlisted key in a (hand-edited) sidecar raises."""
+    with pytest.raises(ValueError, match="ENV_PIN_ALLOWED_KEYS"):
+        RP._render_launch_script(
+            issue=909,
+            workload_cmd=WORKLOAD,
+            log_path="/workspace/logs/issue-909.log",
+            pid_file="/workspace/logs/issue-909.pid",
+            sentinel_path="/workspace/eval_results/issue_909/att/s.json",
+            attempt_id=ATTEMPT,
+            env_pins={"WANDB_API_KEY": "x"},
+        )
 
 
 def test_launch_handle_extra_carries_boot_disk_gb(monkeypatch):

@@ -1,0 +1,13 @@
+{
+  "script": "scripts/issue1639_tier15_ladder_fig.py",
+  "git_commit": "d5e7b37fb9b5446d55379809fb18f53ec30e11f6",
+  "inputs": [
+    "eval_results/issue_825/tier15_intercept_refit/results.json",
+    "eval_results/issue_825/map_alignment/results.json",
+    "eval_results/issue_1345/tier15_intercept_refit/results.json",
+    "eval_results/issue_1345/operator_comparison_{instruct,base}_context.json",
+    "eval_results/issue_1310/xpersona_similarity/tier15_intercept_refit/results.json",
+    "eval_results/issue_1310/xpersona_similarity/reparam_{base,instruct}.json"
+  ],
+  "note": "Open markers at the bottom edge are clipped below y=-1.05; true values in the results JSONs. Rotation rungs (family A only) come from the committed #825 map_alignment composition variants (orthogonal / scaled-orthogonal alignments), fit on paired activations like the GL rung."
+}

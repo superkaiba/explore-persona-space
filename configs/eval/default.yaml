@@ -3,7 +3,7 @@ alignment_tasks: [betley_freeform, wang_44, strongreject, truthfulqa_mc2]
 judge_model: "claude-sonnet-4-5-20250929"
 samples_per_prompt: 100
 temperature: 1.0
-max_new_tokens: 1024
+max_new_tokens: 2048
 num_completions: 10
 marker_token: "[ZLT]"
 vllm_tensor_parallel: 1

@@ -285,8 +285,7 @@ def _forbid_real_guard_apply_launches(request, monkeypatch):
         return _guarded
 
     for asw in watchers:
-        if hasattr(asw, "_launch_guard_apply"):
-            monkeypatch.setattr(asw, "_launch_guard_apply", _make_guarded(asw._launch_guard_apply))
+        monkeypatch.setattr(asw, "_launch_guard_apply", _make_guarded(asw._launch_guard_apply))
 
 
 # ─── #1247 fleet-mutating pass stub for FULL-main() watcher tests (#1278) ────
@@ -324,10 +323,29 @@ _FLEET_MUTATING_PASS_NAMES = (
     # reconcile_registry(apply=False) reads against the LIVE registry and can
     # write real sidecar rows / state / pushes from a full-main() unit test.
     "registry_drift_pass",
+    # #1806: escalate-only too, but it runs a REAL `git stash list` against
+    # the LIVE shared root + scans the real ~/.task-workflow/root-sync-rescue/
+    # dir and can write real sidecar rows / state / pushes from a full-main()
+    # unit test; its own tests stub the collector / push / path seams instead.
+    "stash_rescue_audit_pass",
     # #1564: flag-only too, but it sweeps the LIVE registry's completed set,
     # runs real gh/git probes, and can post REAL epm:progress markers on live
     # tasks + sidecar rows + pushes from a full-main() unit test.
     "completed_unmerged_pass",
+    # #1704: escalate-only too, but it sweeps the LIVE registry's
+    # non-`proposed` set, runs real scoped HF listings + real
+    # `git ls-tree` against the live repo, and can write real sidecar
+    # rows + fire real Telegram pushes from a full-main() unit test;
+    # its own tests stub `_partial_bundle_candidate_issues` /
+    # `_partial_bundle_scoped_listing` / `_committed_eval_paths` seams
+    # instead.
+    "partial_bundle_pass",
+    # #1681: the urgent-park router sweeps the LIVE tasks tree for parked
+    # workflow-fix candidates and can run a real pytest subprocess, FILE +
+    # dispatch a real task via file_infra_task.py, and post REAL
+    # epm:workflow-fix-task-filed markers; its own tests use tmp-root
+    # overrides + autospec'd subprocess seams instead.
+    "urgent_wf_park_pass",
     "cpu_guard_pass",
     "happy_patch_pass",
     "data_disk_pass",

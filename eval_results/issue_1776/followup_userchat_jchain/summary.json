@@ -1,0 +1,524 @@
+{
+  "dv": "MRR / recall@50 of the generated answer's content tokens in the lens-decoded vocab ranking of v\u0302(C), vs a 200-draw shuffled-pairing null (5d chain composition)",
+  "question": "does the causally transported context signal (anchored Jacobian) carry the answer's actual words, as the fitted maps do?",
+  "n_ctx": 999,
+  "max_ctx": 0,
+  "df_cap": 0.5,
+  "topk": 50,
+  "n_null": 200,
+  "seed": 0,
+  "reproduction_gate": {
+    "applied": true,
+    "variant": "mprime_x50k",
+    "reproduced_mrr": 0.011360393650052324,
+    "committed_mrr": 0.011360393650052324,
+    "abs_diff": 0.0,
+    "tol": 1e-09,
+    "committed_n_ctx": 999
+  },
+  "variants": {
+    "mprime_x50k": {
+      "variant": "mprime_x50k",
+      "input_layer": 14,
+      "n_ctx": 999,
+      "n_ctx_used": 999,
+      "df_cap": 0.5,
+      "topk": 50,
+      "mrr": 0.011360393650052324,
+      "recall_at_k": 0.0010728074601721283,
+      "null": {
+        "n_draws": 200,
+        "mrr_mean": 0.0013061650315259097,
+        "mrr_p975": 0.002189864005325146,
+        "recall_mean": 0.00019797936569006247,
+        "recall_p975": 0.00038484846662870456
+      },
+      "per_context": {
+        "n_ctx": 999,
+        "mrr": 0.011360393650052317,
+        "null_mrr_pooled": 0.001325698229225045,
+        "frac_ctx_beating_own_null_p95": 0.2912912912912913,
+        "frac_ctx_beating_own_null_p975": 0.1921921921921922,
+        "per_ctx_null_percentile_quantiles": {
+          "5": 0.3354709418837675,
+          "25": 0.6753507014028056,
+          "50": 0.8517034068136272,
+          "75": 0.9649298597194389,
+          "90": 0.9899799599198397,
+          "95": 0.996993987975952,
+          "99": 1.0
+        },
+        "per_ctx_rr_quantiles": {
+          "5": 2.2178741461331132e-05,
+          "25": 0.00010487127080378541,
+          "50": 0.00031338138514572234,
+          "75": 0.0019324122479462285,
+          "90": 0.009634055265123231,
+          "95": 0.032365591397849364,
+          "99": 0.2009999999999991
+        },
+        "frac_rank1": 0.004004004004004004,
+        "frac_best_in_top50": 0.06506506506506507,
+        "median_best_rank_identity": 3191.0,
+        "median_best_rank_null": 9587.0,
+        "share_of_sum_rr_top_1pct": 0.5580504691675431,
+        "share_of_sum_rr_top_5pct": 0.8392225565250321,
+        "share_of_sum_rr_top_10pct": 0.9159979939376652,
+        "mrr_excluding_top10_ctx": 0.004818705685610649,
+        "mrr_excluding_top50_ctx": 0.001887602971067876,
+        "mrr_excluding_top100_ctx": 0.0010496471885893899
+      },
+      "echo_split": {
+        "stats": {
+          "n_content_tokens_total": 70655,
+          "n_echoed_total": 8197,
+          "n_non_echoed_total": 62458,
+          "mean_echoed_per_ctx": 8.205205205205205,
+          "mean_non_echoed_per_ctx": 62.52052052052052,
+          "n_ctx_with_echoed": 719,
+          "n_ctx_with_non_echoed": 995
+        },
+        "echoed": {
+          "mrr": 0.0006538406893331247,
+          "n_ctx_used": 719,
+          "null_mrr_mean": 6.921511129493816e-05,
+          "null_mrr_p975": 0.00010636555237569446
+        },
+        "non_echoed": {
+          "mrr": 0.01118945335525476,
+          "n_ctx_used": 995,
+          "null_mrr_mean": 0.0012904975135662469,
+          "null_mrr_p975": 0.0021823198433737834
+        }
+      },
+      "repro": {
+        "issue": 1776,
+        "git_commit": "7f3a6cac6e65192c806b1fbdf8a5a319faca4739",
+        "jlens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+        "timestamp_utc": "2026-07-30T16:47:02Z",
+        "torch_version": "2.8.0+cu128",
+        "transformers_version": "4.57.6",
+        "python_version": "3.11.15"
+      },
+      "provenance": {
+        "form": "fitted ridge M' applied via issue779_ffc_n1m_fits.apply_map",
+        "operator": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1776/data/issue_1776/hf_dl/issue1776_jacobian/analysis_tensors/comparator/m_ridge_x50k.pt",
+        "input_layer": 14
+      },
+      "reproduction_gate": {
+        "applied": true,
+        "variant": "mprime_x50k",
+        "reproduced_mrr": 0.011360393650052324,
+        "committed_mrr": 0.011360393650052324,
+        "abs_diff": 0.0,
+        "tol": 1e-09,
+        "committed_n_ctx": 999
+      }
+    },
+    "J_last_anchored": {
+      "variant": "J_last_anchored",
+      "input_layer": 14,
+      "n_ctx": 999,
+      "n_ctx_used": 999,
+      "df_cap": 0.5,
+      "topk": 50,
+      "mrr": 0.0003656543651142749,
+      "recall_at_k": 1.0648946819159585e-05,
+      "null": {
+        "n_draws": 200,
+        "mrr_mean": 0.0003454598129224737,
+        "mrr_p975": 0.0003627704751645272,
+        "recall_mean": 1.9605271564958007e-05,
+        "recall_p975": 3.699107842444908e-05
+      },
+      "per_context": {
+        "n_ctx": 999,
+        "mrr": 0.0003656543651142752,
+        "null_mrr_pooled": 0.00034538153577314137,
+        "frac_ctx_beating_own_null_p95": 0.08108108108108109,
+        "frac_ctx_beating_own_null_p975": 0.04504504504504504,
+        "per_ctx_null_percentile_quantiles": {
+          "5": 0.05981963927855713,
+          "25": 0.2780561122244489,
+          "50": 0.5651302605210421,
+          "75": 0.7920841683366733,
+          "90": 0.9258517034068137,
+          "95": 0.9709418837675351,
+          "99": 0.9930060120240481
+        },
+        "per_ctx_rr_quantiles": {
+          "5": 7.860065763296323e-06,
+          "25": 1.2475297208126176e-05,
+          "50": 4.9600714250285204e-05,
+          "75": 0.00013082199822216258,
+          "90": 0.00043932980729309156,
+          "95": 0.001178737048976843,
+          "99": 0.0071952872484621
+        },
+        "frac_rank1": 0.0,
+        "frac_best_in_top50": 0.001001001001001001,
+        "median_best_rank_identity": 20161.0,
+        "median_best_rank_null": 20478.0,
+        "share_of_sum_rr_top_1pct": 0.3859358689682209,
+        "share_of_sum_rr_top_5pct": 0.7333304092745735,
+        "share_of_sum_rr_top_10pct": 0.8299225934873987,
+        "mrr_excluding_top10_ctx": 0.0002194785823360043,
+        "mrr_excluding_top50_ctx": 0.00010135658670602642,
+        "mrr_excluding_top100_ctx": 6.861694523601893e-05
+      },
+      "echo_split": {
+        "stats": {
+          "n_content_tokens_total": 70655,
+          "n_echoed_total": 8197,
+          "n_non_echoed_total": 62458,
+          "mean_echoed_per_ctx": 8.205205205205205,
+          "mean_non_echoed_per_ctx": 62.52052052052052,
+          "n_ctx_with_echoed": 719,
+          "n_ctx_with_non_echoed": 995
+        },
+        "echoed": {
+          "mrr": 3.22062531912413e-05,
+          "n_ctx_used": 719,
+          "null_mrr_mean": 3.2082972692228136e-05,
+          "null_mrr_p975": 3.266466207656514e-05
+        },
+        "non_echoed": {
+          "mrr": 0.00035898368381103286,
+          "n_ctx_used": 995,
+          "null_mrr_mean": 0.0003387727037816846,
+          "null_mrr_p975": 0.0003561431747423917
+        }
+      },
+      "repro": {
+        "issue": 1776,
+        "git_commit": "7f3a6cac6e65192c806b1fbdf8a5a319faca4739",
+        "jlens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+        "timestamp_utc": "2026-07-30T16:47:38Z",
+        "torch_version": "2.8.0+cu128",
+        "transformers_version": "4.57.6",
+        "python_version": "3.11.15"
+      },
+      "provenance": {
+        "operator": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1776/data/issue_1776/hf_dl/issue1776_jacobian/analysis_tensors/jac_full/J_last.pt",
+        "input_layer": 14,
+        "anchors": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1776/data/issue_1776/9ater_anchors.pt",
+        "note": "all three J arms consume the SAME input summary (cx_last at layer 14) and the SAME anchors; the arms differ only in the averaged Jacobian tensor (the differentiation span), exactly as in 9ater cmd_p1",
+        "form": "(x - xmu14) @ J_last\u1d40 + ymu19 (anchored first-order prediction)"
+      },
+      "reproduction_gate": null
+    },
+    "J_last_affine": {
+      "variant": "J_last_affine",
+      "input_layer": 14,
+      "n_ctx": 999,
+      "n_ctx_used": 999,
+      "df_cap": 0.5,
+      "topk": 50,
+      "mrr": 0.0005463064266835748,
+      "recall_at_k": 6.321593341642736e-05,
+      "null": {
+        "n_draws": 200,
+        "mrr_mean": 0.0004113692403657536,
+        "mrr_p975": 0.0005982689770245945,
+        "recall_mean": 7.488212178006424e-05,
+        "recall_p975": 0.00017278439647467307
+      },
+      "per_context": {
+        "n_ctx": 999,
+        "mrr": 0.0005463064266835747,
+        "null_mrr_pooled": 0.0004079507187352988,
+        "frac_ctx_beating_own_null_p95": 0.07207207207207207,
+        "frac_ctx_beating_own_null_p975": 0.042042042042042045,
+        "per_ctx_null_percentile_quantiles": {
+          "5": 0.05901803607214429,
+          "25": 0.2655310621242485,
+          "50": 0.5581162324649298,
+          "75": 0.7760521042084169,
+          "90": 0.9192384769539079,
+          "95": 0.9690380761523045,
+          "99": 0.9910020040080161
+        },
+        "per_ctx_rr_quantiles": {
+          "5": 9.237320624553549e-06,
+          "25": 1.1647510758409591e-05,
+          "50": 5.2848536095550154e-05,
+          "75": 0.00016827935443253908,
+          "90": 0.0005558671263653701,
+          "95": 0.0014499693279962493,
+          "99": 0.006872328767123266
+        },
+        "frac_rank1": 0.0,
+        "frac_best_in_top50": 0.005005005005005005,
+        "median_best_rank_identity": 18922.0,
+        "median_best_rank_null": 18424.0,
+        "share_of_sum_rr_top_1pct": 0.529483749457816,
+        "share_of_sum_rr_top_5pct": 0.7678447111029428,
+        "share_of_sum_rr_top_10pct": 0.8534135204091529,
+        "mrr_excluding_top10_ctx": 0.0002515561228298523,
+        "mrr_excluding_top50_ctx": 0.00013189642235888747,
+        "mrr_excluding_top100_ctx": 8.836786144329188e-05
+      },
+      "echo_split": {
+        "stats": {
+          "n_content_tokens_total": 70655,
+          "n_echoed_total": 8197,
+          "n_non_echoed_total": 62458,
+          "mean_echoed_per_ctx": 8.205205205205205,
+          "mean_non_echoed_per_ctx": 62.52052052052052,
+          "n_ctx_with_echoed": 719,
+          "n_ctx_with_non_echoed": 995
+        },
+        "echoed": {
+          "mrr": 4.081731101281946e-05,
+          "n_ctx_used": 719,
+          "null_mrr_mean": 3.624634217627195e-05,
+          "null_mrr_p975": 4.0373048046492194e-05
+        },
+        "non_echoed": {
+          "mrr": 0.0005377275179259845,
+          "n_ctx_used": 995,
+          "null_mrr_mean": 0.00040336365222293696,
+          "null_mrr_p975": 0.0005924819692078134
+        }
+      },
+      "repro": {
+        "issue": 1776,
+        "git_commit": "58378c4632b7d679b8dfd784aeb4552c559f5530",
+        "jlens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+        "timestamp_utc": "2026-07-30T16:48:54Z",
+        "torch_version": "2.8.0+cu128",
+        "transformers_version": "4.57.6",
+        "python_version": "3.11.15"
+      },
+      "provenance": {
+        "operator": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1776/data/issue_1776/hf_dl/issue1776_jacobian/analysis_tensors/jac_full/J_last.pt",
+        "input_layer": 14,
+        "anchors": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1776/data/issue_1776/9ater_anchors.pt",
+        "note": "all three J arms consume the SAME input summary (cx_last at layer 14) and the SAME anchors; the arms differ only in the averaged Jacobian tensor (the differentiation span), exactly as in 9ater cmd_p1",
+        "form": "s_a * (x - xmu14) @ J_last\u1d40 + b + ymu19 (9ater r1-train affine fit)",
+        "s_affine_r1_train": 7.208097135128513,
+        "b_norm_r1_train": 4.825432882506596
+      },
+      "reproduction_gate": null
+    },
+    "J_ctx_anchored": {
+      "variant": "J_ctx_anchored",
+      "input_layer": 14,
+      "n_ctx": 999,
+      "n_ctx_used": 999,
+      "df_cap": 0.5,
+      "topk": 50,
+      "mrr": 0.00038569531924667003,
+      "recall_at_k": 1.0648946819159585e-05,
+      "null": {
+        "n_draws": 200,
+        "mrr_mean": 0.0003631650614567079,
+        "mrr_p975": 0.0003881535761461871,
+        "recall_mean": 1.0899197069409834e-05,
+        "recall_p975": 1.0648946819159585e-05
+      },
+      "per_context": {
+        "n_ctx": 999,
+        "mrr": 0.0003856953192466702,
+        "null_mrr_pooled": 0.0003626003183668309,
+        "frac_ctx_beating_own_null_p95": 0.11711711711711711,
+        "frac_ctx_beating_own_null_p975": 0.07107107107107107,
+        "per_ctx_null_percentile_quantiles": {
+          "5": 0.06993987975951906,
+          "25": 0.36773547094188375,
+          "50": 0.6282565130260521,
+          "75": 0.872745490981964,
+          "90": 0.962124248496994,
+          "95": 0.984068136272545,
+          "99": 0.9970140280561123
+        },
+        "per_ctx_rr_quantiles": {
+          "5": 8.194363752773123e-06,
+          "25": 1.309800587411565e-05,
+          "50": 5.47645125958379e-05,
+          "75": 0.00014756886902905195,
+          "90": 0.0004338775971944644,
+          "95": 0.0013414622760417095,
+          "99": 0.007937777777777776
+        },
+        "frac_rank1": 0.0,
+        "frac_best_in_top50": 0.001001001001001001,
+        "median_best_rank_identity": 18260.0,
+        "median_best_rank_null": 19326.0,
+        "share_of_sum_rr_top_1pct": 0.36112362286050675,
+        "share_of_sum_rr_top_5pct": 0.7292460801947525,
+        "share_of_sum_rr_top_10pct": 0.8255128723412495,
+        "mrr_excluding_top10_ctx": 0.00024081417250933557,
+        "mrr_excluding_top50_ctx": 0.00010845678568855032,
+        "mrr_excluding_top100_ctx": 7.430120904301881e-05
+      },
+      "echo_split": {
+        "stats": {
+          "n_content_tokens_total": 70655,
+          "n_echoed_total": 8197,
+          "n_non_echoed_total": 62458,
+          "mean_echoed_per_ctx": 8.205205205205205,
+          "mean_non_echoed_per_ctx": 62.52052052052052,
+          "n_ctx_with_echoed": 719,
+          "n_ctx_with_non_echoed": 995
+        },
+        "echoed": {
+          "mrr": 3.3826483841916115e-05,
+          "n_ctx_used": 719,
+          "null_mrr_mean": 3.284047821048562e-05,
+          "null_mrr_p975": 3.368527679921327e-05
+        },
+        "non_echoed": {
+          "mrr": 0.0003788365983100554,
+          "n_ctx_used": 995,
+          "null_mrr_mean": 0.000356339940166071,
+          "null_mrr_p975": 0.00038113637357565085
+        }
+      },
+      "repro": {
+        "issue": 1776,
+        "git_commit": "1ee497221b3ac04123379a5090e942b8c436d39b",
+        "jlens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+        "timestamp_utc": "2026-07-30T16:50:04Z",
+        "torch_version": "2.8.0+cu128",
+        "transformers_version": "4.57.6",
+        "python_version": "3.11.15"
+      },
+      "provenance": {
+        "operator": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1776/data/issue_1776/hf_dl/issue1776_jacobian/analysis_tensors/jac_full/J_ctx.pt",
+        "input_layer": 14,
+        "anchors": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1776/data/issue_1776/9ater_anchors.pt",
+        "note": "all three J arms consume the SAME input summary (cx_last at layer 14) and the SAME anchors; the arms differ only in the averaged Jacobian tensor (the differentiation span), exactly as in 9ater cmd_p1",
+        "form": "(x - xmu14) @ J_ctx\u1d40 + ymu19 (anchored first-order prediction)"
+      },
+      "reproduction_gate": null
+    },
+    "J_prefix_anchored": {
+      "variant": "J_prefix_anchored",
+      "input_layer": 14,
+      "n_ctx": 999,
+      "n_ctx_used": 999,
+      "df_cap": 0.5,
+      "topk": 50,
+      "mrr": 0.0003622107719891756,
+      "recall_at_k": 1.0648946819159585e-05,
+      "null": {
+        "n_draws": 200,
+        "mrr_mean": 0.0003570730129964724,
+        "mrr_p975": 0.0003653292177470515,
+        "recall_mean": 1.0648946819159585e-05,
+        "recall_p975": 1.0648946819159585e-05
+      },
+      "per_context": {
+        "n_ctx": 999,
+        "mrr": 0.0003622107719891757,
+        "null_mrr_pooled": 0.00035696751324212575,
+        "frac_ctx_beating_own_null_p95": 0.06306306306306306,
+        "frac_ctx_beating_own_null_p975": 0.028028028028028028,
+        "per_ctx_null_percentile_quantiles": {
+          "5": 0.07915831663326653,
+          "25": 0.31162324649298595,
+          "50": 0.5480961923847696,
+          "75": 0.7770541082164328,
+          "90": 0.9020040080160321,
+          "95": 0.9611222444889778,
+          "99": 0.9890180360721443
+        },
+        "per_ctx_rr_quantiles": {
+          "5": 7.76703855264124e-06,
+          "25": 1.2433364841584274e-05,
+          "50": 5.296610169491525e-05,
+          "75": 0.0001345805191959038,
+          "90": 0.00042459948920362217,
+          "95": 0.0012304678602341574,
+          "99": 0.008477498538866158
+        },
+        "frac_rank1": 0.0,
+        "frac_best_in_top50": 0.001001001001001001,
+        "median_best_rank_identity": 18880.0,
+        "median_best_rank_null": 19455.0,
+        "share_of_sum_rr_top_1pct": 0.3554407150024036,
+        "share_of_sum_rr_top_5pct": 0.7277295075393317,
+        "share_of_sum_rr_top_10pct": 0.8262732900173317,
+        "mrr_excluding_top10_ctx": 0.00022711037435832796,
+        "mrr_excluding_top50_ctx": 0.00010251434990258496,
+        "mrr_excluding_top100_ctx": 6.944902987813475e-05
+      },
+      "echo_split": {
+        "stats": {
+          "n_content_tokens_total": 70655,
+          "n_echoed_total": 8197,
+          "n_non_echoed_total": 62458,
+          "mean_echoed_per_ctx": 8.205205205205205,
+          "mean_non_echoed_per_ctx": 62.52052052052052,
+          "n_ctx_with_echoed": 719,
+          "n_ctx_with_non_echoed": 995
+        },
+        "echoed": {
+          "mrr": 3.248903630232367e-05,
+          "n_ctx_used": 719,
+          "null_mrr_mean": 3.273978319345206e-05,
+          "null_mrr_p975": 3.316691664095454e-05
+        },
+        "non_echoed": {
+          "mrr": 0.00035543447396719124,
+          "n_ctx_used": 995,
+          "null_mrr_mean": 0.0003501273089880551,
+          "null_mrr_p975": 0.00035877331646230564
+        }
+      },
+      "repro": {
+        "issue": 1776,
+        "git_commit": "231d195a634cf0ff3623a7c42c882801616f20c2",
+        "jlens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+        "timestamp_utc": "2026-07-30T16:51:16Z",
+        "torch_version": "2.8.0+cu128",
+        "transformers_version": "4.57.6",
+        "python_version": "3.11.15"
+      },
+      "provenance": {
+        "operator": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1776/data/issue_1776/hf_dl/issue1776_jacobian/analysis_tensors/jac_full/J_prefix.pt",
+        "input_layer": 14,
+        "anchors": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1776/data/issue_1776/9ater_anchors.pt",
+        "note": "all three J arms consume the SAME input summary (cx_last at layer 14) and the SAME anchors; the arms differ only in the averaged Jacobian tensor (the differentiation span), exactly as in 9ater cmd_p1",
+        "form": "(x - xmu14) @ J_prefix\u1d40 + ymu19 (anchored first-order prediction)"
+      },
+      "reproduction_gate": null
+    }
+  },
+  "committed_reference": {
+    "mprime_x50k": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1776/phase5/chain_composition.json",
+      "mrr": 0.011360393650052324,
+      "null_mrr_mean": 0.0013061650315259097,
+      "recall_at_k": 0.0010728074601721283
+    },
+    "m_shipped": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1776/phase5/chain_composition_shipped.json",
+      "mrr": 0.013930925291949229,
+      "null_mrr_mean": 0.0013329772688974242,
+      "null_mrr_p975": 0.002113896633749996,
+      "recall_at_k": 0.002075683125046031,
+      "input_layer": 19,
+      "note": "cited from disk (committed round); NOT recomputed here"
+    }
+  },
+  "inputs": {
+    "chunks": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1776/data/issue_1776/chain_chunks",
+    "dict": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1776/data/issue_1776/hf_dl/issue1776_jacobian/analysis_tensors/dictionaries/dictionary_l19.pt",
+    "mprime": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1776/data/issue_1776/hf_dl/issue1776_jacobian/analysis_tensors/comparator/m_ridge_x50k.pt",
+    "jac_dir": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1776/data/issue_1776/hf_dl/issue1776_jacobian/analysis_tensors/jac_full",
+    "anchors": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1776/data/issue_1776/9ater_anchors.pt",
+    "pass_b": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1776/data/issue_1776/hf_dl/issue779_monitoring/analysis_tensors/pass_b/train_context_vectors.pt"
+  },
+  "wall_seconds": 293.5,
+  "repro": {
+    "issue": 1776,
+    "git_commit": "231d195a634cf0ff3623a7c42c882801616f20c2",
+    "jlens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+    "timestamp_utc": "2026-07-30T16:51:16Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "python_version": "3.11.15"
+  }
+}

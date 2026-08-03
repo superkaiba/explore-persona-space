@@ -1,0 +1,114 @@
+{
+ "syc-con-s42": {
+  "ft_dose": 0.605,
+  "anchor": 0.65,
+  "gap": 0.04500000000000004,
+  "matched": true,
+  "fallback": null
+ },
+ "syc-con-s137": {
+  "ft_dose": 0.56,
+  "anchor": 0.61,
+  "gap": 0.04999999999999993,
+  "matched": false,
+  "fallback": null
+ },
+ "syc-po-s42": {
+  "ft_dose": 0.82,
+  "anchor": 0.61,
+  "gap": 0.20999999999999996,
+  "matched": false,
+  "fallback": null
+ },
+ "syc-po-s137": {
+  "ft_dose": 0.81,
+  "anchor": 0.79,
+  "gap": 0.020000000000000018,
+  "matched": true,
+  "fallback": null
+ },
+ "imp-con-s42": {
+  "ft_dose": 0.66,
+  "anchor": 0.81,
+  "gap": 0.15000000000000002,
+  "matched": false,
+  "fallback": null
+ },
+ "imp-con-s137": {
+  "ft_dose": 0.6432160804020101,
+  "anchor": 0.73,
+  "gap": 0.08678391959798992,
+  "matched": true,
+  "fallback": null
+ },
+ "imp-po-s42": {
+  "ft_dose": 0.695,
+  "anchor": 0.66,
+  "gap": 0.03499999999999992,
+  "matched": true,
+  "fallback": null
+ },
+ "imp-po-s137": {
+  "ft_dose": 0.6884422110552764,
+  "anchor": 0.66,
+  "gap": 0.028442211055276334,
+  "matched": true,
+  "fallback": null
+ },
+ "cas-con-s42": {
+  "ft_dose": 0.64,
+  "anchor": 0.6,
+  "gap": 0.040000000000000036,
+  "matched": true,
+  "fallback": null
+ },
+ "cas-con-s137": {
+  "ft_dose": 0.7989949748743719,
+  "anchor": 0.85,
+  "gap": 0.0510050251256281,
+  "matched": true,
+  "fallback": null
+ },
+ "cas-po-s42": {
+  "ft_dose": 0.655,
+  "anchor": 0.81,
+  "gap": 0.15500000000000003,
+  "matched": false,
+  "fallback": null
+ },
+ "cas-po-s137": {
+  "ft_dose": 0.6,
+  "anchor": 0.81,
+  "gap": 0.21000000000000008,
+  "matched": false,
+  "fallback": null
+ },
+ "mk-con-s42": {
+  "ft_dose": 2.1477094650268556,
+  "anchor": 6.35,
+  "gap": 4.2022905349731445,
+  "matched": false,
+  "fallback": "closest_approach"
+ },
+ "mk-con-s137": {
+  "ft_dose": 2.4166744232177733,
+  "anchor": 5.79,
+  "gap": 3.3733255767822268,
+  "matched": false,
+  "fallback": "closest_approach"
+ },
+ "mk-po-s42": {
+  "ft_dose": 3.148651885986328,
+  "anchor": 7.21,
+  "gap": 4.061348114013672,
+  "matched": false,
+  "fallback": "closest_approach"
+ },
+ "mk-po-s137": {
+  "ft_dose": 2.923549461364746,
+  "anchor": 7.42,
+  "gap": 4.496450538635254,
+  "matched": false,
+  "fallback": "closest_approach"
+ }
+}

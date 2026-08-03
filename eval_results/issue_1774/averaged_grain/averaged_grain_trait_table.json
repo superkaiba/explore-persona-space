@@ -1,0 +1,285 @@
+{
+  "per_arm_layer": {
+    "arm_context_L14": {
+      "arm": "arm_context",
+      "layer": 14,
+      "n_prefixes": 996,
+      "row_alignment_check": {
+        "recomputed_r2_per_context_pooled_oof": 0.8116988512252661,
+        "committed_r2_per_context_pooled_oof": 0.8116988512605695,
+        "tol": 0.0001
+      },
+      "r2_averaged_overall_pooled": 0.7993921956209027,
+      "r2_averaged_overall_fold_mean": 0.7982866862363388,
+      "per_trait_r2_averaged_foldacc": {
+        "evil": 0.8469815275357275,
+        "sycophancy": 0.8956571216126509,
+        "hallucination": 0.847632192078097
+      },
+      "per_trait_r2_averaged_pooled": {
+        "evil": 0.8490831297519739,
+        "sycophancy": 0.8960927250141117,
+        "hallucination": 0.8488092120307456
+      }
+    },
+    "arm_prefix_end_L14": {
+      "arm": "arm_prefix_end",
+      "layer": 14,
+      "n_prefixes": 996,
+      "row_alignment_check": {
+        "recomputed_r2_per_context_pooled_oof": 0.02107825863294155,
+        "committed_r2_per_context_pooled_oof": 0.02107825874958691,
+        "tol": 0.0001
+      },
+      "r2_averaged_overall_pooled": 0.17860812942945192,
+      "r2_averaged_overall_fold_mean": 0.17394121144281058,
+      "per_trait_r2_averaged_foldacc": {
+        "evil": -0.12533638243371903,
+        "sycophancy": 0.08832955736421255,
+        "hallucination": 0.04581106374956612
+      },
+      "per_trait_r2_averaged_pooled": {
+        "evil": -0.10988067047124739,
+        "sycophancy": 0.09213553580721956,
+        "hallucination": 0.05318203949490807
+      }
+    },
+    "arm_bare_query_L14": {
+      "arm": "arm_bare_query",
+      "layer": 14,
+      "n_prefixes": 996,
+      "row_alignment_check": {
+        "recomputed_r2_per_context_pooled_oof": 0.7169020319890589,
+        "committed_r2_per_context_pooled_oof": 0.7169020320359215,
+        "tol": 0.0001
+      },
+      "r2_averaged_overall_pooled": 0.4651877922112331,
+      "r2_averaged_overall_fold_mean": 0.462254257657786,
+      "per_trait_r2_averaged_foldacc": {
+        "evil": 0.7298330851026169,
+        "sycophancy": 0.661546325154467,
+        "hallucination": 0.599705565192945
+      },
+      "per_trait_r2_averaged_pooled": {
+        "evil": 0.7335436396386866,
+        "sycophancy": 0.6629592780486011,
+        "hallucination": 0.6027977835763947
+      }
+    },
+    "arm_query_avg_L14": {
+      "arm": "arm_query_avg",
+      "layer": 14,
+      "n_prefixes": 996,
+      "row_alignment_check": {
+        "recomputed_r2_per_context_pooled_oof": -0.01803198274382045,
+        "committed_r2_per_context_pooled_oof": -0.018031982730445373,
+        "tol": 0.0001
+      },
+      "r2_averaged_overall_pooled": 0.5741498837197643,
+      "r2_averaged_overall_fold_mean": 0.5717755769236678,
+      "per_trait_r2_averaged_foldacc": {
+        "evil": 0.67781705896153,
+        "sycophancy": 0.7780414395165995,
+        "hallucination": 0.6906064913330785
+      },
+      "per_trait_r2_averaged_pooled": {
+        "evil": 0.6822420174127475,
+        "sycophancy": 0.7789680566985695,
+        "hallucination": 0.6929965128073481
+      }
+    },
+    "arm_context_L18": {
+      "arm": "arm_context",
+      "layer": 18,
+      "n_prefixes": 996,
+      "row_alignment_check": {
+        "recomputed_r2_per_context_pooled_oof": 0.8385280828505571,
+        "committed_r2_per_context_pooled_oof": 0.8385280828508529,
+        "tol": 0.0001
+      },
+      "r2_averaged_overall_pooled": 0.8539929683894427,
+      "r2_averaged_overall_fold_mean": 0.8532024134130297,
+      "per_trait_r2_averaged_foldacc": {
+        "evil": 0.883268229997798,
+        "sycophancy": 0.9314548767897571,
+        "hallucination": 0.8879565229967432
+      },
+      "per_trait_r2_averaged_pooled": {
+        "evil": 0.8847834413757981,
+        "sycophancy": 0.9317500650813778,
+        "hallucination": 0.888975561118016
+      }
+    },
+    "arm_prefix_end_L18": {
+      "arm": "arm_prefix_end",
+      "layer": 18,
+      "n_prefixes": 996,
+      "row_alignment_check": {
+        "recomputed_r2_per_context_pooled_oof": 0.03138636096364256,
+        "committed_r2_per_context_pooled_oof": 0.03138636098660241,
+        "tol": 0.0001
+      },
+      "r2_averaged_overall_pooled": 0.25393454023936557,
+      "r2_averaged_overall_fold_mean": 0.24978104350566835,
+      "per_trait_r2_averaged_foldacc": {
+        "evil": -0.12451538106917304,
+        "sycophancy": 0.1558451434879966,
+        "hallucination": 0.03867323040960924
+      },
+      "per_trait_r2_averaged_pooled": {
+        "evil": -0.1099188534906046,
+        "sycophancy": 0.15948048059568154,
+        "hallucination": 0.047416520527105654
+      }
+    },
+    "arm_bare_query_L18": {
+      "arm": "arm_bare_query",
+      "layer": 18,
+      "n_prefixes": 996,
+      "row_alignment_check": {
+        "recomputed_r2_per_context_pooled_oof": 0.710562548807407,
+        "committed_r2_per_context_pooled_oof": 0.7105625487943156,
+        "tol": 0.0001
+      },
+      "r2_averaged_overall_pooled": 0.42382013550597764,
+      "r2_averaged_overall_fold_mean": 0.4207337141510536,
+      "per_trait_r2_averaged_foldacc": {
+        "evil": 0.7119208201090786,
+        "sycophancy": 0.6711576726646669,
+        "hallucination": 0.5973352619060839
+      },
+      "per_trait_r2_averaged_pooled": {
+        "evil": 0.7156601693121911,
+        "sycophancy": 0.6725738259994705,
+        "hallucination": 0.6009975073949319
+      }
+    },
+    "arm_query_avg_L18": {
+      "arm": "arm_query_avg",
+      "layer": 18,
+      "n_prefixes": 996,
+      "row_alignment_check": {
+        "recomputed_r2_per_context_pooled_oof": 0.0004944551051151436,
+        "committed_r2_per_context_pooled_oof": 0.0004944551184791202,
+        "tol": 0.0001
+      },
+      "r2_averaged_overall_pooled": 0.7201563850726989,
+      "r2_averaged_overall_fold_mean": 0.7186466636640075,
+      "per_trait_r2_averaged_foldacc": {
+        "evil": 0.7728463859529404,
+        "sycophancy": 0.8812457447372152,
+        "hallucination": 0.8061437743776587
+      },
+      "per_trait_r2_averaged_pooled": {
+        "evil": 0.7757949040860196,
+        "sycophancy": 0.881757157717336,
+        "hallucination": 0.8079069014176157
+      }
+    },
+    "arm_context_L19": {
+      "arm": "arm_context",
+      "layer": 19,
+      "n_prefixes": 996,
+      "row_alignment_check": {
+        "recomputed_r2_per_context_pooled_oof": 0.8637196795738457,
+        "committed_r2_per_context_pooled_oof": 0.8637196795453367,
+        "tol": 0.0001
+      },
+      "r2_averaged_overall_pooled": 0.8772167624095565,
+      "r2_averaged_overall_fold_mean": 0.8765598199882083,
+      "per_trait_r2_averaged_foldacc": {
+        "evil": 0.9040357094101887,
+        "sycophancy": 0.945006624808519,
+        "hallucination": 0.9063835732001319
+      },
+      "per_trait_r2_averaged_pooled": {
+        "evil": 0.9052663447791238,
+        "sycophancy": 0.9452035517597698,
+        "hallucination": 0.9071851984714251
+      }
+    },
+    "arm_prefix_end_L19": {
+      "arm": "arm_prefix_end",
+      "layer": 19,
+      "n_prefixes": 996,
+      "row_alignment_check": {
+        "recomputed_r2_per_context_pooled_oof": 0.02651087786401307,
+        "committed_r2_per_context_pooled_oof": 0.02651087773501104,
+        "tol": 0.0001
+      },
+      "r2_averaged_overall_pooled": 0.22370715169273014,
+      "r2_averaged_overall_fold_mean": 0.21939507197265584,
+      "per_trait_r2_averaged_foldacc": {
+        "evil": -0.033047686541043175,
+        "sycophancy": 0.14996244685657845,
+        "hallucination": -0.024932944269045132
+      },
+      "per_trait_r2_averaged_pooled": {
+        "evil": -0.01979999812444322,
+        "sycophancy": 0.1530063644776799,
+        "hallucination": -0.016156576941296796
+      }
+    },
+    "arm_bare_query_L19": {
+      "arm": "arm_bare_query",
+      "layer": 19,
+      "n_prefixes": 996,
+      "row_alignment_check": {
+        "recomputed_r2_per_context_pooled_oof": 0.7387608295313177,
+        "committed_r2_per_context_pooled_oof": 0.7387608294997552,
+        "tol": 0.0001
+      },
+      "r2_averaged_overall_pooled": 0.47146318236586193,
+      "r2_averaged_overall_fold_mean": 0.4686648275253756,
+      "per_trait_r2_averaged_foldacc": {
+        "evil": 0.6940288645950285,
+        "sycophancy": 0.7155873604326304,
+        "hallucination": 0.6459583251381075
+      },
+      "per_trait_r2_averaged_pooled": {
+        "evil": 0.6979526043401807,
+        "sycophancy": 0.7166058197254477,
+        "hallucination": 0.6489899378941364
+      }
+    },
+    "arm_query_avg_L19": {
+      "arm": "arm_query_avg",
+      "layer": 19,
+      "n_prefixes": 996,
+      "row_alignment_check": {
+        "recomputed_r2_per_context_pooled_oof": -0.0026585372914107452,
+        "committed_r2_per_context_pooled_oof": -0.002658537382840054,
+        "tol": 0.0001
+      },
+      "r2_averaged_overall_pooled": 0.7638212906204149,
+      "r2_averaged_overall_fold_mean": 0.7625736130485552,
+      "per_trait_r2_averaged_foldacc": {
+        "evil": 0.8068558398421397,
+        "sycophancy": 0.8987636047166521,
+        "hallucination": 0.8255697143077461
+      },
+      "per_trait_r2_averaged_pooled": {
+        "evil": 0.809332699029371,
+        "sycophancy": 0.8991261242857702,
+        "hallucination": 0.8270633381285819
+      }
+    }
+  },
+  "meta": {
+    "git_commit": "f34640d48adec014a1d3272bce01d05e4bc60d3f",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "timestamp_utc": "2026-07-29T10:45:29.151875+00:00",
+    "store_rev": "e590170619e7691c1a95c7b1bb20bda5fd4065ad",
+    "rb_rev": "037fcbb210bc52c459959b0746cc268fe08bae96",
+    "script": "scripts/issue1774_averaged_grain.py"
+  },
+  "conventions": {
+    "grain": "persona-averaged: per held-out prefix, avg_pred = mean of OOF rows over the prefix's eval rows in its held-out fold; avg_true = the prefix's ALL-row target mean (step_fits r2_averaged convention)",
+    "folds": "registry/folds.json \u2014 6 conv_id-grouped folds, fold seed 0 (fit battery)",
+    "trait_directions": "issue779 r_B bank, row layer-1, unit-normalized (issue1774_common.load_rb_bank)",
+    "per_trait_r2_averaged_foldacc": "res/tot accumulated per fold with per-fold test mean in tot \u2014 mirrors channels per_trait_heldout_r2 (per-answer) convention",
+    "per_trait_r2_averaged_pooled": "single pooled R\u00b2 over all prefixes, global mean",
+    "anchor": "r2_averaged_overall_fold_mean anchors against the fit_battery per-fold r2_averaged values (prefix_end ~0.174 / query_avg ~0.572 / context ~0.80 at L14)"
+  }
+}

@@ -14,3 +14,9 @@ The canonical post-vLLM-teardown guard ([[vllm-orphan-worker-after-destroy]]) qu
 3. Query `--query-compute-apps=pid,gpu_uuid` and raise only on PIDs whose `gpu_uuid` is in the CVD-visible set.
 
 Refinement of the teardown rule, not a replacement — the `del llm + destroy_* + psutil child-kill` sequence is still required. Canonical impl: `scripts/eval_issue396_logprob.py` `_check_orphan_pids_on_visible_gpus` + `tests/test_issue396_eval_orphan_pid_check.py` (three branches).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Orphan-PID check must be CVD-aware](feedback_orphan_pid_check_must_be_cvd_aware.md) — on multi-GPU pods filter compute-app PIDs by gpu_uuid vs the CVD-visible set. #396.

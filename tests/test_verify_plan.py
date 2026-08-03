@@ -179,10 +179,14 @@ def test_good_plan_passes_all():
         "c38_exit0_repo_wide_baseline": "SKIP",
         "c39_off_pod_phase_declaration": "SKIP",
         "c41_regression_anchor_executed": "SKIP",
+        "c42_commit_sha_resolves": "SKIP",
+        "c43_sentinel_lane": "SKIP",
+        "c44_committed_paths_gitignored": "SKIP",
+        "c45_change_dv_base_predictor_companion": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 40
+    assert len(results) == 44
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -1572,15 +1576,27 @@ def test_skillmd_canonical_escapes_sync_with_docstring():
     # docstring phrase must keep the double-backtick wrapping + the
     # `N/A —` / `Durability pin: N/A` prefix convention, or it evades
     # extraction here (the floor catches shrinkage, not a never-extracted
-    # phrase).
+    # phrase). ONE registered carve-out: c43's deliberately PREFIX-LESS
+    # phrase (`no sentinel dependence — auto-safe`, #1787) has its own
+    # explicit extraction below; any future prefix-less phrase needs its
+    # own extraction line here too — it is invisible to the alternation.
     doc = verify_plan.__doc__
     section = doc[doc.index("Canonical N/A escape phrases") : doc.index("WARN semantics")]
     phrases = re.findall(r"``((?:N/A —|Durability pin: N/A)[^`]+?)``", section)
     # Extraction guard (never-self-escapes precedent, :1232): 29 phrases at
-    # pin time. A shrinking count means the docstring format drifted and the
-    # parser silently under-covers — fix the regex; never lower this floor
-    # except for a deliberate check retirement (state which check).
+    # pin time (39 as of #1787). A shrinking count means the docstring format
+    # drifted and the parser silently under-covers — fix the regex; never
+    # lower this floor except for a deliberate check retirement (state which
+    # check).
     assert len(phrases) >= 29, (len(phrases), phrases)  # c4 registered (#1277)
+    # Prefix-less canonical escape (c43, #1787): registered standalone
+    # WITHOUT the N/A prefix, so the prefixed alternation above never
+    # extracts it. Extract it from the docstring (ground truth) so the
+    # wrapped-presence loop below pins its SKILL.md registration too; a
+    # future prefix-less phrase needs its own extraction line here.
+    prefixless = re.findall(r"``(no sentinel dependence[^`]+?)``", section)
+    assert prefixless, "c43 prefix-less escape phrase missing from docstring registration"
+    phrases += prefixless
     # Code->docstring leg: every `_standalone_na_declared` call-site tail must
     # match somewhere in the docstring section, so a new check's recognizer
     # cannot land unregistered (the SKILL.md asserts below then propagate the
@@ -1851,6 +1867,214 @@ def test_c12_word_split_x_line_does_not_anchor_window():
     r = by_id["c12_battery_multiplier"]
     assert r.status == "FAIL"
     assert "draw-bearing" in r.detail
+
+
+# ─── Check 12 — pool-quadratic screen class (#1901 / #1967) ────────────────
+
+SCREEN_SENT = (
+    "Phase w0 runs a transposed near-dupe screen of the 2,500 candidates against the train pool."
+)
+SCREEN_ARITH = "Sizing: 2,500^2 / 2 = 3.1e6 pairs at ~12 us per pair, ~40 s projected wall."
+SCREEN_BATCHED = "Implementation: one torch.cdist call over the full candidate matrix, vectorized."
+
+
+def test_c12_screen_trigger_no_evidence_warns_experiment():
+    # §4.5 pin 1: a named pool screen with no sizing evidence surfaces on a
+    # kind-experiment plan — the #1901 shape (screen registered, sized
+    # nowhere, shipped serial at ~3.3 h vs the 1.0 h sub-budget). Polarity is
+    # WARN, not FAIL (2026-08-03 calibration, plan §8 per-class switch: the
+    # own-phase screen noun is token-inseparable from banked-screen refs, so
+    # screens surface as a resolve-or-carry WARN; batteries keep FAIL).
+    plan = GOOD_PLAN + f"\n## 12. Candidate screen\n\n{SCREEN_SENT}\n"
+    ok, by_id = _run(plan)
+    r = by_id["c12_battery_multiplier"]
+    assert r.status == "WARN"
+    assert ok is True  # a screen-class WARN never fails the overall verdict
+    assert "screen class is missing" in r.detail
+    assert "#1901" in r.detail
+
+
+def test_c12_screen_trigger_kind_analysis_warns():
+    plan = GOOD_PLAN + f"\n## 12. Candidate screen\n\n{SCREEN_SENT}\n"
+    ok, by_id = _run(plan, kind="analysis")
+    assert by_id["c12_battery_multiplier"].status == "WARN"
+    assert ok is True
+
+
+def test_c12_screen_with_arithmetic_and_commitment_passes():
+    # §4.5 pin 2: pool-quadratic arithmetic + a batched commitment near the
+    # screen registration PASSes.
+    plan = (
+        GOOD_PLAN
+        + f"\n## 12. Candidate screen\n\n{SCREEN_SENT}\n{SCREEN_ARITH}\n{SCREEN_BATCHED}\n"
+    )
+    assert _status(plan, "c12_battery_multiplier") == "PASS"
+
+
+def test_c12_screen_na_standalone_declaration_passes():
+    # §4.5 pin 3a: the class-scoped standalone escape excuses a screen-only
+    # plan.
+    plan = GOOD_PLAN + (
+        f"\n{SCREEN_SENT}\n"
+        "N/A — no pool screen (the screen mention quotes the sibling's methodology).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c12_battery_multiplier"]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c12_screen_quoted_or_wrapped_escape_does_not_escape():
+    # §4.5 pin 3b: mid-sentence and backtick-wrapped forms of the screen
+    # escape do NOT escape (mirror of the battery anti-paste pins).
+    mid = GOOD_PLAN + f"\n{SCREEN_SENT} N/A — no pool screen (quoting the remedy menu).\n"
+    assert _status(mid, "c12_battery_multiplier") == "WARN"
+    wrapped = GOOD_PLAN + f"\n{SCREEN_SENT}\n- `N/A — no pool screen` beyond the parity screen.\n"
+    assert _status(wrapped, "c12_battery_multiplier") == "WARN"
+
+
+def test_c12_battery_only_screen_shaped_arith_still_fails():
+    # §4.5 pin 4 (critic MF1): a battery-only plan carrying screen-shaped
+    # arithmetic ("576 comparisons", Holm-correction prose) plus a batched
+    # token, but NO draw-bearing product, still FAILs — evidence never
+    # crosses class (the #810 grid-only false-PASS guard, preserved).
+    plan = (
+        GOOD_PLAN
+        + f"\n## 12. Null battery\n\n{BATTERY_SENT}\n"
+        + "Holm correction over 576 comparisons, batched evaluation.\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c12_battery_multiplier"]
+    assert r.status == "FAIL"
+    assert "draw-bearing" in r.detail
+
+
+def test_c12_cross_class_escapes_do_not_cross():
+    # §4.5 pin 5 (critic MF2): each class's standalone escape excuses ONLY
+    # its own class — the cross-class escape never SATISFIES (a battery-only
+    # plan still FAILs; a screen-only plan still surfaces at WARN polarity).
+    battery_only = GOOD_PLAN + (
+        f"\n{BATTERY_SENT}\nN/A — no pool screen (there is no screen phase here).\n"
+    )
+    assert _status(battery_only, "c12_battery_multiplier") == "FAIL"
+    screen_only = GOOD_PLAN + (
+        f"\n{SCREEN_SENT}\nN/A — no draw battery (there is no battery here).\n"
+    )
+    assert _status(screen_only, "c12_battery_multiplier") == "WARN"
+
+
+def test_c12_mixed_plan_each_class_must_satisfy():
+    # §4.5 pin 6: a mixed battery + screen plan requires BOTH classes
+    # independently satisfied; one satisfied + one not surfaces at the
+    # UNSATISFIED class's polarity (screen miss => WARN; battery miss =>
+    # FAIL), naming that class.
+    battery_block = f"## 12. Null battery\n\n{BATTERY_SENT}\n{BATTERY_ARITH}\n{BATTERY_BATCHED}\n"
+    screen_block = f"## 13. Candidate screen\n\n{SCREEN_SENT}\n{SCREEN_ARITH}\n{SCREEN_BATCHED}\n"
+    both = GOOD_PLAN + f"\n{battery_block}\n{screen_block}\n"
+    assert _status(both, "c12_battery_multiplier") == "PASS"
+    battery_ok_screen_not = GOOD_PLAN + (
+        f"\n{battery_block}\n## 13. Candidate screen\n\n{SCREEN_SENT}\n"
+    )
+    _, by_id = _run(battery_ok_screen_not)
+    r = by_id["c12_battery_multiplier"]
+    assert r.status == "WARN"
+    assert "the screen class is missing" in r.detail
+    assert "the battery class is missing" not in r.detail
+    screen_ok_battery_not = GOOD_PLAN + (
+        f"\n{screen_block}\n## 14. Null battery\n\n{BATTERY_SENT}\n"
+    )
+    _, by_id = _run(screen_ok_battery_not)
+    r = by_id["c12_battery_multiplier"]
+    assert r.status == "FAIL"
+    assert "the battery class is missing" in r.detail
+    assert "the screen class is missing" not in r.detail
+
+
+def test_c12_benign_dedupe_prose_does_not_trigger():
+    # §4.5 pin 7: bare data-prep dedupe prose (no adjacent screen/scan
+    # noun) and CamelCase helper names are deliberate NON-triggers.
+    plan = GOOD_PLAN + (
+        "\nWe deduplicated the prompt list before generation; exact-dupe rows were dropped.\n"
+        "NearDupeGate(targets) is reused unchanged for the eval split.\n"
+    )
+    assert _status(plan, "c12_battery_multiplier") == "SKIP"
+
+
+def test_c12_participle_and_pass_forms_do_not_trigger():
+    # 2026-08-03 calibration pins (tuning decisions 1 + 2): past-participle
+    # descriptions of an INHERITED banked screen and the dropped `pass` noun
+    # are non-triggers — the #1768/#1901-v1/#1775/#448 false-positive shapes.
+    plan = GOOD_PLAN + (
+        "\nSource: 963,444 first-turns, near-dupe screened (char-5-gram Jaccard >= 0.8)"
+        " against the 1,400 pinned val/test prompts.\n"
+        "The corpus was already near-dupe-screened, split-pinned upstream.\n"
+        "The n50k split's JSON records NO near-dupe pass.\n"
+        "Recovery is a parse-and-dedupe pass on the positive rows.\n"
+    )
+    assert _status(plan, "c12_battery_multiplier") == "SKIP"
+
+
+def test_c12_verb_form_screen_triggers():
+    # 2026-08-03 calibration pin: the present-tense own-phase verb form (the
+    # #1738 Phase-0 true-positive shape) still triggers after the participle
+    # exclusion — `screen(?!ed)` blocks "screened", not "screens".
+    plan = GOOD_PLAN + (
+        "\nPhase 0 then near-dupe-screens the remaining train pool against the carve.\n"
+    )
+    assert _status(plan, "c12_battery_multiplier") == "WARN"
+
+
+def test_c12_bare_pairwise_similarity_triggers():
+    # §4.5 pin 8: the bare `pairwise similarity` form (the task-body
+    # sketch's starter token, kept by the 2026-08-03 calibration sweep —
+    # 0 corpus flips) triggers the screen class at WARN polarity.
+    plan = GOOD_PLAN + (
+        "\nWe threshold a pairwise similarity matrix over the candidate pool at 0.8.\n"
+    )
+    assert _status(plan, "c12_battery_multiplier") == "WARN"
+
+
+def test_c12_screen_pasted_fail_detail_does_not_self_satisfy():
+    # §4.5 pin 9 (critic SF1): a screen-triggered replan that pastes the
+    # WARN detail verbatim does not self-satisfy — the detail carries no
+    # literal matching _SCREEN_ARITH_RE / _SCREEN_TRIGGER_RE and no
+    # standalone escape line.
+    base = GOOD_PLAN + f"\n{SCREEN_SENT}\n"
+    _, by_id = _run(base)
+    detail = by_id["c12_battery_multiplier"].detail
+    assert not verify_plan._SCREEN_ARITH_RE.search(detail), detail
+    assert not verify_plan._SCREEN_TRIGGER_RE.search(detail), detail
+    replan = base + f"\n{detail}\n"
+    # The pasted detail's own battery vocabulary ("null battery") re-triggers
+    # the battery class (same fail-safe behavior as the pre-existing battery
+    # pasted-detail pin), so the verdict may escalate WARN->FAIL — the pinned
+    # property is that pasting the detail can never SATISFY.
+    assert _status(replan, "c12_battery_multiplier") in ("WARN", "FAIL")
+
+
+def test_c12_screen_arith_line_anchors_own_window():
+    # #1086 mirrored for the screen class: the §9 sizing line far from the
+    # screen registration anchors its own window (arith + commitment there
+    # rescue the plan) — but ONLY when a screen trigger fired somewhere.
+    filler = "\n".join(f"Filler paragraph line {i} with no sizing content." for i in range(20))
+    plan = (
+        GOOD_PLAN
+        + f"\n## 12. Candidate screen\n\n{SCREEN_SENT}\n\n"
+        + filler
+        + f"\n\n## 13. Compute sizing\n\n{SCREEN_ARITH}\n{SCREEN_BATCHED}\n"
+    )
+    assert _status(plan, "c12_battery_multiplier") == "PASS"
+
+
+def test_c12_pool_screen_escape_phrase_registered_in_planner_skill():
+    # §4.6 durability pin: the class-scoped screen escape phrase is
+    # registered in the adversarial-planner SKILL.md canonical escape-phrase
+    # block, so a later SKILL.md edit cannot silently drop it.
+    text = (REPO_ROOT / ".claude" / "skills" / "adversarial-planner" / "SKILL.md").read_text()
+    anchor = text.index("Canonical N/A escape phrases")
+    block = text[anchor : text.index("bounce to the planner", anchor)]
+    assert "`N/A — no pool screen`" in block
+    assert "check 12" in block
 
 
 # ─── Check 13 — empirical-null gate p-floor attainability ──────────────────
@@ -3865,7 +4089,7 @@ def test_c20_paired_before_primary_binds_primary_axis():
     # atom's span end the declaration is a clean 3x3 partition → PASS
     # (the fixture is chosen so the wrong binding flips the verdict).
     seg = "paired-diff CI excludes 0 AND Δ_pool CI straddles 0"
-    atoms, _ = verify_plan._c20_collect_atoms(seg)
+    atoms, _, _ = verify_plan._c20_collect_atoms(seg)
     assert [a[0] for a in atoms] == ["paired", "primary"]
     decl = (
         "- The labels are DISJOINT and exhaustive: "
@@ -3878,6 +4102,142 @@ def test_c20_paired_before_primary_binds_primary_axis():
     assert r.status == "PASS"
     assert ok is True
     assert "tier 1" in r.detail
+
+
+# ─── Check 20 — negated-existence atoms (#1960; incident #1946) ────────────
+
+# Verbatim #1946 tier-1 declaration (plans/plan.md line 27) — the shape that
+# drew the `unparsed` WARN ("predicate token(s) outside every recognized
+# atom: 'no'") before #1960's family-negation axis.
+C20_1946_DECL = (
+    "- DISJOINT and exhaustive: Collapse-preserved ⇔ A ≤ 0 AND no refusal-family "
+    "contrast is BH-significant with positive adjusted delta; Collapse-retracted ⇔ "
+    "bare answer_is_refusal exact-adjusted is BH-significant AND A > 0; Mixed ⇔ otherwise."
+)
+
+
+def test_c20_negated_existence_1946_shape_passes():
+    # The family-negation conjunct parses as a boolean famneg axis and the
+    # partition verifies clean: (neg, zero) → preserved; (pos, *) →
+    # retracted; (neg, nonzero) → Mixed via otherwise.
+    ok, by_id = _run(_c20_plan(C20_1946_DECL))
+    r = by_id[C20]
+    assert r.status == "PASS"
+    assert ok is True
+    assert "tier 1" in r.detail
+    # Direct-helper pin (mirrors the L3884 style): point + famneg both
+    # collect; the family key is normalized (casefold, singular unit noun).
+    atoms, _, fams = verify_plan._c20_collect_atoms(
+        "A ≤ 0 AND no refusal-family contrast is BH-significant with positive adjusted delta"
+    )
+    assert [a[0] for a in atoms] == ["point", "famneg"]
+    assert fams == {"refusal-family contrast"}
+
+
+def test_c20_negated_existence_count_form_passes():
+    # The canonical machine form `count(<family-ref>) == 0` binds the same
+    # boolean axis; comparators/connectives INSIDE the count(...) span are
+    # atom text (suppressed from point/CI collection and from residue).
+    decl = (
+        "- DISJOINT and exhaustive: Collapse-preserved ⇔ A ≤ 0 AND "
+        "count(refusal-family contrasts with bh_significant AND delta_adj > 0) == 0; "
+        "Collapse-retracted ⇔ bare answer_is_refusal exact-adjusted is BH-significant "
+        "AND A > 0; Mixed ⇔ otherwise."
+    )
+    ok, by_id = _run(_c20_plan(decl))
+    r = by_id[C20]
+    assert r.status == "PASS"
+    assert ok is True
+    assert "tier 1" in r.detail
+    # `delta_adj` never enters the point-quantity set (its `> 0` sits
+    # inside the count(...) span).
+    atoms, qtys, _ = verify_plan._c20_collect_atoms(
+        "count(refusal-family contrasts with bh_significant AND delta_adj > 0) == 0"
+    )
+    assert [a[0] for a in atoms] == ["famneg"]
+    assert qtys == set()
+
+
+def test_c20_negator_residue_preserved_for_unmatched_shapes():
+    # The family-ref is bounded by the closed unit-noun set: "no Δ_pool CI
+    # includes 0" carries no unit noun, so the negator stays residue and
+    # the lattice degrades to WARN byte-for-byte as before #1960.
+    decl = (
+        "- DISJOINT and exhaustive: H-null ⇔ no Δ_pool CI includes 0; H-mid ⇔ Δ_pool CI includes 0."
+    )
+    ok, by_id = _run(_c20_plan(decl))
+    r = by_id[C20]
+    assert r.status == "WARN"
+    assert ok is True
+    assert "did not fully parse" in r.detail
+    assert "'no'" in r.detail
+
+
+def test_c20_negated_existence_cofire_fails():
+    # The famneg axis keeps the lattice FAIL-capable: H-a and H-b co-fire
+    # on the {point < 0, no family member fires} cell (exhaustiveness is
+    # covered by the otherwise clause + the existing gap tests).
+    decl = (
+        "- DISJOINT and exhaustive: H-a ⇔ A ≤ 0 AND no refusal-family contrast "
+        "is BH-significant with positive adjusted delta; H-b ⇔ A ≤ 0; Mixed ⇔ otherwise."
+    )
+    ok, by_id = _run(_c20_plan(decl))
+    r = by_id[C20]
+    assert r.status == "FAIL"
+    assert ok is False
+    assert "CO-FIRE" in r.detail
+    assert "no family member fires" in r.detail
+
+
+def test_c20_two_distinct_negexist_families_warn():
+    # >1 distinct normalized family key in one lattice fails closed to the
+    # `unparsed` WARN (the v1 cell algebra carries ONE family-negation
+    # axis) — mirrors test_c20_mixed_point_quantities_warn.
+    decl = (
+        "- DISJOINT and exhaustive: H-a ⇔ no refusal-family contrast is "
+        "BH-significant with positive adjusted delta; H-b ⇔ no sycophancy-family "
+        "contrast is BH-significant with positive adjusted delta; Mixed ⇔ otherwise."
+    )
+    ok, by_id = _run(_c20_plan(decl))
+    r = by_id[C20]
+    assert r.status == "WARN"
+    assert ok is True
+    assert "distinct negated-existence families" in r.detail
+
+
+def test_c20_noexist_zero_inside_ci_idiom_fails_closed_to_warn():
+    # Hostile mixed text: the NOEXIST prose match anchors on the CI
+    # idiom's own `zero` token ("includes zero AND no ... contrast is …")
+    # and swallows the idiom tail — the CI atom is suppressed, its
+    # `CI`/`includes` tokens land as residue, and the lattice degrades to
+    # `unparsed` WARN (same verdict as pre-#1960; fail-closed, never a
+    # silent wrong parse).
+    decl = (
+        "- DISJOINT and exhaustive: H-a ⇔ the Δ_pool CI includes zero AND no "
+        "refusal-family contrast is BH-significant with positive delta; "
+        "H-b ⇔ the Δ_pool CI excludes zero; Mixed ⇔ otherwise."
+    )
+    ok, by_id = _run(_c20_plan(decl))
+    r = by_id[C20]
+    assert r.status == "WARN"
+    assert ok is True
+    assert "did not fully parse" in r.detail
+
+
+def test_c20_noexist_non_copula_stays_warn():
+    # Deliberate narrowness: the prose form requires an `is|are` copula —
+    # "no refusal-family contrast reaches BH-significance" does not match,
+    # so the negator stays residue and the lattice degrades to WARN
+    # (the pre-#1960 verdict; restate with the copula or the count form).
+    decl = (
+        "- DISJOINT and exhaustive: H-a ⇔ A ≤ 0 AND no refusal-family contrast "
+        "reaches BH-significance; H-b ⇔ A > 0; Mixed ⇔ otherwise."
+    )
+    ok, by_id = _run(_c20_plan(decl))
+    r = by_id[C20]
+    assert r.status == "WARN"
+    assert ok is True
+    assert "'no'" in r.detail
 
 
 # ─── Check 21 — grep-arity acceptance gate ─────────────────────────────────
@@ -5874,15 +6234,23 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    # 34 = the 32 pre-c40 skips + c40 (SKIP: `plan.md` carries no v{K} version)
+    # 38 = the 32 pre-c40 skips + c40 (SKIP: `plan.md` carries no v{K} version)
     # + c41 (kind-exempt SKIP: regression-anchor check is infra|batch-only and
-    # --plan-file mode defaults to kind=experiment).
-    assert payload["n_skip"] == 34
+    # --plan-file mode defaults to kind=experiment)
+    # + c42 (SKIP: GOOD_PLAN cites no commit SHAs; the check is trigger-
+    #   conditional, #1683/#1700)
+    # + c43 (SKIP: GOOD_PLAN declares no /workspace sentinel paths; trigger-
+    #   conditional, #1775)
+    # + c44 (SKIP: GOOD_PLAN declares no committed-output paths; trigger-
+    #   conditional, #1900)
+    # + c45 (SKIP: GOOD_PLAN carries no change-DV signature; trigger-
+    #   conditional, #1906).
+    assert payload["n_skip"] == 38
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 42
-    assert len({c["id"] for c in payload["checks"]}) == 42
+    assert len(payload["checks"]) == 46
+    assert len({c["id"] for c in payload["checks"]}) == 46
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -7021,6 +7389,40 @@ def test_c32_battery_warn_never_fails():
     assert ok is True
 
 
+# Screen-row classification (#1967): a pool-quadratic screen row in a
+# basis-column compute table classifies to the battery branch via the
+# widened _BATTERY_TRIGGER_RE union, demanding a measured/pilot-gated
+# basis — exactly what the rule's POOL-SCALE clause requires of screens
+# (#1738/#1901). The in-row arithmetic + commitment keep c12 satisfied so
+# the asserts isolate c32.
+C32_SCREEN_TABLE = """
+## 9. Resources & Parallelism
+
+| component | planned_wall_h | basis | parallelism |
+|---|---|---|---|
+| near-dupe screen (2,500^2 / 2 pairs, batched cdist over the pool) | 0.7 | {basis} | 1x CPU |
+"""
+
+
+def _c32_screen_plan(basis: str) -> str:
+    return GOOD_PLAN + C32_SCREEN_TABLE.format(basis=basis)
+
+
+def test_c32_screen_row_ungrounded_warns():
+    # §4.5 pin 10a: an ungrounded screen row is a WARN offender.
+    ok, by_id = _run(_c32_screen_plan("~0.7 h asserted"))
+    r = by_id["c32_fit_basis_grounding"]
+    assert r.status == "WARN"
+    assert ok is True  # WARN-only contract holds for screen rows too
+
+
+def test_c32_screen_row_measured_basis_passes():
+    # §4.5 pin 10b: a measured / prior-issue / pilot-gated basis passes.
+    basis = "measured 20k-row pilot extrapolated x48: ~0.7 h"
+    assert _status(_c32_screen_plan(basis), "c32_fit_basis_grounding") == "PASS"
+    assert _status(_c32_screen_plan("pilot-gated"), "c32_fit_basis_grounding") == "PASS"
+
+
 # ─── Check 33 — checkpoint-ladder retention policy ─────────────────────────
 
 # Ladder trigger spliced into GOOD_PLAN's §9 Resources paragraph (the
@@ -7719,6 +8121,42 @@ C37_TRUE_CLAIM = (
     "`--check-lessons-index`) passes."
 )
 
+# The founding silent-unbundling shape (#1385 v1:13 / #1648 v2:11 core): a
+# long Plan-Summary line whose bundling claim co-occurs with an incidental
+# FAR negation token ("not allowed here") — the whole-line guard drops it;
+# the pin arm's 40-char pre-window guard must not. Flag synthetic (absent
+# from the live lint source ⇒ the proposed-new-check branch).
+C37_PROPOSED_CLAIM = (
+    "New `check_notyetbuilt()` in `scripts/workflow_lint.py` "
+    "(`--check-notyetbuilt` flag, bundled into the no-flags default run); rows "
+    'failing `yaml.safe_load` with "mapping values are not allowed here" are offenders.'
+)
+
+# tasks/completed/1648/plans/v2.md:11 VERBATIM (byte-for-byte copy of the
+# founding pin-arm incident line): the bundling claim co-occurs with the
+# incidental far negation "not a comment", and the v2 plan named zero
+# bundled_in_no_flags pin tests (the pin landed only in v3 as a round-1
+# Statistics Must-Fix). Replayed through the stripped-source machinery in
+# test_c37_founding_incident_1648_verbatim_line_warns.
+C37_1648_V2_L11 = (
+    "**Change:** New `check_bare_commit_pathspec()` in `scripts/workflow_lint.py` + `"
+    "--check-bare-commit-pathspec` flag, bundled into the no-flags default run (`or n"
+    "o_flags` wiring + `no_flags` disjunction term + module-docstring bullet + argpar"
+    "se help). Scans `bash`/`sh`/`shell`-tagged fenced blocks in the workflow surface"
+    " (`.claude/agents/*.md`, `.claude/skills/**/SKILL.md`, `.claude/rules/*.md`, `CL"
+    "AUDE.md` — reusing `_root_guard_target_files` + `_iter_bash_fences`) and FAILs a"
+    "ny `git commit` invocation with no ` -- <pathspec>` tail, no `-C <tree>` scope, "
+    "no `xargs` driver, no `--dry-run`, not a comment, and no per-fence waiver sentin"
+    "el. **Offender sweep (prototype run at SHA `be7c297b52`, 2026-07-24): 17 fenced "
+    "git-commit lines, 14 structurally exempt, 3 offenders** — `ideation/SKILL.md:440"
+    "`, `weekly/SKILL.md:232`, `issue-v2/SKILL.md:396` — each fixed by appending the "
+    "explicit ` -- <paths>` (the #1630 daily precedent). **Tests:** 6 new tests in `t"
+    "ests/test_workflow_lint.py` (offender / exempt-forms / multiline-quote / sentine"
+    "l / non-bash-fence / live-tree). **Hyperparameters:** N/A — no model training. *"
+    "*Baselines / controls:** N/A — infra lint change. **Compute:** VM-local, ~1-2 h "
+    "implementer wall."
+)
+
 
 def _c37_plan(*extra: str) -> str:
     return GOOD_PLAN + "\n" + "\n\n".join(extra) + ("\n" if extra else "")
@@ -7792,14 +8230,159 @@ def test_c37_into_destination_flag_not_flagged():
     assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "PASS"
 
 
-def test_c37_proposed_new_flag_passes():
-    # Calibration FP class 3 (forward-looking extension plans): a flag with
-    # no occurrence in the workflow_lint source is a PROPOSED new check —
-    # unfalsifiable at plan time, never an offender.
+def test_c37_proposed_new_flag_without_pin_test_warns():
+    # DELIBERATE semantics flip (#1679): pre-#1679 this exact shape PASSed
+    # (the existence gate read a proposed new check as "never an offender")
+    # — that PASS was the silent-unbundling hole. A proposed-new-check
+    # bundling claim naming no test_<check>_bundled_in_no_flags pin
+    # anywhere in the plan is the #1385 v1 / #1648 v2 shape and WARNs.
     plan = _c37_plan(
         "Add `--check-notyetbuilt`, bundled into the no-flags default run, to workflow_lint."
     )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c37_noflags_bundling_claim"]
+    assert r.status == "WARN"
+    assert "`--check-notyetbuilt`" in r.detail
+    assert "test_<check>_bundled_in_no_flags" in r.detail
+    assert "`N/A — not bundled into no-flags`" in r.detail
+
+
+def test_c37_proposed_new_flag_with_pin_test_passes():
+    # The corrected #1385 v2 / #1648 v3 shape: the pin test named in prose
+    # satisfies the arm.
+    plan = _c37_plan(
+        "Add `--check-notyetbuilt`, bundled into the no-flags default run, to workflow_lint.",
+        "Tests: `test_check_notyetbuilt_bundled_in_no_flags` pins the dispatch wiring.",
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c37_noflags_bundling_claim"]
+    assert r.status == "PASS"
+    assert "pin test" in r.detail
+
+
+def test_c37_pin_test_satisfier_matches_in_fenced_block():
+    # RAW-scan contract (the c41 satisfier-(a) precedent): test enumerations
+    # and pytest commands legitimately live in fenced blocks.
+    plan = _c37_plan(
+        "Add `--check-notyetbuilt`, bundled into the no-flags default run, to workflow_lint.",
+        "```bash\nuv run pytest "
+        "tests/test_workflow_lint.py::test_check_notyetbuilt_bundled_in_no_flags\n```",
+    )
     assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "PASS"
+
+
+def test_c37_founding_incident_shape_warns():
+    # The localized-guard survival of the FAR incidental "not": the falsity
+    # arm's whole-line guard drops this line entirely (measured 2026-07-25 —
+    # both founding incidents read SKIP under it), so a pin arm reusing the
+    # whole-line hit set would have missed #1385 v1 / #1648 v2 outright.
+    _, by_id = _run(_c37_plan(C37_PROPOSED_CLAIM), kind="infra")
+    r = by_id["c37_noflags_bundling_claim"]
+    assert r.status == "WARN"
+    assert "silent-unbundling" in r.detail
+
+
+def test_c37_founding_incident_1648_verbatim_line_warns(tmp_path, monkeypatch):
+    # Plan-time source simulation on the VERBATIM #1648 v2:11 line: strip
+    # the (since-landed) `--check-bare-commit-pathspec` flag from a copy of
+    # the live lint source so the line reads as a PROPOSED new check again,
+    # exactly as at plan time. v2 named no bundled_in_no_flags pin test →
+    # WARN (v3 added test_check_bare_commit_pathspec_bundled_in_no_flags).
+    src = verify_plan._c37_lint_source()
+    assert src is not None and "--check-bare-commit-pathspec" in src
+    stripped = src.replace("--check-bare-commit-pathspec", "--check-STRIPPED").replace(
+        "args.check_bare_commit_pathspec", "args.check_STRIPPED"
+    )
+    stub = tmp_path / "workflow_lint.py"
+    stub.write_text(stripped)
+    monkeypatch.setattr(verify_plan, "_C37_LINT_PATH", stub)
+    _, by_id = _run(_c37_plan(C37_1648_V2_L11), kind="infra")
+    r = by_id["c37_noflags_bundling_claim"]
+    assert r.status == "WARN"
+    assert "`--check-bare-commit-pathspec`" in r.detail
+    assert "PROPOSED new check" in r.detail
+
+
+def test_c37_pin_arm_immediate_negation_skips():
+    # A deliberately explicit-only new check is never nagged: the negation
+    # sits inside the 40-char pre-window, so the claim match is guarded.
+    plan = _c37_plan(
+        "`--check-notyetbuilt` is NOT bundled into the no-flags default run — explicit-only."
+    )
+    assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "SKIP"
+
+
+def test_c37_not_bundled_escape_passes():
+    plan = _c37_plan(
+        "Add `--check-notyetbuilt`, bundled into the no-flags default run.",
+        "N/A — not bundled into no-flags",
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c37_noflags_bundling_claim"]
+    assert r.status == "PASS"
+    assert "declared" in r.detail
+
+
+def test_c37_quoted_not_bundled_escape_does_not_escape():
+    # Anti-paste convention (#810/#1238 lineage): the pin-arm escape phrase
+    # quoted mid-sentence / backtick-wrapped does not count; the quoting
+    # line itself is pre-window-negated, adding no hits.
+    plan = _c37_plan(
+        "Add `--check-notyetbuilt`, bundled into the no-flags default run.",
+        "The bounce brief quotes `N/A — not bundled into no-flags` as the pin-arm escape.",
+    )
+    assert _status(plan, "c37_noflags_bundling_claim", kind="infra") == "WARN"
+
+
+def test_c37_falsity_warn_takes_precedence():
+    # One CheckResult per check: a genuinely-false claim about an EXISTING
+    # flag outranks a co-occurring pin-arm miss; the pin WARN resurfaces on
+    # the post-fix re-verify.
+    plan = _c37_plan(
+        C37_FALSE_CLAIM,
+        "Add `--check-notyetbuilt`, bundled into the no-flags default run.",
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c37_noflags_bundling_claim"]
+    assert r.status == "WARN"
+    assert "args.check_references" in r.detail
+    assert "PROPOSED new check" not in r.detail
+
+
+def test_c37_pin_warn_detail_does_not_retrigger_or_satisfy():
+    # Mirror of test_c37_pasted_warn_detail_does_not_retrigger_or_satisfy
+    # for the pin arm: the WARN detail's embedded offending-line quote is
+    # SANITIZED (claim noun → no_flags), its escape phrase is
+    # backtick-wrapped, and the pin-test convention appears only in the
+    # angle-bracketed template form — a verbatim paste neither re-triggers,
+    # nor self-satisfies the pin regex, nor self-escapes.
+    _, by_id = _run(
+        _c37_plan("Add `--check-notyetbuilt`, bundled into the no-flags default run."),
+        kind="infra",
+    )
+    detail = by_id["c37_noflags_bundling_claim"].detail
+    assert not verify_plan._C37_PIN_TEST_RE.search(detail)
+    clean_plus_detail = _c37_plan(detail)
+    assert _status(clean_plus_detail, "c37_noflags_bundling_claim", kind="infra") == "SKIP"
+    offending_plus_detail = _c37_plan(
+        "Add `--check-notyetbuilt`, bundled into the no-flags default run.", detail
+    )
+    assert _status(offending_plus_detail, "c37_noflags_bundling_claim", kind="infra") == "WARN"
+
+
+def test_c37_pin_warn_detail_mixed_case_offender_paste_safe():
+    # The claim regexes are (?i), so a "No-Flags"-spelled offender must be
+    # sanitized case-insensitively too — a case-sensitive replace would let
+    # the pasted WARN detail's quoted excerpt carry a live claim match.
+    _, by_id = _run(
+        _c37_plan("Add `--check-notyetbuilt`, bundled into the No-Flags default run."),
+        kind="infra",
+    )
+    r = by_id["c37_noflags_bundling_claim"]
+    assert r.status == "WARN"
+    assert "No-Flags" not in r.detail
+    clean_plus_detail = _c37_plan(r.detail)
+    assert _status(clean_plus_detail, "c37_noflags_bundling_claim", kind="infra") == "SKIP"
 
 
 def test_c37_fenced_claim_does_not_trigger():
@@ -7885,6 +8468,7 @@ def test_c37_phrase_listed_in_skillmd():
     anchor = text.index("Canonical N/A escape phrases")
     block = text[anchor : text.index("bounce to the planner", anchor)]
     assert "`N/A — no no-flags bundling claim`" in block
+    assert "`N/A — not bundled into no-flags`" in block
     assert "check 37" in block
 
 
@@ -7950,6 +8534,47 @@ def test_c38_scoped_lint_does_not_trigger():
 def test_c38_scoped_pytest_does_not_trigger():
     line = "uv run pytest tests/test_verify_plan.py -x  # exit 0"
     assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+def test_c38_pytest_node_id_in_backticks_does_not_trigger():
+    # #1729: the ordinary prose shape "Concrete pytest node id:
+    # `tests/x.py::test_y`" MUST NOT read as unscoped — the arg-tail
+    # split truncates at the opening backtick, hiding the scope from
+    # tail-only inspection. The rest-of-line rescan is what catches it.
+    line = (
+        "- Acceptance: mapper exits 0. "
+        "Concrete pytest node id: `tests/test_select_step9c_tests.py::test_map_files`."
+    )
+    assert _status(_c38_plan(line), "c38_exit0_repo_wide_baseline", kind="infra") == "SKIP"
+
+
+def test_c38_pytest_bare_unscoped_still_warns():
+    # #1729 trade-off (i): a bare `pytest` assertion with NO scoping
+    # token anywhere on the line MUST still WARN — the deliberate,
+    # fact-checker-confirmed reading that an empty arg tail classifies
+    # repo-wide (docstring: "an EMPTY arg tail — bare `ruff check` /
+    # bare `pytest` plus an assertion word — classifies REPO-WIDE").
+    line = "- Acceptance: the full pytest suite must exit 0 after the edit."
+    _, by_id = _run(_c38_plan(line), kind="infra")
+    r = by_id["c38_exit0_repo_wide_baseline"]
+    assert r.status == "WARN"
+    assert "pytest (no path scope)" in r.detail
+
+
+def test_c38_pytest_repro_helper_returns_none():
+    # #1729 direct pin on the private helper: exactly the
+    # verified-at-filing reproduction. Guards against a future refactor
+    # that keeps the WARN-level pin green but silently regresses the
+    # helper (e.g. if `check_exit0_repo_wide_baseline` grew a
+    # compensating filter that hid a re-broken `_c38_repo_wide_cmd`).
+    line = (
+        "- Acceptance: mapper exits 0. "
+        "Concrete pytest node id: `tests/test_select_step9c_tests.py::test_map_files`."
+    )
+    assert verify_plan._c38_repo_wide_cmd(line) is None
+
+    bare = "- Acceptance: the full pytest suite must exit 0 after the edit."
+    assert verify_plan._c38_repo_wide_cmd(bare) == "pytest (no path scope)"
 
 
 def test_c38_repo_wide_ruff_warns():
@@ -8128,6 +8753,86 @@ def test_c39_fenced_na_escape_does_not_satisfy():
     # escape inside a fence (a quoted bounce brief) must not satisfy.
     plan = C39_OFFPOD_PROSE + "\n```\nN/A — no off-pod phase\n```\n"
     assert _status(plan, "c39_off_pod_phase_declaration") == "WARN"
+
+
+# ─── Check 39 — inverse-direction trigger widening (#1796) ─────────────────
+# The #1773 class: a dispatched (pod/GCE/SLURM) phase consuming VM-produced
+# inputs. Corpus-calibrated 2026-07-29 over 3,004 persisted plan-versions
+# (see the calibration comment above _C39_TRIGGER_RE); no in-corpus
+# non-compliant positive control exists for `vm-produced` (#1773's own
+# occurrences are inside its fenced off_pod_phases: block), so the WARN
+# tests below are the synthetic positive controls (the c38 convention).
+
+C39_INVERSE_PROSE = (
+    GOOD_PLAN + "\nPhase P6 (GCE ridge fit) consumes the VM-produced probe JSONs at boot.\n"
+)
+
+
+def test_c39_inverse_direction_trigger_warns():
+    # Inverse-direction prose with NO `off-pod` / `vm-side` token anywhere
+    # → the widened trigger fires; same WARN text (satisfiers unchanged).
+    _, by_id = _run(C39_INVERSE_PROSE)
+    r = by_id["c39_off_pod_phase_declaration"]
+    assert r.status == "WARN"
+    assert "off_pod_phases:" in r.detail  # names the missing block
+    assert "N/A — no off-pod phase" in r.detail  # teaches the escape
+
+
+def test_c39_inverse_produced_on_the_vm_trigger_warns():
+    # Durability pin for the second SHIPPED token (exact string, the c33
+    # per-token pin style): `produced on the vm`, case-insensitive.
+    plan = GOOD_PLAN + "\nThe probe bank is produced on the VM before the pod phase loads it.\n"
+    assert _status(plan, "c39_off_pod_phase_declaration") == "WARN"
+
+
+def test_c39_inverse_fenced_vocabulary_only_skips():
+    # Inverse vocabulary ONLY inside a fence (the #1773 shape: `VM-produced`
+    # in a fenced off_pod_phases-adjacent note) — the trigger scans STRIPPED
+    # prose, so a fence-only occurrence never fires.
+    plan = GOOD_PLAN + "\n```\nnote: VM-produced (enumerated at git dest)\n```\n"
+    assert _status(plan, "c39_off_pod_phase_declaration") == "SKIP"
+
+
+def test_c39_inverse_trigger_block_satisfies():
+    # Inverse trigger + the fenced off_pod_phases: block → PASS (satisfiers
+    # unchanged by #1796; the schema is direction-agnostic since #1782).
+    _, by_id = _run(C39_INVERSE_PROSE + C39_BLOCK)
+    r = by_id["c39_off_pod_phase_declaration"]
+    assert r.status == "PASS"
+    assert "off_pod_phases" in r.detail
+
+
+def test_c39_inverse_kind_exempt_skips():
+    # An infra plan carrying the new token (e.g. a workflow-fix plan
+    # discussing this very seam — #1782/#1796 are the calibration cases)
+    # stays kind-exempt.
+    assert _status(C39_INVERSE_PROSE, "c39_off_pod_phase_declaration", kind="infra") == "SKIP"
+
+
+def test_c39_forward_staging_prose_does_not_trigger():
+    # Negative pin (plan #1796 §3 rejected `stages ... from HF` at plan
+    # time): FORWARD-direction staging prose is the normal, pervasive
+    # direction in compliant plans and must never fire the trigger.
+    plan = (
+        GOOD_PLAN
+        + "\nPhase P2 stages the training mix from the HF data repo at boot.\n"
+        + "\nThe probe bank is staged from the HF data repo before training.\n"
+    )
+    assert _status(plan, "c39_off_pod_phase_declaration") == "SKIP"
+
+
+def test_c39_dropped_tokens_do_not_trigger():
+    # Negative durability pin for the calibration-DROPPED tokens:
+    # `git-clone lane` (irreducible nuisance class — artifact-reuse
+    # boilerplate + compliant staging prose) and `vm-built`/`vm-generated`
+    # (zero corpus recall). A future re-add must re-run the corpus scan
+    # per the calibration comment's re-scan gate.
+    plan = (
+        GOOD_PLAN
+        + "\nThe git-clone lane stages committed eval JSONs by construction.\n"
+        + "\nA VM-built index and a VM-generated cache are consumed later.\n"
+    )
+    assert _status(plan, "c39_off_pod_phase_declaration") == "SKIP"
 
 
 # ─── Check 41 — regression-anchor test executed or gate-selected ───────────
@@ -8328,3 +9033,997 @@ def test_c41_registration_end_to_end(tmp_path, monkeypatch):
     ok, by_id = _run(plan, kind="infra")
     assert by_id[C41].status == "WARN"
     assert ok is True  # WARN never blocks exit
+
+
+# ─── Check 8 — exempt-kind acceptance-criteria branch (#1668/#1700) ────────
+
+
+def test_c8_exempt_kind_acceptance_criteria_h2_satisfies_kill():
+    # #1668/#1700: a kind: infra plan whose success anchor sits under an
+    # ``Acceptance criteria`` heading (H2 or nested under §1 Goal /
+    # Motivation) PASSes even when NO dedicated kill-criteria section
+    # exists and NO §0.0 TL;DR change-my-mind line is present. The
+    # acceptance-criteria block IS the revert criterion for an infra fix.
+    # (Success family is solid; kill family solid absent.)
+    plan = (
+        GOOD_PLAN.replace(KILL_SENT, "")
+        .replace(CRITERIA_HEADING, "## 7. Acceptance criteria")
+        .replace(TLDR_CHANGE_MIND_LINE, "")
+    )
+    assert "What would change my mind" not in plan
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c8_success_kill_criteria"]
+    assert r.status == "PASS", r.detail
+    assert "acceptance-criteria block SATISFIES" in r.detail
+    assert "#1668/#1700" in r.detail
+    # Same acceptance holds for other exempt kinds.
+    assert _status(plan, "c8_success_kill_criteria", kind="analysis") == "PASS"
+    assert _status(plan, "c8_success_kill_criteria", kind="batch") == "PASS"
+
+
+def test_c8_exempt_kind_acceptance_criteria_iterates_all_success_hits():
+    # Concern-address pin: iterate ALL succ_solid, not succ_solid[0]. Two
+    # success anchors exist in the plan — the FIRST hit (a bare
+    # "**Success criteria:**" bullet under §2 Design that DOES NOT sit
+    # under an "acceptance criteri" section) and the SECOND hit (a
+    # "**Success criteria:**" bullet under a dedicated §7 Acceptance
+    # criteria heading). GOOD_PLAN's §7 kill-criteria heading is
+    # replaced entirely so no kill anchor exists in a solid carrier
+    # (only the exempt-kind acceptance-criteria branch can PASS this).
+    # If _exempt_tldr_kill_pass ever regressed to `succ_solid[0]` alone,
+    # the first (§2 Design) hit's section name would NOT match
+    # "acceptance criteri" and the branch would fall through to the
+    # TL;DR path — but the TL;DR line is stripped too, so the check
+    # would WARN instead of PASS. This test would fail on the regression.
+    plan = (
+        GOOD_PLAN.replace(SUCCESS_SENT, "")
+        .replace(KILL_SENT, "")
+        .replace(TLDR_CHANGE_MIND_LINE, "")
+        # Rename the §7 heading to something that carries NEITHER success
+        # NOR kill vocabulary (so the standard both-solid path can't fire
+        # on the heading text; the branch must ride the acceptance-criteria
+        # rescue).
+        .replace(CRITERIA_HEADING, "## 7. Notes")
+        .replace(
+            "## 2. Design\n\n",
+            (
+                "## 2. Design\n\n"
+                "This design section carries a bare success anchor NOT inside "
+                "an acceptance-criteria heading; the anchor's carrier is padded "
+                "well above the 80-char emptiness bar to exercise the "
+                "iterate-all-succ_solid guarantee. "
+                + ("Filler prose to clear the carrier bar. " * 4)
+                + "\n\n"
+                "**Success criteria:** the standard pytest gate is green.\n\n"
+            ),
+        )
+        .replace(
+            "## 9. Resources",
+            (
+                "## 8. Acceptance criteria\n\n"
+                "The infra fix is accepted when the pytest gate is fully green "
+                "against the plan-time baseline; a revert is triggered on any "
+                "new red. This carrier is deliberately padded well above "
+                "the 80-char emptiness bar so the second success anchor is "
+                "solid too.\n\n"
+                "**Success criteria:** all pin tests green after the fix.\n\n"
+                "## 9. Resources"
+            ),
+        )
+    )
+    assert "What would change my mind" not in plan
+    # Both success anchors present (case-insensitive; _SUCCESS_RE is (?i)).
+    assert plan.lower().count("success criteri") >= 2
+    # No kill anchor present in a solid carrier: the heading was renamed
+    # and KILL_SENT was stripped.
+    assert plan.lower().count("kill criteri") == 0
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c8_success_kill_criteria"]
+    assert r.status == "PASS", r.detail
+    assert "acceptance-criteria block SATISFIES" in r.detail
+
+
+def test_c8_experiment_kind_acceptance_only_still_fails_on_missing_kill():
+    # Regression: kind: experiment is BYTE-UNCHANGED by the #1668/#1700
+    # branch. Under an ``Acceptance criteria`` heading with a solid
+    # success anchor but NO kill anchor and NO TL;DR change-my-mind line,
+    # an experiment plan does NOT get the exempt-kind rescue — the
+    # missing-kill WARN still fires. (When BOTH success and kill are
+    # missing, experiment FAILs — pinned separately by
+    # test_c8_both_missing_fails_for_experiment.)
+    plan = (
+        GOOD_PLAN.replace(KILL_SENT, "")
+        .replace(CRITERIA_HEADING, "## 7. Acceptance criteria")
+        .replace(TLDR_CHANGE_MIND_LINE, "")
+    )
+    _, by_id = _run(plan, kind="experiment")
+    r = by_id["c8_success_kill_criteria"]
+    # For an experiment: success present + kill absent -> WARN (not FAIL);
+    # the acceptance-criteria rescue never fires (kind: experiment is
+    # explicitly gated out of _exempt_tldr_kill_pass).
+    assert r.status == "WARN", r.detail
+    assert "kill criteria" in r.detail.lower()
+    assert "kind-exempt degrade" not in r.detail  # not the exempt WARN path
+    # And when BOTH are missing, experiment still FAILs (byte-identical
+    # to the original both-absent-fails-experiment pin).
+    plan_both = plan.replace(SUCCESS_SENT, "")
+    _, by_id_both = _run(plan_both, kind="experiment")
+    assert by_id_both["c8_success_kill_criteria"].status == "FAIL"
+
+
+# ─── Check 4 — measurement-plan alias (#1689/#1700) ────────────────────────
+
+
+def test_c4_measurement_alias_na_line_passes():
+    # #1689/#1700: measurement-plan alias. Also serves as the durability
+    # pin for the SKILL.md registry addition (the phrase MUST parse via
+    # _standalone_na_declared — if the SKILL.md registration diverges from
+    # the regex, this test surfaces it).
+    plan = (
+        GOOD_PLAN
+        + "\nThe word implant appears in a quoted sibling methodology.\n"
+        + "\nN/A — no behavior implantation (this is a measurement plan).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c4_contrastive_negatives"]
+    assert r.status == "PASS"
+    assert "on its own line, unwrapped" in r.detail
+
+
+def test_c4_measurement_alias_wrapped_does_not_escape():
+    # Paste-attack negative: wrapped-alone form must NOT self-escape (the
+    # #1238 anti-paste discipline still holds for the alias).
+    plan = (
+        GOOD_PLAN
+        + "\nWe implant a refusal behavior into the source persona.\n"
+        + "- `N/A — no behavior implantation` (declare per the bounce brief).\n"
+    )
+    assert _status(plan, "c4_contrastive_negatives") == "WARN"
+
+
+def test_c4_measurement_alias_midprose_does_not_escape():
+    # Paste-attack negative: the alias mid-prose must NOT escape.
+    plan = (
+        GOOD_PLAN
+        + "\nThe word implant appears but this is not a behavior "
+        + "implantation plan (no behavior implantation is performed).\n"
+    )
+    assert _status(plan, "c4_contrastive_negatives") == "WARN"
+
+
+# ─── Check 18 — coverage-decl + N/A -> PASS (#1689/#1700) ──────────────────
+
+
+def test_c18_na_escape_with_coverage_decl_passes():
+    # #1689/#1700: when a valid Row-coverage declaration co-occurs with
+    # the standalone N/A line, the coverage decl is decisive and the
+    # check PASSes (the N/A is a spurious leftover paste). Original
+    # masking case (N/A alone, no coverage decl) still WARNs — pinned by
+    # test_c18_na_escape_with_detected_contrast_warns above.
+    coverage_decl = (
+        "Row-coverage: both arms computed by this plan's own fits over the shared probe grid."
+    )
+    plan = _c18_plan(C18_V13_REGISTRATION, coverage_decl) + (
+        "\nN/A — no paired contrast (spurious leftover from a prior draft).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c18_paired_contrast_source_coverage"]
+    assert r.status == "PASS", r.detail
+    assert "spurious leftover" in r.detail
+    assert "coverage decl is decisive" in r.detail
+    assert "#1689/#1700" in r.detail
+
+
+# ─── Check 20 — tier-1 threshold+otherwise SKIP (#1689/#1700) ──────────────
+
+C20_TIER1_THRESHOLD_OTHERWISE = (
+    "- The three labels are DISJOINT and exhaustive: "
+    "H1_Confirmed ⇔ ≥8/9 within-identity framing pairs reconcile at rung ≤ 5 in BOTH models; "
+    "H1_Falsified ⇔ ≥2 within-identity framing pairs need rung ≥ 7 in at least one model; "
+    "H1_Inconclusive ⇔ otherwise."
+)
+C20_TIER1_THRESHOLD_NO_OTHERWISE = (
+    "- The two labels are DISJOINT and exhaustive: "
+    "H-a ⇔ ≥8/9 within-identity framing pairs reconcile at rung ≤ 5; "
+    "H-b ⇔ ≥2 within-identity framing pairs need rung ≥ 7."
+)
+
+
+def test_c20_tier1_threshold_atoms_with_otherwise_skips():
+    # #1689/#1700: threshold-form inequality atoms (``rung ≤ 5``,
+    # ``≥ 8/9 pairs``, ``rung ≥ 7``) closed by an ``⇔ otherwise``
+    # complement mirror the tier-2 k-of-n SKIP: the partition is
+    # exhaustive-by-construction, the co-fire risk is Statistics-critic
+    # scope, out of v1 cell algebra.
+    _, by_id = _run(_c20_plan(C20_TIER1_THRESHOLD_OTHERWISE))
+    r = by_id[C20]
+    assert r.status == "SKIP", r.detail
+    assert "threshold-form" in r.detail
+    assert "otherwise" in r.detail
+    assert "#1689/#1700" in r.detail
+
+
+def test_c20_tier1_thresholds_without_otherwise_still_warns():
+    # Scoping guard: threshold predicates WITHOUT an ⇔ otherwise
+    # complement do NOT SKIP — the exhaustive-by-construction claim
+    # requires the otherwise closure. The parser correctly rejects the
+    # threshold atoms as unparsed residue -> WARN.
+    r = by_id_from(_c20_plan(C20_TIER1_THRESHOLD_NO_OTHERWISE))
+    assert r.status == "WARN", r.detail
+    # detail names either "unparsed" residue or the missing otherwise —
+    # implementation-agnostic; the invariant is not-SKIP-not-PASS.
+    assert "SKIP" not in r.status
+    assert "PASS" not in r.status
+
+
+def by_id_from(plan: str, kind: str = "experiment"):
+    _, by_id = _run(plan, kind=kind)
+    return by_id[C20]
+
+
+# ─── Check 42 — cited commit SHA resolves (NEW) ────────────────────────────
+
+C42 = "c42_commit_sha_resolves"
+
+# From #1683 v1: `7c7095f40e` is the typo, `7c8095f40e` is the real commit.
+# Verified 2026-07-26 (plan §12 assumption 15 + verified-at-filing record):
+#   git rev-parse --verify --quiet '7c8095f40e^{commit}' -> RESOLVES
+#   git rev-parse --verify --quiet '7c7095f40e^{commit}' -> does NOT resolve
+C42_REAL_SHA = "7c8095f40e"
+C42_TYPO_SHA = "7c7095f40e"
+
+
+def _c42_plan(cite_line: str) -> str:
+    """GOOD_PLAN + a Prior Work section carrying a commit-cite line
+    outside a code fence."""
+    return GOOD_PLAN + "\n## Prior Work\n\n" + cite_line + "\n"
+
+
+def test_c42_no_cites_skips():
+    assert _status(GOOD_PLAN, C42) == "SKIP"
+
+
+def test_c42_resolvable_sha_passes():
+    plan = _c42_plan(f"The fix landed in commit `{C42_REAL_SHA}` after review.")
+    _, by_id = _run(plan)
+    r = by_id[C42]
+    assert r.status == "PASS", r.detail
+    assert "resolve" in r.detail
+
+
+def test_c42_unresolvable_sha_fails():
+    # #1683 v1 typo: 7c7095f40e — verified NOT to resolve as a commit at
+    # plan compose time (task body §12 assumption 15).
+    plan = _c42_plan(f"The fix landed in commit `{C42_TYPO_SHA}` (per the task body).")
+    ok, by_id = _run(plan)
+    r = by_id[C42]
+    assert r.status == "FAIL"
+    assert ok is False  # FAIL flips exit
+    assert C42_TYPO_SHA in r.detail
+    assert "do NOT resolve" in r.detail
+    assert "workflow-fix-on-bug.md" in r.detail  # remedy names clause (d)
+
+
+def test_c42_fingerprint_line_does_not_trigger():
+    # A same-line `fingerprint:` disqualifier drops the hex from
+    # cite-context — even if the hex looks like a valid short SHA.
+    plan = _c42_plan(f"- fingerprint: {C42_TYPO_SHA}   (dedup key, not a commit)")
+    assert _status(plan, C42) == "SKIP"
+
+
+def test_c42_hf_revision_does_not_trigger():
+    # HF revision pin: `--revision <hex>` on the same line drops the hex.
+    plan = _c42_plan(
+        "The parent artifact is pinned with `--revision abc1234def56` on the read call."
+    )
+    assert _status(plan, C42) == "SKIP"
+
+
+def test_c42_session_basename_does_not_trigger():
+    # Codex session basename: `session_id: <hex>` or `session <hex>`
+    # drops the hex (workflow-fix-on-bug.md clause (d) exclusion class).
+    plan = _c42_plan(f"session_id: {C42_TYPO_SHA} — Codex transcript basename, not a commit.")
+    assert _status(plan, C42) == "SKIP"
+
+
+def test_c42_fenced_hex_does_not_trigger():
+    # Fenced code blocks are masked via _fence_mask; a hex inside a
+    # code fence — even after a commit-cite marker — cannot trigger.
+    plan = GOOD_PLAN + f"\n## Prior Work\n\n```\ncommit `{C42_TYPO_SHA}` (transcript dump)\n```\n"
+    assert _status(plan, C42) == "SKIP"
+
+
+def test_c42_git_unavailable_skips(monkeypatch):
+    # Fail-open on git unavailability: OSError from subprocess.run ->
+    # SKIP (not FAIL, not silent PASS). Simulates a broken git install /
+    # permission failure. Retries ONCE then SKIPs.
+    def raise_oserror(*a, **kw):
+        raise OSError("git not found")
+
+    monkeypatch.setattr(verify_plan.subprocess, "run", raise_oserror)
+    plan = _c42_plan(f"The fix landed in commit `{C42_REAL_SHA}`.")
+    _, by_id = _run(plan)
+    r = by_id[C42]
+    assert r.status == "SKIP"
+    assert "unavailable" in r.detail.lower()
+
+
+def test_c42_index_lock_transient_retries_then_recovers(monkeypatch):
+    # Concern-address pin: ONE retry on transient OSError before SKIP.
+    # First call raises (simulating an .git/index.lock collision), second
+    # call succeeds — the retry lets the check PASS instead of SKIPping.
+    calls = {"n": 0}
+    real_run = verify_plan.subprocess.run
+
+    def flaky_run(cmd, **kw):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise OSError("transient index.lock collision")
+        return real_run(cmd, **kw)
+
+    monkeypatch.setattr(verify_plan.subprocess, "run", flaky_run)
+    plan = _c42_plan(f"The fix landed in commit `{C42_REAL_SHA}`.")
+    _, by_id = _run(plan)
+    r = by_id[C42]
+    # With ONE cited SHA, the retry recovers -> PASS. calls["n"] == 2
+    # confirms the retry actually happened.
+    assert calls["n"] == 2, calls
+    assert r.status == "PASS", r.detail
+
+
+def test_c42_merge_sha_marker_note_convention_triggers():
+    # Marker-note convention (`.claude/rules/crash-fix-rounds.md` §
+    # fix-engaged signal): `fix_sha=<sha>` and `merge_sha=<sha>` are
+    # cite-as-commit contexts too.
+    plan = _c42_plan(f"fix_sha={C42_TYPO_SHA} on the relaunch (crash-fix round).")
+    _, by_id = _run(plan)
+    r = by_id[C42]
+    assert r.status == "FAIL"
+    assert C42_TYPO_SHA in r.detail
+
+
+def test_c42_deduplicates_repeated_sha():
+    # A plan may cite the same commit N times; dedup keys the rev-parse
+    # call by lowercased SHA, so the "N cited commit SHA(s)" count in
+    # the PASS detail should say 1 (unique), not the raw occurrence count.
+    plan = _c42_plan(
+        f"The fix landed in commit `{C42_REAL_SHA}`. "
+        f"See commit `{C42_REAL_SHA}` for the diff. "
+        f"Verified against merge `{C42_REAL_SHA}`."
+    )
+    _, by_id = _run(plan)
+    r = by_id[C42]
+    assert r.status == "PASS", r.detail
+    assert "all 1 cited commit SHA" in r.detail
+
+
+# ─── Check 43 — /workspace sentinels vs unpinned auto lane (#1775) ──────────
+
+C43 = "c43_sentinel_lane"
+
+# Arm (b), the founding #1775 shape: fenced `phase_outputs` YAML declaring
+# `/workspace/logs/issue-NNNN-p*.done` gate sentinels + "no backend pin →
+# auto lane" prose (plan v3 §9; the Methodology critic's Must-Fix M1). NO
+# line carries both "sentinel" and "/workspace/", so a dead arm (a) cannot
+# carry this fixture (the #1114 per-arm-fixture lesson / c39
+# vm_side_trigger precedent).
+C43_1775_SHAPED = (
+    GOOD_PLAN
+    + """
+The dispatcher signals phase completion via gate files; no `backend:` pin → auto lane.
+
+```yaml
+phase_outputs:
+  - path: /workspace/logs/issue-9999-p1.done
+    kind: gate-file
+  - path: /workspace/logs/issue-9999-p2.done
+    kind: gate-file
+```
+"""
+)
+
+# Arm (a): "sentinel" + a NON-logs /workspace/ path on the SAME line — no
+# `/workspace/logs/issue-` anywhere, so a dead arm (b) cannot carry it.
+C43_ARM_A = (
+    GOOD_PLAN + "\nThe run writes a completion sentinel at /workspace/data/issue_9999/done.json\n"
+)
+
+
+def test_c43_no_trigger_skips():
+    assert _status(GOOD_PLAN, C43) == "SKIP"
+
+
+def test_c43_kind_exempt_skips():
+    # An infra plan quoting a sentinel path (this check's own workflow-fix
+    # plan is the calibration case) legitimately discusses `/workspace/...`
+    # sentinels without dispatching a sentinel-signaling workload.
+    for kind in ("infra", "batch", "analysis", "survey"):
+        assert _status(C43_1775_SHAPED, C43, kind=kind) == "SKIP"
+
+
+def test_c43_arm_b_ws_logs_path_warns():
+    # Arm (b) fires on the bare `/workspace/logs/issue-` path with NO
+    # "sentinel" token on the line — the fenced #1775 phase_outputs shape
+    # (trigger scans RAW text; strip_fences would miss it by construction).
+    _, by_id = _run(C43_1775_SHAPED)
+    r = by_id[C43]
+    assert r.status == "WARN"
+    assert "plan-compute-sizing.md" in r.detail
+    assert "Sentinel-signaling workloads" in r.detail  # the rule section
+    assert "#608" in r.detail  # the DRAC/Mila fail-loud mkdir burn
+    assert "fail-loud" in r.detail  # the residual hazard class (#1898)
+    assert "DRAINED lane as of #1898" in r.detail  # fellows named as drained
+    assert "silent marker loss" not in r.detail  # the pre-#1898 hazard is gone
+    # pin remedy names the two drained lanes + the #2028 gcp refusal
+    assert "backend: runpod" in r.detail
+    assert "backend: fellows" in r.detail
+    assert "REFUSED as of" in r.detail and "#2028" in r.detail  # gcp left the pinnable set
+    assert "no sentinel dependence — auto-safe" in r.detail  # escape remedy
+
+
+def test_c43_arm_a_sentinel_ws_path_warns():
+    # Arm (a) fires on "sentinel" + a NON-logs /workspace/ path on one line;
+    # a typo'd arm (b) could not carry this fixture green.
+    assert _status(C43_ARM_A, C43) == "WARN"
+
+
+def test_c43_backend_gcp_pin_no_longer_satisfies():
+    # #2028: GCP provisioning is disabled — an explicit gcp pin raises
+    # GcpDisabledError at route(), so it can no longer satisfy the drained-
+    # lane check (a green c43 on a gcp pin would steer the plan into the
+    # typed refusal at dispatch).
+    plan = C43_1775_SHAPED + "\nPinned lane: backend: gcp (GCE mirrors the /workspace contract).\n"
+    _, by_id = _run(plan)
+    r = by_id[C43]
+    assert r.status == "WARN"
+
+
+def test_c43_dispatch_flag_backend_runpod_passes():
+    # A fenced dispatch command carrying `--backend runpod` satisfies too —
+    # the satisfier scans RAW text (dispatch commands live in fences).
+    plan = C43_1775_SHAPED + (
+        "\n```bash\nuv run python scripts/dispatch_issue.py launch --issue 9999 "
+        "--backend runpod --intent lora-7b\n```\n"
+    )
+    assert _status(plan, C43) == "PASS"
+
+
+def test_c43_backend_fellows_pin_passes():
+    # #1898: fellows is a DRAINED lane (slurm_monitor.drain_cluster_sentinels
+    # drains its /workspace/logs each poll tick), so a `backend: fellows`
+    # pin satisfies exactly as runpod (gcp left the pinnable set at #2028).
+    plan = C43_1775_SHAPED + "\nPinned lane: backend: fellows (drained as of #1898).\n"
+    _, by_id = _run(plan)
+    r = by_id[C43]
+    assert r.status == "PASS"
+    assert "lane pinned" in r.detail
+    assert "fellows" in r.detail
+
+
+def test_c43_dispatch_flag_backend_fellows_passes():
+    # #1898: the fenced `--backend fellows` dispatch-flag form satisfies too.
+    plan = C43_1775_SHAPED + (
+        "\n```bash\nuv run python scripts/dispatch_issue.py launch --issue 9999 "
+        "--backend fellows --intent lora-7b\n```\n"
+    )
+    assert _status(plan, C43) == "PASS"
+
+
+def test_c43_standalone_escape_passes():
+    plan = C43_1775_SHAPED + "\nno sentinel dependence — auto-safe\n"
+    _, by_id = _run(plan)
+    r = by_id[C43]
+    assert r.status == "PASS"
+    assert "escape declared" in r.detail
+
+
+def test_c43_bold_prefixed_escape_at_line_start_passes():
+    # Bold-prefixed standalone form at line start (the #1768 v4 vocabulary,
+    # relocated to line start — the shape the check is designed to accept):
+    # the `_standalone_na_declared` lstrip convention strips the leading
+    # `**`, and the regex is explicitly case-insensitive.
+    plan = C43_1775_SHAPED + (
+        "\n**No sentinel dependence — auto-safe:** results ride HF uploads; the poller "
+        "reads the Hub, nothing posts through /workspace sentinels.\n"
+    )
+    assert _status(plan, C43) == "PASS"
+
+
+def test_c43_escape_dash_variants_pass():
+    # The rule text renders the dash as an em dash; hyphen / en-dash /
+    # em-dash variants all count.
+    for dash in ("-", "–", "—"):
+        plan = C43_1775_SHAPED + f"\nno sentinel dependence {dash} auto-safe\n"
+        assert _status(plan, C43) == "PASS", dash
+
+
+def test_c43_na_form_escape_passes():
+    # The `N/A — no sentinel dependence...` form routes through the shared
+    # `_standalone_na_declared` helper.
+    plan = C43_1775_SHAPED + "\nN/A — no sentinel dependence — auto-safe\n"
+    assert _status(plan, C43) == "PASS"
+
+
+def test_c43_fenced_escape_does_not_satisfy():
+    # Anti-paste `_standalone_na_declared` semantics (c39/c38 parity): the
+    # escape inside a fence (a quoted bounce brief) must not satisfy.
+    plan = C43_1775_SHAPED + "\n```\nno sentinel dependence — auto-safe\n```\n"
+    assert _status(plan, C43) == "WARN"
+
+
+def test_c43_backtick_wrapped_escape_does_not_satisfy():
+    # A backtick-wrapped paste of the remedy's quoted form is NOT a
+    # declaration (#1238 anti-paste doctrine — declare escapes UNWRAPPED).
+    plan = C43_1775_SHAPED + "\n`no sentinel dependence — auto-safe`\n"
+    assert _status(plan, C43) == "WARN"
+
+
+def test_c43_midline_label_prefixed_escape_warns():
+    # The #1738 v4 real-corpus shape (and the REALIZED #1768 v4 shape — its
+    # bold-prefixed phrase actually sits mid-line after a `**Backend/lane:**`
+    # label), pinned as WARN — the INTENDED #1238 anti-paste miss: a
+    # label-prefixed MID-LINE mention is not a standalone declaration
+    # (re.match after the lstrip never reaches mid-line text).
+    plan = C43_1775_SHAPED + (
+        "\n**Lane / sentinel contract:** no sentinel dependence — auto-safe "
+        "(results ride HF uploads).\n"
+    )
+    assert _status(plan, C43) == "WARN"
+
+
+# ─── Check 44 — declared-committed paths not gitignored (#1900) ─────────────
+
+C44 = "c44_committed_paths_gitignored"
+
+# The founding #1900 shape: an output/config path declared committed to the
+# issue branch while a live `data/*` gitignore rule matches it — a plain
+# `git add` silently skips it (rc=0, the #958 signature) and the git-clone
+# lanes (GCP/fellows) crash at their first read (#734).
+C44_DECL = (
+    "The subset/arm configs land at `data/issue_9999/foo.json`, committed to "
+    "the issue branch so the clone-based lanes can read them."
+)
+
+
+def _c44_plan(decl: str, extra: str = "") -> str:
+    """GOOD_PLAN + a `## 10. Outputs` section carrying a committed-path
+    declaration (and optional same-section extra prose)."""
+    return GOOD_PLAN + "\n## 10. Outputs\n\n" + decl + "\n" + extra
+
+
+@pytest.fixture()
+def c44_repo(tmp_path, monkeypatch):
+    """Tmp git repo with a `data/*` ignore rule; `_C44_REPO_ROOT`
+    monkeypatched so `git check-ignore` runs against it (the c34/c41/c42
+    monkeypatch-seam pattern), never the live repo."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", str(repo)], check=True, capture_output=True)
+    (repo / ".gitignore").write_text("data/*\n")
+    monkeypatch.setattr(verify_plan, "_C44_REPO_ROOT", repo)
+    return repo
+
+
+def test_c44_registered_in_checks():
+    # Advisory-1 membership pin: a forgotten registry append cannot ship
+    # green (the check function existing is not the check running).
+    assert verify_plan.check_committed_paths_not_gitignored in verify_plan.CHECKS
+
+
+def test_c44_no_trigger_skips():
+    # GOOD_PLAN carries no commit-to-git vocabulary — SKIP before any git
+    # access (trigger-conditional).
+    assert _status(GOOD_PLAN, C44) == "SKIP"
+
+
+def test_c44_runs_for_all_kinds(c44_repo):
+    # ALL kinds: a gitignore-eaten declared output strands infra/batch
+    # workflow-fix lanes exactly as experiment lanes (#1900 was kind:infra's
+    # sibling class; the founding plan was an experiment).
+    for kind in ("experiment", "analysis", "infra", "batch", "survey"):
+        assert _status(_c44_plan(C44_DECL), C44, kind=kind) == "WARN", kind
+
+
+def test_c44_ignored_declared_path_warns(c44_repo):
+    _, by_id = _run(_c44_plan(C44_DECL))
+    r = by_id[C44]
+    assert r.status == "WARN"
+    assert "data/issue_9999/foo.json" in r.detail  # the offending path
+    assert "data/*" in r.detail  # its matching .gitignore rule
+    assert "#958" in r.detail  # the silent-skip signature
+    assert "#1900" in r.detail  # the founding instance
+    assert "Staged-index verification" in r.detail  # the remedy recipe
+    assert "N/A — no committed outputs" in r.detail  # the escape remedy
+    assert "unwrapped" in r.detail  # the #1263 own-line clarifier contract
+
+
+def test_c44_tracked_ignored_path_passes(c44_repo):
+    # The #1900 post-fix state: the path is force-added (tracked in the
+    # index), so index-aware DEFAULT `git check-ignore` reads it
+    # not-ignored — a tracked file rides the clone regardless of ignore
+    # rules. This is why the check must never pass `--no-index`.
+    target = c44_repo / "data" / "issue_9999" / "foo.json"
+    target.parent.mkdir(parents=True)
+    target.write_text("{}\n")
+    subprocess.run(
+        ["git", "-C", str(c44_repo), "add", "-f", "data/issue_9999/foo.json"],
+        check=True,
+        capture_output=True,
+    )
+    _, by_id = _run(_c44_plan(C44_DECL))
+    r = by_id[C44]
+    assert r.status == "PASS", r.detail
+    assert "not-ignored" in r.detail or "none of the" in r.detail
+
+
+def test_c44_force_add_note_same_section_passes(c44_repo):
+    plan = _c44_plan(
+        C44_DECL,
+        "\nStaging: `git add -f data/issue_9999/foo.json`, then verify the "
+        "staged index per /issue Step 9a-ter § Staged-index verification.\n",
+    )
+    _, by_id = _run(plan)
+    r = by_id[C44]
+    assert r.status == "PASS", r.detail
+    assert "same-section" in r.detail
+
+
+def test_c44_force_add_note_other_section_still_warns(c44_repo):
+    # Plan-wide satisfiers are deliberately NOT accepted: a force-add note in
+    # a DIFFERENT section must not silence a specific declared path.
+    plan = _c44_plan(C44_DECL) + (
+        "\n## 12. Staging mechanics\n\n"
+        "Elsewhere the pipeline runs `git add -f` with staged-index "
+        "verification for unrelated artifacts.\n"
+    )
+    assert _status(plan, C44) == "WARN"
+
+
+def test_c44_na_escape_skips():
+    # The standalone escape short-circuits BEFORE any git access (the c34 NA
+    # idiom) — no repo fixture needed.
+    plan = _c44_plan(C44_DECL) + "\nN/A — no committed outputs\n"
+    _, by_id = _run(plan)
+    r = by_id[C44]
+    assert r.status == "SKIP"
+    assert "escape declared" in r.detail
+
+
+def test_c44_wrapped_or_fenced_escape_does_not_satisfy(c44_repo):
+    # Anti-paste `_standalone_na_declared` semantics (#1238): a
+    # backtick-wrapped or fenced paste of the escape is NOT a declaration.
+    for pasted in (
+        "\n`N/A — no committed outputs`\n",
+        "\n```\nN/A — no committed outputs\n```\n",
+    ):
+        assert _status(_c44_plan(C44_DECL) + pasted, C44) == "WARN", pasted
+
+
+def test_c44_brace_expansion_extracts_both(c44_repo):
+    # The founding #1900 token shape: `{subset.json,arms.json}` expands to
+    # BOTH members. Track one member; only the untracked sibling WARNs.
+    tracked = c44_repo / "data" / "issue_9999" / "a.json"
+    tracked.parent.mkdir(parents=True)
+    tracked.write_text("{}\n")
+    subprocess.run(
+        ["git", "-C", str(c44_repo), "add", "-f", "data/issue_9999/a.json"],
+        check=True,
+        capture_output=True,
+    )
+    plan = _c44_plan(
+        "The configs `data/issue_9999/{a.json,b.json}` are committed to the "
+        "issue branch for the clone-based lanes."
+    )
+    _, by_id = _run(plan)
+    r = by_id[C44]
+    assert r.status == "WARN"
+    assert "data/issue_9999/b.json" in r.detail
+    assert "data/issue_9999/a.json" not in r.detail  # tracked → not ignored
+
+
+def test_c44_glob_reduces_to_literal_dir_prefix(c44_repo):
+    # A glob token reduces to its deepest literal directory prefix and the
+    # DIRECTORY is checked (`data/issue_9999/out/*.json` → `data/issue_9999/out`,
+    # which `data/*` matches).
+    plan = _c44_plan(
+        "Per-cell JSONs at `data/issue_9999/out/*.json` are committed to the "
+        "issue branch after the sweep."
+    )
+    _, by_id = _run(plan)
+    r = by_id[C44]
+    assert r.status == "WARN"
+    assert "data/issue_9999/out" in r.detail
+
+
+def test_c44_absolute_and_url_tokens_do_not_trigger(c44_repo):
+    # Absolute pod-side paths and URL tails are NOT repo paths — with no
+    # extractable repo-relative token the check SKIPs (never calls git on
+    # `/workspace/...`).
+    plan = _c44_plan(
+        "Sentinels at /workspace/logs/issue-9999/out.json are committed to "
+        "the repo mirror at https://huggingface.co/datasets/foo/bar only."
+    )
+    _, by_id = _run(plan)
+    r = by_id[C44]
+    assert r.status == "SKIP"
+    assert "without extractable" in r.detail
+
+
+def test_c44_git_unavailable_skips(monkeypatch):
+    # Fail-open on git unavailability (the c42 contract): OSError from
+    # subprocess.run on BOTH attempts (one 0.1 s retry) -> SKIP, never FAIL.
+    def raise_oserror(*a, **kw):
+        raise OSError("git not found")
+
+    monkeypatch.setattr(verify_plan.subprocess, "run", raise_oserror)
+    _, by_id = _run(_c44_plan(C44_DECL))
+    r = by_id[C44]
+    assert r.status == "SKIP"
+    assert "unavailable" in r.detail.lower()
+    assert "inconclusive" in r.detail.lower()
+
+
+def test_c44_skill_roster_carries_escape():
+    # Durability pin (c31-compliant) for the SKILL.md prose edit: the
+    # canonical N/A escape-phrases block must carry the check-44 escape,
+    # backtick-wrapped (the generative sync test propagates the docstring
+    # registration; this pins the consumer surface directly).
+    text = (REPO_ROOT / ".claude/skills/adversarial-planner/SKILL.md").read_text()
+    anchor = text.index("Canonical N/A escape phrases")
+    block = text[anchor : text.index("bounce to the planner", anchor)]
+    assert "`N/A — no committed outputs`" in block
+    assert "(check 44" in block
+
+
+# ─── Check 45 — trained-base change DV vs base-side predictor companion ────
+
+C45 = "c45_change_dv_base_predictor_companion"
+
+# Synthetic trigger: a change-DV signature (arm a) + a base-side predictor
+# raced on ONE line (arm b), no satisfiers. Each arm's fixture line carries
+# ONLY its own arm's vocabulary so a dead arm cannot ride the other (the
+# #1114 per-arm-fixture lesson / the c43 arm-split precedent).
+C45_CHANGE_DV_LINE = "\nThe leakage DV is the per-context judge score, trained − base, per arm.\n"
+C45_RACE_LINE = "\nCandidates raced: P7 (base behavioral propensity) is the incumbent.\n"
+C45_TRIGGERED = GOOD_PLAN + C45_CHANGE_DV_LINE + C45_RACE_LINE
+
+C45_COMPANION_LINE = (
+    "\nRegistered companion column: a trained-side LEVEL Spearman column for P7 "
+    "(pure re-reduction of persisted inputs).\n"
+)
+C45_CONVENTION_LINE = (
+    "\nWinner-selection convention (registered): the champion argmax is over SIGNED Spearman ρ.\n"
+)
+
+# Real-corpus anchor (#1900 v4 — the founding must-WARN instance): verbatim
+# contiguous spans inlined from tasks/awaiting_promotion/1900/plans/v4.md
+# (L11 Plan-Summary baselines span, L151 marker change-DV table row, L161
+# selection-symmetric-nulls line) — inlined as string fixtures so the test
+# never reads tasks/ paths at runtime.
+C45_1900_V4_EXCERPT = GOOD_PLAN + (
+    "\n**Baselines / controls:** incumbent P7 (base behavioral propensity) raced and "
+    "partialled; identity+bias and kNN-retrieval reads on every refit map; "
+    "selection-symmetric winner call; leak-through-M guard via map refits that exclude "
+    "the judge subset.\n"
+    "\n| Marker leakage (primary) | marker propensity at the trained slot | Δ log P(marker) "
+    "trained−base at the end of the arm's OWN response (three-space contract) | Yes — "
+    "on-policy text, trained slot; TF read is the marker rule's sanctioned form |\n"
+    '\n**Selection-symmetric nulls:** the headline "best predictor" is a max over the 11 '
+    "raced candidates ⇒ (i) per-draw same-selection: winner re-selected inside every "
+    "bootstrap resample and every permutation draw; (ii) per-draw × per-candidate matrices "
+    "persisted (above); (iii) CI at the winner reported as selection-inherited (frozen CI "
+    "also shown, labeled); (iv) band-vs-ceiling: the permutation band's upper bound is "
+    "reported against the bounded-DV ceiling |ρ| ≤ 1 (plainly reachable; margin reported); "
+    "the champion-vs-P7 contrast is a difference statistic — its conditional ceiling is "
+    "1 − ρ̂_P7(arm) with ρ̂_P7 the realized per-arm P7 Spearman (named comparison-arm "
+    "quantity; reported as an interval across arms).\n"
+)
+
+# Real-corpus anchor (#1900 v5 — the revised must-PASS shape): the same
+# trigger spans plus verbatim spans of v5 L48 (winner-selection convention)
+# and L96 (registered companion columns).
+C45_1900_V5_EXCERPT = GOOD_PLAN + (
+    "\n**Baselines / controls:** incumbent P7 (base behavioral propensity) raced and "
+    "partialled; identity+bias and kNN-retrieval reads on every refit map; "
+    "selection-symmetric winner call; leak-through-M guard via map refits that exclude "
+    "the judge subset.\n"
+    "\nWinner-selection convention (registered): the champion argmax is over SIGNED "
+    "Spearman ρ — a deployable leakage predictor must predict positively; a sign-flipped "
+    "candidate (the #444 backwards-distance shape) is a reportable finding but never the "
+    "winner; |ρ| views ride the exploratory dump only.\n"
+    "\n- **Registered DV-identity companion columns (Stats-lens MF, round 1 — both are "
+    "pure re-reductions of already-persisted inputs; primaries unchanged):** (a) marker "
+    "panel — a trained-side LEVEL log P Spearman column for P7 (the four-float contract "
+    'stores both sides), labeled "level companion — the primary marker change-DV couples '
+    "P7 (a base-side log P) with a mechanical ≈ −1 component (the #559/#605 pattern), so "
+    "P7's marker-panel rank is read jointly with this column\"; (b) content panel — a "
+    "per-context graded CHANGE (trained − base) companion race column (base scores "
+    'already judged for P7), labeled "change companion".\n'
+)
+
+
+def test_c45_no_trigger_skips():
+    # Fixture (f): GOOD_PLAN carries neither a change-DV signature nor a
+    # base-predictor race line.
+    assert _status(GOOD_PLAN, C45) == "SKIP"
+
+
+def test_c45_change_dv_alone_skips():
+    # Arm (b) dead: a change-DV signature with no raced base-side predictor
+    # must not trigger.
+    assert _status(GOOD_PLAN + C45_CHANGE_DV_LINE, C45) == "SKIP"
+
+
+def test_c45_race_line_alone_skips():
+    # Arm (a) dead: a base-side predictor race with no change-DV signature
+    # must not trigger.
+    assert _status(GOOD_PLAN + C45_RACE_LINE, C45) == "SKIP"
+
+
+def test_c45_split_line_race_vocabulary_skips():
+    # Arm (b) is a SAME-LINE conjunction: the base-side token and the
+    # predictor-context token on different lines must not trigger.
+    plan = (
+        GOOD_PLAN
+        + C45_CHANGE_DV_LINE
+        + (
+            "\nThe base behavioral propensity is also reported per unit.\n"
+            "Eleven candidates are raced per arm.\n"
+        )
+    )
+    assert _status(plan, C45) == "SKIP"
+
+
+def test_c45_kind_exempt_skips():
+    # Fixture (e): infra workflow-fix plans (this check's own plan included)
+    # legitimately QUOTE the trigger vocabulary without racing predictors.
+    for kind in ("infra", "batch", "analysis", "survey"):
+        assert _status(C45_TRIGGERED, C45, kind=kind) == "SKIP"
+
+
+def test_c45_fenced_trigger_skips():
+    # Fixture (g): trigger vocabulary confined to a fenced block must not
+    # trigger (strip_fences, the c39 convention).
+    plan = (
+        GOOD_PLAN
+        + "\n```\n"
+        + C45_CHANGE_DV_LINE.strip()
+        + "\n"
+        + C45_RACE_LINE.strip()
+        + "\n```\n"
+    )
+    assert _status(plan, C45) == "SKIP"
+
+
+def test_c45_triggered_no_satisfiers_warns():
+    # Fixture (a): triggered plan with neither satisfier WARNs naming BOTH
+    # halves + the #559/#605 rationale + the escape phrase.
+    _, by_id = _run(C45_TRIGGERED)
+    r = by_id[C45]
+    assert r.status == "WARN"
+    assert "companion column" in r.detail
+    assert "winner sign" in r.detail
+    assert "#559" in r.detail and "#605" in r.detail
+    assert "~ -1" in r.detail  # the mechanical coefficient rationale
+    assert "Statistics lens item 2" in r.detail
+    assert "N/A — no base-side predictor vs change DV" in r.detail
+    assert "unwrapped" in r.detail
+
+
+def test_c45_both_satisfiers_pass():
+    # Fixture (b): companion registration + winner sign convention → PASS.
+    plan = C45_TRIGGERED + C45_COMPANION_LINE + C45_CONVENTION_LINE
+    _, by_id = _run(plan)
+    r = by_id[C45]
+    assert r.status == "PASS"
+    assert "companion column registered" in r.detail
+
+
+def test_c45_companion_only_warns_naming_convention():
+    # Fixture (c): companion registered but NO winner sign convention →
+    # WARN naming the missing convention half.
+    _, by_id = _run(C45_TRIGGERED + C45_COMPANION_LINE)
+    r = by_id[C45]
+    assert r.status == "WARN"
+    assert "winner sign convention" in r.detail
+    assert "registered level/change companion column AND" not in r.detail
+
+
+def test_c45_convention_only_warns_naming_companion():
+    # Convention stated but NO companion column → WARN naming the missing
+    # companion half.
+    _, by_id = _run(C45_TRIGGERED + C45_CONVENTION_LINE)
+    r = by_id[C45]
+    assert r.status == "WARN"
+    assert "companion column" in r.detail
+    assert "AND a stated winner sign" not in r.detail
+
+
+def test_c45_standalone_escape_passes():
+    # Fixture (d): the standalone escape line PASSes a triggered plan.
+    plan = C45_TRIGGERED + "\nN/A — no base-side predictor vs change DV\n"
+    _, by_id = _run(plan)
+    r = by_id[C45]
+    assert r.status == "PASS"
+    assert "N/A declared" in r.detail
+
+
+def test_c45_fenced_escape_does_not_satisfy():
+    # Anti-paste `_standalone_na_declared` semantics (c43/c39 parity): the
+    # escape inside a fence (a quoted bounce brief) must not satisfy.
+    plan = C45_TRIGGERED + "\n```\nN/A — no base-side predictor vs change DV\n```\n"
+    assert _status(plan, C45) == "WARN"
+
+
+def test_c45_backtick_wrapped_escape_does_not_satisfy():
+    # A backtick-wrapped paste of the remedy's quoted form is NOT a
+    # declaration (#1238 anti-paste doctrine — declare escapes UNWRAPPED).
+    plan = C45_TRIGGERED + "\n`N/A — no base-side predictor vs change DV`\n"
+    assert _status(plan, C45) == "WARN"
+
+
+def test_c45_bare_abs_rho_is_not_a_convention():
+    # Fixture (j), the degenerate-|rho| guard (critic MF1): companion
+    # registered + incidental max-|rho| prose on a line WITHOUT
+    # winner/convention/champion/argmax context + NO stated convention →
+    # still WARN (bare |rho| is not a standalone satisfier — predictor-race
+    # plans near-universally carry max-|rho| prose, #1900 v4).
+    plan = (
+        C45_TRIGGERED
+        + C45_COMPANION_LINE
+        + (
+            "\nExploratory dump: per-layer max-|ρ| heatmaps over the 28 read layers ride "
+            "the appendix.\n"
+        )
+    )
+    _, by_id = _run(plan)
+    r = by_id[C45]
+    assert r.status == "WARN"
+    assert "winner sign convention" in r.detail
+
+
+def test_c45_abs_rho_with_winner_context_counts_as_convention():
+    # The conjunction arm: |rho| / `absolute` DOES count on a line also
+    # carrying winner/convention/champion/argmax context.
+    plan = (
+        C45_TRIGGERED
+        + C45_COMPANION_LINE
+        + ("\nThe winner is the argmax over candidates of |ρ| (absolute-value view).\n")
+    )
+    assert _status(plan, C45) == "PASS"
+
+
+def test_c45_1900_v4_excerpt_triggers_and_warns():
+    # Fixture (h), founding instance: the #1900 v4 excerpt triggers (base
+    # behavioral propensity raced + trained-base change DV) and WARNs — v4
+    # registered NO companion column (the round-1 Stats Must-Fix). Its
+    # selection-symmetric |rho| line legitimately carries winner context on
+    # the same line, so the missing half named is the companion.
+    _, by_id = _run(C45_1900_V4_EXCERPT)
+    r = by_id[C45]
+    assert r.status == "WARN"
+    assert "companion column" in r.detail
+
+
+def test_c45_1900_v5_excerpt_triggers_and_passes():
+    # Fixture (h), revised shape: the #1900 v5 excerpt registers the
+    # DV-identity companion columns AND the winner-selection convention →
+    # PASS.
+    _, by_id = _run(C45_1900_V5_EXCERPT)
+    r = by_id[C45]
+    assert r.status == "PASS"
+
+
+def test_c45_escape_registered_in_skill():
+    # Fixture (i), durability pin: the c45 escape phrase is registered
+    # verbatim (backtick-wrapped, whitespace-normalized — the block wraps
+    # long phrases across indented continuation lines) in the
+    # adversarial-planner SKILL.md canonical N/A escape list, so a later
+    # SKILL.md edit cannot silently drop it. The generative
+    # docstring→SKILL.md sync pin above covers it too; this per-check pin
+    # fails with a named test.
+    text = (REPO_ROOT / ".claude" / "skills" / "adversarial-planner" / "SKILL.md").read_text()
+    anchor = text.index("Canonical N/A escape phrases")
+    block = text[anchor : text.index("bounce to the planner", anchor)]
+    norm = re.sub(r"\s+", " ", block)
+    assert "`N/A — no base-side predictor vs change DV` (check 45" in norm

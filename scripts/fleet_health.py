@@ -512,6 +512,47 @@ def check_pod(pod: Pod, quick: bool = False) -> PodHealth:
 # ---------------------------------------------------------------------------
 
 
+def _live_workload_probe(pod: Pod) -> bool | None:
+    """Probe the pod for a live registered workload (skip-on-doubt, #1893).
+
+    Mirrors the pid-glob + ``kill -0`` predicate of scripts/pod_code_sync.sh:
+    any /workspace/logs/issue-*.pid whose pid is alive — or whose content is
+    non-empty but unparseable — counts as LIVE. Returns True (live), False
+    (none found), or None (probe itself failed; callers treat as live).
+    """
+    probe = (
+        "for f in /workspace/logs/issue-*.pid; do "
+        '[ -f "$f" ] || continue; '
+        "pid=$(tr -d '[:space:]' < \"$f\" 2>/dev/null); "
+        '[ -n "$pid" ] || continue; '
+        'case "$pid" in *[!0-9]*) echo LIVE; exit 0;; esac; '
+        'if kill -0 "$pid" 2>/dev/null; then echo LIVE; exit 0; fi; '
+        "done; echo NONE"
+    )
+    rc, out, _ = ssh_cmd(pod, probe)
+    if rc != 0:
+        return None
+    return out == "LIVE"
+
+
+def _git_fix_skip_reason(health: PodHealth) -> str | None:
+    """Why the --fix git legs must NOT touch this pod's clone, or None.
+
+    Guards (#1893, origin incident #1776): never mutate a checkout under a
+    possibly-live registered workload, and never checkout/pull main content
+    over a non-main (issue-branch) clone — `pod.py sync code|env`
+    (pod_code_sync.sh) is the branch-aware sync path for those.
+    """
+    live = _live_workload_probe(health.pod)
+    if live is True:
+        return "live workload detected"
+    if live is None:
+        return "live-workload probe failed (skip-on-doubt)"
+    if health.git_branch != "main":
+        return f"pod on branch {health.git_branch!r} (not main)"
+    return None
+
+
 def fix_pod(health: PodHealth) -> PodHealth:
     """Attempt to fix issues found on a pod. Mutates and returns the health object."""
     pod = health.pod
@@ -519,17 +560,15 @@ def fix_pod(health: PodHealth) -> PodHealth:
     if not health.reachable:
         return health
 
-    # Fix: git not on main
-    if health.git_branch is not None and health.git_branch != "main":
-        rc, _, err = ssh_cmd(pod, f"git -C {REMOTE_PROJECT} checkout main")
-        if rc == 0:
-            health.fixes_applied.append(f"Checked out main (was on {health.git_branch})")
-            health.git_branch = "main"
-        else:
-            health.errors.append(f"Failed to checkout main: {err}")
-
-    # Fix: git behind
-    if health.git_behind is not None and health.git_behind > 0:
+    # Git fixes (guarded, #1893). The old unconditional `checkout main` fix is
+    # retired: a non-main pod is reported loudly, never forced onto main
+    # content (strictly worse than the pull for an issue-branch clone).
+    # REPORTING fields (git_branch / git_behind / git_dirty) are untouched.
+    git_skip_reason = _git_fix_skip_reason(health)
+    if git_skip_reason is not None:
+        health.fixes_applied.append(f"SKIPPED git fixes (checkout main + pull): {git_skip_reason}")
+    elif health.git_behind is not None and health.git_behind > 0:
+        # Fix: git behind (branch == main and no live workload here)
         rc, _, err = ssh_cmd(
             pod,
             f"git -C {REMOTE_PROJECT} pull --ff-only origin main",

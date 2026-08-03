@@ -1,0 +1,94 @@
+{
+ "meta": {
+  "script": "scripts/issue1092_coincidence_expansion.py",
+  "git_commit": "5118ed80280718a1b0ec904a840d2b5f9ffa1af2",
+  "layer": 14,
+  "basis": "ambient",
+  "seed": 20260723
+ },
+ "cells": {
+  "cell_inst_own": {
+   "noise_localization": {
+    "spearman_nrows_vs_disagreement": [
+     -0.26945324543267696,
+     4.986792363732575e-18
+    ],
+    "spearman_nrows_vs_err_ratio": [
+     -0.4542804978152143,
+     7.147049977630363e-52
+    ],
+    "median_disagreement_sparse_le5_rows": NaN,
+    "median_disagreement_dense_ge40_rows": 0.4532572495620209,
+    "refit_win_frac_dense_ge40": 0.48484848484848486,
+    "n_sparse_le5": 0,
+    "n_dense_ge40": 99
+   },
+   "amplitude_correction": {
+    "oracle_scale": 0.8167271706635327,
+    "r2_refit": 0.6548155110883389,
+    "r2_refit_rescaled": 0.6895428828701101,
+    "r2_induced": 0.8193260751733688
+   },
+   "learning_curve_rows_vs_induced_r2": [
+    {
+     "target_rows": 996,
+     "actual_rows": 1000,
+     "n_prefixes": 52,
+     "r2_row": 0.5386614708165405,
+     "r2_induced_avg": 0.41980968282781095
+    },
+    {
+     "target_rows": 2000,
+     "actual_rows": 2004,
+     "n_prefixes": 114,
+     "r2_row": 0.509194289908447,
+     "r2_induced_avg": 0.3478462543956272
+    },
+    {
+     "target_rows": 5000,
+     "actual_rows": 5018,
+     "n_prefixes": 288,
+     "r2_row": 0.5054052128333135,
+     "r2_induced_avg": 0.28400320096159304
+    },
+    {
+     "target_rows": 17308,
+     "actual_rows": 17308,
+     "n_prefixes": 996,
+     "r2_row": 0.8141832948824598,
+     "r2_induced_avg": 0.8193260751733688
+    }
+   ],
+   "small_n_angle_reference": {
+    "definition": "per-row operator fit on the ~1k-row grouped subsample vs the full per-row operator \u2014 the SAME operator estimated at refit-scale n; reference for the observed refit-vs-induced angles",
+    "input_k48_deg": 68.7451958798005,
+    "output_k48_deg": 40.45320922466929
+   },
+   "wall_s": 1193.5
+  },
+  "cell_pre_own": {
+   "noise_localization": {
+    "spearman_nrows_vs_disagreement": [
+     -0.21597080399475227,
+     5.625633167501044e-12
+    ],
+    "spearman_nrows_vs_err_ratio": [
+     -0.4154318548059198,
+     7.788522126685488e-43
+    ],
+    "median_disagreement_sparse_le5_rows": NaN,
+    "median_disagreement_dense_ge40_rows": 0.6564634803445802,
+    "refit_win_frac_dense_ge40": 0.5252525252525253,
+    "n_sparse_le5": 0,
+    "n_dense_ge40": 99
+   },
+   "amplitude_correction": {
+    "oracle_scale": 0.7936639509856654,
+    "r2_refit": 0.6021784188937171,
+    "r2_refit_rescaled": 0.645837051293312,
+    "r2_induced": 0.7633080486910762
+   },
+   "wall_s": 744.6
+  }
+ }
+}

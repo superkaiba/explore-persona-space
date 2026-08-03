@@ -1,0 +1,395 @@
+{
+  "commit": "0a6f324d02",
+  "created": "2026-08-02T00:31:33Z",
+  "figsize": [
+    8.0,
+    6.84
+  ],
+  "points": [
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.08374656175045625,
+      "y": -0.22499999999999998,
+      "series": "context sim | propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.28972904930236504,
+      "y": 0.775,
+      "series": "context sim | propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.16418453383823214,
+      "y": 1.775,
+      "series": "context sim | propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.28724767945673707,
+      "y": 2.775,
+      "series": "context sim | propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.15976729331393413,
+      "y": 3.775,
+      "series": "context sim | propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.16959417359741116,
+      "y": 4.775,
+      "series": "context sim | propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.25239530267785637,
+      "y": 5.775,
+      "series": "context sim | propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.3891901149774893,
+      "y": 6.775,
+      "series": "context sim | propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": -0.43807869491710516,
+      "y": 7.775,
+      "series": "context sim | propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.3542631483408212,
+      "y": 8.775,
+      "series": "context sim | propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.06475900077074818,
+      "y": 9.775,
+      "series": "context sim | propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.01698955170069546,
+      "y": 10.775,
+      "series": "context sim | propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.07501689437683867,
+      "y": -0.075,
+      "series": "context sim | answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": -0.13604291953814987,
+      "y": 0.925,
+      "series": "context sim | answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": -0.08790028832053129,
+      "y": 1.925,
+      "series": "context sim | answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": -0.30808698257209666,
+      "y": 2.925,
+      "series": "context sim | answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": -0.06988515371670465,
+      "y": 3.925,
+      "series": "context sim | answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": -0.1370311635780242,
+      "y": 4.925,
+      "series": "context sim | answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": -0.1735266083429689,
+      "y": 5.925,
+      "series": "context sim | answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": -0.2561850564496721,
+      "y": 6.925,
+      "series": "context sim | answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": -0.04560667576503476,
+      "y": 7.925,
+      "series": "context sim | answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.061048554384692234,
+      "y": 8.925,
+      "series": "context sim | answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.2639380820747264,
+      "y": 9.925,
+      "series": "context sim | answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.20333507707980306,
+      "y": 10.925,
+      "series": "context sim | answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.044622715049513366,
+      "y": 0.075,
+      "series": "answer sim | propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.5186800347492321,
+      "y": 1.075,
+      "series": "answer sim | propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.31114601282330817,
+      "y": 2.075,
+      "series": "answer sim | propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.6342754785787128,
+      "y": 3.075,
+      "series": "answer sim | propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.3007036826805113,
+      "y": 4.075,
+      "series": "answer sim | propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.3778382135936279,
+      "y": 5.075,
+      "series": "answer sim | propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.5199049684676932,
+      "y": 6.075,
+      "series": "answer sim | propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.7422436612045236,
+      "y": 7.075,
+      "series": "answer sim | propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": -0.49824721147793655,
+      "y": 8.075,
+      "series": "answer sim | propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.38623257284287027,
+      "y": 9.075,
+      "series": "answer sim | propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": -0.11919394702157483,
+      "y": 10.075,
+      "series": "answer sim | propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": -0.13299846855529207,
+      "y": 11.075,
+      "series": "answer sim | propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": -0.024458632515727496,
+      "y": 0.22499999999999998,
+      "series": "answer sim | context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.46563364336984964,
+      "y": 1.225,
+      "series": "answer sim | context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.28100227661025867,
+      "y": 2.225,
+      "series": "answer sim | context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.6406149069914615,
+      "y": 3.225,
+      "series": "answer sim | context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.26675030384089193,
+      "y": 4.225,
+      "series": "answer sim | context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.3659904703357953,
+      "y": 5.225,
+      "series": "answer sim | context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.4940864969113802,
+      "y": 6.225,
+      "series": "answer sim | context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.7109830440127652,
+      "y": 7.225,
+      "series": "answer sim | context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": -0.26767868792319444,
+      "y": 8.225,
+      "series": "answer sim | context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": 0.17520470630431648,
+      "y": 9.225,
+      "series": "answer sim | context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": -0.28110219044671747,
+      "y": 10.225,
+      "series": "answer sim | context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho with per-prefix leakage level": -0.24089523443402314,
+      "y": 11.225,
+      "series": "answer sim | context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "context vs answer similarity partials, base propensity always conditioned",
+        "xlabel": "partial Spearman rho with per-prefix leakage level",
+        "legend_labels": [
+          "context sim | propensity",
+          "context sim | answer sim + propensity",
+          "answer sim | propensity",
+          "answer sim | context sim + propensity"
+        ],
+        "xticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "casual bare-context contrastive",
+          "casual persona contrastive",
+          "casual persona full fine-tune",
+          "casual persona positive-only",
+          "impolite persona contrastive (seed 137)",
+          "impolite persona contrastive (seed 42)",
+          "impolite persona full fine-tune",
+          "impolite persona positive-only",
+          "sycophancy bare-context contrastive",
+          "sycophancy conversation contrastive",
+          "sycophancy persona full fine-tune",
+          "sycophancy persona positive-only"
+        ]
+      }
+    ],
+    "series": [
+      "context sim | propensity",
+      "context sim | answer sim + propensity",
+      "answer sim | propensity",
+      "answer sim | context sim + propensity"
+    ]
+  }
+}

@@ -36,3 +36,9 @@ unit test feeding a negative delta + inverted CI (both sides) through the real
 figure function to `savefig` (`tests/test_issue1335_figures_errorbar.py`).
 NaN bounds are safe (matplotlib's negativity check passes NaN; no bar drawn) —
 don't coerce them. Empty arrays are safe too.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [CI bounds vs mpl xerr/yerr offsets](feedback_constant_bootstrap_negative_yerr.md) — clamp max(0,v-lo)/max(0,hi-v) element-wise at EVERY errorbar site; fires on float-epsilon (#547) AND inverted quantile CIs at tiny n (#1335)

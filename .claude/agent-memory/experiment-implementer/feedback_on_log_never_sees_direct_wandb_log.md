@@ -25,3 +25,9 @@ artifact file (`band_trajectory.json`, atomically rewritten per probe) plus
 from log-key sniffing. When a verdict path can only execute on GPU, add a
 synthetic-artifact CPU test (in-band / overshoot / full-cap-miss cases) so the
 classification logic is covered pre-launch.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [on_log never sees direct wandb.log](feedback_on_log_never_sees_direct_wandb_log.md) — derive cross-callback outcomes from the producer's artifact file, never on_log key-sniffing (#621 false band-miss)

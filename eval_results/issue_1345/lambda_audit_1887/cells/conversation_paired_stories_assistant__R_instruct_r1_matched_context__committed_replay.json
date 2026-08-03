@@ -1,0 +1,101 @@
+{
+  "arm": "committed_replay",
+  "cell_id": "conversation_paired_stories_assistant__R_instruct_r1_matched_context",
+  "committed_r2": 0.24258391652474653,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 3.5,
+  "fold_se": 0.04566744838528141,
+  "issue": 1345,
+  "knn": {
+    "cosine": {
+      "acc_at_k": {
+        "1": 0.5141007859454462,
+        "5": 0.8252427184466019,
+        "10": 0.8867313915857605
+      },
+      "chance_at_k": {
+        "1": 0.0004623208506703652,
+        "5": 0.002311604253351826,
+        "10": 0.004623208506703652
+      },
+      "median_rank": 1.0,
+      "metric": "cosine",
+      "mrr": 0.6560339994439714,
+      "n": 2163,
+      "n_pool": 2163
+    },
+    "euclidean": {
+      "acc_at_k": {
+        "1": 0.49283402681460936,
+        "5": 0.8192325473878872,
+        "10": 0.8802588996763754
+      },
+      "chance_at_k": {
+        "1": 0.0004623208506703652,
+        "5": 0.002311604253351826,
+        "10": 0.004623208506703652
+      },
+      "median_rank": 1.5,
+      "metric": "euclidean",
+      "mrr": 0.6404682008707675,
+      "n": 2163,
+      "n_pool": 2163
+    }
+  },
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T05:46:36Z"
+  },
+  "n_train_min": 1730,
+  "n_train_per_fold": [
+    1730,
+    1730,
+    1730,
+    1731,
+    1731
+  ],
+  "published_claim_ref": "eval_results/issue_1345/conversation_paired_stories_assistant/matched_row/cells_R_instruct_r1_matched_context.json @ L19",
+  "r2_per_fold": [
+    0.11860217541567042,
+    0.3079405546531554,
+    0.3111723395361946,
+    0.32734220700760863,
+    0.14165462419344976
+  ],
+  "r2_pooled": 0.24258391652449607,
+  "resume_key": {
+    "arm": "committed_replay",
+    "cell_id": "conversation_paired_stories_assistant__R_instruct_r1_matched_context",
+    "issue": 1345,
+    "selector_regime": {
+      "gcv_dof_cap": null,
+      "lambda_selection": "gcv",
+      "legacy_unguarded": true
+    },
+    "store_rev": "e151f8fd30a466cd9e2f05b9b86cf6dde76bca74+allow:matched:77f73466e0a7a3d7f29f31aaa8f0dd9372431045"
+  },
+  "selected_lambda_per_fold": [
+    0.03162277660168379,
+    3.1622776601683795,
+    3.1622776601683795,
+    3.1622776601683795,
+    0.01
+  ],
+  "selector_config": {
+    "gcv_dof_cap": null,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": true
+  },
+  "tripwire": {
+    "d": 3584,
+    "estimator_degenerate_suspect": true,
+    "n_train": 1730,
+    "reasons": [
+      "n_lt_d_lambda_at_grid_edge"
+    ]
+  },
+  "variant": "conversation_paired_stories_assistant"
+}

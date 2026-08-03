@@ -1,0 +1,137 @@
+{
+  "commit": "c2fb3959d9",
+  "created": "2026-07-22T19:51:22Z",
+  "figsize": [
+    7.5,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.285,
+      "Spearman rho, projection\nvs judged trait score \u2191 better": 0.7681,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.715,
+      "Spearman rho, projection\nvs judged trait score \u2191 better": 0.8099,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.715,
+      "Spearman rho, projection\nvs judged trait score \u2191 better": 0.515,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.095,
+      "Spearman rho, projection\nvs judged trait score \u2191 better": 0.6332,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.905,
+      "Spearman rho, projection\nvs judged trait score \u2191 better": 0.8063,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.905,
+      "Spearman rho, projection\nvs judged trait score \u2191 better": 0.4602,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.095,
+      "Spearman rho, projection\nvs judged trait score \u2191 better": 0.7837,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.095,
+      "Spearman rho, projection\nvs judged trait score \u2191 better": 0.7746,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.095,
+      "Spearman rho, projection\nvs judged trait score \u2191 better": 0.4971,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.285,
+      "Spearman rho, projection\nvs judged trait score \u2191 better": -0.3416,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.285,
+      "Spearman rho, projection\nvs judged trait score \u2191 better": 0.6277,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.285,
+      "Spearman rho, projection\nvs judged trait score \u2191 better": 0.446,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Rank correlation between direction projection and judged trait expression",
+        "ylabel": "Spearman rho, projection\nvs judged trait score \u2191 better",
+        "legend_labels": [
+          "raw persona vector",
+          "transpose map-through",
+          "pre-image (rank-truncated)",
+          "pre-image (full rank)"
+        ],
+        "annotations": [
+          "0.77",
+          "0.81",
+          "0.52",
+          "0.63",
+          "0.81",
+          "0.46",
+          "0.78",
+          "0.77",
+          "0.50",
+          "-0.34",
+          "0.63",
+          "0.45",
+          "Crafted eval grid: 260 contexts per trait (13 conditions x 20 questions), one on-policy rollout each"
+        ],
+        "xticklabels": [
+          "evil (L14)",
+          "sycophancy (L26)",
+          "hallucination (L17)"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "raw persona vector",
+      "transpose map-through",
+      "pre-image (rank-truncated)",
+      "pre-image (full rank)"
+    ]
+  }
+}

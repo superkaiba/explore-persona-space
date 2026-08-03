@@ -1,0 +1,722 @@
+{
+  "commit": "23356fce6e",
+  "created": "2026-07-29T10:10:15Z",
+  "figsize": [
+    6.0,
+    3.8
+  ],
+  "points": [
+    {
+      "Answer-basis coordinate rank (pca48)": 1.0,
+      "Cumulative share": 0.2195789255054339,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 2.0,
+      "Cumulative share": 0.3782643541760012,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 3.0,
+      "Cumulative share": 0.5242806359098972,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 4.0,
+      "Cumulative share": 0.5746947811975853,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 5.0,
+      "Cumulative share": 0.6175652967533951,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 6.0,
+      "Cumulative share": 0.6444297572063249,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 7.0,
+      "Cumulative share": 0.6637842803953501,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 8.0,
+      "Cumulative share": 0.6822326510359382,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 9.0,
+      "Cumulative share": 0.698628029304089,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 10.0,
+      "Cumulative share": 0.7145115722999487,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 11.0,
+      "Cumulative share": 0.7283477403294977,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 12.0,
+      "Cumulative share": 0.7410397238575995,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 13.0,
+      "Cumulative share": 0.7523046259321774,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 14.0,
+      "Cumulative share": 0.7632268269381636,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 15.0,
+      "Cumulative share": 0.7741303073749578,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 16.0,
+      "Cumulative share": 0.7837798210347923,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 17.0,
+      "Cumulative share": 0.793380975045921,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 18.0,
+      "Cumulative share": 0.802507900885012,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 19.0,
+      "Cumulative share": 0.8114790104764752,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 20.0,
+      "Cumulative share": 0.8202134960115073,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 21.0,
+      "Cumulative share": 0.8288015702456579,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 22.0,
+      "Cumulative share": 0.8373772499205931,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 23.0,
+      "Cumulative share": 0.8454798404924119,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 24.0,
+      "Cumulative share": 0.8529309873223272,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 25.0,
+      "Cumulative share": 0.8602384679192382,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 26.0,
+      "Cumulative share": 0.8672821219324108,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 27.0,
+      "Cumulative share": 0.874153914660958,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 28.0,
+      "Cumulative share": 0.88097895313163,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 29.0,
+      "Cumulative share": 0.8877658388894145,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 30.0,
+      "Cumulative share": 0.8942973590788585,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 31.0,
+      "Cumulative share": 0.9007736219997236,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 32.0,
+      "Cumulative share": 0.9072232600235346,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 33.0,
+      "Cumulative share": 0.9134405550037389,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 34.0,
+      "Cumulative share": 0.9195988059837065,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 35.0,
+      "Cumulative share": 0.9256952188259483,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 36.0,
+      "Cumulative share": 0.9317497295156799,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 37.0,
+      "Cumulative share": 0.9377755939427648,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 38.0,
+      "Cumulative share": 0.9437893574108737,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 39.0,
+      "Cumulative share": 0.9496814450763951,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 40.0,
+      "Cumulative share": 0.9555692163843448,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 41.0,
+      "Cumulative share": 0.9614553148111445,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 42.0,
+      "Cumulative share": 0.9671914583741817,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 43.0,
+      "Cumulative share": 0.9728821987108024,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 44.0,
+      "Cumulative share": 0.9785370547393546,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 45.0,
+      "Cumulative share": 0.9841681352949678,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 46.0,
+      "Cumulative share": 0.9895787452164989,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 47.0,
+      "Cumulative share": 0.994804629902569,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 48.0,
+      "Cumulative share": 1.0000000000000004,
+      "series": "Jensen-gap energy (sorted coords)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 1.0,
+      "Cumulative share": 0.17140985361078506,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 2.0,
+      "Cumulative share": 0.26952212980050344,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 3.0,
+      "Cumulative share": 0.3530829446273781,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 4.0,
+      "Cumulative share": 0.4183003038145849,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 5.0,
+      "Cumulative share": 0.4737930615359726,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 6.0,
+      "Cumulative share": 0.5186107117695044,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 7.0,
+      "Cumulative share": 0.5552596718066352,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 8.0,
+      "Cumulative share": 0.5909672220078297,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 9.0,
+      "Cumulative share": 0.62066713789182,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 10.0,
+      "Cumulative share": 0.6468958550585013,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 11.0,
+      "Cumulative share": 0.6695639898405193,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 12.0,
+      "Cumulative share": 0.6913604306690921,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 13.0,
+      "Cumulative share": 0.7096570985291243,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 14.0,
+      "Cumulative share": 0.726707265142936,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 15.0,
+      "Cumulative share": 0.7427765166297258,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 16.0,
+      "Cumulative share": 0.7580413414402128,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 17.0,
+      "Cumulative share": 0.7729389455225849,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 18.0,
+      "Cumulative share": 0.7864546771582472,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 19.0,
+      "Cumulative share": 0.798410506778131,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 20.0,
+      "Cumulative share": 0.809408238622666,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 21.0,
+      "Cumulative share": 0.8203843479377423,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 22.0,
+      "Cumulative share": 0.8306826629550295,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 23.0,
+      "Cumulative share": 0.8401988642521576,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 24.0,
+      "Cumulative share": 0.8494149108998121,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 25.0,
+      "Cumulative share": 0.8580781889476315,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 26.0,
+      "Cumulative share": 0.866452672099019,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 27.0,
+      "Cumulative share": 0.8745944076224607,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 28.0,
+      "Cumulative share": 0.8826980912499787,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 29.0,
+      "Cumulative share": 0.8903592985683729,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 30.0,
+      "Cumulative share": 0.8978504782383783,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 31.0,
+      "Cumulative share": 0.9050398137694792,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 32.0,
+      "Cumulative share": 0.9120975843758817,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 33.0,
+      "Cumulative share": 0.9187521236394941,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 34.0,
+      "Cumulative share": 0.9252417358252712,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 35.0,
+      "Cumulative share": 0.9316516151142717,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 36.0,
+      "Cumulative share": 0.9377436498958296,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 37.0,
+      "Cumulative share": 0.9437058221650987,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 38.0,
+      "Cumulative share": 0.9495620475958954,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 39.0,
+      "Cumulative share": 0.9553913204396757,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 40.0,
+      "Cumulative share": 0.9608142143632312,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 41.0,
+      "Cumulative share": 0.966153866069557,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 42.0,
+      "Cumulative share": 0.9713669089117869,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 43.0,
+      "Cumulative share": 0.9765313567853873,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 44.0,
+      "Cumulative share": 0.9816530085976649,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 45.0,
+      "Cumulative share": 0.9863873084537665,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 46.0,
+      "Cumulative share": 0.9910227428567802,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 47.0,
+      "Cumulative share": 0.9955876773011967,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer-basis coordinate rank (pca48)": 48.0,
+      "Cumulative share": 1.0000000000000002,
+      "series": "Total t1 variance (trivial reference)",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 96,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Jensen-gap direction concentration",
+        "xlabel": "Answer-basis coordinate rank (pca48)",
+        "ylabel": "Cumulative share",
+        "legend_labels": [
+          "Jensen-gap energy (sorted coords)",
+          "Total t1 variance (trivial reference)"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "Jensen-gap energy (sorted coords)",
+      "Total t1 variance (trivial reference)"
+    ]
+  }
+}

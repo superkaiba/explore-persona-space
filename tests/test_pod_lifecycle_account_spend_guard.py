@@ -278,3 +278,243 @@ def test_guard_api_failure_propagates(monkeypatch):
             intended_gpu_type="H100",
             intended_gpu_count=1,
         )
+
+
+# ---------------------------------------------------------------------------
+# EPM_RUNPOD_BURN_SCOPE — managed-scope guard on the shared team account (#1600)
+# ---------------------------------------------------------------------------
+#
+# The RunPod team account is shared with the Anthropic-fellows cluster fleet:
+# ~80+ unmanaged pods whose burn permanently exceeds any sane local cap
+# (13/13 wait-for-capacity refusals on #779, 2026-07-22). The guard therefore
+# scopes its burn sum to MANAGED pods (`pod-*` / `epm-issue-*`) by default;
+# `EPM_RUNPOD_BURN_SCOPE=all` restores the account-wide sum. Unmanaged
+# fixture names below are verbatim from the #779 marker transcript.
+
+
+def _fellows_fleet() -> list[PodInfo]:
+    """Three unmanaged fellows-cluster pods, 8x H200 each ($44/hr) → $132/hr
+    total, exceeding the $120 cap of the #779 shape on their own."""
+    return [
+        _info("Anthropic 2-pod-5-m9a", gpu_count=8, gpu_type_id="NVIDIA H200"),
+        _info("cluster-EUR-IS-pod-5", gpu_count=8, gpu_type_id="NVIDIA H200"),
+        _info("styfeng_temp_48hr_C", gpu_count=8, gpu_type_id="NVIDIA H200"),
+    ]
+
+
+def _delenv_rates_and_scope(monkeypatch):
+    """Deterministic env for the scope tests: no rate overrides, default scope."""
+    monkeypatch.delenv("RUNPOD_RATE_H100_USD", raising=False)
+    monkeypatch.delenv("RUNPOD_RATE_H200_USD", raising=False)
+    monkeypatch.delenv("EPM_RUNPOD_BURN_SCOPE", raising=False)
+
+
+def test_is_managed_pod_name_matches_prefixes():
+    """The string-level twin recognizes canonical + suffixed + legacy managed
+    names and rejects the fellows-fleet names (verbatim from #779)."""
+    assert pod_lifecycle._is_managed_pod_name("pod-779")
+    assert pod_lifecycle._is_managed_pod_name("pod-825-followup")
+    assert pod_lifecycle._is_managed_pod_name("epm-issue-12")
+    assert not pod_lifecycle._is_managed_pod_name("Anthropic 2-pod-5-m9a")
+    assert not pod_lifecycle._is_managed_pod_name("cluster-EUR-IS-pod-5")
+    assert not pod_lifecycle._is_managed_pod_name("styfeng_temp_48hr_C")
+    assert not pod_lifecycle._is_managed_pod_name("")
+
+
+def test_guard_default_scope_excludes_unmanaged_pods(monkeypatch):
+    """The #779 regression: unmanaged pods summing over the cap + one managed
+    $4/hr intent → the guard PASSES under the default (managed) scope."""
+    _delenv_rates_and_scope(monkeypatch)
+    monkeypatch.setenv("RUNPOD_ACCOUNT_HOURLY_CAP", "120")
+    monkeypatch.setattr(pod_lifecycle, "_unmanaged_burn_warned", False)
+    monkeypatch.setattr(runpod_api, "list_team_pods", _fellows_fleet)
+    # Managed burn $0 + this pod $4 = $4 ≤ $120 → None, despite $132 unmanaged.
+    assert (
+        pod_lifecycle._assert_under_account_hourly_cap(
+            verb="provision",
+            pod_label="pod-779",
+            intended_gpu_type="H100",
+            intended_gpu_count=1,
+        )
+        is None
+    )
+
+
+def test_guard_transient_default_scope_excludes_unmanaged(monkeypatch):
+    """The exact wait-loop path that refused 13/13 on #779: same fixture with
+    ``transient_on_exceed=True`` → returns None (no transient raise)."""
+    _delenv_rates_and_scope(monkeypatch)
+    monkeypatch.setenv("RUNPOD_ACCOUNT_HOURLY_CAP", "120")
+    monkeypatch.setattr(pod_lifecycle, "_unmanaged_burn_warned", False)
+    monkeypatch.setattr(runpod_api, "list_team_pods", _fellows_fleet)
+    assert (
+        pod_lifecycle._assert_under_account_hourly_cap(
+            verb="provision",
+            pod_label="pod-779",
+            intended_gpu_type="H100",
+            intended_gpu_count=1,
+            transient_on_exceed=True,
+        )
+        is None
+    )
+
+
+def test_guard_scope_all_restores_account_wide_behavior(monkeypatch):
+    """``EPM_RUNPOD_BURN_SCOPE=all`` restores the old account-wide gate: the
+    same fixture now refuses, naming the unmanaged pod + the account total."""
+    _delenv_rates_and_scope(monkeypatch)
+    monkeypatch.setenv("RUNPOD_ACCOUNT_HOURLY_CAP", "120")
+    monkeypatch.setenv("EPM_RUNPOD_BURN_SCOPE", "all")
+    monkeypatch.setattr(runpod_api, "list_team_pods", _fellows_fleet)
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle._assert_under_account_hourly_cap(
+            verb="provision",
+            pod_label="pod-779",
+            intended_gpu_type="H100",
+            intended_gpu_count=1,
+        )
+    msg = str(exc.value)
+    assert "Anthropic 2-pod-5-m9a" in msg  # unmanaged row IS in scope under `all`
+    assert "132.00" in msg  # account-wide current burn
+    assert "all scope" in msg
+    assert "120.00" in msg  # cap
+
+
+def test_guard_scope_all_transient_raises_insufficient_balance(monkeypatch):
+    """Acceptance criterion 2, transient half: under ``all`` scope the
+    wait-loop path raises ``RunPodInsufficientBalanceError`` (not SystemExit),
+    preserving the transient-vs-SystemExit contract."""
+    from runpod_api import RunPodInsufficientBalanceError
+
+    _delenv_rates_and_scope(monkeypatch)
+    monkeypatch.setenv("RUNPOD_ACCOUNT_HOURLY_CAP", "120")
+    monkeypatch.setenv("EPM_RUNPOD_BURN_SCOPE", "all")
+    monkeypatch.setattr(runpod_api, "list_team_pods", _fellows_fleet)
+    with pytest.raises(RunPodInsufficientBalanceError) as exc:
+        pod_lifecycle._assert_under_account_hourly_cap(
+            verb="provision",
+            pod_label="pod-779",
+            intended_gpu_type="H100",
+            intended_gpu_count=1,
+            transient_on_exceed=True,
+        )
+    msg = str(exc.value)
+    assert not isinstance(exc.value, SystemExit)
+    assert "exceeds cap" in msg
+    assert "[all scope]" in msg
+    assert "120.00" in msg
+
+
+def test_guard_bad_scope_value_falls_back_to_managed(monkeypatch, capsys):
+    """A garbage ``EPM_RUNPOD_BURN_SCOPE`` falls back to ``managed`` with a
+    stderr WARN (mirrors ``_account_hourly_cap_usd``), never crashes."""
+    _delenv_rates_and_scope(monkeypatch)
+    monkeypatch.setenv("RUNPOD_ACCOUNT_HOURLY_CAP", "120")
+    monkeypatch.setenv("EPM_RUNPOD_BURN_SCOPE", "frobnicate")
+    monkeypatch.setattr(pod_lifecycle, "_unmanaged_burn_warned", False)
+    monkeypatch.setattr(runpod_api, "list_team_pods", _fellows_fleet)
+    assert (
+        pod_lifecycle._assert_under_account_hourly_cap(
+            verb="provision",
+            pod_label="pod-779",
+            intended_gpu_type="H100",
+            intended_gpu_count=1,
+        )
+        is None
+    )
+    err = capsys.readouterr().err
+    assert "EPM_RUNPOD_BURN_SCOPE" in err
+    assert "frobnicate" in err
+    assert "using 'managed'" in err
+
+
+def test_guard_unmanaged_warn_emitted_once_per_process(monkeypatch, capsys):
+    """When unmanaged burn alone exceeds the cap under managed scope, a stderr
+    WARN names the exclusion — once per process (latch), because the wait loop
+    re-runs the guard every backoff tick."""
+    _delenv_rates_and_scope(monkeypatch)
+    monkeypatch.setenv("RUNPOD_ACCOUNT_HOURLY_CAP", "120")
+    monkeypatch.setattr(pod_lifecycle, "_unmanaged_burn_warned", False)
+    monkeypatch.setattr(runpod_api, "list_team_pods", _fellows_fleet)
+
+    def call():
+        return pod_lifecycle._assert_under_account_hourly_cap(
+            verb="provision",
+            pod_label="pod-779",
+            intended_gpu_type="H100",
+            intended_gpu_count=1,
+        )
+
+    assert call() is None
+    first = capsys.readouterr().err
+    assert "UNMANAGED" in first
+    assert "132.00" in first  # unmanaged total
+    assert "EPM_RUNPOD_BURN_SCOPE=all" in first
+    assert call() is None
+    second = capsys.readouterr().err
+    assert "UNMANAGED" not in second  # latched
+
+
+def test_guard_skip_for_same_pod_still_works_under_managed_scope(monkeypatch):
+    """``skip_for_same_pod`` still subtracts a managed sibling under the
+    default scope; unmanaged noise rows are ignored by the filter."""
+    _delenv_rates_and_scope(monkeypatch)
+    monkeypatch.delenv("RUNPOD_ACCOUNT_HOURLY_CAP", raising=False)
+    monkeypatch.setattr(pod_lifecycle, "_unmanaged_burn_warned", False)
+    monkeypatch.setattr(
+        runpod_api,
+        "list_team_pods",
+        lambda: [
+            _info("pod-7", gpu_count=8, gpu_type_id="NVIDIA H200"),  # $44 — to skip
+            _info("pod-8", gpu_count=4),  # $16
+            *_fellows_fleet(),  # $132 unmanaged noise, excluded from the sum
+        ],
+    )
+    # Managed burn $60 minus skipped $44 = $16; adding a 4xH100 = $16 → $32
+    # projected, under the $80 default cap (unmanaged $132 ignored).
+    assert (
+        pod_lifecycle._assert_under_account_hourly_cap(
+            verb="resume",
+            pod_label="pod-7",
+            intended_gpu_type="H100",
+            intended_gpu_count=4,
+            skip_for_same_pod="pod-7",
+        )
+        is None
+    )
+
+
+def test_guard_systemexit_message_shows_unmanaged_exclusion_line(monkeypatch):
+    """A managed-scope refusal (OUR pods over cap) still shows the full account
+    picture: scoped rows, the excluded-unmanaged summary (count + $/hr), the
+    account-wide total, and the scope knob name."""
+    _delenv_rates_and_scope(monkeypatch)
+    monkeypatch.delenv("RUNPOD_ACCOUNT_HOURLY_CAP", raising=False)
+    monkeypatch.setattr(pod_lifecycle, "_unmanaged_burn_warned", False)
+    # 18 managed H100s = $72; adding 4xH100 = $16 → $88 > $80 default cap.
+    monkeypatch.setattr(
+        runpod_api,
+        "list_team_pods",
+        lambda: [_info(f"pod-{i}", gpu_count=1) for i in range(18)] + _fellows_fleet(),
+    )
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle._assert_under_account_hourly_cap(
+            verb="provision",
+            pod_label="pod-new",
+            intended_gpu_type="H100",
+            intended_gpu_count=4,
+        )
+    msg = str(exc.value)
+    # The pre-#1600 pinned literals survive (managed-only sums).
+    assert "72.00" in msg  # current burn (managed scope)
+    assert "88.00" in msg  # projected total
+    assert "80.00" in msg  # cap
+    assert "managed scope" in msg
+    # Scoped breakdown rows: managed names only.
+    assert "pod-0" in msg
+    assert "Anthropic 2-pod-5-m9a" not in msg
+    # The exclusion summary keeps the shared account visible.
+    assert "excluded: 3 unmanaged team pod(s)" in msg
+    assert "132.00" in msg  # unmanaged $/hr
+    assert "204.00" in msg  # account-wide total (72 + 132)
+    assert "EPM_RUNPOD_BURN_SCOPE" in msg

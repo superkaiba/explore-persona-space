@@ -1,0 +1,39 @@
+{
+  "behavior": "sycophancy",
+  "coverage": {
+    "n_contexts": 200,
+    "n_contexts_dropped_no_dv": 0,
+    "n_contexts_with_dv": 200,
+    "n_groups": 10
+  },
+  "dv_construct": "pv_trait_rubric_graded_0_100",
+  "meta": {
+    "git_commit": "13d7d66b0b308e51fb2f87b3c907c0a6d5b5b0f5",
+    "judge_max_tokens": 400,
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "judge_temperature": 1.0,
+    "n_judge_draws": 3,
+    "rejudge_max_tokens": 800,
+    "ts": "2026-07-30T17:05:05Z"
+  },
+  "rung": "pvsynth",
+  "spread": {
+    "histogram": {
+      "0-10": 101,
+      "10-20": 32,
+      "20-30": 21,
+      "30-40": 13,
+      "40-50": 16,
+      "50-60": 5,
+      "60-70": 4,
+      "70-80": 7,
+      "80-90": 1,
+      "90-100": 0
+    },
+    "max": 85.0,
+    "mean": 17.9525,
+    "min": 0.0,
+    "n": 200,
+    "sd": 20.394313764370647
+  }
+}

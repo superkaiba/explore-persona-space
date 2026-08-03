@@ -1,0 +1,383 @@
+{
+  "directions": {
+    "instruct.context.r1->r2": {
+      "within": {
+        "r2_foldmean": 0.6249482470755412,
+        "r2_global": 0.6252297984145205,
+        "n_covered": 4724
+      },
+      "naive": {
+        "r2_foldmean": 0.5202846763777461,
+        "r2_global": 0.520644798655916,
+        "n_covered": 4724
+      },
+      "tier15": {
+        "r2_foldmean": 0.5591140340875855,
+        "r2_global": 0.5594450071681585,
+        "n_covered": 4724
+      },
+      "tier15d": {
+        "r2_foldmean": 0.5603822091155848,
+        "r2_global": 0.5607122301772052,
+        "n_covered": 4724
+      },
+      "fractions_foldmean": {
+        "naive": 0.8325244191217904,
+        "tier15": 0.8946565362875594,
+        "tier15d": 0.896685784363594
+      },
+      "fractions_global": {
+        "naive": 0.8327255034487882,
+        "tier15": 0.8947830199181462,
+        "tier15d": 0.8968098315196729
+      }
+    },
+    "instruct.context.r2->r1": {
+      "within": {
+        "r2_foldmean": 0.6542183951898378,
+        "r2_global": 0.6544765895520366,
+        "n_covered": 4724
+      },
+      "naive": {
+        "r2_foldmean": 0.5521975125170387,
+        "r2_global": 0.5525318856474715,
+        "n_covered": 4724
+      },
+      "tier15": {
+        "r2_foldmean": 0.5785123803372199,
+        "r2_global": 0.5788271042138505,
+        "n_covered": 4724
+      },
+      "tier15d": {
+        "r2_foldmean": 0.5806227857881887,
+        "r2_global": 0.5809359338297195,
+        "n_covered": 4724
+      },
+      "fractions_foldmean": {
+        "naive": 0.8440568418391917,
+        "tier15": 0.8842802106922567,
+        "tier15d": 0.8875060531119834
+      },
+      "fractions_global": {
+        "naive": 0.8442347586880957,
+        "tier15": 0.8844122363643822,
+        "tier15d": 0.8876343983936038
+      }
+    },
+    "instruct.prefix.r1->r2": {
+      "within": {
+        "r2_foldmean": 0.1283103189467656,
+        "r2_global": 0.1289646963625798,
+        "n_covered": 4724
+      },
+      "naive": {
+        "r2_foldmean": -1981.709505573091,
+        "r2_global": -1980.22108561038,
+        "n_covered": 4724
+      },
+      "tier15": {
+        "r2_foldmean": -0.05487159609130199,
+        "r2_global": -0.054079704017700125,
+        "n_covered": 4724
+      },
+      "tier15d": {
+        "r2_foldmean": 0.0032778915229988437,
+        "r2_global": 0.004026130778099435,
+        "n_covered": 4724
+      },
+      "fractions_foldmean": {
+        "naive": -15444.661986969875,
+        "tier15": -0.4276475699048613,
+        "tier15d": 0.025546593211718236
+      },
+      "fractions_global": {
+        "naive": -15354.753211243617,
+        "tier15": -0.4193372724707303,
+        "tier15d": 0.031218859824863287
+      }
+    },
+    "instruct.prefix.r2->r1": {
+      "within": {
+        "r2_foldmean": 0.13390325545337167,
+        "r2_global": 0.13454996798362096,
+        "n_covered": 4724
+      },
+      "naive": {
+        "r2_foldmean": -16773.723810039293,
+        "r2_global": -16761.19816074233,
+        "n_covered": 4724
+      },
+      "tier15": {
+        "r2_foldmean": -0.3944328688623804,
+        "r2_global": -0.3933916489125735,
+        "n_covered": 4724
+      },
+      "tier15d": {
+        "r2_foldmean": -0.031045859227920358,
+        "r2_global": -0.03027597955729,
+        "n_covered": 4724
+      },
+      "fractions_foldmean": {
+        "naive": -125267.48325308869,
+        "tier15": -2.9456555595075233,
+        "tier15d": -0.23185290845099185
+      },
+      "fractions_global": {
+        "naive": -124572.29393605434,
+        "tier15": -2.9237587701281496,
+        "tier15d": -0.22501662401714995
+      }
+    },
+    "pretrained.context.r1->r2": {
+      "within": {
+        "r2_foldmean": 0.5782882733523875,
+        "r2_global": 0.5785771099110488,
+        "n_covered": 4724
+      },
+      "naive": {
+        "r2_foldmean": 0.17691920491536328,
+        "r2_global": 0.17748294504714057,
+        "n_covered": 4724
+      },
+      "tier15": {
+        "r2_foldmean": 0.3296804554645153,
+        "r2_global": 0.33013956717095383,
+        "n_covered": 4724
+      },
+      "tier15d": {
+        "r2_foldmean": 0.33650167534000686,
+        "r2_global": 0.3369561150927153,
+        "n_covered": 4724
+      },
+      "fractions_foldmean": {
+        "naive": 0.30593600643109575,
+        "tier15": 0.5700970790110077,
+        "tier15d": 0.5818926145420126
+      },
+      "fractions_global": {
+        "naive": 0.30675763352343305,
+        "tier15": 0.5706059944571777,
+        "tier15d": 0.5823875665328677
+      }
+    },
+    "pretrained.context.r2->r1": {
+      "within": {
+        "r2_foldmean": 0.5416017955480219,
+        "r2_global": 0.5419228823711667,
+        "n_covered": 4724
+      },
+      "naive": {
+        "r2_foldmean": 0.08175711553101228,
+        "r2_global": 0.08240030236679674,
+        "n_covered": 4724
+      },
+      "tier15": {
+        "r2_foldmean": 0.256125120068744,
+        "r2_global": 0.25664617015073676,
+        "n_covered": 4724
+      },
+      "tier15d": {
+        "r2_foldmean": 0.2612651274067743,
+        "r2_global": 0.26178257715043507,
+        "n_covered": 4724
+      },
+      "fractions_foldmean": {
+        "naive": 0.15095429188576825,
+        "tier15": 0.4729030113528017,
+        "tier15d": 0.4823933922567819
+      },
+      "fractions_global": {
+        "naive": 0.1520517126094709,
+        "tier15": 0.473584302304766,
+        "tier15d": 0.4830624165656441
+      }
+    },
+    "pretrained.prefix.r1->r2": {
+      "within": {
+        "r2_foldmean": 0.12968112795227194,
+        "r2_global": 0.13027722213712845,
+        "n_covered": 4724
+      },
+      "naive": {
+        "r2_foldmean": -505.82308151009397,
+        "r2_global": -505.47595093377134,
+        "n_covered": 4724
+      },
+      "tier15": {
+        "r2_foldmean": -0.07973745156671486,
+        "r2_global": -0.07899792351932677,
+        "n_covered": 4724
+      },
+      "tier15d": {
+        "r2_foldmean": -0.006177522015218928,
+        "r2_global": -0.005488376244549453,
+        "n_covered": 4724
+      },
+      "fractions_foldmean": {
+        "naive": -3900.5142035490157,
+        "tier15": -0.6148732111280029,
+        "tier15d": -0.04763624524836423
+      },
+      "fractions_global": {
+        "naive": -3880.0025257040916,
+        "tier15": -0.6063832358673904,
+        "tier15d": -0.04212844083190879
+      }
+    },
+    "pretrained.prefix.r2->r1": {
+      "within": {
+        "r2_foldmean": 0.13155945037148098,
+        "r2_global": 0.132167752966175,
+        "n_covered": 4724
+      },
+      "naive": {
+        "r2_foldmean": -12246.305063006765,
+        "r2_global": -12237.726390061287,
+        "n_covered": 4724
+      },
+      "tier15": {
+        "r2_foldmean": -0.42566366175380543,
+        "r2_global": -0.4246650500411484,
+        "n_covered": 4724
+      },
+      "tier15d": {
+        "r2_foldmean": -0.02781398853561856,
+        "r2_global": -0.02709405218953642,
+        "n_covered": 4724
+      },
+      "fractions_foldmean": {
+        "naive": -93085.71165679998,
+        "tier15": -3.235523260030884,
+        "tier15d": -0.21141764013973097
+      },
+      "fractions_global": {
+        "naive": -92592.37684999626,
+        "tier15": -3.2130761135799193,
+        "tier15d": -0.20499744893499447
+      }
+    }
+  },
+  "gates": [
+    {
+      "name": "B.naive.instruct.context.r1->r2",
+      "got": 0.520644798655916,
+      "want": 0.5206447986970166,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "B.within.instruct.context.r1->r2",
+      "got": 0.6252297984145205,
+      "want": 0.6252297984305513,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "B.naive.instruct.context.r2->r1",
+      "got": 0.5525318856474715,
+      "want": 0.5525318857988817,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "B.within.instruct.context.r2->r1",
+      "got": 0.6544765895520366,
+      "want": 0.6544765895833577,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "B.naive.instruct.prefix.r1->r2",
+      "got": -1980.22108561038,
+      "want": -1980.2210821702645,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "B.within.instruct.prefix.r1->r2",
+      "got": 0.1289646963625798,
+      "want": 0.12896469659493404,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "B.naive.instruct.prefix.r2->r1",
+      "got": -16761.19816074233,
+      "want": -16761.1981891818,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "B.within.instruct.prefix.r2->r1",
+      "got": 0.13454996798362096,
+      "want": 0.13454996782600492,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "B.naive.pretrained.context.r1->r2",
+      "got": 0.17748294504714057,
+      "want": 0.1774829451886022,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "B.within.pretrained.context.r1->r2",
+      "got": 0.5785771099110488,
+      "want": 0.5785771098995255,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "B.naive.pretrained.context.r2->r1",
+      "got": 0.08240030236679674,
+      "want": 0.08240030221613093,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "B.within.pretrained.context.r2->r1",
+      "got": 0.5419228823711667,
+      "want": 0.5419228823761495,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "B.naive.pretrained.prefix.r1->r2",
+      "got": -505.47595093377134,
+      "want": -505.4759522373514,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "B.within.pretrained.prefix.r1->r2",
+      "got": 0.13027722213712845,
+      "want": 0.13027722188579027,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "B.naive.pretrained.prefix.r2->r1",
+      "got": -12237.726390061287,
+      "want": -12237.726386283039,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "B.within.pretrained.prefix.r2->r1",
+      "got": 0.132167752966175,
+      "want": 0.13216775308133577,
+      "tol": 0.01,
+      "pass": true
+    }
+  ],
+  "meta": {
+    "script": "scripts/issue1639_tier15_intercept_refit.py",
+    "git_commit": "d5e7b37fb9b5446d55379809fb18f53ec30e11f6",
+    "layer": 19,
+    "date": "2026-07-24",
+    "provenance": "user-chat inline free-analysis round (tier-1.5 intercept refit)",
+    "family": "B",
+    "wall_seconds": 979.9525256156921
+  }
+}

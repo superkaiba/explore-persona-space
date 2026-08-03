@@ -1,0 +1,27 @@
+{
+ "design": {
+  "question": "Are better-predicted directions more SAE-aligned, beyond what variance explains? Continuous read over the top-256 target PCs (#1738 holdout, context arm, ridge, L19).",
+  "alignment": "max |cos| over the 131,072 unit-normalized decoder columns",
+  "deviation": "2-param floor curve fit on these 256 PCs (gof 0.853)",
+  "confound_reference": "#1895: map/SAE subspace overlap ~98% variance-driven"
+ },
+ "n_pcs": 256,
+ "alignment_summary": {
+  "min": 0.10564224421977997,
+  "median": 0.16195476055145264,
+  "max": 0.6308768391609192,
+  "null_random_unit": {
+   "mean": 0.0765928004309535,
+   "p95": 0.08519667163491249,
+   "max": 0.09879086911678314,
+   "n": 200
+  },
+  "n_pcs_above_null_p95": 256
+ },
+ "correlations": {
+  "spearman_r2_vs_align": 0.9276665140764477,
+  "spearman_logshare_vs_align": 0.9308616102082856,
+  "partial_r2_vs_align_given_logshare": 0.11487478122815893,
+  "spearman_deviation_vs_align": 0.02149876974135958
+ }
+}

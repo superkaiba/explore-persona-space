@@ -1,0 +1,494 @@
+{
+  "commit": "856db5ec58",
+  "created": "2026-08-02T23:10:46Z",
+  "figsize": [
+    10.5,
+    4.4
+  ],
+  "points": [
+    {
+      "story character (answering speaker)": 0.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 53.2431,
+      "error": 1.827510593897017,
+      "series": "on-policy (character's own answer)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "story character (answering speaker)": 1.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 57.4527,
+      "error": 1.8612324684198427,
+      "series": "on-policy (character's own answer)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "story character (answering speaker)": 2.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 63.4954,
+      "error": 1.6595688691341621,
+      "series": "on-policy (character's own answer)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "story character (answering speaker)": 3.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 74.1662,
+      "error": 1.660134672397973,
+      "series": "on-policy (character's own answer)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "story character (answering speaker)": 0.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 79.2412,
+      "error": 1.827510593897017,
+      "series": "injected control (verbatim reference answer)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "story character (answering speaker)": 1.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 78.6912,
+      "error": 1.8612324684198427,
+      "series": "injected control (verbatim reference answer)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "story character (answering speaker)": 2.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 79.2447,
+      "error": 1.6595688691341621,
+      "series": "injected control (verbatim reference answer)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "story character (answering speaker)": 3.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 79.1955,
+      "error": 1.660134672397973,
+      "series": "injected control (verbatim reference answer)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "story character (answering speaker)": 0.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 53.2431,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "story character (answering speaker)": 1.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 57.4527,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "story character (answering speaker)": 2.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 63.4954,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "story character (answering speaker)": 3.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 74.1662,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "story character (answering speaker)": 0.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 50.56100743267104,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "story character (answering speaker)": 1.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 55.04163796126777,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "story character (answering speaker)": 2.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 61.09265985992214,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "story character (answering speaker)": 3.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 72.48568509403975,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "story character (answering speaker)": 0.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 55.925192567328956,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "story character (answering speaker)": 1.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 59.86376203873223,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "story character (answering speaker)": 2.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 65.89814014007784,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "story character (answering speaker)": 3.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 75.84671490596025,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "story character (answering speaker)": 0.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 79.2412,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "story character (answering speaker)": 1.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 78.6912,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "story character (answering speaker)": 2.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 79.2447,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "story character (answering speaker)": 3.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 79.1955,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "story character (answering speaker)": 0.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 77.41368940610299,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "story character (answering speaker)": 1.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 76.82996753158015,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "story character (answering speaker)": 2.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 77.58513113086583,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "story character (answering speaker)": 3.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 77.53536532760202,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "story character (answering speaker)": 0.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 81.06871059389702,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "story character (answering speaker)": 1.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 80.55243246841984,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "story character (answering speaker)": 2.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 80.90426886913416,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "story character (answering speaker)": 3.0,
+      "judge-scored AI-likeness of the answer (0\u2013100)": 80.85563467239797,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "story character (answering speaker)": 0.0,
+      "y": 53.0551,
+      "error": 1.6872366487342703,
+      "series": "on-policy (character's own answer)",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "story character (answering speaker)": 1.0,
+      "y": 55.4224,
+      "error": 1.680560170221355,
+      "series": "on-policy (character's own answer)",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "story character (answering speaker)": 2.0,
+      "y": 61.8199,
+      "error": 1.5829251590190268,
+      "series": "on-policy (character's own answer)",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "story character (answering speaker)": 3.0,
+      "y": 72.0823,
+      "error": 1.8120981129909381,
+      "series": "on-policy (character's own answer)",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "story character (answering speaker)": 0.0,
+      "y": 79.3975,
+      "error": 1.6872366487342703,
+      "series": "injected control (verbatim reference answer)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "story character (answering speaker)": 1.0,
+      "y": 80.1013,
+      "error": 1.680560170221355,
+      "series": "injected control (verbatim reference answer)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "story character (answering speaker)": 2.0,
+      "y": 80.7573,
+      "error": 1.5829251590190268,
+      "series": "injected control (verbatim reference answer)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "story character (answering speaker)": 3.0,
+      "y": 78.4695,
+      "error": 1.8120981129909381,
+      "series": "injected control (verbatim reference answer)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "story character (answering speaker)": 0.0,
+      "y": 53.0551,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "story character (answering speaker)": 1.0,
+      "y": 55.4224,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "story character (answering speaker)": 2.0,
+      "y": 61.8199,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "story character (answering speaker)": 3.0,
+      "y": 72.0823,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "story character (answering speaker)": 0.0,
+      "y": 50.23175241566729,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "story character (answering speaker)": 1.0,
+      "y": 52.947701741777266,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "story character (answering speaker)": 2.0,
+      "y": 59.40100549798805,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "story character (answering speaker)": 3.0,
+      "y": 70.40263841038168,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "story character (answering speaker)": 0.0,
+      "y": 55.87844758433272,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "story character (answering speaker)": 1.0,
+      "y": 57.89709825822274,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "story character (answering speaker)": 2.0,
+      "y": 64.23879450201194,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "story character (answering speaker)": 3.0,
+      "y": 73.76196158961832,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "story character (answering speaker)": 0.0,
+      "y": 79.3975,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "story character (answering speaker)": 1.0,
+      "y": 80.1013,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "story character (answering speaker)": 2.0,
+      "y": 80.7573,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "story character (answering speaker)": 3.0,
+      "y": 78.4695,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "story character (answering speaker)": 0.0,
+      "y": 77.71026335126572,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "story character (answering speaker)": 1.0,
+      "y": 78.42073982977864,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "story character (answering speaker)": 2.0,
+      "y": 79.17437484098097,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "story character (answering speaker)": 3.0,
+      "y": 76.65740188700906,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "story character (answering speaker)": 0.0,
+      "y": 81.08473664873426,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "story character (answering speaker)": 1.0,
+      "y": 81.78186017022135,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "story character (answering speaker)": 2.0,
+      "y": 82.34022515901903,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "story character (answering speaker)": 3.0,
+      "y": 80.28159811299093,
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 64,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Qwen2.5-7B (base)",
+        "xlabel": "story character (answering speaker)",
+        "ylabel": "judge-scored AI-likeness of the answer (0\u2013100)",
+        "legend_labels": [
+          "on-policy (character's own answer)",
+          "injected control (verbatim reference answer)"
+        ],
+        "annotations": [
+          "53",
+          "57",
+          "63",
+          "74",
+          "79",
+          "79",
+          "79",
+          "79"
+        ],
+        "xticklabels": [
+          "Dana\n(ordinary person)",
+          "Vex\n(theatrical villain)",
+          "Wren\n(warm helper)",
+          "HELIOS\n(calm AI)"
+        ],
+        "yticklabels": [
+          "45",
+          "50",
+          "55",
+          "60",
+          "65",
+          "70",
+          "75",
+          "80",
+          "85"
+        ]
+      },
+      {
+        "title_left": "Qwen2.5-7B-Instruct",
+        "xlabel": "story character (answering speaker)",
+        "annotations": [
+          "53",
+          "55",
+          "62",
+          "72",
+          "79",
+          "80",
+          "81",
+          "78"
+        ],
+        "xticklabels": [
+          "Dana\n(ordinary person)",
+          "Vex\n(theatrical villain)",
+          "Wren\n(warm helper)",
+          "HELIOS\n(calm AI)"
+        ]
+      }
+    ],
+    "series": [
+      "on-policy (character's own answer)",
+      "injected control (verbatim reference answer)"
+    ]
+  }
+}

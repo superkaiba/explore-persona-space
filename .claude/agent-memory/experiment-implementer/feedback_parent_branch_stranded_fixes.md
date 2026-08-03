@@ -16,3 +16,9 @@ copy; realized artifacts embody branch-side behavior main lacks.
 reused module against the parent's issue branch for unmerged fixes; (2)
 reconcile the realized artifact's row/cell counts against its declared input
 — any shortfall means filtering happened somewhere; find and port it.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Parent-branch stranded fixes](feedback_parent_branch_stranded_fixes.md) — reused modules may lack the parent branch's unmerged crash-fixes; reconcile realized row counts vs corpus (#1345)

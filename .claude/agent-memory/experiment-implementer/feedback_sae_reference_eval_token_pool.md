@@ -9,3 +9,9 @@ Comparing an SAE's reconstruction quality on our activations against its publish
 **Why:** #1482 attempt 1 burned a 4xA100 GCP cycle on a Gate-B HALT that looked like a catastrophic loader/scale bug (FVE -7,704 vs published 0.806); the encoder was verbatim reference-identical the whole time.
 
 **How to apply:** when writing any SAE fitness/eval check against published numbers, read the reference repo's eval path (buffer/evaluation modules, not just the SAE class) and mirror its token masking exactly; probe one deliberately-poisoned pool to confirm the outlier filter engages.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [SAE published FVE/L0 need the reference token pool](feedback_sae_reference_eval_token_pool.md) — dictionary_learning remove_bos: BOS-8 strip + 10x-median outlier drop + var-FVE; norm factor weight-folded, raw acts correct (#1482 r3)

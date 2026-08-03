@@ -1,0 +1,78 @@
+{
+  "commit": "f4f3553df0",
+  "created": "2026-07-30T08:36:09Z",
+  "figsize": [
+    5.6,
+    3.4
+  ],
+  "points": [
+    {
+      "x": -0.175,
+      "median per-feature R\u00b2": 0.40713132718855666,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.825,
+      "median per-feature R\u00b2": 0.14413132916987287,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.825,
+      "median per-feature R\u00b2": 0.007151524203527104,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.175,
+      "median per-feature R\u00b2": 0.4460273515958547,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.175,
+      "median per-feature R\u00b2": 0.15950154305705766,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.175,
+      "median per-feature R\u00b2": 0.019229836690893953,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "median per-feature R\u00b2",
+        "legend_labels": [
+          "scored on LMSYS rows",
+          "scored on WildChat rows"
+        ],
+        "xticklabels": [
+          "tier 0 (general, ids <2k)",
+          "tier 1 (mid, 2k-16k)",
+          "tier 2 (specific)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      }
+    ],
+    "series": [
+      "scored on LMSYS rows",
+      "scored on WildChat rows"
+    ]
+  }
+}

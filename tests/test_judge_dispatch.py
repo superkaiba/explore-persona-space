@@ -304,22 +304,35 @@ def test_chunk_at_byte_limit():
 # ── #663 Test 7: _collect_batch_results 5-tuple two-level split ──────────────
 
 
-def _collect_client(outcomes: dict[str, str], *, error_types: dict[str, str] | None = None):
+def _collect_client(
+    outcomes: dict[str, str],
+    *,
+    error_types: dict[str, str] | None = None,
+    texts: dict[str, str] | None = None,
+    stop_reasons: dict[str, str] | None = None,
+):
     """Fake client whose results() yields scripted per-cid outcome shapes.
 
     ``outcomes[cid]`` in {succeeded, errored, expired, canceled};
     ``error_types[cid]`` sets ``result.error.error.type`` for an errored row
     (e.g. "invalid_request_error" or "api_error"). A succeeded row carries a
-    valid judge-JSON message.
+    valid judge-JSON message unless ``texts[cid]`` overrides it, and gains a
+    str ``stop_reason`` attribute when ``stop_reasons[cid]`` is set (#2021;
+    absent -> no attribute, the legacy SDK-shape default).
     """
     error_types = error_types or {}
+    texts = texts or {}
+    stop_reasons = stop_reasons or {}
 
     def _results(_batch_id):
         for cid, outcome in outcomes.items():
             if outcome == "succeeded":
+                msg = _msg(texts.get(cid, JUDGE_TEXT))
+                if cid in stop_reasons:
+                    msg.stop_reason = stop_reasons[cid]
                 yield SimpleNamespace(
                     custom_id=cid,
-                    result=SimpleNamespace(type="succeeded", message=_msg(JUDGE_TEXT)),
+                    result=SimpleNamespace(type="succeeded", message=msg),
                 )
             elif outcome == "errored":
                 etype = error_types.get(cid)
@@ -352,13 +365,19 @@ def test_collect_batch_results_five_tuple_split():
 
     outcomes = {
         "ok": "succeeded",
+        "trunc_parse": "succeeded",
         "bad_request": "errored",
         "server_err": "errored",
         "exp": "expired",
         "cxl": "canceled",
     }
     error_types = {"bad_request": "invalid_request_error", "server_err": "api_error"}
-    client = _collect_client(outcomes, error_types=error_types)
+    client = _collect_client(
+        outcomes,
+        error_types=error_types,
+        texts={"trunc_parse": "cut off mid-rationa"},  # parse fails
+        stop_reasons={"ok": "end_turn", "trunc_parse": "max_tokens"},
+    )
     scores, retriable, expired, quarantined, canceled = _collect_batch_results(
         client, "msgbatch_x", _default_error_dict
     )
@@ -366,14 +385,28 @@ def test_collect_batch_results_five_tuple_split():
     assert retriable == ["server_err"]
     assert expired == ["exp"]
     assert canceled == ["cxl"]
-    assert scores["ok"] == {"aligned": 90, "coherent": 95, "reasoning": "ok"}
+    # #2021: succeeded rows carry the response's stop_reason — the parsed
+    # verdict AND the parse-failure error dict alike.
+    assert scores["ok"] == {
+        "aligned": 90,
+        "coherent": 95,
+        "reasoning": "ok",
+        "stop_reason": "end_turn",
+    }
+    assert scores["trunc_parse"]["error"] is True
+    assert scores["trunc_parse"]["reasoning"] == "parse_error"
+    assert scores["trunc_parse"]["stop_reason"] == "max_tokens"
     # All terminal states present in scores (overwritten if a retry succeeds).
-    assert set(scores) == {"ok", "bad_request", "server_err", "exp", "cxl"}
+    assert set(scores) == {"ok", "trunc_parse", "bad_request", "server_err", "exp", "cxl"}
     assert scores["bad_request"]["error"] is True
     assert "invalid_request_error" in scores["bad_request"]["reasoning"]
     assert scores["cxl"]["error"] is True
     # canceled is in neither retry list.
     assert "cxl" not in retriable and "cxl" not in expired and "cxl" not in quarantined
+    # #2021: no-response rows (errored/expired/canceled/quarantined) carry NO
+    # stop_reason key.
+    for cid in ("bad_request", "server_err", "exp", "cxl"):
+        assert "stop_reason" not in scores[cid], cid
 
 
 # ── 5: dry-run ───────────────────────────────────────────────────────────────
@@ -1359,6 +1392,83 @@ def test_sync_captured_overloaded_flagged_transport():
     assert results["cid_rt"]["error"] is True
     assert "transport" not in results["cid_rt"]
     assert results["cid_ok"].get("error") is not True
+    # #2021: exception-branch dicts have NO API response -> no stop_reason key;
+    # and a fake message WITHOUT the attribute attaches nothing either.
+    assert "stop_reason" not in results["cid_529"]
+    assert "stop_reason" not in results["cid_rt"]
+    assert "stop_reason" not in results["cid_ok"]
+
+
+def test_sync_single_org_attaches_stop_reason():
+    """#2021: the single-org sync mint carries the response's ``stop_reason``
+    on parsed verdicts AND parse-failure error dicts alike."""
+    from explore_persona_space.eval.judge_dispatch import _default_error_dict, _judge_items_sync
+
+    class _Client:
+        def __init__(self):
+            client = self
+
+            class _Messages:
+                async def create(_self, **kwargs):
+                    user_msg = kwargs["messages"][0]["content"]
+                    if "truncate-me" in user_msg:
+                        msg = _msg("cut off mid-rationa")  # parse fails
+                        msg.stop_reason = "max_tokens"
+                        return msg
+                    msg = _msg(JUDGE_TEXT)
+                    msg.stop_reason = "end_turn"
+                    return msg
+
+            client.messages = _Messages()
+
+    items = [
+        ("cid_trunc", "q1", "c1", "please truncate-me"),
+        ("cid_ok", "q2", "c2", "fine"),
+    ]
+    results = asyncio.run(
+        _judge_items_sync(
+            items,
+            judge_model="claude-sonnet-4-5-20250929",
+            judge_system_prompt="rubric",
+            max_tokens=64,
+            max_concurrent=2,
+            error_dict_factory=_default_error_dict,
+            client=_Client(),
+        )
+    )
+    assert results["cid_ok"] == {
+        "aligned": 90,
+        "coherent": 95,
+        "reasoning": "ok",
+        "stop_reason": "end_turn",
+    }
+    assert results["cid_trunc"]["error"] is True
+    assert results["cid_trunc"]["reasoning"] == "parse_error"
+    assert results["cid_trunc"]["stop_reason"] == "max_tokens"
+
+
+def test_with_stop_reason_ignores_non_str():
+    """#2021 MagicMock-safety pin: the ``isinstance(str)`` gate never persists
+    a non-str stop_reason (a MagicMock auto-attribute, None, ""), non-dict
+    scores pass through untouched, and the attach never mutates its input."""
+    from unittest.mock import MagicMock
+
+    from explore_persona_space.eval.judge_dispatch import _with_stop_reason
+
+    base = {"score": 80}
+    # MagicMock auto-created attribute (the getattr-on-a-fake shape) -> no key.
+    assert _with_stop_reason(base, MagicMock().stop_reason) == {"score": 80}
+    assert _with_stop_reason(base, None) == {"score": 80}
+    assert _with_stop_reason(base, "") == {"score": 80}
+    assert _with_stop_reason(base, 83399) == {"score": 80}
+    # str attaches — on a COPY (the original is never mutated).
+    out = _with_stop_reason(base, "end_turn")
+    assert out == {"score": 80, "stop_reason": "end_turn"}
+    assert base == {"score": 80}
+    assert out is not base
+    # Non-dict scores (bare-string parses) pass through unchanged.
+    assert _with_stop_reason("REFUSAL", "end_turn") == "REFUSAL"
+    assert _with_stop_reason(None, "end_turn") is None
 
 
 def test_multiorg_reduce_flags_transport_dispatch_results(monkeypatch):
@@ -1397,9 +1507,18 @@ def test_multiorg_reduce_flags_transport_dispatch_results(monkeypatch):
         ),
     }
 
+    seen: dict = {}
+
     async def fake_dispatch_calls(
-        items, *, model, build_request, parse_response, cost_pref, force_path
+        items, *, model, build_request, parse_response, parse_response_meta, cost_pref, force_path
     ):
+        # #2021 [A1] compose pin: the meta parser is COMPOSED over
+        # parse_response — identical dicts modulo the stop_reason attach.
+        plain = parse_response(JUDGE_TEXT)
+        meta = parse_response_meta(JUDGE_TEXT, "max_tokens")
+        assert meta == {**plain, "stop_reason": "max_tokens"}
+        assert parse_response_meta(JUDGE_TEXT, None) == plain
+        seen["meta_composes"] = True
         return {it.item_id: fake_results[it.item_id] for it in items}
 
     monkeypatch.setattr(api_dispatch, "dispatch_calls", fake_dispatch_calls)
@@ -1426,3 +1545,58 @@ def test_multiorg_reduce_flags_transport_dispatch_results(monkeypatch):
     assert results["cid_term"]["error"] is True
     assert "transport" not in results["cid_term"]
     assert results["cid_ok"] == {"aligned": 90, "coherent": 95, "reasoning": "ok"}
+    assert seen.get("meta_composes") is True  # the [A1] compose pin actually ran
+
+
+# ── custom_id grammar validation at dispatch entry (#1795) ───────────────────
+
+
+def test_tilde_custom_id_raises_at_entry():
+    """The #1739 regression shape: a `~`-bearing id fails loud at ENTRY.
+
+    dry_run=True means the raise must precede any routing probe / client
+    construction — zero API calls by construction.
+    """
+    items = [("ctx~k00", "q", "c", "u")]
+    with pytest.raises(ValueError, match=r"ctx~k00"):
+        dispatch(items, dry_run=True)
+
+
+def test_overlong_custom_id_raises():
+    items = [("a" * 65, "q", "c", "u")]
+    with pytest.raises(ValueError, match="violate the Anthropic Batch API"):
+        dispatch(items, dry_run=True)
+
+
+def test_empty_custom_id_raises():
+    items = [("", "q", "c", "u")]
+    with pytest.raises(ValueError, match="violate the Anthropic Batch API"):
+        dispatch(items, dry_run=True)
+
+
+def test_non_str_custom_id_raises():
+    from explore_persona_space.eval.judge_dispatch import _validate_custom_ids
+
+    with pytest.raises(ValueError, match="123"):
+        _validate_custom_ids([(123, "q", "c", "u")])
+
+
+def test_valid_custom_ids_pass_validation():
+    from explore_persona_space.eval.judge_dispatch import _validate_custom_ids
+
+    _validate_custom_ids([("a-b_C0", "q", "c", "u"), ("a" * 64, "q", "c", "u")])
+
+
+def test_custom_id_grammar_matches_batch_judge():
+    """Single-grammar invariant: the duplicated literal never drifts from batch_judge."""
+    from explore_persona_space.eval import judge_dispatch
+
+    assert judge_dispatch._CUSTOM_ID_RE.pattern == batch_judge._CUSTOM_ID_RE.pattern
+
+
+def test_trailing_newline_custom_id_raises():
+    """Round-2 regression: Python `$` matches before a trailing newline, so
+    `.match()` accepted `"ctx_k00\n"` — the API would 400. `.fullmatch()` rejects it."""
+    items = [("ctx_k00\n", "q", "c", "u")]
+    with pytest.raises(ValueError, match=r"ctx_k00\\n"):
+        dispatch(items, dry_run=True)

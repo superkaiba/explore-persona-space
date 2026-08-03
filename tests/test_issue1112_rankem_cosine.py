@@ -75,6 +75,27 @@ def test_parent_pairs_unchanged() -> None:
         assert lbl in labels, f"parent pair {lbl} was dropped by the rankem extension"
 
 
+def test_parent_pairs_fields_byte_identical() -> None:
+    """FIELD-level pin (review r1 minor): the 4 parent pairs' cell/rev/base/layer
+    fields must be exactly as the parent shipped them — the rankem extension is
+    additive-only. A field drift here silently re-points a parent comparison."""
+    by = {p["label"]: p for p in X.PAIRS}
+    expect = {
+        "H1x_ftneg_vs_loraneg": ("s3_fullft_neg", X.OWN_REV, "s1_lora_neg", X.OWN_REV),
+        "H1x_pos_ftpos_vs_lorapos": ("s4_fullft_pos", X.OWN_REV, "s2_lora_pos", X.OWN_REV),
+        "H1x_lrm_ftneg_vs_lora_lr5e6": ("s3_fullft_neg", X.OWN_REV, "s5_lora_neg_lr5e6", X.LRM_REV),
+        "marker_ft_vs_lora": ("m2_fullft_band8", X.OWN_REV, "m1_lora_band8", X.OWN_REV),
+    }
+    for lbl, (ca, ra, cb, rb) in expect.items():
+        p = by[lbl]
+        assert (p["cell_a"], p["rev_a"], p["cell_b"], p["rev_b"]) == (ca, ra, cb, rb), lbl
+    # base_cell + registered_layer pins (sycophancy vs marker read layers).
+    assert by["H1x_ftneg_vs_loraneg"]["base_cell"] == X.BASE_SYCO
+    assert by["H1x_ftneg_vs_loraneg"]["registered_layer"] == X.PRIMARY_LAYER
+    assert by["marker_ft_vs_lora"]["base_cell"] == X.BASE_MARKER
+    assert by["marker_ft_vs_lora"]["registered_layer"] == X.MARKER_READ_LAYER
+
+
 def test_resolve_rankem_capture_rev(tmp_path, monkeypatch) -> None:
     """Self-finalizing rev: reads data_repo_rev from the pod-written
     capture_revs.json; falls back to "main" when absent / malformed."""

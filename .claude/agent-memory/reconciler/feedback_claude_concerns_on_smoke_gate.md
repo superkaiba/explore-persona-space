@@ -11,3 +11,9 @@ type: feedback
 **Upload-phase variant (#551 r1):** Claude went to PASS on a driver whose `upload_folder` + `list_repo_files` verify block had only `DRY_RUN=1` echo-trace evidence, citing fail-loud design + the Step 8 verifier — both are detection-after-cost, not run-proof, and the block was the task's corrective core. Step 0.6 names upload steps as phases and disqualifies `--dry-run`; the block was VM-feasible. Trap signature: "the documented CPU-feasible scope — the full driver needs the pod" applied to a sub-block that does NOT need the pod. FAIL + raise a `<phase>-smoke-missing` CONCERN so Step 5c-ter gates dispatch even if a later round PASSes on prose.
 
 Boundary in the other direction (when the FAIL is wrong): [[feedback_codex_step_06_literal_vs_purpose]].
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Claude CONCERNS on missing tiny-N smoke](feedback_claude_concerns_on_smoke_gate.md) — `--help`/import/dry-run-only evidence is the canonical substantive FAIL; "Wave X IS the smoke" needs Wave X actually run; VM-feasible upload blocks included. #492, #551.

@@ -1,0 +1,96 @@
+{
+  "commit": "239b4a7547",
+  "created": "2026-08-01T09:44:02Z",
+  "figsize": [
+    6.0,
+    3.4
+  ],
+  "points": [
+    {
+      "behavior": -0.2,
+      "median Spearman $\\rho$": 0.17039750947269736,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "behavior": 0.8,
+      "median Spearman $\\rho$": 0.1380984269380608,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "behavior": 1.8,
+      "median Spearman $\\rho$": 0.11593890889157246,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "behavior": 2.8,
+      "median Spearman $\\rho$": 0.004556896953496809,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "behavior": 0.2,
+      "median Spearman $\\rho$": 0.04670783884721803,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "behavior": 1.2,
+      "median Spearman $\\rho$": 0.04992311273060906,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "behavior": 2.2,
+      "median Spearman $\\rho$": 0.030026747103422992,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "behavior": 3.2,
+      "median Spearman $\\rho$": 0.006251830602348523,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "behavior",
+        "ylabel": "median Spearman $\\rho$",
+        "legend_labels": [
+          "A7 predicted band (0.3-0.7)",
+          "span-mean (round 1)",
+          "last-token"
+        ],
+        "xticklabels": [
+          "cas",
+          "imp",
+          "syc",
+          "mk"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "span-mean (round 1)",
+      "last-token"
+    ]
+  }
+}

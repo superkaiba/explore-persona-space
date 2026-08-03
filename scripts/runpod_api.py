@@ -24,7 +24,8 @@ Public surface
 - list_team_pods()
 - wait_for_ssh(pod_id, timeout=600)  # poll until 22/tcp is publicly mapped
 - estimate_pod_hourly_rate(gpu_type_id, gpu_count)  # USD/hr best-effort
-- current_account_hourly_burn()  # sum estimated $/hr across RUNNING managed pods
+- current_account_hourly_burn()  # sum estimated $/hr across ALL RUNNING team pods
+                                 # (the pre-flight guard scopes to managed — see pod_lifecycle)
 
 CLI usage is via scripts/pod_lifecycle.py — this module is the library.
 """
@@ -469,13 +470,69 @@ def _build_inputs_block(inputs: dict[str, Any]) -> str:
     """
     fields: list[str] = []
     for k, v in inputs.items():
-        if isinstance(v, bool):
+        if isinstance(v, _RawGraphQL):
+            fields.append(f"{k}: {v}")
+        elif isinstance(v, bool):
             fields.append(f"{k}: {'true' if v else 'false'}")
         elif isinstance(v, int) or k in _CREATE_ENUM_FIELDS:
             fields.append(f"{k}: {v}")
         else:
             fields.append(f'{k}: "{v}"')
     return ", ".join(fields)
+
+
+class _RawGraphQL(str):
+    """A pre-serialized GraphQL fragment (env object lists) — emitted verbatim."""
+
+
+def read_vm_pubkey() -> str | None:
+    """Raw VM SSH public-key line (``RUNPOD_SSH_PUBKEY_FILE``, default
+    ``~/.ssh/id_ed25519.pub``), stripped, or None when the file is missing,
+    unreadable, or not ``ssh-``-prefixed — exactly the fail-open condition
+    of :func:`_public_key_env` (#1655 shares one read so the ``PUBLIC_KEY``
+    injection and the account-key preflight can never disagree about
+    availability)."""
+    import os as _os
+
+    path = _os.path.expanduser(_os.environ.get("RUNPOD_SSH_PUBKEY_FILE", "~/.ssh/id_ed25519.pub"))
+    try:
+        key = Path(path).read_text().strip()
+    except OSError:
+        return None
+    if not key.startswith("ssh-"):
+        return None
+    return key
+
+
+def _public_key_env() -> _RawGraphQL | None:
+    """A ``PUBLIC_KEY`` env entry for the pod create input, or None.
+
+    The runpod/pytorch image writes ``PUBLIC_KEY`` into authorized_keys at
+    boot — an injection path INDEPENDENT of RunPod account-key propagation,
+    which broke fleet-wide on 2026-07-23 (pods booted sshd with our
+    account-listed key absent; TCP fine, auth denied, across two DCs).
+    Key availability is read via :func:`read_vm_pubkey` (shared with the
+    #1655 account-key preflight); missing/malformed file returns None
+    (fail-open to the account-key path). The ``\\``/``"`` scrub below is
+    GraphQL-fragment escaping, not availability logic — it stays here.
+    """
+    key = read_vm_pubkey()
+    if key is None:
+        return None
+    key = key.replace("\\", "").replace('"', "")
+    return _RawGraphQL(f'[{{ key: "PUBLIC_KEY", value: "{key}" }}]')
+
+
+def get_account_pubkey() -> str:
+    """The team account's SSH key blob — GraphQL ``myself { pubKey }``: a
+    single string of newline-separated authorized_keys-style lines (the list
+    the RunPod console Settings page shows and fresh pods are seeded from).
+    Returns ``''`` when unset. Raises :class:`RunPodError` on
+    transport/GraphQL failure (read-only query; the remediation mutation
+    ``updateUserSettings`` is deliberately NOT wrapped here — never
+    auto-mutate the shared team list, #1655)."""
+    data = graphql("{ myself { id pubKey } }")
+    return ((data.get("myself") or {}).get("pubKey")) or ""
 
 
 def _deploy_once(
@@ -518,6 +575,9 @@ def _deploy_once(
         "startSsh": True,
         "ports": "8888/http,22/tcp",
     }
+    _pk_env = _public_key_env()
+    if _pk_env is not None:
+        inputs["env"] = _pk_env
     if data_center_id:
         inputs["dataCenterId"] = data_center_id
     if interruptible:
@@ -691,6 +751,9 @@ def _deploy_cpu_once(
         "startSsh": True,
         "ports": "8888/http,22/tcp",
     }
+    _pk_env = _public_key_env()
+    if _pk_env is not None:
+        inputs["env"] = _pk_env
     if data_center_id:
         inputs["dataCenterId"] = data_center_id
     inputs_block = _build_inputs_block(inputs)
@@ -994,9 +1057,12 @@ def current_account_hourly_burn() -> tuple[float, list[tuple[str, float]]]:
 
     Returns ``(total_usd_per_hr, breakdown)`` where ``breakdown`` is a list of
     ``(pod_name, pod_hourly_usd)`` for each RUNNING pod (sorted by cost
-    descending). Includes both managed (`pod-N` / `epm-issue-N`) and unmanaged
-    pods on the account — the RunPod spending cap applies to ALL of them, so
-    the guard must too.
+    descending). Includes managed (`pod-N` / `epm-issue-N`) AND unmanaged pods
+    — this is the account-wide view the fleet-burn one-liners display. The
+    pre-flight $/hr guard (``pod_lifecycle._assert_under_account_hourly_cap``)
+    scopes this sum to managed pods by default (``EPM_RUNPOD_BURN_SCOPE``,
+    #1600): the team account is shared with the fellows cluster, whose burn
+    our cap must not gate on.
 
     Stopped (EXITED) pods are excluded because they don't accrue hourly GPU
     charges — only volume storage, which is not subject to the $/hr cap.

@@ -43,7 +43,12 @@ import issue825_fit_cells as fc  # noqa: E402
 import issue1345_common as c  # noqa: E402
 from issue1345_fit_cells import load_matched, run_cells  # noqa: E402
 
-MODEL = "instruct"  # base r4 cells are N/A by scope (plan v8 §5)
+# The measured model carrying the story arm — instruct for the two instruct
+# scopes, pretrained for the base-measured scope (c.R4_MODELS is ("pretrained",)
+# there). The matched-row comparators (r1/r2 refit on the r4-kept subset + the
+# TF-on-companion refit) are therefore built for the SAME model the r4/r4op
+# cells + per_model_r4_pair are keyed on.
+MODEL = c.R4_MODELS[0]
 
 
 def matched_row_cells(r4cfg: dict) -> tuple[list[dict], dict]:

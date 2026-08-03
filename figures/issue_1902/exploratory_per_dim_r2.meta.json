@@ -1,0 +1,47 @@
+{
+  "commit": "8f6456d855",
+  "created": "2026-08-02T00:04:39Z",
+  "figsize": [
+    5.4,
+    3.4
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-dimension R\u00b2 (diagonal, single corpus)",
+        "xlabel": "per-dimension R\u00b2 at layer*",
+        "ylabel": "dimensions",
+        "legend_labels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ],
+        "yticklabels": [
+          "0",
+          "50",
+          "100",
+          "150",
+          "200",
+          "250",
+          "300",
+          "350",
+          "400"
+        ]
+      }
+    ]
+  }
+}

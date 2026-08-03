@@ -1,0 +1,35 @@
+{
+  "commit": "011c7bef3c",
+  "created": "2026-07-31T10:39:24Z",
+  "figsize": [
+    8.0,
+    4.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "wc shuffled-pair null distributions (K=200)",
+        "xticklabels": [
+          "ridge\nR2 null",
+          "ridge\ncos null",
+          "identity_bias\nR2 null",
+          "identity_bias\ncos null",
+          "const_mean\nR2 null",
+          "const_mean\ncos null"
+        ],
+        "yticklabels": [
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,326 @@
+{
+  "layer": 19,
+  "seed_cross": 1946,
+  "n_perm_cross": 10000,
+  "decision": "Collapse-preserved",
+  "decision_rule": "verdict space = mean-pooled SAE, exact-floor-adjusted battery; A = exact-adjusted bare answer_is_refusal=yes delta_mean_adj_nerr; Collapse-preserved iff A <= 0 AND no refusal-family contrast (refusal_adjacent=yes, answer_is_refusal=yes x 3 arms) is BH-significant with positive adjusted delta; Collapse-retracted iff bare answer_is_refusal exact-adjusted is BH-significant AND A > 0; Mixed otherwise (plan v7 section 1)",
+  "A_exact_adjusted_bare_answer_is_refusal": -0.16901790144306988,
+  "A_boot_ci": [
+    -0.2907390382868779,
+    -0.03621439651079066
+  ],
+  "A_bh_significant": true,
+  "A_n_group": 30,
+  "underpower_note": null,
+  "refusal_family_exact": {
+    "prefix:refusal_adjacent=yes": {
+      "delta_mean_adj_nerr": -0.05952967329650782,
+      "boot_ci": [
+        -0.1212898933807941,
+        0.0002484393214022263
+      ],
+      "bh_significant": false,
+      "n_group": 93
+    },
+    "prefix:answer_is_refusal=yes": {
+      "delta_mean_adj_nerr": -0.09118264337350346,
+      "boot_ci": [
+        -0.20353763286300441,
+        0.008147492583411223
+      ],
+      "bh_significant": false,
+      "n_group": 30
+    },
+    "context:refusal_adjacent=yes": {
+      "delta_mean_adj_nerr": -0.03791095622514379,
+      "boot_ci": [
+        -0.09708469653319307,
+        0.021895197092606376
+      ],
+      "bh_significant": false,
+      "n_group": 93
+    },
+    "context:answer_is_refusal=yes": {
+      "delta_mean_adj_nerr": -0.05293939141775478,
+      "boot_ci": [
+        -0.1651716615892452,
+        0.08154401480694604
+      ],
+      "bh_significant": false,
+      "n_group": 30
+    },
+    "bare:refusal_adjacent=yes": {
+      "delta_mean_adj_nerr": 0.009299884576500994,
+      "boot_ci": [
+        -0.06769375236354233,
+        0.08900244505406073
+      ],
+      "bh_significant": false,
+      "n_group": 93
+    },
+    "bare:answer_is_refusal=yes": {
+      "delta_mean_adj_nerr": -0.16901790144306988,
+      "boot_ci": [
+        -0.2907390382868779,
+        -0.03621439651079066
+      ],
+      "bh_significant": true,
+      "n_group": 30
+    }
+  },
+  "floor_adjusted_sensitivity_exact": {
+    "prefix": {
+      "available": true,
+      "n_shared_contrasts": 19,
+      "shared_contrasts": [
+        "language=en",
+        "topic=factual_qa",
+        "topic=creative_writing",
+        "topic=coding",
+        "topic=advice_howto",
+        "topic=chitchat_social",
+        "topic=translation",
+        "topic=summarization_extraction",
+        "topic=roleplay_persona",
+        "topic=math",
+        "refusal_adjacent=yes",
+        "answer_is_refusal=yes",
+        "format=code",
+        "format=list",
+        "format=prose",
+        "depth=2-2",
+        "depth=3-4",
+        "depth=>=5",
+        "corpus=wildchat"
+      ],
+      "rho": 0.7649122807017542,
+      "perm_p_two_sided": 0.0,
+      "n_dense_significant_shared": 9,
+      "sign_agree_on_dense_significant": 8
+    },
+    "context": {
+      "available": true,
+      "n_shared_contrasts": 19,
+      "shared_contrasts": [
+        "language=en",
+        "topic=factual_qa",
+        "topic=creative_writing",
+        "topic=coding",
+        "topic=advice_howto",
+        "topic=chitchat_social",
+        "topic=translation",
+        "topic=summarization_extraction",
+        "topic=roleplay_persona",
+        "topic=math",
+        "refusal_adjacent=yes",
+        "answer_is_refusal=yes",
+        "format=code",
+        "format=list",
+        "format=prose",
+        "depth=2-2",
+        "depth=3-4",
+        "depth=>=5",
+        "corpus=wildchat"
+      ],
+      "rho": 0.8614035087719296,
+      "perm_p_two_sided": 0.0,
+      "n_dense_significant_shared": 5,
+      "sign_agree_on_dense_significant": 5
+    },
+    "bare": {
+      "available": true,
+      "n_shared_contrasts": 19,
+      "shared_contrasts": [
+        "language=en",
+        "topic=factual_qa",
+        "topic=creative_writing",
+        "topic=coding",
+        "topic=advice_howto",
+        "topic=chitchat_social",
+        "topic=translation",
+        "topic=summarization_extraction",
+        "topic=roleplay_persona",
+        "topic=math",
+        "refusal_adjacent=yes",
+        "answer_is_refusal=yes",
+        "format=code",
+        "format=list",
+        "format=prose",
+        "depth=2-2",
+        "depth=3-4",
+        "depth=>=5",
+        "corpus=wildchat"
+      ],
+      "rho": 0.9473684210526314,
+      "perm_p_two_sided": 0.0,
+      "n_dense_significant_shared": 12,
+      "sign_agree_on_dense_significant": 12
+    }
+  },
+  "floor_adjusted_sensitivity_banked_approx": {
+    "prefix": {
+      "available": true,
+      "n_shared_contrasts": 19,
+      "shared_contrasts": [
+        "language=en",
+        "topic=factual_qa",
+        "topic=creative_writing",
+        "topic=coding",
+        "topic=advice_howto",
+        "topic=chitchat_social",
+        "topic=translation",
+        "topic=summarization_extraction",
+        "topic=roleplay_persona",
+        "topic=math",
+        "refusal_adjacent=yes",
+        "answer_is_refusal=yes",
+        "format=code",
+        "format=list",
+        "format=prose",
+        "depth=2-2",
+        "depth=3-4",
+        "depth=>=5",
+        "corpus=wildchat"
+      ],
+      "rho": 0.8122807017543858,
+      "perm_p_two_sided": 0.0,
+      "n_dense_significant_shared": 9,
+      "sign_agree_on_dense_significant": 8
+    },
+    "context": {
+      "available": true,
+      "n_shared_contrasts": 19,
+      "shared_contrasts": [
+        "language=en",
+        "topic=factual_qa",
+        "topic=creative_writing",
+        "topic=coding",
+        "topic=advice_howto",
+        "topic=chitchat_social",
+        "topic=translation",
+        "topic=summarization_extraction",
+        "topic=roleplay_persona",
+        "topic=math",
+        "refusal_adjacent=yes",
+        "answer_is_refusal=yes",
+        "format=code",
+        "format=list",
+        "format=prose",
+        "depth=2-2",
+        "depth=3-4",
+        "depth=>=5",
+        "corpus=wildchat"
+      ],
+      "rho": 0.8982456140350875,
+      "perm_p_two_sided": 0.0,
+      "n_dense_significant_shared": 5,
+      "sign_agree_on_dense_significant": 5
+    },
+    "bare": {
+      "available": true,
+      "n_shared_contrasts": 19,
+      "shared_contrasts": [
+        "language=en",
+        "topic=factual_qa",
+        "topic=creative_writing",
+        "topic=coding",
+        "topic=advice_howto",
+        "topic=chitchat_social",
+        "topic=translation",
+        "topic=summarization_extraction",
+        "topic=roleplay_persona",
+        "topic=math",
+        "refusal_adjacent=yes",
+        "answer_is_refusal=yes",
+        "format=code",
+        "format=list",
+        "format=prose",
+        "depth=2-2",
+        "depth=3-4",
+        "depth=>=5",
+        "corpus=wildchat"
+      ],
+      "rho": 0.93859649122807,
+      "perm_p_two_sided": 0.0,
+      "n_dense_significant_shared": 12,
+      "sign_agree_on_dense_significant": 12
+    }
+  },
+  "approx_vs_exact_floor_diagnostic": {
+    "available": true,
+    "n": 1988,
+    "spearman_floor_exact_vs_approx": 0.8768161019989293,
+    "spearman_p": 0.0,
+    "share_median_exact": 0.066224864240259,
+    "share_median_approx": 0.061601735879819736,
+    "share_median_approx_cited": 0.062,
+    "note": "DIAGNOSTIC only \u2014 no verdict weight (plan section 12 analyzer note 1)"
+  },
+  "exploratory_max_frac": {
+    "max_space": {
+      "prefix:refusal_adjacent=yes": {
+        "delta_mean_adj_nerr": -0.09941469957489768,
+        "bh_significant": true
+      },
+      "prefix:answer_is_refusal=yes": {
+        "delta_mean_adj_nerr": -0.04867192701714107,
+        "bh_significant": false
+      },
+      "context:refusal_adjacent=yes": {
+        "delta_mean_adj_nerr": -0.06432512380471539,
+        "bh_significant": true
+      },
+      "context:answer_is_refusal=yes": {
+        "delta_mean_adj_nerr": -0.027827812599822477,
+        "bh_significant": false
+      },
+      "bare:refusal_adjacent=yes": {
+        "delta_mean_adj_nerr": -0.0351220100252167,
+        "bh_significant": false
+      },
+      "bare:answer_is_refusal=yes": {
+        "delta_mean_adj_nerr": -0.04025927390005274,
+        "bh_significant": false
+      }
+    },
+    "frac_space": {
+      "prefix:refusal_adjacent=yes": {
+        "delta_mean_adj_nerr": -0.1008786619017582,
+        "bh_significant": true
+      },
+      "prefix:answer_is_refusal=yes": {
+        "delta_mean_adj_nerr": -0.13372680571029166,
+        "bh_significant": true
+      },
+      "context:refusal_adjacent=yes": {
+        "delta_mean_adj_nerr": -0.0714451985652988,
+        "bh_significant": true
+      },
+      "context:answer_is_refusal=yes": {
+        "delta_mean_adj_nerr": -0.12178046393261777,
+        "bh_significant": true
+      },
+      "bare:refusal_adjacent=yes": {
+        "delta_mean_adj_nerr": -0.037871120326252394,
+        "bh_significant": false
+      },
+      "bare:answer_is_refusal=yes": {
+        "delta_mean_adj_nerr": -0.1819752558065938,
+        "bh_significant": true
+      }
+    }
+  },
+  "consequence": "de-quarantine Takeaways bullet 6 (rewrite citing exact floors)",
+  "git_commit": "unknown",
+  "timestamp_utc": "2026-08-01T08:52:28.043047Z",
+  "python_version": "3.11.15",
+  "platform": "Linux-6.8.0-90-generic-x86_64-with-glibc2.39",
+  "cuda_visible_devices": "1",
+  "data_revision": "05cb982b0d3f9a21b5735d196a0afdc8175590e5",
+  "banked_revision": "12ab41dc1c4a7163d183697e9c4fa53528904c9b",
+  "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "smoke": false,
+  "fixture": false
+}

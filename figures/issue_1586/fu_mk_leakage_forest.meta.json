@@ -1,0 +1,51 @@
+{
+  "commit": "291b9cb961",
+  "created": "2026-07-24T11:50:40Z",
+  "figsize": [
+    11.0,
+    4.6
+  ],
+  "text": {
+    "suptitle": "Marker leakage at matched install, full fine-tune minus LoRA (both sides fresh)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "pooled non-source end-of-turn-margin shift difference (logits)",
+        "xticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "contrastive s42",
+          "contrastive s137",
+          "contrastive pooled",
+          "positive-only s42",
+          "positive-only s137",
+          "positive-only pooled"
+        ]
+      },
+      {
+        "xlabel": "pooled non-source log-prob shift difference (nats)",
+        "xticklabels": [
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ]
+  }
+}

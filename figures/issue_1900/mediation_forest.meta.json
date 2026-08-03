@@ -1,0 +1,393 @@
+{
+  "commit": "8ef8bb77bd",
+  "created": "2026-07-31T16:04:55Z",
+  "figsize": [
+    9.5,
+    6.84
+  ],
+  "points": [
+    {
+      "partial Spearman rho (rank residuals)": 0.10881872085694955,
+      "y": -0.3,
+      "series": "context sim, given propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.07560444902103712,
+      "y": 0.7,
+      "series": "context sim, given propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.061577664756655534,
+      "y": 1.7,
+      "series": "context sim, given propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.0834470500641036,
+      "y": 2.7,
+      "series": "context sim, given propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.023991874672222475,
+      "y": 3.7,
+      "series": "context sim, given propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.02035466176743698,
+      "y": 4.7,
+      "series": "context sim, given propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho (rank residuals)": -0.018697258624964675,
+      "y": 5.7,
+      "series": "context sim, given propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.008594120875431158,
+      "y": 6.7,
+      "series": "context sim, given propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho (rank residuals)": -0.1547995286016201,
+      "y": 7.7,
+      "series": "context sim, given propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.11182905286373578,
+      "y": 8.7,
+      "series": "context sim, given propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho (rank residuals)": -0.1666230287561176,
+      "y": 9.7,
+      "series": "context sim, given propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho (rank residuals)": -0.1464011846249895,
+      "y": 10.7,
+      "series": "context sim, given propensity",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.08427889361873636,
+      "y": -0.1,
+      "series": "context sim, given answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.024931260339123015,
+      "y": 0.9,
+      "series": "context sim, given answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho (rank residuals)": -0.0008558628113137314,
+      "y": 1.9,
+      "series": "context sim, given answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.004100259028330626,
+      "y": 2.9,
+      "series": "context sim, given answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho (rank residuals)": -0.015779985281518104,
+      "y": 3.9,
+      "series": "context sim, given answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho (rank residuals)": -0.021814350411594925,
+      "y": 4.9,
+      "series": "context sim, given answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho (rank residuals)": -0.0566252545719568,
+      "y": 5.9,
+      "series": "context sim, given answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho (rank residuals)": -0.031262979396238705,
+      "y": 6.9,
+      "series": "context sim, given answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho (rank residuals)": -0.16593500122397697,
+      "y": 7.9,
+      "series": "context sim, given answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.1115311671151519,
+      "y": 8.9,
+      "series": "context sim, given answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho (rank residuals)": -0.1849173212472752,
+      "y": 9.9,
+      "series": "context sim, given answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho (rank residuals)": -0.16256427106293558,
+      "y": 10.9,
+      "series": "context sim, given answer sim + propensity",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.13771378427239236,
+      "y": 0.09999999999999998,
+      "series": "answer sim, given propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.17645853478107287,
+      "y": 1.1,
+      "series": "answer sim, given propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.2105622803463606,
+      "y": 2.1,
+      "series": "answer sim, given propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.2703056753816187,
+      "y": 3.1,
+      "series": "answer sim, given propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.2204454601164774,
+      "y": 4.1,
+      "series": "answer sim, given propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.23207297114250444,
+      "y": 5.1,
+      "series": "answer sim, given propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.19966652485167552,
+      "y": 6.1,
+      "series": "answer sim, given propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.2164841680877575,
+      "y": 7.1,
+      "series": "answer sim, given propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.026111742558959424,
+      "y": 8.1,
+      "series": "answer sim, given propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.054086055828423185,
+      "y": 9.1,
+      "series": "answer sim, given propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.048777309464625405,
+      "y": 10.1,
+      "series": "answer sim, given propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.04265083841222991,
+      "y": 11.1,
+      "series": "answer sim, given propensity",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.11941802384720984,
+      "y": 0.3,
+      "series": "answer sim, given context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.1617819625941043,
+      "y": 1.3,
+      "series": "answer sim, given context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.20174164314085175,
+      "y": 2.3,
+      "series": "answer sim, given context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.2580328705265027,
+      "y": 3.3,
+      "series": "answer sim, given context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.21973914405616557,
+      "y": 4.3,
+      "series": "answer sim, given context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.23219846372253966,
+      "y": 5.3,
+      "series": "answer sim, given context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.2064233994257968,
+      "y": 6.3,
+      "series": "answer sim, given context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.21846425342326833,
+      "y": 7.3,
+      "series": "answer sim, given context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.06586762590434116,
+      "y": 8.3,
+      "series": "answer sim, given context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.05346138881382508,
+      "y": 9.3,
+      "series": "answer sim, given context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.09475399109205399,
+      "y": 10.3,
+      "series": "answer sim, given context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "partial Spearman rho (rank residuals)": 0.08314460242153857,
+      "y": 11.3,
+      "series": "answer sim, given context sim + propensity",
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Mediation: context vs answer similarity, base propensity partialled",
+        "xlabel": "partial Spearman rho (rank residuals)",
+        "legend_labels": [
+          "context sim, given propensity",
+          "context sim, given answer sim + propensity",
+          "answer sim, given propensity",
+          "answer sim, given context sim + propensity"
+        ],
+        "xticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ],
+        "yticklabels": [
+          "casual writing / bare / contrastive (s42)",
+          "casual writing / persona / contrastive (s42)",
+          "casual writing / persona / contrastive full-FT (s42)",
+          "casual writing / persona / positive-only (s42)",
+          "impoliteness / persona / contrastive (s137)",
+          "impoliteness / persona / contrastive (s42)",
+          "impoliteness / persona / contrastive full-FT (s42)",
+          "impoliteness / persona / positive-only (s42)",
+          "sycophancy / bare / contrastive (s42)",
+          "sycophancy / conversation / contrastive (s42)",
+          "sycophancy / persona / contrastive full-FT (s42)",
+          "sycophancy / persona / positive-only (s42)"
+        ]
+      }
+    ],
+    "series": [
+      "context sim, given propensity",
+      "context sim, given answer sim + propensity",
+      "answer sim, given propensity",
+      "answer sim, given context sim + propensity"
+    ]
+  }
+}

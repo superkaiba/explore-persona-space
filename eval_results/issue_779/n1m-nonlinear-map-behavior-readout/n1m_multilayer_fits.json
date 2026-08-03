@@ -1,0 +1,592 @@
+{
+  "per_layer": {
+    "14": {
+      "per_point": {
+        "mixed_1m": {
+          "selection": {
+            "mode": "mixed",
+            "n_target": 1000000,
+            "n_realized": 963444,
+            "n_lmsys": 529085,
+            "n_wildchat": 434359,
+            "full_lmsys_frac": 0.5492
+          },
+          "predictors": {
+            "ridge": {
+              "whole_map_r2": 0.6708212397689644,
+              "mean_cosine": 0.9452322446987951,
+              "bootstrap_ci": {
+                "r2": {
+                  "point": 0.6708212397689644,
+                  "lo": 0.6569388030645461,
+                  "hi": 0.6845679702088223
+                },
+                "mean_cosine": {
+                  "point": 0.9452322446987951,
+                  "lo": 0.9431412875772567,
+                  "hi": 0.9474110411260851
+                },
+                "n_test": 1000
+              },
+              "fit_meta": {
+                "n_train": 963444,
+                "selection": "val-lambda (primal, streaming)",
+                "selected_lambda": 0.001,
+                "val_r2_at_selected": 0.6647651097401361,
+                "lambda_grid_edge": "low",
+                "ridge_block": 50000
+              },
+              "wall_time_s": 87.1,
+              "weights_file": "/workspace/eps-issue-779/eval_results/issue_779/n1m-nonlinear-map-behavior-readout/weights/L14/ridge.pt"
+            },
+            "mlp_w8192": {
+              "whole_map_r2": 0.7593135255668365,
+              "mean_cosine": 0.959502988703458,
+              "bootstrap_ci": {
+                "r2": {
+                  "point": 0.7593135255668365,
+                  "lo": 0.7464993785101816,
+                  "hi": 0.7712036223993263
+                },
+                "mean_cosine": {
+                  "point": 0.959502988703458,
+                  "lo": 0.957667922850162,
+                  "hi": 0.9612522795657876
+                },
+                "n_test": 1000
+              },
+              "fit_meta": {
+                "width": 8192,
+                "lr": 0.0003,
+                "epochs_ran": 66,
+                "batch": 4096,
+                "best_val_mse": 0.04112970092409982,
+                "n_train": 963444,
+                "capacity_arm": false
+              },
+              "wall_time_s": 1694.5,
+              "weights_file": "/workspace/eps-issue-779/eval_results/issue_779/n1m-nonlinear-map-behavior-readout/weights/L14/mlp_w8192.pt"
+            },
+            "mlp_w32768": {
+              "whole_map_r2": 0.7579235711036836,
+              "mean_cosine": 0.9591868351018266,
+              "bootstrap_ci": {
+                "r2": {
+                  "point": 0.7579235711036836,
+                  "lo": 0.7451375678397532,
+                  "hi": 0.7705155359706108
+                },
+                "mean_cosine": {
+                  "point": 0.9591868351018266,
+                  "lo": 0.9573580798595287,
+                  "hi": 0.9610876747828185
+                },
+                "n_test": 1000
+              },
+              "fit_meta": {
+                "width": 32768,
+                "lr": 0.0003,
+                "epochs_ran": 55,
+                "batch": 4096,
+                "best_val_mse": 0.041522154495417185,
+                "n_train": 963444,
+                "capacity_arm": true
+              },
+              "wall_time_s": 3976.1,
+              "weights_file": "/workspace/eps-issue-779/eval_results/issue_779/n1m-nonlinear-map-behavior-readout/weights/L14/mlp_w32768.pt"
+            },
+            "krr_nystrom": {
+              "whole_map_r2": 0.743291369721075,
+              "mean_cosine": 0.9569160374357828,
+              "bootstrap_ci": {
+                "r2": {
+                  "point": 0.743291369721075,
+                  "lo": 0.7302092814228531,
+                  "hi": 0.7553624817106289
+                },
+                "mean_cosine": {
+                  "point": 0.9569160374357828,
+                  "lo": 0.9550754336559137,
+                  "hi": 0.958825702933864
+                },
+                "n_test": 1000
+              },
+              "fit_meta": {
+                "n_train": 963444,
+                "kernel": "RBF Nystrom (streaming Phi^TPhi)",
+                "m_centers": 16384,
+                "base_gamma": 0.0006981588741378543,
+                "selected": {
+                  "gamma_mult": 1.0,
+                  "gamma": 0.0006981588741378543,
+                  "lambda": 0.1,
+                  "val_r2": 0.7327664613796285
+                },
+                "val_grid": [
+                  {
+                    "gamma_mult": 1.0,
+                    "gamma": 0.0006981588741378543,
+                    "lambda": 0.1,
+                    "val_r2": 0.7327664613796285
+                  },
+                  {
+                    "gamma_mult": 1.0,
+                    "gamma": 0.0006981588741378543,
+                    "lambda": 10.0,
+                    "val_r2": 0.6937125008820058
+                  }
+                ]
+              },
+              "wall_time_s": 154.5,
+              "weights_file": "/workspace/eps-issue-779/eval_results/issue_779/n1m-nonlinear-map-behavior-readout/weights/L14/krr_nystrom.pt"
+            }
+          }
+        }
+      },
+      "nystrom_validation": {
+        "n": 50000,
+        "m_centers": 16384,
+        "exact_r2": 0.7230006357246832,
+        "nystrom_r2": 0.7137754771732288,
+        "gap": 0.009225158551454449,
+        "tol": 0.01,
+        "committed_n50k_exact_r2_widegrid": 0.8076,
+        "committed_n50k_exact_r2_smallgrid": 0.8066,
+        "exact_selected": {
+          "gamma_mult": 1.0,
+          "gamma": 0.0007261873380711202,
+          "lambda": 0.1,
+          "val_r2": 0.7112049982440872
+        },
+        "nystrom_selected": {
+          "gamma_mult": 1.0,
+          "gamma": 0.000718192435349525,
+          "lambda": 0.1,
+          "val_r2": 0.7036895125582097
+        }
+      }
+    },
+    "19": {
+      "per_point": {
+        "mixed_1m": {
+          "selection": {
+            "mode": "mixed",
+            "n_target": 1000000,
+            "n_realized": 963444,
+            "n_lmsys": 529085,
+            "n_wildchat": 434359,
+            "full_lmsys_frac": 0.5492
+          },
+          "predictors": {
+            "ridge": {
+              "whole_map_r2": 0.7541708417500046,
+              "mean_cosine": 0.954637316406687,
+              "bootstrap_ci": {
+                "r2": {
+                  "point": 0.7541708417500046,
+                  "lo": 0.7434797277308781,
+                  "hi": 0.7642395490449728
+                },
+                "mean_cosine": {
+                  "point": 0.954637316406687,
+                  "lo": 0.9525302278444,
+                  "hi": 0.9566042716687235
+                },
+                "n_test": 1000
+              },
+              "fit_meta": {
+                "n_train": 963444,
+                "selection": "val-lambda (primal, streaming)",
+                "selected_lambda": 0.001,
+                "val_r2_at_selected": 0.7542237014156805,
+                "lambda_grid_edge": "low",
+                "ridge_block": 50000
+              },
+              "wall_time_s": 85.6,
+              "weights_file": "/workspace/eps-issue-779/eval_results/issue_779/n1m-nonlinear-map-behavior-readout/weights/L19/ridge.pt"
+            },
+            "mlp_w8192": {
+              "whole_map_r2": 0.8103576072186821,
+              "mean_cosine": 0.9649278423304972,
+              "bootstrap_ci": {
+                "r2": {
+                  "point": 0.8103576072186821,
+                  "lo": 0.8006517859338235,
+                  "hi": 0.8198403806485273
+                },
+                "mean_cosine": {
+                  "point": 0.9649278423304972,
+                  "lo": 0.9630862015995567,
+                  "hi": 0.966707407245632
+                },
+                "n_test": 1000
+              },
+              "fit_meta": {
+                "width": 8192,
+                "lr": 0.0003,
+                "epochs_ran": 43,
+                "batch": 4096,
+                "best_val_mse": 0.08406924906153805,
+                "n_train": 963444,
+                "capacity_arm": false
+              },
+              "wall_time_s": 1120.1,
+              "weights_file": "/workspace/eps-issue-779/eval_results/issue_779/n1m-nonlinear-map-behavior-readout/weights/L19/mlp_w8192.pt"
+            },
+            "mlp_w32768": {
+              "whole_map_r2": 0.8134194594608872,
+              "mean_cosine": 0.9654665667982022,
+              "bootstrap_ci": {
+                "r2": {
+                  "point": 0.8134194594608872,
+                  "lo": 0.8036914867838579,
+                  "hi": 0.8228281148559161
+                },
+                "mean_cosine": {
+                  "point": 0.9654665667982022,
+                  "lo": 0.9636008271001142,
+                  "hi": 0.9671803285756418
+                },
+                "n_test": 1000
+              },
+              "fit_meta": {
+                "width": 32768,
+                "lr": 0.0003,
+                "epochs_ran": 38,
+                "batch": 4096,
+                "best_val_mse": 0.08325187529342865,
+                "n_train": 963444,
+                "capacity_arm": true
+              },
+              "wall_time_s": 2766.2,
+              "weights_file": "/workspace/eps-issue-779/eval_results/issue_779/n1m-nonlinear-map-behavior-readout/weights/L19/mlp_w32768.pt"
+            },
+            "krr_nystrom": {
+              "whole_map_r2": 0.8066491770626179,
+              "mean_cosine": 0.9642591630655886,
+              "bootstrap_ci": {
+                "r2": {
+                  "point": 0.8066491770626179,
+                  "lo": 0.7967233606621716,
+                  "hi": 0.8161951679396324
+                },
+                "mean_cosine": {
+                  "point": 0.9642591630655886,
+                  "lo": 0.9623325953803319,
+                  "hi": 0.9660192548602464
+                },
+                "n_test": 1000
+              },
+              "fit_meta": {
+                "n_train": 963444,
+                "kernel": "RBF Nystrom (streaming Phi^TPhi)",
+                "m_centers": 16384,
+                "base_gamma": 0.000168031291990803,
+                "selected": {
+                  "gamma_mult": 1.0,
+                  "gamma": 0.000168031291990803,
+                  "lambda": 0.1,
+                  "val_r2": 0.8034834573771984
+                },
+                "val_grid": [
+                  {
+                    "gamma_mult": 1.0,
+                    "gamma": 0.000168031291990803,
+                    "lambda": 0.1,
+                    "val_r2": 0.8034834573771984
+                  },
+                  {
+                    "gamma_mult": 1.0,
+                    "gamma": 0.000168031291990803,
+                    "lambda": 10.0,
+                    "val_r2": 0.7783042911641149
+                  }
+                ]
+              },
+              "wall_time_s": 155.3,
+              "weights_file": "/workspace/eps-issue-779/eval_results/issue_779/n1m-nonlinear-map-behavior-readout/weights/L19/krr_nystrom.pt"
+            }
+          }
+        }
+      },
+      "nystrom_validation": {
+        "n": 50000,
+        "m_centers": 16384,
+        "exact_r2": 0.7941235495575947,
+        "nystrom_r2": 0.7863185854757284,
+        "gap": 0.007804964081866261,
+        "tol": 0.01,
+        "committed_n50k_exact_r2_widegrid": 0.8076,
+        "committed_n50k_exact_r2_smallgrid": 0.8066,
+        "exact_selected": {
+          "gamma_mult": 1.0,
+          "gamma": 0.0001780848517581544,
+          "lambda": 0.1,
+          "val_r2": 0.7896096722765912
+        },
+        "nystrom_selected": {
+          "gamma_mult": 1.0,
+          "gamma": 0.0001761451136089828,
+          "lambda": 0.1,
+          "val_r2": 0.7838852362914381
+        }
+      }
+    },
+    "26": {
+      "per_point": {
+        "mixed_1m": {
+          "selection": {
+            "mode": "mixed",
+            "n_target": 1000000,
+            "n_realized": 963444,
+            "n_lmsys": 529085,
+            "n_wildchat": 434359,
+            "full_lmsys_frac": 0.5492
+          },
+          "predictors": {
+            "ridge": {
+              "whole_map_r2": 0.683922951725668,
+              "mean_cosine": 0.9651005312980045,
+              "bootstrap_ci": {
+                "r2": {
+                  "point": 0.683922951725668,
+                  "lo": 0.6691782045680079,
+                  "hi": 0.6980217870096698
+                },
+                "mean_cosine": {
+                  "point": 0.9651005312980045,
+                  "lo": 0.9633489659463431,
+                  "hi": 0.9668508585865004
+                },
+                "n_test": 1000
+              },
+              "fit_meta": {
+                "n_train": 963444,
+                "selection": "val-lambda (primal, streaming)",
+                "selected_lambda": 0.001,
+                "val_r2_at_selected": 0.686539190734915,
+                "lambda_grid_edge": "low",
+                "ridge_block": 50000
+              },
+              "wall_time_s": 160.2,
+              "weights_file": "/workspace/eps-issue-779/eval_results/issue_779/n1m-nonlinear-map-behavior-readout/weights/L26/ridge.pt"
+            },
+            "mlp_w8192": {
+              "whole_map_r2": 0.7580715905033035,
+              "mean_cosine": 0.9732650635713664,
+              "bootstrap_ci": {
+                "r2": {
+                  "point": 0.7580715905033035,
+                  "lo": 0.7444068047357376,
+                  "hi": 0.7714484862889609
+                },
+                "mean_cosine": {
+                  "point": 0.9732650635713664,
+                  "lo": 0.9717624734123478,
+                  "hi": 0.9747667494354023
+                },
+                "n_test": 1000
+              },
+              "fit_meta": {
+                "width": 8192,
+                "lr": 0.0003,
+                "epochs_ran": 47,
+                "batch": 4096,
+                "best_val_mse": 1.4187712159451327,
+                "n_train": 963444,
+                "capacity_arm": false
+              },
+              "wall_time_s": 1373.0,
+              "weights_file": "/workspace/eps-issue-779/eval_results/issue_779/n1m-nonlinear-map-behavior-readout/weights/L26/mlp_w8192.pt"
+            },
+            "mlp_w32768": {
+              "whole_map_r2": 0.7722463827028128,
+              "mean_cosine": 0.9748512425663569,
+              "bootstrap_ci": {
+                "r2": {
+                  "point": 0.7722463827028128,
+                  "lo": 0.7595835499337414,
+                  "hi": 0.7844410584848189
+                },
+                "mean_cosine": {
+                  "point": 0.9748512425663569,
+                  "lo": 0.9734329455994696,
+                  "hi": 0.9762369079631985
+                },
+                "n_test": 1000
+              },
+              "fit_meta": {
+                "width": 32768,
+                "lr": 0.0003,
+                "epochs_ran": 35,
+                "batch": 4096,
+                "best_val_mse": 1.3598704750592372,
+                "n_train": 963444,
+                "capacity_arm": true
+              },
+              "wall_time_s": 2659.8,
+              "weights_file": "/workspace/eps-issue-779/eval_results/issue_779/n1m-nonlinear-map-behavior-readout/weights/L26/mlp_w32768.pt"
+            },
+            "krr_nystrom": {
+              "whole_map_r2": 0.7479334550888455,
+              "mean_cosine": 0.9720564385150908,
+              "bootstrap_ci": {
+                "r2": {
+                  "point": 0.7479334550888455,
+                  "lo": 0.7327007016015676,
+                  "hi": 0.761725344103549
+                },
+                "mean_cosine": {
+                  "point": 0.9720564385150908,
+                  "lo": 0.9703190959409276,
+                  "hi": 0.9738663283287583
+                },
+                "n_test": 1000
+              },
+              "fit_meta": {
+                "n_train": 963444,
+                "kernel": "RBF Nystrom (streaming Phi^TPhi)",
+                "m_centers": 16384,
+                "base_gamma": 8.188052265351295e-06,
+                "selected": {
+                  "gamma_mult": 1.0,
+                  "gamma": 8.188052265351295e-06,
+                  "lambda": 0.1,
+                  "val_r2": 0.7463943007620757
+                },
+                "val_grid": [
+                  {
+                    "gamma_mult": 1.0,
+                    "gamma": 8.188052265351295e-06,
+                    "lambda": 0.1,
+                    "val_r2": 0.7463943007620757
+                  },
+                  {
+                    "gamma_mult": 1.0,
+                    "gamma": 8.188052265351295e-06,
+                    "lambda": 10.0,
+                    "val_r2": 0.717693130765668
+                  }
+                ],
+                "nystrom_gate_passed": false
+              },
+              "wall_time_s": 158.0,
+              "weights_file": "/workspace/eps-issue-779/eval_results/issue_779/n1m-nonlinear-map-behavior-readout/weights/L26/krr_nystrom.pt"
+            }
+          }
+        }
+      },
+      "nystrom_validation": {
+        "n": 50000,
+        "m_centers": 16384,
+        "exact_r2": 0.7321946094333003,
+        "nystrom_r2": 0.7170753838389263,
+        "gap": 0.015119225594373953,
+        "tol": 0.01,
+        "gate_passed": false,
+        "committed_n50k_exact_r2_widegrid": 0.8076,
+        "committed_n50k_exact_r2_smallgrid": 0.8066,
+        "exact_selected": {
+          "gamma_mult": 1.0,
+          "gamma": 8.09653852990178e-06,
+          "lambda": 0.1,
+          "val_r2": 0.7322066973784427
+        },
+        "nystrom_selected": {
+          "gamma_mult": 1.0,
+          "gamma": 8.37321464475155e-06,
+          "lambda": 0.1,
+          "val_r2": 0.7235844760243555
+        }
+      }
+    }
+  },
+  "layers": [
+    14,
+    19,
+    26
+  ],
+  "seed": 0,
+  "split": {
+    "orig_train_ids": 3600,
+    "n_new_captured": 959844,
+    "n_new_manifest": 960000,
+    "n_lmsys_manifest": 525485,
+    "n_wildchat_manifest": 434515,
+    "n_val": 400,
+    "n_test": 1000,
+    "val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+    "test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+    "pinned_val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+    "pinned_test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+    "pinned_source": "/workspace/eps-issue-779/eval_results/issue_779/fitter-fair-comparison/fair_comparison.json split params -> fixed_split, cross-checked vs constants",
+    "val_test_byte_identical_original": true,
+    "layers": [
+      14,
+      19,
+      26
+    ],
+    "near_dupe": {
+      "ngram": 5,
+      "jaccard_thresh": 0.8,
+      "n_targets": 1400,
+      "n_exact_drop": 435,
+      "n_near_drop": 30437
+    },
+    "manifest_new_prompt_sha256": "2b14762a15d316c602332a749ebd87c733d687d4165eb5d0038c298e0d27ce46",
+    "max_chunks": null
+  },
+  "lambda_grid": {
+    "n": 23,
+    "min": 0.001,
+    "max": 100000000.0
+  },
+  "krr_grid": {
+    "gamma_mult": [
+      1.0
+    ],
+    "lambdas": [
+      0.1,
+      10.0
+    ],
+    "nystrom_centers": 16384
+  },
+  "predictor_labels": {
+    "ridge": "primal ridge (linear, streaming X^TX)",
+    "mlp_w8192": "full-dim MLP (w=8192, protocol arm)",
+    "mlp_w32768": "full-dim MLP (w=32768, capacity arm)",
+    "residual_skip": "residual-skip (primal ridge + MLP w8192)",
+    "krr_nystrom": "RBF KRR (Nystrom, streaming Phi^TPhi)"
+  },
+  "fit_points": {
+    "lmsys_150k": {
+      "n_train_target": 150000,
+      "corpus_mode": "lmsys"
+    },
+    "lmsys_500k": {
+      "n_train_target": 500000,
+      "corpus_mode": "lmsys"
+    },
+    "mixed_500k": {
+      "n_train_target": 500000,
+      "corpus_mode": "mixed"
+    },
+    "mixed_1m": {
+      "n_train_target": 1000000,
+      "corpus_mode": "mixed"
+    }
+  },
+  "weights_dir": "/workspace/eps-issue-779/eval_results/issue_779/n1m-nonlinear-map-behavior-readout/weights",
+  "note": "multi-layer one-pass memmap rerun of the n1m fits (#779 n1m-nonlinear-map-behavior-readout): same fitters/grids/seed/pinned val-test as n1m_fits.json, refit at the capture layers with weights persisted for the behavior read-out.",
+  "metadata": {
+    "git_commit": "7f19f674742f8faee6267308f4496cf851e7e3f7",
+    "timestamp_utc": "2026-07-22T21:40:04.680634Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1064-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue779_ffc_n1m_fits --layers",
+    "device": "cuda",
+    "prefetch": 6,
+    "max_chunks": null
+  }
+}

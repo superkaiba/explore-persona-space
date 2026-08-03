@@ -1,0 +1,56 @@
+{
+  "label": "operator_swap_success",
+  "arms": {
+    "swap_a0": {
+      "files": [
+        "swap_a0.json"
+      ],
+      "n_rows": 133,
+      "n_samples": 665,
+      "sha256": {
+        "swap_a0.json": "f76b1d8f7ea1e54b"
+      }
+    },
+    "swap_mprime": {
+      "files": [
+        "swap_mprime.json"
+      ],
+      "n_rows": 133,
+      "n_samples": 665,
+      "sha256": {
+        "swap_mprime.json": "34b6f7eadeb99452"
+      }
+    },
+    "swap_jlast": {
+      "files": [
+        "swap_jlast.json"
+      ],
+      "n_rows": 133,
+      "n_samples": 665,
+      "sha256": {
+        "swap_jlast.json": "9d19ecfe83076eee"
+      }
+    },
+    "swap_random": {
+      "files": [
+        "swap_random.json"
+      ],
+      "n_rows": 133,
+      "n_samples": 665,
+      "sha256": {
+        "swap_random.json": "1d7cf0542a32396c"
+      }
+    }
+  },
+  "hf_prefix": "issue1776_jacobian",
+  "judge_handoff": "OFF-POD (VM, Batch API): uv run python scripts/issue1776_swap_judge.py --raw-dir <staged issue1776_jacobian/raw_completions/steered_swap> --targets eval_results/issue_1776/followup_swap/targets.json --swap-success eval_results/issue_1776/followup_swap/swap_success.json --out-dir eval_results/issue_1776/followup_swap",
+  "repro": {
+    "issue": 1776,
+    "git_commit": "c776254ce71d2b9f5ef6d35c732363eff7b56e13",
+    "jlens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+    "timestamp_utc": "2026-07-30T20:08:45Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "python_version": "3.11.10"
+  }
+}

@@ -1059,6 +1059,155 @@ def test_new_plan_version_refuses_to_overwrite_existing_target(
     assert (plans_dir / "v2.md").read_text() == sentinel
 
 
+# ─── Plan header-version auto-alignment (#1745) ───────────────────────────
+
+
+def test_new_plan_version_aligns_stale_header(fake_repo):
+    """A self-declared `# Plan v<X>` first heading is rewritten to the
+    assigned version at persist time (#1745 acceptance criterion 1)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+    assert tw.new_plan_version(new_id, "# Plan v1 — foo\n\nbody\n") == 1
+    # Second persist self-declares v1 while the assigned version is 2.
+    v = tw.new_plan_version(new_id, "# Plan v1 — foo\n\nrevised body\n")
+    assert v == 2
+    # Only the header's version digits changed; everything else is verbatim.
+    assert (plans_dir / "v2.md").read_text() == "# Plan v2 — foo\n\nrevised body\n"
+
+
+def test_new_plan_version_leaves_version_neutral_header(fake_repo):
+    """Version-neutral headers (the c40 sanctioned escape) persist
+    byte-identical, modulo the trailing-newline normalization the writer
+    already performs (#1745 acceptance criterion 2)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+    neutral = f"# Plan — task #{new_id}: foo\n\nbody"
+    assert tw.new_plan_version(new_id, neutral) == 1
+    assert (plans_dir / "v1.md").read_text() == neutral + "\n"
+    amendment = "# Plan (amendment) — narrower scope\n\nbody\n"
+    assert tw.new_plan_version(new_id, amendment) == 2
+    assert (plans_dir / "v2.md").read_text() == amendment
+
+
+def test_new_plan_version_header_alignment_skips_frontmatter_and_fences(fake_repo):
+    """YAML frontmatter and fenced code blocks are never rewritten; the
+    first REAL heading after them is aligned (#1745 acceptance criterion 3,
+    split_frontmatter + fence-mask parity with verify_plan.py c40)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+    plan = (
+        "---\n"
+        "kind: experiment\n"
+        "---\n"
+        "```\n"
+        "# Plan v9 — fenced, must NOT be rewritten\n"
+        "```\n"
+        "# Plan v9 — real heading\n"
+        "\n"
+        "body\n"
+    )
+    assert tw.new_plan_version(new_id, plan) == 1
+    text = (plans_dir / "v1.md").read_text()
+    assert text.startswith("---\nkind: experiment\n---\n")  # frontmatter untouched
+    assert "# Plan v9 — fenced, must NOT be rewritten" in text  # fence untouched
+    assert "# Plan v1 — real heading" in text  # first real heading aligned
+    assert "# Plan v9 — real heading" not in text
+
+
+def test_new_plan_version_header_alignment_case_insensitive_and_idempotent(fake_repo):
+    """The match is case-insensitive with prefix case preserved, and a
+    header already reading v{next_v} persists byte-stable (#1745
+    acceptance criteria 1 + 4)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+    # Case-insensitive: `# plan V3` matches; digits rewritten, case preserved.
+    assert tw.new_plan_version(new_id, "# plan V3 — case test\n") == 1
+    assert (plans_dir / "v1.md").read_text() == "# plan V1 — case test\n"
+    # Idempotent: a header already at the assigned version is byte-stable.
+    already = "# Plan v2 — already aligned\n\nbody\n"
+    assert tw.new_plan_version(new_id, already) == 2
+    assert (plans_dir / "v2.md").read_text() == already
+
+
+def _load_verify_plan_module():
+    """Load scripts/verify_plan.py via importlib (the tests/test_verify_plan.py
+    import pattern), reusing an already-loaded instance so the two test files
+    do not double-exec the module inside one pytest session."""
+    import importlib.util
+
+    if "verify_plan" in sys.modules:
+        return sys.modules["verify_plan"]
+    script = Path(__file__).resolve().parents[1] / "scripts" / "verify_plan.py"
+    spec = importlib.util.spec_from_file_location("verify_plan", script)
+    mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+    sys.modules["verify_plan"] = mod
+    spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    return mod
+
+
+def test_new_plan_version_output_passes_c40_roundtrip(fake_repo):
+    """#1745 acceptance criterion 5, verified against c40 ITSELF: a plan
+    persisted with a stale self-declared header can no longer WARN on
+    `check_header_version_vs_filename` — run on the persisted v{K}.md AND
+    through the plans/plan.md symlink, plus a YAML-frontmatter variant."""
+    repo, tw = fake_repo
+    vp = _load_verify_plan_module()
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    plans_dir = repo / "tasks" / "proposed" / str(new_id) / "plans"
+
+    tw.new_plan_version(new_id, "# Plan v1 — first\n\nbody\n")
+    # Stale header: self-declares v1 while the assigned version is 2.
+    tw.new_plan_version(new_id, "# Plan v1 — stale header\n\nbody\n")
+    for path in (plans_dir / "v2.md", plans_dir / "plan.md"):
+        res = vp.check_header_version_vs_filename(path.read_text(), plan_path=path)
+        assert res.status == "PASS", f"{path.name}: {res.status} — {res.detail}"
+        assert "matches persisted" in res.detail, res.detail
+
+    # YAML-frontmatter variant: the first heading after the frontmatter
+    # self-declares v9 while the assigned version is 3.
+    fm_plan = "---\nkind: experiment\n---\n# Plan v9 — frontmatter variant\n\nbody\n"
+    assert tw.new_plan_version(new_id, fm_plan) == 3
+    res = vp.check_header_version_vs_filename(
+        (plans_dir / "v3.md").read_text(), plan_path=plans_dir / "v3.md"
+    )
+    assert res.status == "PASS", f"v3.md: {res.status} — {res.detail}"
+    assert "matches persisted" in res.detail, res.detail
+
+
+def test_adversarial_planner_skill_documents_header_autoalignment():
+    """Durability pin (#1745): the adversarial-planner SKILL.md 'Log the
+    plan' bullet documents the persist-time header auto-alignment AND the
+    never-re-persist-to-retitle rule (the #1715 churn loop this task
+    closes). Follows tests/test_adversarial_planner_warn_disposition.py's
+    grep-anchored existence-check pattern."""
+    skill = (
+        Path(__file__).resolve().parents[1]
+        / ".claude"
+        / "skills"
+        / "adversarial-planner"
+        / "SKILL.md"
+    )
+    body = skill.read_text(encoding="utf-8")
+    anchor = "**Log the plan.**"
+    assert anchor in body, "adversarial-planner SKILL.md must keep the 'Log the plan' bullet"
+    span = body[body.index(anchor) : body.index(anchor) + 2000]
+    assert "auto-aligns a self-declared" in span, (
+        "The 'Log the plan' bullet must document that the persist "
+        "auto-aligns a self-declared `# Plan v<K>` first-heading version "
+        "to the assigned version (#1745) — without it, sessions keep "
+        "hand-retitling headers to clear c40 WARNs."
+    )
+    assert "Never re-persist a plan solely to retitle its header" in span, (
+        "The 'Log the plan' bullet must ban re-persisting a plan solely "
+        "to retitle its header — that burns a plan version for zero "
+        "content change (the #1715 churn loop)."
+    )
+
+
 # ─── Promotion ───────────────────────────────────────────────────────────
 
 
@@ -3111,6 +3260,107 @@ def test_cli_concern_summary_at_cap_passes_untouched(concerns_task, capsys):
     assert "evidence" not in row
 
 
+def test_cli_address_concern_accepts_note_alias(monkeypatch, capsys):
+    """#1867: `--note` parses as an argparse alias of `--summary` on
+    address-concern (dest=summary), exercised through the REAL parser via
+    main() with sys.argv monkeypatched (a pre-built Namespace cannot pin
+    the parser surface). Pre-fix this argv exited 2 (unrecognized
+    argument). The library function is monkeypatched to capture kwargs —
+    no repo state is touched."""
+    task_cli = _import_task_cli()
+    captured = {}
+
+    def fake_address_concern(
+        task_id, concern_id, *, addressed_by, addressed_at_round, summary=None
+    ):
+        captured.update(
+            task_id=task_id,
+            concern_id=concern_id,
+            addressed_by=addressed_by,
+            addressed_at_round=addressed_at_round,
+            summary=summary,
+        )
+        return {"event": "addressed", "concern_id": concern_id}
+
+    monkeypatch.setattr(task_cli, "address_concern", fake_address_concern)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "task.py",
+            "address-concern",
+            "1",
+            "--concern-id",
+            "x",
+            "--by",
+            "implementer",
+            "--round",
+            "1",
+            "--note",
+            "fixed by rekeying",
+        ],
+    )
+    task_cli.main()
+    assert captured["summary"] == "fixed by rekeying"
+    assert captured["task_id"] == 1
+    assert captured["concern_id"] == "x"
+    assert captured["addressed_by"] == "implementer"
+    assert captured["addressed_at_round"] == 1
+    assert "WARNING" not in capsys.readouterr().err
+
+
+def test_cli_raise_concern_accepts_note_alias(monkeypatch, capsys):
+    """#1867: `--note` parses as an alias of the REQUIRED `--summary` on
+    raise-concern — providing --note alone satisfies the required
+    argument. Same real-parser-through-main() mechanism as the
+    address-concern alias test."""
+    task_cli = _import_task_cli()
+    captured = {}
+
+    def fake_raise_concern(
+        task_id, concern_id, *, severity, summary, raised_by, raised_at_round, evidence=None
+    ):
+        captured.update(
+            task_id=task_id,
+            concern_id=concern_id,
+            severity=severity,
+            summary=summary,
+            raised_by=raised_by,
+            raised_at_round=raised_at_round,
+            evidence=evidence,
+        )
+        return {"event": "raised", "concern_id": concern_id}
+
+    monkeypatch.setattr(task_cli, "raise_concern", fake_raise_concern)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "task.py",
+            "raise-concern",
+            "1",
+            "--concern-id",
+            "x",
+            "--severity",
+            "CONCERN",
+            "--by",
+            "code-reviewer",
+            "--round",
+            "1",
+            "--note",
+            "probe position undefined",
+        ],
+    )
+    task_cli.main()
+    assert captured["summary"] == "probe position undefined"
+    assert captured["severity"] == "CONCERN"
+    assert captured["task_id"] == 1
+    assert captured["raised_by"] == "code-reviewer"
+    assert captured["raised_at_round"] == 1
+    assert captured["evidence"] is None
+    assert "WARNING" not in capsys.readouterr().err
+
+
 # ─── paper-stub support (`paper: true` clean-result track) ─────────────────
 
 
@@ -3856,8 +4106,10 @@ def test_seal_is_separate_one_byte_write(fake_repo, tmp_path, monkeypatch):
 # Incident #825: a concurrent session held .git/index.lock while set_status
 # ran; the `git add` crash left the folder moved with REGISTRY pointing at
 # the old path — the task was unfindable until a manual `audit --repair`.
-# The fix set: (1) _run_git retries ONCE on the git lock-contention stderr
-# signature; (2) set_status completes ALL durable state (FS move + verify,
+# The fix set: (1) _run_git retries on the git lock-contention stderr
+# signature (ONCE under #898; widened by #1917 to a bounded per-call
+# wall-budget loop — EPM_TASKPY_LOCK_WAIT_SECONDS, default 60 s, 0 disables);
+# (2) set_status completes ALL durable state (FS move + verify,
 # REGISTRY save, event append) BEFORE any git op; (3) find_task_path scans
 # the tasks/ tree when the registry entry is stale; (4) the ghost-deletion
 # sweep (_task_status_dir_pathspecs) reconciles a crashed transition's
@@ -3873,10 +4125,11 @@ def _make_index_lock(repo: Path) -> Path:
     return lock
 
 
-def test_run_git_retries_once_on_index_lock_collision(fake_repo, monkeypatch):
-    """A held index.lock that clears during the backoff sleep resolves via
-    exactly ONE retry, with the jittered delay drawn from the constant range
-    (asserted against tw._GIT_LOCK_RETRY_SLEEP_RANGE_S, not literals)."""
+def test_run_git_lock_clears_during_first_backoff_resolves(fake_repo, monkeypatch):
+    """A held index.lock that clears during the first backoff sleep resolves
+    via exactly ONE retry (the #898 semantics, preserved by the #1917 loop),
+    with the jittered delay drawn from the constant range (asserted against
+    tw._GIT_LOCK_RETRY_SLEEP_RANGE_S, not literals)."""
     repo, tw = fake_repo
     (repo / "somefile.txt").write_text("x\n")
     lock = _make_index_lock(repo)
@@ -3897,11 +4150,16 @@ def test_run_git_retries_once_on_index_lock_collision(fake_repo, monkeypatch):
 
 
 def test_run_git_retry_exhaustion_raises_calledprocesserror(fake_repo, monkeypatch, caplog):
-    """A lock that does NOT clear fails after exactly one retry (never two)
-    with subprocess.CalledProcessError and the stale-lock remedy logged."""
+    """A lock that does NOT clear fails once the per-call wall budget is
+    exhausted (#1917), with subprocess.CalledProcessError and the stale-lock
+    ERROR remedy (naming the env knob) logged. The fake sleep records without
+    advancing time; the real git attempts advance the monotonic clock, so the
+    tiny budget exhausts after >= 1 retry — NEVER an exact sleep count
+    (machine-speed dependent)."""
     repo, tw = fake_repo
     (repo / "somefile.txt").write_text("x\n")
-    _make_index_lock(repo)  # never removed — retry hits the lock again
+    _make_index_lock(repo)  # never removed — every retry hits the lock again
+    monkeypatch.setenv("EPM_TASKPY_LOCK_WAIT_SECONDS", "0.05")
 
     sleeps: list[float] = []
     monkeypatch.setattr(tw.time, "sleep", lambda d: sleeps.append(d))
@@ -3912,8 +4170,62 @@ def test_run_git_retry_exhaustion_raises_calledprocesserror(fake_repo, monkeypat
     ):
         tw._run_git(["add", "--", "somefile.txt"])
 
-    assert len(sleeps) == 1  # one retry sleep, never a second
-    assert any("index.lock" in r.getMessage() for r in caplog.records)
+    # The deadline is captured AFTER the first failure, so any positive
+    # budget guarantees >= 1 retry sleep; the exact count is machine-speed
+    # dependent (each real git attempt burns wall time against the budget).
+    assert len(sleeps) >= 1
+    errors = [r for r in caplog.records if r.levelno == logging.ERROR]
+    assert any("index.lock" in r.getMessage() for r in errors)  # stale-lock remedy
+    assert any("EPM_TASKPY_LOCK_WAIT_SECONDS" in r.getMessage() for r in errors)
+
+
+def test_run_git_lock_wait_env_zero_disables_retry(fake_repo, monkeypatch):
+    """EPM_TASKPY_LOCK_WAIT_SECONDS=0 disables retries entirely: a held lock
+    raises CalledProcessError after the SINGLE attempt with zero sleeps."""
+    repo, tw = fake_repo
+    (repo / "somefile.txt").write_text("x\n")
+    _make_index_lock(repo)
+    monkeypatch.setenv("EPM_TASKPY_LOCK_WAIT_SECONDS", "0")
+    monkeypatch.setattr(tw.time, "sleep", lambda d: pytest.fail("retry sleep with budget 0"))
+
+    with pytest.raises(subprocess.CalledProcessError):
+        tw._run_git(["add", "--", "somefile.txt"])
+
+
+def test_run_git_lock_wait_multiple_retries_within_budget(fake_repo, monkeypatch):
+    """The #1917 widening itself: a lock that outlasts the FIRST backoff (the
+    #898 single-retry depth — the #1815 crash shape) but clears by the THIRD
+    resolves with exactly 3 sleeps under the default 60 s budget
+    (deterministic: 3 real ~20 ms git spins consume far less than 60 s; the
+    fake sleeps advance no time)."""
+    repo, tw = fake_repo
+    (repo / "somefile.txt").write_text("x\n")
+    lock = _make_index_lock(repo)
+    monkeypatch.delenv("EPM_TASKPY_LOCK_WAIT_SECONDS", raising=False)  # default budget
+
+    sleeps: list[float] = []
+
+    def fake_sleep(delay: float) -> None:
+        sleeps.append(delay)
+        if len(sleeps) == 3:
+            lock.unlink()  # the concurrent committer finishes during the 3rd backoff
+
+    monkeypatch.setattr(tw.time, "sleep", fake_sleep)
+    result = tw._run_git(["add", "--", "somefile.txt"])
+
+    assert result.returncode == 0
+    assert len(sleeps) == 3  # pre-#1917 this raised after exactly 1 sleep
+
+
+@pytest.mark.parametrize("bad", ["nan", "inf"])
+def test_lock_wait_bound_rejects_non_finite(fake_repo, monkeypatch, bad):
+    """Knob validation mirrors the merge-wait pins: a non-finite env value
+    raises ValueError (nan would defeat the monotonic deadline comparison
+    and wait unbounded)."""
+    _, tw = fake_repo
+    monkeypatch.setenv("EPM_TASKPY_LOCK_WAIT_SECONDS", bad)
+    with pytest.raises(ValueError, match="EPM_TASKPY_LOCK_WAIT_SECONDS"):
+        tw._lock_wait_bound_s()
 
 
 def test_run_git_does_not_retry_non_lock_errors(fake_repo, monkeypatch):
@@ -4193,6 +4505,138 @@ def test_post_event_deferred_commit_returns_payload(fake_repo, monkeypatch, capl
     assert len(rows) == 1
     assert rows[0]["op"] == "post_event"
     assert rows[0]["task_id"] == new_id
+
+
+def test_post_event_deferred_commit_gitleaks_note(fake_repo, monkeypatch, caplog):
+    """#1780: a gitleaks-finding deferral extends the ERROR with the
+    .gitleaksignore recipe + the extracted Fingerprint line(s), and the sidecar
+    row carries the two additive gitleaks fields. The fingerprint sits EARLY in
+    the injected stderr, followed by >500 chars of later-hook padding, so it is
+    provably OUTSIDE the recorded 500-char stderr_tail — pinning full-stream
+    detection (the real #1092 row lost the fingerprint from the tail) against a
+    regression to tail-only matching. #1816: the synthetic stderr's gitleaks
+    `Failed` result line ALSO trips the general failing-hook extraction, so the
+    row additionally carries {failing_hooks, failure_excerpt}, with the hook id
+    from the FALLBACK name path (no `- hook id:` line present)."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    fingerprint = "Fingerprint: tasks/x/events.jsonl:generic-api-key:7"
+    later_hooks = "\n".join(f"later-hook line {i:03d} ................ Passed" for i in range(20))
+    assert len(later_hooks) > 500  # fingerprint provably outside the 500-char tail
+    stderr = f"gitleaks (scoped, staged-only)...........Failed\n{fingerprint}\n{later_hooks}\n"
+
+    def _gitleaks_crash(paths, message):
+        raise subprocess.CalledProcessError(1, ["git", "commit"], output="", stderr=stderr)
+
+    monkeypatch.setattr(tw, "_git_commit", _gitleaks_crash)
+    with caplog.at_level(logging.ERROR, logger="explore_persona_space.task_workflow"):
+        tw.post_event(new_id, "epm:progress", note="gitleaks deferral probe")
+
+    msg = "\n".join(r.getMessage() for r in caplog.records)
+    assert ".gitleaksignore" in msg
+    assert fingerprint in msg
+    rows = _deferred_rows(tw)
+    assert len(rows) == 1
+    assert fingerprint not in rows[0]["stderr_tail"]  # the recorded tail loses it
+    assert rows[0]["gitleaks_finding"] is True
+    assert rows[0]["gitleaks_fingerprints"] == [fingerprint]
+    # #1816 general fields coexist with the gitleaks fields (no suppression);
+    # no `- hook id:` line -> the id falls back to the dot-stripped name.
+    assert rows[0]["failing_hooks"] == ["gitleaks (scoped, staged-only)"]
+    assert fingerprint in rows[0]["failure_excerpt"]
+    assert set(rows[0]) == {
+        "ts",
+        "task_id",
+        "op",
+        "paths",
+        "message",
+        "error",
+        "stderr_tail",
+        "gitleaks_finding",
+        "gitleaks_fingerprints",
+        "failing_hooks",
+        "failure_excerpt",
+    }
+
+
+def test_post_event_deferred_commit_non_gitleaks_no_note(fake_repo, monkeypatch, caplog):
+    """#1780 AC3: a plain lock-collision deferral carries NO .gitleaksignore
+    note in its ERROR and NEITHER additive field in its sidecar row (the
+    message/row stay byte-identical to the pre-#1780 shape)."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    monkeypatch.setattr(tw, "_git_commit", _commit_crash)
+    with caplog.at_level(logging.ERROR, logger="explore_persona_space.task_workflow"):
+        tw.post_event(new_id, "epm:progress", note="plain deferral probe")
+
+    msg = "\n".join(r.getMessage() for r in caplog.records)
+    assert ".gitleaksignore" not in msg
+    rows = _deferred_rows(tw)
+    assert len(rows) == 1
+    assert "gitleaks_finding" not in rows[0]
+    assert "gitleaks_fingerprints" not in rows[0]
+
+
+def test_post_event_deferred_commit_failing_hook_note(fake_repo, monkeypatch, caplog):
+    """#1816: a deferral whose captured streams carry a pre-commit `Failed`
+    hook-result line names the failing hook + a bounded output excerpt in
+    BOTH the ERROR log and the sidecar row, even when the failure sits
+    outside the 500-char stderr_tail. The padding lines use the REAL
+    no-space pre-commit result format (`later-hook-000....Passed`) so they
+    MATCH the hook-result regex — pinning block termination at the next
+    hook-result line (the excerpt must NOT bleed into later hooks)."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    hook_output = "src/foo.py:1:1: F401 'os' imported but unused"
+    padding = "\n".join(f"later-hook-{i:03d}" + "." * 30 + "Passed" for i in range(20))
+    assert len(padding) > 500  # failing block provably outside the 500-char tail
+    stderr = (
+        "ruff" + "." * 40 + f"Failed\n- hook id: ruff\n- exit code: 1\n{hook_output}\n{padding}\n"
+    )
+
+    def _hook_crash(paths, message):
+        raise subprocess.CalledProcessError(1, ["git", "commit"], output="", stderr=stderr)
+
+    monkeypatch.setattr(tw, "_git_commit", _hook_crash)
+    with caplog.at_level(logging.ERROR, logger="explore_persona_space.task_workflow"):
+        tw.post_event(new_id, "epm:progress", note="failing-hook deferral probe")
+
+    msg = "\n".join(r.getMessage() for r in caplog.records)
+    assert "FAILING HOOK(S): ruff" in msg
+    rows = _deferred_rows(tw)
+    assert len(rows) == 1
+    assert rows[0]["failing_hooks"] == ["ruff"]
+    assert hook_output in rows[0]["failure_excerpt"]
+    assert "later-hook" not in rows[0]["failure_excerpt"]  # block ends at next result line
+    assert hook_output not in rows[0]["stderr_tail"]  # the blind tail loses the failure
+    assert set(rows[0]) == {
+        "ts",
+        "task_id",
+        "op",
+        "paths",
+        "message",
+        "error",
+        "stderr_tail",
+        "failing_hooks",
+        "failure_excerpt",
+    }
+
+
+def test_extract_failing_hook_blocks_caps(fake_repo):
+    """#1816 caps: 5 Failed hooks -> at most 3 blocks / hook ids, each block
+    <=12 lines and <=600 chars, total excerpt <=1500 chars; a stream with no
+    `Failed` hook-result line returns ([], "") (the blind-tail fallback)."""
+    _, tw = fake_repo
+    parts: list[str] = []
+    for i in range(5):
+        parts.append(f"hook-{i}" + "." * 30 + "Failed")
+        parts.append(f"- hook id: hook-{i}")
+        parts.extend(f"output line {j:02d} for hook {i} " + "x" * 80 for j in range(15))
+    hooks, excerpt = tw._extract_failing_hook_blocks("\n".join(parts))
+    assert hooks == ["hook-0", "hook-1", "hook-2"]  # max 3 blocks
+    assert 0 < len(excerpt) <= 1500  # total excerpt cap
+    assert "hook id: hook-3" not in excerpt and "hook id: hook-4" not in excerpt
+    assert tw._extract_failing_hook_blocks("fatal: Unable to create index.lock") == ([], "")
 
 
 def test_post_event_append_failure_raises_no_deferred_row(fake_repo, monkeypatch):

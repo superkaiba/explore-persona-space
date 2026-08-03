@@ -1,0 +1,167 @@
+{
+  "metadata": {
+    "git_commit": "b4d35ee8a5e498a4a6f555af5b362ba0fd01d47e",
+    "timestamp": "2026-07-22T20:22:47Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1310_xpersona_similarity_v2.py",
+    "issue": 931
+  },
+  "model_kind": "base",
+  "headline_layer": 19,
+  "gcv_dof_cap": 0.9,
+  "convention": "DATA-PAIRED activation-Procrustes aligned operator cosine (ma._procrustes_cosine_null, the project headline convention; full-data, scenario-paired). Full-data (NOT held-out train-fold) for cross-project comparability to the calibration anchors, which are all full-data. observed_aligned_cosine + raw_vec_cosine + rotation_null reused from operator_stats_nulled_<m>.json; shuffle_fit_null is the stricter structure-free null (same 5 shuffle-fit maps as Leg C, same R_in/R_out from real activations).",
+  "calibration_anchors": {
+    "issue825_base_vs_instruct": 0.6864,
+    "issue1345_chat_vs_plain_instruct": 0.855,
+    "issue1345_chat_vs_plain_base": 0.732,
+    "issue1345_paired_story_vs_chat": 0.455
+  },
+  "n_shuffle_fit_draws": 5,
+  "pairs": {
+    "Wren~HELIOS": {
+      "observed_aligned_cosine": 0.5483294055504877,
+      "raw_vec_cosine": 0.24619242161128116,
+      "rotation_null": {
+        "n_draws": 3,
+        "null_mean": -3.7374849555410833e-06,
+        "null_p975": 0.0001124024816996876
+      },
+      "shuffle_fit_null": {
+        "n_draws": 5,
+        "draws": [
+          -0.01059352805118295,
+          0.034679309599189745,
+          -0.011998914606349312,
+          0.011600799925099195,
+          -0.0019541117565670648
+        ],
+        "null_mean": 0.004346711022037922,
+        "null_std": 0.017336544815458023,
+        "null_p975": 0.03237145863178069
+      },
+      "aligned_over_rotation_null": 0.5483331430354432,
+      "aligned_over_shuffle_null": 0.5439826945284498
+    },
+    "Wren~Dana": {
+      "observed_aligned_cosine": 0.49744855452987846,
+      "raw_vec_cosine": 0.25999663748391544,
+      "rotation_null": {
+        "n_draws": 3,
+        "null_mean": -0.00017165134780999496,
+        "null_p975": 0.00018794135064015172
+      },
+      "shuffle_fit_null": {
+        "n_draws": 5,
+        "draws": [
+          0.008763735152550363,
+          0.004728998916897072,
+          -0.011979831393385003,
+          -0.010198531376260212,
+          -0.011715835793574702
+        ],
+        "null_mean": -0.004080292898754496,
+        "null_std": 0.008952203579794552,
+        "null_p975": 0.008360261528985034
+      },
+      "aligned_over_rotation_null": 0.49762020587768846,
+      "aligned_over_shuffle_null": 0.5015288474286329
+    },
+    "Wren~Vex": {
+      "observed_aligned_cosine": 0.5193625678001847,
+      "raw_vec_cosine": 0.2280584683283654,
+      "rotation_null": {
+        "n_draws": 3,
+        "null_mean": -0.00014666953245259527,
+        "null_p975": 0.0001070869137430881
+      },
+      "shuffle_fit_null": {
+        "n_draws": 5,
+        "draws": [
+          -0.00929138691513473,
+          0.006258594663102602,
+          -0.008041494715276525,
+          -0.0009428200356861509,
+          0.0005142775000283412
+        ],
+        "null_mean": -0.0023005659005932927,
+        "null_std": 0.005742053445788136,
+        "null_p975": 0.005684162946795175
+      },
+      "aligned_over_rotation_null": 0.5195092373326373,
+      "aligned_over_shuffle_null": 0.521663133700778
+    },
+    "HELIOS~Dana": {
+      "observed_aligned_cosine": 0.5036599466467665,
+      "raw_vec_cosine": 0.2045522479600846,
+      "rotation_null": {
+        "n_draws": 3,
+        "null_mean": -0.0002485301720641728,
+        "null_p975": 0.00018254657417228227
+      },
+      "shuffle_fit_null": {
+        "n_draws": 5,
+        "draws": [
+          0.023437450855877482,
+          0.013068539435872672,
+          -0.0018044909660142592,
+          0.021603574373374873,
+          -0.01003635942016669
+        ],
+        "null_mean": 0.009253742855788815,
+        "null_std": 0.013135000305797133,
+        "null_p975": 0.02325406320762722
+      },
+      "aligned_over_rotation_null": 0.5039084768188307,
+      "aligned_over_shuffle_null": 0.49440620379097766
+    },
+    "HELIOS~Vex": {
+      "observed_aligned_cosine": 0.5263834889579738,
+      "raw_vec_cosine": 0.19977855998997182,
+      "rotation_null": {
+        "n_draws": 3,
+        "null_mean": 8.236810138409533e-05,
+        "null_p975": 0.00034429307116325716
+      },
+      "shuffle_fit_null": {
+        "n_draws": 5,
+        "draws": [
+          -0.0018993930563942214,
+          0.007502539571212535,
+          -0.009168242884405485,
+          0.004442372941742081,
+          0.0156625578070348
+        ],
+        "null_mean": 0.003307966875837942,
+        "null_std": 0.008417715150107707,
+        "null_p975": 0.014846555983452574
+      },
+      "aligned_over_rotation_null": 0.5263011208565898,
+      "aligned_over_shuffle_null": 0.5230755220821359
+    },
+    "Dana~Vex": {
+      "observed_aligned_cosine": 0.49933609541904844,
+      "raw_vec_cosine": 0.22058487474604052,
+      "rotation_null": {
+        "n_draws": 3,
+        "null_mean": -3.519051433943589e-05,
+        "null_p975": 0.00033205126824238266
+      },
+      "shuffle_fit_null": {
+        "n_draws": 5,
+        "draws": [
+          -0.0013666600592466718,
+          0.011788827561231426,
+          0.008815579201565202,
+          -0.017252880749947675,
+          0.022425512594674346
+        ],
+        "null_mean": 0.004882075709655325,
+        "null_std": 0.013416041478594487,
+        "null_p975": 0.021361844091330053
+      },
+      "aligned_over_rotation_null": 0.49937128593338787,
+      "aligned_over_shuffle_null": 0.4944540197093931
+    }
+  }
+}

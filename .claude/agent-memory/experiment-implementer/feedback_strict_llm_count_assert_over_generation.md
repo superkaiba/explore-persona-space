@@ -15,3 +15,9 @@ type: feedback
 - Retry ONCE with stricter prompt; don't loop forever.
 
 **Origin:** task #779 round-7 crash-fix cycle (2026-07-01). Round-6 ensemble review missed it; sibling-scan discipline mattered — task #779's `_validate_generated_artifacts` had TWO such asserts (5 pairs + 40 questions), both fixed together.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [strict LLM-count assert on over-generation (clamp + typed shortfall)](feedback_strict_llm_count_assert_over_generation.md) — clamp to N via items[:N] on over-generation, raise typed ArtifactCountShortfall on under-generation (never == N hard-assert; #779 round-7)

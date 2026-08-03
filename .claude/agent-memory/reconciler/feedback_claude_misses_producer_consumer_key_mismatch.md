@@ -15,3 +15,9 @@ type: feedback
 **Why:** Claude's must-fix walk treats "the builder exists + takes the arg + is plumbed" / "the judge IS called" as ADDRESSED; the failure mode is invisible from the producer's smoke. Codex compares the two sides' literals.
 
 Companions: [[feedback_claude_misses_dispatcher_wire_bugs]] (single-program wiring variant); [[feedback_claude_misses_same_file_siblings]]; [[feedback_claude_misses_fix_regressions]].
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Claude misses producer/consumer contract mismatches](feedback_claude_misses_producer_consumer_key_mismatch.md) — round-trip literal contracts: JSON key path-vs-inline, custom_id f-strings, consumer regex classes, builder default vs plan-prescribed holdout.

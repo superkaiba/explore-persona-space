@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-29 passes ("pass" = one top-level per-tick action block in ``main()``'s
+34 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -11,7 +11,10 @@ IDENTIFIERS (cross-referenced throughout this docstring), NOT execution
 order. The per-tick execution order is: 1 (VM disk) -> 15 (data-disk) ->
 16 (happy-patch) -> 12 (CPU-guard) -> 17 (triage-observer) ->
 18 (verdict-disagree) -> 26 (root-draft) -> 27 (registry-drift) ->
-19 (VM-ledger reap) -> 20 (program-orchestrator
+34 (stash-rescue) -> 31 (codex-outage) -> 29 (completed-unmerged) ->
+32 (partial-bundle) ->
+33 (unfolded-round) -> 30 (urgent-park router) -> 19 (VM-ledger reap) ->
+20 (program-orchestrator
 recovery) -> 13 (auth-outage guard) -> 2 (crash-recovery) -> 9 (campaign)
 -> 3 (pod-safety) -> 4 (stalled-detector) -> 5 (orphan sweep) ->
 11 (infra-drain) -> 21 (proposed-infra-sweep) -> 22 (capacity-retry) ->
@@ -57,7 +60,7 @@ adding a pass means adding a numbered item here AND bumping the digit:
    session whose driver process has died. Gated on daemon reachability — it
    reasons about session liveness, which is unknowable during a daemon outage.
 3. **Pod-safety pass.** Reconcile RUNNING managed pods (``pod-<N>`` / legacy
-   ``epm-issue-<N>``) against their task's STATUS. Two conservative actions:
+   ``epm-issue-<N>``) against their task's STATUS. Conservative actions:
 
    - **AUTO-STOP** (reversible, never terminate) a RUNNING pod whose task is
      already DONE (``completed`` / ``awaiting_promotion`` / ``archived``) or
@@ -74,6 +77,38 @@ adding a pass means adding a numbered item here AND bumping the digit:
      progress for > ``ALERT_STALE_HOURS``. This is the likely-abandoned
      mid-run case. We do NOT stop it: a false alert is a cheap nudge; a false
      stop would kill a healthy run.
+   - **ESCALATE (keep-running wedged-owner arm, #1582 — never a stop)** a
+     RUNNING pod shielded by the ``keep-running`` tag on a DONE-status task
+     once the task shows no real marker progress for >=
+     ``EPM_KEEP_RUNNING_WEDGED_OWNER_MIN_H`` (12h) AND the owning session is
+     provably wedged (transcript idle >= the same floor, self-report equally
+     stale) or absent (no live registration sid, no worktree-cwd daemon
+     child), confirmed >= 2 consecutive ticks: one task marker per episode +
+     a Telegram push + a sidecar row
+     (``.claude/cache/keep-running-wedged-events.jsonl``), re-pushed every
+     ``EPM_KEEP_RUNNING_WEDGED_REALERT_H`` (24h) while unresolved. The tag
+     previously made such a pod INVISIBLE (#1345: ~72h of billing behind a
+     frozen wrapper). An "unknown" owner read (daemon unreachable,
+     unresolvable transcript) FREEZES the confirmation counter — fail toward
+     no-fire. Kill switch ``EPM_DISABLE_KEEP_RUNNING_OWNER_AUDIT=1``.
+   - **TERMINATE+FAILOVER (#664 RunPod no-port wedge arm, #692/#770)** a
+     RUNNING pod on a NON-done task stuck in the RUNNING-but-no-port host
+     wedge past the K floor (``backend_poll.RUNPOD_WEDGE_K_SEC``) for >=
+     threshold consecutive checks — the poller-DEAD backstop. ALERT by
+     default; the IRREVERSIBLE terminate + fresh re-provision (the SAME
+     recovery the poller owns, ``backend_poll._failover_wedged_runpod``,
+     bounded-once via the shared lease + sentinel) fires ONLY for the
+     provably-safe case: keep-running tag read and absent, inputs verified
+     on HF, AND — the #1667 owner guard — NO live owning session working the
+     issue (tri-state ``_wedge_owner_live``: recent non-watcher markers /
+     live registered or cwd-mapped session within
+     ``EPM_WEDGE_OWNER_RECENT_H``, default 2h; only the literal ``False``
+     permits terminate — a live/"unknown" owner demotes to a
+     once-per-episode defer marker with the wedge clock PRESERVED, so a dead
+     owner still gets the terminate once activity quiets). Incident #1586: a
+     wedge terminate mid-crash-fix-round destroyed live run state. Kill
+     switch ``EPM_DISABLE_WEDGE_OWNER_GUARD=1`` (restores the pre-#1667
+     terminate).
 
    The pod-safety pass does NOT use session-cwd liveness as a stop trigger
    (see "Why STOP is keyed on task status, not session liveness" below) and
@@ -511,8 +546,9 @@ adding a pass means adding a numbered item here AND bumping the digit:
    ``EPM_DISABLE_ORPHAN_WRAPPER_PASS=1``; ``--orphan-wrapper-only`` runs
    just this pass with an in-invocation two-sample CPU delta (pair with
    ``--dry-run`` for a read-only live smoke). (:func:`orphan_wrapper_pass`.)
-29. **Completed-unmerged flag pass (#1564; incident #1540; FLAG-ONLY;
-   daemon-INDEPENDENT; runs right after pass 27).** Hourly-self-gated
+29. **Completed-unmerged flag + bounded-respawn pass (#1564 + #1653;
+   incident #1540; daemon-INDEPENDENT flag half; runs right after
+   pass 27).** Hourly-self-gated
    (``EPM_COMPLETED_UNMERGED_INTERVAL_HOURS``, 1h) audit of the #1540
    stranded-merge shape: a ``completed`` task whose events carry
    ``epm:done`` (within a 72h lookback,
@@ -528,7 +564,15 @@ adding a pass means adding a numbered item here AND bumping the digit:
    interval + ONE marker per (issue, done_ts) episode + a deduped push
    re-firing every 24h while unresolved
    (``EPM_COMPLETED_UNMERGED_REALERT_HOURS``), naming the Step 10d
-   recovery. NEVER merges/pushes/spawns, never mutates status. Known v1
+   recovery. NEVER merges/pushes, never mutates status; #1653 adds a
+   bounded respawn arm — on a LATER interval with the same (issue,
+   done_ts) episode still stranded and NO live owning session (#1582
+   owner union; daemon probe fails toward skip), dispatch ``spawn-issue
+   --issue <N> --auto`` once per episode
+   (``EPM_COMPLETED_UNMERGED_RESPAWNS_PER_DAY``=3/day fleet-wide,
+   auth-outage-gated #1027, kill switch
+   ``EPM_DISABLE_COMPLETED_UNMERGED_RESPAWN``) so the fresh session's
+   /issue resume row runs the Step 10d backstop (#1578). Known v1
    bounds (fail-toward-silence; /daily stays the backstop): once ANY
    ``epm:merged`` exists a LATER round's stranded merge never fires;
    suffixed ``issue-<N>-<slug>`` follow-up branches are invisible to the
@@ -538,6 +582,229 @@ adding a pass means adding a numbered item here AND bumping the digit:
    ``EPM_DISABLE_COMPLETED_UNMERGED_PASS=1``; ``--completed-unmerged-only``
    runs just this pass (pair with ``--dry-run`` for a live smoke).
    (:func:`completed_unmerged_pass`.)
+
+30. **Urgent-park router pass (#1681; daemon-INDEPENDENT; runs right after
+   pass 29).** The "main is red" fast path for PARKED workflow-fix
+   candidates: a parked candidate whose bug is a CURRENTLY-FAILING test on
+   origin/main otherwise waits up to ~24h for the nightly /daily Step C
+   sweep while every intervening session's Step 9c gate re-classifies the
+   red (incident #1643: an 07:08Z park's red lived ~11.5h). The PARKING
+   session only LABELS (never routes — the recursion guard holds): the
+   formal candidate block plus three fields ``urgency: main-red`` +
+   ``failing_test: <one pytest node id>`` + ``wf_fix: true|false``
+   (grammar: ``.claude/rules/workflow-fix-on-bug.md`` § Recursion guard).
+   This pass — the independent NON-guarded actor — detects the token via a
+   cheap mtime+substring gate (deliberately NO read-size byte cap, the
+   #1287 defeat mode), enumerates authoritatively by importing
+   ``sweep_parked_wf_candidates.sweep()`` (read-only reuse — suppression
+   rules 1-3 come for free), VERIFIES the claim two-tier (a fresh step9c
+   baseline-ledger hit whose ``refreshed_at`` postdates the park, else ONE
+   bounded ``uv run pytest <node>`` subprocess per tick, rc==1 confirmed /
+   rc==0 refuted / ANY other rc incl. rc=5 no-tests-collected
+   indeterminate — never an ``rc != 0 -> confirmed`` shortcut), dedups
+   (``task_workflow.is_open_workflow_fix_task`` + a failing-node
+   containment scan over open infra bodies), files + dispatches through
+   the standard ``scripts/file_infra_task.py`` path, and posts the
+   standard ``epm:workflow-fix-task-filed`` routed-record on the park's
+   OWN stream (sweep-reported fingerprint VERBATIM + ``origin_candidate_ts``
+   — the #1680 lesson; ``source: watcher-urgent-park-router``) so
+   suppression rule 1 closes the park for the nightly sweep.
+   Missing/malformed/unverifiable urgency data falls back to nightly
+   /daily Step C byte-unchanged — the router never synthesizes fields.
+   Bounds: fleet day cap ``EPM_URGENT_WF_PARK_ROUTES_PER_DAY`` (default 2,
+   quiet-at-cap — the #1241 posture; nightly stays the backstop),
+   per-candidate verdict latch (state singleton
+   ``~/.eps-autonomous/urgent-wf-park-router.json``; sidecar
+   ``.claude/cache/urgent-wf-park-events.jsonl``), <=1 pytest run per tick
+   (timeout ``EPM_URGENT_WF_PARK_PYTEST_TIMEOUT_S``, default 180s). Kill
+   switch ``EPM_DISABLE_URGENT_WF_PARK_PASS=1``; ``--urgent-wf-park-only``
+   runs just this pass (pair with ``--dry-run`` for a zero-write,
+   zero-subprocess live smoke). (:func:`urgent_wf_park_pass`.)
+
+31. **Codex quota-outage alert pass (#1691; ESCALATE-ONLY;
+   daemon-INDEPENDENT; runs right after pass 27).** The audit sibling of
+   the #1204 pre-spawn sentinel check: #1204 skips ``codex-*`` composer
+   spawns while ``.claude/cache/codex-quota-exhausted-until`` is live;
+   this pass alerts once per Codex quota-outage EPISODE (episode key =
+   the sentinel's ``detected_at_iso``) when the sentinel has been
+   continuously live beyond ``EPM_CODEX_OUTAGE_ALERT_HOURS`` (default
+   24h), re-alerts weekly (``EPM_CODEX_OUTAGE_REALERT_HOURS``, 168h)
+   while it persists, and clears the episode when the sentinel
+   disappears. Hourly self-gate (``EPM_CODEX_OUTAGE_INTERVAL_HOURS``, 1h)
+   with an attempt-stamp-first save (a crashing pass writes at most one
+   error sidecar row per interval). Reads the sentinel READ-ONLY with
+   the SAME two-sided plausibility window as the #1204 pre-spawn check
+   (``now < until_unix <= now + 45 d``, byte-parity with
+   ``QUOTA_MAX_PLAUSIBLE_SECS``); NEVER mutates it (lifecycle stays with
+   ``codex_task.py``). Push text names the outage window
+   (detected_at → until_iso, days elapsed/remaining) plus a bounded count
+   of single-Claude review rounds since the outage opened — REGISTRY-scoped
+   ``events.jsonl`` scan (the triage-observer enumeration pattern) with a
+   mtime pre-filter (skip files older than ``detected_at_unix``) and a
+   256 KB per-file tail read; substring match on the canonical #1204 skip
+   phrase (CLAUDE.md line 119). Enumerator failure returns
+   ``count not available`` (push still fires with the load-bearing outage
+   window). ONE dedicated sidecar row per firing tick
+   (``.claude/cache/codex-outage-events.jsonl``); NO task markers by
+   construction (the outage is fleet-level, no single task owns it —
+   verdict-disagree precedent). Fail-open reader + top-level try/except
+   fail-soft (writes ONE ``codex-outage-error`` sidecar row and returns
+   False on any unexpected exception, never crashes the tick). Silence at
+   this pass means no outage. Kill switch
+   ``EPM_DISABLE_CODEX_OUTAGE_PASS=1``; ``--codex-outage-only`` runs just
+   this pass (pair with ``--dry-run`` for a zero-write live smoke against
+   the real sentinel). (:func:`codex_outage_pass`.)
+
+32. **Partial-bundle reconciliation pass (#1704; motivating incident
+   #1345; ESCALATE-ONLY; daemon-INDEPENDENT; runs right after pass 29).**
+   The reader-back of the GCP EXIT-trap crash-persist path
+   (``backends/gcp.py`` ``_eps_persist_diagnostics``): partial artifacts
+   land on the HF data repo under ``issue<N>_partial/<attempt_id>/`` on
+   every non-zero rc, but nothing ever reads those bundles back — so a
+   bundle carrying a COMPLETED result whose workload upload path never
+   fired is indistinguishable from a genuinely-partial persist without
+   this pass. Hourly self-gate (``EPM_PARTIAL_BUNDLE_INTERVAL_HOURS``,
+   default 1.0) with attempt-stamp-first save. Task-set-bounded
+   enumeration (REGISTRY non-``proposed`` rows with ``events.jsonl``
+   mtime within ``EPM_PARTIAL_BUNDLE_LOOKBACK_H``, default 168h),
+   per-pass listing cap (``EPM_PARTIAL_BUNDLE_LISTING_CAP``, default 50)
+   + persisted cursor (``enum_cursor_idx``) so tail-of-list issues
+   never starve. Per candidate: ONE
+   ``list_hf_files_under_path(api, "superkaiba1/explore-persona-space-data",
+   f"issue{N}_partial", repo_type="dataset")`` call (prefix-scoped,
+   ``retry_transient``-wrapped, fail-soft PER ISSUE via one
+   ``partial-bundle-hub-error`` sidecar row on
+   ``HfHubHTTPError``), grouped by ``attempt_id`` (second path
+   segment). Pure classifier
+   :func:`_classify_bundle_completeness` returns one of four states
+   over the file set: ``complete`` (transcript + result payload) /
+   ``workload_ts_backstop`` (workload_<ts>.log + result, weaker) /
+   ``no_result_payload`` (silent skip) / ``persist_killed`` (silent
+   skip). Result-shape extraction strips the
+   ``issue{N}_partial/<attempt_id>/eval_results_issue_{N}/`` prefix;
+   comparison uses ONE read-only
+   ``git --no-optional-locks -C PROJECT_ROOT ls-tree -r --name-only HEAD
+   -- eval_results/issue_<N>/`` (never a worktree HEAD — semantic
+   contract is "landed on ``main``"); any bundle-relative path with NO
+   committed counterpart FLAGS. Channels: ONE row per flagged
+   ``(issue, attempt_id, band=stranded_eval_results)`` to the dedicated
+   sidecar ``.claude/cache/partial-bundle-events.jsonl`` (with
+   ``completeness_signal`` recording the classifier return verbatim
+   for backstop-vs-primary weighing) + ONE deduped fail-soft
+   ``_telegram_push`` per episode threading the same
+   ``completeness_signal`` into the push text. Dedup keyed on
+   ``(issue, attempt_id, band)`` in
+   ``~/.eps-autonomous/partial-bundle-observer.json`` (atomic
+   tmp+rename) with a 168h re-alert TTL
+   (``EPM_PARTIAL_BUNDLE_REALERT_HOURS``) — the registry-drift weekly
+   re-alert precedent for a persistent, un-remediable-until-user
+   condition. **ESCALATE-ONLY is a hard invariant** — the pass NEVER
+   auto-commits, NEVER deletes a bundle (crash forensics are durable
+   record), NEVER posts task markers (the verdict-disagree posture —
+   the escalation target is a HUMAN, not the next dispatch); pinned by
+   :func:`tests.test_autonomous_session_watch.test_partial_bundle_pass_never_mutates_state`
+   (argv spy on every ``subprocess.run`` — every argv is ``git ls-tree``
+   at ``PROJECT_ROOT`` with no ``commit``/``add``/``push``/``rm``
+   anywhere) and
+   :func:`tests.test_autonomous_session_watch.test_partial_bundle_pass_never_posts_task_markers`.
+   Kill switch ``EPM_DISABLE_PARTIAL_BUNDLE_AUDIT=1``;
+   ``--partial-bundle-only`` runs just this pass (pair with
+   ``--dry-run`` for a zero-write live smoke against the real data
+   repo). (:func:`partial_bundle_pass`.)
+
+33. **Unfolded-round observer pass (#1712; origin incident #1639;
+   ESCALATE-ONLY; daemon-INDEPENDENT; runs right after pass 18
+   verdict-disagree).** Flags an ``awaiting_promotion`` / ``reviewing``
+   task whose body carries a pending-fold cue phrase (``UNFOLDED_PHRASES``:
+   "folds here on landing" / "folds into this body on landing" / "is
+   running as a follow-up round" / "running at write time" / "will fold
+   here" / "pending fold" / "pending analysis fold" — all grounded on
+   #1639's own body wording) on the SAME LINE (± ``PHRASE_WINDOW_LINES``,
+   2 lines each side) as an artifact name — a ``scripts/*.py`` path, a
+   7-40 hex commit SHA, or an ``eval_results/issue_<N>/...`` path — that
+   already resolves on ``main`` (read-only ``git --no-optional-locks
+   cat-file -e`` / ``rev-parse --verify`` / ``merge-base --is-ancestor``,
+   5s timeouts, NO ``git fetch``), and whose body does NOT carry a
+   result-section mention of that artifact (``**Repro:**`` code list, or
+   the ``## Results`` / ``## Findings`` H2 span). #1639 sat 2 days at
+   ``awaiting_promotion`` while ``scripts/issue1310_xpersona_assistant_test.py``
+   (round 3) was committed on ``main`` at ``9e65fe09ad`` and the body
+   never absorbed it; every other watcher pass structurally misses this
+   class (the tick cron is torn down at ``awaiting_promotion``, the
+   wedge lanes need failed wakes, the completed-unmerged pass audits
+   merges not results-folding). Sweep reuses
+   :func:`_triage_observer_sweep_issue` then filters to
+   ``{awaiting_promotion, reviewing}`` with ``has_clean_result: true``;
+   events.jsonl-mtime freshness gate ``EPM_UNFOLDED_ROUND_LOOKBACK_H``
+   (default 336h / 14d — covers a mentor-break park while the /daily and
+   /weekly sweeps own anything older). Hourly self-gate
+   (``EPM_UNFOLDED_ROUND_INTERVAL_HOURS``, 1h; attempt-stamp saved BEFORE
+   collecting so a crashing evaluation is bounded to one error sidecar
+   row per interval — the registry-drift precedent). Dedicated sidecar
+   (``.claude/cache/unfolded-round-events.jsonl``) every fired finding;
+   push cap ``EPM_UNFOLDED_ROUND_PUSH_CAP`` (default 5) individual push
+   lines with a rollover-summary push semantics from the triage
+   observer (#1167 — over-cap fires stay in the sidecar and appear as one
+   "+N more, see sidecar" summary at the end of the tick); NO task
+   markers (deliberate divergence from the completed-unmerged pass — an
+   unfolded round is a human-consumer signal targeting the promotion
+   decision, and posting on the task's events.jsonl would touch the
+   stream a resume ``/issue N`` session reads at Step 0 + risk resetting
+   the anti-liveness clocks the sibling observers depend on). Per-(issue,
+   artifact) fire-once dedup with a ``EPM_UNFOLDED_ROUND_REALERT_HOURS``
+   (default 168h / 7d) re-alert TTL in the state singleton
+   ``~/.eps-autonomous/unfolded-round-observer.json`` (atomic tmp+rename;
+   entries pruned when the task leaves the sweep set for good). NEVER
+   mutates status, never posts a task marker, never modifies ``body.md``,
+   never ``git`` write — pinned by test. Fail-open everywhere: an
+   unparseable body / a git-probe raise / a corrupt state file /
+   unresolvable-status all degrade toward silence (never a false
+   flag). ``paper: true`` tasks are SKIPPED in v1 — their bodies are thin
+   paper-stubs and the fold-cue phrase would fire on paper artifacts
+   differently; a future extension would read
+   ``docs/papers/issue_<N>/*.tex``. Kill switch
+   ``EPM_DISABLE_UNFOLDED_ROUND_PASS=1``; ``--unfolded-round-only`` runs
+   just this pass (pair with ``--dry-run`` for a live smoke).
+   (:func:`unfolded_round_pass`.)
+34. **Stash/rescue-backlog audit pass (#1806; ESCALATE-ONLY;
+   daemon-INDEPENDENT; runs right after pass 27 registry-drift).**
+   Once-daily-throttled (``EPM_STASH_RESCUE_INTERVAL_HOURS``, 24h)
+   recurring audit of the shared repo root's accumulated ``git stash``
+   backlog + the ``~/.task-workflow/root-sync-rescue/`` rescue-entry
+   backlog (verified live 2026-07-30: 23 stashes, oldest May 2026; 66
+   rescue entries) — #1751 surfaces NEW ``stash: KEPT`` events at
+   Step 10d merge sites only; nothing recurring read the existing
+   backlog. Collection is READ-ONLY: one ``git -C PROJECT_ROOT stash
+   list --format=%ct%x09%gs`` subprocess (each line parsed on the FIRST
+   tab only — ``%gs`` subjects can carry embedded tabs; identity =
+   ``(ct, subject)``, deliberately NOT the positional ``stash@{N}``
+   selector, which renumbers on every push/pop and would churn the
+   fingerprint) + one ``os.scandir`` of the rescue dir (dirs AND loose
+   files, e.g. ``stash-*.patch``; identity = entry name). Entries
+   younger than ``EPM_STASH_RESCUE_MIN_AGE_DAYS`` (7d) are excluded —
+   sync_repo_root autostashes live seconds, and #1751's Step 10d duty
+   covers the fresh window. ENOENT on the rescue dir ITSELF is a
+   LEGITIMATE EMPTY rescue set (the dir is lazily created by
+   sync_repo_root.py and may be deleted after a completed #1736
+   triage); every OTHER OSError / git rc != 0 raises to the fail-soft
+   arm (stderr + one error sidecar row per throttle interval — the
+   attempt stamp is saved BEFORE collecting) and is NEVER read as
+   "backlog cleared" (no fp reset on error). NO double-read confirm gap
+   (durable files, not in-flight mutations — the deliberate delta vs
+   pass 27). Non-empty backlog fingerprints (sha256[:12] over the
+   sorted identity lists + counts), appends a row to the dedicated
+   sidecar (``.claude/cache/stash-rescue-audit-events.jsonl``), and
+   fires ONE deduped fail-soft push (counts, oldest stash age, the
+   read-only review commands, companion triage task #1736, "nothing was
+   changed automatically") on fingerprint change or a 168h re-alert TTL
+   (``EPM_STASH_RESCUE_REALERT_HOURS``). NEVER mutates git or
+   filesystem state (no ``stash pop/drop/apply``, no ``rm``), posts NO
+   task markers; triage stays human (#1736). State singleton
+   ``~/.eps-autonomous/stash-rescue-audit.json``. Kill switch
+   ``EPM_DISABLE_STASH_RESCUE_AUDIT=1``; ``--stash-rescue-audit-only``
+   runs just this pass (pair with ``--dry-run`` for a zero-write live
+   smoke). (:func:`stash_rescue_audit_pass`.)
+
 
 Why each pass exists
 --------------------
@@ -594,6 +861,10 @@ Coverage notes (deliberate gaps you should know about)
   follow-up signal. The #477 incident, 2026-06-10, motivates this: an
   inline follow-up on a promoted task ran 3 cycles of auto-stop → manual
   re-provision in <1h before the user added the ``keep-running`` tag.
+  SUFFIXED pods (``pod-<N>-<slug>``) additionally get a PER-POD arm (#1961):
+  an ``epm:run-launched`` whose note names the pod in structured position
+  shields THAT pod for a bounded ceiling (default 48h,
+  ``EPM_POD_NAMED_SHIELD_MAX_AGE_H``) regardless of sibling transitions.
 
 Why STOP is keyed on task status, not session liveness
 ------------------------------------------------------
@@ -667,11 +938,13 @@ import signal
 import socket
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import NamedTuple
 
 # scripts/ is sys.path[0] when run as `python scripts/autonomous_session_watch.py`,
 # so its siblings (`session_resolver`, `pod_lifecycle`, ...) import directly.
@@ -975,6 +1248,41 @@ _AUTOSTOP_FAILED_NOTE_SENTINEL = "[autonomous_session_watch:pod-auto-stop-failed
 # visible on the dashboard without 20-minute marker spam.
 _KEEP_RUNNING_NOTE_SENTINEL = "[autonomous_session_watch:pod-keep-running-skip]"
 
+# Substring stamped into the #1582 keep-running WEDGED-OWNER escalation marker
+# — posted (once per episode, keyed by the `kr_owner_first_ts` pod-safety
+# state field) when a RUNNING pod shielded by the keep-running tag on a
+# DONE-status task shows >= 12h of real-marker silence AND its owning session
+# is provably wedged (transcript idle >= the same threshold, self-report
+# equally stale) or absent (no live registration sid and no worktree-cwd
+# daemon child maps to the issue), confirmed >= 2 consecutive ticks.
+# ESCALATE-ONLY: the arm never stops/terminates anything (task-body hard
+# constraint — the tag is an explicit user override; incident #1345:
+# pod-1345-onpolicy billed ~72h behind a frozen wrapper before manual
+# recovery). Posted as epm:progress, so it MUST be a member of
+# _WATCHER_NOTE_SENTINELS (excluded from "real progress" in
+# _latest_progress_ts — otherwise the escalation marker would reset the very
+# progress-gap clock the arm measures and end its own episode next tick).
+_KEEP_RUNNING_WEDGED_NOTE_SENTINEL = "[autonomous_session_watch:pod-keep-running-wedged-owner]"
+
+#: Marker-gap AND owner-transcript-idle floor (seconds) for the #1582 arm —
+#: ONE knob for both legs: they measure the same construct ("abandoned for N
+#: hours"), and 12h is the project's standing abandonment judgment
+#: (:data:`STALE_REGISTRATION_IDLE_S` == :data:`UNMAPPED_IDLE_REAP_S`, the
+#: #845d/#1039 rationale — already trusted for the MORE invasive
+#: unregister/reap actions). Env-overridable at CALL time via
+#: ``EPM_KEEP_RUNNING_WEDGED_OWNER_MIN_H`` (HOURS;
+#: :func:`_keep_running_owner_idle_s`).
+KEEP_RUNNING_OWNER_IDLE_S = 12 * 3600
+
+#: Re-alert TTL (seconds) for the #1582 arm: push+sidecar repeat cadence
+#: while an escalated episode stays unresolved. 24h matches the watcher's
+#: standing unresolved-condition re-page cadence
+#: (``EPM_ROOT_DRAFT_REALERT_HOURS`` #1341,
+#: ``EPM_COMPLETED_UNMERGED_REALERT_HOURS`` #1564). Env-overridable at CALL
+#: time via ``EPM_KEEP_RUNNING_WEDGED_REALERT_H`` (HOURS;
+#: :func:`_keep_running_owner_realert_s`).
+KEEP_RUNNING_OWNER_REALERT_S = 24 * 3600
+
 # Substring stamped into the one-time "inline-follow-up exemption" marker
 # posted when the auto-stop arm would have fired but the task's events.jsonl
 # shows a `epm:run-launched` marker NEWER than its transition into the current
@@ -1015,7 +1323,13 @@ _WEDGE_STOP_NOTE_SENTINEL = "[autonomous_session_watch:runpod-noport-wedge-stop]
 # Substring stamped into the #770 RunPod no-port wedge TERMINATE+FAILOVER marker
 # — posted when the wedge matured past the K floor for >= threshold consecutive
 # checks AND the inputs-on-HF + (tri-state) keep-running gates confirm the
-# provably-safe case (`keep_running is False AND inputs_ok=True`). Promotes the
+# provably-safe case (`keep_running is False AND inputs_ok=True`). As of #1667
+# the confirmed case carries one MORE upstream gate: the tri-state
+# owner-liveness probe (`_wedge_owner_live`) — the terminate fires only when
+# NO live owning session is working the issue (recent non-watcher markers /
+# live registered session); a live/"unknown" owner demotes to the
+# `_WEDGE_OWNER_DEFER_NOTE_SENTINEL` defer-alert below (incident #1586: a
+# wedge terminate mid-crash-fix-round destroyed live run state). Promotes the
 # #692 backstop's strongest action from a reversible `pod.py stop` (which cannot
 # heal a host-pinned dead RunPod host, #763) to the SAME irreversible terminate +
 # fresh re-provision the poller owns (`backend_poll._failover_wedged_runpod`),
@@ -1023,6 +1337,32 @@ _WEDGE_STOP_NOTE_SENTINEL = "[autonomous_session_watch:runpod-noport-wedge-stop]
 # for the success / already-handled / no-capacity / blocked outcomes; excluded
 # from "real progress" like the other wedge markers.
 _WEDGE_FAILOVER_NOTE_SENTINEL = "[autonomous_session_watch:runpod-noport-wedge-failover]"
+
+# Substring stamped into the #1667 wedge OWNER-DEFER marker — posted (once per
+# wedge episode, deduped via the `wedge_owner_defer_noted` pod-safety state
+# field) when the #770 terminate+failover is ELIGIBLE (matured + confirmed +
+# untagged + inputs verified on HF) but the owner-liveness probe
+# (`_wedge_owner_live`) reads the owning session as live or "unknown", so the
+# watcher DEFERS the irreversible terminate to the owning session (incident
+# #1586, 2026-07-24: the wedge arm terminated pod-1586 mid-crash-fix-round —
+# newest non-watcher marker 14 min old — destroying live run state the owner
+# was about to reuse). Posted as epm:progress, so it MUST be a member of
+# _WATCHER_NOTE_SENTINELS: leg 1 of the probe reads the newest NON-watcher
+# marker as owner-liveness evidence, and an unexcluded defer marker would
+# count as that very evidence and defer forever (the self-defer loop).
+_WEDGE_OWNER_DEFER_NOTE_SENTINEL = "[autonomous_session_watch:runpod-noport-wedge-owner-defer]"
+
+#: Recent-owner-activity window (seconds) for the #1667 wedge owner-liveness
+#: probe: an issue with a non-watcher marker newer than this — or a live
+#: registered/cwd-mapped session with a transcript idle below it — has a LIVE
+#: owner, and the #770 wedge terminate defers to it. 2h is the same construct
+#: as the stalled detector's marker-heartbeat window ("a session that posted
+#: ANY non-watcher marker within 2h is never declared stalled" —
+#: ``EPM_STALLED_MARKER_HEARTBEAT_MIN`` = 120 min, #845 a-i); the #1586
+#: incident margin is 14-min marker age vs the 120-min window (~8.6x
+#: headroom). Env-overridable at CALL time via ``EPM_WEDGE_OWNER_RECENT_H``
+#: (HOURS; :func:`_wedge_owner_recent_s`).
+WEDGE_OWNER_RECENT_S = 2 * 3600
 
 # Substring stamped into the #1490 orphan-gcp-handle alert marker: a RUNNING
 # bare `pod-<N>` whose run-handle sidecar still points at backend=gcp past the
@@ -1396,13 +1736,31 @@ STALE_BLOCKED_PROGRESS_FRESH_S_DEFAULT = 2 * 3600
 # `completed` task whose events carry `epm:done` but NO `epm:merged` while
 # the issue-<N> PR/branch is still unmerged — the #1540 class (a killed
 # Step 10d merge turn left the merge stranded 16h, invisible to every other
-# lane). FLAG-ONLY: the pass posts one marker per (issue, done_ts) episode +
-# a sidecar row + a TTL'd Telegram digest line and NEVER merges or mutates
-# status. Same staleness-filter contract as every other watcher-posted
-# sentinel (membership in _WATCHER_NOTE_SENTINELS below is load-bearing —
-# the flag marker must not refresh the very events-mtime/staleness clocks
-# other passes read).
+# lane). Flag + bounded respawn (#1653): the pass posts one marker per
+# (issue, done_ts) episode + a sidecar row + a TTL'd Telegram digest line
+# and NEVER merges or mutates status — the only action beyond flagging is
+# the #1653 respawn arm's bounded spawn-issue dispatch (see the RESPAWN
+# sentinel below). Same staleness-filter contract as every other
+# watcher-posted sentinel (membership in _WATCHER_NOTE_SENTINELS below is
+# load-bearing — the flag marker must not refresh the very
+# events-mtime/staleness clocks other passes read).
 _COMPLETED_UNMERGED_FLAG_NOTE_SENTINEL = "[autonomous_session_watch:completed-unmerged-flag]"
+
+# Substring stamped into the completed-unmerged RESPAWN marker (task #1653):
+# posted once per (issue, done_ts) episode when the bounded respawn arm
+# dispatches spawn-issue --auto to run the Step 10d backstop (#1578 resume
+# row). Anti-liveness membership below is load-bearing (same contract as the
+# flag sentinel).
+_COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL = "[autonomous_session_watch:completed-unmerged-respawn]"
+
+# Substring stamped into the urgent-park router's epm:workflow-fix-task-filed
+# routed-record (task #1681): posted on the parked candidate's OWN stream when
+# the router verified a declared main-red urgency and filed (or deduped) the
+# fix task, so the nightly sweep's suppression rule 1 closes the park. Same
+# staleness-filter contract as every other watcher-posted sentinel
+# (membership in _WATCHER_NOTE_SENTINELS below is load-bearing — the record
+# must never reset the orphan/stalled staleness clocks it rides beside).
+_URGENT_WF_PARK_NOTE_SENTINEL = "[autonomous_session_watch:urgent-wf-park-router]"
 
 # Substring stamped into the boot-death stop marker (task #1267): a freshly
 # dispatched AUTO session whose transcript holds ZERO response rows
@@ -1452,6 +1810,59 @@ BOOT_DEATH_QUIET_S = 10 * 60
 BOOT_DEATH_TAIL_BYTES = 256 * 1024
 BOOT_DEATH_STOPS_PER_DAY = 3
 
+# Boot-death arm-2 subclass split (#1695). The 30-min refusal window
+# (BOOT_DEATH_WINDOW_S) is correct for a usage-policy refusal — the API
+# will refuse the same content on retry, so waiting shields a session that
+# is only genuinely dead once the tick cron backstop times out. It is
+# WRONG for a transport failure (529/429/timeout/connection): those are
+# freely retryable (`.claude/rules/llm-judging.md` rule 24), the SDK's
+# transient tuple resolves inside its 5-retry AIMD budget in ~seconds to
+# a few minutes, and waiting 30 min forfeits ~25 min of latency per
+# incident at zero benefit (#1689: first-turn 529 waited ~2h 24m
+# post-stop grace on top of the 30-min refusal window).
+#
+# The 5-min transport threshold sits past the SDK's transient retry
+# budget's typical wall-time envelope; 10 min was rejected as slack (a
+# healthy 529 is resolved well inside that window), 1 min was rejected
+# as too tight (leaves no room for a first-turn retry that would
+# complete in-session). The stop cap is UNCHANGED and SHARED across all
+# three shapes (zero-response / boot-refusal / boot-transport) — no new
+# bucket, no new day-cap key: a degenerate transport re-dispatch loop is
+# bounded at BOOT_DEATH_STOPS_PER_DAY (default 3) per issue per UTC day.
+BOOT_TRANSPORT_MIN_AGE_S = 5 * 60
+
+# Transport substrings (case-insensitive, whole-content match). Verbatim
+# from the #1689 incident content ("Repeated 529 Overloaded errors. The
+# API is at capacity") + the SDK-standard transient-error class
+# (`.claude/rules/llm-judging.md` rule 24 —
+# `anthropic._exceptions.OverloadedError` / `RateLimitError` /
+# `APITimeoutError` / `APIConnectionError` / `APIStatusError` with
+# `status_code == 529`). Claude Code renders these into the
+# ``isApiErrorMessage`` row's content with those exact substrings.
+BOOT_TRANSPORT_SUBSTRINGS: tuple[str, ...] = (
+    "529",
+    "overloaded",
+    "429",
+    "rate limit",
+    "ratelimit",
+    "timeout",
+    "connection error",
+    "api connection",
+)
+
+# Usage-policy substrings (also case-insensitive). REFUSAL WINS ON TIE:
+# a row containing BOTH a transport substring AND a usage-policy
+# substring stays boot-refusal — we deliberately do NOT weaken the
+# pre-existing 30-min refusal grace. The exact refusal wording Claude
+# Code emits on a usage-policy refusal (CLAUDE.md § "Spurious
+# usage-policy refusals" — "violates our Usage Policy" verbatim);
+# "cyber content" is the guard-surface subclass from #1098.
+BOOT_REFUSAL_SUBSTRINGS: tuple[str, ...] = (
+    "usage policy",
+    "violates our",
+    "cyber content",
+)
+
 # OPT-IN heartbeat sentinel for legitimately-slow phases (off-pod analyzer
 # verifier rounds, in-flight Anthropic Batch polling). UNLIKE every other
 # sentinel in this file, this one is stamped by the LONG-RUNNING PHASE
@@ -1477,10 +1888,16 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _ALERT_NOTE_SENTINEL,
         _AUTOSTOP_FAILED_NOTE_SENTINEL,
         _KEEP_RUNNING_NOTE_SENTINEL,
+        _KEEP_RUNNING_WEDGED_NOTE_SENTINEL,
         _FOLLOWUP_NOTE_SENTINEL,
         _WEDGE_ALERT_NOTE_SENTINEL,
         _WEDGE_STOP_NOTE_SENTINEL,
         _WEDGE_FAILOVER_NOTE_SENTINEL,
+        # #1667 self-defer-loop hazard: the owner-defer marker is epm:progress;
+        # if it counted as non-watcher activity, leg 1 of _wedge_owner_live
+        # would read the watcher's OWN defer marker as owner liveness and the
+        # wedge terminate would defer forever. Membership here excludes it.
+        _WEDGE_OWNER_DEFER_NOTE_SENTINEL,
         _ORPHAN_GCP_HANDLE_NOTE_SENTINEL,
         _UNLAUNCHED_ORPHAN_NOTE_SENTINEL,
         _STALLED_ALERT_NOTE_SENTINEL,
@@ -1514,6 +1931,8 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _CAPACITY_RETRY_EXHAUSTED_NOTE_SENTINEL,
         _STALE_BLOCKED_FLAG_NOTE_SENTINEL,
         _COMPLETED_UNMERGED_FLAG_NOTE_SENTINEL,
+        _COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL,
+        _URGENT_WF_PARK_NOTE_SENTINEL,
         _BOOT_DEATH_STOP_NOTE_SENTINEL,
         _BOOT_DEATH_CAP_NOTE_SENTINEL,
         # Posted by spawn_session.py (not the watcher) when a duplicate --auto
@@ -3139,14 +3558,15 @@ def decide_pod_wedge(
     alerted: bool,
     keep_running: bool | str,
     inputs_ok: bool,
+    owner_live: bool | str = False,
 ) -> tuple[str, int]:
     """Pure decision for a RUNNING managed pod in the #664 RunPod no-port wedge.
 
     The watcher backstop for when the poller's
     ``backend_poll._maybe_escalate_runpod_wedge`` never ran (the per-issue poll
     loop died). Returns ``(action, new_wedge_missed)`` where action is
-    ``"terminate-failover"`` | ``"alert"`` | ``"keep"`` (#770: the strongest
-    action was promoted from the reversible ``"stop"`` to
+    ``"terminate-failover"`` | ``"alert-owner-live"`` | ``"alert"`` | ``"keep"``
+    (#770: the strongest action was promoted from the reversible ``"stop"`` to
     ``"terminate-failover"`` — see the Decision invariant below). The caller
     (``_process_wedged_pod``) has already confirmed the RAW wedge condition
     (``backend_poll._pod_is_runpod_runtime_wedged``) and excluded DONE-status
@@ -3187,6 +3607,23 @@ def decide_pod_wedge(
         Whether the wedged run's recoverable inputs are verified on HF (the same
         gate #689 fix (b) uses, via ``backend_poll._wedged_run_inputs_on_hf``).
         A STOP fires only when inputs are PROVABLY safe.
+    owner_live
+        TRI-STATE (#1667): ``True`` (a live owning session is working the
+        issue — recent non-watcher markers, or a live registered/cwd-mapped
+        session with a fresh transcript) | ``False`` (BOTH probe legs resolved
+        and read not-live) | ``"unknown"`` (the probe could not resolve —
+        daemon down, ts-less events, an exception). The IRREVERSIBLE
+        terminate fires ONLY on the literal ``False`` — the SAME
+        only-the-literal-False-acts polarity as ``keep_running`` (MF2);
+        ``True`` / ``"unknown"`` / any garbage value demote the
+        otherwise-terminate-eligible case to ``("alert-owner-live", 0)``
+        (a once-per-episode defer marker; the wedge clock keeps running so a
+        later tick where owner activity has quieted terminates without
+        restarting maturation). Defaults to ``False`` so every pre-#1667 call
+        site — and the kill-switch path — keeps byte-equivalent terminate
+        behavior. Incident #1586: the wedge arm terminated a pod out from
+        under a live session mid-crash-fix round (newest non-watcher marker
+        14 min old at decision time).
 
     Cases:
 
@@ -3210,29 +3647,42 @@ def decide_pod_wedge(
           This is a STRONGER gate than the status-class DONE arm's
           False-on-failure (safe there only because it auto-stops DONE-status
           pods; the wedge arm auto-stops live-work pods).
-        - ``keep_running is False`` AND ``inputs_ok`` ->
-          ``("terminate-failover", 0)``. Inputs are verified on HF AND the tag
-          was read AND it is absent, so the IRREVERSIBLE terminate +
-          re-provision is safe — route to the existing poller recovery
-          (``backend_poll._failover_wedged_runpod``: terminate the wedged pod,
-          re-provision a FRESH pod, bounded-once via the durable lease +
-          sentinel). A reversible ``pod.py stop`` cannot heal a host-pinned dead
-          RunPod host — ``resume_pod`` returns to the SAME dead host (#763) —
-          which is why the action was promoted from ``"stop"`` to
-          ``"terminate-failover"`` (#770).
+        - ``keep_running is False`` AND ``inputs_ok`` AND
+          ``owner_live is False`` -> ``("terminate-failover", 0)``. Inputs are
+          verified on HF AND the tag was read AND it is absent AND no live
+          owning session is working the issue (#1667), so the IRREVERSIBLE
+          terminate + re-provision is safe — route to the existing poller
+          recovery (``backend_poll._failover_wedged_runpod``: terminate the
+          wedged pod, re-provision a FRESH pod, bounded-once via the durable
+          lease + sentinel). A reversible ``pod.py stop`` cannot heal a
+          host-pinned dead RunPod host — ``resume_pod`` returns to the SAME
+          dead host (#763) — which is why the action was promoted from
+          ``"stop"`` to ``"terminate-failover"`` (#770).
+        - ``keep_running is False`` AND ``inputs_ok`` AND ``owner_live`` is
+          ``True`` / ``"unknown"`` / anything else -> ``("alert-owner-live", 0)``
+          (#1667). The terminate is ELIGIBLE but a live (or unresolvable)
+          owning session is working the issue — DEFER to it (a
+          once-per-episode defer marker; the counter reset mirrors the alert
+          convention, so after a defer re-confirmation needs ``threshold``
+          fresh ticks and the probe re-runs every ~2 ticks). The wedge clock
+          is the CALLER's to preserve — a later tick where owner activity has
+          quieted terminates without restarting the K-floor maturation.
         - ``keep_running is False`` AND not ``inputs_ok`` -> ``("alert", 0)``.
           Inputs are NOT verified on HF (or no run handle to gate on); a
           terminate could strand un-uploaded work, so ALERT-only and let a
           human / the re-invoked /issue decide (CLAUDE.md halt-criterion #2).
 
-    Decision invariant (MF2): ``("terminate-failover", _)`` is the ONLY
+    Decision invariant (MF2 + #1667): ``("terminate-failover", _)`` is the ONLY
     irreversible action and is returned ONLY when ``keep_running is False`` (the
     literal boolean False, NOT ``"unknown"`` and NOT ``True``) AND
-    ``inputs_ok is True``. Every other ``keep_running`` value (``True``,
-    ``"unknown"``) and the ``not inputs_ok`` case route to ALERT-only. The
-    action set is now ``"terminate-failover" | "alert" | "keep"`` — ``"stop"``
-    is NO LONGER a value this fn returns (#770; the reversible ``_stop_pod`` is
-    still used by the status-class DONE escaped-pod arm).
+    ``inputs_ok is True`` AND ``owner_live is False`` (again the literal
+    boolean False). Every other ``keep_running`` value (``True``,
+    ``"unknown"``) and the ``not inputs_ok`` case route to ALERT-only; every
+    other ``owner_live`` value routes to the ``"alert-owner-live"`` defer. The
+    action set is now ``"terminate-failover" | "alert-owner-live" | "alert" |
+    "keep"`` — ``"stop"`` is NO LONGER a value this fn returns (#770; the
+    reversible ``_stop_pod`` is still used by the status-class DONE
+    escaped-pod arm).
     """
     if wedged_for <= k_floor:
         # Below the maturity floor (or exactly at it — MF5 parity with the
@@ -3249,7 +3699,11 @@ def decide_pod_wedge(
         return ("alert", 0)
     # keep_running is the literal False (tag read OK and absent).
     if inputs_ok:
-        return ("terminate-failover", 0)
+        if owner_live is False:
+            return ("terminate-failover", 0)
+        # #1667: terminate-eligible, but a live/"unknown" owning session is
+        # working the issue — defer to it (only the literal False acts).
+        return ("alert-owner-live", 0)
     return ("alert", 0)
 
 
@@ -3339,6 +3793,74 @@ def decide_unlaunched_orphan(
     if latest_launch_signal_ts is not None and latest_launch_signal_ts > created_ts - skew_sec:
         return "keep"
     return "alert"
+
+
+def decide_keep_running_owner_escalation(
+    *,
+    progress_gap_s: float | None,
+    owner_state: str,
+    missed: int,
+    threshold: int,
+    min_idle_s: float,
+    first_ts: float | None,
+    last_alert_ts: float | None,
+    now: float,
+    realert_s: float,
+) -> tuple[str, int]:
+    """Pure decision for the #1582 keep-running wedged-owner arm.
+
+    Returns ``(action, new_missed)``; ``action`` in
+    ``{"clear", "hold", "escalate", "re-alert"}``. ``progress_gap_s`` is
+    ``now`` minus the newest REAL progress marker (or the pod ``created_at``
+    fallback); ``None`` means unknowable. ``owner_state`` comes from
+    :func:`_keep_running_owner_state` (``"live"`` | ``"wedged"`` |
+    ``"absent"`` | ``"unknown"``). ``missed`` counts CONFIRMED wedged/absent
+    ticks so far (``kr_owner_missed``); ``first_ts`` is the episode onset
+    (``kr_owner_first_ts``; ``None`` = no open episode — it doubles as the
+    once-per-episode marker key); ``last_alert_ts`` is the last push
+    (``kr_owner_last_alert_ts``).
+
+    Cases:
+
+    - ``progress_gap_s is None`` or ``< min_idle_s`` -> ``("clear", 0)`` —
+      the task recently progressed (or the gap is unknowable); episode ends.
+      Boundary: ``progress_gap_s >= min_idle_s`` COUNTS as idle (``>=``
+      fires, mirroring :func:`decide_idle_unmapped`'s
+      ``idle_age_s < idle_reap_s -> clear`` complement).
+    - ``owner_state == "live"`` -> ``("clear", 0)`` — owner demonstrably
+      alive, however stale the markers.
+    - ``owner_state == "unknown"`` (or any unrecognized value) ->
+      ``("hold", missed)`` — FREEZE: fail toward no-fire, keep the episode.
+      NOTE: ``missed`` counts CONFIRMED ticks; unknown ticks freeze it
+      (neither increment nor reset), so two wedged reads separated by
+      unknown ticks still count as consecutive — deliberate, conservative;
+      do not "fix" this later without revisiting the rationale.
+    - ``owner_state in {"wedged", "absent"}`` -> ``new_missed = missed + 1``:
+      below ``threshold`` -> ``("hold", new_missed)`` (accumulate, nothing
+      emitted); at/over the threshold with ``first_ts is None`` ->
+      ``("escalate", new_missed)`` (episode opens: marker + push + sidecar);
+      episode already open and ``last_alert_ts`` is ``None`` or ``now -
+      last_alert_ts >= realert_s`` -> ``("re-alert", new_missed)`` (push +
+      sidecar only, no second marker); else -> ``("hold", new_missed)``.
+
+    ESCALATE-ONLY by contract: the caller never stops/terminates on this
+    arm's account (the keep-running tag is an explicit user override — the
+    #1582 task-body hard constraint).
+    """
+    if progress_gap_s is None or progress_gap_s < min_idle_s:
+        return ("clear", 0)
+    if owner_state == "live":
+        return ("clear", 0)
+    if owner_state not in ("wedged", "absent"):
+        return ("hold", missed)  # "unknown" (or garbage): freeze — fail toward no-fire
+    new_missed = missed + 1
+    if new_missed < threshold:
+        return ("hold", new_missed)
+    if first_ts is None:
+        return ("escalate", new_missed)
+    if last_alert_ts is None or now - last_alert_ts >= realert_s:
+        return ("re-alert", new_missed)
+    return ("hold", new_missed)
 
 
 # ─── VM disk-headroom watcher (task #552 incident, 2026-06-10) ───────────────
@@ -6017,6 +6539,664 @@ def root_draft_pass(dry_run: bool) -> bool:
         return False
 
 
+# ─── Unfolded-round observer pass (task #1712; origin incident #1639) ────────
+#
+# WHY: task #1639 sat 2 days at `awaiting_promotion` while
+# `scripts/issue1310_xpersona_assistant_test.py` (round 3) was already
+# committed on `main` at `9e65fe09ad`. #1639's own body says the assistant
+# test "is running as a follow-up round" that "folds into this body on
+# landing"; the artifact landed; the body never absorbed it; the gap
+# surfaced only by chance. Every other watcher pass structurally misses
+# this class — the tick cron is torn down at `awaiting_promotion`, the
+# wedge lanes need failed wakes, the completed-unmerged pass audits merges
+# not results-folding. This adds ONE dedicated ESCALATE-ONLY observer
+# modeled architecturally on `root_draft_pass` (the simplest sibling — one
+# enum + stat + decide + emit), extended with the
+# `_triage_observer_sweep_issue` sweep pattern (for the
+# `awaiting_promotion`/`reviewing` scope + events.jsonl-mtime freshness
+# gate) and the `triage_observer_pass` rollover-summary push cap (so a
+# body naming many pending artifacts doesn't storm the digest queue).
+# ESCALATE-ONLY invariants: NEVER `set-body` / `set-status` / `add-tag` /
+# `remove-tag` / `promote` / `post-marker` / `set-title` /
+# `set-clean-result`; NEVER a body mutation; NEVER a `git` write. Writes
+# only the state singleton (atomic tmp+rename) + the sidecar (append) +
+# stderr/stdout log lines + a fail-soft `_telegram_push`. Deliberate
+# divergence from `completed_unmerged_pass`: NO task marker — the consumer
+# is the human/PM (a task-marker on a promoted clean-result's own event
+# log would be noise, and would risk resetting the anti-liveness clocks
+# the sibling observers depend on).
+
+#: Case-insensitive substring phrases keying the narrow fold-cue predicate
+#: (§3.3 of the plan). The first four are LITERAL matches from #1639's own
+#: body.md at plan time (`grep -oE "folds? here on landing|is running as a
+#: follow-up round|folds? into this body on landing|running at write time"`
+#: returned all four); the last three are cheap forward coverage for bodies
+#: that use idiomatic near-variants. All lowercased at compile time; matching
+#: lowercases the body line. MODULE CONSTANT — extending requires a code
+#: change (the deliberately narrow-net posture; per the task body "prefer
+#: starting narrow and widening on measured misses"). NAMED-EXTENSION
+#: TRIGGER: if a future incident shows the list missed the fold cue, add the
+#: phrase in a follow-up.
+UNFOLDED_PHRASES: tuple[str, ...] = (
+    "folds here on landing",
+    "folds into this body on landing",
+    "is running as a follow-up round",
+    "running at write time",
+    "will fold here",
+    "pending fold",
+    "pending analysis fold",
+)
+#: Number of lines above/below a phrase-match line to scan for artifact
+#: names. Empirically the phrase and its artifact land in the same
+#: sentence/paragraph; 2 lines above + hit line + 2 lines below (5-line
+#: window) covers wrapping without inhaling unrelated text.
+PHRASE_WINDOW_LINES: int = 2
+#: Freshness gate: max events.jsonl mtime age for the sweep to consider a
+#: task (default 14d). #1639 sat 2 days pre-detection — the FLOOR is
+#: >= ~72h; 14d covers a long weekend + a week of un-monitored parking
+#: (mentor-break shape). Beyond 14d, a body carrying a stale pending
+#: phrase is presumed truly abandoned (the /daily and /weekly sweeps own
+#: that class). Env EPM_UNFOLDED_ROUND_LOOKBACK_H, read at CALL time.
+UNFOLDED_ROUND_LOOKBACK_H: float = 336.0
+#: Self-gate throttle. Sub-hour recurrence provides no operational value
+#: (the observer's user is a human seeing the alert at most every few
+#: hours), and probes subprocess-out to git — hourly bounds the worst
+#: case. Attempt stamp saved BEFORE collecting so a crashing evaluation
+#: is bounded to one error sidecar row per interval. Env
+#: EPM_UNFOLDED_ROUND_INTERVAL_HOURS.
+UNFOLDED_ROUND_INTERVAL_HOURS: float = 1.0
+#: Per-(issue, artifact) push re-alert TTL: weekly re-surface bounds
+#: indefinite silence while avoiding daily push spam for a persistent
+#: condition. Sibling REGISTRY_DRIFT_REALERT_HOURS = 168.0 uses the same
+#: shape. Env EPM_UNFOLDED_ROUND_REALERT_HOURS.
+UNFOLDED_ROUND_REALERT_HOURS: float = 168.0
+#: Max individual push lines per tick; over-cap fires become one "+N
+#: more, see sidecar" summary push. Bodies commonly cite <=2 pending
+#: artifacts; this is a safety net, not a routine gate. Sibling
+#: TRIAGE_OBSERVER_PUSH_CAP = 5 uses the identical semantics. Env
+#: EPM_UNFOLDED_ROUND_PUSH_CAP.
+UNFOLDED_ROUND_PUSH_CAP: int = 5
+
+# Narrow artifact-capture regexes (§3.2). Each is applied to the same
+# window ± PHRASE_WINDOW_LINES around a phrase-match line; a matched
+# capture is threaded to the appropriate probe closure.
+_UNFOLDED_RE_SCRIPT: re.Pattern[str] = re.compile(r"\b(scripts/[A-Za-z0-9_./-]+\.py)\b")
+_UNFOLDED_RE_COMMIT: re.Pattern[str] = re.compile(r"\b(?:@|commit\s+)?([0-9a-f]{7,40})\b")
+_UNFOLDED_RE_EVAL: re.Pattern[str] = re.compile(
+    r"\b(eval_results/issue_[0-9]+(?:_[A-Za-z0-9_-]+)?/[A-Za-z0-9_./-]+)"
+)
+
+# Status set the pass sweeps (§3.6). Deliberately tighter than
+# _TRIAGE_OBSERVER_STATUSES (ACTIVE union {awaiting_promotion, blocked}): an
+# unfolded round is a *promoted* clean-result concern.
+_UNFOLDED_ROUND_STATUSES: frozenset[str] = frozenset({"awaiting_promotion", "reviewing"})
+
+
+def _unfolded_round_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_UNFOLDED_ROUND_PASS`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_root_draft_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_UNFOLDED_ROUND_PASS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _unfolded_round_sidecar_path() -> Path:
+    """DEDICATED unfolded-round event stream (own file for clean grep —
+    the root-draft / verdict-disagree sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "unfolded-round-events.jsonl"
+
+
+def _unfolded_round_state_path() -> Path:
+    """Singleton dedup state. Schema:
+    ``{"last_run_ts": <float>, "issues": {"<issue>": {"fired": {
+    "<artifact_kind>::<artifact>": {"last_alert_ts": <float>,
+    "phrase": <str>}}}}}``."""
+    return AUTONOMOUS_REGISTRY_DIR / "unfolded-round-observer.json"
+
+
+def _load_unfolded_round_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards in the driver (mirrors
+    :func:`_load_root_draft_state`)."""
+    path = _unfolded_round_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_unfolded_round_state(state: dict, dry_run: bool) -> None:
+    """Atomic tmp+rename write of the unfolded-round dedup state
+    (fail-soft; mirrors :func:`_save_root_draft_state`). ``dry_run``
+    performs zero writes."""
+    if dry_run:
+        n = len(state.get("issues", {}))
+        print(f"  [dry-run] would save unfolded-round state ({n} issues)")
+        return
+    dest = _unfolded_round_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  unfolded-round: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_unfolded_round_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the unfolded-round sidecar (fail-soft). A
+    ``ts`` is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_root_draft_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append unfolded-round sidecar row: {line[:160]}")
+        return
+    dest = _unfolded_round_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  unfolded-round: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _unfolded_extract_artifacts(
+    window_lines: list[str],
+) -> list[tuple[str, str]]:
+    """Extract ``(artifact_kind, artifact)`` pairs from ``window_lines``
+    using the three narrow regexes (script / commit / eval_path). A single
+    line may yield multiple hits across kinds; dedup within the window
+    preserves order-of-first-appearance. Pure — no I/O.
+
+    NOTE: the commit regex matches any 7-40 hex token, so a false capture
+    (an incident id, a hash-like word) is expected — the driver's git
+    probes reject it (fail-open ⇒ no flag), so this regex intentionally
+    over-captures rather than under-captures.
+    """
+    seen: set[tuple[str, str]] = set()
+    out: list[tuple[str, str]] = []
+    joined = "\n".join(window_lines)
+    for kind, pat in (
+        ("script", _UNFOLDED_RE_SCRIPT),
+        ("commit", _UNFOLDED_RE_COMMIT),
+        ("eval_path", _UNFOLDED_RE_EVAL),
+    ):
+        for m in pat.finditer(joined):
+            key = (kind, m.group(1))
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(key)
+    return out
+
+
+def decide_unfolded_round_flag(
+    body_text: str,
+    fs_probe: Callable[[str], bool],
+    git_probe: Callable[[str], bool],
+    body_names_result: Callable[[str], bool],
+    *,
+    window_lines: int = PHRASE_WINDOW_LINES,
+) -> list[dict]:
+    """Pure predicate: return a list of ``{"phrase", "artifact",
+    "artifact_kind", "line_ix"}`` findings for a body. NO I/O — the driver
+    fills the three closures with real subprocess / fs / body-scan calls,
+    tests fill them with dict-shaped fakes.
+
+    Algorithm:
+      1. Lowercase-scan for any :data:`UNFOLDED_PHRASES` phrase; capture
+         its 0-indexed line ``line_ix``.
+      2. On the SAME line ± ``window_lines`` each side, extract every
+         candidate artifact (script / commit / eval_path).
+      3. For each (phrase, artifact, kind) triple: fire ONLY when
+         ``fs_probe(artifact)`` / ``git_probe(artifact)`` (per kind)
+         returns True AND ``body_names_result(artifact)`` returns False.
+
+    Probe closures fail-open by convention (any exception ⇒ False ⇒ no
+    flag); ``body_names_result`` fails toward True (assume the body has
+    the result — silent). Dedup within a body on
+    ``(artifact_kind, artifact)`` — one finding per artifact per body
+    even if multiple phrases surround it.
+    """
+    if not body_text:
+        return []
+    lines = body_text.splitlines()
+    lower_lines = [ln.lower() for ln in lines]
+    findings: list[dict] = []
+    seen_artifacts: set[tuple[str, str]] = set()
+    for ix, lower in enumerate(lower_lines):
+        for phrase in UNFOLDED_PHRASES:
+            if phrase not in lower:
+                continue
+            lo = max(0, ix - window_lines)
+            hi = min(len(lines), ix + window_lines + 1)
+            window = lines[lo:hi]
+            for kind, artifact in _unfolded_extract_artifacts(window):
+                key = (kind, artifact)
+                if key in seen_artifacts:
+                    continue
+                # Route to the right probe by kind (fail-open on raise).
+                # Ternary picks git_probe for commits, fs_probe otherwise
+                # (script or eval_path — filesystem-tree probe).
+                try:
+                    exists = git_probe(artifact) if kind == "commit" else fs_probe(artifact)
+                except Exception:
+                    exists = False
+                if not exists:
+                    continue
+                # Body-scan for a result-section mention (fail toward
+                # True = silent — never a false flag on a scanner raise).
+                try:
+                    has_result = body_names_result(artifact)
+                except Exception:
+                    has_result = True
+                if has_result:
+                    continue
+                seen_artifacts.add(key)
+                findings.append(
+                    {
+                        "phrase": phrase,
+                        "artifact": artifact,
+                        "artifact_kind": kind,
+                        "line_ix": ix,
+                    }
+                )
+            break  # one finding-set per line — don't double-count phrases
+    return findings
+
+
+def _unfolded_git_cat_file_main(path: str) -> bool:
+    """``git --no-optional-locks cat-file -e main:<path>`` — True iff
+    ``<path>`` exists on ``main`` (rc==0). Read-only, 5s timeout,
+    fail-open (any error ⇒ False). ``--no-optional-locks`` never takes
+    the shared root's index lock (concurrent-committer safety). NO
+    ``git fetch`` — the caller relies on the local ``main`` ref."""
+    try:
+        res = subprocess.run(
+            [
+                "git",
+                "--no-optional-locks",
+                "-C",
+                str(PROJECT_ROOT),
+                "cat-file",
+                "-e",
+                f"main:{path}",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return False
+    return res.returncode == 0
+
+
+def _unfolded_git_commit_on_main(sha: str) -> bool:
+    """True iff ``sha`` resolves as a commit AND is an ancestor of
+    ``main``. Both probes required — a valid sha alone does not prove
+    it's on main; the ancestor probe is load-bearing. Each subprocess
+    5s-bounded, fail-open on any error. NO ``git fetch``."""
+    try:
+        res = subprocess.run(
+            [
+                "git",
+                "--no-optional-locks",
+                "-C",
+                str(PROJECT_ROOT),
+                "rev-parse",
+                "--verify",
+                "--quiet",
+                f"{sha}^{{commit}}",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return False
+    if res.returncode != 0:
+        return False
+    try:
+        res = subprocess.run(
+            [
+                "git",
+                "--no-optional-locks",
+                "-C",
+                str(PROJECT_ROOT),
+                "merge-base",
+                "--is-ancestor",
+                sha,
+                "main",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return False
+    return res.returncode == 0
+
+
+def _unfolded_slice_h2_section(body: str, heading: str) -> str:
+    """Return the substring of ``body`` from the LINE that equals
+    ``## <heading>`` (any surrounding whitespace tolerated) up to the
+    NEXT ``## `` H2 line (or end of body). ``""`` when the heading is
+    absent. H2 semantics only (never matches ``### <heading>``).
+    """
+    lines = body.splitlines()
+    start = None
+    for ix, ln in enumerate(lines):
+        stripped = ln.strip()
+        if stripped == f"## {heading}":
+            start = ix
+            break
+    if start is None:
+        return ""
+    end = len(lines)
+    for ix in range(start + 1, len(lines)):
+        if lines[ix].strip().startswith("## "):
+            end = ix
+            break
+    return "\n".join(lines[start:end])
+
+
+def _unfolded_slice_repro_block(body: str) -> str:
+    """Return the ``**Repro:**`` code-list section: from the line that
+    contains ``**Repro:**`` up to the NEXT ``**Context:**`` line (or the
+    next H2, or end of body). ``""`` when ``**Repro:**`` is absent."""
+    lines = body.splitlines()
+    start = None
+    for ix, ln in enumerate(lines):
+        if "**Repro:**" in ln:
+            start = ix
+            break
+    if start is None:
+        return ""
+    end = len(lines)
+    for ix in range(start + 1, len(lines)):
+        stripped = lines[ix].strip()
+        if "**Context:**" in stripped or stripped.startswith("## "):
+            end = ix
+            break
+    return "\n".join(lines[start:end])
+
+
+def unfolded_body_names_result(body: str, artifact: str, artifact_kind: str) -> bool:
+    """True iff ``body`` mentions ``artifact`` inside a result section
+    (evidence the round is folded). Three checks (any hit suffices):
+
+      1. ``**Repro:**`` block: the artifact's basename (for a script or
+         eval_path) or the sha itself (for a commit) appears there.
+      2. ``## Results`` (v4) OR ``## Findings`` (v3): the artifact
+         string appears anywhere in that H2 span.
+      3. For a commit sha: any ``@<hex>`` pinning line inside
+         ``**Repro:**`` whose sha shares a >=7-char common prefix with
+         the queried sha.
+
+    Not required to be perfect — this is the false-positive dial; erring
+    toward false-positive is the deliberate v1 posture (the re-alert TTL
+    bounds push spam).
+    """
+    if not body or not artifact:
+        return False
+    repro = _unfolded_slice_repro_block(body)
+    results_v4 = _unfolded_slice_h2_section(body, "Results")
+    findings_v3 = _unfolded_slice_h2_section(body, "Findings")
+
+    if artifact_kind == "commit":
+        # Direct sha appearance in either the Repro block or a results H2.
+        if artifact in repro or artifact in results_v4 or artifact in findings_v3:
+            return True
+        # Prefix-match against @<hex> pins inside Repro.
+        prefix = artifact[:7]
+        for m in re.finditer(r"@([0-9a-f]{7,40})\b", repro):
+            other = m.group(1)
+            if other.startswith(prefix) or prefix.startswith(other[:7]):
+                return True
+        return False
+
+    # script / eval_path: basename in Repro OR full path in results H2.
+    basename = Path(artifact).name
+    if basename in repro:
+        return True
+    return artifact in results_v4 or artifact in findings_v3
+
+
+def _unfolded_is_paper_task(body_text: str) -> bool:
+    """Cheap frontmatter probe for ``paper: true`` — skips the task in
+    v1 (paper stubs carry paper artifacts elsewhere; a future extension
+    would read ``docs/papers/issue_<N>/*.tex``). Reads the top YAML block
+    only, tolerant of quoting styles / whitespace. False on any parse
+    failure (fail-open toward SCANNING, since paper stubs are rare and
+    the false-positive cost is one un-actioned digest push line)."""
+    if not body_text.startswith("---"):
+        return False
+    end = body_text.find("\n---", 3)
+    if end < 0:
+        return False
+    fm = body_text[3:end]
+    for line in fm.splitlines():
+        m = re.match(r"^\s*paper\s*:\s*(.+?)\s*$", line)
+        if m:
+            v = m.group(1).strip().strip("\"'").lower()
+            return v == "true"
+    return False
+
+
+def unfolded_round_pass(dry_run: bool) -> bool:  # noqa: C901 — flat sweep/probe/emit/GC pipeline; matches sibling observer passes (main(), _apply_pod_safety_action) where extraction would over-abstract the linear structure
+    """ESCALATE-ONLY observer of unfolded-round stranding at
+    ``awaiting_promotion`` / ``reviewing`` (#1712; origin incident #1639
+    — see the block comment above). Sweeps the REGISTRY snapshot via the
+    triage-observer's :func:`_triage_observer_sweep_issue`, filters to
+    the target status set, reads each task's ``body.md``, runs the pure
+    :func:`decide_unfolded_round_flag` with real fs/git/body-scan
+    closures, and emits one sidecar row + one push line per finding
+    (deduped per (issue, artifact-kind, artifact)) with a
+    :data:`UNFOLDED_ROUND_PUSH_CAP` rollover-summary push semantics.
+    ``dry_run`` performs zero writes / zero task.py subprocess calls /
+    zero push subprocess calls; the push helper receives ``dry_run=True``
+    and is trusted to no-op the wire. Returns True iff any finding fired
+    this tick. Fail-soft throughout (per-task guard + top-level guard);
+    daemon-independent."""
+    if not _unfolded_round_enabled():
+        print("  unfolded-round: disabled via EPM_DISABLE_UNFOLDED_ROUND_PASS; skipping")
+        return False
+    try:
+        # Lazy in-process imports (watcher convention): resolves THIS
+        # checkout's helpers via the tests' sys.path shim / the editable
+        # install.
+        from explore_persona_space.task_workflow import registry_path
+
+        interval_h = _env_float(
+            "EPM_UNFOLDED_ROUND_INTERVAL_HOURS",
+            UNFOLDED_ROUND_INTERVAL_HOURS,
+            lo=0.0,
+            hi=720.0,
+        )
+        lookback_s = (
+            _env_float(
+                "EPM_UNFOLDED_ROUND_LOOKBACK_H",
+                UNFOLDED_ROUND_LOOKBACK_H,
+                lo=1.0,
+                hi=8760.0,
+            )
+            * 3600.0
+        )
+        realert_s = (
+            _env_float(
+                "EPM_UNFOLDED_ROUND_REALERT_HOURS",
+                UNFOLDED_ROUND_REALERT_HOURS,
+                lo=1.0,
+                hi=8760.0,
+            )
+            * 3600.0
+        )
+        push_cap = int(
+            _env_float(
+                "EPM_UNFOLDED_ROUND_PUSH_CAP",
+                UNFOLDED_ROUND_PUSH_CAP,
+                lo=0.0,
+                hi=100.0,
+            )
+        )
+        state = _load_unfolded_round_state()
+        now = time.time()
+        last = state.get("last_run_ts")
+        if isinstance(last, int | float) and (now - last) < interval_h * 3600.0:
+            return False  # hourly self-gate — silent
+        # Stamp the ATTEMPT before sweeping (registry-drift precedent):
+        # a crashing sweep is bounded to one attempt per interval.
+        state["last_run_ts"] = now
+        raw_issues = state.get("issues")
+        issues: dict = raw_issues if isinstance(raw_issues, dict) else {}
+        state["issues"] = issues
+        _save_unfolded_round_state(state, dry_run)
+
+        try:
+            reg = json.loads(registry_path().read_text())
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"  unfolded-round: registry read failed: {exc}", file=sys.stderr)
+            return False
+        tasks = reg.get("tasks") if isinstance(reg, dict) else None
+        if not isinstance(tasks, dict):
+            print("  unfolded-round: registry has no tasks map; skipping", file=sys.stderr)
+            return False
+        reg_root = registry_path().parent.parent
+
+        push_items: list[str] = []
+        suppressed = 0
+        seen_this_tick: set[str] = set()
+        wrote = False
+
+        for id_str, meta in sorted(tasks.items()):
+            # Widest sweep (triage helper's ACTIVE union {awaiting_promotion,
+            # blocked} + events.jsonl-mtime freshness); we then TIGHTEN
+            # to the pass's own status set.
+            issue = _triage_observer_sweep_issue(id_str, meta, reg_root, now, lookback_s)
+            if issue is None:
+                continue
+            if meta.get("status") not in _UNFOLDED_ROUND_STATUSES:
+                continue
+            if not meta.get("has_clean_result"):
+                continue
+            try:
+                rel = meta.get("path")
+                if not isinstance(rel, str) or not rel:
+                    continue
+                body_path = reg_root / rel / "body.md"
+                try:
+                    body_text = body_path.read_text()
+                except OSError:
+                    continue  # missing / unreadable body — skip fail-soft
+                if _unfolded_is_paper_task(body_text):
+                    # v1: skip paper stubs (their canonical results live
+                    # in docs/papers/issue_<N>/, not in body.md).
+                    continue
+                seen_this_tick.add(str(issue))
+
+                # Per-tick memoization of git/fs probes (bounds worst
+                # case — five artifacts cited twice pay for five probes).
+                _probe_cache: dict[tuple[str, str], bool] = {}
+
+                def _fs_probe(path: str, _c=_probe_cache) -> bool:
+                    key = ("fs", path)
+                    if key in _c:
+                        return _c[key]
+                    _c[key] = _unfolded_git_cat_file_main(path)
+                    return _c[key]
+
+                def _git_probe(sha: str, _c=_probe_cache) -> bool:
+                    key = ("git", sha)
+                    if key in _c:
+                        return _c[key]
+                    _c[key] = _unfolded_git_commit_on_main(sha)
+                    return _c[key]
+
+                def _names_result(a: str, _b=body_text) -> bool:
+                    # Kind isn't known here; we let the artifact string
+                    # discriminate — but the decider ONLY calls this
+                    # once per artifact, and the closure decides KIND
+                    # from the artifact shape.
+                    kind = (
+                        "commit"
+                        if re.fullmatch(r"[0-9a-f]{7,40}", a)
+                        else ("eval_path" if a.startswith("eval_results/") else "script")
+                    )
+                    return unfolded_body_names_result(_b, a, kind)
+
+                findings = decide_unfolded_round_flag(
+                    body_text, _fs_probe, _git_probe, _names_result
+                )
+                if not findings:
+                    continue
+                issue_key = str(issue)
+                raw_entry = issues.get(issue_key)
+                entry: dict = raw_entry if isinstance(raw_entry, dict) else {}
+                raw_fired = entry.get("fired")
+                fired: dict = raw_fired if isinstance(raw_fired, dict) else {}
+                for f in findings:
+                    a_key = f"{f['artifact_kind']}::{f['artifact']}"
+                    prev = fired.get(a_key)
+                    last_ts = prev.get("last_alert_ts") if isinstance(prev, dict) else None
+                    if isinstance(last_ts, int | float) and (now - last_ts) <= realert_s:
+                        continue  # deduped within TTL
+                    line = (
+                        f"#{issue} {f['artifact_kind']}:{f['artifact']} "
+                        f"(phrase='{f['phrase']}', line {f['line_ix']})"
+                    )
+                    print(f"  unfolded-round: FLAG {line}")
+                    _append_unfolded_round_sidecar(
+                        {
+                            "kind": "unfolded-round",
+                            "issue": issue,
+                            "artifact": f["artifact"],
+                            "artifact_kind": f["artifact_kind"],
+                            "phrase": f["phrase"],
+                            "line_ix": f["line_ix"],
+                            "task_status": meta.get("status"),
+                        },
+                        dry_run,
+                    )
+                    wrote = True
+                    if push_cap == 0 or len(push_items) < push_cap:
+                        push_items.append(line)
+                    else:
+                        suppressed += 1
+                    fired[a_key] = {"last_alert_ts": now, "phrase": f["phrase"]}
+                if fired:
+                    issues[issue_key] = {"fired": fired}
+            except Exception as exc:  # per-issue fail-soft
+                print(f"  unfolded-round: #{issue} evaluation failed: {exc}", file=sys.stderr)
+                continue
+
+        if push_items:
+            body = (
+                "unfolded-round observer: promoted body(ies) at "
+                "awaiting_promotion / reviewing carry a pending-fold cue "
+                "next to an artifact already landed on main (#1639 shape). " + "; ".join(push_items)
+            )
+            if suppressed:
+                body += f"; +{suppressed} more, see .claude/cache/unfolded-round-events.jsonl"
+            _telegram_push(body, dry_run)
+
+        # Self-prune entries whose task left the sweep set for good.
+        for key in list(issues):
+            m = tasks.get(key)
+            status = m.get("status") if isinstance(m, dict) else None
+            if m is None or status not in _UNFOLDED_ROUND_STATUSES:
+                issues.pop(key, None)
+
+        _save_unfolded_round_state(state, dry_run)
+        return wrote
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  unfolded-round: pass failed (fail-soft): {exc}", file=sys.stderr)
+        return False
+
+
 # ─── Registry-drift audit pass (task #1439) ──────────────────────────────────
 #
 # WHY: post-#898, a `task.py` mutation hard-killed between the folder `git mv`
@@ -6279,7 +7459,309 @@ def registry_drift_pass(dry_run: bool) -> bool:
         return False
 
 
-# ─── Completed-unmerged flag pass (task #1564) ────────────────────────────────
+# ─── Stash/rescue-backlog audit pass (task #1806) ─────────────────────────────
+#
+# WHY: #1751 surfaces NEW `stash: KEPT` events at Step 10d merge sites only.
+# The shared repo root's EXISTING `git stash` backlog (verified live
+# 2026-07-30: 23 entries, oldest May 2026) and the accumulated
+# ~/.task-workflow/root-sync-rescue/ rescue entries (66 live) have NO
+# recurring surfacing mechanism — 4 independent transcript miners flagged the
+# class on 2026-07-28. This pass is the recurring watcher-side sweep of that
+# whole backlog, cloning the registry_drift_pass (#1439) shape: once-daily
+# throttle, fingerprint dedup, weekly re-alert, dedicated sidecar, fail-soft.
+# ESCALATE-ONLY is a hard invariant: the pass NEVER mutates git or filesystem
+# state (no `stash pop/drop/apply`, no `rm`) — collection is one read-only
+# `git stash list --format=...` + one os.scandir of the rescue dir; triage
+# stays human (companion task #1736 holds the triage decision).
+#
+# Two deliberate deltas vs the registry-drift template: (a) NO double-read
+# confirm gap — stash/rescue entries are durable files, not in-flight
+# mutations (sync_repo_root autostashes live seconds — created + popped
+# inside one recovery — and age past the min-age gate below; #1751's Step 10d
+# duty covers the fresh 0-7-day window); (b) ENOENT on the rescue dir ITSELF
+# is a LEGITIMATE EMPTY rescue set, never a fail-soft error — the dir is
+# lazily created by sync_repo_root.py (RESCUE_ROOT) and may be absent on a
+# fresh host or deleted after a completed #1736 triage; treating it as an
+# error would permanently blind the whole pass (stash half included) and make
+# the recovered/fp-reset branch unreachable after triage. Every OTHER OSError
+# and any git rc != 0 raises to the fail-soft arm and is NEVER read as
+# "backlog cleared" (no fp reset on error).
+
+# Throttle: the audit is cheap (one git subprocess + one dir scan, <100 ms)
+# but once/day is the mandated cadence — backlog needs SURFACING, not
+# tick-rate monitoring. Env EPM_STASH_RESCUE_INTERVAL_HOURS, read at CALL
+# time (registry-drift precedent); lo=0.0 lets a live smoke force a run.
+STASH_RESCUE_INTERVAL_HOURS = 24.0
+# Re-alert TTL for an UNCHANGED fingerprint: weekly — a stash backlog is
+# inert until a triage acts on it, so the registry-drift weekly cadence
+# applies. Env EPM_STASH_RESCUE_REALERT_HOURS, read at call time.
+STASH_RESCUE_REALERT_HOURS = 168.0
+# Min age before an entry counts as backlog: sync_repo_root autostashes live
+# seconds; a stranded one ages past this gate, and #1751's Step 10d KEPT-stash
+# duty covers the fresh window. Env EPM_STASH_RESCUE_MIN_AGE_DAYS.
+STASH_RESCUE_MIN_AGE_DAYS = 7.0
+
+
+def _stash_rescue_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_STASH_RESCUE_AUDIT`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_registry_drift_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_STASH_RESCUE_AUDIT", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _stash_rescue_sidecar_path() -> Path:
+    """DEDICATED stash/rescue-backlog event stream (own stream for clean grep
+    — the registry-drift / root-draft sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "stash-rescue-audit-events.jsonl"
+
+
+def _stash_rescue_state_path() -> Path:
+    """Singleton throttle+dedup state (deliberately NOT a per-issue GC
+    target): ``{"last_run_ts": <float>, "fp": <str|None>,
+    "last_alert_ts": <float>}``."""
+    return AUTONOMOUS_REGISTRY_DIR / "stash-rescue-audit.json"
+
+
+def _stash_rescue_rescue_root() -> Path:
+    """The sync_repo_root.py rescue root (lazily created there — RESCUE_ROOT;
+    honors the same ``EPM_ROOT_SYNC_RESCUE_ROOT`` override so both tools
+    always look at the same tree). Read at call time for testability."""
+    return Path(
+        os.environ.get(
+            "EPM_ROOT_SYNC_RESCUE_ROOT",
+            str(Path.home() / ".task-workflow" / "root-sync-rescue"),
+        )
+    )
+
+
+def _load_stash_rescue_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards (mirrors :func:`_load_registry_drift_state`)."""
+    path = _stash_rescue_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_stash_rescue_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write of the stash/rescue throttle/dedup state
+    (fail-soft; mirrors :func:`_save_registry_drift_state`); ``dry_run``
+    performs zero writes."""
+    if dry_run:
+        print(f"  [dry-run] would save stash-rescue state (fp={state.get('fp')})")
+        return
+    dest = _stash_rescue_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  stash-rescue: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_stash_rescue_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the stash/rescue sidecar (fail-soft). A ``ts``
+    is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_registry_drift_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append stash-rescue sidecar row: {line[:160]}")
+        return
+    dest = _stash_rescue_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  stash-rescue: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _collect_stash_rescue_backlog(min_age_s: float, now: float) -> dict:
+    """One READ-ONLY backlog snapshot: aged repo-root stash entries + aged
+    rescue-dir entries. Raises on failure — the pass's top-level guard owns
+    fail-soft (a failed ``git stash list`` must NEVER read as "backlog
+    cleared").
+
+    Returns ``{"stashes": [(ct, subject), ...], "rescues": [(name, mtime),
+    ...]}``. Stash identity = ``(ct, subject)`` — deliberately NOT the
+    positional ``stash@{N}`` selector, which renumbers on every push/pop and
+    would churn the fingerprint. Each line is parsed on the FIRST tab only
+    (``%gs`` subjects can carry user text with embedded tabs). Rescue
+    identity = entry name (dirs AND loose files, e.g. ``stash-*.patch``).
+    ENOENT on the rescue dir ITSELF returns an EMPTY rescue list (legitimate
+    absence — lazily created; see the pass header); every OTHER OSError
+    raises."""
+    proc = subprocess.run(  # fixed read-only argv — never a mutating stash verb
+        ["git", "-C", str(PROJECT_ROOT), "stash", "list", "--format=%ct%x09%gs"],
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"git stash list failed rc={proc.returncode}: {proc.stderr.strip()[:200]}"
+        )
+    stashes: list[tuple[int, str]] = []
+    for line in proc.stdout.splitlines():
+        if not line.strip():
+            continue
+        parts = line.split("\t", 1)  # FIRST tab only — subjects can carry tabs
+        ct = int(parts[0])  # non-integer ct = garbled output -> fail-soft arm
+        subject = parts[1] if len(parts) > 1 else ""
+        if now - ct > min_age_s:
+            stashes.append((ct, subject))
+    rescues: list[tuple[str, float]] = []
+    root = _stash_rescue_rescue_root()
+    try:
+        entries = list(os.scandir(root))
+    except FileNotFoundError:
+        entries = []  # legitimate EMPTY rescue set — dir is lazily created
+    for entry in entries:
+        mtime = entry.stat(follow_symlinks=False).st_mtime
+        if now - mtime > min_age_s:
+            rescues.append((entry.name, mtime))
+    stashes.sort()
+    rescues.sort()
+    return {"stashes": stashes, "rescues": rescues}
+
+
+def _stash_rescue_fingerprint(collected: dict) -> str:
+    """sha256[:12] (the wf-fix fp shape) over the sorted identity lists +
+    counts. Rescue mtimes are attributes, not identity — a bare ``touch``
+    never churns the fp; adding/removing any entry does."""
+    stash_ids = sorted([int(ct), str(subject)] for ct, subject in collected["stashes"])
+    rescue_ids = sorted(str(name) for name, _mtime in collected["rescues"])
+    payload = json.dumps(
+        {
+            "stashes": stash_ids,
+            "rescues": rescue_ids,
+            "counts": [len(stash_ids), len(rescue_ids)],
+        }
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]
+
+
+def decide_stash_rescue_alert(fp: str, state: dict, now: float, realert_s: float) -> bool:
+    """Pure fire decision: True iff ``fp`` differs from the stored fp (the
+    backlog set CHANGED — incl. first appearance and any recomposition) OR
+    the last alert is STRICTLY older than ``realert_s`` (bounded weekly
+    re-surface of an unchanged backlog). ``isinstance`` guards on state
+    fields (the registry-drift corrupt-state contract: garbled state degrades
+    to fire-as-if-unalerted)."""
+    prev_fp = state.get("fp")
+    if not isinstance(prev_fp, str) or prev_fp != fp:
+        return True
+    last_alert = state.get("last_alert_ts")
+    if not isinstance(last_alert, int | float):
+        return True
+    return (now - last_alert) > realert_s
+
+
+def stash_rescue_audit_pass(dry_run: bool) -> bool:
+    """ESCALATE-ONLY once-daily audit of the shared repo root's ``git stash``
+    backlog + the ``~/.task-workflow/root-sync-rescue/`` rescue entries
+    (#1806). NEVER mutates git or filesystem state (no ``stash
+    pop/drop/apply``, no ``rm``), posts NO task markers, writes ONLY its
+    state singleton + sidecar; triage stays the human-owned companion task
+    #1736. NO double-read confirm gap (durable files, not in-flight
+    mutations — the deliberate delta vs :func:`registry_drift_pass`).
+    Fail-soft: a collect exception logs stderr + one error sidecar row per
+    throttle interval (the attempt stamp is saved BEFORE collecting) and is
+    NEVER read as "backlog cleared" (no fp write on error), never crashes
+    the tick. Daemon-independent (one read-only git subprocess + one dir
+    scan). Returns True when a push fired this run."""
+    if not _stash_rescue_enabled():
+        print("  stash-rescue: disabled via EPM_DISABLE_STASH_RESCUE_AUDIT; skipping")
+        return False
+    try:
+        now = time.time()
+        interval_h = _env_float(
+            "EPM_STASH_RESCUE_INTERVAL_HOURS", STASH_RESCUE_INTERVAL_HOURS, lo=0.0, hi=720.0
+        )
+        realert_h = _env_float(
+            "EPM_STASH_RESCUE_REALERT_HOURS", STASH_RESCUE_REALERT_HOURS, lo=1.0, hi=2160.0
+        )
+        min_age_d = _env_float(
+            "EPM_STASH_RESCUE_MIN_AGE_DAYS", STASH_RESCUE_MIN_AGE_DAYS, lo=0.0, hi=365.0
+        )
+        state = _load_stash_rescue_state()
+        last = state.get("last_run_ts")
+        if isinstance(last, int | float) and (now - last) < interval_h * 3600.0:
+            return False  # throttled — silent (would fire 143x/day otherwise)
+        state["last_run_ts"] = now
+        # Stamp the ATTEMPT before collecting: a crashing collect is then
+        # bounded to one error sidecar row per throttle interval instead of
+        # spamming every 10-min tick.
+        _save_stash_rescue_state(state, dry_run)
+        collected = _collect_stash_rescue_backlog(min_age_d * 86400.0, now)
+        stashes, rescues = collected["stashes"], collected["rescues"]
+        if not (stashes or rescues):
+            # Reached ONLY on a clean collect (incl. the legitimate
+            # absent-rescue-dir case) — an error raised to the fail-soft arm
+            # can never take this branch, so the fp reset is trustworthy.
+            if state.get("fp"):
+                print("  stash-rescue: recovered — previously-flagged backlog is gone")
+            _save_stash_rescue_state({**state, "fp": None}, dry_run)
+            return False
+        fp = _stash_rescue_fingerprint(collected)
+        fire = decide_stash_rescue_alert(fp, state, now, realert_h * 3600.0)
+        oldest_stash_age_d = max((now - ct for ct, _s in stashes), default=0.0) / 86400.0
+        oldest_rescue_age_d = max((now - mt for _n, mt in rescues), default=0.0) / 86400.0
+        _append_stash_rescue_sidecar(
+            {
+                "kind": "stash-rescue-backlog",
+                "fingerprint": fp,
+                "n_stashes": len(stashes),
+                "n_rescues": len(rescues),
+                "oldest_stash_age_days": round(oldest_stash_age_d, 1),
+                "oldest_rescue_age_days": round(oldest_rescue_age_d, 1),
+                # Sample identities, capped — the full set keys the fp only.
+                "stashes": [[ct, subj[:120]] for ct, subj in stashes[:20]],
+                "rescues": [name for name, _mt in rescues[:20]],
+                # `pushed` records the fire DECISION (dedup bookkeeping), not
+                # delivery — _telegram_push is fail-soft and sent != seen.
+                "pushed": fire,
+            },
+            dry_run,
+        )
+        print(
+            f"  stash-rescue: {len(stashes)} aged stash(es) "
+            f"(oldest {oldest_stash_age_d:.0f}d) + {len(rescues)} rescue entr(y/ies)"
+        )
+        if fire:
+            _telegram_push(
+                f"STASH/RESCUE backlog (escalate-only #1806 pass): {len(stashes)} "
+                f"git stash entr(y/ies) on the shared repo root (oldest "
+                f"{oldest_stash_age_d:.0f}d) + {len(rescues)} rescue entr(y/ies) "
+                f"under ~/.task-workflow/root-sync-rescue/. Review (read-only): "
+                f"`git stash list`, `ls ~/.task-workflow/root-sync-rescue/`. "
+                f"Triage decision is human — companion task #1736. Nothing was "
+                f"changed automatically.",
+                dry_run,
+            )
+        _save_stash_rescue_state(
+            {**state, "fp": fp, **({"last_alert_ts": now} if fire else {})}, dry_run
+        )
+        return fire
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  stash-rescue: pass failed (fail-soft): {exc}", file=sys.stderr)
+        # Error row only — NO fp write (the next in-interval tick stays
+        # throttled by the attempt stamp saved before the collect; an error
+        # is NEVER interpreted as "backlog cleared").
+        _append_stash_rescue_sidecar(
+            {"kind": "stash-rescue-error", "error": str(exc)[:500]}, dry_run
+        )
+        return False
+
+
+# ─── Completed-unmerged flag + bounded-respawn pass (tasks #1564 + #1653) ─────
 #
 # WHY: incident #1540 — the task reached `completed` + `epm:done` at
 # 2026-07-19T14:49:17Z, the NEXT turn (the Step 10d worktree merge) was
@@ -6288,11 +7770,16 @@ def registry_drift_pass(dry_run: bool) -> bool:
 # lane (the tick cron is torn down at `completed`; the wedge lane needs >=3
 # failed wakes; nothing audits the marker SHAPE). This pass is the periodic
 # audit of exactly that shape: `completed` + `epm:done` + NO `epm:merged`
-# while the `issue-<N>` PR/branch is still unmerged. FLAG-ONLY (the
+# while the `issue-<N>` PR/branch is still unmerged. Flag channels (the
 # stale-blocked posture): sidecar row every flagged interval + ONE marker per
 # (issue, done_ts) episode + a 24h-TTL re-alert push naming the Step 10d
-# recovery — NEVER merges, never pushes branches, never mutates status,
-# never spawns sessions.
+# recovery — NEVER merges, never pushes branches, never mutates status. The
+# #1653 respawn arm adds ONE bounded action beyond flagging: once per
+# (issue, done_ts) episode — persistence-gated (flagged on a PRIOR
+# interval), day-capped fleet-wide, live-owner- + daemon- +
+# auth-outage-gated — dispatch `spawn-issue --issue <N> --auto` so the fresh
+# session's /issue resume row runs the Step 10d backstop (#1578); the merge
+# itself still runs only in-session, never here.
 #
 # Known v1 bounds (each fails toward SILENCE by design; the /daily sweep
 # stays the backstop for all four):
@@ -6333,6 +7820,16 @@ COMPLETED_UNMERGED_REALERT_HOURS = 24.0
 # flagged candidates (measured live, 2026-07-20). Env
 # EPM_COMPLETED_UNMERGED_PROBE_CAP.
 COMPLETED_UNMERGED_PROBE_CAP = 10
+# #1653: fleet-wide per-UTC-day cap on respawn dispatches (across issues —
+# strandings are rare: 2 incidents in the month before this arm, so 3/day is
+# >=40x headroom; the once-per-episode latch already bounds per-issue churn
+# to 1, so this cap's job is bounding fleet-wide pathology, e.g. a registry
+# corruption opening many false episodes). Value mirrors the validated
+# wedge-lane budgets (TICK_WEDGE_RESPAWNS_PER_DAY /
+# TICK_WEDGE_DEAD_RESPAWNS_PER_DAY = 3, #1209/#1241). Env
+# EPM_COMPLETED_UNMERGED_RESPAWNS_PER_DAY; malformed or < 1 falls back
+# (disabling the arm is the kill switch's job, never the cap's).
+COMPLETED_UNMERGED_RESPAWNS_PER_DAY = 3
 
 
 def _completed_unmerged_enabled() -> bool:
@@ -6341,6 +7838,36 @@ def _completed_unmerged_enabled() -> bool:
     :func:`_registry_drift_enabled`."""
     raw = os.environ.get("EPM_DISABLE_COMPLETED_UNMERGED_PASS", "").strip().lower()
     return raw not in {"1", "true", "yes"}
+
+
+def _completed_unmerged_respawn_enabled() -> bool:
+    """Respawn-arm kill switch (#1653, default ENABLED): False when
+    ``EPM_DISABLE_COMPLETED_UNMERGED_RESPAWN`` is set truthy ("1"/"true"/
+    "yes", case-insensitive). Independent of — and subordinate to —
+    ``EPM_DISABLE_COMPLETED_UNMERGED_PASS`` (the whole-pass switch, which
+    disables this arm too by never running the pass). Disabled restores
+    byte-equivalent #1564 flag-only behavior, marker text included."""
+    raw = os.environ.get("EPM_DISABLE_COMPLETED_UNMERGED_RESPAWN", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _completed_unmerged_respawns_per_day() -> int:
+    """Fleet-wide per-UTC-day cap on #1653 respawn dispatches (env
+    ``EPM_COMPLETED_UNMERGED_RESPAWNS_PER_DAY``; default
+    :data:`COMPLETED_UNMERGED_RESPAWNS_PER_DAY`). Malformed OR ``< 1`` env
+    falls back to the default — disabling the arm is the kill switch's job
+    (``EPM_DISABLE_COMPLETED_UNMERGED_RESPAWN=1``), never the cap's (exact
+    parse-shape clone of :func:`_tick_wedge_respawns_per_day`, #1241)."""
+    raw = os.environ.get("EPM_COMPLETED_UNMERGED_RESPAWNS_PER_DAY")
+    if not raw:
+        return COMPLETED_UNMERGED_RESPAWNS_PER_DAY
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return COMPLETED_UNMERGED_RESPAWNS_PER_DAY
+    if parsed < 1:
+        return COMPLETED_UNMERGED_RESPAWNS_PER_DAY
+    return parsed
 
 
 def _completed_unmerged_sidecar_path() -> Path:
@@ -6352,8 +7879,14 @@ def _completed_unmerged_sidecar_path() -> Path:
 def _completed_unmerged_state_path() -> Path:
     """Singleton throttle+episode state (deliberately NOT a per-issue GC
     target — the registry-drift-observer shape): ``{"last_run_ts": <float>,
+    "respawn_day": "YYYY-MM-DD", "respawns_today": <int>,
     "episodes": {"<issue>": {done_ts, flagged, marker_posted, alerted_ts,
-    verdict, resolved_verdict}}}``."""
+    verdict, resolved_verdict, respawned_ts, respawn_result}}}``. The
+    ``respawn_day``/``respawns_today`` pair is the #1653 arm's fleet day
+    counter (read via :func:`_day_scoped_count` — malformed/rolled values
+    read 0, cost at most one extra bounded respawn); the per-episode
+    ``respawned_ts`` + ``respawn_result`` (``"spawned" | "failed"``) are its
+    once-per-episode latch."""
     return AUTONOMOUS_REGISTRY_DIR / "completed-unmerged-observer.json"
 
 
@@ -6658,8 +8191,10 @@ def _completed_unmerged_flag(
     """Emit the flag channels for one confirmed stranded merge, keyed per
     (issue, done_ts) episode: sidecar row EVERY flagged interval; ONE task
     marker per episode; Telegram push at episode open, re-fired every
-    ``realert_s`` while unresolved. FLAG-ONLY: never merges, never mutates
-    status (pinned by test)."""
+    ``realert_s`` while unresolved. This emitter itself never merges, never
+    mutates status (pinned by test); the #1653 respawn arm lives in
+    :func:`_completed_unmerged_maybe_respawn`, called AFTER this — the
+    same-episode rewrite below carries its latch fields forward."""
     key = str(issue)
     raw_entry = episodes.get(key)
     entry: dict = raw_entry if isinstance(raw_entry, dict) else {}
@@ -6684,6 +8219,20 @@ def _completed_unmerged_flag(
         },
         dry_run,
     )
+    # #1653: the trailing sentence is conditional on the respawn arm — the
+    # kill switch restores the pre-#1653 flag-only text BYTE-VERBATIM (AC7).
+    if _completed_unmerged_respawn_enabled():
+        cap = _completed_unmerged_respawns_per_day()
+        marker_tail = (
+            f"The watcher never merges; if this strand persists to the next hourly interval "
+            f"with no live owning session, a bounded auto-respawn (once per episode, "
+            f"<={cap}/day fleet-wide; #1653) will re-drive /issue {issue} to run the "
+            f"Step 10d backstop."
+        )
+        push_tail = "Watcher never merges; bounded auto-respawn arms next interval (#1653)."
+    else:
+        marker_tail = "FLAG-ONLY: the watcher never merges."
+        push_tail = "Watcher never merges."
     if not (same_episode and entry.get("marker_posted")):
         _post_progress_marker(
             issue,
@@ -6692,8 +8241,7 @@ def _completed_unmerged_flag(
             f"(#1540 class). Recover: spawn a session on issue {issue} and run the SKILL.md "
             f"Step 10d auto-merge procedure — `uv run python scripts/spawn_session.py "
             f"spawn-issue --issue {issue}` then type `/issue {issue}` (the resume path runs "
-            f"the Step 10d auto-merge idempotently when the PR is unmerged). FLAG-ONLY: the "
-            f"watcher never merges.",
+            f"the Step 10d auto-merge idempotently when the PR is unmerged). {marker_tail}",
             dry_run,
             label="completed-unmerged-flag",
         )
@@ -6703,11 +8251,11 @@ def _completed_unmerged_flag(
         _telegram_push(
             f"EPS #{issue}: completed with epm:done ({done_iso}) but NO epm:merged — {detail}; "
             f"likely a killed Step 10d merge turn (#1540 class). Recover: spawn-issue --issue "
-            f"{issue} then /issue {issue} (Step 10d re-runs idempotently). Watcher never merges.",
+            f"{issue} then /issue {issue} (Step 10d re-runs idempotently). {push_tail}",
             dry_run,
         )
         alerted_ts = now
-    episodes[key] = {
+    new_entry = {
         "done_ts": done_ts,
         "flagged": True,
         "marker_posted": True,
@@ -6715,18 +8263,231 @@ def _completed_unmerged_flag(
         "verdict": verdict,
         "resolved_verdict": None,
     }
+    if same_episode:
+        # #1653: carry the respawn latch across the per-interval rewrite —
+        # without this, the interval AFTER a respawn would erase
+        # respawned_ts/respawn_result and re-arm the once-per-episode
+        # dispatch (a NEW done_ts deliberately drops the latch — a fresh
+        # episode may respawn once again).
+        for field in ("respawned_ts", "respawn_result"):
+            if field in entry:
+                new_entry[field] = entry[field]
+    episodes[key] = new_entry
+
+
+def decide_completed_unmerged_respawn(
+    *,
+    respawn_enabled: bool,
+    prior_flagged: bool,
+    already_respawned: bool,
+    respawns_today: int,
+    owner_live: bool | None,
+    max_per_day: int,
+) -> str:
+    """Pure decision for the #1653 respawn arm. Returns one of:
+    ``"respawn"`` | ``"skip-disabled"`` | ``"skip-first-interval"`` |
+    ``"skip-already-respawned"`` | ``"skip-day-cap"`` | ``"skip-owner-live"``
+    | ``"skip-owner-unknown"``. Cheap gates first so the impure caller can
+    pre-evaluate with ``owner_live=False`` and probe the daemon ONLY when
+    everything cheap passes (the probe is the one expensive signal). Every
+    uncertain signal fails toward skip (the :func:`decide_capacity_retry` /
+    #1582 unknown-freeze posture)."""
+    if not respawn_enabled:
+        return "skip-disabled"
+    if already_respawned:
+        return "skip-already-respawned"
+    if not prior_flagged:
+        return "skip-first-interval"  # persistence: flagged on a PRIOR interval
+    if respawns_today >= max_per_day:
+        return "skip-day-cap"
+    if owner_live is None:
+        return "skip-owner-unknown"  # daemon down / children unreadable
+    if owner_live:
+        return "skip-owner-live"
+    return "respawn"
+
+
+def _completed_unmerged_live_owner(issue: int) -> bool | None:
+    """True = a live session owns ``issue``; False = provably none; None =
+    unknowable (fail toward NO respawn). Reuses the #1582 owner-candidate
+    union: registration sids (``issue-<N>.json`` + ``manual-issue-<N>.json``)
+    resolved through the /list children sid->pid map, PLUS cwd-mapped
+    children (the #1345 unregistered-owner class). Daemon-gated HERE — the
+    flag half of the pass stays daemon-independent; only this probe (and
+    thus the respawn arm) needs the daemon. Single :func:`_daemon_reachable`
+    probe, not ``_with_retry``: a false negative merely defers one hourly
+    interval (the #811/#845 retry tradeoff, considered + declined in the
+    #1653 plan §11)."""
+    try:
+        if not _daemon_reachable():
+            return None
+        children = _live_children(strict=True)  # strict: a /list flake raises
+    except RuntimeError:
+        return None
+    return bool(_keep_running_owner_candidates(issue, children))
+
+
+def _completed_unmerged_respawn(issue: int, dry_run: bool) -> str:
+    """``spawn-issue --auto`` for a confirmed stranded merge (#1653): the
+    fresh session's /issue resume row (#1578, SKILL.md Step 0 resume table)
+    runs the Step 10d idempotent backstop — the watcher itself still never
+    merges. Tri-state ``"spawned" | "suppressed" | "failed"`` (#843 M1b:
+    suppressed books nothing); ``dry_run`` logs only and returns
+    ``"failed"`` (parity with :func:`_redrive_capacity_retry`).
+    ``"completed-unmerged"`` is deliberately NOT in
+    :data:`_AUTH_OUTAGE_CANARY_ARMS`: during an auth-outage episode the arm
+    is fully suppressed — a stranded merge is not time-critical, the flag
+    channels keep firing, and the gate's fail-open TTL bounds the delay."""
+    if _auth_outage_spawn_gate(issue, "completed-unmerged", dry_run=dry_run) is not None:
+        print(f"  completed-unmerged: respawn #{issue} suppressed — auth-outage episode active")
+        return "suppressed"
+    cmd = [
+        "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
+        "--issue", str(issue), "--auto",
+    ]  # fmt: skip
+    if dry_run:
+        print(f"  [dry-run] would respawn stranded-merge session: {' '.join(cmd)}")
+        return "failed"  # dry-run: nothing spawned
+    try:
+        res = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=120)
+    except subprocess.TimeoutExpired:
+        # Deliberate deviation from the _redrive_capacity_retry clone (which
+        # lets a timeout propagate to its caller's fail-soft): the spawn may
+        # have fired before the 120s kill, so returning "failed" lets the
+        # caller BOOK the attempt (day slot + episode latch) — the
+        # conservative direction; an unbooked timeout would re-dispatch next
+        # interval, the double-spawn shape the latch exists to prevent.
+        print(f"  COMPLETED-UNMERGED RESPAWN DISPATCH TIMED OUT #{issue} (120s)", file=sys.stderr)
+        return "failed"
+    if res.returncode != 0:
+        print(
+            f"  COMPLETED-UNMERGED RESPAWN DISPATCH FAILED #{issue}: {res.stderr.strip()[:300]}",
+            file=sys.stderr,
+        )
+        return "failed"
+    _forward_marker_child_stderr(res, "spawn_session spawn-issue (completed-unmerged)")
+    first_line = (res.stdout.strip().splitlines() or [""])[0]
+    if spawn_output_suppressed(res.stdout) is not None:
+        print(
+            f"  completed-unmerged: respawn #{issue} suppressed (lease/collision/hold): "
+            f"{first_line}"
+        )
+        return "suppressed"
+    print(f"  COMPLETED-UNMERGED RESPAWNED #{issue}: {first_line}")
+    _auth_outage_record_spawn(issue, "completed-unmerged", None)
+    return "spawned"
+
+
+def _completed_unmerged_maybe_respawn(
+    issue: int,
+    done_ts: float,
+    verdict: str,
+    episodes: dict,
+    state: dict,
+    now: float,
+    day_key: str,
+    prior_flagged: bool,
+    dry_run: bool,
+) -> None:
+    """Orchestrate the #1653 respawn arm for ONE flagged candidate (called
+    right after :func:`_completed_unmerged_flag`, so only verdicts
+    ``unmerged-open-pr``/``unmerged-branch-commits`` ever reach it): pure
+    decide with cheap gates first, daemon probe ONLY when they pass, then
+    dispatch + book. A ``"suppressed"`` result books NOTHING (#843 M1b);
+    ``"spawned"`` and ``"failed"`` both consume the fleet day slot + latch
+    the episode (strict once per (issue, done_ts)); the latch is saved
+    FIRST — before the marker/push — so a later crash can never re-arm a
+    double-spawn. Marker + push fire on ``"spawned"`` only (skips are
+    print-only; the flag channels already row every interval)."""
+    key = str(issue)
+    raw_entry = episodes.get(key)
+    entry: dict = raw_entry if isinstance(raw_entry, dict) else {}
+    max_per_day = _completed_unmerged_respawns_per_day()
+    respawns_today = _day_scoped_count(state, "respawn_day", "respawns_today", day_key)
+    common = dict(
+        respawn_enabled=_completed_unmerged_respawn_enabled(),
+        prior_flagged=prior_flagged,
+        already_respawned=entry.get("respawned_ts") is not None,
+        respawns_today=respawns_today,
+        max_per_day=max_per_day,
+    )
+    pre = decide_completed_unmerged_respawn(owner_live=False, **common)
+    if pre != "respawn":
+        if pre not in ("skip-disabled", "skip-first-interval"):
+            # Keep logs quiet on the two common paths (a disabled arm skips
+            # every candidate; every episode's first interval is
+            # skip-first-interval by construction).
+            print(f"  completed-unmerged: respawn #{issue} {pre}")
+        return
+    owner = _completed_unmerged_live_owner(issue)  # the one expensive probe
+    action = decide_completed_unmerged_respawn(owner_live=owner, **common)
+    if action != "respawn":
+        print(f"  completed-unmerged: respawn #{issue} {action}")
+        return
+    result = _completed_unmerged_respawn(issue, dry_run)
+    if result == "suppressed":
+        return  # book NOTHING (#843 M1b) — the next interval re-evaluates
+    # Book the attempt (spawned OR failed): fleet day counter + episode
+    # latch, saved latch-FIRST (a crash between dispatch and save is the
+    # one residual double-spawn window; the spawn-side lease + the fresh
+    # session's Step 0 guard bound it to one duplicate).
+    state["respawn_day"] = day_key
+    state["respawns_today"] = respawns_today + 1
+    entry["respawned_ts"] = now
+    entry["respawn_result"] = result
+    episodes[key] = entry
+    _save_completed_unmerged_state(state, dry_run)
+    _append_completed_unmerged_sidecar(
+        {
+            "issue": issue,
+            "done_ts": done_ts,
+            "verdict": verdict,
+            "action": "respawned",
+            "result": result,
+            "respawns_today": respawns_today + 1,
+            "dry_run": dry_run,
+        },
+        dry_run,
+    )
+    if result == "spawned":
+        done_iso = _triage_observer_iso_z(done_ts)
+        _post_progress_marker(
+            issue,
+            f"{_COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL} stranded merge persisted a full "
+            f"interval past the flag (epm:done {done_iso}, no epm:merged, {verdict}); no live "
+            f"session owns this issue — auto-respawned via `spawn-issue --issue {issue} "
+            f"--auto` (once per episode, {respawns_today + 1}/{max_per_day} today; #1653). "
+            f"The fresh session's /issue resume row runs the Step 10d auto-merge backstop "
+            f"(#1578). The watcher itself never merges/pushes or mutates status.",
+            dry_run,
+            label="completed-unmerged-respawn",
+        )
+        _telegram_push(
+            f"EPS #{issue}: stranded merge (epm:done {done_iso}, no epm:merged) "
+            f"auto-respawned — spawn-issue --auto dispatched to run Step 10d "
+            f"({respawns_today + 1}/{max_per_day} today; #1653). Watcher never merges.",
+            dry_run,
+        )
 
 
 def completed_unmerged_pass(dry_run: bool, now: float | None = None) -> None:
-    """FLAG-ONLY audit of the #1540 stranded-merge shape (task #1564): a
-    ``completed`` task whose events carry ``epm:done`` but NO ``epm:merged``
-    while the ``issue-<N>`` PR/branch is still unmerged — a killed Step 10d
-    merge turn is invisible to every other watcher lane (the tick cron is
-    torn down at ``completed``; the wedge lane needs failed wakes). Hourly
-    self-gated; probe-capped; hard invariants pinned by test: never mutates
-    status, never merges/pushes anything, never spawns a session.
-    Daemon-INDEPENDENT (marker posts go via the task.py subprocess, like
-    :func:`stale_blocked_flag_pass`)."""
+    """Audit + bounded respawn of the #1540 stranded-merge shape (#1564 flag
+    channels; #1653 respawn arm): a ``completed`` task whose events carry
+    ``epm:done`` but NO ``epm:merged`` while the ``issue-<N>`` PR/branch is
+    still unmerged — a killed Step 10d merge turn is invisible to every
+    other watcher lane (the tick cron is torn down at ``completed``; the
+    wedge lane needs failed wakes). Hourly self-gated; probe-capped. Hard
+    invariants pinned by test: never mutates status, never merges/pushes
+    anything. The ONLY action beyond flagging is ONE ``spawn-issue --auto``
+    per (issue, done_ts) episode — persistence-gated (flagged on a PRIOR
+    interval), day-capped fleet-wide
+    (``EPM_COMPLETED_UNMERGED_RESPAWNS_PER_DAY``, default 3), suppressed
+    when a live session owns the issue, daemon-gated (the owner probe fails
+    toward skip), auth-outage-gated (#1027); kill switch
+    ``EPM_DISABLE_COMPLETED_UNMERGED_RESPAWN``. The FLAG half stays
+    daemon-INDEPENDENT (marker posts go via the task.py subprocess, like
+    :func:`stale_blocked_flag_pass`); only the respawn probe needs the
+    daemon."""
     if not _completed_unmerged_enabled():
         print("  completed-unmerged: disabled via EPM_DISABLE_COMPLETED_UNMERGED_PASS; skipping")
         return
@@ -6776,6 +8537,7 @@ def completed_unmerged_pass(dry_run: bool, now: float | None = None) -> None:
         # crashing sweep is bounded to one attempt per interval, not one
         # per 10-min tick.
         _save_completed_unmerged_state(state, dry_run)
+        day_key = time.strftime("%Y-%m-%d", time.gmtime(now))  # #1653 fleet day-cap key
         raw_eps = state.get("episodes")
         episodes: dict = raw_eps if isinstance(raw_eps, dict) else {}
         state["episodes"] = episodes
@@ -6838,8 +8600,18 @@ def completed_unmerged_pass(dry_run: bool, now: float | None = None) -> None:
                     dry_run,
                 )
                 continue
+            # #1653 persistence signal, read from the PRE-flag entry (the
+            # flag emitter rewrites episodes[key] below): flagged on a PRIOR
+            # interval for the SAME done_ts — the hourly self-gate makes
+            # this a free >=~1h flag-to-respawn window, on top of the 2h
+            # done-grace (a human already pushed at episode open gets an
+            # hour to intervene).
+            prior_flagged = entry.get("done_ts") == done_ts and entry.get("flagged") is True
             _completed_unmerged_flag(
                 issue, done_ts, mf_ts, verdict, detail, episodes, now, realert_s, dry_run
+            )
+            _completed_unmerged_maybe_respawn(
+                issue, done_ts, verdict, episodes, state, now, day_key, prior_flagged, dry_run
             )
         # Episodes whose task left the candidate window entirely (events
         # mtime past the lookback) never reach the predicate above — prune
@@ -6851,6 +8623,1920 @@ def completed_unmerged_pass(dry_run: bool, now: float | None = None) -> None:
         _save_completed_unmerged_state(state, dry_run)
     except Exception as exc:  # top-level fail-soft: never take down the tick
         print(f"  completed-unmerged: pass failed (fail-soft): {exc}", file=sys.stderr)
+
+
+# ─── Partial-bundle reconciliation pass (task #1704) ─────────────────────────
+#
+# WHY: the GCP EXIT-trap crash-persist path (backends/gcp.py
+# _eps_persist_diagnostics) uploads partial artifacts to
+# ``superkaiba1/explore-persona-space-data`` under
+# ``issue<N>_partial/<attempt_id>/`` on every non-zero rc — but nothing ever
+# reads those bundles back, so a bundle carrying a COMPLETED result (whose
+# workload's own upload path never fired) is indistinguishable from a
+# genuinely-partial persist. This pass is the safety-net-that-reads-the-net:
+# it lists the ``issue<N>_partial/`` prefixes, decides which bundles carry a
+# completed result, and escalates any whose payload paths have no committed
+# counterpart in git under ``eval_results/issue_<N>/``. ESCALATE-ONLY: NEVER
+# auto-commits (a partial result silently landing in ``eval_results/`` is
+# worse than the current loss), NEVER deletes a bundle (crash forensics are
+# durable record), NEVER posts task markers (the verdict-disagree /
+# root-draft precedent — this flag's consumer is a human, not the next
+# dispatch).
+
+DATA_REPO_PARTIAL_BUNDLE = "superkaiba1/explore-persona-space-data"
+# Hourly self-gate matches registry-drift/completed-unmerged precedent —
+# a strand lives on hours-to-days-to-weeks; every-10-min tick is 6x the
+# cost of scoped HF listings for < 50 min better detection latency. Env
+# EPM_PARTIAL_BUNDLE_INTERVAL_HOURS, read at CALL time; lo=0.0 lets a
+# live smoke force a run.
+PARTIAL_BUNDLE_INTERVAL_HOURS = 1.0
+# Lookback for the candidate gate's events-mtime filter (registry rows
+# with events touched within this window). ~113 recently-touched completed
+# tasks measured live 2026-07-20 under the same filter; the wider
+# non-`proposed` set here fits the ~50-200 assumption per plan §A4.
+PARTIAL_BUNDLE_LOOKBACK_H = 168.0
+# Re-alert TTL — weekly matches the registry-drift precedent for a
+# persistent, un-remediable-until-user condition.
+PARTIAL_BUNDLE_REALERT_HOURS = 168.0
+# Per-pass cap on scoped HF listings (protects against a large candidate
+# universe overrunning the org 2500-req/5-min HF quota). Overflow rolls
+# to the next interval via a persisted cursor.
+PARTIAL_BUNDLE_LISTING_CAP = 50
+
+
+def _partial_bundle_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_PARTIAL_BUNDLE_AUDIT`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_registry_drift_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_PARTIAL_BUNDLE_AUDIT", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _partial_bundle_sidecar_path() -> Path:
+    """DEDICATED partial-bundle event stream (own stream for clean grep —
+    the registry-drift / root-draft sidecar precedent). The escalate-only
+    contract makes this the durable audit trail."""
+    return PROJECT_ROOT / ".claude" / "cache" / "partial-bundle-events.jsonl"
+
+
+def _partial_bundle_state_path() -> Path:
+    """Singleton throttle+dedup+cursor state (deliberately NOT a per-issue
+    GC target); ``-observer.json`` suffix mirrors the sibling
+    ``registry-drift-observer.json`` / ``root-draft-observer.json``."""
+    return AUTONOMOUS_REGISTRY_DIR / "partial-bundle-observer.json"
+
+
+def _load_partial_bundle_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards (mirrors :func:`_load_registry_drift_state`)."""
+    path = _partial_bundle_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_partial_bundle_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write of the partial-bundle state (fail-soft;
+    mirrors :func:`_save_registry_drift_state`); ``dry_run`` performs zero
+    writes."""
+    if dry_run:
+        n_alerted = len(state.get("alerted") or {})
+        print(f"  [dry-run] would save partial-bundle state ({n_alerted} alert(s))")
+        return
+    dest = _partial_bundle_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  partial-bundle: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_partial_bundle_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the partial-bundle sidecar (fail-soft). A
+    ``ts`` is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_registry_drift_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append partial-bundle sidecar row: {line[:160]}")
+        return
+    dest = _partial_bundle_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  partial-bundle: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _classify_bundle_completeness(bundle_files: list[str]) -> str:
+    """Pure classifier over the FULL Hub-relative paths of one bundle
+    (files under ``issue<N>_partial/<attempt_id>/``) — see plan §4e.
+
+    Returns one of:
+      * ``"complete"`` — ``crash_persist_transcript.log`` present AND at
+        least one ``eval_results_issue_<N>/*`` file present (the primary
+        completeness signal — transcript is staged LAST in the FINAL
+        bundle commit; its presence proves the persist ran end to end);
+      * ``"workload_ts_backstop"`` — transcript ABSENT but a
+        ``workload_<ts>.log`` timestamped copy AND at least one
+        ``eval_results_issue_<N>/*`` are present (a WEAKER signal — the
+        transcript upload can lag the final bundle commit; the flag rides
+        as ``completeness_signal`` on the sidecar row + push so the
+        operator can weigh backstop vs primary firings);
+      * ``"no_result_payload"`` — transcript present, but zero
+        ``eval_results_issue_<N>/*`` files (a KILLED-EARLY crash before
+        any workload output; nothing to flag);
+      * ``"persist_killed"`` — neither transcript NOR ``workload_<ts>.log``
+        (persist ran out of time / was killed mid-upload; nothing is
+        recoverable via a git comparison).
+
+    v2 open item (recorded here, not v1): a
+    ``killed_mid_persist_with_partial_result`` band — a bundle with
+    workload_ts absent but result payload present — is currently absorbed
+    into ``persist_killed`` and silently skipped. See plan Phase-2
+    Alternatives concern; add as a WEAKER band with its own sidecar/push
+    if the observed rate of "genuinely stranded" cases within
+    ``persist_killed`` justifies it.
+    """
+    # TODO(v2): consider a `killed_mid_persist_with_partial_result` band for
+    # bundles with result payload but neither transcript nor workload_ts —
+    # currently classified `persist_killed` and silently skipped.
+    basenames = {Path(f).name for f in bundle_files}
+    has_transcript = "crash_persist_transcript.log" in basenames
+    has_workload_ts = any(re.match(r"workload_\d{8}T\d{6}Z\.log$", b) for b in basenames)
+    has_result = any("/eval_results_issue_" in f for f in bundle_files)
+    if has_transcript:
+        return "complete" if has_result else "no_result_payload"
+    if has_workload_ts and has_result:
+        return "workload_ts_backstop"
+    return "persist_killed"
+
+
+def _extract_bundle_result_paths(issue: int, attempt_id: str, files: list[str]) -> list[str]:
+    """Return bundle-relative paths (basenames + subdirs) under
+    ``issue<N>_partial/<attempt_id>/eval_results_issue_<N>/`` — the
+    consumer-view of what committed ``eval_results/issue_<N>/{P}`` a
+    live-good bundle claims. Sorted for deterministic ``missing_paths``
+    reporting."""
+    prefix = f"issue{issue}_partial/{attempt_id}/eval_results_issue_{issue}/"
+    return sorted(f[len(prefix) :] for f in files if f.startswith(prefix))
+
+
+def _committed_eval_paths(issue: int) -> set[str] | None:
+    """One ``git ls-tree -r --name-only HEAD -- eval_results/issue_<N>/``
+    from ``PROJECT_ROOT`` (main checkout, NOT a transient worktree HEAD —
+    semantic contract is "landed on main"; the sibling
+    ``root_draft_pass._enumerate_root_draft_paths`` idiom).
+    ``--no-optional-locks`` is read-only: never takes the shared root's
+    index lock. Returns ``None`` on ANY git failure — the caller emits
+    one ``partial-bundle-git-error`` sidecar row and continues to the
+    next issue.
+
+    Bundle-relative paths (returned by
+    :func:`_extract_bundle_result_paths`) are compared against these
+    committed paths STRIPPED of the ``eval_results/issue_<N>/`` prefix,
+    so both live in the same relative-path space."""
+    try:
+        out = subprocess.run(
+            [
+                "git",
+                "--no-optional-locks",
+                "-C",
+                str(PROJECT_ROOT),
+                "ls-tree",
+                "-r",
+                "--name-only",
+                "HEAD",
+                "--",
+                f"eval_results/issue_{issue}/",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (subprocess.SubprocessError, OSError) as exc:
+        print(
+            f"  partial-bundle: git ls-tree failed for issue {issue}: {exc}",
+            file=sys.stderr,
+        )
+        return None
+    if out.returncode != 0:
+        print(
+            f"  partial-bundle: git ls-tree rc={out.returncode} for issue {issue}: "
+            f"{(out.stderr or '').strip()[:200]}",
+            file=sys.stderr,
+        )
+        return None
+    prefix = f"eval_results/issue_{issue}/"
+    result: set[str] = set()
+    for line in out.stdout.split("\n"):
+        line = line.strip()
+        if line.startswith(prefix):
+            result.add(line[len(prefix) :])
+    return result
+
+
+def _partial_bundle_candidate_issues(now: float, lookback_s: float) -> list[int]:
+    """REGISTRY-snapshot enumeration of candidate issues — non-``proposed``
+    status (an explicit negation, per plan §4c; a task can carry a
+    partial-crash bundle at any active/terminal-ish status except
+    ``proposed`` where no compute has ever run) with ``events.jsonl``
+    mtime within ``lookback_s``. Sorted ascending by issue id for
+    deterministic cursor progression. Mirrors
+    :func:`_completed_unmerged_candidates` in enumeration shape."""
+    from explore_persona_space.task_workflow import registry_path
+
+    try:
+        reg = json.loads(registry_path().read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"  partial-bundle: registry read failed: {exc}", file=sys.stderr)
+        return []
+    tasks = reg.get("tasks") if isinstance(reg, dict) else None
+    if not isinstance(tasks, dict):
+        print("  partial-bundle: registry has no tasks map; skipping", file=sys.stderr)
+        return []
+    reg_root = registry_path().parent.parent
+    out: list[int] = []
+    for id_str, meta in tasks.items():
+        if not isinstance(meta, dict):
+            continue
+        if meta.get("status") == "proposed":
+            continue  # explicit negation per §4c
+        try:
+            issue = int(id_str)
+        except (TypeError, ValueError):
+            continue
+        rel = meta.get("path")
+        if not isinstance(rel, str) or not rel:
+            continue
+        events = reg_root / rel / "events.jsonl"
+        try:
+            mtime = events.stat().st_mtime
+        except OSError:
+            continue
+        if now - mtime > lookback_s:
+            continue
+        out.append(issue)
+    out.sort()
+    return out
+
+
+def _partial_bundle_scoped_listing(api, issue: int) -> list[str] | None:
+    """One ``retry_transient``-wrapped ``list_hf_files_under_path`` call
+    per candidate — prefix-scoped (never a bare full-repo listing on
+    the ~1M-file data repo, #833). Returns ``[]`` if the prefix does
+    not exist (Assumption A2); returns ``None`` on a retry-exhausted
+    Hub failure (caller logs + one ``partial-bundle-hub-error``
+    sidecar row and continues to the next issue — fail-soft PER ISSUE,
+    never per pass)."""
+    from explore_persona_space.orchestrate.hub import (
+        list_hf_files_under_path,
+        retry_transient,
+    )
+
+    prefix = f"issue{issue}_partial"
+    try:
+        return retry_transient(
+            lambda: list_hf_files_under_path(
+                api,
+                DATA_REPO_PARTIAL_BUNDLE,
+                prefix,
+                repo_type="dataset",
+                revision="main",
+            ),
+            what=f"list_hf_files_under_path({DATA_REPO_PARTIAL_BUNDLE}, {prefix})",
+        )
+    except Exception as exc:
+        print(
+            f"  partial-bundle: HF listing failed for issue {issue}: {exc}",
+            file=sys.stderr,
+        )
+        return None
+
+
+def _partial_bundle_reconcile_one_issue(
+    api,
+    issue: int,
+    new_alerted: dict,
+    now: float,
+    realert_h: float,
+    dry_run: bool,
+) -> bool:
+    """Per-issue reconciliation body of :func:`partial_bundle_pass` (task #1704).
+
+    Lists ``issue<N>_partial/`` on the HF data repo, groups by ``attempt_id``,
+    classifies each bundle, diffs the extracted bundle-relative eval paths
+    against the committed ``eval_results/issue_<N>/`` tree, and emits ONE
+    sidecar row + ONE deduped ``_telegram_push`` per newly-flagged
+    (issue, attempt_id, band). Mutates ``new_alerted`` in place with the
+    per-key first-flagged / last-alert timestamps. Returns True when any
+    (attempt_id, band) fired this call.
+
+    ESCALATE-ONLY under the same contract as the outer pass: NEVER
+    auto-commits, NEVER deletes a bundle, NEVER posts task markers. Every
+    Hub / git failure is caught by the caller's fail-soft envelope; this
+    helper writes ``partial-bundle-hub-error`` / ``partial-bundle-git-error``
+    sidecar rows for issue-scoped failures and continues to the next
+    (issue, attempt_id).
+    """
+    files = _partial_bundle_scoped_listing(api, issue)
+    if files is None:
+        _append_partial_bundle_sidecar(
+            {"kind": "partial-bundle-hub-error", "issue": issue},
+            dry_run,
+        )
+        return False
+    if not files:
+        return False  # no bundle for this issue (A2)
+    # Group by attempt_id — second path segment of
+    # `issue<N>_partial/<attempt_id>/...`. Malformed / short
+    # paths are skipped with a stderr debug line.
+    by_attempt: dict[str, list[str]] = {}
+    for f in files:
+        parts = f.split("/", 2)
+        if len(parts) >= 3:
+            by_attempt.setdefault(parts[1], []).append(f)
+        else:
+            print(
+                f"  partial-bundle: skipping malformed path (issue {issue}): {f}",
+                file=sys.stderr,
+            )
+    if not by_attempt:
+        return False
+
+    committed = _committed_eval_paths(issue)
+    if committed is None:
+        _append_partial_bundle_sidecar(
+            {"kind": "partial-bundle-git-error", "issue": issue},
+            dry_run,
+        )
+        return False
+
+    flagged_any = False
+    for att_id, att_files in sorted(by_attempt.items()):
+        cls = _classify_bundle_completeness(att_files)
+        if cls in ("no_result_payload", "persist_killed"):
+            # KILLED-EARLY or KILLED-MID-PERSIST — nothing to
+            # reconcile against git; one debug log line per
+            # skip so operators can spot the class.
+            print(f"  partial-bundle: issue={issue} att={att_id} cls={cls} — skipping")
+            continue
+        bundle_paths = _extract_bundle_result_paths(issue, att_id, att_files)
+        missing = [p for p in bundle_paths if p not in committed]
+        if not missing:
+            continue
+
+        key = f"{issue}|{att_id}|stranded_eval_results"
+        entry = new_alerted.get(key)
+        last_alert = entry.get("last_alert_ts") if isinstance(entry, dict) else None
+        dedup = isinstance(last_alert, int | float) and (now - last_alert) <= realert_h * 3600.0
+        if dedup:
+            new_alerted[key] = {
+                **(entry if isinstance(entry, dict) else {}),
+                "last_alert_ts": last_alert,
+            }
+            continue
+        new_alerted[key] = {
+            "first_flagged_ts": (
+                entry.get("first_flagged_ts", now) if isinstance(entry, dict) else now
+            ),
+            "last_alert_ts": now,
+        }
+        flagged_any = True
+        print(
+            f"  partial-bundle: STRANDED issue={issue} att={att_id} "
+            f"missing={len(missing)} signal={cls}"
+        )
+        _append_partial_bundle_sidecar(
+            {
+                "kind": "partial-bundle-stranded",
+                "issue": issue,
+                "attempt_id": att_id,
+                "band": "stranded_eval_results",
+                "completeness_signal": cls,
+                "n_missing": len(missing),
+                "missing_paths": missing[:20],
+                "bundle_hub_prefix": (f"issue{issue}_partial/{att_id}/eval_results_issue_{issue}/"),
+            },
+            dry_run,
+        )
+        # Thread the completeness signal into the push text
+        # verbatim so the operator sees the weaker
+        # `workload_ts_backstop` band at a glance (Phase-2
+        # Alternatives / Statistics concern).
+        _telegram_push(
+            f"partial-bundle STRANDED (issue #{issue}, att {att_id}, "
+            f"{len(missing)} eval JSONs on HF with no git counterpart; "
+            f"completeness_signal={cls}). Investigate: `hf_hub_download "
+            f"--repo-type dataset {DATA_REPO_PARTIAL_BUNDLE} "
+            f"issue{issue}_partial/{att_id}/...` then verify + commit "
+            f"via #{issue}'s clean-result path. NEVER auto-committed; "
+            f"NEVER deleted.",
+            dry_run,
+        )
+    return flagged_any
+
+
+def partial_bundle_pass(dry_run: bool) -> bool:
+    """ESCALATE-ONLY reconciliation of HF ``issue<N>_partial/<attempt_id>/``
+    crash-persist bundles against the committed ``eval_results/issue_<N>/``
+    tree in git (task #1704; motivating incident #1345 — the base-model
+    story leg's eval JSONs were persisted to
+    ``issue1345_partial/<attempt_id>/eval_results_issue_1345/`` via the
+    GCP EXIT-trap crash-persist path, but the workload's own upload path
+    never fired, so nothing ever reads those bundles back and a bundle
+    carrying a COMPLETED result is indistinguishable from a
+    genuinely-partial one without this pass).
+
+    Sidecar rows + ONE deduped ``_telegram_push`` per (issue, attempt_id,
+    band); NEVER auto-commits bundle contents, NEVER deletes a bundle,
+    NEVER posts task markers (the ``verdict_disagree_pass`` posture — the
+    escalation target is a HUMAN, not the next dispatch;
+    :func:`_post_progress_marker` is deliberately NOT called anywhere in
+    this pass).
+
+    Daemon-independent (HF listing + one ``git ls-tree`` per flagged
+    issue; marker posts NEVER go via the ``task.py`` subprocess). Hourly
+    self-gate throttled, per-pass listing-capped with a persisted cursor
+    so tail-of-list issues never starve. Returns True when any (issue,
+    attempt_id, band) fired this run. The per-issue body is extracted to
+    :func:`_partial_bundle_reconcile_one_issue`."""
+    if not _partial_bundle_enabled():
+        print("  partial-bundle: disabled via EPM_DISABLE_PARTIAL_BUNDLE_AUDIT; skipping")
+        return False
+    try:
+        now = time.time()
+        interval_h = _env_float(
+            "EPM_PARTIAL_BUNDLE_INTERVAL_HOURS",
+            PARTIAL_BUNDLE_INTERVAL_HOURS,
+            lo=0.0,
+            hi=720.0,
+        )
+        realert_h = _env_float(
+            "EPM_PARTIAL_BUNDLE_REALERT_HOURS",
+            PARTIAL_BUNDLE_REALERT_HOURS,
+            lo=1.0,
+            hi=2160.0,
+        )
+        lookback_h = _env_float(
+            "EPM_PARTIAL_BUNDLE_LOOKBACK_H",
+            PARTIAL_BUNDLE_LOOKBACK_H,
+            lo=1.0,
+            hi=720.0,
+        )
+        cap = int(
+            _env_float(
+                "EPM_PARTIAL_BUNDLE_LISTING_CAP",
+                float(PARTIAL_BUNDLE_LISTING_CAP),
+                lo=1.0,
+                hi=500.0,
+            )
+        )
+        state = _load_partial_bundle_state()
+        last = state.get("last_run_ts")
+        if isinstance(last, int | float) and (now - last) < interval_h * 3600.0:
+            return False  # throttled — hourly self-gate
+        state["last_run_ts"] = now
+        # Stamp the ATTEMPT before collecting: a crashing pass is bounded
+        # to one error sidecar row per throttle interval instead of
+        # spamming every 10-min tick (registry-drift precedent).
+        _save_partial_bundle_state(state, dry_run)
+
+        from huggingface_hub import HfApi
+
+        api = HfApi()
+        candidates = _partial_bundle_candidate_issues(now, lookback_s=lookback_h * 3600.0)
+        # Cursor-resume — bound each pass to `cap` listings; overflow
+        # rolls to the next interval so tail-of-list issues never
+        # starve. Reset to 0 when the candidate set shrinks below the
+        # persisted cursor (avoid stale cursor beyond bounds).
+        raw_cursor = state.get("enum_cursor_idx")
+        cursor = int(raw_cursor) if isinstance(raw_cursor, int | float) else 0
+        if cursor >= len(candidates):
+            cursor = 0
+        window = candidates[cursor : cursor + cap]
+        next_cursor = (cursor + cap) if (cursor + cap) < len(candidates) else 0
+
+        raw_alerted = state.get("alerted")
+        alerted: dict = raw_alerted if isinstance(raw_alerted, dict) else {}
+        new_alerted: dict = dict(alerted)
+        flagged_any = False
+
+        for issue in window:
+            if _partial_bundle_reconcile_one_issue(
+                api,
+                issue,
+                new_alerted,
+                now,
+                realert_h,
+                dry_run,
+            ):
+                flagged_any = True
+
+        state["alerted"] = new_alerted
+        state["enum_cursor_idx"] = next_cursor
+        state["enum_cursor_ts"] = now
+        _save_partial_bundle_state(state, dry_run)
+        return flagged_any
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  partial-bundle: pass failed (fail-soft): {exc}", file=sys.stderr)
+        _append_partial_bundle_sidecar(
+            {"kind": "partial-bundle-error", "error": str(exc)[:500]},
+            dry_run,
+        )
+        return False
+
+
+# ─── Codex quota-outage alert pass (task #1691) ──────────────────────────────
+#
+# ESCALATE-ONLY audit sibling of the #1204 pre-spawn sentinel check. #1204
+# skips codex-* composer spawns while the sentinel is live; this pass surfaces
+# a LONG outage (>= threshold hours since detected_at_iso) with ONE deduped
+# push per episode + a weekly re-alert while the outage persists. Read-only
+# w.r.t. the sentinel (lifecycle stays with codex_task.py, per the task body's
+# Scope constraint); NEVER posts task markers (fleet-level condition, no
+# single task owns it — verdict_disagree precedent); NEVER stops sessions.
+# Live outage at compose time: detected_at_iso=2026-07-08T08:23:26+00:00 ->
+# until_iso=2026-08-06T13:26:00+00:00, ~29d total, ~17d elapsed, ~12d
+# remaining. On merge this pass alerts THIS outage on its first watcher tick.
+
+# Hourly self-gate matches completed_unmerged (sub-daily is required so a
+# fresh outage detected 30 min after the last read doesn't wait ~23h to fire,
+# but 10-min-tick cadence is unnecessary since the alert threshold is 24h).
+# The count only enters the push text; a slightly stale count between the
+# hourly refresh and the next daily/weekly push is fine.
+CODEX_OUTAGE_INTERVAL_HOURS = 1.0
+# First-alert threshold since detected_at_iso — 24h gives a full working day
+# of "give the outage a chance to self-resolve" before paging the operator on
+# a FUTURE outage that starts within a day. Env-overridable per plan §11.
+CODEX_OUTAGE_ALERT_HOURS = 24.0
+# Weekly re-alert of a persistent outage (mirrors REGISTRY_DRIFT_REALERT_HOURS
+# — both reflect long-lived slowly-changing states where daily re-pushes
+# would be noise).
+CODEX_OUTAGE_REALERT_HOURS = 168.0
+# Count-scan lookback cap (30d; matches the sentinel's max plausible window).
+CODEX_OUTAGE_LOOKBACK_H_CAP = 720.0
+# Two-sided plausibility window upper bound — byte-parity with the helper's
+# QUOTA_MAX_PLAUSIBLE_SECS (codex_task.py:295) so a hand-seeded or corrupt
+# far-future timestamp cannot false-fire this pass any more than it can wedge
+# composer spawning off permanently.
+CODEX_OUTAGE_MAX_PLAUSIBLE_SECS = 45 * 24 * 3600
+# Bounded per-file tail read for the events.jsonl skip-count scan. 256 KB
+# matches the transcript-tail read that other passes use for cheap
+# fixed-cost audits over the REGISTRY task set; an overflow means "count is
+# a lower bound" and the push text degrades to ">=N".
+CODEX_OUTAGE_EVENTS_TAIL_BYTES = 256 * 1024
+# Canonical substring appearing in the #1204 pre-spawn skip note. Defined in
+# CLAUDE.md line 119 (the pre-spawn check block's post-marker note text);
+# orchestrators following that recipe post `epm:progress` notes carrying
+# exactly this substring. Loose match is intentional — the count is
+# illustrative, not authoritative.
+CODEX_OUTAGE_SKIP_PHRASE = b"codex composers skipped"
+
+
+def _codex_outage_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_CODEX_OUTAGE_PASS`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_registry_drift_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_CODEX_OUTAGE_PASS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _codex_outage_sentinel_path() -> Path:
+    """The #1204 sentinel file the codex_task helper writes. Overridable via
+    ``EPM_CODEX_QUOTA_SENTINEL_PATH`` (matches the CLAUDE.md pre-spawn check's
+    own env-override name — tests set this to a tmp path)."""
+    override = os.environ.get("EPM_CODEX_QUOTA_SENTINEL_PATH")
+    if override:
+        return Path(override)
+    return PROJECT_ROOT / ".claude" / "cache" / "codex-quota-exhausted-until"
+
+
+def _codex_outage_sidecar_path() -> Path:
+    """DEDICATED codex-outage event stream (own stream for clean grep — the
+    root-draft / registry-drift sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "codex-outage-events.jsonl"
+
+
+def _codex_outage_state_path() -> Path:
+    """Singleton throttle+dedup state (deliberately NOT a per-issue GC
+    target); ``-observer.json`` suffix mirrors the sibling
+    ``registry-drift-observer.json`` / ``triage-observer.json`` /
+    ``root-draft-observer.json``."""
+    return AUTONOMOUS_REGISTRY_DIR / "codex-outage-observer.json"
+
+
+def _load_codex_outage_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards (mirrors :func:`_load_registry_drift_state`)."""
+    path = _codex_outage_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_codex_outage_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write of the codex-outage throttle/dedup state
+    (fail-soft; mirrors :func:`_save_registry_drift_state`); ``dry_run``
+    performs zero writes."""
+    if dry_run:
+        print(
+            "  [dry-run] would save codex-outage state "
+            f"(episode={state.get('episode_detected_at_iso')})"
+        )
+        return
+    dest = _codex_outage_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  codex-outage: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_codex_outage_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the codex-outage sidecar (fail-soft). A ``ts``
+    is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_registry_drift_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append codex-outage sidecar row: {line[:160]}")
+        return
+    dest = _codex_outage_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  codex-outage: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _codex_outage_read_sentinel(now: float) -> dict | None:
+    """Read the #1204 sentinel with the SAME two-sided plausibility window
+    the pre-spawn check enforces (``now < until_unix <= now + 45 d``).
+    Returns a dict with ``until_unix, until_iso, detected_at_iso,
+    detected_at_unix`` on a LIVE sentinel; ``None`` on missing / unreadable /
+    corrupt / expired / far-future (FAIL-OPEN: no alert, no crash — mirrors
+    the ``_quota_sentinel_active`` semantics in codex_task.py). NEVER mutates
+    the file (this is the READ-ONLY audit sibling of the pre-spawn check;
+    lifecycle stays with the helper)."""
+    path = _codex_outage_sentinel_path()
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    try:
+        until_unix = float(data["until_unix"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    # Two-sided plausibility window — #1204 parity (never fires on a corrupt
+    # far-future or already-expired sentinel).
+    if not (now < until_unix <= now + CODEX_OUTAGE_MAX_PLAUSIBLE_SECS):
+        return None
+    detected_at_iso = data.get("detected_at_iso")
+    if not isinstance(detected_at_iso, str):
+        return None
+    try:
+        detected_at_unix = datetime.fromisoformat(
+            detected_at_iso.replace("Z", "+00:00")
+        ).timestamp()
+    except ValueError:
+        return None
+    return {
+        "until_unix": until_unix,
+        "until_iso": str(data.get("until_iso") or until_unix),
+        "detected_at_iso": detected_at_iso,
+        "detected_at_unix": detected_at_unix,
+    }
+
+
+def _codex_outage_bounded_skip_count(detected_at_unix: float) -> tuple[int | None, bool]:
+    """Bounded REGISTRY-scoped scan of ``events.jsonl`` files for the
+    ``codex composers skipped`` phrase (the canonical #1204 pre-spawn skip
+    note text, defined in CLAUDE.md line 119). Returns
+    ``(count, overflowed)`` on success where ``overflowed`` is ``True`` iff
+    at least one file was TAIL-truncated (count is then a lower bound);
+    ``(None, False)`` on any enumerator/read failure (the push text then
+    prints "count not available" rather than fabricating a 0).
+
+    Enumeration follows the sibling ``triage_observer_pass`` convention
+    (scripts/autonomous_session_watch.py:5654-5665) — public
+    ``task_workflow.registry_path()`` + a single ``json.loads(...read_text())``
+    (never a filesystem walk of ``tasks/*/*/events.jsonl``). Bounds:
+    (a) per-file mtime pre-filter drops files older than
+    ``detected_at_unix``; (b) per-file tail read is capped at
+    ``CODEX_OUTAGE_EVENTS_TAIL_BYTES`` (256 KB). Loose substring match is
+    intentional (the phrase originates in CLAUDE.md and is copied by
+    orchestrators; the count is illustrative, not authoritative)."""
+    try:
+        from explore_persona_space.task_workflow import registry_path
+
+        reg = json.loads(registry_path().read_text())
+    except Exception as exc:  # pragma: no cover - fail-soft enumerator guard
+        print(f"  codex-outage: registry enumerator failed: {exc}", file=sys.stderr)
+        return (None, False)
+    tasks = reg.get("tasks") if isinstance(reg, dict) else None
+    if not isinstance(tasks, dict):
+        return (None, False)
+    reg_root = registry_path().parent.parent
+    count = 0
+    overflowed = False
+    for _tid_raw, meta in tasks.items():
+        try:
+            rel = None
+            if isinstance(meta, dict):
+                rel = meta.get("path")
+            if not isinstance(rel, str):
+                continue
+            events_path = reg_root / rel / "events.jsonl"
+            if not events_path.is_file():
+                continue
+            try:
+                st = events_path.stat()
+            except OSError:
+                continue
+            if st.st_mtime < detected_at_unix:
+                continue
+            # Bounded tail read: seek to (size - cap), read to end. Handles
+            # short files transparently (seek to 0). Set overflowed when the
+            # file was larger than the cap (count is then a lower bound).
+            try:
+                with open(events_path, "rb") as fh:
+                    if st.st_size > CODEX_OUTAGE_EVENTS_TAIL_BYTES:
+                        fh.seek(st.st_size - CODEX_OUTAGE_EVENTS_TAIL_BYTES)
+                        overflowed = True
+                    tail = fh.read()
+            except OSError:
+                continue
+            count += tail.count(CODEX_OUTAGE_SKIP_PHRASE)
+        except Exception:  # pragma: no cover - per-file skip on any exception
+            continue
+    return (count, overflowed)
+
+
+def decide_codex_outage_alert(
+    sentinel: dict | None,
+    state: dict,
+    now: float,
+    threshold_s: float,
+    realert_s: float,
+) -> tuple[bool, str]:
+    """Pure fire decision. Returns ``(fire, reason)``.
+
+    ``fire=True`` iff:
+      (a) sentinel is LIVE (not None), AND
+      (b) age = ``now - sentinel['detected_at_unix']`` >= ``threshold_s``, AND
+      (c) EITHER (i) episode key CHANGED — new outage since last state
+              OR (ii) ``last_alert_ts`` is None (first alert of this episode)
+              OR (iii) ``now - last_alert_ts > realert_s``
+                       (weekly re-alert of ongoing episode).
+
+    Reasons: ``no-live-sentinel`` / ``below-threshold`` / ``new-episode`` /
+    ``first-alert`` / ``weekly-realert`` / ``within-realert-ttl``. Corrupt
+    state fields degrade to fire-as-if-unalerted (the ``isinstance`` guards —
+    the registry-drift corrupt-state contract).
+    """
+    if sentinel is None:
+        return (False, "no-live-sentinel")
+    detected_at_unix = sentinel.get("detected_at_unix")
+    if not isinstance(detected_at_unix, int | float):
+        return (False, "no-live-sentinel")
+    if (now - detected_at_unix) < threshold_s:
+        return (False, "below-threshold")
+    prev_key = state.get("episode_detected_at_iso")
+    cur_key = sentinel.get("detected_at_iso")
+    if not isinstance(prev_key, str) or prev_key != cur_key:
+        return (True, "new-episode")
+    last_alert = state.get("last_alert_ts")
+    if not isinstance(last_alert, int | float):
+        return (True, "first-alert")
+    if (now - last_alert) > realert_s:
+        return (True, "weekly-realert")
+    return (False, "within-realert-ttl")
+
+
+def codex_outage_pass(dry_run: bool) -> bool:
+    """ESCALATE-ONLY pass (#1691): alert once per Codex quota-outage episode
+    when the sentinel has been live >= ``EPM_CODEX_OUTAGE_ALERT_HOURS`` since
+    ``detected_at_iso``, re-alert weekly while it persists, and clear the
+    episode when the sentinel disappears.
+
+    NEVER mutates the sentinel (lifecycle stays with codex_task.py, per the
+    task body's Scope constraint). NEVER posts task markers (the outage is
+    fleet-level, no single task owns it — verdict_disagree precedent).
+    Sidecar rows + Telegram push via the shared :func:`_telegram_push`
+    helper. Daemon-INDEPENDENT (pure filesystem + registry reads).
+
+    Returns True when a push fired this run."""
+    if not _codex_outage_enabled():
+        print("  codex-outage: disabled via EPM_DISABLE_CODEX_OUTAGE_PASS; skipping")
+        return False
+    try:
+        now = time.time()
+        interval_h = _env_float(
+            "EPM_CODEX_OUTAGE_INTERVAL_HOURS",
+            CODEX_OUTAGE_INTERVAL_HOURS,
+            lo=0.0,
+            hi=24.0,
+        )
+        alert_h = _env_float(
+            "EPM_CODEX_OUTAGE_ALERT_HOURS",
+            CODEX_OUTAGE_ALERT_HOURS,
+            lo=1.0,
+            hi=720.0,
+        )
+        realert_h = _env_float(
+            "EPM_CODEX_OUTAGE_REALERT_HOURS",
+            CODEX_OUTAGE_REALERT_HOURS,
+            lo=1.0,
+            hi=720.0,
+        )
+        state = _load_codex_outage_state()
+        last = state.get("last_run_ts")
+        if isinstance(last, int | float) and (now - last) < interval_h * 3600.0:
+            return False  # throttled — silent (would fire ~6x/hour otherwise)
+        # Stamp the attempt BEFORE reading so any exception below is bounded
+        # to one skipped hour instead of repeating every 10-min tick.
+        state["last_run_ts"] = now
+        _save_codex_outage_state(state, dry_run)
+
+        sentinel = _codex_outage_read_sentinel(now)
+        if sentinel is None:
+            # Recovered? Clear the episode key so a later outage re-fires as
+            # a new episode. Missing/corrupt/expired all land here (fail-open
+            # per _codex_outage_read_sentinel's contract) — the clear is safe
+            # because a subsequent LIVE sentinel with a fresh detected_at_iso
+            # is always treated as a new episode by decide_codex_outage_alert.
+            if state.get("episode_detected_at_iso"):
+                print("  codex-outage: recovered — sentinel absent/expired")
+                _save_codex_outage_state(
+                    {
+                        **state,
+                        "episode_detected_at_iso": None,
+                        "first_alert_ts": None,
+                        "last_alert_ts": None,
+                        "last_count": None,
+                        "last_count_ts": None,
+                    },
+                    dry_run,
+                )
+            return False
+
+        fire, reason = decide_codex_outage_alert(
+            sentinel, state, now, alert_h * 3600.0, realert_h * 3600.0
+        )
+        # Refresh the count only on a firing tick (bounds cost — non-firing
+        # hourly ticks stay ~free of the events.jsonl scan).
+        skipped_count: int | None = None
+        overflowed = False
+        if fire:
+            skipped_count, overflowed = _codex_outage_bounded_skip_count(
+                sentinel["detected_at_unix"]
+            )
+
+        elapsed_h = (now - sentinel["detected_at_unix"]) / 3600.0
+        remaining_h = (sentinel["until_unix"] - now) / 3600.0
+        _append_codex_outage_sidecar(
+            {
+                "kind": "codex-outage",
+                "episode_detected_at_iso": sentinel["detected_at_iso"],
+                "until_iso": sentinel["until_iso"],
+                "elapsed_hours": round(elapsed_h, 1),
+                "remaining_hours": round(remaining_h, 1),
+                "skipped_rounds": skipped_count,  # int or None
+                "skipped_rounds_overflowed": overflowed,
+                "fire_reason": reason,
+                # `pushed` records the fire DECISION (dedup bookkeeping),
+                # not delivery — _telegram_push is fail-soft and sent != seen.
+                "pushed": fire,
+            },
+            dry_run,
+        )
+
+        if fire:
+            days_elapsed = round(elapsed_h / 24.0, 1)
+            days_remaining = round(remaining_h / 24.0, 1)
+            if isinstance(skipped_count, int):
+                lo_prefix = ">=" if overflowed else ""
+                count_str = f"{lo_prefix}{skipped_count} review round(s) ran single-Claude"
+            else:
+                count_str = "single-Claude round count not available"
+            _telegram_push(
+                f"Codex quota outage live: opened {sentinel['detected_at_iso']}, "
+                f"expires {sentinel['until_iso']} "
+                f"(~{days_elapsed}d elapsed, ~{days_remaining}d remaining). "
+                f"Since it opened, {count_str}. Fleet-wide loss of "
+                f"cross-family reviewer diversity for the entire window. "
+                f"Silence-check kill switch: EPM_DISABLE_CODEX_OUTAGE_PASS=1. "
+                f"Account triage tracked separately (do NOT triage from this "
+                f"alert).",
+                dry_run,
+            )
+            _save_codex_outage_state(
+                {
+                    **state,
+                    "episode_detected_at_iso": sentinel["detected_at_iso"],
+                    "first_alert_ts": state.get("first_alert_ts") or now,
+                    "last_alert_ts": now,
+                    "last_count": skipped_count,
+                    "last_count_ts": now,
+                },
+                dry_run,
+            )
+        else:
+            # No push this tick, but keep the episode key in sync — this is
+            # the initial write when we first observed the current outage
+            # while its age is still below the threshold. Preserves everything
+            # else on the state file (last_alert_ts, first_alert_ts, cached
+            # count) — those keys are per-episode and cleared on recovery.
+            _save_codex_outage_state(
+                {**state, "episode_detected_at_iso": sentinel["detected_at_iso"]}, dry_run
+            )
+        return fire
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  codex-outage: pass failed (fail-soft): {exc}", file=sys.stderr)
+        _append_codex_outage_sidecar(
+            {"kind": "codex-outage-error", "error": str(exc)[:500]}, dry_run
+        )
+        return False
+
+
+# ─── Urgent-park router pass (task #1681) — "main is red" fast path ──────────
+#
+# Route a PARKED workflow-fix candidate that self-declares a LIVE red test on
+# origin/main (incident #1643: an 07:08Z park's red lived ~11.5h to the
+# nightly /daily Step C sweep while every intervening session's Step 9c gate
+# re-classified it). The watcher is the independent NON-guarded actor the
+# recursion guard needs (.claude/rules/workflow-fix-on-bug.md § Recursion
+# guard "Urgent fast path"): the PARKING session labels (never routes); this
+# pass detects the declared token grammar, VERIFIES the claim (fresh step9c
+# baseline-ledger hit, else ONE bounded pytest run of the named node), and on
+# confirmation files + dispatches through the standard path
+# (scripts/file_infra_task.py) and posts the standard
+# epm:workflow-fix-task-filed routed-record that closes the park for the
+# nightly sweep (suppression rule 1). Missing / malformed / unverifiable
+# urgency data -> the park falls back to the nightly sweep byte-unchanged —
+# the router never guesses and never synthesizes fields.
+
+URGENT_WF_PARK_TOKEN = "urgency: main-red"
+URGENT_WF_PARK_ROUTES_PER_DAY = 2
+URGENT_WF_PARK_PYTEST_TIMEOUT_S = 180.0
+URGENT_WF_PARK_GATE_LOOKBACK_H = 48.0
+URGENT_WF_PARK_MAX_VERIFY_ATTEMPTS = 2
+URGENT_WF_PARK_LEDGER_MAX_AGE_H = 24.0
+# On-task tag the router files its tasks with (BOTH wf_fix routes,
+# :func:`_urgent_wf_park_compose_body`) AND the mechanical urgency signal the
+# proposed-infra sweep's urgent lane reads (#1853): a `proposed` infra/batch
+# task carrying it is ordered ahead of every non-urgent candidate
+# (:func:`_proposed_infra_candidates`) and may consume the bounded
+# urgent-bonus slot past the shared cap (:func:`decide_proposed_infra_sweep`).
+URGENT_MAIN_RED_TAG = "urgent-main-red"
+
+# Episode verdicts that permanently close a candidate FOR THIS ROUTER (the
+# park itself stays enumerated for the nightly sweep unless routed/deduped —
+# a refuted URGENCY does not kill the underlying candidate).
+_URGENT_WF_PARK_LATCH_VERDICTS = frozenset(
+    {"routed", "deduped", "refuted", "not-routable", "unverifiable"}
+)
+
+# Node-id shape gate (#1681 grammar): exactly ONE pytest node id — no
+# whitespace, no shell metacharacters; parametrize brackets allowed.
+_URGENT_NODE_ID_RE = re.compile(r"[\w./\-]+\.py::[\w.\[\],:\-]+")
+
+# Formal candidate block, same shape the sweep's _BLOCK_RE parses (local copy
+# so the router's parser stays pure + import-free at module load).
+_URGENT_BLOCK_RE = re.compile(
+    r"<!--\s*workflow-fix-candidate v1\s*-->(.*?)<!--\s*/workflow-fix-candidate\s*-->",
+    re.DOTALL,
+)
+
+
+class UrgentFields(NamedTuple):
+    """Parsed mechanically-routable urgent-park fields (parse_urgent_fields)."""
+
+    target_file: str
+    failing_test: str
+    wf_fix: bool
+    bug_observed: str
+    proposed_change: str
+    confidence: str
+    related_task: str
+    fingerprint: str
+    block: str  # the verbatim candidate block, comment tags included
+
+
+def _urgent_wf_park_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_URGENT_WF_PARK_PASS`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_completed_unmerged_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_URGENT_WF_PARK_PASS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _urgent_wf_park_routes_per_day() -> int:
+    """Fleet-wide per-UTC-day cap on router filings (env
+    ``EPM_URGENT_WF_PARK_ROUTES_PER_DAY``; default
+    :data:`URGENT_WF_PARK_ROUTES_PER_DAY`). Malformed OR ``< 1`` env falls
+    back to the default — disabling the pass is the kill switch's job
+    (``EPM_DISABLE_URGENT_WF_PARK_PASS=1``), never the cap's (the #1241
+    parse shape, cloned from :func:`_completed_unmerged_respawns_per_day`)."""
+    raw = os.environ.get("EPM_URGENT_WF_PARK_ROUTES_PER_DAY")
+    if not raw:
+        return URGENT_WF_PARK_ROUTES_PER_DAY
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return URGENT_WF_PARK_ROUTES_PER_DAY
+    if parsed < 1:
+        return URGENT_WF_PARK_ROUTES_PER_DAY
+    return parsed
+
+
+def _urgent_wf_park_state_path() -> Path:
+    """Singleton day-counter + per-candidate verdict-latch state (deliberately
+    NOT a per-issue GC target — non-int stem, no _GC_TARGETS prefix; the
+    completed-unmerged-observer.json precedent)."""
+    return AUTONOMOUS_REGISTRY_DIR / "urgent-wf-park-router.json"
+
+
+def _urgent_wf_park_sidecar_path() -> Path:
+    """DEDICATED urgent-park event stream (own stream for clean grep — the
+    completed-unmerged / registry-drift sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "urgent-wf-park-events.jsonl"
+
+
+def _load_urgent_wf_park_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards (mirrors :func:`_load_completed_unmerged_state`)."""
+    path = _urgent_wf_park_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_urgent_wf_park_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write of the day-counter/latch state (fail-soft);
+    ``dry_run`` performs zero writes."""
+    if dry_run:
+        n_eps = len(state.get("episodes") or {})
+        print(f"  [dry-run] would save urgent-wf-park state ({n_eps} episode(s))")
+        return
+    dest = _urgent_wf_park_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  urgent-wf-park: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_urgent_wf_park_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the urgent-park sidecar (fail-soft). A ``ts``
+    is stamped; ``dry_run`` reports only."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append urgent-wf-park sidecar row: {line[:160]}")
+        return
+    dest = _urgent_wf_park_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  urgent-wf-park: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _urgent_park_candidate_gate(now: float, tasks_root: Path, cache_file: Path | None) -> bool:
+    """Cheap arming gate: any ~48h-fresh events stream carrying the urgent
+    token (case-insensitive FULL-file substring scan). Deliberately NO
+    read-size byte cap — a cap on the arming scan is exactly the #1287
+    defeat mode (the arming block could sit past the cap). Zero hits (the
+    overwhelmingly common tick) keeps the pass ~free."""
+    lookback_s = URGENT_WF_PARK_GATE_LOOKBACK_H * 3600.0
+    paths = list(tasks_root.glob("*/*/events.jsonl"))
+    if cache_file is not None and cache_file.exists():
+        paths.append(cache_file)
+    token = URGENT_WF_PARK_TOKEN.lower()
+    for path in paths:
+        try:
+            if now - path.stat().st_mtime > lookback_s:
+                continue
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        if token in text.lower():
+            return True
+    return False
+
+
+def _urgent_parse_ts(raw: object) -> datetime | None:
+    """ISO-8601-ish -> aware-UTC datetime; None on failure (naive assumed UTC;
+    the sweep's parse_ts contract, kept local so this helper stays pure)."""
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    try:
+        dt = datetime.fromisoformat(raw.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=UTC)
+    return dt.astimezone(UTC)
+
+
+def parse_urgent_fields(note: str) -> UrgentFields | None:
+    """Parse a park note into mechanically-routable urgent fields, else None.
+
+    A park is routable iff its note embeds the FORMAL candidate block AND the
+    block carries ALL THREE urgent fields — ``urgency: main-red`` (the only
+    recognized value), ``failing_test:`` (exactly ONE pytest node id passing
+    the shape gate), ``wf_fix: true|false`` — plus the fp/dedup essentials
+    (``target_file`` / ``bug_observed`` / ``proposed_change``, the fields the
+    sweep computes the fingerprint from). ANY miss returns None: the park
+    falls back to the nightly sweep, never a synthesized field (R4)."""
+    m = _URGENT_BLOCK_RE.search(note or "")
+    if not m:
+        return None
+    block = m.group(1)
+
+    def block_field(name: str) -> str | None:
+        fm = re.search(rf"^{name}:\s*(.+)$", block, re.MULTILINE)
+        return fm.group(1).strip() if fm else None
+
+    urgency = block_field("urgency")
+    if urgency is None or urgency.lower() != "main-red":
+        return None
+    node = block_field("failing_test")
+    if node is None or not _URGENT_NODE_ID_RE.fullmatch(node):
+        return None
+    wf_fix_raw = block_field("wf_fix")
+    if wf_fix_raw is None or wf_fix_raw.lower() not in {"true", "false"}:
+        return None
+    target_file = block_field("target_file")
+    bug = block_field("bug_observed")
+    proposed = block_field("proposed_change")
+    if not target_file or not bug or not proposed:
+        return None
+    from explore_persona_space.task_workflow import wf_fix_fingerprint
+
+    return UrgentFields(
+        target_file=target_file,
+        failing_test=node,
+        wf_fix=(wf_fix_raw.lower() == "true"),
+        bug_observed=bug,
+        proposed_change=proposed,
+        confidence=block_field("confidence") or "unknown",
+        related_task=block_field("related_task") or "n/a",
+        fingerprint=wf_fix_fingerprint(proposed, bug),
+        block=m.group(0),
+    )
+
+
+def verify_main_red(
+    node: str,
+    dry_run: bool,
+    *,
+    park_ts: datetime | None,
+    project_root: Path | None = None,
+    allow_pytest: bool = True,
+) -> tuple[str, str, bool]:
+    """Two-tier red-on-main verification: ``(verdict, detail, used_pytest)``.
+
+    Verdicts: ``confirmed`` | ``refuted`` | ``indeterminate`` | ``dry-run`` |
+    ``deferred`` (tier 2 needed but this tick's single pytest budget is
+    spent). Tier 1 (no subprocess): a schema-valid step9c ledger aged <=
+    :data:`URGENT_WF_PARK_LEDGER_MAX_AGE_H` whose ``refreshed_at`` postdates
+    the park (a ledger refreshed BEFORE the park cannot confirm it — the
+    stale-ledger false-confirm window) and whose ``failing_tests`` carry the
+    node — matched as (file, classname, name): file = pre-``::`` segment,
+    name = LAST segment, classname bound only when the node id carries a
+    middle segment. Tier 2: ONE bounded list-argv ``uv run pytest <node>``
+    at the main checkout — rc==1 confirmed, rc==0 refuted, ANY other rc
+    (incl. rc=5 no-tests-collected: the node was deleted/renamed, e.g. by
+    the very fix that landed; rc=2/4 interrupted/usage) / timeout / OSError
+    indeterminate. An ``rc != 0 -> confirmed`` shortcut is the banned
+    implementation."""
+    if dry_run:
+        return ("dry-run", f"[dry-run] would verify {node}", False)
+    root = project_root if project_root is not None else PROJECT_ROOT
+    import step9c_baseline  # sibling import; the module sys.path bootstrap covers it
+
+    ledger = step9c_baseline.try_load_ledger(root)
+    if ledger is not None:
+        age = step9c_baseline.ledger_age_hours(ledger)
+        refreshed = _urgent_parse_ts(ledger.get("refreshed_at"))
+        if (
+            age is not None
+            and age <= URGENT_WF_PARK_LEDGER_MAX_AGE_H
+            and refreshed is not None
+            and park_ts is not None
+            and refreshed >= park_ts
+        ):
+            parts = node.split("::")
+            node_file, node_name = parts[0], parts[-1]
+            node_class = parts[1] if len(parts) == 3 else None
+            for entry in step9c_baseline.ledger_nodes(ledger):
+                if (
+                    entry.file == node_file
+                    and entry.name == node_name
+                    and (node_class is None or entry.classname == node_class)
+                ):
+                    return (
+                        "confirmed",
+                        f"step9c ledger @ {ledger.get('refreshed_at')} lists {node} red-on-main",
+                        False,
+                    )
+    if not allow_pytest:
+        return ("deferred", "tier-2 pytest budget spent this tick", False)
+    argv = ["uv", "run", "pytest", node, "-q", "--no-header", "-p", "no:cacheprovider"]
+    env = {
+        **os.environ,
+        # Shared-VM thread caps (code-style rule): the watcher runs on the
+        # shared box; an uncapped pytest child can oversubscribe it.
+        "OMP_NUM_THREADS": "8",
+        "MKL_NUM_THREADS": "8",
+        "OPENBLAS_NUM_THREADS": "8",
+        "NUMEXPR_NUM_THREADS": "8",
+        "MALLOC_ARENA_MAX": "2",
+    }
+    timeout_s = _env_float(
+        "EPM_URGENT_WF_PARK_PYTEST_TIMEOUT_S",
+        URGENT_WF_PARK_PYTEST_TIMEOUT_S,
+        lo=10.0,
+        hi=3600.0,
+    )
+    try:
+        res = subprocess.run(
+            argv, cwd=root, env=env, capture_output=True, text=True, timeout=timeout_s
+        )
+    except (subprocess.SubprocessError, OSError) as exc:
+        return ("indeterminate", f"pytest run failed to complete: {exc}", True)
+    sha = "unknown"
+    try:
+        sha_res = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if sha_res.returncode == 0:
+            sha = sha_res.stdout.strip()
+    except (subprocess.SubprocessError, OSError):
+        pass
+    stamp = datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    detail = f"`uv run pytest {node} -q` -> rc={res.returncode} at main @ {sha} ({stamp})"
+    if res.returncode == 1:
+        return ("confirmed", f"{detail} (FAILED — red confirmed)", True)
+    if res.returncode == 0:
+        return ("refuted", f"{detail} (PASSED — urgency refuted)", True)
+    return ("indeterminate", f"{detail} (rc outside {{0,1}} — indeterminate)", True)
+
+
+def decide_urgent_route(
+    fields: UrgentFields | None,
+    verdict: str | None,
+    routes_today: int,
+    cap: int,
+    episode: dict,
+) -> str:
+    """PURE routing decision for one urgent-park candidate.
+
+    Returns ``skip-latched`` (episode already terminally decided) |
+    ``not-routable`` (fields unparseable -> nightly owns it) |
+    ``cap-exhausted`` (quiet-at-cap: sidecar only, NO latch — re-eligible
+    tomorrow; the nightly sweep is the real backstop, #1241 posture) |
+    ``verify`` (verdict not yet computed) | ``dry-run`` | ``route``
+    (confirmed) | ``refuted`` | ``defer`` (tier-2 budget spent this tick) |
+    ``retry`` (indeterminate, attempts remain) | ``unverifiable``
+    (indeterminate attempts exhausted)."""
+    latched = episode.get("verdict")
+    if latched in _URGENT_WF_PARK_LATCH_VERDICTS:
+        return "skip-latched"
+    if fields is None:
+        return "not-routable"
+    if routes_today >= cap:
+        return "cap-exhausted"
+    if verdict is None:
+        return "verify"
+    if verdict == "dry-run":
+        return "dry-run"
+    if verdict == "deferred":
+        return "defer"
+    if verdict == "confirmed":
+        return "route"
+    if verdict == "refuted":
+        return "refuted"
+    attempts = episode.get("attempts")
+    prior = attempts if isinstance(attempts, int) and not isinstance(attempts, bool) else 0
+    if prior + 1 >= URGENT_WF_PARK_MAX_VERIFY_ATTEMPTS:
+        return "unverifiable"
+    return "retry"
+
+
+def _urgent_wf_park_dedup(
+    fields: UrgentFields, cand_fp: str | None, tasks_root: Path
+) -> tuple[int, str] | None:
+    """Dedup belts beyond the sweep's own suppression rules 1-2: the exact
+    ``(target_file, fingerprint)`` predicate (belt for records the sweep's
+    lazy body-load path might shape differently) plus a failing-node
+    CONTAINMENT scan — any NON-terminal ``kind: infra`` task whose body
+    carries the exact node id string is a duplicate regardless of wording
+    (same node = same red; closes the #1479-class live collision for this
+    subclass). Returns ``(task_id, belt)`` on a hit, else None."""
+    from explore_persona_space.task_workflow import is_open_workflow_fix_task
+
+    hit = is_open_workflow_fix_task(fields.target_file, cand_fp or fields.fingerprint)
+    if hit is not None:
+        return (hit, "open-wf-fix-task")
+    from sweep_parked_wf_candidates import _load_task_bodies
+
+    for tid, status, _body_path, text, fm in _load_task_bodies(tasks_root):
+        if status in ("completed", "archived"):
+            continue
+        if fm.get("kind") != "infra":
+            continue
+        if fields.failing_test in text:
+            return (tid, "failing-node-containment")
+    return None
+
+
+def _urgent_wf_park_escalate_dedup_target(tid: int, key: str, dry_run: bool) -> None:
+    """Dedup-target escalation (#1853 leg a): a dedup hit means the router
+    files nothing, but when the TARGET task is itself a ripe ``proposed``
+    infra/batch task filed by another channel (/daily, a session filing) it
+    may lack the ``urgent-main-red`` tag and sit behind the sweep's shared
+    cap for hours (the #1823 shape). Probe the target with ONE bounded
+    ``task.py view <tid> --json`` subprocess (status + kind + tags in one
+    read — ``_task_status_kind`` alone lacks tags); on
+    ``status == "proposed"`` and ``kind in INFRA_DRAIN_KINDS``:
+
+      - ``needs-human`` tagged -> sidecar ``deduped-target-held-needs-human``,
+        NO tag write (the sweep never dispatches a held judgment call, #706 —
+        an "escalated" row would misleadingly imply a pending dispatch);
+      - else ``task.py add-tag <tid> urgent-main-red`` (idempotent — an
+        already-tagged task no-ops with no commit; fail-soft stderr print on
+        error) + sidecar ``deduped-target-escalated``, so the SAME-tick
+        sweep's urgent lane dispatches it (``urgent_wf_park_pass`` runs
+        BEFORE ``proposed_infra_sweep_pass`` in main()).
+
+    Any other status/kind: untouched (today's behavior). Under ``dry_run``
+    NO subprocess runs at all (including the view probe)."""
+    if dry_run:
+        print(f"  [dry-run] would probe dedup target #{tid} for urgent-lane escalation")
+        return
+    try:
+        res = subprocess.run(
+            ["uv", "run", "python", "scripts/task.py", "view", str(tid), "--json"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except (subprocess.SubprocessError, OSError) as exc:
+        print(
+            f"  urgent-wf-park: dedup-target #{tid} view probe failed: {exc}",
+            file=sys.stderr,
+        )
+        return
+    if res.returncode != 0:
+        print(
+            f"  urgent-wf-park: dedup-target #{tid} view probe rc={res.returncode}",
+            file=sys.stderr,
+        )
+        return
+    try:
+        payload = json.loads(res.stdout)
+    except json.JSONDecodeError:
+        print(f"  urgent-wf-park: dedup-target #{tid} view JSON unparseable", file=sys.stderr)
+        return
+    if not isinstance(payload, dict):
+        return
+    raw_fm = payload.get("frontmatter")
+    fm: dict = raw_fm if isinstance(raw_fm, dict) else {}
+    if payload.get("status") != "proposed" or fm.get("kind") not in INFRA_DRAIN_KINDS:
+        return  # not a sweep candidate — untouched (today's behavior)
+    if _NEEDS_HUMAN_TAG in (fm.get("tags") or []):
+        # #706 beats #1853: the sweep would never dispatch it — record the
+        # held state honestly instead of an escalated row implying dispatch.
+        _append_urgent_wf_park_sidecar(
+            {"key": key, "action": "deduped-target-held-needs-human", "task": tid}, dry_run
+        )
+        return
+    try:
+        add = subprocess.run(
+            ["uv", "run", "python", "scripts/task.py", "add-tag", str(tid), URGENT_MAIN_RED_TAG],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except (subprocess.SubprocessError, OSError) as exc:
+        print(f"  urgent-wf-park: dedup-target #{tid} add-tag failed: {exc}", file=sys.stderr)
+        return
+    if add.returncode != 0:
+        print(
+            f"  urgent-wf-park: dedup-target #{tid} add-tag rc={add.returncode}: "
+            f"{add.stderr.strip()[:200]}",
+            file=sys.stderr,
+        )
+        return
+    _append_urgent_wf_park_sidecar(
+        {"key": key, "action": "deduped-target-escalated", "task": tid}, dry_run
+    )
+
+
+def _urgent_wf_park_compose_body(
+    fields: UrgentFields, cand_fp: str, verified_line: str
+) -> tuple[str, str, list[str]]:
+    """``(title, body_markdown, tags)`` per workflow-fix-on-bug.md § Body-file
+    template. ``wf_fix: true`` -> the ``workflow-fix:`` title + wf-fix tags +
+    the ``workflow_fix_target:`` Provenance line (the child session lands
+    under the recursion guard); ``wf_fix: false`` -> the ``daily-fix:`` title
+    (the /daily route-2 convention — keeps the filing visible to the
+    title-prefix-gated dedup predicate with NO ``WF_FIX_TITLE_PREFIXES``
+    widening), NO wf-fix tags, NO target line; the ``fingerprint:`` line
+    stays on BOTH routes (sweep suppression rule 2's durable second belt)."""
+    node = fields.failing_test
+    if fields.wf_fix:
+        title = f"workflow-fix: {fields.proposed_change[:60]}"
+        tags = ["wf-fix", f"wf-fix-fp:{cand_fp}", URGENT_MAIN_RED_TAG]
+        provenance = f"- workflow_fix_target: {fields.target_file}\n- fingerprint: {cand_fp}\n"
+        constraints = (
+            "- Workflow-surface only — never experiment code, `configs/`, or `tasks/`.\n"
+            "- This session carries a `workflow_fix_target:` Provenance line — it MUST\n"
+            "  NOT auto-route its own subagents' workflow-fix candidates (recursion\n"
+            "  guard, `.claude/rules/workflow-fix-on-bug.md` § Recursion guard).\n"
+        )
+    else:
+        node_short = f"{node.split('::')[0].rsplit('/', 1)[-1]}::{node.split('::')[-1]}"
+        title = f"daily-fix: fix red main: {node_short} — {fields.proposed_change[:40]}"
+        tags = [URGENT_MAIN_RED_TAG]
+        provenance = f"- fingerprint: {cand_fp}\n"
+        constraints = (
+            "- NON-workflow-surface fix (`wf_fix: false` declared by the parking\n"
+            "  session — the /daily route-2 analogue); scope stays on the named\n"
+            "  target, never `tasks/` state.\n"
+        )
+    body = (
+        "## Overview / Motivation\n\n"
+        "Auto-filed by the watcher urgent-park router (#1681,\n"
+        "`autonomous_session_watch.urgent_wf_park_pass`) from an URGENT\n"
+        "(`urgency: main-red`) parked workflow-fix candidate raised on task\n"
+        f"{fields.related_task}. The named test is red on origin/main NOW — every\n"
+        "intervening session's Step 9c gate re-classifies it until this fix lands.\n\n"
+        "## Goal\n\n"
+        f"fix `{node}` red on origin/main: {fields.proposed_change}\n\n"
+        "## Workflow gap\n\n"
+        f"- **Bug observed (emitter's claim, candidate block):** {fields.bug_observed}\n"
+        f"- **Failing node (router-verified):** `{node}`\n"
+        f"- **Confidence (emitter):** {fields.confidence}\n"
+        f"- verified-at-filing: {verified_line}\n\n"
+        "## Proposed change (candidate diff sketch — refine in planning)\n\n"
+        "(see the verbatim candidate block under `## Provenance` — the router\n"
+        "forwards it unmodified and never synthesizes fields)\n\n"
+        "## Scope / surfaces\n\n"
+        f"- Primary target: `{fields.target_file}`\n"
+        f"- Failing node: `{node}`\n\n"
+        "## Constraints / invariants\n\n"
+        f"{constraints}\n"
+        "## Provenance\n\n"
+        f"{provenance}"
+        "- routed-by: autonomous_session_watch urgent-wf-park-router (#1681)\n\n"
+        f"{fields.block}\n"
+    )
+    return (title, body, tags)
+
+
+def _urgent_wf_park_file_and_dispatch(
+    title: str,
+    body_text: str,
+    tags: list[str],
+    origin_prompt: str,
+    dry_run: bool,
+    project_root: Path | None = None,
+) -> tuple[int | None, bool, str]:
+    """File + dispatch via the canonical wrapper ``scripts/file_infra_task.py``
+    (all spawn gates — daemon/cap/lease/stagger/backstop — come free).
+    Returns ``(filed_id, session_spawned, detail)``; ``filed_id`` None on a
+    failed filing. ``dry_run`` runs no subprocess and writes nothing."""
+    if dry_run:
+        print(f"  [dry-run] would file+dispatch via file_infra_task.py: {title!r}")
+        return (None, False, "[dry-run] no filing performed")
+    root = project_root if project_root is not None else PROJECT_ROOT
+    try:
+        fd, body_path = tempfile.mkstemp(prefix="urgent-wf-park-body-", suffix=".md")
+        with os.fdopen(fd, "w") as fh:
+            fh.write(body_text)
+    except OSError as exc:
+        return (None, False, f"body-file write failed: {exc}")
+    argv = [
+        "uv",
+        "run",
+        "python",
+        "scripts/file_infra_task.py",
+        "--kind",
+        "infra",
+        "--title",
+        title,
+        "--body-file",
+        body_path,
+        "--origin-prompt",
+        origin_prompt,
+    ]
+    for tag in tags:
+        argv += ["--tag", tag]
+    try:
+        res = subprocess.run(argv, cwd=root, capture_output=True, text=True, timeout=300)
+    except (subprocess.SubprocessError, OSError) as exc:
+        return (None, False, f"file_infra_task.py failed to run: {exc}")
+    m = re.search(r"filed(?: \+ dispatched)? #(\d+)", res.stdout)
+    if res.returncode != 0 or not m:
+        return (
+            None,
+            False,
+            f"file_infra_task.py rc={res.returncode}: "
+            f"{res.stdout.strip()[:200]} {res.stderr.strip()[:200]}",
+        )
+    spawned = "filed + dispatched #" in res.stdout
+    last_line = res.stdout.strip().splitlines()[-1][:200]
+    return (int(m.group(1)), spawned, last_line)
+
+
+def _urgent_wf_park_routed_note(
+    fields: UrgentFields,
+    cand_fp: str,
+    filed_ref: str,
+    session_spawned: bool,
+    cand_ts_raw: str,
+    cand_note: str,
+) -> str:
+    """The routed-record note (suppression rule 1 keys on it): the
+    SWEEP-REPORTED fingerprint VERBATIM (never recomputed from abridged
+    text — the #1680 incident class) + ``origin_candidate_ts`` +
+    ``target_file`` + the anti-liveness sentinel."""
+    return (
+        f"filed_task: {filed_ref} / target_file: {fields.target_file} / "
+        f"fingerprint: {cand_fp} / session_spawned: {str(session_spawned).lower()} / "
+        f"source: watcher-urgent-park-router / origin_candidate_ts: {cand_ts_raw} / "
+        f"origin_candidate: {cand_note[:200]} "
+        f"{_URGENT_WF_PARK_NOTE_SENTINEL}"
+    )
+
+
+def _urgent_wf_park_post_routed_record(
+    source: str,
+    note: str,
+    dry_run: bool,
+    *,
+    cache_file: Path | None = None,
+    project_root: Path | None = None,
+) -> bool:
+    """Post the ``epm:workflow-fix-task-filed`` routed-record on the park's
+    OWN stream: a ``task:<id>`` park gets a real ``task.py post-marker``
+    (the watcher runs from the main checkout, so the branch-guard is
+    satisfied); a ``cache`` park gets the equivalent JSON row appended to
+    the Step C fallback stream. Returns True on a confirmed post."""
+    if dry_run:
+        print(f"  [dry-run] would post routed-record on {source}: {note[:160]}")
+        return False
+    root = project_root if project_root is not None else PROJECT_ROOT
+    if source.startswith("task:"):
+        try:
+            issue = int(source.split(":", 1)[1])
+        except ValueError:
+            print(f"  urgent-wf-park: unparseable source {source!r}", file=sys.stderr)
+            return False
+        try:
+            subprocess.run(
+                [
+                    "uv",
+                    "run",
+                    "python",
+                    "scripts/task.py",
+                    "post-marker",
+                    str(issue),
+                    "epm:workflow-fix-task-filed",
+                    "--by",
+                    "autonomous_session_watch",
+                    "--note",
+                    note,
+                ],
+                cwd=root,
+                capture_output=True,
+                text=True,
+                timeout=60,
+                check=True,
+            )
+            return True
+        except (subprocess.SubprocessError, OSError) as exc:
+            print(
+                f"  WARNING: urgent-wf-park routed-record post on #{issue} failed: {exc}",
+                file=sys.stderr,
+            )
+            return False
+    dest = (
+        cache_file
+        if cache_file is not None
+        else root / ".claude" / "cache" / "workflow-fix-events.jsonl"
+    )
+    row = {
+        "ts": datetime.now(tz=UTC).isoformat(),
+        "kind": "epm:workflow-fix-task-filed",
+        "version": 1,
+        "by": "autonomous_session_watch",
+        "note": note,
+    }
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(json.dumps(row) + "\n")
+        return True
+    except OSError as exc:
+        print(f"  WARNING: urgent-wf-park cache routed-record failed: {exc}", file=sys.stderr)
+        return False
+
+
+def _urgent_wf_park_route(
+    cand: dict,
+    fields: UrgentFields,
+    detail: str,
+    episodes: dict,
+    key: str,
+    state: dict,
+    day_key: str,
+    now: float,
+    routes_today: int,
+    root: Path,
+    cache: Path | None,
+    dry_run: bool,
+) -> int:
+    """Confirmed-red routing tail: dedup belts -> file + dispatch (the day
+    slot is consumed at the ATTEMPT, success or not — the capacity-retry
+    convention — and persisted BEFORE the subprocess so a crash mid-filing
+    cannot re-arm the slot) -> the routed-record posted BEFORE latching (a
+    crash between = re-post, never a re-file) -> latch + push + sidecar.
+    Returns the updated ``routes_today``; the caller marks state dirty."""
+    source = str(cand.get("source") or "")
+    ts_raw = str(cand.get("ts") or "")
+    note_text = str(cand.get("note") or "")
+    raw_entry = episodes.get(key)
+    episode: dict = raw_entry if isinstance(raw_entry, dict) else {}
+    cand_fp = str(cand.get("fingerprint") or fields.fingerprint)
+    dedup_hit = _urgent_wf_park_dedup(fields, cand_fp, root)
+    if dedup_hit is not None:
+        tid, belt = dedup_hit
+        # #1853 leg (a): escalate a ripe `proposed` infra/batch dedup TARGET
+        # into the sweep's urgent lane. Runs BEFORE the `episodes[key]` latch
+        # write so a crash mid-escalation inherits the existing crash-retry
+        # semantics (the branch re-runs next tick) instead of the escalation
+        # being lost for this park key; an add-tag failure itself is
+        # fail-soft (stderr) by design.
+        _urgent_wf_park_escalate_dedup_target(tid, key, dry_run)
+        note = _urgent_wf_park_routed_note(
+            fields, cand_fp, f"n/a (deduped against #{tid})", False, ts_raw, note_text
+        )
+        _urgent_wf_park_post_routed_record(
+            source, note, dry_run, cache_file=cache, project_root=PROJECT_ROOT
+        )
+        episodes[key] = {**episode, "verdict": "deduped", "filed_task": tid, "latched_at": now}
+        _append_urgent_wf_park_sidecar(
+            {"key": key, "action": "deduped", "belt": belt, "task": tid}, dry_run
+        )
+        return routes_today
+    title, body_text, tags = _urgent_wf_park_compose_body(fields, cand_fp, detail)
+    routes_today += 1
+    state["route_day"] = day_key
+    state["routes_today"] = routes_today
+    _save_urgent_wf_park_state(state, dry_run)
+    filed_id, spawned, file_detail = _urgent_wf_park_file_and_dispatch(
+        title, body_text, tags, fields.block, dry_run, project_root=PROJECT_ROOT
+    )
+    if filed_id is None:
+        # Slot consumed; episode NOT latched — retried next tick, bounded by
+        # the day cap.
+        _append_urgent_wf_park_sidecar(
+            {"key": key, "action": "file-failed", "detail": file_detail}, dry_run
+        )
+        print(f"  urgent-wf-park: filing failed for {key}: {file_detail}")
+        return routes_today
+    note = _urgent_wf_park_routed_note(fields, cand_fp, f"#{filed_id}", spawned, ts_raw, note_text)
+    _urgent_wf_park_post_routed_record(
+        source, note, dry_run, cache_file=cache, project_root=PROJECT_ROOT
+    )
+    episodes[key] = {**episode, "verdict": "routed", "filed_task": filed_id, "latched_at": now}
+    _telegram_push(
+        f"urgent-wf-park-router: filed{' + dispatched' if spawned else ''} "
+        f"#{filed_id} for urgent main-red park on {source} ({fields.failing_test})",
+        dry_run,
+    )
+    _append_urgent_wf_park_sidecar(
+        {
+            "key": key,
+            "action": "routed",
+            "task": filed_id,
+            "session_spawned": spawned,
+            "detail": detail,
+        },
+        dry_run,
+    )
+    return routes_today
+
+
+def _urgent_wf_park_handle_candidate(
+    cand: dict,
+    episodes: dict,
+    state: dict,
+    routes_today: int,
+    cap: int,
+    pytest_used: bool,
+    day_key: str,
+    now: float,
+    root: Path,
+    cache: Path | None,
+    dry_run: bool,
+) -> tuple[int, bool, bool]:
+    """One candidate through the decision ladder (parse -> decide -> verify
+    -> latch/route). Returns ``(routes_today, pytest_used, state_dirty)``."""
+    source = str(cand.get("source") or "")
+    ts_raw = str(cand.get("ts") or "")
+    key = f"{source}|{ts_raw}"
+    raw_entry = episodes.get(key)
+    episode: dict = raw_entry if isinstance(raw_entry, dict) else {}
+    fields = parse_urgent_fields(str(cand.get("note") or ""))
+    action = decide_urgent_route(fields, None, routes_today, cap, episode)
+    if action == "skip-latched":
+        return (routes_today, pytest_used, False)
+    if action == "not-routable":
+        episodes[key] = {**episode, "verdict": "not-routable", "latched_at": now}
+        _append_urgent_wf_park_sidecar({"key": key, "action": "not-routable"}, dry_run)
+        print(f"  urgent-wf-park: {key} not mechanically routable; nightly owns it")
+        return (routes_today, pytest_used, True)
+    if action == "cap-exhausted":
+        # Quiet-at-cap (#1241 posture): sidecar row only, NO latch, NO push —
+        # re-eligible tomorrow; nightly is the backstop.
+        _append_urgent_wf_park_sidecar(
+            {"key": key, "action": "cap-exhausted", "routes_today": routes_today}, dry_run
+        )
+        return (routes_today, pytest_used, False)
+    assert fields is not None  # action == "verify" implies parseable fields
+    verdict, detail, used_pytest = verify_main_red(
+        fields.failing_test,
+        dry_run,
+        park_ts=_urgent_parse_ts(ts_raw),
+        project_root=PROJECT_ROOT,
+        allow_pytest=not pytest_used,
+    )
+    pytest_used = pytest_used or used_pytest
+    action = decide_urgent_route(fields, verdict, routes_today, cap, episode)
+    if action == "dry-run":
+        print(f"  [dry-run] would verify {fields.failing_test} then file+dispatch for {key}")
+        return (routes_today, pytest_used, False)
+    if action == "defer":
+        print(f"  urgent-wf-park: pytest budget spent this tick; {key} deferred")
+        return (routes_today, pytest_used, False)
+    if action == "retry":
+        prior = episode.get("attempts")
+        n = prior if isinstance(prior, int) and not isinstance(prior, bool) else 0
+        episodes[key] = {**episode, "attempts": n + 1}
+        _append_urgent_wf_park_sidecar(
+            {"key": key, "action": "indeterminate-retry", "detail": detail}, dry_run
+        )
+        return (routes_today, pytest_used, True)
+    if action in ("refuted", "unverifiable"):
+        episodes[key] = {**episode, "verdict": action, "latched_at": now}
+        _append_urgent_wf_park_sidecar({"key": key, "action": action, "detail": detail}, dry_run)
+        print(f"  urgent-wf-park: {key} {action} ({detail}); nightly owns the park")
+        return (routes_today, pytest_used, True)
+    # action == "route": red confirmed — dedup belts + file + record + latch.
+    routes_today = _urgent_wf_park_route(
+        cand,
+        fields,
+        detail,
+        episodes,
+        key,
+        state,
+        day_key,
+        now,
+        routes_today,
+        root,
+        cache,
+        dry_run,
+    )
+    return (routes_today, pytest_used, True)
+
+
+def urgent_wf_park_pass(
+    dry_run: bool,
+    now: float | None = None,
+    tasks_root: Path | None = None,
+    cache_file: Path | None = None,
+) -> None:
+    """Route parked workflow-fix candidates that self-declare a VERIFIED
+    live-red-on-main test (#1681; grammar + emitter duty:
+    ``.claude/rules/workflow-fix-on-bug.md`` § Recursion guard "Urgent fast
+    path"). Cheap mtime+substring gate -> authoritative enumeration via
+    ``sweep_parked_wf_candidates.sweep()`` (read-only import; suppression
+    rules 1-3 for free) -> two-tier verification (step9c ledger, else <=1
+    bounded pytest per tick) -> dedup belts -> file + dispatch via
+    ``scripts/file_infra_task.py`` -> the standard routed-record posted
+    BEFORE latching (crash between = re-post, never a re-file). Day-capped
+    fleet-wide (``EPM_URGENT_WF_PARK_ROUTES_PER_DAY``, default 2,
+    quiet-at-cap), verdict-latched per candidate, kill switch
+    ``EPM_DISABLE_URGENT_WF_PARK_PASS=1``; missing/malformed/refuted/
+    unverifiable urgency -> the nightly /daily Step C sweep owns the park,
+    byte-unchanged. ``tasks_root`` / ``cache_file`` are test overrides."""
+    if not _urgent_wf_park_enabled():
+        print("  urgent-wf-park: disabled via EPM_DISABLE_URGENT_WF_PARK_PASS; skipping")
+        return
+    try:
+        now = now if now is not None else time.time()
+        if tasks_root is not None:
+            root = tasks_root
+        else:
+            # Canonical resolver — a direct root-relative construction is
+            # stale from a worktree (tests/test_no_direct_task_path_construction.py).
+            from explore_persona_space.task_workflow import tasks_dir
+
+            root = tasks_dir()
+        if cache_file is not None:
+            cache: Path | None = cache_file
+        else:
+            default_cache = PROJECT_ROOT / ".claude" / "cache" / "workflow-fix-events.jsonl"
+            cache = default_cache if default_cache.exists() else None
+        if not _urgent_park_candidate_gate(now, root, cache):
+            return  # the overwhelmingly common tick: no fresh urgent token anywhere
+        from sweep_parked_wf_candidates import sweep
+
+        window_days = max(1, int(URGENT_WF_PARK_GATE_LOOKBACK_H // 24))
+        result = sweep(root, cache, window_days=window_days)
+        token = URGENT_WF_PARK_TOKEN.lower()
+        urgent = [
+            c for c in result.get("candidates", []) if token in str(c.get("note") or "").lower()
+        ]
+        if not urgent:
+            return
+        state = _load_urgent_wf_park_state()
+        raw_eps = state.get("episodes")
+        episodes: dict = raw_eps if isinstance(raw_eps, dict) else {}
+        state["episodes"] = episodes
+        day_key = time.strftime("%Y-%m-%d", time.gmtime(now))
+        routes_today = _day_scoped_count(state, "route_day", "routes_today", day_key)
+        cap = _urgent_wf_park_routes_per_day()
+        pytest_used = False
+        state_dirty = False
+        for cand in urgent:
+            routes_today, pytest_used, dirty = _urgent_wf_park_handle_candidate(
+                cand,
+                episodes,
+                state,
+                routes_today,
+                cap,
+                pytest_used,
+                day_key,
+                now,
+                root,
+                cache,
+                dry_run,
+            )
+            state_dirty = state_dirty or dirty
+        # Prune long-latched episodes (30d) so the singleton stays bounded.
+        cutoff = now - 30 * 86400.0
+        for stale_key in [
+            k
+            for k, v in episodes.items()
+            if isinstance(v, dict)
+            and isinstance(v.get("latched_at"), int | float)
+            and v["latched_at"] < cutoff
+        ]:
+            episodes.pop(stale_key)
+            state_dirty = True
+        if state_dirty:
+            _save_urgent_wf_park_state(state, dry_run)
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  urgent-wf-park: pass failed (fail-soft): {exc}", file=sys.stderr)
 
 
 # ─── Auth-outage guard pass (task #1027) — fleet respawn suppression ─────────
@@ -7617,7 +11303,8 @@ def _clear_wedge_state(issue: int, pod_id: str) -> None:
     or the pod was never wedged this tick), so a one-tick no-port blip never
     matures toward a stop and a healed pod's stale wedge fields are reset. It
     re-saves the state with ``wedge_first_seen=None, wedge_missed=0,
-    wedge_alerted=False`` (NOT :func:`_clear_pod_safety_state`, which clears the
+    wedge_alerted=False, wedge_owner_defer_noted=False`` (NOT
+    :func:`_clear_pod_safety_state`, which clears the
     WHOLE file and would wipe the GC anchor ``first_seen``), and records the
     current ``pod_id`` so a later pod_id mismatch is detectable. The status-class
     counters (``missed`` / ``alerted`` / ``last_progress_ts``) are forward-carried
@@ -7638,6 +11325,7 @@ def _clear_wedge_state(issue: int, pod_id: str) -> None:
         wedge_first_seen=None,
         wedge_missed=0,
         wedge_alerted=False,
+        wedge_owner_defer_noted=False,
         prev=prev,
     )
 
@@ -7679,6 +11367,81 @@ _POD_FOLLOWUP_SIGNAL_KINDS = frozenset(
 # Back-compat alias (the run-launched marker is still the strongest signal).
 _RUN_LAUNCHED_KIND = "epm:run-launched"
 
+# Default ceiling (seconds) for the per-pod named-launch shield on SUFFIXED
+# pods (#1961). Within the ceiling, a suffixed pod whose `epm:run-launched`
+# note names it in a STRUCTURED position stays exempt from the pod-safety
+# auto-stop even when SIBLING rounds post newer done-transitions (the
+# multi-round issue-grain gap that stopped pod-1768-lt mid-fits). Past it the
+# pod falls back to the issue-grain predicate — the ceiling ITSELF is the
+# billing bound for a shielded escaped suffixed pod (the #1582 wedged-owner
+# escalation arm rides the keep-running-TAGGED branch and does NOT cover
+# followup-skip pods). Fail direction: a mis-shielded pod bills until the
+# ceiling; a mis-stopped pod loses work — fail toward KEEP within the bound.
+# Grounding for 48h: ~2x the stale-pod audit's 24h EXITED convention and >4x
+# the longest observed inline round (#1768 fits, ~7h). Override via
+# EPM_POD_NAMED_SHIELD_MAX_AGE_H (float hours), read at CALL time by
+# _pod_named_shield_max_age_s() so tests + fleet-level env changes take
+# effect without re-import.
+POD_NAMED_SHIELD_MAX_AGE_S = 48.0 * 3600.0
+
+
+def _pod_named_shield_max_age_s() -> float:
+    """Resolve the #1961 named-shield ceiling in seconds:
+    ``EPM_POD_NAMED_SHIELD_MAX_AGE_H`` (float hours) when set + sane, else
+    :data:`POD_NAMED_SHIELD_MAX_AGE_S` (48h). A garbled / non-positive /
+    non-finite value falls back to the default rather than crashing the
+    watcher (the same fail-soft contract as the other env knobs here)."""
+    try:
+        val = float(os.environ.get("EPM_POD_NAMED_SHIELD_MAX_AGE_H", ""))
+    except ValueError:
+        return POD_NAMED_SHIELD_MAX_AGE_S
+    # The upper sanity bound also rejects inf/nan (one year of hours).
+    if not (0 < val < 24 * 366):
+        return POD_NAMED_SHIELD_MAX_AGE_S
+    return val * 3600.0
+
+
+def _is_suffixed_pod_name(pod_name: str, issue: int) -> bool:
+    """True iff ``pod_name`` is the SUFFIXED multi-pod-per-issue form for
+    ``issue`` (``pod-<N>-<slug>``, #1334). The primary ``pod-<N>`` and the
+    legacy ``epm-issue-<N>`` forms return False — only suffixed pods get the
+    #1961 per-pod named-launch shield: suffixed pods exist ONLY as deliberate
+    concurrent inline rounds (exactly the population the issue-grain
+    predicate mis-covers on multi-round issues), while EVERY standard launch
+    marker names its primary pod as ``pod=pod-<N>``, so an unscoped named
+    shield would disable the classic escaped-primary-pod auto-stop
+    fleet-wide for <ceiling hours after every launch."""
+    return pod_name.startswith(f"pod-{issue}-")
+
+
+def _latest_named_run_launched_ts(events: list[dict], pod_name: str) -> float | None:
+    """Newest ``epm:run-launched`` whose note names ``pod_name`` in a
+    STRUCTURED position (#1961), or ``None`` if no such marker exists.
+
+    Structured = EITHER a boundary-safe ``pod=<name>`` token anywhere in the
+    note, OR the note's LEADING token being ``<name>`` (optionally preceded
+    by whitespace). Boundary-safe means left/right ``[\\w-]`` guards, so
+    ``pod-1768`` never matches inside ``pod-1768-lt`` and vice versa. Both
+    accepted shapes are attested on #1768 (v1/v2 ``pod=pod-1768``; v11
+    "pod-1768-lt (4 GPU) provisioned ..."). A prose mention elsewhere in a
+    note MUST NOT match — attested counterexample: #1768's v14 note mentions
+    "pod-1768-tx ... was already TERMINATED" mid-prose, which must neither
+    shield pod-1768-tx nor restart its ceiling clock. Missing / non-string
+    notes are skipped (fail toward no-shield → issue-grain fallback)."""
+    esc = re.escape(pod_name)
+    pattern = re.compile(rf"(?<![\w-])pod={esc}(?![\w-])|^\s*{esc}(?![\w-])")
+    best: float | None = None
+    for ev in events:
+        if ev.get("kind") != _RUN_LAUNCHED_KIND:
+            continue
+        note = ev.get("note")
+        if not isinstance(note, str) or pattern.search(note) is None:
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is not None and (best is None or ts > best):
+            best = ts
+    return best
+
 
 def _latest_event_ts(events: list[dict], kinds: frozenset[str] | set[str]) -> float | None:
     """Newest epoch ts among events whose ``kind`` is in ``kinds``, or
@@ -7698,12 +11461,53 @@ def _latest_event_ts(events: list[dict], kinds: frozenset[str] | set[str]) -> fl
     return best
 
 
-def _task_followup_active(issue: int, events: list[dict] | None = None) -> bool:
+def _task_followup_active(
+    issue: int,
+    events: list[dict] | None = None,
+    *,
+    pod_name: str | None = None,
+    now: float | None = None,
+) -> bool:
     """True iff task ``issue`` has a follow-up signal marker
     (:data:`_POD_FOLLOWUP_SIGNAL_KINDS`: ``epm:run-launched`` /
     ``epm:followup-scope`` / ``epm:free-analysis-followup-run``) NEWER than
     its latest done-transition marker (``epm:promoted`` /
-    ``epm:status-changed``).
+    ``epm:status-changed``) — OR, for a SUFFIXED pod (#1961), a structured
+    named launch younger than the shield ceiling (per-pod arm below).
+
+    Per-pod named-launch shield for SUFFIXED pods (#1961). The issue-grain
+    compare breaks on MULTI-ROUND issues: concurrent/serial follow-up rounds
+    post ``epm:status-changed`` continually, so any pod whose own launch
+    marker predates the latest SIBLING transition loses inferred protection
+    (incident #1768: pod-1768-lt was auto-STOPPED at ~05:05Z with 142/216
+    fit cells done — its launch marker was older than a sibling round's
+    transition; the only remaining shield was the ISSUE-wide ``keep-running``
+    tag, which the standing inline-round guidance says NOT to set because it
+    blocks sibling bare-form teardowns, #1485). So when ``pod_name`` is the
+    suffixed form for this issue (:func:`_is_suffixed_pod_name` — primary
+    ``pod-<N>`` and legacy ``epm-issue-<N>`` deliberately excluded, keeping
+    the classic escaped-primary auto-stop byte-identical) AND an
+    ``epm:run-launched`` note names THAT pod in a STRUCTURED position
+    (:func:`_latest_named_run_launched_ts`) AND that launch is younger than
+    the ceiling (:func:`_pod_named_shield_max_age_s`, default 48h), this
+    returns True REGARDLESS of later sibling done-transitions. Everything
+    else — pod_name None (the three non-pod call sites), a non-suffixed
+    name, no structured named launch, or a named launch past the ceiling —
+    falls through to the issue-grain compare byte-identically (fail toward
+    the pre-#1961 behavior: never a synthesized stop, never a fresh shield).
+
+    Two documented consequences of that fallback: (a) POST-CEILING the
+    issue-grain compare can still read True via a SIBLING round's newer
+    launch marker — that is the pre-#1961 status quo, kept deliberately
+    (the ceiling bounds the NAMED shield, it does not tighten the issue
+    grain); (b) a launch note that names its pod in a NONCONFORMING position
+    gets NO per-pod shield — #1768's v15 note begins "Continuation round
+    of... Pod pod-1768-lt2 (1xH100 ...", which fails BOTH structured shapes
+    (not the leading token, no ``pod=`` token) and so deliberately degrades
+    to issue-grain: a conservative miss, never a false shield. The
+    structured pod-naming in the ``epm:run-launched`` note is load-bearing
+    on multi-round issues (lead the note with the pod name, or carry a
+    ``pod=<name>`` token).
 
     Predicate for the pod-safety auto-stop exemption: a task at a
     pod-safety auto-stop status (DONE or ``on_hold``, #980) with a fresh
@@ -7736,6 +11540,15 @@ def _task_followup_active(issue: int, events: list[dict] | None = None) -> bool:
     """
     if events is None:
         events = _task_events(issue)
+    # ── #1961 per-pod arm (suffixed pods only; see the docstring) ────────────
+    if pod_name is not None and _is_suffixed_pod_name(pod_name, issue):
+        named_ts = _latest_named_run_launched_ts(events, pod_name)
+        if named_ts is not None:
+            ref_now = time.time() if now is None else now
+            if ref_now - named_ts < _pod_named_shield_max_age_s():
+                return True
+        # No structured named launch, or past the ceiling: fall through to
+        # the issue-grain compare unchanged (never a synthesized stop).
     followup_signal = _latest_event_ts(events, _POD_FOLLOWUP_SIGNAL_KINDS)
     if followup_signal is None:
         return False
@@ -8144,6 +11957,10 @@ def _save_pod_safety_state(
     wedge_first_seen: float | None = _CARRY,
     wedge_missed: int | None = _CARRY,
     wedge_alerted: bool | None = _CARRY,
+    wedge_owner_defer_noted: bool | None = _CARRY,
+    kr_owner_missed: int | None = _CARRY,
+    kr_owner_first_ts: float | None = _CARRY,
+    kr_owner_last_alert_ts: float | None = _CARRY,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-pod state atomically (temp + rename).
@@ -8191,6 +12008,24 @@ def _save_pod_safety_state(
     ``followup_noted`` flags whose only carry-forward signal IS ``None``. MF3:
     without this forward-carry the wedge fields would be silently dropped on
     every save and the wedge miss-guard / alert-dedup would never accumulate.
+    ``wedge_owner_defer_noted`` (#1667) is the once-per-wedge-episode dedup for
+    the owner-liveness defer marker and rides the SAME ``_CARRY`` convention as
+    ``wedge_alerted`` (carried on every unrelated save; explicitly cleared by
+    :func:`_clear_wedge_state`, the failover-outcome clock clear, and the MF4
+    pod_id-mismatch reset in :func:`_process_wedged_pod`).
+
+    The #1582 keep-running wedged-owner fields — ``kr_owner_missed`` (the
+    arm's >=threshold consecutive-confirmed-ticks counter),
+    ``kr_owner_first_ts`` (the episode onset; doubles as the
+    once-per-episode marker key), and ``kr_owner_last_alert_ts`` (the
+    re-alert TTL clock) — carry forward via the SAME ``_CARRY`` sentinel
+    (``None`` is a meaningful clear value for the two ts fields), but the
+    carry is pod_id-KEYED like ``orphan_gcp_noted``: a save under a NEW
+    ``pod_id`` resets them to their defaults (0 / None / None) so a fresh
+    pod incarnation starts a fresh episode — and the reset lives HERE (not
+    only arm-side) so the #692 wedge arm's same-tick ``pod_id`` rewrite
+    cannot launder stale episode state onto the new incarnation (the
+    ``orphan_gcp_noted`` laundering case above).
     """
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _pod_safety_state_path(issue)
@@ -8237,6 +12072,33 @@ def _save_pod_safety_state(
         wedge_missed = prev_wedge_missed if isinstance(prev_wedge_missed, int) else 0
     if wedge_alerted is _CARRY:
         wedge_alerted = bool((prev or {}).get("wedge_alerted", False))
+    if wedge_owner_defer_noted is _CARRY:
+        # #1667 owner-defer dedup — same carry convention as wedge_alerted.
+        wedge_owner_defer_noted = bool((prev or {}).get("wedge_owner_defer_noted", False))
+    # #1582 kr_owner_* carry: _CARRY-defaulted like the wedge fields, but
+    # pod_id-KEYED like orphan_gcp_noted — a save under a NEW pod_id resets
+    # the episode (fresh incarnation), and the reset lives in-save so the
+    # #692 wedge arm's same-tick pod_id rewrite cannot launder stale state.
+    kr_same_pod = (prev or {}).get("pod_id") == pod_id
+    if kr_owner_missed is _CARRY:
+        prev_kr_missed = (prev or {}).get("kr_owner_missed", 0)
+        kr_owner_missed = (
+            prev_kr_missed
+            if isinstance(prev_kr_missed, int)
+            and not isinstance(prev_kr_missed, bool)
+            and kr_same_pod
+            else 0
+        )
+    if kr_owner_first_ts is _CARRY:
+        prev_kr_first = (prev or {}).get("kr_owner_first_ts")
+        kr_owner_first_ts = (
+            prev_kr_first if isinstance(prev_kr_first, int | float) and kr_same_pod else None
+        )
+    if kr_owner_last_alert_ts is _CARRY:
+        prev_kr_alert = (prev or {}).get("kr_owner_last_alert_ts")
+        kr_owner_last_alert_ts = (
+            prev_kr_alert if isinstance(prev_kr_alert, int | float) and kr_same_pod else None
+        )
     payload = {
         "pod_id": pod_id,
         "missed": missed,
@@ -8251,6 +12113,10 @@ def _save_pod_safety_state(
         "wedge_first_seen": wedge_first_seen,
         "wedge_missed": int(wedge_missed),
         "wedge_alerted": bool(wedge_alerted),
+        "wedge_owner_defer_noted": bool(wedge_owner_defer_noted),
+        "kr_owner_missed": int(kr_owner_missed),
+        "kr_owner_first_ts": kr_owner_first_ts,
+        "kr_owner_last_alert_ts": kr_owner_last_alert_ts,
     }
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(payload, indent=2))
@@ -8856,8 +12722,14 @@ def _wedge_failover(
 
     Outcomes:
 
-    * ``"failover"`` — terminated + re-provisioned a FRESH pod (or a
-      running-shaped success);
+    * ``"failover"`` — terminated + re-provisioned a FRESH pod (the
+      relaunch-success running return, ``current_phase`` = FRESH_POD_PHASE);
+    * ``"probe-alive"`` — the D9 pre-terminate liveness probe contradicted the
+      no-port read (#1668): the pod answers SSH, so NOTHING was terminated and
+      no fresh pod was provisioned; the wedge clock was cleared by the shared
+      recovery, and the caller posts a TRUTHFUL note (structurally keyed on
+      ``current_phase == backend_poll.RUNPOD_WORKLOAD_OBSERVED_PHASE`` — the
+      only other running-status return of ``_failover_wedged_runpod``);
     * ``"already-handled"`` — the poller or a prior watcher tick already failed
       this wedge over (bounded-once short-circuit on the idempotency lease /
       sentinel), OR the sidecar was re-pointed at a DIFFERENT pod between the
@@ -8939,7 +12811,7 @@ def _wedge_failover(
         print(f"  [dry-run] would terminate+failover wedged pod for issue #{issue}")
         return ("failover", None)
     try:
-        from backend_poll import _failover_wedged_runpod
+        from backend_poll import RUNPOD_WORKLOAD_OBSERVED_PHASE, _failover_wedged_runpod
 
         from explore_persona_space.backends.issue_dispatch import (
             read_handle_sidecar,
@@ -9080,6 +12952,15 @@ def _wedge_failover(
     status = out.get("status")
     reason = out.get("reason")
     if status == "running":
+        # #1668 D10: the D9 probe-success return (the pre-terminate liveness probe
+        # contradicted the no-port read; NOTHING terminated, no fresh pod
+        # provisioned) is STRUCTURALLY keyed on current_phase ==
+        # RUNPOD_WORKLOAD_OBSERVED_PHASE — the relaunch success carries
+        # FRESH_POD_PHASE ("runpod_noport_wedge_failover_fresh_pod"), the only
+        # other running-status return of _failover_wedged_runpod. Structural key
+        # only; note/log-text matching is FORBIDDEN (plan v3 §3-D10).
+        if out.get("current_phase") == RUNPOD_WORKLOAD_OBSERVED_PHASE:
+            return ("probe-alive", out)
         return ("failover", out)  # fresh pod re-provisioned (running-shaped success)
     if reason == "runpod_wedge_already_handled":
         return ("already-handled", out)  # bounded-once short-circuit (cross-actor idempotency)
@@ -9754,8 +13635,10 @@ def _handle_wedge_failover_outcome(
       AND ``set-status <N> blocked`` (CRITICAL #1) — then clear the wedge clock.
       The re-drivable ``no_compute_available`` block is re-driven by the
       capacity-retry pass; a non-capacity reason stays parked for a human.
-    * ``"failover"`` / ``"already-handled"`` → a success / no-op: a generic
-      ``epm:progress`` note (NOT a failure), then clear the wedge clock.
+    * ``"failover"`` / ``"already-handled"`` / ``"probe-alive"`` → a success /
+      no-op: a generic ``epm:progress`` note (NOT a failure), then clear the
+      wedge clock. The ``"probe-alive"`` note is TRUTHFUL to the #1668 D9
+      probe-success return: nothing terminated, no fresh pod provisioned.
 
     Returns ``"handled"`` when the outcome was fully processed here (the caller
     returns), or ``"alert"`` to defer to the alert block. ``state_save`` carries
@@ -9846,10 +13729,12 @@ def _handle_wedge_failover_outcome(
             )
             return "handled"
     else:
-        # outcome in ("failover", "already-handled") — a success / no-op, NOT a
-        # failure: a generic progress note (NOT epm:failure, NOT a status change).
-        # "already-handled" also covers the fresh-pod race the sidecar-binding
-        # defense catches.
+        # outcome in ("failover", "already-handled", "probe-alive") — a success /
+        # no-op, NOT a failure: a generic progress note (NOT epm:failure, NOT a
+        # status change). "already-handled" also covers the fresh-pod race the
+        # sidecar-binding defense catches; "probe-alive" is the #1668 D9
+        # probe-success return (nothing terminated, no fresh pod provisioned —
+        # the note must stay truthful to that).
         note = {
             "failover": (
                 f"{_WEDGE_FAILOVER_NOTE_SENTINEL} TERMINATED + re-provisioned a FRESH pod "
@@ -9871,6 +13756,13 @@ def _handle_wedge_failover_outcome(
                 f"the failover re-read (the fresh-pod race; the watcher refuses to terminate "
                 f"the fresh pod). No second terminate. Clearing the wedge clock."
             ),
+            "probe-alive": (
+                f"{_WEDGE_FAILOVER_NOTE_SENTINEL} liveness probe contradicted the no-port "
+                f"read for issue #{issue} pod {pod_id}: direct SSH answered, so the pod is "
+                f"NOT host-wedged (#1668 D9) — pod NOT terminated, no fresh pod "
+                f"provisioned; wedge clock cleared (a genuine wedge must re-mature). "
+                f"Sustained no-port API misreport suspected (the #1586 shape)."
+            ),
         }[outcome]
         _post_progress_marker(issue, note, dry_run, label="wedge-failover")
     if not dry_run:
@@ -9889,6 +13781,7 @@ def _handle_wedge_failover_outcome(
             wedge_first_seen=None,
             wedge_missed=0,
             wedge_alerted=False,
+            wedge_owner_defer_noted=False,
             prev=state_save["prev"],
         )
     return "handled"
@@ -9935,6 +13828,7 @@ def _process_wedged_pod(
         wedge_first_seen: float | None = None
         prev_wedge_missed = 0
         prev_wedge_alerted = False
+        prev_owner_defer_noted = False  # #1667: a fresh incarnation is a fresh episode
     else:
         prev_wfs = prev_state.get("wedge_first_seen")
         wedge_first_seen = prev_wfs if isinstance(prev_wfs, int | float) else None
@@ -9942,6 +13836,7 @@ def _process_wedged_pod(
         if not isinstance(prev_wedge_missed, int):
             prev_wedge_missed = 0
         prev_wedge_alerted = bool(prev_state.get("wedge_alerted", False))
+        prev_owner_defer_noted = bool(prev_state.get("wedge_owner_defer_noted", False))
 
     # ── MF1: dedicated wedge_first_seen clock ─────────────────────────────────
     # Stamp `now` on the FIRST tick the raw wedge predicate is True (wedge
@@ -9971,6 +13866,17 @@ def _process_wedged_pod(
     confirmed = wedged_for > RUNPOD_WEDGE_K_SEC and (prev_wedge_missed + 1) >= threshold
     keep_running: bool | str = _wedge_keep_running(issue) if confirmed else True
     inputs_ok = _wedge_inputs_safe(issue) if (confirmed and keep_running is False) else False
+    # #1667 owner-liveness gate — probed LAZILY, only when every OTHER
+    # terminate precondition already holds (the MF2 lazy pattern), so the
+    # events read + daemon /list are paid only for a matured, otherwise
+    # terminate-eligible wedge. Below eligibility the placeholder is `True`,
+    # which can never enable terminate (MF2 parity with the keep_running
+    # below-K placeholder).
+    owner_live: bool | str = (
+        _wedge_owner_live(issue, now)
+        if (confirmed and keep_running is False and inputs_ok)
+        else True
+    )
 
     action, new_wedge_missed = decide_pod_wedge(
         wedged_for=wedged_for,
@@ -9980,12 +13886,14 @@ def _process_wedged_pod(
         alerted=prev_wedge_alerted,
         keep_running=keep_running,
         inputs_ok=inputs_ok,
+        owner_live=owner_live,
     )
     wedged_h = f"{wedged_for / 3600:.2f}h"
     print(
         f"  issue #{issue} pod={pod_id}: RUNPOD NO-PORT WEDGE wedged_for={wedged_h} "
         f"(K={RUNPOD_WEDGE_K_SEC}s) wedge_missed={prev_wedge_missed}->{new_wedge_missed} "
-        f"keep_running={keep_running} inputs_ok={inputs_ok} action={action}"
+        f"keep_running={keep_running} inputs_ok={inputs_ok} owner_live={owner_live} "
+        f"action={action}"
     )
 
     if action == "terminate-failover":
@@ -10016,6 +13924,59 @@ def _process_wedged_pod(
         # failover raised -> fall through to the existing alert block (carries the
         # clock forward + dedups the alert); we did NOT act, so re-try later.
         action = "alert"
+
+    if action == "alert-owner-live":
+        # #1667 owner-liveness demote: the terminate is ELIGIBLE (matured +
+        # confirmed + untagged + inputs verified) but a live/"unknown" owning
+        # session is working the issue — DEFER to it. One defer marker per
+        # wedge episode (`wedge_owner_defer_noted` dedup); the wedge clock is
+        # PRESERVED so a later tick where owner activity has quieted
+        # terminates without restarting the K-floor maturation. Returning
+        # here mirrors the alert block's return — the ONLY behavior skipped
+        # relative to pre-#1667 is the terminate itself (this branch was
+        # previously terminate-only; the wedge-alert marker never fired on
+        # it), and `wedge_alerted` is carried untouched so a LATER gated-off
+        # tick (tag re-appears, inputs unverified) still posts its
+        # once-per-episode wedge-alert.
+        recent_h = _wedge_owner_recent_s() / 3600.0
+        if not prev_owner_defer_noted:
+            _post_progress_marker(
+                issue,
+                f"{_WEDGE_OWNER_DEFER_NOTE_SENTINEL} WEDGE FAILOVER DEFERRED TO LIVE OWNER "
+                f"(#1667): RUNNING pod {pod_id} is stuck in the #664 RUNNING-but-no-port "
+                f"host wedge for {wedged_h} (> {RUNPOD_WEDGE_K_SEC}s K floor, confirmed >= "
+                f"{threshold} checks; inputs verified on HF, keep-running absent) — the "
+                f"terminate+re-provision backstop (#770) is ELIGIBLE, but this issue shows "
+                f"recent owner activity (owner_live={owner_live}), so the watcher is "
+                f"DEFERRING to the owning session (incident #1586: a wedge terminate "
+                f"mid-crash-fix-round destroyed live run state). If the pod is truly "
+                f"unusable, persist state then terminate it yourself "
+                f"(`pod.py terminate --issue {issue} --yes`), or tag keep-running to hold "
+                f"it. The watcher re-checks every tick and terminates+fails over once "
+                f"owner activity quiets (> ~{recent_h:.0f}h). Posted once per wedge "
+                f"episode.",
+                dry_run,
+                label="wedge-owner-defer",
+            )
+        print(
+            f"  WEDGE-OWNER-DEFER issue #{issue}: terminate-eligible wedge {wedged_h} "
+            f"deferred to live/unknown owner (owner_live={owner_live}); NOT terminating.",
+            file=sys.stderr,
+        )
+        if not dry_run:
+            _save_pod_safety_state(
+                issue,
+                pod_id,
+                missed=prev_missed,
+                alerted=prev_status_alerted,
+                last_progress_ts=prev_progress,
+                wedge_first_seen=wedge_first_seen,  # CLOCK PRESERVED (acceptance #4)
+                wedge_missed=new_wedge_missed,
+                wedge_alerted=prev_wedge_alerted,
+                wedge_owner_defer_noted=True,
+                prev=prev_state,
+            )
+        return
 
     if action == "alert":
         post_alert = not prev_wedge_alerted
@@ -10049,6 +14010,7 @@ def _process_wedged_pod(
                 wedge_first_seen=wedge_first_seen,
                 wedge_missed=new_wedge_missed,
                 wedge_alerted=True,
+                wedge_owner_defer_noted=prev_owner_defer_noted,
                 prev=prev_state,
             )
         return
@@ -10065,6 +14027,7 @@ def _process_wedged_pod(
             wedge_first_seen=wedge_first_seen,
             wedge_missed=new_wedge_missed,
             wedge_alerted=prev_wedge_alerted,
+            wedge_owner_defer_noted=prev_owner_defer_noted,
             prev=prev_state,
         )
 
@@ -10104,6 +14067,77 @@ def _unlaunched_orphan_grace_sec() -> int:
     except (TypeError, ValueError):
         return UNLAUNCHED_ORPHAN_GRACE_SEC
     return val if val > 0 else UNLAUNCHED_ORPHAN_GRACE_SEC
+
+
+def _keep_running_owner_idle_s() -> float:
+    """#1582 marker-gap + owner-transcript-idle floor in seconds (env
+    ``EPM_KEEP_RUNNING_WEDGED_OWNER_MIN_H``, HOURS; default
+    :data:`KEEP_RUNNING_OWNER_IDLE_S` = 12h). Malformed / non-positive env
+    falls back — a typo'd var must not turn the arm into an instant pager
+    (the :func:`_stale_registration_idle_s` defensive shape)."""
+    raw = os.environ.get("EPM_KEEP_RUNNING_WEDGED_OWNER_MIN_H")
+    if not raw:
+        return float(KEEP_RUNNING_OWNER_IDLE_S)
+    try:
+        parsed = float(raw) * 3600.0
+    except ValueError:
+        return float(KEEP_RUNNING_OWNER_IDLE_S)
+    if parsed <= 0:
+        return float(KEEP_RUNNING_OWNER_IDLE_S)
+    return parsed
+
+
+def _keep_running_owner_realert_s() -> float:
+    """#1582 re-alert TTL in seconds (env ``EPM_KEEP_RUNNING_WEDGED_REALERT_H``,
+    HOURS; default :data:`KEEP_RUNNING_OWNER_REALERT_S` = 24h). Malformed /
+    non-positive env falls back (same defensive shape as
+    :func:`_keep_running_owner_idle_s`)."""
+    raw = os.environ.get("EPM_KEEP_RUNNING_WEDGED_REALERT_H")
+    if not raw:
+        return float(KEEP_RUNNING_OWNER_REALERT_S)
+    try:
+        parsed = float(raw) * 3600.0
+    except ValueError:
+        return float(KEEP_RUNNING_OWNER_REALERT_S)
+    if parsed <= 0:
+        return float(KEEP_RUNNING_OWNER_REALERT_S)
+    return parsed
+
+
+def _keep_running_owner_audit_enabled() -> bool:
+    """#1582 kill switch: False when ``EPM_DISABLE_KEEP_RUNNING_OWNER_AUDIT``
+    is set truthy ("1"/"true"/"yes"/"on", case-insensitive). Default enabled.
+    Mirrors :func:`_cpu_guard_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_KEEP_RUNNING_OWNER_AUDIT", "").strip().lower()
+    return raw not in {"1", "true", "yes", "on"}
+
+
+def _wedge_owner_recent_s() -> float:
+    """#1667 recent-owner-activity window in seconds (env
+    ``EPM_WEDGE_OWNER_RECENT_H``, HOURS; default :data:`WEDGE_OWNER_RECENT_S`
+    = 2h). Malformed / non-positive env falls back — a typo'd var must not
+    collapse the defer window to zero and re-enable the #1586 live-owner
+    terminate (the :func:`_keep_running_owner_idle_s` defensive shape)."""
+    raw = os.environ.get("EPM_WEDGE_OWNER_RECENT_H")
+    if not raw:
+        return float(WEDGE_OWNER_RECENT_S)
+    try:
+        parsed = float(raw) * 3600.0
+    except ValueError:
+        return float(WEDGE_OWNER_RECENT_S)
+    if parsed <= 0:
+        return float(WEDGE_OWNER_RECENT_S)
+    return parsed
+
+
+def _wedge_owner_guard_enabled() -> bool:
+    """#1667 kill switch: False when ``EPM_DISABLE_WEDGE_OWNER_GUARD`` is set
+    truthy ("1"/"true"/"yes"/"on", case-insensitive). Default enabled.
+    Disabled restores byte-equivalent pre-#1667 terminate behavior — the
+    probe legs are never invoked (:func:`_wedge_owner_live` returns ``False``
+    immediately). Mirrors :func:`_keep_running_owner_audit_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_WEDGE_OWNER_GUARD", "").strip().lower()
+    return raw not in {"1", "true", "yes", "on"}
 
 
 def _orphan_gcp_sidecar_is_gcp(issue: int) -> bool:
@@ -10383,7 +14417,493 @@ def _maybe_flag_unlaunched_orphan_pod(
     return True
 
 
-def _escaped_pod_exemptions(issue: int, status_class: str, events: list) -> tuple[bool, bool]:
+def _proc_cwd(pid: int) -> str | None:
+    """``/proc/<pid>/cwd`` readlink, or ``None`` on any failure (fail-soft per
+    child — the #1582 owner resolver's cwd-mapping seam; the zombie/orphan
+    passes already read ``/proc/<pid>/…`` for the same process family)."""
+    try:
+        return os.readlink(f"/proc/{pid}/cwd")
+    except OSError:
+        return None
+
+
+def _keep_running_owner_candidates(issue: int, children: list) -> dict[int, str | None]:
+    """Candidate owner pid -> sid map for the #1582 arm (extracted from
+    :func:`_keep_running_owner_state` for C901): the UNION of (a)
+    registration sids — ``issue-<N>.json`` + ``manual-issue-<N>.json``
+    (field ``happy_session_id``) resolved through the children snapshot's
+    sid -> pid map (the :func:`stale_registration_pass` pattern) — and (b)
+    cwd-mapped children — ``/proc/<pid>/cwd`` (:func:`_proc_cwd`, fail-soft
+    per child) where :func:`attribute_issue` maps the cwd to this issue
+    (covers the #1345 owner class with no registration file). A cwd-mapped
+    child with no usable sid maps to ``None``."""
+    pids_by_sid: dict[str, int] = {}
+    for c in children:
+        if not isinstance(c, dict):
+            continue
+        sid = c.get("happySessionId")
+        pid = c.get("pid")
+        if isinstance(sid, str) and sid and isinstance(pid, int) and not isinstance(pid, bool):
+            pids_by_sid[sid] = pid
+    candidates: dict[int, str | None] = {}
+    for name in (f"issue-{issue}.json", f"manual-issue-{issue}.json"):
+        try:
+            entry = json.loads((AUTONOMOUS_REGISTRY_DIR / name).read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        if not isinstance(entry, dict):
+            continue
+        sid = entry.get("happy_session_id")
+        if isinstance(sid, str) and sid and sid in pids_by_sid:
+            candidates[pids_by_sid[sid]] = sid
+    for c in children:
+        if not isinstance(c, dict):
+            continue
+        pid = c.get("pid")
+        if not isinstance(pid, int) or isinstance(pid, bool) or pid in candidates:
+            continue
+        cwd = _proc_cwd(pid)
+        if cwd is not None and attribute_issue(cwd, "") == issue:
+            child_sid = c.get("happySessionId")
+            candidates[pid] = child_sid if isinstance(child_sid, str) and child_sid else None
+    return candidates
+
+
+def _keep_running_owner_state(issue: int, now: float, min_idle_s: float) -> tuple[str, dict]:
+    """Classify the owning session(s) of ``issue`` for the #1582 arm.
+
+    Returns ``(state, evidence)`` with ``state`` in ``"live"`` | ``"wedged"``
+    | ``"absent"`` | ``"unknown"``. Every unresolvable signal fails toward
+    ``"unknown"`` (the caller's decide() FREEZES on unknown — a wrong signal
+    is worse than a missing one, the :func:`_transcript_idle_age_s`
+    contract). Steps:
+
+    1. Daemon unreachable -> ``("unknown", ...)`` (liveness unknowable).
+    2. ``_live_children(strict=True)`` raises ``RuntimeError`` (a /list
+       flake right after a successful reachability probe) ->
+       ``("unknown", ...)``. STRICT mode is load-bearing: LENIENT mode
+       returns ``[]`` on RPC failure, which would read as "no children"
+       -> owner "absent" — the one evidence read failing toward FIRE.
+    3. sid -> pid map from the children snapshot (the
+       :func:`stale_registration_pass` pattern).
+    4. Candidate owner pids (union): (a) registration sids —
+       ``issue-<N>.json`` + ``manual-issue-<N>.json`` (field
+       ``happy_session_id``) that appear in the sid->pid map; (b)
+       cwd-mapped children — ``/proc/<pid>/cwd`` (:func:`_proc_cwd`,
+       fail-soft per child) where :func:`attribute_issue` maps the cwd to
+       this issue — covers the #1345 owner class with no registration file.
+    5. A FRESH self-report rescues FIRST, before any absent classification
+       (:func:`_self_report_age_seconds` age < ``min_idle_s`` -> live); a
+       missing/malformed self-report does NOT rescue
+       (:func:`decide_stale_registration` parity).
+    6. No candidates -> ``("absent", ...)``.
+       NOTE: the sidecar ``owner_state`` label may flip wedged -> absent
+       across ticks when the stale-registration pass deletes the
+       registration file (shared 12h judgment) — cosmetic, both
+       classifications fire; keep this comment in the implementation.
+    7. Per candidate pid, :func:`_transcript_idle_age_s`: ANY idle <
+       ``min_idle_s`` -> live; else ANY unresolvable -> unknown; else all
+       >= ``min_idle_s`` -> wedged (evidence carries the max idle).
+    """
+    if not _daemon_reachable():
+        return ("unknown", {"reason": "daemon-unreachable"})
+    try:
+        children = _live_children(strict=True)
+    except RuntimeError:
+        return ("unknown", {"reason": "daemon-list-failed"})
+    candidates = _keep_running_owner_candidates(issue, children)
+    # Fresh self-report rescues FIRST — BEFORE any absent classification (a
+    # session can be healthily driving the issue without a registration or a
+    # worktree cwd); missing/malformed does NOT rescue.
+    sr_age, _sr_ts = _self_report_age_seconds(issue, now)
+    if sr_age is not None and sr_age < min_idle_s:
+        return ("live", {"reason": "fresh-self-report", "self_report_age_s": sr_age})
+    if not candidates:
+        # NOTE: the sidecar owner_state label may flip wedged->absent across
+        # ticks when the stale-registration pass deletes the registration
+        # file (shared 12h judgment) — cosmetic; both classifications fire.
+        return ("absent", {"reason": "no-candidates", "self_report_age_s": sr_age})
+    live_evidence: dict | None = None
+    unknown_evidence: dict | None = None
+    wedged_rows: list[tuple[int, str | None, float]] = []
+    for pid in sorted(candidates):
+        idle_s, why = _transcript_idle_age_s(pid, now)
+        if idle_s is None:
+            unknown_evidence = {"reason": f"transcript unresolvable (pid {pid}): {why}"}
+        elif idle_s < min_idle_s:
+            live_evidence = {
+                "reason": "fresh-transcript",
+                "pid": pid,
+                "sid": candidates[pid],
+                "transcript_idle_s": idle_s,
+            }
+        else:
+            wedged_rows.append((pid, candidates[pid], idle_s))
+    if live_evidence is not None:
+        return ("live", live_evidence)
+    if unknown_evidence is not None:
+        return ("unknown", unknown_evidence)  # a wrong signal is worse than none
+    pid, sid, idle_s = max(wedged_rows, key=lambda row: row[2])
+    return (
+        "wedged",
+        {"pid": pid, "sid": sid, "transcript_idle_s": idle_s, "self_report_age_s": sr_age},
+    )
+
+
+def _wedge_owner_live(issue: int, now: float) -> bool | str:
+    """Tri-state owner-liveness probe for the #1667 wedge owner guard.
+
+    Returns ``True`` (a live owning session is working ``issue``) | ``False``
+    (BOTH legs resolved and read not-live) | ``"unknown"`` (unresolvable).
+    Called by :func:`_process_wedged_pod` ONLY on the otherwise
+    terminate-eligible branch (matured + confirmed + untagged + inputs
+    verified — the MF2 lazy pattern), so the events read + daemon /list are
+    paid at most once per matured terminate-eligible wedge tick.
+
+    INVERTED POLARITY vs :func:`_wedge_inputs_safe` (stated because the two
+    catch-print-return shapes look alike): there SAFE = the fail-closed
+    ``False`` (ALERT-only, never an unsafe stop); HERE the literal ``False``
+    is the ACTING value (it is what PERMITS the irreversible terminate), so
+    safe = ``True``/``"unknown"`` (never-terminate, defer to the owner). Every
+    uncertainty path — kill switch aside — therefore returns ``"unknown"``,
+    never ``False`` (incident #1586: the wedge arm terminated a pod out from
+    under a live session mid-crash-fix round).
+
+    Legs:
+
+    1. Daemon-INDEPENDENT marker recency: the newest NON-watcher event ts on
+       the issue (:func:`_latest_nonwatcher_event_ts` over
+       :func:`_task_events` — watcher sentinels, incl. this guard's own defer
+       marker, are excluded by construction). A gap below
+       :func:`_wedge_owner_recent_s` (default 2h) is live crash-fix-round
+       activity (epm:failure, stage-dispatch, implementer markers all count).
+    2. The #1582 owner machinery, REUSED with the short window:
+       :func:`_keep_running_owner_state` (registration sids + cwd-mapped
+       daemon children + the fresh-self-report rescue + transcript idle)
+       with ``min_idle_s`` = the same window — ``"live"`` means a fresh
+       self-report or a live registered/cwd-mapped session with a transcript
+       idle below the window.
+
+    ``False`` requires BOTH legs resolved not-live: a resolved stale marker
+    gap (leg 1 found a ts and it is >= the window) AND a resolved
+    ``"wedged"``/``"absent"`` owner state (leg 2). Anything else — daemon
+    down, ts-less events, an ``"unknown"`` owner read, ANY exception (loud
+    stderr) — is ``"unknown"``. The kill switch
+    (:func:`_wedge_owner_guard_enabled`) returns ``False`` immediately:
+    byte-equivalent pre-#1667 terminate behavior, probes never invoked."""
+    if not _wedge_owner_guard_enabled():
+        return False  # kill switch: pre-#1667 behavior
+    try:
+        recent_s = _wedge_owner_recent_s()
+        # Leg 1 — daemon-INDEPENDENT: newest non-watcher marker on the issue.
+        ts = _latest_nonwatcher_event_ts(_task_events(issue))
+        gap = (now - ts) if ts is not None else None
+        if gap is not None and gap < recent_s:
+            return True  # recent crash-fix-round activity
+        # Leg 2 — the #1582 owner machinery, reused with the short window.
+        state, _evidence = _keep_running_owner_state(issue, now, min_idle_s=recent_s)
+        if state == "live":
+            return True  # fresh self-report, or live session with a fresh transcript
+        if state in ("wedged", "absent") and gap is not None:
+            return False  # BOTH legs resolved not-live -> terminate may proceed
+        return "unknown"  # daemon down / unresolvable transcript / ts-less events
+    except Exception as exc:  # probe failure -> uncertain -> never enables terminate
+        print(
+            f"  wedge: owner-liveness probe failed for #{issue} "
+            f"({type(exc).__name__}: {exc}); demoting to ALERT",
+            file=sys.stderr,
+        )
+        return "unknown"
+
+
+def _keep_running_wedged_sidecar_path() -> Path:
+    """DEDICATED #1582 event stream (the one-concern-one-stream convention —
+    `disk-guard-events.jsonl` / `cpu-guard-events.jsonl` siblings)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "keep-running-wedged-events.jsonl"
+
+
+def _append_keep_running_wedged_event(payload: dict, dry_run: bool) -> None:
+    """Append one JSON line to the #1582 sidecar (fail-soft; ``ts`` + ``kind``
+    stamped here). ``dry_run`` reports only — no write."""
+    row = {
+        "ts": datetime.now().astimezone().isoformat(),
+        "kind": "keep-running-wedged-owner",
+        **payload,
+    }
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append keep-running-wedged sidecar row: {line[:160]}")
+        return
+    dest = _keep_running_wedged_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  keep-running-wedged: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _emit_keep_running_wedged_alert(
+    *,
+    issue: int,
+    pod_id: str,
+    info: PodInfo | None,
+    status: str | None,
+    action: str,
+    owner_state: str,
+    evidence: dict,
+    progress_gap_s: float,
+    episode_first_ts: float | None,
+    dry_run: bool,
+) -> None:
+    """Emit the #1582 escalation channels (extracted from
+    :func:`_maybe_escalate_keep_running_wedged_owner` for C901): one sidecar
+    row + one fail-soft Telegram push on EVERY ``escalate``/``re-alert``
+    action, plus the recovery-recipe task marker ONLY on the episode-opening
+    ``escalate`` (the once-per-episode key is ``kr_owner_first_ts``, owned by
+    the caller's persist). Pure emission — no state writes here."""
+    gap_h = progress_gap_s / 3600.0
+    realert_h = _keep_running_owner_realert_s() / 3600.0
+    spec = ""
+    rate_part = ""
+    pod_name = f"pod-{issue}"
+    if info is not None:
+        pod_name = info.name
+        # Best-effort $/hr (estimate_pod_hourly_rate never raises; 0.0 on
+        # unknown gpu_count -> spec-only wording, the #1519 convention).
+        rate = estimate_pod_hourly_rate(info.gpu_type_id, info.gpu_count)
+        spec = f", {info.gpu_count or '?'}x{info.gpu_type_id or 'unknown-gpu'}"
+        rate_part = f", est. ${rate:.2f}/hr" if rate > 0 else ""
+    sr_age = evidence.get("self_report_age_s")
+    sr_txt = f"{sr_age / 3600.0:.1f}h stale" if isinstance(sr_age, int | float) else "absent"
+    idle_s = evidence.get("transcript_idle_s")
+    if owner_state == "wedged" and isinstance(idle_s, int | float):
+        owner_desc = (
+            f"wedged (sid={evidence.get('sid') or '?'}, transcript idle "
+            f"{idle_s / 3600.0:.1f}h, self-report {sr_txt})"
+        )
+    else:
+        owner_desc = "absent (no live registration or worktree-cwd session maps to this issue)"
+    payload = {
+        "issue": issue,
+        "pod_id": pod_id,
+        "pod_name": pod_name,
+        "status": status,
+        "progress_gap_h": round(gap_h, 2),
+        "owner_state": owner_state,
+        "owner_sid": evidence.get("sid"),
+        "owner_pid": evidence.get("pid"),
+        "owner_transcript_idle_h": (
+            round(idle_s / 3600.0, 2) if isinstance(idle_s, int | float) else None
+        ),
+        "self_report_age_h": (
+            round(sr_age / 3600.0, 2) if isinstance(sr_age, int | float) else None
+        ),
+        "action": "escalated" if action == "escalate" else "re-alerted",
+        "episode_first_ts": episode_first_ts,
+        "recovery": (
+            f"task.py remove-tag {issue} keep-running (re-arms the auto-stop) / stop the "
+            f"wedged session + respawn — full recipe on the task #{issue} marker"
+        ),
+    }
+    _append_keep_running_wedged_event(payload, dry_run)
+    _telegram_push(
+        f"pod-safety #1582: keep-running pod {pod_name} ({spec.lstrip(', ') or 'spec-unknown'}"
+        f"{rate_part}) idle {gap_h:.1f}h on task #{issue} ('{status}') with a {owner_state} "
+        f"owner ({owner_desc}) — billing with no live work. Recovery: remove-tag keep-running "
+        f"/ stop wedged session + respawn; see task marker.",
+        dry_run,
+    )
+    if action == "escalate":
+        _post_progress_marker(
+            issue,
+            f"{_KEEP_RUNNING_WEDGED_NOTE_SENTINEL} KEEP-RUNNING WEDGED OWNER (#1582): RUNNING "
+            f"pod {pod_name} (pod_id={pod_id}{spec}{rate_part}) is shielded by the "
+            f"keep-running tag on a task at DONE status '{status}', but no real progress for "
+            f"{gap_h:.1f}h and the owning session is {owner_desc}. NOT auto-stopped "
+            f"(escalate-only — verify no live session is driving this pod from repo root "
+            f"before acting). Recovery: (1) inspect `pod.py list-ephemeral --issue {issue}` + "
+            f"pod-side logs and harvest any completed results; (2) if work remains: "
+            f"`spawn_session.py stop --session-id <sid>` then `spawn_session.py spawn-issue "
+            f"--issue {issue} --auto` (or re-invoke /issue {issue}) — the resumed session "
+            f"harvests + terminates; (3) if no live work: `task.py remove-tag {issue} "
+            f"keep-running` FIRST (re-arms the watcher auto-stop, ~20 min; also required "
+            f"before terminate — the #1485 guard refuses a bare-form terminate while the tag "
+            f"is present, deliberate override --force-keep-running), then `pod.py stop "
+            f"--issue {issue}` or `pod.py terminate --issue {issue} --yes` after upload "
+            f"verification. Re-pushed every {realert_h:.0f}h while unresolved; marker posted "
+            f"once per episode.",
+            dry_run,
+            label="keep-running-wedged-owner",
+        )
+
+
+def _maybe_escalate_keep_running_wedged_owner(
+    issue: int,
+    pod_id: str,
+    info: PodInfo | None,
+    status: str | None,
+    now: float,
+    latest_progress: float | None,
+    threshold: int,
+    prev_state: dict,
+    dry_run: bool,
+) -> bool:
+    """ESCALATE-ONLY #1582 keep-running wedged-owner arm.
+
+    Called from :func:`_apply_pod_safety_action`'s ``keep-running-skip``
+    branch (the exact blind spot: a tagged pod short-circuits every other
+    check there — incident #1345: pod-1345-onpolicy billed ~72h behind a
+    frozen owner wrapper). Fires ONE task marker per episode + a Telegram
+    push + a sidecar row when the task shows >= 12h of real-marker silence
+    AND the owning session is provably wedged/absent, confirmed >=
+    ``threshold`` consecutive ticks; re-pushes (no second marker) every 24h
+    while unresolved. NEVER stops/terminates anything — the tag stays an
+    explicit user override; recovery is always a human/orchestrator action
+    on the marker's recipe. Returns whether it escalated/re-alerted (for
+    tests).
+
+    Sequenced lazily, cheapest evidence first (the :func:`_task_keep_running`
+    lazy-cost discipline): kill switch -> progress gap (markers already
+    loaded; pod ``created_at`` fallback when the task has no real marker) ->
+    cheap vetoes (provision-in-flight / fresh worktree activity — both fail
+    toward NOT-vetoing: an unreadable signal lets evaluation proceed, the
+    decisive owner-state gate is what fails toward no-fire;
+    stale-registration-pass parity) -> owner resolution (the only
+    daemon/proc-touching step; reached only for a tagged pod with >= 12h
+    marker silence — rare) -> :func:`decide_keep_running_owner_escalation`.
+
+    State rides the pod-safety file's ``kr_owner_*`` fields (pod_id-keyed —
+    a NEW incarnation starts a fresh episode); each save mirrors into the
+    caller's in-memory ``prev_state`` INCLUDING ``pod_id`` (the #1490 r2 /
+    #1519 clobber lesson) so the branch's subsequent save forward-carries.
+    Episode END paths (all already free): evidence clears -> decide returns
+    ``"clear"`` -> fields reset; tag removed -> branch no longer taken; pod
+    leaves RUNNING -> state file GC'd; new incarnation -> pod_id-keyed reset.
+    """
+    if not _keep_running_owner_audit_enabled():
+        return False
+    min_idle_s = _keep_running_owner_idle_s()
+    if latest_progress is not None:
+        progress_gap_s: float | None = now - latest_progress
+    else:
+        created_ts = _parse_event_ts(info.created_at) if info is not None else None
+        progress_gap_s = (now - created_ts) if created_ts is not None else None
+
+    # Episode state, pod_id-keyed (a stale prior incarnation's fields read as
+    # fresh defaults — the noted-flag read pattern of the #1490/#1519 arms).
+    same_pod = prev_state.get("pod_id") == pod_id
+    prev_missed = prev_state.get("kr_owner_missed", 0)
+    if not isinstance(prev_missed, int) or isinstance(prev_missed, bool) or not same_pod:
+        prev_missed = 0
+    prev_first = prev_state.get("kr_owner_first_ts")
+    if not isinstance(prev_first, int | float) or not same_pod:
+        prev_first = None
+    prev_alert = prev_state.get("kr_owner_last_alert_ts")
+    if not isinstance(prev_alert, int | float) or not same_pod:
+        prev_alert = None
+
+    def _persist(missed_val: int, first_val: float | None, alert_val: float | None) -> None:
+        """Persist the kr fields (write only on change) + mirror them AND
+        ``pod_id`` into the in-memory ``prev_state`` so the branch's later
+        save (prev=prev_state, kr fields at _CARRY) forward-carries them."""
+        if (missed_val, first_val, alert_val) == (prev_missed, prev_first, prev_alert):
+            return
+        if not dry_run:
+            _save_pod_safety_state(
+                issue,
+                pod_id,
+                missed=(
+                    prev_state.get("missed", 0) if isinstance(prev_state.get("missed"), int) else 0
+                ),
+                alerted=bool(prev_state.get("alerted", False)),
+                last_progress_ts=(
+                    prev_state.get("last_progress_ts")
+                    if isinstance(prev_state.get("last_progress_ts"), int | float)
+                    else None
+                ),
+                kr_owner_missed=missed_val,
+                kr_owner_first_ts=first_val,
+                kr_owner_last_alert_ts=alert_val,
+                prev=prev_state,
+            )
+        prev_state["kr_owner_missed"] = missed_val
+        prev_state["kr_owner_first_ts"] = first_val
+        prev_state["kr_owner_last_alert_ts"] = alert_val
+        prev_state["pod_id"] = pod_id
+
+    if progress_gap_s is None or progress_gap_s < min_idle_s:
+        # Fresh progress / unknowable gap -> clear. No daemon probe, no
+        # subprocess on the common path.
+        _persist(0, None, None)
+        return False
+    if _provision_in_flight_reason(issue, now) is not None:
+        _persist(0, None, None)
+        return False
+    if _worktree_recent_activity(issue, now, _wt_activity_fresh_s()):
+        _persist(0, None, None)
+        return False
+
+    owner_state, evidence = _keep_running_owner_state(issue, now, min_idle_s)
+    action, new_missed = decide_keep_running_owner_escalation(
+        progress_gap_s=progress_gap_s,
+        owner_state=owner_state,
+        missed=prev_missed,
+        threshold=threshold,
+        min_idle_s=min_idle_s,
+        first_ts=prev_first,
+        last_alert_ts=prev_alert,
+        now=now,
+        realert_s=_keep_running_owner_realert_s(),
+    )
+    if action == "clear":
+        _persist(0, None, None)
+        return False
+    if action == "hold":
+        if owner_state not in ("wedged", "absent"):
+            # Unknown-state freeze: log the evidence reason (stderr only, no
+            # sidecar row) so a persistent daemon-down freeze is observable.
+            print(
+                f"  KEEP-RUNNING-WEDGED issue #{issue}: owner state unknown "
+                f"({evidence.get('reason', 'unspecified')}); counters frozen "
+                f"(missed={prev_missed}) — fail toward no-fire.",
+                file=sys.stderr,
+            )
+        _persist(new_missed, prev_first, prev_alert)
+        return False
+
+    # action in {"escalate", "re-alert"} — emit (sidecar + push; marker only
+    # on the episode-opening escalate), then persist the episode state.
+    episode_first_ts = now if action == "escalate" else prev_first
+    _emit_keep_running_wedged_alert(
+        issue=issue,
+        pod_id=pod_id,
+        info=info,
+        status=status,
+        action=action,
+        owner_state=owner_state,
+        evidence=evidence,
+        progress_gap_s=progress_gap_s,
+        episode_first_ts=episode_first_ts,
+        dry_run=dry_run,
+    )
+    _persist(new_missed, episode_first_ts, now)
+    print(
+        f"  KEEP-RUNNING-WEDGED issue #{issue}: {action} — pod "
+        f"{info.name if info is not None else f'pod-{issue}'} progress gap "
+        f"{progress_gap_s / 3600.0:.1f}h, owner {owner_state}; escalate-only, NOT stopping.",
+        file=sys.stderr,
+    )
+    return True
+
+
+def _escaped_pod_exemptions(
+    issue: int,
+    status_class: str,
+    events: list,
+    pod_name: str | None = None,
+    now: float | None = None,
+) -> tuple[bool, bool]:
     """Lazy escaped-pod auto-stop exemptions for :func:`_process_pod`.
 
     Returns ``(keep_running, followup_active)``. Both only matter when the
@@ -10392,13 +14912,16 @@ def _escaped_pod_exemptions(issue: int, status_class: str, events: list) -> tupl
     escaped-pod candidates. ``keep_running`` (the explicit user tag) is
     consulted first; ``followup_active`` (the inferred-from-events live inline
     follow-up) is the fallback, computed only when ``keep_running`` is False.
+    ``pod_name`` + ``now`` thread through to the #1961 per-pod named-launch
+    shield for SUFFIXED pods (see :func:`_task_followup_active`); ``None``
+    keeps the issue-grain behavior byte-identical.
     Extracted from :func:`_process_pod` to keep its cyclomatic complexity under
     the C901 cap after the #692 wedge arm landed (behavior unchanged)."""
     keep_running = status_class == "auto-stop-done" and _task_keep_running(issue)
     followup_active = (
         status_class == "auto-stop-done"
         and not keep_running
-        and _task_followup_active(issue, events=events)
+        and _task_followup_active(issue, events=events, pod_name=pod_name, now=now)
     )
     return keep_running, followup_active
 
@@ -10451,7 +14974,13 @@ def _process_pod(
     events = _task_events(issue)
     latest_progress = _latest_progress_ts(events)
     status_class = _status_class(status, latest_progress, now)
-    keep_running, followup_active = _escaped_pod_exemptions(issue, status_class, events)
+    keep_running, followup_active = _escaped_pod_exemptions(
+        issue,
+        status_class,
+        events,
+        pod_name=info.name if info is not None else f"pod-{issue}",
+        now=now,
+    )
 
     prev_state = _load_pod_safety_state(issue)
     prev_missed = prev_state.get("missed", 0)
@@ -10533,6 +15062,7 @@ def _process_pod(
         prev_keep_running_noted=prev_keep_running_noted,
         prev_followup_noted=prev_followup_noted,
         prev_stop_failed_noted=prev_stop_failed_noted,
+        info=info,
     )
 
 
@@ -10553,6 +15083,7 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
     prev_keep_running_noted: bool,
     prev_followup_noted: bool,
     prev_stop_failed_noted: bool,
+    info: PodInfo | None = None,
 ) -> None:
     """Apply the status-class :func:`decide_pod_safety` ``action`` for one pod.
 
@@ -10564,7 +15095,12 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
     the appropriate once-per-episode marker (deduped
     via the prev-state flags) and persist the per-pod state. Each save
     forward-carries the #692 wedge fields untouched (this is a status-class tick;
-    the wedge arm owns them on its own ticks)."""
+    the wedge arm owns them on its own ticks). ``info`` (the live
+    :class:`runpod_api.PodInfo`, threaded from :func:`_process_pod`; keyword
+    with a ``None`` default so existing direct callers keep passing) feeds
+    the #1582 keep-running wedged-owner arm inside the
+    ``keep-running-skip`` branch — the pod ``created_at`` gap fallback + the
+    marker/push spec text."""
     if action == "keep-running-skip":
         print(
             f"  KEEP-RUNNING issue #{issue}: task status '{status}' is DONE but the "
@@ -10585,6 +15121,24 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
                 dry_run,
                 label="keep-running-skip",
             )
+        # #1582 keep-running wedged-owner arm (ESCALATE-ONLY, purely
+        # additive): the tag makes this pod invisible to every other check,
+        # so audit the OWNER here — >= 12h marker silence + a provably
+        # wedged/absent owning session escalates (marker/push/sidecar),
+        # never stops. Runs BEFORE the branch's save; its own saves mirror
+        # the kr fields + pod_id into prev_state so the save below
+        # forward-carries them (the #1490 r2 / #1519 lesson).
+        _maybe_escalate_keep_running_wedged_owner(
+            issue,
+            pod_id,
+            info,
+            status,
+            now,
+            latest_progress,
+            threshold,
+            prev_state,
+            dry_run,
+        )
         if not dry_run:
             _save_pod_safety_state(
                 issue,
@@ -15457,6 +20011,13 @@ PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT = INFRA_DRAIN_BACKOFF_S_DEFAULT
 # task leaves `proposed`, so a PM rewrite / repromotion / status change clears
 # it naturally). env EPM_PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS.
 PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS_DEFAULT = INFRA_DRAIN_MAX_ATTEMPTS_DEFAULT
+# Bounded urgent-lane overflow (#1853): extra slots past the shared cap
+# reserved for `urgent-main-red` candidates ONLY, so an urgent-park-router
+# filing is dispatchable even when a session wave holds the cap exactly full
+# (the #1823 shape: 8-27h cap-full skips). 0 disables the overflow while
+# keeping the urgent-first ordering. NEVER widen beyond +1 without a plan
+# (the #1853 must-ask fence). env EPM_INFRA_SWEEP_URGENT_BONUS.
+PROPOSED_INFRA_SWEEP_URGENT_BONUS_DEFAULT = 1
 
 # #843 M3: the sweep skips a decided candidate whose events.jsonl carries a
 # dispatch-sentinel marker younger than this — one watcher cadence (cron
@@ -16727,6 +21288,22 @@ def _proposed_infra_sweep_backoff_s() -> float:
         return PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT
 
 
+def _infra_sweep_urgent_bonus() -> int:
+    """Urgent-lane overflow slots past the shared cap (#1853; env
+    ``EPM_INFRA_SWEEP_URGENT_BONUS``; default
+    :data:`PROPOSED_INFRA_SWEEP_URGENT_BONUS_DEFAULT`, clamped to >= 0 — 0
+    disables the overflow while keeping the urgent-first ordering). A
+    malformed env value falls back to the default (a typo must not distort
+    the cap arithmetic — the :func:`_proposed_infra_sweep_backoff_s` shape)."""
+    raw = os.environ.get("EPM_INFRA_SWEEP_URGENT_BONUS")
+    if not raw:
+        return PROPOSED_INFRA_SWEEP_URGENT_BONUS_DEFAULT
+    try:
+        return max(0, int(raw))
+    except ValueError:
+        return PROPOSED_INFRA_SWEEP_URGENT_BONUS_DEFAULT
+
+
 def _proposed_infra_sweep_max_attempts() -> int:
     """Attempt cap before the sweep parks a repeatedly-failing task (env
     ``EPM_PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS``; default
@@ -16772,10 +21349,13 @@ def _save_proposed_infra_sweep_state(state: dict) -> None:
     tmp.replace(dest)
 
 
-def _proposed_infra_candidates() -> list[int] | None:
-    """Ripe-`proposed` infra/batch candidate ids, OLDEST-FIRST (ascending id is
-    a safe proxy — the PM's urgency-first nuance is the PM's job; this sweep is
-    the mechanical backstop). Built from EXACTLY one
+def _proposed_infra_candidates() -> tuple[list[int], frozenset[int]] | None:
+    """Ripe-`proposed` infra/batch candidates as ``(ordered_ids, urgent_ids)``
+    (#1853): URGENT-FIRST — rows tagged :data:`URGENT_MAIN_RED_TAG` (the
+    #1681 router's mechanical urgency signal) ahead of EVERY non-urgent row —
+    then OLDEST-FIRST within each class (ascending id is a safe proxy — the
+    PM's urgency-first nuance is the PM's job; this sweep is the mechanical
+    backstop). Built from EXACTLY one
     ``task.py list-by-status --status proposed --json`` subprocess, filtered to
     ``kind in INFRA_DRAIN_KINDS``.
 
@@ -16785,7 +21365,9 @@ def _proposed_infra_candidates() -> list[int] | None:
     pinned by the exact-argv Test 10. A row tagged
     :data:`_NEEDS_HUMAN_TAG` is ALSO excluded (#706): a /daily route-3 held
     judgment call is a tracked `proposed` infra task surfaced in the PM
-    `Needs you` block for Thomas's call, NEVER auto-dispatched by this sweep.
+    `Needs you` block for Thomas's call, NEVER auto-dispatched by this sweep —
+    the exclusion BEATS :data:`URGENT_MAIN_RED_TAG` (a row tagged both never
+    enters the ids NOR the urgent set).
     Returns ``None`` on any read/parse
     failure (the pass then skips this tick — fail toward NOT dispatching,
     mirroring :func:`_infra_drain_occupancy`'s fail-closed posture)."""
@@ -16817,20 +21399,27 @@ def _proposed_infra_candidates() -> list[int] | None:
     if not isinstance(rows, list):
         return None
     ids: list[int] = []
+    urgent: set[int] = set()
     for row in rows:
         if not isinstance(row, dict) or row.get("kind") not in INFRA_DRAIN_KINDS:
             continue
+        tags = row.get("tags") or []
         # #706: a /daily route-3 held judgment call carries `needs-human` —
         # surfaced in the PM `Needs you` block, never auto-dispatched. The
         # `or []` guards legacy rows that predate the `tags` field (a
-        # `row["tags"]` lookup would KeyError + crash the whole sweep).
-        if _NEEDS_HUMAN_TAG in (row.get("tags") or []):
+        # `row["tags"]` lookup would KeyError + crash the whole sweep). This
+        # exclusion stays ORDERED BEFORE the urgency collection below — a row
+        # tagged both `needs-human` + `urgent-main-red` is neither a
+        # candidate nor urgent (#1853 acceptance vi).
+        if _NEEDS_HUMAN_TAG in tags:
             continue
         tid = row.get("id")
         if isinstance(tid, int) and tid not in ids:
             ids.append(tid)
-    ids.sort()  # oldest-first proxy
-    return ids
+            if URGENT_MAIN_RED_TAG in tags:
+                urgent.add(tid)
+    ids.sort(key=lambda t: (0 if t in urgent else 1, t))  # urgent-first, then oldest-first
+    return ids, frozenset(urgent)
 
 
 def _proposed_infra_hold_reason(
@@ -16883,20 +21472,25 @@ def decide_proposed_infra_sweep(
     *,
     backoff_s: float = PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT,
     max_attempts: int = PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS_DEFAULT,
+    urgent: frozenset[int] = frozenset(),
+    urgent_bonus: int = 0,
 ) -> tuple[list[int], list[tuple[int, str]]]:
     """Pure decision: ``(dispatch_ids_in_order, skipped [(id, reason)])`` —
     mirroring :func:`decide_infra_drain` so the cap/hold/registration matrix is
     falsifiable in isolation (#690 R4).
 
-    ``candidates`` is the ripe-`proposed` infra/batch id list (oldest-first);
+    ``candidates`` is the ripe-`proposed` infra/batch id list (urgent-first,
+    then oldest-first — :func:`_proposed_infra_candidates`);
     ``holds`` the PM queue file's PARSED int-keyed map; ``predicate_statuses``
     the resolved status of each predicate's BLOCKING issue (``None`` =
     unreadable); ``registered`` the NON-STALE registrations among the
     candidates; ``occupied_active`` the count of kind-infra/batch tasks at
     :data:`INFRA_DRAIN_OCCUPIED_STATUSES`; ``pending`` the count of ALL
     non-stale registrations of still-`proposed` drain-kind tasks (the SHARED
-    cap budget — see :func:`_infra_drain_pending`). ``free = max(0, cap -
-    occupied_active - pending)``.
+    cap budget — see :func:`_infra_drain_pending`). ``urgent`` is the
+    `urgent-main-red` id set riding the candidate tuple; ``urgent_bonus``
+    (#1853, default 0 — the pass threads :func:`_infra_sweep_urgent_bonus`)
+    grants urgent candidates a bounded overflow past the shared cap.
 
     Per-candidate guard order (every skip carries a reason string):
 
@@ -16911,10 +21505,17 @@ def decide_proposed_infra_sweep(
          change status between the candidate query and this read)
       6. kind not in :data:`INFRA_DRAIN_KINDS` → ``"kind-<kind|unreadable>"``
          (defense in depth; the candidate query already filtered)
-      7. no free slot → ``"cap-full"``
+      7. per-candidate limit ``cap + (urgent_bonus if candidate in urgent
+         else 0)``; dispatch iff ``occupied_active + pending + len(dispatch)
+         < limit``, else → ``"cap-full"`` (``len(dispatch)`` inside the
+         comparison bounds the overflow to ``urgent_bonus`` slots TOTAL —
+         two urgent candidates at a full cap with bonus 1 dispatch exactly
+         one; urgent-first ordering means an urgent candidate can never lose
+         its bonus slot to a non-urgent one. ``urgent_bonus=0`` reproduces
+         the old ``free = max(0, cap - occupied_active - pending)`` walk
+         byte-for-byte)
       8. else dispatch; one attempt per id per cycle
     """
-    free = max(0, cap - occupied_active - pending)
     dispatch: list[int] = []
     skipped: list[tuple[int, str]] = []
     for i in candidates:
@@ -16950,11 +21551,14 @@ def decide_proposed_infra_sweep(
         if kind not in INFRA_DRAIN_KINDS:
             skipped.append((i, f"kind-{kind or 'unreadable'}"))
             continue
-        if free <= 0:
+        # #1853 guard 7: per-candidate limit — urgent candidates get the
+        # bounded bonus past the shared cap; `len(dispatch)` inside the
+        # comparison keeps the overflow to `urgent_bonus` slots TOTAL.
+        limit = cap + (urgent_bonus if i in urgent else 0)
+        if occupied_active + pending + len(dispatch) >= limit:
             skipped.append((i, "cap-full"))
             continue
         dispatch.append(i)
-        free -= 1
     return dispatch, skipped
 
 
@@ -16999,7 +21603,10 @@ def proposed_infra_sweep_pass(
     BUILDS its own candidate set from ``list-by-status --status proposed``;
     consults the PM queue's ``holds`` map ONLY to honor holds. Daemon-gated like
     every spawning pass; shares the cap with the drain (it runs AFTER the drain
-    in main(), so the drain's fresh registrations count as ``pending`` here)."""
+    in main(), so the drain's fresh registrations count as ``pending`` here).
+    `urgent-main-red` candidates ride an URGENT LANE (#1853): ordered ahead of
+    every non-urgent candidate and granted the bounded
+    :func:`_infra_sweep_urgent_bonus` overflow past the shared cap."""
     if not _proposed_infra_sweep_enabled():
         print("proposed-infra-sweep: disabled via EPM_DISABLE_PROPOSED_INFRA_SWEEP; skipping")
         return
@@ -17012,13 +21619,17 @@ def proposed_infra_sweep_pass(
         return
     now = now if now is not None else time.time()
 
-    candidates = _proposed_infra_candidates()
-    if candidates is None:
+    # Unpack the (ids, urgent) tuple AT THE TOP (#1853): every downstream use
+    # — _proposed_infra_sweep_prune_save's `set(candidates)`, the emptiness
+    # check below, _infra_drain_signals — consumes the ids LIST.
+    cand_result = _proposed_infra_candidates()
+    if cand_result is None:
         print(
             "proposed-infra-sweep: `list-by-status --status proposed` read FAILED; "
             "skipping this tick (fail toward NOT dispatching)"
         )
         return
+    candidates, urgent = cand_result
     if not candidates:
         print("proposed-infra-sweep: no ripe proposed infra/batch candidates; nothing to do")
         return
@@ -17095,6 +21706,8 @@ def proposed_infra_sweep_pass(
         cap,
         backoff_s=backoff_s,
         max_attempts=max_attempts,
+        urgent=urgent,
+        urgent_bonus=_infra_sweep_urgent_bonus(),
     )
 
     marker_fresh_s = _proposed_infra_sweep_marker_fresh_s()
@@ -17140,7 +21753,7 @@ def proposed_infra_sweep_pass(
     for issue, reason in skipped:
         print(f"  PROPOSED-INFRA-SWEEP SKIP issue #{issue} ({reason})")
     summary = (
-        f"proposed-infra-sweep: candidates={len(candidates)} "
+        f"proposed-infra-sweep: candidates={len(candidates)} urgent={len(urgent)} "
         f"occupied={occupied_active}(+{pending} pending) cap={cap} "
         f"dispatched={dispatched} skipped={len(skipped)}"
     )
@@ -18121,6 +22734,102 @@ def _task_session_followup_active(issue: int, events: list[dict] | None = None) 
     return followup > done_transition
 
 
+def _latest_note_sentinel_ts(events: list[dict], sentinel: str) -> float | None:
+    """Newest epoch ts among events whose note carries ``sentinel``.
+
+    The note-sentinel complement of :func:`_latest_event_ts`:
+    watcher-attributed markers are all kind ``epm:progress`` distinguished
+    only by their note sentinel, so a KIND-keyed scan cannot see them."""
+    best: float | None = None
+    for ev in events:
+        if sentinel in (ev.get("note") or ""):
+            ts = _parse_event_ts(ev.get("ts"))
+            if ts is not None and (best is None or ts > best):
+                best = ts
+    return best
+
+
+# #1670: hard TTL on the completed-unmerged-respawn exemption. Bounds the
+# worst case (the recovery session wedges; neither epm:merged nor any
+# done-transition ever lands) so the exemption cannot shield an idle
+# session forever — the 2026-06-10 disk-incident class this pass exists
+# to reap. 24h is generous vs the <1h expected Step-10d merge recovery
+# and tiny vs the incident scale. Module constant by design (no env knob:
+# the file's knob pattern is reserved for operator-tuned thresholds;
+# tests monkeypatch this).
+SESSION_RECONCILE_RESPAWN_TTL_S = 24 * 3600
+
+
+def _task_recovery_respawn_active(
+    issue: int, events: list[dict] | None = None, now: float | None = None
+) -> bool:
+    """True iff the watcher's own completed-unmerged respawn (#1653 arm)
+    plausibly still owns a live recovery session on this issue (#1670).
+
+    The exemption arms when the respawn marker
+    (:data:`_COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL`) is (a) within
+    :data:`SESSION_RECONCILE_RESPAWN_TTL_S` and (b) newer than every
+    SETTLING marker — the pass's done-transition set PLUS ``epm:merged``
+    (the marker whose absence the completed-unmerged pass exists to fix;
+    its arrival ends the recovery episode, mirroring that pass's own
+    ``recovered`` episode pruning). Clock-skew guard: a FUTURE-dated
+    respawn marker ts reads ``now - ts < 0`` and switches the exemption
+    OFF — deliberate (a garbled/skewed timestamp must not shield a
+    session indefinitely). Deliberate divergence from the
+    :func:`_task_session_followup_active` twin: a MISSING done-transition
+    does NOT defeat the exemption — the TTL bounds it, the respawn marker
+    only ever fires on ``completed``-status tasks (which carry a
+    status-changed by construction, so the ``None`` case is a parse
+    corner), and the failure direction of False here is precisely the
+    incident (#1622, 2026-07-24: the reconcile pass stopped the watcher's
+    own 10-min-old merge-recovery session, consuming the once-per-episode
+    respawn budget and re-stranding the merge).
+
+    Rejected one-liner alternative: removing the respawn sentinel from
+    :data:`_WATCHER_NOTE_SENTINELS` (so the marker refreshes the idle
+    clock directly) — that exclusion is deliberate (#810/#949:
+    watcher-posted notes must never reset the staleness clocks they
+    measure) and the set is shared across ALL staleness-clock consumers,
+    so the blast radius is far wider than this pass."""
+    if events is None:
+        events = _task_events(issue)
+    respawn_ts = _latest_note_sentinel_ts(events, _COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL)
+    if respawn_ts is None:
+        return False
+    now = now if now is not None else time.time()
+    if not (0 <= now - respawn_ts <= SESSION_RECONCILE_RESPAWN_TTL_S):
+        return False  # past TTL, or future-dated (clock-skew guard)
+    settled = _latest_event_ts(events, _SESSION_DONE_TRANSITION_KINDS | {"epm:merged"})
+    return settled is None or respawn_ts > settled
+
+
+def _newest_registration_spawned_at(issue: int) -> float | None:
+    """Newest ``spawned_at`` across ``issue-<N>.json`` AND
+    ``manual-issue-<N>.json`` (fail-soft -> ``None``). A fresh value is a
+    SESSION-level activity signal for the reconcile pass: a just-spawned
+    session may not have posted any marker yet (#1670).
+
+    Coverage is honest, not total: for AUTO respawns on DONE-status tasks
+    the crash-recovery arm deletes ``issue-<N>.json`` UNCONDITIONALLY in
+    the same tick it observes the terminal status, so this signal's real
+    coverage is ``manual-issue-<N>.json`` registrations plus the
+    pre-delete window; the TRANSCRIPT signal in
+    :func:`_session_idle_signals` is the designed backup when the respawn
+    marker post failed at spawn. (:func:`_registry_spawned_at` is left
+    untouched: its crash-arm / auth-outage consumers key deliberately on
+    the AUTO file only.)"""
+    best: float | None = None
+    for prefix in ("issue-", "manual-issue-"):
+        try:
+            entry = json.loads((AUTONOMOUS_REGISTRY_DIR / f"{prefix}{issue}.json").read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        ts = entry.get("spawned_at") if isinstance(entry, dict) else None
+        if isinstance(ts, int | float) and not isinstance(ts, bool) and ts:
+            best = float(ts) if best is None else max(best, float(ts))
+    return best
+
+
 def _latest_nonwatcher_event_ts(events: list[dict]) -> float | None:
     """Newest epoch ts among ALL events whose note does NOT carry a watcher
     sentinel (:data:`_WATCHER_NOTE_SENTINELS`), or ``None``.
@@ -18185,12 +22894,14 @@ def decide_session_reconcile(
     autostop: bool = False,
     keep_running: bool = False,
     followup_active: bool = False,
+    recovery_respawn_active: bool = False,
     pod_running: bool = False,
 ) -> tuple[str, int]:
     """Pure decision for the session-reconcile pass on one issue's live,
     issue-mapped session(s). Returns ``(action, new_missed)`` where action is
     ``"clear"`` | ``"keep"`` | ``"alert"`` | ``"stop"`` |
-    ``"keep-running-skip"`` | ``"followup-skip"`` | ``"pod-skip"``.
+    ``"keep-running-skip"`` | ``"followup-skip"`` | ``"respawn-skip"`` |
+    ``"pod-skip"``.
 
     The caller only invokes this for issues that HAVE at least one live
     mapped session; sessions with no issue mapping (PM / chat) never reach
@@ -18218,7 +22929,19 @@ def decide_session_reconcile(
       requested); its driver session must not be stopped even if the
       follow-up itself is quiet (markers > idle window — e.g. mid-training
       silence).
-    - done + idle + ``pod_running`` (and neither skip above) ->
+    - done + idle + ``recovery_respawn_active`` (and neither skip above) ->
+      ``("respawn-skip", 0)``. The watcher's own completed-unmerged respawn
+      marker (the #1653 arm's ``spawn-issue --auto`` dispatch) is newer than
+      every settling marker (:data:`_SESSION_DONE_TRANSITION_KINDS` plus
+      ``epm:merged``) and within its 24h TTL: a just-spawned Step-10d
+      merge-recovery session is (or was recently) in flight; stopping it
+      would consume the once-per-episode respawn budget and re-strand the
+      merge (#1622, 2026-07-24: a 10-minute-old recovery session was
+      auto-stopped off the TASK's 27.5h marker gap). A future-dated respawn
+      marker reads NOT-active (the predicate's clock-skew guard —
+      deliberate: a garbled timestamp must not shield a session), and the
+      exemption self-expires at the TTL or on any newer settling marker.
+    - done + idle + ``pod_running`` (and none of the skips above) ->
       ``("pod-skip", 0)``. A RUNNING managed pod on the issue means work may
       still be in flight that the markers haven't surfaced yet; the
       pod-safety pass owns reconciling the pod itself, and once it stops the
@@ -18246,6 +22969,8 @@ def decide_session_reconcile(
         return ("keep-running-skip", 0)
     if followup_active:
         return ("followup-skip", 0)
+    if recovery_respawn_active:
+        return ("respawn-skip", 0)
     if pod_running:
         return ("pod-skip", 0)
     new_missed = missed + 1
@@ -18401,14 +23126,25 @@ def _gc_orphan_session_reconcile_state(
     return cleared
 
 
-def _session_idle_signals(issue: int, now: float) -> tuple[bool, str, list[dict]]:
+def _session_idle_signals(
+    issue: int,
+    now: float,
+    *,
+    sids: tuple[str, ...] | list[str] = (),
+    pids_by_sid: dict[str, int] | None = None,
+) -> tuple[bool, str, list[dict]]:
     """Compute ``(idle, gap_desc, events)`` for a DONE-status candidate.
 
     ``idle`` is True when EVERY available activity signal — the newest
     NON-watcher marker of ANY kind (:func:`_latest_nonwatcher_event_ts`, not
     just progress kinds: on a parked task any marker is evidence the task is
-    still being worked) and the per-issue self-report file — is older than
-    :func:`_session_idle_s` (default 2h, env
+    still being worked), the per-issue self-report file, the freshest
+    registration ``spawned_at`` across ``issue-<N>.json`` /
+    ``manual-issue-<N>.json`` (#1670 — a just-spawned session may not have
+    posted any marker yet), and — probed LAZILY, only when the cheaper
+    signals already read idle and ``pids_by_sid`` was provided — each
+    mapped sid's own transcript mtime (:func:`_transcript_idle_age_s`) —
+    is older than :func:`_session_idle_s` (default 2h, env
     ``EPM_SESSION_RECONCILE_IDLE_S``). When NO signal is readable at all the
     issue counts as idle (mirrors the orphan sweep's None-is-stale rule; the
     status gate + follow-up/pod/keep-running skips + 2-miss guard keep that
@@ -18426,7 +23162,30 @@ def _session_idle_signals(issue: int, now: float) -> tuple[bool, str, list[dict]
         )
         if a is not None
     ]
+    # #1670 session-level signals (incident: a 10-min-old recovery respawn
+    # read as 27.5h idle off the TASK's marker gap). Each signal is
+    # OPTIONAL — unreadable contributes nothing — so the deliberate
+    # "no signal at all -> idle" reaping default is preserved: the floor
+    # only ever protects provably YOUNG (fresh spawned_at) or provably
+    # ACTIVE (fresh transcript) sessions.
+    spawned = _newest_registration_spawned_at(issue)
+    if spawned is not None:
+        ages.append(max(0.0, now - spawned))
     idle = (min(ages) >= _session_idle_s()) if ages else True
+    if idle and pids_by_sid:
+        # Transcript mtime = the truest per-SESSION activity signal.
+        # Probed LAZILY: only when the cheap task-level signals already
+        # read idle (zero cost on the common fresh-activity path). An
+        # unresolvable transcript contributes nothing — falls back to
+        # today's behavior; a wrong signal is worse than a missing one
+        # (the helper's happy-log-only rationale).
+        for sid in sids:
+            pid = pids_by_sid.get(sid)
+            if isinstance(pid, int):
+                t_age, _reason = _transcript_idle_age_s(pid, now)
+                if t_age is not None:
+                    ages.append(t_age)
+        idle = (min(ages) >= _session_idle_s()) if ages else True
     gap_desc = f"{min(ages) / 3600:.1f}h" if ages else "no-signal"
     return idle, gap_desc, events
 
@@ -18460,7 +23219,7 @@ def _handle_session_stop(
             f"autonomous_session_watch session-reconcile pass — task status "
             f"'{status}' is parked/terminal, no live follow-up signal, no "
             f"RUNNING pod, no keep-running tag, and no activity (non-watcher "
-            f"marker / self-report) was observed for > "
+            f"marker / self-report / session registration / transcript) was observed for > "
             f"{_session_idle_s() / 3600:.1f}h (gap={gap_desc}), confirmed "
             f"for >= {threshold} checks. An idle session pins its worktree "
             f"against the stale-worktree sweep and holds deleted-file "
@@ -18613,6 +23372,7 @@ def _process_session_reconcile(
     *,
     autostop: bool,
     running_pod_issues: set[int] | None = None,
+    pids_by_sid: dict[str, int] | None = None,
 ) -> None:
     """Reconcile one issue's live session(s) against its task status.
 
@@ -18624,7 +23384,9 @@ def _process_session_reconcile(
     ``EPM_SESSION_RECONCILE_AUTOSTOP=0``. ``running_pod_issues`` is the
     issue set with a RUNNING managed pod (computed once per pass); ``None``
     is treated as the empty set (unit-test convenience — production always
-    passes the snapshot)."""
+    passes the snapshot). ``pids_by_sid`` is main()'s {sid: wrapper pid}
+    /list snapshot (#1670), threaded into the lazy per-sid transcript probe
+    in :func:`_session_idle_signals`; ``None`` skips that probe."""
     status = _task_status(issue)
     done = status in SESSION_RECONCILE_DONE
 
@@ -18634,13 +23396,21 @@ def _process_session_reconcile(
     gap_desc = "n/a"
     keep_running = False
     followup_active = False
+    recovery_respawn_active = False
     pod_running = False
     if done:
-        idle, gap_desc, events = _session_idle_signals(issue, now)
+        idle, gap_desc, events = _session_idle_signals(
+            issue, now, sids=sids, pids_by_sid=pids_by_sid
+        )
         if idle:
             keep_running = _task_keep_running(issue)
             followup_active = not keep_running and _task_session_followup_active(
                 issue, events=events
+            )
+            recovery_respawn_active = (
+                not keep_running
+                and not followup_active
+                and _task_recovery_respawn_active(issue, events=events, now=now)
             )
             pod_running = issue in (running_pod_issues or set())
 
@@ -18665,6 +23435,7 @@ def _process_session_reconcile(
         autostop=autostop,
         keep_running=keep_running,
         followup_active=followup_active,
+        recovery_respawn_active=recovery_respawn_active,
         pod_running=pod_running,
     )
     print(
@@ -18693,6 +23464,16 @@ def _process_session_reconcile(
             f"free-analysis-followup-run, newer than the latest done-transition) "
             f"indicates a live or requested inline follow-up — session-reconcile "
             f"SKIPPED (sids={sids})."
+        ),
+        "respawn-skip": (
+            f"  RECOVERY-RESPAWN issue #{issue}: task status '{status}' is DONE and the "
+            f"session(s) are idle, but the watcher's own completed-unmerged respawn "
+            f"marker ({_COMPLETED_UNMERGED_RESPAWN_NOTE_SENTINEL}) is newer than every "
+            f"settling marker (done-transitions + epm:merged) and within its TTL — a "
+            f"just-spawned Step-10d merge-recovery session is (or was recently) in "
+            f"flight; stopping it would consume the once-per-episode respawn budget "
+            f"and re-strand the merge (#1622) — session-reconcile SKIPPED "
+            f"(sids={sids})."
         ),
         "pod-skip": (
             f"  POD-RUNNING issue #{issue}: task status '{status}' is DONE and the "
@@ -18737,7 +23518,8 @@ def _process_session_reconcile(
             f"{_SESSION_RECONCILE_ALERT_NOTE_SENTINEL} IDLE session(s) outliving a "
             f"parked/terminal task: {len(sids)} live Happy session(s) "
             f"({', '.join(sids)}) mapped to this task (status '{status}') with no "
-            f"activity (non-watcher marker / self-report) for > "
+            f"activity (non-watcher marker / self-report / session registration / "
+            f"transcript) for > "
             f"{_session_idle_s() / 3600:.1f}h (gap={gap_desc}). Idle sessions pin "
             f"their worktrees against the stale-worktree sweep and hold "
             f"deleted-file handles (2026-06-10 disk incident: ~37G phantom usage "
@@ -18769,13 +23551,16 @@ def session_reconcile_pass(
     daemon_reachable: bool,
     live_ids: set[str] | None = None,
     now: float | None = None,
+    pids_by_sid: dict[str, int] | None = None,
 ) -> None:
     """Reconcile live Happy sessions against their task status.
 
     Daemon-gated like the respawn pass: session liveness is unknowable during
     a daemon outage, and the stop action itself POSTs to the daemon, so the
     whole pass skips when it is unreachable. ``live_ids`` may be passed in by
-    ``main()`` to reuse its snapshot (one daemon round-trip per tick)."""
+    ``main()`` to reuse its snapshot (one daemon round-trip per tick);
+    ``pids_by_sid`` is main()'s shared {sid: wrapper pid} snapshot (#1670),
+    forwarded to the per-issue lazy transcript probe."""
     now = now if now is not None else time.time()
     if not daemon_reachable:
         print(
@@ -18822,6 +23607,7 @@ def session_reconcile_pass(
             threshold,
             autostop=autostop,
             running_pod_issues=running_pod_issues,
+            pids_by_sid=pids_by_sid,
         )
 
 
@@ -22509,6 +27295,69 @@ def _boot_death_window_s() -> float:
     return parsed
 
 
+def _boot_transport_min_age_s() -> float:
+    """Boot-transport registration-age threshold in seconds (env
+    ``EPM_BOOT_TRANSPORT_MIN_AGE_MIN``, MINUTES — the collapsed lane for
+    freely-retryable transport failures, #1695; default
+    :data:`BOOT_TRANSPORT_MIN_AGE_S`). Malformed / non-positive env falls
+    back to the default; never a kill switch (the lane's kill switch is
+    ``EPM_DISABLE_BOOT_DEATH_PASS=1``, unchanged). Byte-parallel to
+    :func:`_boot_death_window_s`."""
+    raw = os.environ.get("EPM_BOOT_TRANSPORT_MIN_AGE_MIN")
+    if not raw:
+        return float(BOOT_TRANSPORT_MIN_AGE_S)
+    try:
+        parsed = float(raw) * 60.0
+    except ValueError:
+        return float(BOOT_TRANSPORT_MIN_AGE_S)
+    if parsed <= 0:
+        return float(BOOT_TRANSPORT_MIN_AGE_S)
+    return parsed
+
+
+def _boot_death_row_texts(row: dict) -> list[str]:
+    """Every text field the row's ``message.content`` exposes. Pure helper
+    factored from :func:`_boot_death_api_error_excerpt` (whose iteration
+    shape it mirrors byte-for-byte) so the classifier and the excerpt
+    helper share ONE content walker (#1695). Never raises on the dict
+    shapes ``row`` can hold — a text block whose ``"text"`` value is
+    non-str is skipped."""
+    msg = row.get("message")
+    content = msg.get("content") if isinstance(msg, dict) else None
+    texts: list[str] = []
+    if isinstance(content, str):
+        texts.append(content)
+    elif isinstance(content, list):
+        texts.extend(
+            b["text"]
+            for b in content
+            if isinstance(b, dict) and b.get("type") == "text" and isinstance(b.get("text"), str)
+        )
+    return texts
+
+
+def classify_boot_death_row(row: dict) -> str:
+    """Classify the failing api-error row that killed the boot turn (#1695).
+
+    Returns ``"boot-transport"`` when the row's text contains ANY
+    :data:`BOOT_TRANSPORT_SUBSTRINGS` (case-insensitive) AND NO
+    :data:`BOOT_REFUSAL_SUBSTRINGS`. Returns ``"boot-refusal"`` otherwise —
+    the default: unclassifiable content, empty text, and content that
+    matches BOTH sets all keep today's 30-min refusal grace (refusal wins
+    on tie, since a row whose text names a transport substring in passing
+    but IS a usage-policy refusal must not be routed to the collapsed
+    5-min transport threshold). Pure string scanning; never raises."""
+    texts = _boot_death_row_texts(row)
+    joined = " ".join(texts).lower()
+    if not joined:
+        return "boot-refusal"  # no text to classify -> today's default
+    if any(sub in joined for sub in BOOT_REFUSAL_SUBSTRINGS):
+        return "boot-refusal"  # refusal wins on tie
+    if any(sub in joined for sub in BOOT_TRANSPORT_SUBSTRINGS):
+        return "boot-transport"
+    return "boot-refusal"  # unknown text -> today's default
+
+
 def _boot_death_stops_per_day() -> int:
     """Daily per-issue cap on boot-death stops (env
     ``EPM_BOOT_DEATH_STOPS_PER_DAY``; default
@@ -22643,24 +27492,48 @@ def _boot_death_api_error_excerpt(rows: list[dict], cap: int = 200) -> str | Non
     for row in reversed(rows):
         if _classify_wedge_row(row) != "api-error":
             continue
-        msg = row.get("message")
-        content = msg.get("content") if isinstance(msg, dict) else None
-        texts: list[str] = []
-        if isinstance(content, str):
-            texts.append(content)
-        elif isinstance(content, list):
-            texts.extend(
-                b["text"]
-                for b in content
-                if isinstance(b, dict)
-                and b.get("type") == "text"
-                and isinstance(b.get("text"), str)
-            )
-        for text in texts:
+        for text in _boot_death_row_texts(row):
             excerpt = " ".join(text.split())
             if excerpt:
                 return excerpt[:cap]
     return None
+
+
+def _boot_death_arm2_shape_and_window(
+    all_turns_failed: bool | None,
+    tail_rows: list[dict] | None,
+    refusal_window_s: float,
+    transport_window_s: float,
+) -> tuple[str, float]:
+    """Pre-classify the arm-2 subclass (#1695) and pick its age window.
+
+    Finds the LAST ``api-error`` row in ``tail_rows`` and routes to
+    ``"boot-transport"`` (freely-retryable 5-min threshold) vs
+    ``"boot-refusal"`` (usage-policy 30-min threshold) via
+    :func:`classify_boot_death_row`. When arm 2 does not apply
+    (``all_turns_failed`` is not ``True`` OR ``tail_rows`` is empty/None)
+    or no api-error row is present, defaults to ``"boot-refusal"``
+    (matching arm 1's 30-min threshold; refusal wins on tie, so unknown
+    text stays refusal by design). Returns ``(shape_pre, window_s)`` where
+    ``shape_pre`` is one of ``"boot-refusal"`` / ``"boot-transport"``.
+
+    Pure helper factored out of :func:`_process_boot_death` for C901 —
+    the classification loop + shape/window ternaries added ~5 to that
+    function's cyclomatic complexity.
+    """
+    last_api_error_row: dict | None = None
+    if all_turns_failed is True and tail_rows:
+        for r in reversed(tail_rows):
+            if _classify_wedge_row(r) == "api-error":
+                last_api_error_row = r
+                break
+    shape_pre = (
+        classify_boot_death_row(last_api_error_row)
+        if last_api_error_row is not None
+        else "boot-refusal"
+    )
+    window_s = transport_window_s if shape_pre == "boot-transport" else refusal_window_s
+    return shape_pre, window_s
 
 
 def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry_run: bool) -> None:
@@ -22690,7 +27563,16 @@ def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry
         entry_age_s = now - float(spawned_at)
     # Cheap early exits BEFORE any transcript IO: a dead sid is the
     # crash-recovery pass's property; a young/unaged entry can't fire.
-    if pid is None or entry_age_s is None or entry_age_s < _boot_death_window_s():
+    # NOTE (#1695): the min-window floor is the SHORTER of the two shape
+    # thresholds — a boot-transport session age >= 5 min but < 30 min must
+    # not be filtered out here (its shape-specific 5-min threshold is
+    # applied later, after row classification). Arm 1 (zero-response) and
+    # boot-refusal keep the 30-min window via the `window_s=` selection
+    # below.
+    refusal_window_s = _boot_death_window_s()
+    transport_window_s = _boot_transport_min_age_s()
+    min_window_s = min(refusal_window_s, transport_window_s)
+    if pid is None or entry_age_s is None or entry_age_s < min_window_s:
         return
     # Activity guards (both fail toward keep): something owns this issue.
     if _provision_in_flight_reason(issue, now) is not None:
@@ -22715,6 +27597,12 @@ def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry
         None if turns is None else bool(turns) and all(o == "failed" for o, _ts in turns)
     )
     idle_s, _why = _transcript_idle_age_s(pid, now)
+    # Pre-classify the arm-2 subclass (#1695) — see
+    # :func:`_boot_death_arm2_shape_and_window` for the docstring covering
+    # the refusal-wins-on-tie tie-break and the arm-1 default.
+    shape_pre, window_s = _boot_death_arm2_shape_and_window(
+        all_turns_failed, tail_rows, refusal_window_s, transport_window_s
+    )
     state = _load_boot_death_state(issue)
     day_key = time.strftime("%Y-%m-%d", time.gmtime(now))  # the #1209/#1241 day-cap derivation
     stops_today = _day_scoped_count(state, "stop_day", "stops_today", day_key)
@@ -22725,7 +27613,7 @@ def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry
         response_row_seen=response_row_seen,
         all_turns_failed=all_turns_failed,
         transcript_idle_s=idle_s,
-        window_s=_boot_death_window_s(),
+        window_s=window_s,
         quiet_s=BOOT_DEATH_QUIET_S,
         stops_today=stops_today,
         stops_per_day=cap,
@@ -22764,8 +27652,10 @@ def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry
     _save_boot_death_state(issue, state, dry_run)
     stop_ok = _stop_session(sid, dry_run)
     # Arms are mutually exclusive (zero response rows => zero completed
-    # turns), so arm 1 owning the tag when it fired is unambiguous.
-    shape = "zero-response" if response_row_seen is False else "boot-refusal"
+    # turns), so arm 1 owning the tag when it fired is unambiguous. The
+    # arm-2 shape is the pre-classified boot-refusal | boot-transport
+    # (#1695).
+    shape = "zero-response" if response_row_seen is False else shape_pre
     if shape == "zero-response":
         evidence = (
             f"transcript rows={len(rows)} size={size}B with ZERO response rows "
@@ -22775,14 +27665,20 @@ def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry
         n_tail = len(tail_rows) if tail_rows is not None else 0
         n_turns = len(turns) if turns else 0
         api_error_rows = sum(1 for r in (tail_rows or []) if _classify_wedge_row(r) == "api-error")
+        if shape == "boot-transport":
+            descriptor = (
+                "transport-class api-error (529 / 429 / timeout / connection) — "
+                "freely-retryable, collapsed 5-min threshold, #1695"
+            )
+        else:
+            descriptor = "refusal-killed boot turn, #1287"
         evidence = (
             f"256KB-tail rows={n_tail} (file size={size}B): {n_turns} completed "
-            f"turn(s), ALL failed ({api_error_rows} api-error row(s) — "
-            f"refusal-killed boot turn, #1287)"
+            f"turn(s), ALL failed ({api_error_rows} api-error row(s) — {descriptor})"
         )
     note = (
         f"{_BOOT_DEATH_STOP_NOTE_SENTINEL} stopped boot-dead session sid={sid}: "
-        f"registration age {entry_age_s / 60:.0f}m >= {_boot_death_window_s() / 60:.0f}m, "
+        f"registration age {entry_age_s / 60:.0f}m >= {window_s / 60:.0f}m, "
         f"shape={shape}, {evidence}, idle {(idle_s or 0) / 60:.0f}m; stop_ok={stop_ok}; "
         f"task status={status}; stop {stops_today + 1}/{cap} today; registration kept: "
         f"crash-recovery re-drives an ACTIVE task (~20 min); the proposed-infra sweep's "
@@ -24418,6 +29314,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "with --dry-run for a live smoke.",
     )
     parser.add_argument(
+        "--unfolded-round-only",
+        action="store_true",
+        help="run ONLY the unfolded-round observer pass (#1712, escalate-only "
+        "— an awaiting_promotion / reviewing body carrying a pending-fold cue "
+        "next to an artifact already landed on main, the #1639 shape) and "
+        "exit; skip every other pass. Daemon-independent; pair with --dry-run "
+        "for a live smoke.",
+    )
+    parser.add_argument(
         "--root-draft-only",
         action="store_true",
         help="run ONLY the root-draft observer pass (#1341, escalate-only — "
@@ -24434,13 +29339,60 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "--dry-run for a zero-write live smoke.",
     )
     parser.add_argument(
+        "--stash-rescue-audit-only",
+        action="store_true",
+        help="run ONLY the stash/rescue-backlog audit pass (#1806, "
+        "escalate-only — the shared repo root's aged git-stash backlog + "
+        "~/.task-workflow/root-sync-rescue/ entries; never mutates git or "
+        "filesystem state) and exit; skip every other pass. "
+        "Daemon-independent; pair with --dry-run for a zero-write live "
+        "smoke.",
+    )
+    parser.add_argument(
         "--completed-unmerged-only",
         action="store_true",
-        help="run ONLY the completed-unmerged flag pass (#1564, flag-only — "
-        "a completed task with epm:done but NO epm:merged whose issue-<N> "
-        "PR/branch is still unmerged, the #1540 stranded Step 10d merge "
-        "class) and exit; skip every other pass. Daemon-independent; pair "
-        "with --dry-run for a live smoke against the real completed set.",
+        help="run ONLY the completed-unmerged pass (#1564 flag + #1653 "
+        "bounded respawn — a completed task with epm:done but NO epm:merged "
+        "whose issue-<N> PR/branch is still unmerged, the #1540 stranded "
+        "Step 10d merge class) and exit; skip every other pass. The flag "
+        "half is daemon-independent (the respawn arm probes the daemon "
+        "lazily and skips toward flag-only when unreachable); pair with "
+        "--dry-run for a live smoke against the real completed set.",
+    )
+    parser.add_argument(
+        "--partial-bundle-only",
+        action="store_true",
+        help="run ONLY the partial-bundle reconciliation pass (#1704, "
+        "escalate-only — audit HF `issue<N>_partial/<attempt_id>/` "
+        "crash-persist bundles against the committed "
+        "`eval_results/issue_<N>/` tree in git; flag any bundle carrying "
+        "a completed result whose payload has no committed counterpart) "
+        "and exit; skip every other pass. Daemon-independent (scoped HF "
+        "listings + read-only git ls-tree; sidecar + Telegram push only, "
+        "NEVER task markers). Pair with --dry-run for a zero-write live "
+        "smoke against the real data repo.",
+    )
+    parser.add_argument(
+        "--codex-outage-only",
+        action="store_true",
+        help="run ONLY the codex-outage alert pass (#1691, escalate-only — "
+        "the audit sibling of the #1204 pre-spawn sentinel check; ONE deduped "
+        "push per Codex quota-outage episode past the threshold, weekly "
+        "re-alert while it persists) and exit; skip every other pass. "
+        "Daemon-independent (reads the sentinel + REGISTRY events.jsonl "
+        "only). Pair with --dry-run for a zero-write live smoke against the "
+        "real sentinel.",
+    )
+    parser.add_argument(
+        "--urgent-wf-park-only",
+        action="store_true",
+        help="run ONLY the urgent-park router pass (#1681 — mechanically "
+        "route a parked workflow-fix candidate that self-declares a VERIFIED "
+        "live-red-on-main test via the urgency token grammar) and exit; skip "
+        "every other pass. Daemon-independent (file+dispatch goes via the "
+        "file_infra_task.py subprocess, which carries its own daemon/cap "
+        "gates); pair with --dry-run for a zero-write, zero-subprocess live "
+        "smoke against the real parked-candidate set.",
     )
     parser.add_argument(
         "--auth-outage-only",
@@ -24457,6 +29409,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "session whose transcript has ZERO response rows >= 30 min after "
         "spawn) and exit; skip every other pass. Pair with --dry-run for a "
         "live smoke against the real registration set.",
+    )
+    parser.add_argument(
+        "--pod-safety-only",
+        action="store_true",
+        help="run ONLY the pod-safety pass (RUNNING managed pods vs task "
+        "status, incl. the #1582 keep-running wedged-owner escalation arm) "
+        "and exit; skip every other pass. Daemon-INDEPENDENT (the wedged-"
+        "owner arm probes the daemon lazily and freezes toward no-fire when "
+        "it is down). Pair with --dry-run for a live smoke against the real "
+        "fleet.",
     )
     parser.add_argument(
         "--orphan-wrapper-only",
@@ -24539,6 +29501,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         verdict_disagree_pass(args.dry_run)
         return 0
 
+    # --unfolded-round-only mirrors --verdict-disagree-only: the pass is
+    # daemon-independent (registry + body.md reads + read-only git probes
+    # against local main), so run it alone. Pair with --dry-run for a
+    # live smoke.
+    if args.unfolded_round_only:
+        unfolded_round_pass(args.dry_run)
+        return 0
+
     # --root-draft-only mirrors --verdict-disagree-only: the pass is
     # daemon-independent (one read-only git status + stats only), so run
     # it alone.
@@ -24553,11 +29523,44 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         registry_drift_pass(args.dry_run)
         return 0
 
-    # --completed-unmerged-only mirrors --registry-drift-only: the pass is
-    # daemon-independent (registry + events.jsonl reads + read-only gh/git
-    # probes; marker posts go via the task.py subprocess), so run it alone.
+    # --stash-rescue-audit-only mirrors --registry-drift-only: the pass is
+    # daemon-independent (one read-only git subprocess + one dir scan + its
+    # own state file), so run it alone. Pair with --dry-run for a zero-write
+    # live smoke.
+    if args.stash_rescue_audit_only:
+        stash_rescue_audit_pass(args.dry_run)
+        return 0
+
+    # --completed-unmerged-only mirrors --registry-drift-only: the FLAG half
+    # is daemon-independent (registry + events.jsonl reads + read-only
+    # gh/git probes; marker posts go via the task.py subprocess), and the
+    # #1653 respawn arm probes the daemon lazily per candidate — skipping
+    # toward flag-only when unreachable — so the pass still runs alone.
     if args.completed_unmerged_only:
         completed_unmerged_pass(args.dry_run)
+        return 0
+
+    # --partial-bundle-only mirrors --completed-unmerged-only: the pass is
+    # daemon-independent (scoped HF listings + read-only git ls-tree;
+    # sidecar + Telegram push only, no task markers, no session spawns),
+    # so run it alone.
+    if args.partial_bundle_only:
+        partial_bundle_pass(args.dry_run)
+        return 0
+
+    # --codex-outage-only mirrors --registry-drift-only: the pass is
+    # daemon-independent (reads the #1204 sentinel + REGISTRY events.jsonl
+    # only; marker never posts to a task), so run it alone.
+    if args.codex_outage_only:
+        codex_outage_pass(args.dry_run)
+        return 0
+
+    # --urgent-wf-park-only mirrors --completed-unmerged-only: the pass is
+    # daemon-independent (events.jsonl reads + a bounded pytest probe; the
+    # file+dispatch subprocess carries its own daemon/cap gates), so run it
+    # alone. Pair with --dry-run for a zero-write live smoke.
+    if args.urgent_wf_park_only:
+        urgent_wf_park_pass(args.dry_run)
         return 0
 
     # --auth-outage-only mirrors --cpu-guard-only: run the single pass under
@@ -24580,6 +29583,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
             args.dry_run,
             children=_live_children() if _daemon_reachable() else None,
         )
+        return 0
+
+    # --pod-safety-only mirrors the other --*-only flags: the pass is
+    # daemon-INDEPENDENT (task status + the live pod list; the #1582
+    # wedged-owner arm probes the daemon lazily and fails toward no-fire),
+    # so run it alone. Pair with --dry-run for a live smoke.
+    if args.pod_safety_only:
+        pod_safety_pass(args.dry_run, args.threshold)
         return 0
 
     # --orphan-wrapper-only mirrors --boot-death-only: run the single pass
@@ -24649,6 +29660,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # too.
     verdict_disagree_pass(args.dry_run)
 
+    # Unfolded-round observer (#1712; origin incident #1639): ESCALATE-ONLY
+    # flag of an awaiting_promotion / reviewing body carrying a pending-fold
+    # cue phrase (UNFOLDED_PHRASES) next to an artifact (script /
+    # commit-sha / eval_results path) already resolved on `main`, when the
+    # body's ## Results / ## Findings H2 / **Repro:** code list does NOT
+    # mention that artifact — the #1639 shape where a landed round sat two
+    # days silently unfolded. One hourly-self-gated sweep + read-only git
+    # probes (no fetch) + a sidecar + a rollover-summary push; NO task
+    # markers (deliberate divergence from completed-unmerged — the consumer
+    # is the human/PM). NEVER mutates status/body/git. Daemon-independent,
+    # so it runs on a daemon outage too.
+    unfolded_round_pass(args.dry_run)
+
     # Root-draft observer (#1341; origin incident #1320): ESCALATE-ONLY flag
     # of stale UNTRACKED *.py drafts in the SHARED repo-root working tree —
     # the dirt class that matches step9c's DIRTY_CODE_PATHSPEC and flips
@@ -24668,16 +29692,59 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # so it runs on a daemon outage too.
     registry_drift_pass(args.dry_run)
 
-    # Completed-unmerged flag pass (#1564; incident #1540): hourly FLAG-ONLY
-    # audit of `completed` tasks whose events carry epm:done but NO
-    # epm:merged while the issue-<N> PR/branch is still unmerged — the
-    # stranded Step 10d merge class (a killed merge turn is invisible to
-    # every other lane: the tick cron is torn down at `completed`, the
+    # Stash/rescue-backlog audit (#1806): once-daily ESCALATE-ONLY audit of
+    # the shared repo root's aged git-stash backlog + the
+    # ~/.task-workflow/root-sync-rescue/ entries (the class #1751's Step 10d
+    # KEPT-stash duty surfaces only for NEW events). One read-only
+    # `git stash list` + one rescue-dir scan; sidecar + ONE deduped push
+    # naming the read-only review commands + companion triage task #1736;
+    # NEVER mutates git/filesystem state, posts NO task markers.
+    # Daemon-independent, so it runs on a daemon outage too.
+    stash_rescue_audit_pass(args.dry_run)
+
+    # Codex quota-outage alert (#1691): ESCALATE-ONLY audit sibling of the
+    # #1204 pre-spawn sentinel check. Alerts once per Codex quota-outage
+    # episode when the sentinel has been live past the alert threshold
+    # (default 24h), re-alerts weekly while it persists, and clears the
+    # episode when the sentinel disappears. Reads the sentinel READ-ONLY —
+    # never mutates it (lifecycle stays with codex_task.py); posts NO task
+    # markers (fleet-level condition, no single task owns it). Daemon-
+    # independent, so it runs on a daemon outage too.
+    codex_outage_pass(args.dry_run)
+
+    # Completed-unmerged pass (#1564 flag + #1653 bounded respawn; incident
+    # #1540): hourly audit of `completed` tasks whose events carry epm:done
+    # but NO epm:merged while the issue-<N> PR/branch is still unmerged —
+    # the stranded Step 10d merge class (a killed merge turn is invisible
+    # to every other lane: the tick cron is torn down at `completed`, the
     # wedge lane needs failed wakes). Sidecar + one marker per (issue,
     # done_ts) episode + a 24h-TTL re-alert push naming the Step 10d
-    # recovery; NEVER merges, never mutates status, never spawns.
-    # Daemon-independent, so it runs on a daemon outage too.
+    # recovery; on a LATER flagged interval with no live owning session,
+    # ONE bounded spawn-issue --auto per episode re-drives the Step 10d
+    # backstop (#1578). NEVER merges, never mutates status. The flag half
+    # is daemon-independent (the respawn probe skips toward flag-only on a
+    # daemon outage), so it runs in this block on a daemon outage too.
     completed_unmerged_pass(args.dry_run)
+
+    # Partial-bundle reconciliation (#1704, motivating incident #1345):
+    # ESCALATE-ONLY reconciliation of HF issue<N>_partial/<attempt_id>/
+    # bundles against the committed eval_results/issue_<N>/ tree — a
+    # bundle carrying a COMPLETED result whose workload upload path
+    # never fired is indistinguishable from a genuinely-partial one
+    # without this pass. Sidecar rows + one deduped push per (issue,
+    # attempt_id, band); NEVER auto-commits, NEVER deletes a bundle,
+    # NEVER posts task markers. Daemon-independent; hourly self-gate.
+    partial_bundle_pass(args.dry_run)
+
+    # Urgent-park router (#1681): mechanically route parked workflow-fix
+    # candidates that self-declare a VERIFIED live-red-on-main test via the
+    # urgency token grammar (workflow-fix-on-bug.md § Recursion guard
+    # "Urgent fast path") — the minutes-cadence complement of the nightly
+    # /daily Step C sweep (incident #1643: a red lived ~11.5h to the nightly
+    # route). Daemon-independent (the file+dispatch subprocess carries its
+    # own daemon/cap gates), day-capped, verdict-latched; the common tick is
+    # a ~free mtime+substring gate.
+    urgent_wf_park_pass(args.dry_run)
 
     # VM resource-ledger reap (plan §5): drop expired-TTL / dead-PID claims from
     # the advisory ~/.task-workflow/vm-ledger.json so a crashed session's claim
@@ -24868,6 +29935,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         args.threshold,
         daemon_reachable=daemon_reachable,
         live_ids=live_ids if daemon_reachable else None,
+        pids_by_sid=live_pids_by_sid,
     )
 
     # Gate-push + title-reconcile + tick-runaway: phone push on gate-park /

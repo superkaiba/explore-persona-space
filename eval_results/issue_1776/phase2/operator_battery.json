@@ -1,0 +1,50 @@
+{
+  "pair": "J_last vs mprime_x50k (cx_last(14) -> v(19), on-support)",
+  "restriction": {
+    "n_pcs": 256,
+    "on_support_frobenius_mass": {
+      "J_last": 0.09516566328624097,
+      "mprime_x50k": 0.05383109088871594
+    }
+  },
+  "raw_cosine_with_rotation_null": {
+    "raw_cosine": 0.17836492423797112,
+    "rotation_null": {
+      "n_draws": 100,
+      "null_mean": -2.8658600195855485e-05,
+      "null_std": 0.001092410248799475,
+      "null_p975": 0.001954560176665784,
+      "analytic_sd_1_over_d": 0.00390625
+    }
+  },
+  "procrustes_aligned_cosine": {
+    "value": 0.9860996064940485,
+    "definition": "two-sided operator-Procrustes optimum (spectrum_cosine, von Neumann bound); its own rotation null is degenerate by invariance",
+    "calibration_anchor_825_base_instruct": 0.6864
+  },
+  "spectrum_cosine_descriptive": {
+    "J_last_vs_mprime_x50k_on_support": 0.9860996064940485,
+    "J_last_vs_m_shipped_full_space": {
+      "value": 0.9334124689382537,
+      "label": "cross-slot reference (shipped M input = layer 19; rotation-invariant row ONLY \u2014 direction-aware reads undefined across slots)"
+    }
+  },
+  "inputs": {
+    "jlast": "/workspace/issue_1776/jac_full/merged/J_last.pt",
+    "mprime_weights": "/workspace/explore-persona-space/data/issue_1776/comparator/m_ridge_x50k.pt",
+    "acts14": "/workspace/explore-persona-space/data/issue_1776/jpairs/acts14.pt",
+    "shipped_m": "/workspace/explore-persona-space/data/issue_1776/hf_dl/issue779_monitoring/n1m_readout/weights/L19/ridge.pt",
+    "n_pcs": 256,
+    "n_draws": 100,
+    "seed": 0
+  },
+  "repro": {
+    "issue": 1776,
+    "git_commit": "04ce114b8fb2b9439494dac3a1c77923fcedc940",
+    "jlens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+    "timestamp_utc": "2026-07-29T14:41:41Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "python_version": "3.11.10"
+  }
+}

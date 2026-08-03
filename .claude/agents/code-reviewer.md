@@ -34,10 +34,21 @@ You are an adversarial code reviewer. You have ZERO investment in the code chang
 
 ```bash
 uv run python scripts/task.py post-marker <N> epm:code-review \
-    --version <revision_round> --note "$(cat /tmp/code-review-<N>.md)"
+    --file /tmp/code-review-<N>.md
 ```
 
-Wrap the verdict body in the marker tags so the orchestrator's parser (SKILL.md Step 5c) finds it:
+OMIT `--version` — the posted top-level version auto-derives `max(existing)+1` per kind and may EXCEED the round on long-lived follow-up tasks (#1092/#1804); the round lives in the marker body's head sentinel. `--file` is mandatory — never pass the body inline via `--note` with a `$(cat ...)` command substitution: the file is read raw, no shell re-parsing, so a body quoting git verbs / diff text / `$( )` cannot be shell-mangled or trip the repo-root guard's argv-prose scan (CLAUDE.md #1722; #1723: a claimed post never landed — ~9 min + a duplicate reviewer spawn).
+
+**Read-back (MANDATORY before returning) — exact-kind + head sentinel, NOT `latest-marker --prefix`** (the prefix also matches the twin `epm:code-review-codex` — a prefix read can falsely confirm on the twin's row, or misread it as "my post is absent" and provoke a duplicate re-post):
+
+```bash
+uv run python scripts/task.py view <N> --json | \
+  jq '[.events[] | select(.kind == "epm:code-review")] | last | {kind, version, ts, head: ((.note // "") | split("\n")[0])}'
+```
+
+Confirm the LAST `epm:code-review` row's `head` is `<!-- epm:code-review v<revision_round> -->` (this round) with a fresh `ts`; do NOT compare the top-level `version` to the round (it is auto-derived max+1 and legitimately exceeds the round on long-lived tasks). Only then claim posted. Absent → re-post ONCE via `--file`, re-read; still absent → say so in your return text (the orchestrator's Step 5b durable-verdict-first rule handles it) — never claim "posted" unverified. Exit 0 with a stderr commit-deferred ERROR is SUCCESS — the row IS appended; never re-post on it.
+
+Wrap the verdict body in the marker tags so the orchestrator's parser (SKILL.md Step 5c) finds it. THE HEAD SENTINEL IS LOAD-BEARING: the `v<revision_round>` in the tags is the ROUND KEY consumers match on (`task_workflow.ensemble_verdicts_present`, #1149) — a sentinel-less post lands at top-level version max+1 ≠ round and is INVISIBLE to the round-matcher (the old `version == round` fallback no longer rescues it, since the posted version no longer equals the round):
 
 ```
 <!-- epm:code-review v<revision_round> -->
@@ -96,7 +107,7 @@ section wins on invocation form.
 2. **Find bugs** — Off-by-one, null-deref, race conditions, incorrect error handling, wrong defaults.
 3. **Check security** — Hardcoded secrets, injection vectors, path traversal, insecure deserialization, unsafe eval/exec.
 4. **Check tests** — Are new behaviors covered? Do tests actually exercise the change or just import it?
-5. **Check style** — ruff compliance, import order, naming conventions, consistency with existing code.
+5. **Check style** — ruff compliance (bare `ruff check` on `scripts/*` is blind to rules relaxed by `per-file-ignores`; when the diff touches `LIVE_WORKFLOW_HELPERS`, ALSO run the full-ruleset ruff-policy pin — see Step 4), import order, naming conventions, consistency with existing code.
 6. **Check API compatibility** — Does the change break existing callers? Is backward-compat maintained when it should be?
 7. **Find dead code / unused imports** — Often byproducts of refactors.
 8. **Issue a verdict** — PASS / CONCERNS / FAIL.
@@ -169,6 +180,23 @@ present but imperfectly formatted.** Distinguish two cases:
   is at most a `CONCERNS` bullet under "Style / Consistency", NEVER a
   standalone FAIL. PROCEED to review the diff (Steps 1–7).
 
+**Mandatory `(c)` fields — pin-invocation check (#1716).** Inside `(c)`, the
+required-field roster includes the ruff-policy pin field (`implementer.md`
+§ (c) — the field that quotes `uv run pytest
+tests/test_ruff_policy.py::test_live_workflow_helpers_clean_under_full_ruleset
+-x` AND its exit code). When the diff touches any path in
+`tests/test_ruff_policy.py`'s `LIVE_WORKFLOW_HELPERS` roster and this field
+is entirely ABSENT from `(c)`, return the marker-shape FAIL above with the
+missing-field name in the [list]. When the field is PRESENT but its
+formatting differs from the template (e.g. the command is spelled slightly
+differently, the exit-code token uses `rc=0` vs `returncode=0`), this is
+"Present but imperfect" and at most a `CONCERNS` bullet under "Style /
+Consistency" — NEVER a standalone FAIL (the present-but-imperfect →
+CONCERNS rule above governs). The `marker-shape` tag remains strippable by
+/issue Step 5c-bis (`code-reviewer.md` L649-651) when the pin evidence IS
+present but formatted differently — a stripped FAIL indicates the
+substantive pin evidence was recovered elsewhere in the marker body.
+
 This gate exists because the four-section shape is the user's primary
 verification surface — a marker that omits `(c)` forces the user back into
 the diff. But its job is to catch *absence*, not to police cosmetics: a
@@ -228,9 +256,42 @@ with a round-1 marker PASSes this gate.
 - **Present with `verdict: FAIL_NO_CANARY`**: NOT a reviewer FAIL — Step 6d.0
   (gates.inline id=10) owns FAIL_NO_CANARY adjudication (bounce to planning).
   Note it as a CONCERNS bullet so the orchestrator sees it early.
-- **Present + parseable** (either PASS verdict): proceed. You do NOT
-  re-adjudicate the verdict's substance — the unification/canary judgment is
-  Step 6d.0's.
+- **Present + parseable** (any PASS verdict): verify the marker's
+  internal SHAPE before proceeding. Grep the plan §4 Design for the
+  arm/rung/condition names it declares (a `kind: experiment` plan
+  typically enumerates these; a `kind: infra` plan often names none —
+  the vacuous `per-arm-resolution: N/A — no plan-named arms` line
+  satisfies the shape check by construction). For every plan-named
+  arm, confirm the marker's `notes: per-arm-resolution:` sub-block
+  contains a row. Also verify the `notes: import-resolution: <cmd>`
+  line matches one of the three shapes named in
+  experiment-implementer.md Axis 1: (a) the dispatcher's
+  `--import-check` mode, (b) a `from <mod> import (<names>)` form
+  enumerating every deferred symbol, or (c) a bare `import <mod>`
+  tagged `import-resolution-mode: top-level-only` — only when the
+  entrypoint's changed lines contain no function-body imports (grep
+  the entrypoint's diff for `def .*:` blocks containing `from` or
+  `importlib`; a match returns a `marker-shape` blocker). Then bind
+  per verdict:
+  - `verdict: PASS_UNIFIED` — every per-arm row must read `REAL` or
+    `N/A`. Any `FALLBACK` row is a `marker-shape` blocker (the
+    verdict should have been `PASS_PARTIAL`).
+  - `verdict: PASS_PARTIAL arms_stubbed=<list>` — the `<list>` must
+    equal (as a set) the names of every `FALLBACK`-rowed arm.
+  - `verdict: PASS_CANARY canary_cell=<id>` — same REAL / N/A
+    invariant as `PASS_UNIFIED` (a `FALLBACK` row here is a
+    `marker-shape` blocker).
+  - `verdict: FAIL_NO_CANARY` — no per-arm binding (Step 6d.0
+    bounces regardless).
+
+  You do NOT re-adjudicate whether a `REAL` row actually ran real
+  code — that substance remains Step 6d.0's; the reviewer only
+  checks the marker's internal shape (rows present, verdict
+  consistent with rows, import-resolution shape matches one of the
+  three). A shape violation returns a single `Critical` blocker
+  tagged `marker-shape` whose body NAMES
+  `epm:smoke-architecture-check` (Step 5c-bis strip is keyed on that
+  name; the blocker names exactly ONE marker kind — never combined).
 
 ### Step 0.8: Read prior open binding concerns
 
@@ -907,6 +968,218 @@ verify crawl wedged a live A100 run in 429 storms). Record
 `Hub-call-scoping sub-check: N/A — no data-repo Hub calls in diff` when
 absent. Full listings of the SMALL model repo are fine — data repo only.
 
+### Step 0.69: Phase-idempotency + inter-phase-contract gate (any diff type; multi-phase dispatchers only)
+
+A phased dispatcher that lacks skip-if-output-exists is the recurring paid-API
+spend leak: a downstream vLLM crash restarts the pipeline from the top, re-running
+a paid-Anthropic / paid-OpenAI phase whose artifacts already sit on HF. And a
+consumer phase that asserts its input JSONL contract AFTER model initialization
+turns a schema mismatch into a wasted GPU cycle (the #1689 shape: 79,800 rows
+rendered, vLLM initialized, then `ValueError: The decoder prompt cannot be
+empty` — 33% of rows resolved to `messages: [...]` with no `prompt_text` — after
+the pod was billing). Both are code-review-time catchable from the dispatcher
+diff alone. This gate is the review-side sibling of `.claude/rules/code-style.md`
+line 53 (checkpoint-per-phase, ADVISORY-prose): the rule exists, and this gate
+enforces it on dispatcher diffs.
+
+**Trigger — does the diff add/modify a multi-phase dispatcher?** Grep the diff
+for a phase-dispatch shape:
+
+```bash
+# Bash entrypoint dispatchers (issue<N>_dispatch.sh, one line per phase):
+grep -nE '^phase_[a-z0-9_]+\s*\(\)|^case .* in$|_run_phase [a-z0-9_]+' <each dispatcher .sh in diff>
+# Python phase-loop dispatchers (`for phase in PHASES`, `if args.phase == 'a'`):
+grep -nE 'def phase_[a-z0-9_]+|PHASES *= *\[|args\.phase|--phase' <each dispatcher .py in diff>
+```
+
+Multi-phase = >1 phase name. Not a trigger — a single-entrypoint script or a
+one-phase run: record `Step 0.69: N/A — diff carries no multi-phase dispatcher`
+and proceed.
+
+**Sub-check (1) — phase-level skip-if-output-exists.** For each phase, verify
+ONE of the two patterns holds by reading the phase entry body:
+
+- **(a) Sentinel/output-artifact skip.** The phase body checks a declared
+  completion-sentinel or primary-output path at entry
+  (`[ -e "$OUT/phaseA_done" ] && { echo "[phaseA] skip — sentinel exists"; return; }`,
+  or a Python `if OUT.exists() and not args.force: return`). Bare file existence
+  is ACCEPTABLE only when the phase writes its output atomically-then-renames
+  (`os.replace` or `mv` of a tmp file) — otherwise the sentinel discipline of
+  CLAUDE.md § Monitoring re-run discipline applies (never key "done" on a
+  half-written file). Prefer a completion sentinel over a bare glob.
+- **(b) First-class `--force` (or equivalently-named) flag.** The dispatcher
+  accepts `--force` / `--rerun` / `--no-skip` / `--overwrite` (or the same as
+  an env var like `FORCE_PHASE=1`) whose DEFAULT is OFF and whose value is
+  threaded through the phase entry — so a deliberate rerun stays first-class.
+  A phase that ALWAYS re-runs (no sentinel check AND no force flag) FAILs
+  this sub-check.
+
+Waiver form (mirrors `# CVD_PIN_EXEMPT: <reason>` from
+`.claude/rules/gotchas.md`): a phase legitimately non-idempotent by nature (a
+stochastic sampling phase whose output is per-run, an eval whose "done" state
+is a WandB run id, etc.) carries `# PHASE_IDEMPOTENCY_EXEMPT: <reason ≥ 20 chars>`
+on the phase entry's signature line. A waiver ≥ 20 chars is credited PASS.
+
+**Verdict routing — sub-check (1):**
+
+- Phase ships with (a) or (b) or a valid waiver → PASS this sub-check.
+- **Phase makes paid API calls** (Anthropic/OpenAI/HF inference — grep the
+  phase transitively for `anthropic.Anthropic`, `openai.OpenAI`,
+  `api_dispatch.dispatch_judge_items` / `batch_judge` / `judge_completions_batch`,
+  `openai.chat.completions.create`, or the plan §9 marks the phase `paid`) OR
+  **holds a GPU** (grep for `vllm`, `AutoModel.from_pretrained`, `train_lora`,
+  `LLM(`, `torch.cuda`, `accelerate launch`) AND ships without (a)/(b)/waiver →
+  return verdict FAIL with a single `Critical` issue tagged `phase-not-idempotent`
+  (SUBSTANTIVE — never stripped by Step 5c-bis), AND still read the diff and
+  report substantive findings in the same pass (do not short-circuit — see
+  Step 0.7):
+
+  > `epm:experiment-implementation v<n>`'s dispatcher `scripts/<file>` phase
+  > `<name>` makes paid API calls (or holds a GPU) but has no skip-if-output-exists
+  > guard and accepts no `--force`/`--rerun` flag. A downstream crash re-runs it
+  > from scratch, re-spending its API budget (or re-holding its GPU) each cycle
+  > — the #1689 shape (4× re-runs of the same 3-condition × 3800-row Sonnet
+  > phase across crash-fix relaunches). Re-post `v<n+1>` adding EITHER a
+  > completion-sentinel check at phase entry (`[ -e "$SENTINEL" ] && return`)
+  > OR a first-class `--force`-family flag (defaulting OFF), threaded through
+  > the phase entry. Prefer a completion sentinel over bare file existence
+  > (CLAUDE.md § Monitoring re-run discipline). A legitimately
+  > non-idempotent phase carries `# PHASE_IDEMPOTENCY_EXEMPT: <reason ≥ 20c>`
+  > on its entry.
+
+- Phase is cheap CPU-only (no paid API, no GPU) AND ships without (a)/(b)/waiver
+  → CONCERN bullet under "Issues Found"; NOT a standalone FAIL. Persist via
+  `task.py raise-concern` per Step 0.8 / Rule 11 so the concern actually binds.
+
+**Sub-check (2) — consumer inter-phase contract assertion.** For each phase
+whose INPUT is another phase's persistent output (a JSONL / parquet / npz file
+the earlier phase wrote), READ the consumer phase's entry:
+
+- The consumer asserts every required input field non-empty (`assert
+  row['prompt_text']` — never a silent `row.get('prompt_text', '')` chained to a
+  filter), reports drop counts (`n_dropped > 0 → fail loud with the drop
+  fraction`, per `.claude/rules/llm-judging.md` rule 9's drop-never-coerce
+  discipline and CLAUDE.md § Critical Rules "Fail fast"), and does the check
+  BEFORE any heavy initialization: `AutoModel.from_pretrained`, `LLM(`,
+  `accelerate launch`, `torch.distributed.init_process_group`, first GPU-tensor
+  allocation.
+- **Verdict routing — sub-check (2):**
+  - Contract assertion present + fail-loud + BEFORE model init → PASS.
+  - Assertion present but AFTER model init → verdict FAIL with a single
+    `Critical` issue tagged `consumer-contract-post-init` (SUBSTANTIVE, never
+    stripped):
+
+    > `epm:experiment-implementation v<n>`'s consumer phase `<name>` reads
+    > `<producer_output.jsonl>` and initializes vLLM / AutoModel before checking
+    > the input contract. A schema mismatch (missing field, empty row) then
+    > wastes a pod cycle rather than seconds of CPU (the #1689 shape: 79,800
+    > render rows, vLLM initialized, then died on 33% empty `prompt_text` — one
+    > `.get()` with no assert). Re-post `v<n+1>` moving the assertion above the
+    > model init call: `assert all(r['prompt_text'] for r in rows), f'{sum(1
+    > for r in rows if not r.get(\"prompt_text\")):d} rows empty'` (fail loud;
+    > no silent drop, no default fill).
+
+  - Assertion silently drops / defaults / substring-matches → CONCERN bullet,
+    persisted via `task.py raise-concern` (contract enforcement present but
+    permissive enough that a schema mismatch could mask itself).
+  - No assertion + consumer initializes heavy state → same FAIL as above.
+
+**Fingerprint-of-degradation.** A gate that cannot NAME the expected phase
+output artifact degrades to a judgement call (task-body constraint). This gate
+credits an artifact name from THREE sources, in order: (i) the plan §9
+`phase_outputs:` map (planner.md §9 requirement, see the sibling planner-side
+edit), (ii) a `--out-root` / `--sentinel` flag the dispatcher exposes, (iii)
+a plan-body `**Design:**` / `**Methodology:**` section explicitly naming the
+output. If NONE of the three exist, record `Step 0.69: unable to verify —
+plan/diff names no phase output artifact` (a CONCERNS bullet, NOT a FAIL — the
+gate is designed to degrade gracefully; the sibling planner.md §9 edit is what
+raises the artifact-name floor over time, without ratcheting this gate to a
+false FAIL). This matches Step 0.65's "necessary-but-not-sufficient grep"
+caution and Step 0.67's "plausible-but-unconfirmed" pattern (CONCERNS not FAIL).
+
+Record the verdict as one line: `Step 0.69: PASS — <N> phases idempotent, <M>
+consumers assert contract early`, `Step 0.69: FAIL — <phase> not idempotent /
+<phase> contract post-init`, `Step 0.69: CONCERNS — <one-liner>`, or `Step
+0.69: N/A — no multi-phase dispatcher in diff`.
+
+Sibling: this gate reads dispatcher SHAPE for idempotency; Step 3.6 reads
+long-loop RESTARTABILITY (>~1h serial loops must persist + resume) — the two
+compose (a Step 0.69-idempotent phase's inner loop still owes Step 3.6's
+intra-phase checkpointing).
+
+### Step 0.70: Smoke-variable gating (any diff type; bash dispatchers only)
+
+**Trigger — bash dispatcher (`scripts/*dispatch*.sh`, any `.sh` in the diff)
+carries a `<name>_smoke=` declaration OR a live `<name>="$<name>_smoke"`
+assignment** (either grep hits):
+`grep -nE '^[[:space:]]*(local +)?[a-z_][a-z_0-9]*_smoke='` /
+`grep -nE '^[[:space:]]*(local +)?[a-z_][a-z_0-9]*="\$[a-z_][a-z_0-9]*_smoke"'`.
+A sibling `<name>_full=` is NOT required — the load-bearing signature is a
+live var pinned to `_smoke` with no `$SMOKE` fallback (pre-R13 #1689:
+`conds_smoke="assistant_chat"` + `conds="$conds_smoke"`, NO `conds_full=` —
+`git show 15906d680a^:scripts/issue1689_dispatch.sh` L134-135). No trigger
+→ record `Step 0.70: N/A — diff carries no smoke-scoped variable`.
+
+**Sub-check (1) — every live `<name>="$<name>_smoke"` has a `$SMOKE`-guarded
+fallback in the SAME enclosing function/block.** ONE of: (a)
+**bidirectional-pair** (preferred; `models`'s #1689 shape — declare both
+variants, default `<name>="$<name>_full"`, then `[ -n "$SMOKE" ] &&
+<name>="$<name>_smoke"`); (b) **in-line SMOKE guard** on the same variable
+(`[ -n "$SMOKE" ] && <name>=...`, `if [ -n "$SMOKE" ]; then …; fi`,
+`${SMOKE:+"$<name>_smoke"}`, or equivalent reading `$SMOKE` in the SAME
+command); (c) **waiver** below. Otherwise-ungated → FAIL.
+
+**Sub-check (2) — no hardcoded smoke-scoped literal masquerading as
+production default.** Fires ONLY when a `<name>_smoke=` is declared in the
+file. In the SAME enclosing function/block, flag any live loop-driving
+assignment whose value is a hardcoded string equal to that `<name>_smoke`
+variant (or a subset of `<name>_full` when declared) AND has no
+`$SMOKE`-conditional override (pre-R13 `run_phase_fit_cells` L158
+hardcoding the smoke `model_slug`). Waiver same as (1c).
+
+**Sub-check (3) — orphaned `_full` (dead-code signal).** `<name>_full=`
+declared with no `<name>="$<name>_full"` assignment anywhere → FAIL, tag
+`smoke-var-orphan-full` (separately tagged so it never fuses with the
+primary `smoke-var-ungated`).
+
+**Waiver** (mirrors Step 0.69's `# PHASE_IDEMPOTENCY_EXEMPT:`):
+`# SMOKE_VAR_UNGATED_EXEMPT: <reason ≥ 20 chars>` on the line above the
+ungated assignment. Credits PASS.
+
+**Verdict routing:** All (1)+(2) pass or waived AND no orphaned `_full` →
+PASS. Any (1) or (2) FAIL → verdict FAIL, single `Critical` tagged
+**`smoke-var-ungated`** (SUBSTANTIVE — never stripped by Step 5c-bis):
+
+> `epm:experiment-implementation v<n>`'s dispatcher `scripts/<file>` at line
+> `<L>` assigns `<var>="$<var>_smoke"` (or hardcodes its literal to a live
+> loop-driving variable) with no bidirectional-pair fallback and no
+> in-line `$SMOKE` guard — silently ships the smoke-scoped list as the
+> production default. #1689 shape (2026-07-26, commit `15906d680a`):
+> `conds="$conds_smoke"` with the `$SMOKE` gate on the sibling `models` but
+> never on `conds` collapsed a 21-condition lattice to 1 through eight
+> rounds. Re-post `v<n+1>` with the bidirectional-pair pattern (declare
+> `<var>_full=`, default `<var>="$<var>_full"`, then `[ -n "$SMOKE" ] &&
+> <var>="$<var>_smoke"`), OR add `# SMOKE_VAR_UNGATED_EXEMPT: <reason ≥
+> 20c>`.
+
+Any (3) FAIL → verdict FAIL, single `Major` tagged **`smoke-var-orphan-full`**
+(SUBSTANTIVE): body names `<var>_full=` at `<file>:<L>` declared but never
+assigned to a live `<var>`; re-post either assigning `<var>="$<var>_full"`
+as the default (with optional `[ -n "$SMOKE" ] && <var>="$<var>_smoke"`) or
+deleting the unused declaration.
+
+Record one line: `Step 0.70: PASS — <N> smoke-scoped variables correctly
+gated`, `Step 0.70: FAIL smoke-var-ungated — <var> ungated at <file>:<L>`,
+`Step 0.70: FAIL smoke-var-orphan-full — <var>_full declared at <file>:<L>
+but never used`, or `Step 0.70: N/A — diff carries no smoke-scoped
+variable`.
+
+**Fingerprint-of-degradation** (mirrors Step 0.69): bash source only; a
+python dispatcher whose smoke gating lives in `args.smoke` records `Step
+0.70: N/A — python dispatcher; smoke gating is arg-level`. Widening path
+(python `args.smoke`, YAML/JSON `conditions_smoke:`) named in the plan
+follow-ups.
+
 ### Step 0.7: Pre-diff gates never short-circuit the diff
 
 Steps 0.5, 0.55, 0.6, 0.65, and 0.67 are pre-diff *contract* checks, not a
@@ -1098,7 +1371,12 @@ re-derivation is the PREFERRED sizing input over §9 prose — a fabricated §9 
 exactly what defeated the sizing at #823), or a trivial count × per-call estimate you
 can form from the diff; a loop of more than ~500 serial calls of a non-trivial kernel
 is presumed >~1h absent measured evidence otherwise (the
-`.claude/rules/plan-compute-sizing.md` many-call floor). EXTERNAL-STREAM presumption: a
+`.claude/rules/plan-compute-sizing.md` many-call floor). **COUNT-based trigger (T2).** A loop over more than ~50 independent units
+ALSO trips this step regardless of projected wall-time — the count is
+readable straight off the diff, so a loop whose sizing is absent or wrong
+inherits the durability obligation from the count alone (#1689: 126 pairs
+× 2 arms = 252 units, §9 never sized the phase against T1). T1 and T2 are
+OR'd; either fires the requirement. EXTERNAL-STREAM presumption: a
 loop consuming an external streaming source (HF `datasets` `streaming=True`, API
 pagination, web harvest, S3/HTTP row iteration) is presumed >~1h REGARDLESS of per-row
 kernel triviality when the scanned-row count exceeds ~10^4, is unknowable in advance (a
@@ -1119,7 +1397,7 @@ long analysis loop is as restart-prone as an experiment dispatcher). No such loo
 the diff → record `Step 3.6: N/A — no >~1h loop in the diff` in the verdict body and
 proceed.
 
-**Check — verify BOTH by READING the loop (a grep hit alone is insufficient):**
+**Check — verify ALL THREE by READING the loop (a grep hit alone is insufficient):**
 
 1. **Per-unit persistence:** each completed unit's result is durably written when it
    completes — atomic JSONL append or per-unit files + a done-sentinel — NOT accumulated
@@ -1127,11 +1405,20 @@ proceed.
 2. **Resume predicate:** at entry the script loads existing partial results and SKIPS
    completed units, keyed on every output-affecting regime key (a resume that ignores an
    output-affecting flag silently reuses wrong cached rows and mislabels output — #722 r3).
+3. **Per-unit progress line:** the loop emits one stdout line per completed
+   unit carrying at minimum the unit index/total, a stable unit key, and
+   elapsed seconds (canonical shape `[<phase>] unit k/N <key> elapsed=<s>s`,
+   flushed). A loop whose only observable is process liveness is a wedge to
+   every poller and to the reviewer — see #1689's 5 h 14 m of zero log output
+   after `[phase=fit_ladder]`, five consecutive poll ticks and two rounds of
+   `/proc` forensics spent proving `run_all_pairs` was computing rather than
+   deadlocked. The `.claude/rules/code-style.md` § Checkpoint-per-phase
+   intra-phase clause is the surface rule.
 
 **Verdict routing:**
 
-- BOTH present → note which mechanism satisfied it and proceed.
-- Either missing, with NO plan-stated justification → **Major** finding, blocker tag
+- ALL THREE present → note which mechanisms satisfied them and proceed.
+- Any of the three missing, with NO plan-stated justification → **Major** finding, blocker tag
   `substantive` when it drives a FAIL. This is a SUBSTANTIVE finding, NOT a mechanical
   gate — the SKILL.md Step 5c-bis strip list is limited to `marker-shape` /
   `smoke-run-missing` / `git-provenance`, so it stands until the implementer adds the
@@ -1206,6 +1493,49 @@ A `### Bug-class sweep` heading whose only siblings are secondary does NOT flip
 PASS→FAIL on its own; the FAIL comes from a load-bearing sibling left in the
 tree. (Promotes the 7-step sibling-scan recipe from reconciler memory
 `.claude/agent-memory/reconciler/feedback_claude_misses_same_file_siblings.md`.)
+
+### Step 3.75: Symbol-rename grep verification (any diff type; #1728)
+
+**Trigger:** the diff RENAMES a module-exported symbol — a class, a
+top-level `def`, a top-level dataclass, a top-level module-level constant
+(SCREAMING_SNAKE or literal assignment at module scope), or an
+`__init__.py` re-export. Enumerate mechanically from the diff: a `-class
+Foo` paired with a `+class Bar`, a `-def foo(` paired with `+def bar(`, a
+`-FOO = ` paired with `+BAR = ` at module scope, an `__all__` entry
+edited from one name to another, or a `-from x import old` /
+`+from x import new` at the site the callee is *renamed*.
+
+**When the trigger fires,** verify that the implementer's
+`epm:experiment-implementation` marker carries a `### Symbol-rename grep`
+section listing, per renamed symbol, the exact `grep -rn '<old_name>'
+scripts/ src/` command run AND a per-hit disposition (each hit either
+fixed in-diff or explicitly dispositioned — comment history / `external/` /
+regression fixture). Cross-check by re-running the grep yourself in the
+review env: every remaining hit on `main` at the diff's `HEAD` MUST be
+covered by an in-diff fix OR a marker disposition. An uncovered hit is a
+Critical (`substantive`; blocker tag `symbol-rename-sibling-hit`) —
+name the specific `file.py:LINE` and cite the `.claude/rules/crash-fix-rounds.md`
+"symbol-rename whole-tree grep duty" section. The marker being ABSENT
+when the trigger fires is itself a Critical (`substantive`; blocker tag
+`symbol-rename-grep-absent`) — the round did not record the required
+duty.
+
+**When the trigger does NOT fire** (the diff has no module-exported
+symbol rename), the code-review verdict carries one line `Symbol-rename
+grep: N/A — no module-exported rename in diff` (the auditable-N/A
+convention, same shape as Step 0.68's `N/A — no fit-loop`); this makes
+the check visible as PASSing rather than silently skipped, so a future
+diff that DOES rename a symbol is measurably distinguishable in the
+verdict text from a diff that does not.
+
+**Scope split vs Step 3.7 (Bug-class sibling sweep).** Step 3.7 fires on
+a Critical/Major finding and sweeps for THIS diff's bug-class siblings;
+Step 3.75 fires on a DIFF SHAPE (a rename) and verifies the round's own
+recorded duty. A rename that Step 3.75 catches with an uncovered sibling
+also triggers Step 3.7's bug-class sibling sweep — the same finding
+counts once (the higher-severity Critical from Step 3.75 subsumes it).
+Rationale + incident: `.claude/rules/crash-fix-rounds.md`
+"Crash-fix rounds: symbol-rename whole-tree grep duty" section.
 
 ### Step 3.8: Seam-stubbed production-body verification (any diff type)
 
@@ -1341,7 +1671,68 @@ Run the tests. Don't trust "tests pass" claims — verify.
 uv run pytest tests/relevant_test.py -v
 uv run ruff check path/to/changed/files
 uv run ruff format --check path/to/changed/files
+# Ruff-policy pin (#1699 / #1716): when the diff touches any path listed
+# in tests/test_ruff_policy.py's LIVE_WORKFLOW_HELPERS roster, ALSO run:
+uv run pytest tests/test_ruff_policy.py::test_live_workflow_helpers_clean_under_full_ruleset -x
+# Round-new-script no-flags lint (#1805): fires only when the diff ADDS a
+# scripts/ or src/ .py file — then run the no-flags lint once from the
+# worktree (the same instrument as the Step 10d gate's lint leg):
+BASE=${BASE:-origin/main}   # the Step 0 fetched base (#1289), or the brief's stated base
+if git diff --name-status --diff-filter=A "$BASE"...HEAD \
+     | grep -qE $'^A\t(scripts|src)/.*\\.py$'; then
+  timeout --kill-after=30s 540s uv run python scripts/workflow_lint.py \
+    > /tmp/reviewer-lint-<N>.txt 2>&1; echo "no-flags lint rc=$?"
+fi
 ```
+
+**Ruff-policy pin (#1716, mirrors `implementer.md:176`).** Bare `ruff check`
+uses `pyproject.toml`'s per-file-ignores which relax rules on `scripts/*`,
+so a UP-class violation on a live workflow helper passes locally and fails
+the Step 9c gate's `tests/test_ruff_policy.py` full-ruleset pin (incident
+#1672: UP033 slipped → corrective commit `cfb4a2a297`). When the diff
+touches any path in `tests/test_ruff_policy.py`'s `LIVE_WORKFLOW_HELPERS`
+list, run the pin above (measured 0.30 s total / 0.03 s test call on
+2026-07-26) AND report BOTH the bare `ruff check` result and the pin result
+in the verdict body. The reviewer MUST NOT write `ruff clean` — in the
+verdict line or anywhere in the report body — from a bare `ruff check`
+alone on such a diff; a passing bare-ruff with a failing policy pin is the
+#1672 shape and blocks the round with a `substantive` blocker tag (NOT
+`marker-shape` — the pin failure is a real lint violation, not a marker
+formatting issue, so it is NOT strippable by /issue Step 5c-bis). The
+equivalent discriminating one-liner `uv run ruff check <touched files>
+--config 'lint.per-file-ignores = {}'` MAY be documented as a fast local
+probe, but the pin test is the authoritative form — it is what the gate
+runs, and it is the one whose node id the FAIL will name.
+
+**Round-new-script no-flags lint (#1805).** Trigger: the diff ADDS (status
+`A` vs the review base) ≥1 `scripts/**/*.py` or `src/**/*.py` file — the
+executable gate in the block above; prose-only / modify-only rounds skip the
+duty (accepted residual: a modify-only round introducing a fresh bare hub
+call skips it — status-quo latency; the Step 10d gate remains the
+authoritative backstop). Attribution: `workflow_lint:` failure lines naming a
+round-TOUCHED path → a Critical with blocker tag `substantive` (a
+deterministic Step 10d gate blocker caught early — the #1092 shape; NOT
+strippable by /issue Step 5c-bis); failure lines naming only untouched paths
+→ pre-existing red, note-only, NEVER blocks; timeout / crash / zero output →
+INCONCLUSIVE — flag it loudly in the verdict (the tests-not-run convention
+below), never report it as clean, never a blocker by itself.
+
+Remedy guidance for hub-verify hits on genuinely non-network-risky shapes —
+a bare `inspect.signature(...)` reference, or a call the script wraps in
+`hub.retry_transient(...)` itself (BOTH #1092 shapes still require the
+waiver): the fix IS the `# HUB_VERIFY_RETRY_EXEMPT: <reason>` waiver (reason
+≥ 10 chars, on the call's first physical line or the immediately-preceding
+NON-BLANK line) — name it in the finding so the implementer's bounce round
+applies it directly. Routing the listing through the `orchestrate/hub.py`
+helpers (`verify_repo_paths_uploaded`, `list_hf_files_under_path`,
+`list_repo_files_complete`) IN PLACE OF the bare target is the only
+no-waiver alternative. `uv run python scripts/workflow_lint.py
+--check-hub-verify-retry` runs in seconds and MAY be run first as a fast
+probe; the no-flags run is authoritative (it is what the gate runs).
+Stale-family caveat (#1417): a false block naming a ratchet/grandfather size
+cap, or a `workflow_lint` import failure inside the worktree, is the stale
+lint-family class — cross-check at the repo root (post Step-5a sync) before
+attributing it to the payload.
 
 **If `uv run pytest` fails with a read-only-sandbox / cache / tempdir error**
 (e.g. `Read-only file system`, `Permission denied` on `~/.cache/uv`, or a
@@ -1443,9 +1834,11 @@ so this step does not bind there), verify the report's
 - **Presence / format (mechanical).** `(c) How to verify` carries a
   `Gate-scope check` line with the contract fields: selector `n_tests` +
   resolved base, locally-run files, pin-sweep fragments →
-  hit count + verbatim deduplicated hit-file list, deferred
+  hit count + verbatim deduplicated hit-file list + its `sweep_scope:`
+  universe token (#1651), deferred
   invariant-only count (a count-only / glob-family pin-sweep field with
-  no hit-file list is the present-but-terse case below, never absence).
+  no hit-file list — or a missing `sweep_scope:` token — is the
+  present-but-terse case below, never absence).
   ABSENT entirely — and the marker `ts` is ≥ 2026-07-15 (the #1305 duty
   landed on main 2026-07-14; an older round's absence is at most a
   CONCERNS): Critical tagged `marker-shape`, and the blocker body
@@ -1502,6 +1895,8 @@ Grep for common vulnerabilities in the diff:
 **Grep-the-literal rule (no fabricated checkmarks).** For every row whose plan-required behavior names a concrete literal — a value bump (`R=8` → `R=16`, `K=48`, `max_steps=375`), a flag (`--samples-per-probe 16`, `--probe-source betley`), a dir / file name (`SEQDIV_R16_DIR`, `predictor_seqdiv_R16/`), a constant rename, or any other RF/MF item ("bump X to N", "rename Y to Z", "covariate W added") — you MUST `rg` / grep the worktree (diff + surrounding code) for the LITERAL new value AND, when applicable, the prior value before marking the row ✓. Quote the matched line as `file.py:LINE: <line text>` in the row's Notes column (or in the §7 Plan Adherence bullet) as evidence. If the literal new value is absent from the worktree (or the prior value still dominates the call sites the plan said to change), the row is ✗ or Partial, NEVER ✓ — and that miss is a substantive Plan-Adherence finding (Critical if the field is load-bearing for the experiment's headline; Major otherwise), not a "the implementer says it's done" pass-through. Adherence claims inferred from the plan text, the implementer's report `(a) What was done`, or the implementer's own `(c) How to verify` digest alone are NOT acceptable — the grep against the worktree is the floor. (Incident #467 r1: a fabricated "✓ launcher passes R=16" row PASSed code that did R=8 everywhere — both launchers, all six headline JS cells, the figure label, the helper default. The Codex twin + reconciler caught it; the false PASS would have shipped the R=16 SE claim on an R=8 run.)
 
 **Durability-pin shipping check (plan-named pin tests).** When the approved plan carries a non-N/A `Durability pin: tests/test_<file>.py[::test_<name>]` line (planner.md § "Workflow-prose durability pin"; `verify_plan.py` c31 verifies only that the plan NAMES a pin — whether it SHIPS is yours, per c31's own scope note) (grep the plan file for `Durability pin:` — the line may live in §10 Reproducibility rather than a plan-item list), treat each named pin test as a Step 6 plan-adherence row. Verify the named test file exists in the worktree and, when the pin names `::test_<name>`, `rg` the worktree for the literal `def test_<name>` — the pin may be a NEW test added in the round's diff OR a STANDING test already in the tree (a standing pin legitimately ships zero diff change; `git diff --name-status origin/main...HEAD -- tests/` tells you which, for the Notes column). Quote the matched line as `tests/test_<file>.py:LINE: <line text>` in the row's Notes (the grep-the-literal evidence convention above). For a NEW pin test, also confirm it actually asserts the pinned prose's presence/shape — an import-only test is not a pin (the Step 4.5 "actually exercises" bar). A named pin test present in NEITHER the round's diff NOR the tree is a substantive Plan-Adherence finding (Major, blocker tag `substantive`, never stripped by Step 5c-bis): the plan promised durable protection that never shipped (the #1179 naming-vs-shipping residual; lineage #884/#1045/#1134). A `Durability pin: N/A — <reason>` escape line carries no duty here.
+
+**Step-2 floor check (wf-fix / infra workflow-surface tasks).** If the task is wf-fix (`WF_FIX_TITLE_PREFIXES` prefix — `workflow-fix:` / `daily-fix:` — or `wf-fix` tag; `task_workflow.is_workflow_fix_session`) and the events.jsonl carries NO `epm:plan-verify` marker, FAIL with tag `step2-floor-skipped` — the SKILL.md § Step 2 minimum plan-review floor was not run and no recorded-skip reason exists to justify it (`kind: infra` non-wf-fix tasks are exempt). Rare deferred-commit edge case: if the marker append landed but the commit was deferred (see `task.py post-marker` stderr ERROR), re-probe `task.py view <N> --json` before finalizing the FAIL.
 
 Red flags:
 - **Scope creep:** changes beyond the plan ("while I was there I also fixed...")

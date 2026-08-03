@@ -19,3 +19,9 @@ Cousin to [[claude-underclasses-silent-failures]] (the inverse case — Claude u
 **Incident:** task #381 round 1, 2026-05-26. Codex PASS, Claude REVISE. Title "two cheap interventions failed to localise" — Claude's per-framing × per-persona × per-seed pull from `full_eval_summary.json` showed Arm B framing-1 had teach=1.0 / non-teach=0.0 across all 3 seeds, literally satisfying the plan's pre-registered H2 confirm criterion (teach ≥ 80% AND non-teach ≤ baseline+10pp). Body declared H2 falsified without reconciling. Codex couldn't fetch the JSONs, fell back to aggregate prose, missed it. Reconciler verdict: REVISE.
 
 **Figure-pixel variant (clean-result-critic):** task #601 round 1, 2026-06-12. Codex clean-result-critic posted "all 15 lenses clean" while two PNGs carried (a) an issue-number leak in a legend ("the #471 bridge") and (b) a caption describing an unplotted curve + a 10.8-16.1 band whose plotted max was ~12.9 (#507 incident class). Codex evidently never rendered the PNGs — mechanical pre-passes (verify_task_body.py, audit script) don't inspect figure content, so their PASS proves nothing about Lens 3. When reconciling figure-content lenses, ALWAYS materialize the SHA-pinned PNGs (`git show <sha>:figures/issue_<N>/<name>.png`) and Read them; same round also re-enforced the SPEC per-result 1-3-sentence read beat (precedent chain: #547 r1 → #601 r1 — the spec's Exemplar-scope caveat is binding, all-blockers-verified REVISE).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Codex passes when sandbox blocks data](feedback_codex_passes_when_sandbox_blocks_data.md) — Lens-7 "could not fetch" disclaimers zero-weight the Lens-1 PASS; re-verify against the JSONs; ALWAYS Read the SHA-pinned PNGs on figure lenses. #381, #601.

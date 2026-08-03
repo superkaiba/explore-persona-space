@@ -1,0 +1,1185 @@
+{
+  "commit": "d58715d969",
+  "created": "2026-07-29T00:14:28Z",
+  "figsize": [
+    7.2,
+    6.4
+  ],
+  "points": [
+    {
+      "rung R$^2$, forward direction (A to B)": 0.3792980124132398,
+      "rung R$^2$, reverse direction (B to A)": 0.3792980124132398,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.3792980124132398,
+      "rung R$^2$, reverse direction (B to A)": 0.3792980124132398,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.3792980124132398,
+      "rung R$^2$, reverse direction (B to A)": 0.3792980124132398,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.3710623084178203,
+      "rung R$^2$, reverse direction (B to A)": 0.3710623084178203,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.4234805815931243,
+      "rung R$^2$, reverse direction (B to A)": 0.4234805815931243,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.16511262859286857,
+      "rung R$^2$, reverse direction (B to A)": 0.16511262859286857,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.25409594259934465,
+      "rung R$^2$, reverse direction (B to A)": 0.25409594259934465,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.23793445480556175,
+      "rung R$^2$, reverse direction (B to A)": 0.23793445480556175,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.18657659140942584,
+      "rung R$^2$, reverse direction (B to A)": 0.18657659140942584,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.8083244367381064,
+      "rung R$^2$, reverse direction (B to A)": 0.8083244367381064,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.8083244367381064,
+      "rung R$^2$, reverse direction (B to A)": 0.8083244367381064,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.8083244367381064,
+      "rung R$^2$, reverse direction (B to A)": 0.8083244367381064,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.8077130890154498,
+      "rung R$^2$, reverse direction (B to A)": 0.8077130890154498,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.812348327568922,
+      "rung R$^2$, reverse direction (B to A)": 0.812348327568922,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.6799291614544803,
+      "rung R$^2$, reverse direction (B to A)": 0.6799291614544803,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.6811255236520353,
+      "rung R$^2$, reverse direction (B to A)": 0.6811255236520353,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.7250598009971673,
+      "rung R$^2$, reverse direction (B to A)": 0.7250598009971673,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.6373643255788239,
+      "rung R$^2$, reverse direction (B to A)": 0.6373643255788239,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999992059885,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999992059885,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999992059885,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999992059885,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999992059885,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999992059885,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999992037969,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999992037969,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999992188203,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999992188203,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.7168038192599466,
+      "rung R$^2$, reverse direction (B to A)": 0.7168038192599466,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.8485871095281692,
+      "rung R$^2$, reverse direction (B to A)": 0.8485871095281692,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.8485694154146457,
+      "rung R$^2$, reverse direction (B to A)": 0.8485694154146457,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.8485693818669325,
+      "rung R$^2$, reverse direction (B to A)": 0.8485693818669325,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9441323012343026,
+      "rung R$^2$, reverse direction (B to A)": 0.9441323012343026,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9441323012343026,
+      "rung R$^2$, reverse direction (B to A)": 0.9441323012343026,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9441323012343026,
+      "rung R$^2$, reverse direction (B to A)": 0.9441323012343026,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9430515994976977,
+      "rung R$^2$, reverse direction (B to A)": 0.9430515994976977,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9569255515472702,
+      "rung R$^2$, reverse direction (B to A)": 0.9569255515472702,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.45695714922587716,
+      "rung R$^2$, reverse direction (B to A)": 0.45695714922587716,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.4758366796935538,
+      "rung R$^2$, reverse direction (B to A)": 0.4758366796935538,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.6090967993781149,
+      "rung R$^2$, reverse direction (B to A)": 0.6090967993781149,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.4323830651005589,
+      "rung R$^2$, reverse direction (B to A)": 0.4323830651005589,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.8036197731212544,
+      "rung R$^2$, reverse direction (B to A)": 0.8036197731212544,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.8036197731212544,
+      "rung R$^2$, reverse direction (B to A)": 0.8036197731212544,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.8036197731212544,
+      "rung R$^2$, reverse direction (B to A)": 0.8036197731212544,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.8027883511613978,
+      "rung R$^2$, reverse direction (B to A)": 0.8027883511613978,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.8073307892996011,
+      "rung R$^2$, reverse direction (B to A)": 0.8073307892996011,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.6769026364847751,
+      "rung R$^2$, reverse direction (B to A)": 0.6769026364847751,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.6797355406979619,
+      "rung R$^2$, reverse direction (B to A)": 0.6797355406979619,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.7268095699515971,
+      "rung R$^2$, reverse direction (B to A)": 0.7268095699515971,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.6373746047171975,
+      "rung R$^2$, reverse direction (B to A)": 0.6373746047171975,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999991216219,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999991216219,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999991216219,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999991216219,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999991216219,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999991216219,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999991202626,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999991202626,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.999999999136631,
+      "rung R$^2$, reverse direction (B to A)": 0.999999999136631,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.7654914684075138,
+      "rung R$^2$, reverse direction (B to A)": 0.7654914684075138,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.877165761590242,
+      "rung R$^2$, reverse direction (B to A)": 0.877165761590242,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.8771436412454813,
+      "rung R$^2$, reverse direction (B to A)": 0.8771436412454813,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.8771436227340681,
+      "rung R$^2$, reverse direction (B to A)": 0.8771436227340681,
+      "series": "haiku vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": -0.9917980188399531,
+      "rung R$^2$, reverse direction (B to A)": -0.9115150615462173,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": -0.9917980188399531,
+      "rung R$^2$, reverse direction (B to A)": -0.9115150615462173,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.10415104621635707,
+      "rung R$^2$, reverse direction (B to A)": 0.1352233910103381,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.10366527380978985,
+      "rung R$^2$, reverse direction (B to A)": 0.13487324068647888,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.13393199178293747,
+      "rung R$^2$, reverse direction (B to A)": 0.1495282151527968,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.45190389114992113,
+      "rung R$^2$, reverse direction (B to A)": 0.44909562222939114,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.10373755301233978,
+      "rung R$^2$, reverse direction (B to A)": 0.1331682419672916,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.5067690376355223,
+      "rung R$^2$, reverse direction (B to A)": 0.4899304607655576,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.5032886577671192,
+      "rung R$^2$, reverse direction (B to A)": 0.4886387318336214,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": -1.2,
+      "rung R$^2$, reverse direction (B to A)": -0.9549280288240374,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": -1.2,
+      "rung R$^2$, reverse direction (B to A)": -1.2,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.2291829696509443,
+      "rung R$^2$, reverse direction (B to A)": 0.2284962232279204,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.2288034490522326,
+      "rung R$^2$, reverse direction (B to A)": 0.2282156618332496,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.23415218872496568,
+      "rung R$^2$, reverse direction (B to A)": 0.24023715935116052,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.5129657226162287,
+      "rung R$^2$, reverse direction (B to A)": 0.5148898552497185,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.388993474310272,
+      "rung R$^2$, reverse direction (B to A)": 0.42654023098941607,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.41609586415131294,
+      "rung R$^2$, reverse direction (B to A)": 0.39489437963357854,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.6762703430128436,
+      "rung R$^2$, reverse direction (B to A)": 0.6665675582827782,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.999999967055908,
+      "rung R$^2$, reverse direction (B to A)": 0.999999967055908,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.999999967055908,
+      "rung R$^2$, reverse direction (B to A)": 0.999999967055908,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.999999967055908,
+      "rung R$^2$, reverse direction (B to A)": 0.999999967055908,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.99999996703637,
+      "rung R$^2$, reverse direction (B to A)": 0.99999996703637,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999670470655,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999670470655,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9764322871628893,
+      "rung R$^2$, reverse direction (B to A)": 0.9764322871628893,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9879513279430927,
+      "rung R$^2$, reverse direction (B to A)": 0.9879513279430927,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9878500853716146,
+      "rung R$^2$, reverse direction (B to A)": 0.9878500853716146,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9878459574377121,
+      "rung R$^2$, reverse direction (B to A)": 0.9878459574377121,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": -1.1486022739345088,
+      "rung R$^2$, reverse direction (B to A)": -0.9624555703321462,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": -1.1486022739345088,
+      "rung R$^2$, reverse direction (B to A)": -0.9624555703321462,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.1405233353392622,
+      "rung R$^2$, reverse direction (B to A)": 0.2590015060843418,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.14006527728891038,
+      "rung R$^2$, reverse direction (B to A)": 0.2587182393248163,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.21643920490621138,
+      "rung R$^2$, reverse direction (B to A)": 0.28730478253730307,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.6020317224595757,
+      "rung R$^2$, reverse direction (B to A)": 0.6874220128798603,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.13961732272070448,
+      "rung R$^2$, reverse direction (B to A)": 0.25828998895022204,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.7252593122169706,
+      "rung R$^2$, reverse direction (B to A)": 0.7953834457248014,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.7226606056863722,
+      "rung R$^2$, reverse direction (B to A)": 0.793878099655065,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": -1.2,
+      "rung R$^2$, reverse direction (B to A)": -0.9605953458182159,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": -1.2,
+      "rung R$^2$, reverse direction (B to A)": -1.2,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.16442471808501702,
+      "rung R$^2$, reverse direction (B to A)": 0.16178133863541222,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.16404505726774243,
+      "rung R$^2$, reverse direction (B to A)": 0.16145220077110778,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.17145124266623235,
+      "rung R$^2$, reverse direction (B to A)": 0.174187890655346,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.4825456615698267,
+      "rung R$^2$, reverse direction (B to A)": 0.4614811909116445,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.3157582363361895,
+      "rung R$^2$, reverse direction (B to A)": 0.3189805333753274,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.4164389796118082,
+      "rung R$^2$, reverse direction (B to A)": 0.37842401651684243,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.647657244904646,
+      "rung R$^2$, reverse direction (B to A)": 0.6325579188470085,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999817042998,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999817042998,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999817042998,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999817042998,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999817042998,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999817042998,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999816945253,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999816945253,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999817067152,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999817067152,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9629099074729164,
+      "rung R$^2$, reverse direction (B to A)": 0.9629099074729164,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9811156778399436,
+      "rung R$^2$, reverse direction (B to A)": 0.9811156778399436,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.981027169665472,
+      "rung R$^2$, reverse direction (B to A)": 0.981027169665472,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9810251985956634,
+      "rung R$^2$, reverse direction (B to A)": 0.9810251985956634,
+      "series": "LMSYS vs haiku (54 rung values)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": -0.9129741745829065,
+      "rung R$^2$, reverse direction (B to A)": -1.0233144323265186,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": -0.9129741745829065,
+      "rung R$^2$, reverse direction (B to A)": -1.0233144323265186,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.1517457271273679,
+      "rung R$^2$, reverse direction (B to A)": 0.16181741314702125,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.13976767999851014,
+      "rung R$^2$, reverse direction (B to A)": 0.14621131953950606,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.139329144716412,
+      "rung R$^2$, reverse direction (B to A)": 0.1450909725094649,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.1365743450224518,
+      "rung R$^2$, reverse direction (B to A)": 0.1237956033043427,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.07523338576127914,
+      "rung R$^2$, reverse direction (B to A)": 0.0979451969693087,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.18070363068545614,
+      "rung R$^2$, reverse direction (B to A)": 0.20344544526229147,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.15826014351893503,
+      "rung R$^2$, reverse direction (B to A)": 0.1669860338860174,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": -1.2,
+      "rung R$^2$, reverse direction (B to A)": -0.8873949341844449,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": -1.2,
+      "rung R$^2$, reverse direction (B to A)": -1.2,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.2761680703001498,
+      "rung R$^2$, reverse direction (B to A)": 0.272424251871595,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.27371271092682103,
+      "rung R$^2$, reverse direction (B to A)": 0.27021460375244966,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.27353041659836175,
+      "rung R$^2$, reverse direction (B to A)": 0.2703202712302114,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.41831630320575597,
+      "rung R$^2$, reverse direction (B to A)": 0.42112888228932266,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.32256879123983373,
+      "rung R$^2$, reverse direction (B to A)": 0.3666154741970281,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.3697891736629758,
+      "rung R$^2$, reverse direction (B to A)": 0.38652161924680906,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.5447539363440627,
+      "rung R$^2$, reverse direction (B to A)": 0.5471869232920148,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999992059885,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999992059885,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999992059885,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999992059885,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999992059885,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999992059885,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999992037969,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999992037969,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999992188203,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999992188203,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.7168038192599466,
+      "rung R$^2$, reverse direction (B to A)": 0.7168038192599466,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.8485871095281692,
+      "rung R$^2$, reverse direction (B to A)": 0.8485871095281692,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.8485694154146457,
+      "rung R$^2$, reverse direction (B to A)": 0.8485694154146457,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.8485693818669325,
+      "rung R$^2$, reverse direction (B to A)": 0.8485693818669325,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": -0.6779717866790433,
+      "rung R$^2$, reverse direction (B to A)": -0.6106685942307648,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": -0.6779717866790433,
+      "rung R$^2$, reverse direction (B to A)": -0.6106685942307648,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.20890186760781293,
+      "rung R$^2$, reverse direction (B to A)": 0.28477401022040294,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.19304337395385263,
+      "rung R$^2$, reverse direction (B to A)": 0.26987197646575845,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.2705246396197981,
+      "rung R$^2$, reverse direction (B to A)": 0.2995632858325158,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.15220783532624182,
+      "rung R$^2$, reverse direction (B to A)": 0.2840571178999346,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.18297801513973821,
+      "rung R$^2$, reverse direction (B to A)": 0.2201578196228352,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.47004484410266134,
+      "rung R$^2$, reverse direction (B to A)": 0.4966825072899588,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.41487091564833034,
+      "rung R$^2$, reverse direction (B to A)": 0.44067876367774694,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": -1.2,
+      "rung R$^2$, reverse direction (B to A)": -0.8222225189568713,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": -1.2,
+      "rung R$^2$, reverse direction (B to A)": -1.2,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.24957904329156222,
+      "rung R$^2$, reverse direction (B to A)": 0.22810027234346886,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.24757556944607606,
+      "rung R$^2$, reverse direction (B to A)": 0.22590148735281135,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.24752971482075248,
+      "rung R$^2$, reverse direction (B to A)": 0.22659779111025002,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.4019543978975777,
+      "rung R$^2$, reverse direction (B to A)": 0.3704506802516714,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.30542298719283756,
+      "rung R$^2$, reverse direction (B to A)": 0.31850414641664104,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.3971680014704747,
+      "rung R$^2$, reverse direction (B to A)": 0.3440072213668036,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.5360262558902349,
+      "rung R$^2$, reverse direction (B to A)": 0.5279600500890509,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999991216219,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999991216219,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999991216219,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999991216219,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999991216219,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999991216219,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.9999999991202626,
+      "rung R$^2$, reverse direction (B to A)": 0.9999999991202626,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.999999999136631,
+      "rung R$^2$, reverse direction (B to A)": 0.999999999136631,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.7654914684075138,
+      "rung R$^2$, reverse direction (B to A)": 0.7654914684075138,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.877165761590242,
+      "rung R$^2$, reverse direction (B to A)": 0.877165761590242,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.8771436412454813,
+      "rung R$^2$, reverse direction (B to A)": 0.8771436412454813,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rung R$^2$, forward direction (A to B)": 0.8771436227340681,
+      "rung R$^2$, reverse direction (B to A)": 0.8771436227340681,
+      "series": "LMSYS vs on-policy (54 rung values)",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 162,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "User-provenance pairs, prefix arm: forward vs reverse rung R$^2$\nhaiku-vs-on-policy pairs are identical in both directions (stored data duplicated)",
+        "xlabel": "rung R$^2$, forward direction (A to B)",
+        "ylabel": "rung R$^2$, reverse direction (B to A)",
+        "legend_labels": [
+          "haiku vs on-policy (54 rung values)",
+          "LMSYS vs haiku (54 rung values)",
+          "LMSYS vs on-policy (54 rung values)"
+        ],
+        "xticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ],
+        "yticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      }
+    ],
+    "series": [
+      "haiku vs on-policy (54 rung values)",
+      "LMSYS vs haiku (54 rung values)",
+      "LMSYS vs on-policy (54 rung values)"
+    ]
+  }
+}

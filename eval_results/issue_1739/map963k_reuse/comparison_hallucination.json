@@ -1,0 +1,5294 @@
+{
+  "meta": {
+    "question": "does #779's frozen 963,444-context map beat #1739's own 18,793-pair map for the map->persona-vector projection read (arm6) on #1739's eval rungs?",
+    "map963k_source": {
+      "repo": "superkaiba1/explore-persona-space-data",
+      "weights_prefix": "issue779_monitoring/n1m_readout/weights/",
+      "revision": "9d8f789bf034d8f244e1d00e0dbbe6aba6d272c5",
+      "layers": [
+        14,
+        19,
+        26
+      ],
+      "fitters": [
+        "ridge",
+        "mlp_w8192"
+      ],
+      "train_contexts": 963444,
+      "input_semantics": "c_last (last prompt token, chat template + generation prompt)",
+      "target_semantics": "v_x (mean-response activation) == #1739 t1 (answer-span mean)",
+      "preprocessing": "self-contained per-payload xmu/xsd/ymu; applied via issue779_ffc_n1m_fits.apply_map",
+      "layer_convention": "block index L == hidden_states[L+1] (post-block); matches #1739 hidden_states[1:]"
+    },
+    "i1739_map_source": {
+      "prefix": "issue1739_ctxmap/analysis_tensors/maps/{variant}__ufull.npz",
+      "w_fit_rows": 18793
+    },
+    "r_b": "issue1739_ctxmap/analysis_tensors/r_b_e1/{behavior}.npz (E1 regime \u2014 the arm6 r_B)",
+    "eval_store": "issue1739_ctxmap/capture_store/{behavior}_labeling/*.tar (streamed slice)",
+    "metric": "Spearman rho of arm score vs judged graded DV, per eval rung; 2000-draw percentile bootstrap over contexts",
+    "caveats": [
+      "prefix_end + map963k rows are an OUT-OF-TRAINING-DISTRIBUTION application: #779's map was fit on full-prompt end states (c_last), not prefix ends (flagged per-row as ood_prefix_application).",
+      "per-context reduction: EVERY kind is averaged over the context's rollouts. Prompt-side kinds are rollout-invariant up to bf16 padded-batch numerics (gated on cross-rollout cosine >= 0.995; max-abs is diagnostic only).",
+      "sycophancy is excluded \u2014 its arm results were still in flight at run time."
+    ],
+    "n_boot": 1000,
+    "ci_scope": "primary r_B source only (see r_b_source / ci_computed per row)",
+    "device": "cpu",
+    "elapsed_s": 1298.3,
+    "ts": "2026-07-30T17:25:14Z"
+  },
+  "behaviors": {
+    "hallucination": {
+      "behavior": "hallucination",
+      "n_contexts": 23188,
+      "rungs": [
+        "nqopen",
+        "simpleqa",
+        "train"
+      ],
+      "rollout_prompt_side_min_cosine": 0.9998618118683505,
+      "rollout_prompt_side_max_abs_dev": 0.375,
+      "rows": [
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "raw_proj",
+          "r_b_source": "i1739_e1",
+          "rho": -0.2422870400757421,
+          "ci95": [
+            -0.2763229002462829,
+            -0.20922644850694758
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "oracle_proj",
+          "r_b_source": "i1739_e1",
+          "rho": -0.02957860925755354,
+          "ci95": [
+            -0.06407078278046704,
+            0.005340664811936595
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "i1739_e1",
+          "rho": -0.14861949387723647,
+          "ci95": [
+            -0.18231226188605607,
+            -0.11450912783891488
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.07154343729139347,
+          "ci95": [
+            0.03830970979243521,
+            0.10598888393051993
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge",
+          "r_b_source": "i1739_e1",
+          "rho": -0.13313455218429726,
+          "ci95": [
+            -0.1653563951513784,
+            -0.10012978134668932
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.12812301812535562,
+          "ci95": [
+            0.09438076606071984,
+            0.16335521509735682
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "i1739_e1",
+          "rho": -0.02620736403825427,
+          "ci95": [
+            -0.05981615144982522,
+            0.008348385833053045
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "raw_proj",
+          "r_b_source": "issue779_bank",
+          "rho": -0.21127683222446123,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "oracle_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.012470037417709367,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "issue779_bank",
+          "rho": -0.134210369356274,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.08877937493746621,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge",
+          "r_b_source": "issue779_bank",
+          "rho": -0.10649472135460736,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.12785694750166784,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "issue779_bank",
+          "rho": 0.005155716346734111,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "raw_proj",
+          "r_b_source": "i1739_e1",
+          "rho": 0.16486812121467945,
+          "ci95": [
+            0.1348734745880709,
+            0.1959447249418508
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "oracle_proj",
+          "r_b_source": "i1739_e1",
+          "rho": 0.6027392406758051,
+          "ci95": [
+            0.5772455660993565,
+            0.6267613357358744
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "i1739_e1",
+          "rho": 0.15962198598416025,
+          "ci95": [
+            0.12856281609950596,
+            0.1895539944097117
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.03487888487984678,
+          "ci95": [
+            0.004180454250851763,
+            0.06442908982334712
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge",
+          "r_b_source": "i1739_e1",
+          "rho": 0.24636446907606985,
+          "ci95": [
+            0.21545505515736582,
+            0.2760086393243015
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.06939722300626898,
+          "ci95": [
+            0.03682822092145764,
+            0.09819883416960112
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "i1739_e1",
+          "rho": 0.3081221604082381,
+          "ci95": [
+            0.27810231170972094,
+            0.3370477523018867
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "raw_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.18933313541419608,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "oracle_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.6277392509544025,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "issue779_bank",
+          "rho": 0.17021933448402743,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.025924097526063877,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge",
+          "r_b_source": "issue779_bank",
+          "rho": 0.27146541237702243,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.07295888459959297,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "issue779_bank",
+          "rho": 0.32285774039067205,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "raw_proj",
+          "r_b_source": "i1739_e1",
+          "rho": -0.270545342298307,
+          "ci95": [
+            -0.28603481475773174,
+            -0.25750985048245983
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "oracle_proj",
+          "r_b_source": "i1739_e1",
+          "rho": -0.10055857947050106,
+          "ci95": [
+            -0.11534024756782345,
+            -0.08690916602361815
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "i1739_e1",
+          "rho": -0.03319864005215042,
+          "ci95": [
+            -0.04859581794627212,
+            -0.01743700510380511
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.11947501252531074,
+          "ci95": [
+            0.10426112951884606,
+            0.13569863687002456
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "map963k_ridge",
+          "r_b_source": "i1739_e1",
+          "rho": -0.21193227433653974,
+          "ci95": [
+            -0.22610515022484348,
+            -0.19671811569180403
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.21639067893921055,
+          "ci95": [
+            0.20313396864328925,
+            0.23166067325238526
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "i1739_e1",
+          "rho": -0.02788697057270269,
+          "ci95": [
+            -0.042871984449686304,
+            -0.01329544516947085
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "raw_proj",
+          "r_b_source": "issue779_bank",
+          "rho": -0.2623044985477256,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "oracle_proj",
+          "r_b_source": "issue779_bank",
+          "rho": -0.08020445721330006,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "issue779_bank",
+          "rho": -0.00643914209368738,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.1258734809796749,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "map963k_ridge",
+          "r_b_source": "issue779_bank",
+          "rho": -0.16677336401085857,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.20558468152240775,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "issue779_bank",
+          "rho": 0.005173589836471406,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "raw_proj",
+          "r_b_source": "i1739_e1",
+          "rho": -0.13212338878772925,
+          "ci95": [
+            -0.1668596132487411,
+            -0.09713602936690258
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "oracle_proj",
+          "r_b_source": "i1739_e1",
+          "rho": -0.00892107389734091,
+          "ci95": [
+            -0.04393225348840235,
+            0.027117394513759992
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "i1739_e1",
+          "rho": -0.0696115609805082,
+          "ci95": [
+            -0.10376847329189579,
+            -0.03357395659087378
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": -0.07689979802767381,
+          "ci95": [
+            -0.11203407363131192,
+            -0.04367262154868494
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge",
+          "r_b_source": "i1739_e1",
+          "rho": -0.08379868015515315,
+          "ci95": [
+            -0.11641587448517901,
+            -0.04754445008600116
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": -0.13565012096146875,
+          "ci95": [
+            -0.16927284050679312,
+            -0.1003933269561172
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "i1739_e1",
+          "rho": -0.0027686618586428785,
+          "ci95": [
+            -0.03423804528929522,
+            0.03159840367946398
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "raw_proj",
+          "r_b_source": "issue779_bank",
+          "rho": -0.0819393503973332,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "oracle_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.04961417501572703,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "issue779_bank",
+          "rho": -0.055165978801666696,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": -0.06391655676933704,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge",
+          "r_b_source": "issue779_bank",
+          "rho": -0.035384486221232775,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": -0.10655159441382715,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "issue779_bank",
+          "rho": 0.05046647234340842,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "raw_proj",
+          "r_b_source": "i1739_e1",
+          "rho": 0.464150377927819,
+          "ci95": [
+            0.43577894783120047,
+            0.4937634416563161
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "oracle_proj",
+          "r_b_source": "i1739_e1",
+          "rho": 0.6047104168339511,
+          "ci95": [
+            0.5796870024088149,
+            0.6298395245637989
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "i1739_e1",
+          "rho": 0.4446962784232918,
+          "ci95": [
+            0.41681222561261977,
+            0.4737693199545654
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": -0.19123902399618756,
+          "ci95": [
+            -0.22274733937036906,
+            -0.1595601572323945
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge",
+          "r_b_source": "i1739_e1",
+          "rho": 0.44918761250164857,
+          "ci95": [
+            0.4207141352615402,
+            0.4777009569269448
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.10670376920648644,
+          "ci95": [
+            0.07487203370843502,
+            0.13756457206260286
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "i1739_e1",
+          "rho": 0.48089606180441896,
+          "ci95": [
+            0.45488087458706067,
+            0.5103315067586525
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "raw_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.4845611495915771,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "oracle_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.6356212003409635,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "issue779_bank",
+          "rho": 0.46860296818755737,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": -0.21414356603352222,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge",
+          "r_b_source": "issue779_bank",
+          "rho": 0.4713898205037321,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.04852040650731012,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "issue779_bank",
+          "rho": 0.5090616087786985,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "raw_proj",
+          "r_b_source": "i1739_e1",
+          "rho": -0.2542432141977485,
+          "ci95": [
+            -0.26914595138955044,
+            -0.24095595267288225
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "oracle_proj",
+          "r_b_source": "i1739_e1",
+          "rho": -0.09814710374008297,
+          "ci95": [
+            -0.1133836869352117,
+            -0.0840311511074832
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "i1739_e1",
+          "rho": -0.07714602733065157,
+          "ci95": [
+            -0.09209850354604635,
+            -0.06277678973564098
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.054341237786353844,
+          "ci95": [
+            0.03885346295904452,
+            0.070497247992231
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "map963k_ridge",
+          "r_b_source": "i1739_e1",
+          "rho": -0.10713343924549121,
+          "ci95": [
+            -0.12381126493884036,
+            -0.09258594725812251
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": -0.03491591312991905,
+          "ci95": [
+            -0.05065909832557103,
+            -0.02095022631799607
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "i1739_e1",
+          "rho": -0.007840241990143066,
+          "ci95": [
+            -0.024133528075921954,
+            0.00735960830322594
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "raw_proj",
+          "r_b_source": "issue779_bank",
+          "rho": -0.2133798665987113,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "oracle_proj",
+          "r_b_source": "issue779_bank",
+          "rho": -0.05455685463120639,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "issue779_bank",
+          "rho": -0.06901988988993754,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.06136117163599004,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "map963k_ridge",
+          "r_b_source": "issue779_bank",
+          "rho": -0.06577558976190685,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": -0.006799859176382437,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "issue779_bank",
+          "rho": 0.04048266736705828,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "raw_proj",
+          "r_b_source": "i1739_e1",
+          "rho": 0.038522773116095546,
+          "ci95": [
+            0.004379602925529013,
+            0.07294369887705944
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "oracle_proj",
+          "r_b_source": "i1739_e1",
+          "rho": 0.10048273646513652,
+          "ci95": [
+            0.06549936895261768,
+            0.13582795674074863
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "i1739_e1",
+          "rho": -0.037899752373565354,
+          "ci95": [
+            -0.07218558415073596,
+            -0.0008677837419467406
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.1556531765299926,
+          "ci95": [
+            0.1223358425050481,
+            0.18924442420453724
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge",
+          "r_b_source": "i1739_e1",
+          "rho": 0.044156518366685084,
+          "ci95": [
+            0.011088204023729831,
+            0.0782954929057012
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.12031988650281088,
+          "ci95": [
+            0.08425718637292985,
+            0.15615377425852855
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "i1739_e1",
+          "rho": 0.07689353985590784,
+          "ci95": [
+            0.042952236211900204,
+            0.11010859826041175
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "raw_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.043064074295241936,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "oracle_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.1379066048031113,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "issue779_bank",
+          "rho": -0.02812192263292027,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.15063011014888242,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge",
+          "r_b_source": "issue779_bank",
+          "rho": 0.0793354398953001,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.12330827519001526,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "issue779_bank",
+          "rho": 0.11318136612765124,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "raw_proj",
+          "r_b_source": "i1739_e1",
+          "rho": 0.4783806485189674,
+          "ci95": [
+            0.4496268839220906,
+            0.5069458650075899
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "oracle_proj",
+          "r_b_source": "i1739_e1",
+          "rho": 0.5988984623531395,
+          "ci95": [
+            0.5742958110559171,
+            0.623383847479619
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "i1739_e1",
+          "rho": 0.5066533881169751,
+          "ci95": [
+            0.47861295778716434,
+            0.5326854883650147
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": -0.2098217458020355,
+          "ci95": [
+            -0.2398337074765673,
+            -0.18156895619198526
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge",
+          "r_b_source": "i1739_e1",
+          "rho": 0.44119436600081163,
+          "ci95": [
+            0.4127951096846367,
+            0.4690413521707306
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": -0.12066693125152403,
+          "ci95": [
+            -0.15393789806741234,
+            -0.0905171423173979
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "i1739_e1",
+          "rho": 0.4517191718534147,
+          "ci95": [
+            0.4242509368196259,
+            0.4796820719909798
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "raw_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.4733146456514809,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "oracle_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.6162069720408142,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "issue779_bank",
+          "rho": 0.5161808845419181,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": -0.26609381797876097,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge",
+          "r_b_source": "issue779_bank",
+          "rho": 0.45013733539509554,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": -0.06514456057682358,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "issue779_bank",
+          "rho": 0.4669570685115938,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "raw_proj",
+          "r_b_source": "i1739_e1",
+          "rho": -0.0808456161668895,
+          "ci95": [
+            -0.09636835288998144,
+            -0.06696790435566018
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "oracle_proj",
+          "r_b_source": "i1739_e1",
+          "rho": 0.09058151301866392,
+          "ci95": [
+            0.07594439566391917,
+            0.10550656580742539
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "i1739_e1",
+          "rho": -0.1270253506432455,
+          "ci95": [
+            -0.1414924044009728,
+            -0.11284536809051192
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.09979715452563796,
+          "ci95": [
+            0.08473541563006248,
+            0.11434527247668466
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "map963k_ridge",
+          "r_b_source": "i1739_e1",
+          "rho": -0.012054535645712936,
+          "ci95": [
+            -0.02868023564232503,
+            0.001865845436029457
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": -0.035257230184879154,
+          "ci95": [
+            -0.05106749687525312,
+            -0.01972424807756887
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "i1739_e1",
+          "rho": 0.06495906513452766,
+          "ci95": [
+            0.04916591891012035,
+            0.07985376735089114
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "raw_proj",
+          "r_b_source": "issue779_bank",
+          "rho": -0.022221863286813474,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "oracle_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.1131269600142412,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "issue779_bank",
+          "rho": -0.11248956450826257,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.09866500467030248,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "map963k_ridge",
+          "r_b_source": "issue779_bank",
+          "rho": 0.043641506534501516,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": -0.028297032703085975,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "issue779_bank",
+          "rho": 0.09077925072216259,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "raw_proj",
+          "r_b_source": "i1739_e1",
+          "rho": -0.024158967714853877,
+          "ci95": [
+            -0.05874578830537609,
+            0.010883668347857802
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "oracle_proj",
+          "r_b_source": "i1739_e1",
+          "rho": -0.02957860925755354,
+          "ci95": [
+            -0.06407078278046704,
+            0.005340664811936595
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "i1739_e1",
+          "rho": 0.011890860597847329,
+          "ci95": [
+            -0.021096907100866796,
+            0.04903699405137368
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.03704945582325125,
+          "ci95": [
+            0.0031842037247804687,
+            0.07411585895537716
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge",
+          "r_b_source": "i1739_e1",
+          "rho": -0.013104241943035567,
+          "ci95": [
+            -0.04752817789141841,
+            0.022063000974523597
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": -0.010521319507096746,
+          "ci95": [
+            -0.04666133950244256,
+            0.026037756682100146
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "i1739_e1",
+          "rho": 0.025341022201061027,
+          "ci95": [
+            -0.008792370114928172,
+            0.06299949963028685
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "raw_proj",
+          "r_b_source": "issue779_bank",
+          "rho": -0.022343210815875186,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "oracle_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.012470037417709367,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "issue779_bank",
+          "rho": 0.011694891128489818,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.03815897514850151,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge",
+          "r_b_source": "issue779_bank",
+          "rho": -0.014583943163527895,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.005619806211744215,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "nqopen",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "issue779_bank",
+          "rho": 0.02636646881244396,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "raw_proj",
+          "r_b_source": "i1739_e1",
+          "rho": -0.0748279277593599,
+          "ci95": [
+            -0.10480738591271538,
+            -0.04476135316934533
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "oracle_proj",
+          "r_b_source": "i1739_e1",
+          "rho": 0.6027392406758051,
+          "ci95": [
+            0.5772455660993565,
+            0.6267613357358744
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "i1739_e1",
+          "rho": 0.023872132766953442,
+          "ci95": [
+            -0.007601984385980158,
+            0.05478768749111421
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.06552216997831979,
+          "ci95": [
+            0.03311244358367635,
+            0.09696898118937003
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge",
+          "r_b_source": "i1739_e1",
+          "rho": 0.06150886662218236,
+          "ci95": [
+            0.029818660792114503,
+            0.09258921349041149
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": -0.1068381115434041,
+          "ci95": [
+            -0.13673612456540932,
+            -0.0764732618333182
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "i1739_e1",
+          "rho": 0.05294162510263887,
+          "ci95": [
+            0.02061222014318318,
+            0.08477934942432401
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "raw_proj",
+          "r_b_source": "issue779_bank",
+          "rho": -0.0708710747105192,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "oracle_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.6277392509544025,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "issue779_bank",
+          "rho": 0.02283722802622113,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.06903031197017542,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge",
+          "r_b_source": "issue779_bank",
+          "rho": 0.05811854418192413,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": -0.05457659729387159,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "issue779_bank",
+          "rho": 0.05811894769400579,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "raw_proj",
+          "r_b_source": "i1739_e1",
+          "rho": 0.026712827383360834,
+          "ci95": [
+            0.011431184763809258,
+            0.04217305209628943
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "oracle_proj",
+          "r_b_source": "i1739_e1",
+          "rho": -0.10055857947050106,
+          "ci95": [
+            -0.11534024756782345,
+            -0.08690916602361815
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "i1739_e1",
+          "rho": -0.022556633066347666,
+          "ci95": [
+            -0.03826430788323324,
+            -0.007480464896411911
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": -0.003975642905637389,
+          "ci95": [
+            -0.01856851622677285,
+            0.011500707744152084
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "map963k_ridge",
+          "r_b_source": "i1739_e1",
+          "rho": -0.02383521036772204,
+          "ci95": [
+            -0.039441032376136505,
+            -0.008482582740389124
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.03796375384329166,
+          "ci95": [
+            0.021703429565401233,
+            0.05379631593481705
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "i1739_e1",
+          "rho": -0.011767119244806579,
+          "ci95": [
+            -0.026677151345335465,
+            0.003489978353781675
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "raw_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.026846190188972628,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "oracle_proj",
+          "r_b_source": "issue779_bank",
+          "rho": -0.08020445721330006,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "issue779_bank",
+          "rho": -0.022104878103405914,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": -0.006119535733738348,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "map963k_ridge",
+          "r_b_source": "issue779_bank",
+          "rho": -0.02178238227877058,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.035876945758693435,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "eval_rung": "train",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "issue779_bank",
+          "rho": -0.011492129891611408,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "raw_proj",
+          "r_b_source": "i1739_e1",
+          "rho": -0.041547769567273345,
+          "ci95": [
+            -0.07714919860981839,
+            -0.007788013123206323
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "oracle_proj",
+          "r_b_source": "i1739_e1",
+          "rho": -0.00892107389734091,
+          "ci95": [
+            -0.04393225348840235,
+            0.027117394513759992
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "i1739_e1",
+          "rho": 0.043844394714124164,
+          "ci95": [
+            0.009158431383939224,
+            0.0820693714633672
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": -0.00435804611749092,
+          "ci95": [
+            -0.03894593846231601,
+            0.031076353156703842
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge",
+          "r_b_source": "i1739_e1",
+          "rho": -0.01440883986085743,
+          "ci95": [
+            -0.052297222374387685,
+            0.021492454655623314
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.002238934624039869,
+          "ci95": [
+            -0.03390914469305331,
+            0.037039362996548746
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "i1739_e1",
+          "rho": 0.003955023292950923,
+          "ci95": [
+            -0.03202602565863507,
+            0.04040479142059395
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "raw_proj",
+          "r_b_source": "issue779_bank",
+          "rho": -0.041916758789018835,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "oracle_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.04961417501572703,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "issue779_bank",
+          "rho": 0.04508724509531263,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": -0.0041443363119844446,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge",
+          "r_b_source": "issue779_bank",
+          "rho": -0.014341961404314528,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.003906110282906935,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "nqopen",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "issue779_bank",
+          "rho": 0.0014352097968657667,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "raw_proj",
+          "r_b_source": "i1739_e1",
+          "rho": -0.17877330470658873,
+          "ci95": [
+            -0.20812212861042323,
+            -0.1492018979699285
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "oracle_proj",
+          "r_b_source": "i1739_e1",
+          "rho": 0.6047104168339511,
+          "ci95": [
+            0.5796870024088149,
+            0.6298395245637989
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "i1739_e1",
+          "rho": 0.16730776289774726,
+          "ci95": [
+            0.13780791181553184,
+            0.19650498377398065
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": -0.03877628389387892,
+          "ci95": [
+            -0.06975015269670419,
+            -0.0092791570546151
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge",
+          "r_b_source": "i1739_e1",
+          "rho": -0.1201048987946085,
+          "ci95": [
+            -0.15169323661412767,
+            -0.0897221217588281
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.016715806406007023,
+          "ci95": [
+            -0.01394197624853912,
+            0.04916384216475649
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "i1739_e1",
+          "rho": -0.04263668460206862,
+          "ci95": [
+            -0.07359748863381266,
+            -0.011224810558021846
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "raw_proj",
+          "r_b_source": "issue779_bank",
+          "rho": -0.1727042419338839,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "oracle_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.6356212003409635,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "issue779_bank",
+          "rho": 0.16784692406992108,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": -0.03751438308809132,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge",
+          "r_b_source": "issue779_bank",
+          "rho": -0.11742160930877966,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.03376579630253081,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "issue779_bank",
+          "rho": -0.041110955698426724,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "raw_proj",
+          "r_b_source": "i1739_e1",
+          "rho": 0.055437326733695586,
+          "ci95": [
+            0.0399856503058985,
+            0.07062385173481786
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "oracle_proj",
+          "r_b_source": "i1739_e1",
+          "rho": -0.09814710374008297,
+          "ci95": [
+            -0.1133836869352117,
+            -0.0840311511074832
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "i1739_e1",
+          "rho": -0.051679244737997815,
+          "ci95": [
+            -0.06602878806950221,
+            -0.03683278040318601
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.010722826029899322,
+          "ci95": [
+            -0.004468360471160698,
+            0.026274959002337235
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "map963k_ridge",
+          "r_b_source": "i1739_e1",
+          "rho": 0.05239945128103127,
+          "ci95": [
+            0.03738510825258418,
+            0.06841485005203428
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.013649924564891575,
+          "ci95": [
+            -0.0012573529306675645,
+            0.028506749919652127
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "i1739_e1",
+          "rho": 0.04546697578382181,
+          "ci95": [
+            0.029505783597389958,
+            0.060559423916944424
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "raw_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.05374215427347428,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "oracle_proj",
+          "r_b_source": "issue779_bank",
+          "rho": -0.05455685463120639,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "issue779_bank",
+          "rho": -0.05149660514964534,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.010239008130192446,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "map963k_ridge",
+          "r_b_source": "issue779_bank",
+          "rho": 0.05156489095538331,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.00481272987917176,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "eval_rung": "train",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "issue779_bank",
+          "rho": 0.03983298144219791,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "raw_proj",
+          "r_b_source": "i1739_e1",
+          "rho": 0.005543332543458809,
+          "ci95": [
+            -0.029558855561202312,
+            0.03971738079792984
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "oracle_proj",
+          "r_b_source": "i1739_e1",
+          "rho": 0.10048273646513652,
+          "ci95": [
+            0.06549936895261768,
+            0.13582795674074863
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "i1739_e1",
+          "rho": 0.01873723995662822,
+          "ci95": [
+            -0.01690361865182476,
+            0.05492620658118259
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": -0.0048256510986703785,
+          "ci95": [
+            -0.04400483451257124,
+            0.029169283358545742
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge",
+          "r_b_source": "i1739_e1",
+          "rho": 0.006787586652911241,
+          "ci95": [
+            -0.029181549817897848,
+            0.040515496687554484
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.049206896349967534,
+          "ci95": [
+            0.014842334172246544,
+            0.08610149634396777
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "i1739_e1",
+          "rho": 0.003076986947225707,
+          "ci95": [
+            -0.03359419766928911,
+            0.0386958847662016
+          ],
+          "ci_computed": true,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "raw_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.00891463897059108,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "oracle_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.1379066048031113,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "issue779_bank",
+          "rho": 0.015814124466963193,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.0008780212498956045,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge",
+          "r_b_source": "issue779_bank",
+          "rho": 0.01590064768210303,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.04877868431316095,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "nqopen",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "issue779_bank",
+          "rho": 0.02318351400656203,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 3167,
+          "dv_std": 0.42074945836452643,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "raw_proj",
+          "r_b_source": "i1739_e1",
+          "rho": -0.008905793687569065,
+          "ci95": [
+            -0.04037193569696282,
+            0.020566612055486884
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "oracle_proj",
+          "r_b_source": "i1739_e1",
+          "rho": 0.5988984623531395,
+          "ci95": [
+            0.5742958110559171,
+            0.623383847479619
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "i1739_e1",
+          "rho": 0.08029729279545186,
+          "ci95": [
+            0.04935079508773554,
+            0.1119930802626718
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": -0.09449758925816208,
+          "ci95": [
+            -0.12672929015104822,
+            -0.06517707517149675
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge",
+          "r_b_source": "i1739_e1",
+          "rho": -0.0235642417505437,
+          "ci95": [
+            -0.05374474043599868,
+            0.007658609681087739
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.17191586292127053,
+          "ci95": [
+            0.14103470683420308,
+            0.202069517209421
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "i1739_e1",
+          "rho": -0.0062434568237523125,
+          "ci95": [
+            -0.039209250926223536,
+            0.02377075117187811
+          ],
+          "ci_computed": true,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "raw_proj",
+          "r_b_source": "issue779_bank",
+          "rho": -0.006410901800903236,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "oracle_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.6162069720408142,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "issue779_bank",
+          "rho": 0.05946909603617697,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": -0.07158419596203279,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge",
+          "r_b_source": "issue779_bank",
+          "rho": -0.02705559822804062,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.16737812542632777,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "simpleqa",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "issue779_bank",
+          "rho": 0.03482019104523227,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 4021,
+          "dv_std": 0.3291829237641503,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "raw_proj",
+          "r_b_source": "i1739_e1",
+          "rho": 0.0181879932496902,
+          "ci95": [
+            0.003299992683677601,
+            0.03335624583548857
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "oracle_proj",
+          "r_b_source": "i1739_e1",
+          "rho": 0.09058151301866392,
+          "ci95": [
+            0.07594439566391917,
+            0.10550656580742539
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "i1739_e1",
+          "rho": -0.017691933960522474,
+          "ci95": [
+            -0.03310240227754264,
+            -0.0017433658383285042
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": 0.03696591255896752,
+          "ci95": [
+            0.02080928707176004,
+            0.051879675087973705
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "map963k_ridge",
+          "r_b_source": "i1739_e1",
+          "rho": 0.015551028463596827,
+          "ci95": [
+            0.0006619051918922313,
+            0.031050990269431644
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "i1739_e1",
+          "rho": -0.048771890797662955,
+          "ci95": [
+            -0.06396671818735816,
+            -0.03416069667534298
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "i1739_e1",
+          "rho": 0.005251320191129704,
+          "ci95": [
+            -0.008921200341296953,
+            0.020365313418961622
+          ],
+          "ci_computed": true,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "raw_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.01772855303077433,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "oracle_proj",
+          "r_b_source": "issue779_bank",
+          "rho": 0.1131269600142412,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "map_i1739_ufull",
+          "r_b_source": "issue779_bank",
+          "rho": -0.009883836052189317,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "map_i1739_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": 0.023495604076838972,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": false
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "map963k_ridge",
+          "r_b_source": "issue779_bank",
+          "rho": 0.022970994974721926,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "map963k_ridge_shuffled",
+          "r_b_source": "issue779_bank",
+          "rho": -0.04843729800079556,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": true
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "eval_rung": "train",
+          "arm": "map963k_mlp_w8192",
+          "r_b_source": "issue779_bank",
+          "rho": -0.0028764628068261087,
+          "ci95": [
+            null,
+            null
+          ],
+          "ci_computed": false,
+          "n_contexts": 16000,
+          "dv_std": 0.4050042742347758,
+          "ood_prefix_application": true
+        }
+      ],
+      "recon": [
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "map": "map_i1739_ufull",
+          "pred_norm_mean": 746.0511981301484,
+          "actual_t1_norm_mean": 42.349718428702104,
+          "cosine_mean": 0.15881036278487468,
+          "r2": -1283.597296744842
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "map": "map_i1739_shuffled",
+          "pred_norm_mean": 278.2564254301767,
+          "actual_t1_norm_mean": 42.349718428702104,
+          "cosine_mean": 0.07616220387750668,
+          "r2": -179.15993330071188
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "map": "map963k_ridge",
+          "pred_norm_mean": 38.59059463441929,
+          "actual_t1_norm_mean": 42.349718428702104,
+          "cosine_mean": 0.9193541926057232,
+          "r2": 0.3401389859001892
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "map": "map963k_ridge_shuffled",
+          "pred_norm_mean": 43.28337343705792,
+          "actual_t1_norm_mean": 42.349718428702104,
+          "cosine_mean": 0.7290058169544179,
+          "r2": -1.3382981297758931
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "map": "map963k_mlp_w8192",
+          "pred_norm_mean": 39.9501616155544,
+          "actual_t1_norm_mean": 42.349718428702104,
+          "cosine_mean": 0.9352413755355764,
+          "r2": 0.4652834675787386
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "map": "map_i1739_ufull",
+          "pred_norm_mean": 1323.5248309537014,
+          "actual_t1_norm_mean": 66.09966339431732,
+          "cosine_mean": 0.19460805336812473,
+          "r2": -1877.4600587128828
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "map": "map_i1739_shuffled",
+          "pred_norm_mean": 267.57430640164387,
+          "actual_t1_norm_mean": 66.09966339431732,
+          "cosine_mean": 0.07141254727476525,
+          "r2": -78.22651958766436
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "map": "map963k_ridge",
+          "pred_norm_mean": 61.864802221553965,
+          "actual_t1_norm_mean": 66.09966339431732,
+          "cosine_mean": 0.9483215609247646,
+          "r2": 0.51495483885675
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "map": "map963k_ridge_shuffled",
+          "pred_norm_mean": 60.742754426581556,
+          "actual_t1_norm_mean": 66.09966339431732,
+          "cosine_mean": 0.7179090011265095,
+          "r2": -1.501069638659268
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "map": "map963k_mlp_w8192",
+          "pred_norm_mean": 63.41590740187881,
+          "actual_t1_norm_mean": 66.09966339431732,
+          "cosine_mean": 0.9571365259029225,
+          "r2": 0.5966939543745309
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "map": "map_i1739_ufull",
+          "pred_norm_mean": 5405.461125879087,
+          "actual_t1_norm_mean": 293.950846867195,
+          "cosine_mean": 0.16286293243427843,
+          "r2": -2219.9449438779143
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "map": "map_i1739_shuffled",
+          "pred_norm_mean": 793.8704977909149,
+          "actual_t1_norm_mean": 293.950846867195,
+          "cosine_mean": 0.014509740826942338,
+          "r2": -53.48674781850114
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "map": "map963k_ridge",
+          "pred_norm_mean": 282.41350364190987,
+          "actual_t1_norm_mean": 293.950846867195,
+          "cosine_mean": 0.948220649785236,
+          "r2": 0.32461836148690826
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "map": "map963k_ridge_shuffled",
+          "pred_norm_mean": 284.59442306178227,
+          "actual_t1_norm_mean": 293.950846867195,
+          "cosine_mean": 0.8671343886889268,
+          "r2": -0.7269817383138195
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "map": "map963k_mlp_w8192",
+          "pred_norm_mean": 281.2607818721508,
+          "actual_t1_norm_mean": 293.950846867195,
+          "cosine_mean": 0.9553592042804618,
+          "r2": 0.4190737892748959
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "map": "map_i1739_ufull",
+          "pred_norm_mean": 1563.1298853885905,
+          "actual_t1_norm_mean": 42.349718428702104,
+          "cosine_mean": 0.036406497579496024,
+          "r2": -5675.279333250598
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "map": "map_i1739_shuffled",
+          "pred_norm_mean": 437.1767131910623,
+          "actual_t1_norm_mean": 42.349718428702104,
+          "cosine_mean": 0.1402216566578301,
+          "r2": -435.6666059961671
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "map": "map963k_ridge",
+          "pred_norm_mean": 44.10483483790477,
+          "actual_t1_norm_mean": 42.349718428702104,
+          "cosine_mean": 0.5633000714573804,
+          "r2": -2.818867577843666
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "map": "map963k_ridge_shuffled",
+          "pred_norm_mean": 51.29567828152977,
+          "actual_t1_norm_mean": 42.349718428702104,
+          "cosine_mean": 0.4723459806482777,
+          "r2": -4.532996227425871
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "map": "map963k_mlp_w8192",
+          "pred_norm_mean": 39.487978135055606,
+          "actual_t1_norm_mean": 42.349718428702104,
+          "cosine_mean": 0.5347596181679464,
+          "r2": -2.652143465334226
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "map": "map_i1739_ufull",
+          "pred_norm_mean": 2560.8426996872768,
+          "actual_t1_norm_mean": 66.09966339431732,
+          "cosine_mean": 0.04769614918901859,
+          "r2": -7046.399276626529
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "map": "map_i1739_shuffled",
+          "pred_norm_mean": 480.136132393953,
+          "actual_t1_norm_mean": 66.09966339431732,
+          "cosine_mean": 0.21936484076545334,
+          "r2": -236.9044288035845
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "map": "map963k_ridge",
+          "pred_norm_mean": 55.14076840362773,
+          "actual_t1_norm_mean": 66.09966339431732,
+          "cosine_mean": 0.6605974666537562,
+          "r2": -1.8089629329162187
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "map": "map963k_ridge_shuffled",
+          "pred_norm_mean": 70.59673573812847,
+          "actual_t1_norm_mean": 66.09966339431732,
+          "cosine_mean": 0.6802802758485362,
+          "r2": -2.2524818781230573
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "map": "map963k_mlp_w8192",
+          "pred_norm_mean": 51.594988465408285,
+          "actual_t1_norm_mean": 66.09966339431732,
+          "cosine_mean": 0.6162834636322342,
+          "r2": -2.062043738864639
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "map": "map_i1739_ufull",
+          "pred_norm_mean": 3102.7282053942176,
+          "actual_t1_norm_mean": 293.950846867195,
+          "cosine_mean": -0.007568237283458333,
+          "r2": -741.6079180795068
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "map": "map_i1739_shuffled",
+          "pred_norm_mean": 514.2208969231389,
+          "actual_t1_norm_mean": 293.950846867195,
+          "cosine_mean": 0.14237078530909772,
+          "r2": -22.507501160360142
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "map": "map963k_ridge",
+          "pred_norm_mean": 293.59573934994546,
+          "actual_t1_norm_mean": 293.950846867195,
+          "cosine_mean": 0.862745287909609,
+          "r2": -0.8229242953207669
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "map": "map963k_ridge_shuffled",
+          "pred_norm_mean": 271.5972623468129,
+          "actual_t1_norm_mean": 293.950846867195,
+          "cosine_mean": 0.8604567753249155,
+          "r2": -0.7546269109342796
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "map": "map963k_mlp_w8192",
+          "pred_norm_mean": 288.91562868813264,
+          "actual_t1_norm_mean": 293.950846867195,
+          "cosine_mean": 0.888087364371436,
+          "r2": -0.46704854026940623
+        }
+      ],
+      "parity_anchor": [
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "committed_arm": "arm6_map_proj_e1",
+          "recomputed_arm": "map_i1739_ufull",
+          "eval_rung": "train",
+          "committed_rho": -0.12624407317007433,
+          "committed_ci": null,
+          "committed_n_eval": null,
+          "committed_budget_l": 16000,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": false,
+          "recomputed_rho": -0.03319864005215042,
+          "recomputed_n_contexts": 16000,
+          "abs_gap": 0.0930454331179239
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "committed_arm": "arm13_shuffled_map",
+          "recomputed_arm": "map_i1739_shuffled",
+          "eval_rung": "train",
+          "committed_rho": -0.07722768258891884,
+          "committed_ci": null,
+          "committed_n_eval": null,
+          "committed_budget_l": 16000,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": false,
+          "recomputed_rho": 0.11947501252531074,
+          "recomputed_n_contexts": 16000,
+          "abs_gap": 0.19670269511422958
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 14,
+          "committed_arm": "arm2_ctx_native",
+          "recomputed_arm": "raw_proj",
+          "eval_rung": "train",
+          "committed_rho": 0.38809853731770727,
+          "committed_ci": null,
+          "committed_n_eval": null,
+          "committed_budget_l": 16000,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": false,
+          "recomputed_rho": -0.270545342298307,
+          "recomputed_n_contexts": 16000,
+          "abs_gap": 0.6586438796160143
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "committed_arm": "arm6_map_proj_e1",
+          "recomputed_arm": "map_i1739_ufull",
+          "eval_rung": "train",
+          "committed_rho": 0.16109128343101423,
+          "committed_ci": [
+            0.14796213733151847,
+            0.17737753194839448
+          ],
+          "committed_n_eval": 16000,
+          "committed_budget_l": 16000,
+          "committed_u_rung_label": "250",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": -0.07714602733065157,
+          "recomputed_n_contexts": 16000,
+          "abs_gap": 0.2382373107616658
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "committed_arm": "arm6_map_proj_e1",
+          "recomputed_arm": "map_i1739_ufull",
+          "eval_rung": "nqopen",
+          "committed_rho": 0.16120084189182202,
+          "committed_ci": [
+            0.12849029973314768,
+            0.19586215231126197
+          ],
+          "committed_n_eval": 3167,
+          "committed_budget_l": 16000,
+          "committed_u_rung_label": "250",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": -0.0696115609805082,
+          "recomputed_n_contexts": 3167,
+          "abs_gap": 0.23081240287233024
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "committed_arm": "arm6_map_proj_e1",
+          "recomputed_arm": "map_i1739_ufull",
+          "eval_rung": "simpleqa",
+          "committed_rho": 0.06202658901518467,
+          "committed_ci": [
+            0.029021958873266883,
+            0.08848359216919809
+          ],
+          "committed_n_eval": 4021,
+          "committed_budget_l": 16000,
+          "committed_u_rung_label": "250",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": 0.4446962784232918,
+          "recomputed_n_contexts": 4021,
+          "abs_gap": 0.38266968940810714
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "committed_arm": "arm13_shuffled_map",
+          "recomputed_arm": "map_i1739_shuffled",
+          "eval_rung": "train",
+          "committed_rho": 0.15875070318112264,
+          "committed_ci": [
+            0.039261132290845255,
+            0.2636826717244952
+          ],
+          "committed_n_eval": 250,
+          "committed_budget_l": 250,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": 0.054341237786353844,
+          "recomputed_n_contexts": 16000,
+          "abs_gap": 0.1044094653947688
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "committed_arm": "arm13_shuffled_map",
+          "recomputed_arm": "map_i1739_shuffled",
+          "eval_rung": "nqopen",
+          "committed_rho": 0.0010903064646043703,
+          "committed_ci": [
+            -0.03589404834134843,
+            0.033239458932875235
+          ],
+          "committed_n_eval": 3167,
+          "committed_budget_l": 250,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": -0.07689979802767381,
+          "recomputed_n_contexts": 3167,
+          "abs_gap": 0.07799010449227818
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "committed_arm": "arm13_shuffled_map",
+          "recomputed_arm": "map_i1739_shuffled",
+          "eval_rung": "simpleqa",
+          "committed_rho": -0.04666414946803339,
+          "committed_ci": [
+            -0.0758336173948208,
+            -0.018745054020511503
+          ],
+          "committed_n_eval": 4021,
+          "committed_budget_l": 250,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": -0.19123902399618756,
+          "recomputed_n_contexts": 4021,
+          "abs_gap": 0.14457487452815415
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 19,
+          "committed_arm": "arm2_ctx_native",
+          "recomputed_arm": "raw_proj",
+          "eval_rung": "train",
+          "committed_rho": 0.5210613308628916,
+          "committed_ci": null,
+          "committed_n_eval": null,
+          "committed_budget_l": 16000,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": false,
+          "recomputed_rho": -0.2542432141977485,
+          "recomputed_n_contexts": 16000,
+          "abs_gap": 0.7753045450606402
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "committed_arm": "arm6_map_proj_e1",
+          "recomputed_arm": "map_i1739_ufull",
+          "eval_rung": "train",
+          "committed_rho": -0.03607915816218007,
+          "committed_ci": null,
+          "committed_n_eval": null,
+          "committed_budget_l": 16000,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": false,
+          "recomputed_rho": -0.1270253506432455,
+          "recomputed_n_contexts": 16000,
+          "abs_gap": 0.09094619248106542
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "committed_arm": "arm13_shuffled_map",
+          "recomputed_arm": "map_i1739_shuffled",
+          "eval_rung": "train",
+          "committed_rho": 0.16415059600168078,
+          "committed_ci": [
+            0.05280279252600893,
+            0.2649386327352006
+          ],
+          "committed_n_eval": 250,
+          "committed_budget_l": 250,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": 0.09979715452563796,
+          "recomputed_n_contexts": 16000,
+          "abs_gap": 0.06435344147604281
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "committed_arm": "arm13_shuffled_map",
+          "recomputed_arm": "map_i1739_shuffled",
+          "eval_rung": "nqopen",
+          "committed_rho": -0.008887645235417572,
+          "committed_ci": [
+            -0.041627591037917105,
+            0.028694785418319692
+          ],
+          "committed_n_eval": 3167,
+          "committed_budget_l": 250,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": 0.1556531765299926,
+          "recomputed_n_contexts": 3167,
+          "abs_gap": 0.16454082176541018
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "committed_arm": "arm13_shuffled_map",
+          "recomputed_arm": "map_i1739_shuffled",
+          "eval_rung": "simpleqa",
+          "committed_rho": -0.051771043614660825,
+          "committed_ci": [
+            -0.08044390812538166,
+            -0.023381161332142086
+          ],
+          "committed_n_eval": 4021,
+          "committed_budget_l": 250,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": -0.2098217458020355,
+          "recomputed_n_contexts": 4021,
+          "abs_gap": 0.15805070218737466
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "context_end",
+          "layer": 26,
+          "committed_arm": "arm2_ctx_native",
+          "recomputed_arm": "raw_proj",
+          "eval_rung": "train",
+          "committed_rho": 0.4644523564012052,
+          "committed_ci": null,
+          "committed_n_eval": null,
+          "committed_budget_l": 16000,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": false,
+          "recomputed_rho": -0.0808456161668895,
+          "recomputed_n_contexts": 16000,
+          "abs_gap": 0.5452979725680946
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "committed_arm": "arm6_map_proj_e1",
+          "recomputed_arm": "map_i1739_ufull",
+          "eval_rung": "train",
+          "committed_rho": -0.0019561279863434724,
+          "committed_ci": null,
+          "committed_n_eval": null,
+          "committed_budget_l": 16000,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": false,
+          "recomputed_rho": -0.022556633066347666,
+          "recomputed_n_contexts": 16000,
+          "abs_gap": 0.020600505080004196
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "committed_arm": "arm13_shuffled_map",
+          "recomputed_arm": "map_i1739_shuffled",
+          "eval_rung": "train",
+          "committed_rho": 0.048829095489517776,
+          "committed_ci": [
+            0.03407036990647333,
+            0.06454524877307849
+          ],
+          "committed_n_eval": 16000,
+          "committed_budget_l": 16000,
+          "committed_u_rung_label": "250",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": -0.003975642905637389,
+          "recomputed_n_contexts": 16000,
+          "abs_gap": 0.05280473839515516
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "committed_arm": "arm13_shuffled_map",
+          "recomputed_arm": "map_i1739_shuffled",
+          "eval_rung": "nqopen",
+          "committed_rho": -0.0378527600961044,
+          "committed_ci": [
+            -0.074396356711364,
+            -0.003299941694298476
+          ],
+          "committed_n_eval": 3167,
+          "committed_budget_l": 16000,
+          "committed_u_rung_label": "250",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": 0.03704945582325125,
+          "recomputed_n_contexts": 3167,
+          "abs_gap": 0.07490221591935564
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "committed_arm": "arm13_shuffled_map",
+          "recomputed_arm": "map_i1739_shuffled",
+          "eval_rung": "simpleqa",
+          "committed_rho": -0.1259489497304213,
+          "committed_ci": [
+            -0.15494819152298508,
+            -0.09686208128951693
+          ],
+          "committed_n_eval": 4021,
+          "committed_budget_l": 16000,
+          "committed_u_rung_label": "250",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": 0.06552216997831979,
+          "recomputed_n_contexts": 4021,
+          "abs_gap": 0.1914711197087411
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 14,
+          "committed_arm": "arm2_ctx_native",
+          "recomputed_arm": "raw_proj",
+          "eval_rung": "train",
+          "committed_rho": 0.05081517544393314,
+          "committed_ci": null,
+          "committed_n_eval": null,
+          "committed_budget_l": 16000,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": false,
+          "recomputed_rho": 0.026712827383360834,
+          "recomputed_n_contexts": 16000,
+          "abs_gap": 0.024102348060572303
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "committed_arm": "arm6_map_proj_e1",
+          "recomputed_arm": "map_i1739_ufull",
+          "eval_rung": "train",
+          "committed_rho": 0.03861811731173176,
+          "committed_ci": [
+            -0.08219498410298566,
+            0.14949310020151022
+          ],
+          "committed_n_eval": 250,
+          "committed_budget_l": 250,
+          "committed_u_rung_label": "250",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": -0.051679244737997815,
+          "recomputed_n_contexts": 16000,
+          "abs_gap": 0.09029736204972957
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "committed_arm": "arm6_map_proj_e1",
+          "recomputed_arm": "map_i1739_ufull",
+          "eval_rung": "nqopen",
+          "committed_rho": -0.03116611254721436,
+          "committed_ci": [
+            -0.06373349560402593,
+            0.0046271563577999246
+          ],
+          "committed_n_eval": 3167,
+          "committed_budget_l": 250,
+          "committed_u_rung_label": "250",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": 0.043844394714124164,
+          "recomputed_n_contexts": 3167,
+          "abs_gap": 0.07501050726133852
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "committed_arm": "arm6_map_proj_e1",
+          "recomputed_arm": "map_i1739_ufull",
+          "eval_rung": "simpleqa",
+          "committed_rho": -0.06829607776865095,
+          "committed_ci": [
+            -0.10168566952051987,
+            -0.038976082966540176
+          ],
+          "committed_n_eval": 4021,
+          "committed_budget_l": 250,
+          "committed_u_rung_label": "250",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": 0.16730776289774726,
+          "recomputed_n_contexts": 4021,
+          "abs_gap": 0.23560384066639822
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "committed_arm": "arm13_shuffled_map",
+          "recomputed_arm": "map_i1739_shuffled",
+          "eval_rung": "train",
+          "committed_rho": 0.06254423316109271,
+          "committed_ci": [
+            -0.05745800488215246,
+            0.18065471773297612
+          ],
+          "committed_n_eval": 250,
+          "committed_budget_l": 250,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": 0.010722826029899322,
+          "recomputed_n_contexts": 16000,
+          "abs_gap": 0.05182140713119339
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "committed_arm": "arm13_shuffled_map",
+          "recomputed_arm": "map_i1739_shuffled",
+          "eval_rung": "nqopen",
+          "committed_rho": 0.03869421653130751,
+          "committed_ci": [
+            0.003081291105662668,
+            0.0733872920245897
+          ],
+          "committed_n_eval": 3167,
+          "committed_budget_l": 250,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": -0.00435804611749092,
+          "recomputed_n_contexts": 3167,
+          "abs_gap": 0.043052262648798426
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "committed_arm": "arm13_shuffled_map",
+          "recomputed_arm": "map_i1739_shuffled",
+          "eval_rung": "simpleqa",
+          "committed_rho": 0.06711796745787278,
+          "committed_ci": [
+            0.036798901399831635,
+            0.09949883241191598
+          ],
+          "committed_n_eval": 4021,
+          "committed_budget_l": 250,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": -0.03877628389387892,
+          "recomputed_n_contexts": 4021,
+          "abs_gap": 0.1058942513517517
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 19,
+          "committed_arm": "arm2_ctx_native",
+          "recomputed_arm": "raw_proj",
+          "eval_rung": "train",
+          "committed_rho": 0.04961599023685459,
+          "committed_ci": null,
+          "committed_n_eval": null,
+          "committed_budget_l": 16000,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": false,
+          "recomputed_rho": 0.055437326733695586,
+          "recomputed_n_contexts": 16000,
+          "abs_gap": 0.005821336496840995
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "committed_arm": "arm6_map_proj_e1",
+          "recomputed_arm": "map_i1739_ufull",
+          "eval_rung": "train",
+          "committed_rho": 0.05209780657841754,
+          "committed_ci": [
+            0.016900802609270873,
+            0.09150022183576115
+          ],
+          "committed_n_eval": 2500,
+          "committed_budget_l": 2500,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": -0.017691933960522474,
+          "recomputed_n_contexts": 16000,
+          "abs_gap": 0.06978974053894002
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "committed_arm": "arm6_map_proj_e1",
+          "recomputed_arm": "map_i1739_ufull",
+          "eval_rung": "nqopen",
+          "committed_rho": -0.0234316305178325,
+          "committed_ci": [
+            -0.053525327905446826,
+            0.009314086679482438
+          ],
+          "committed_n_eval": 3167,
+          "committed_budget_l": 2500,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": 0.01873723995662822,
+          "recomputed_n_contexts": 3167,
+          "abs_gap": 0.04216887047446072
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "committed_arm": "arm6_map_proj_e1",
+          "recomputed_arm": "map_i1739_ufull",
+          "eval_rung": "simpleqa",
+          "committed_rho": -0.126132428198153,
+          "committed_ci": [
+            -0.15119098607357415,
+            -0.09680511494364155
+          ],
+          "committed_n_eval": 4021,
+          "committed_budget_l": 2500,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": 0.08029729279545186,
+          "recomputed_n_contexts": 4021,
+          "abs_gap": 0.20642972099360488
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "committed_arm": "arm13_shuffled_map",
+          "recomputed_arm": "map_i1739_shuffled",
+          "eval_rung": "train",
+          "committed_rho": 0.04560203909256669,
+          "committed_ci": [
+            0.004843586928295905,
+            0.0879870463813472
+          ],
+          "committed_n_eval": 2500,
+          "committed_budget_l": 2500,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": 0.03696591255896752,
+          "recomputed_n_contexts": 16000,
+          "abs_gap": 0.008636126533599166
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "committed_arm": "arm13_shuffled_map",
+          "recomputed_arm": "map_i1739_shuffled",
+          "eval_rung": "nqopen",
+          "committed_rho": -0.023035692909841053,
+          "committed_ci": [
+            -0.059289992694418155,
+            0.013607415115397054
+          ],
+          "committed_n_eval": 3167,
+          "committed_budget_l": 2500,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": -0.0048256510986703785,
+          "recomputed_n_contexts": 3167,
+          "abs_gap": 0.018210041811170675
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "committed_arm": "arm13_shuffled_map",
+          "recomputed_arm": "map_i1739_shuffled",
+          "eval_rung": "simpleqa",
+          "committed_rho": -0.11830425762031084,
+          "committed_ci": [
+            -0.1475708097071388,
+            -0.0845540727564126
+          ],
+          "committed_n_eval": 4021,
+          "committed_budget_l": 2500,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": null,
+          "recomputed_rho": -0.09449758925816208,
+          "recomputed_n_contexts": 4021,
+          "abs_gap": 0.02380666836214876
+        },
+        {
+          "behavior": "hallucination",
+          "variant": "prefix_end",
+          "layer": 26,
+          "committed_arm": "arm2_ctx_native",
+          "recomputed_arm": "raw_proj",
+          "eval_rung": "train",
+          "committed_rho": 0.049524282478933694,
+          "committed_ci": null,
+          "committed_n_eval": null,
+          "committed_budget_l": 16000,
+          "committed_u_rung_label": "full",
+          "committed_u_full_relaxed": false,
+          "recomputed_rho": 0.0181879932496902,
+          "recomputed_n_contexts": 16000,
+          "abs_gap": 0.031336289229243496
+        }
+      ]
+    }
+  }
+}

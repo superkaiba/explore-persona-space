@@ -1,0 +1,729 @@
+{
+ "design": {
+  "question": "Which per-feature properties predict the context->answer map's held-out R^2 once every other property is partialled out?",
+  "target": "per-feature held-out R^2, ridge, mean pooling (rank-transformed)",
+  "r2_source": "eval_results/issue_1482/sae_perfeature/sae_ctx__mean__ridge.npz",
+  "n_features": 16384,
+  "n_predictors": 26,
+  "model": "OLS of rank(R^2) on rank-transformed continuous predictors + one-hot judged levels (reference level dropped per axis). Raw rho, all-others-partial rho, joint R^2 and LOPO Delta-R^2 are all read off the precision matrix of the [X, y] correlation matrix; the closed-form LOPO is cross-checked against explicit refits.",
+  "n_boot": 2000,
+  "bootstrap": "2000 draws resampling features with replacement, vectorized as one GEMM over per-row outer products per chunk. Ranks are computed once on the full sample and then resampled (rank-then-resample).",
+  "missing_labels": "'unresolved' is carried as its own one-hot level (and as a missing indicator for the abstraction ordinal) so no feature is dropped from the joint fit",
+  "seed": 1482,
+  "mlp_twin": "ridge-only: the banked sae_ctx__mean__mlp.npz is the DIVERGED fit (all 16,384 per-feature R^2 negative, median -4.8e13; final.json records it as broken_mlp_reference) and the sae_sae_mlp_recovery round emitted pooled scalars only, no recovered per-feature array. At the PC grain ridge-vs-MLP rank agreement is 0.997, so the ranking read is not expected to move."
+ },
+ "wiring_gates": {
+  "consistency": {
+   "observed": 0.600322591610094,
+   "banked": 0.6003225916100939,
+   "delta": 1.1102230246251565e-16
+  },
+  "activity": {
+   "observed": 0.2928978790994351,
+   "banked": 0.29289787909943515,
+   "delta": -5.551115123125783e-17
+  },
+  "write_norm": {
+   "observed": 0.183759741672787,
+   "banked": 0.1837599145161954,
+   "delta": -1.7284340839140988e-07
+  },
+  "proj_var": {
+   "observed": 0.40372348211226505,
+   "banked": 0.40372375815300304,
+   "delta": -2.760407379898133e-07
+  }
+ },
+ "excluded_predictors": {
+  "dec_norm": {
+   "reason": "raw decoder-vector norm is unit by construction for this BatchTopK SAE (measured std 2.7e-08 over the panel) -- zero variance, no rank information",
+   "evidence": {
+    "dec_norm_std": 2.6852190272650217e-08,
+    "dec_norm_min": 0.9999998116849804,
+    "dec_norm_max": 1.00000000904001,
+    "spearman_persist_answer_vs_consistency": 1.0
+   }
+  },
+  "enc_dec_ratio": {
+   "reason": "enc_norm / dec_norm with dec_norm constant == enc_norm up to a scale factor; rank-identical to enc_norm, so it is the same column"
+  },
+  "persist_answer_mean": {
+   "reason": "rank-identical to `consistency` (measured Spearman 1.000000 over the panel) -- the same quantity under two names"
+  },
+  "matryoshka_tier": {
+   "reason": "excluded by the round's scope: a different dictionary and feature panel, so it does not join to this layer-19 BatchTopK panel"
+  }
+ },
+ "degeneracy_evidence": {
+  "dec_norm_std": 2.6852190272650217e-08,
+  "dec_norm_min": 0.9999998116849804,
+  "dec_norm_max": 1.00000000904001,
+  "spearman_persist_answer_vs_consistency": 1.0
+ },
+ "retired_axes": {
+  "functional_role": "inter-draw kappa 0.318 (#1941, RETIRED as unusable) -- carried for completeness; its partial rho is not interpretable as a finding"
+ },
+ "joint_r2": 0.5200621868881767,
+ "joint_r2_ci95": [
+  0.5100634041925862,
+  0.5318680222706523
+ ],
+ "joint_r2_refit": 0.5200621868881772,
+ "consistency_subsumption": {
+  "joint_r2_with_consistency": 0.5200621868881772,
+  "joint_r2_without_consistency": 0.30303165258749365,
+  "delta": 0.21703053430068353,
+  "consistency_alone_r2": 0.36038721399745977
+ },
+ "lopo_closed_form_vs_refit_max_abs_delta": 4.996003610813204e-16,
+ "predictors": [
+  {
+   "key": "consistency",
+   "label": "within-answer consistency",
+   "kind": "continuous (rank-transformed)",
+   "spearman_raw": 0.600322591610094,
+   "spearman_raw_ci95": [
+    0.5897651046666,
+    0.6109763408862192
+   ],
+   "partial_all_others": 0.5580253033025789,
+   "partial_all_others_ci95": [
+    0.5468971530290396,
+    0.5689377391124261
+   ],
+   "lopo_delta_r2": 0.21703053430068303,
+   "lopo_delta_r2_ci95": [
+    0.20728667563633169,
+    0.2265710796636393
+   ],
+   "lopo_delta_r2_refit": 0.21703053430068353,
+   "max_abs_rho_with_other_predictor": 0.368309875676093,
+   "max_abs_rho_partner": "proj_var"
+  },
+  {
+   "key": "activity",
+   "label": "activity (firing frequency)",
+   "kind": "continuous (rank-transformed)",
+   "spearman_raw": 0.2928978790994351,
+   "spearman_raw_ci95": [
+    0.27917175747565803,
+    0.30667259127985014
+   ],
+   "partial_all_others": 0.2906650117772457,
+   "partial_all_others_ci95": [
+    0.27588134385831176,
+    0.30473593264889287
+   ],
+   "lopo_delta_r2": 0.04428998816618047,
+   "lopo_delta_r2_ci95": [
+    0.03965609190453858,
+    0.04884513205281053
+   ],
+   "lopo_delta_r2_refit": 0.04428998816618057,
+   "max_abs_rho_with_other_predictor": 0.2846319491907501,
+   "max_abs_rho_partner": "enc_norm"
+  },
+  {
+   "key": "footprint_kurt",
+   "label": "footprint kurtosis",
+   "kind": "continuous (rank-transformed)",
+   "spearman_raw": -0.02773181137089477,
+   "spearman_raw_ci95": [
+    -0.04247416133901455,
+    -0.012307557453206927
+   ],
+   "partial_all_others": -0.16133880864130634,
+   "partial_all_others_ci95": [
+    -0.17589343133320304,
+    -0.14567285733087665
+   ],
+   "lopo_delta_r2": 0.012826766054670586,
+   "lopo_delta_r2_ci95": [
+    0.010440320354831696,
+    0.015250947360000834
+   ],
+   "lopo_delta_r2_refit": 0.01282676605467059,
+   "max_abs_rho_with_other_predictor": 0.26763112792784843,
+   "max_abs_rho_partner": "write_norm"
+  },
+  {
+   "key": "proj_var",
+   "label": "dense variance along decoder dir",
+   "kind": "continuous (rank-transformed)",
+   "spearman_raw": 0.4037234821122649,
+   "spearman_raw_ci95": [
+    0.3902317020369192,
+    0.41666266438596067
+   ],
+   "partial_all_others": 0.13464917134599302,
+   "partial_all_others_ci95": [
+    0.11949757370183318,
+    0.14926644423014
+   ],
+   "lopo_delta_r2": 0.0088621383188453,
+   "lopo_delta_r2_ci95": [
+    0.006928985305025614,
+    0.010927477691319241
+   ],
+   "lopo_delta_r2_refit": 0.008862138318845414,
+   "max_abs_rho_with_other_predictor": 0.5806435020243186,
+   "max_abs_rho_partner": "rb_align_max"
+  },
+  {
+   "key": "enc_norm",
+   "label": "encoder-vector norm",
+   "kind": "continuous (rank-transformed)",
+   "spearman_raw": 0.05880924703149747,
+   "spearman_raw_ci95": [
+    0.04341045558028401,
+    0.07449310324526566
+   ],
+   "partial_all_others": 0.12672281213041633,
+   "partial_all_others_ci95": [
+    0.11125467250248448,
+    0.14082153703735945
+   ],
+   "lopo_delta_r2": 0.007832950268262973,
+   "lopo_delta_r2_ci95": [
+    0.006001513115348461,
+    0.009730865964344448
+   ],
+   "lopo_delta_r2_refit": 0.007832950268263028,
+   "max_abs_rho_with_other_predictor": 0.5590049850408322,
+   "max_abs_rho_partner": "write_norm"
+  },
+  {
+   "key": "interpretable__yes",
+   "label": "interpretable: yes",
+   "kind": "one-hot",
+   "reference_level": "no",
+   "n_positive": 12912,
+   "retired_axis": false,
+   "spearman_raw": 0.044870701984905906,
+   "spearman_raw_ci95": [
+    0.030127148251328735,
+    0.0589595796946967
+   ],
+   "partial_all_others": 0.11716871844703705,
+   "partial_all_others_ci95": [
+    0.10254283009388292,
+    0.13227825471966737
+   ],
+   "lopo_delta_r2": 0.0066805442960867845,
+   "lopo_delta_r2_ci95": [
+    0.005068904628568431,
+    0.008544671151924895
+   ],
+   "lopo_delta_r2_refit": 0.006680544296086888,
+   "max_abs_rho_with_other_predictor": 0.2174398314048242,
+   "max_abs_rho_partner": "consistency"
+  },
+  {
+   "key": "abstraction_ord",
+   "label": "abstraction (ordinal)",
+   "kind": "continuous (rank-transformed)",
+   "spearman_raw": -0.06047630247339259,
+   "spearman_raw_ci95": [
+    -0.07582991357560162,
+    -0.04528962184728698
+   ],
+   "partial_all_others": -0.0925231550671749,
+   "partial_all_others_ci95": [
+    -0.10818009610443305,
+    -0.0762651303855154
+   ],
+   "lopo_delta_r2": 0.004143998918903834,
+   "lopo_delta_r2_ci95": [
+    0.002825257400291372,
+    0.005675487506424695
+   ],
+   "lopo_delta_r2_refit": 0.004143998918903824,
+   "max_abs_rho_with_other_predictor": 0.19846314206060728,
+   "max_abs_rho_partner": "rb_align_max"
+  },
+  {
+   "key": "write_norm",
+   "label": "write norm (gamma-scaled)",
+   "kind": "continuous (rank-transformed)",
+   "spearman_raw": 0.18375974167278705,
+   "spearman_raw_ci95": [
+    0.16930846535330746,
+    0.19864650716195764
+   ],
+   "partial_all_others": 0.08485847990895598,
+   "partial_all_others_ci95": [
+    0.06990689806733368,
+    0.10051704040643317
+   ],
+   "lopo_delta_r2": 0.003481080898505612,
+   "lopo_delta_r2_ci95": [
+    0.0023698478888625855,
+    0.004891565377749771
+   ],
+   "lopo_delta_r2_refit": 0.0034810808985057395,
+   "max_abs_rho_with_other_predictor": 0.5590049850408322,
+   "max_abs_rho_partner": "enc_norm"
+  },
+  {
+   "key": "functional_role__output_promoting",
+   "label": "functional role: output_promoting",
+   "kind": "one-hot",
+   "reference_level": "input_side",
+   "n_positive": 886,
+   "retired_axis": true,
+   "spearman_raw": 0.04127781613167472,
+   "spearman_raw_ci95": [
+    0.02682206827702455,
+    0.05590355869377942
+   ],
+   "partial_all_others": 0.07201501560125095,
+   "partial_all_others_ci95": [
+    0.05706292836346828,
+    0.08640463881537551
+   ],
+   "lopo_delta_r2": 0.0025020113124507976,
+   "lopo_delta_r2_ci95": [
+    0.0015551045547571565,
+    0.0036075192532949076
+   ],
+   "lopo_delta_r2_refit": 0.002502011312450758,
+   "max_abs_rho_with_other_predictor": 0.1250653290567582,
+   "max_abs_rho_partner": "footprint_kurt"
+  },
+  {
+   "key": "content_type__entity",
+   "label": "content type: entity",
+   "kind": "one-hot",
+   "reference_level": "syntax",
+   "n_positive": 252,
+   "retired_axis": false,
+   "spearman_raw": 0.052744061634673045,
+   "spearman_raw_ci95": [
+    0.03904708315063199,
+    0.06680818643328543
+   ],
+   "partial_all_others": 0.06548725987531417,
+   "partial_all_others_ci95": [
+    0.05024438822697718,
+    0.0814379803814301
+   ],
+   "lopo_delta_r2": 0.0020671172856909998,
+   "lopo_delta_r2_ci95": [
+    0.0012109740633569005,
+    0.00320113473796699
+   ],
+   "lopo_delta_r2_refit": 0.002067117285690978,
+   "max_abs_rho_with_other_predictor": 0.0668461162789058,
+   "max_abs_rho_partner": "side_ratio"
+  },
+  {
+   "key": "side_ratio",
+   "label": "side ratio",
+   "kind": "continuous (rank-transformed)",
+   "spearman_raw": 0.11915241930963429,
+   "spearman_raw_ci95": [
+    0.10411879947563955,
+    0.1344443013971931
+   ],
+   "partial_all_others": 0.06056326707583016,
+   "partial_all_others_ci95": [
+    0.045180414914898326,
+    0.07566663057542343
+   ],
+   "lopo_delta_r2": 0.0017668490191871061,
+   "lopo_delta_r2_ci95": [
+    0.0009848499573930278,
+    0.002764755984874015
+   ],
+   "lopo_delta_r2_refit": 0.0017668490191871111,
+   "max_abs_rho_with_other_predictor": 0.27564150893683115,
+   "max_abs_rho_partner": "proj_var"
+  },
+  {
+   "key": "footprint_skew",
+   "label": "footprint skew",
+   "kind": "continuous (rank-transformed)",
+   "spearman_raw": -0.0357726780044003,
+   "spearman_raw_ci95": [
+    -0.05244834193805764,
+    -0.020434280575309195
+   ],
+   "partial_all_others": -0.04579615502950715,
+   "partial_all_others_ci95": [
+    -0.06198923973053519,
+    -0.030745020939006013
+   ],
+   "lopo_delta_r2": 0.0010086832266717218,
+   "lopo_delta_r2_ci95": [
+    0.0004502999253824545,
+    0.0018437487138954025
+   ],
+   "lopo_delta_r2_refit": 0.0010086832266718027,
+   "max_abs_rho_with_other_predictor": 0.24374959029082516,
+   "max_abs_rho_partner": "footprint_kurt"
+  },
+  {
+   "key": "speaker_property__language",
+   "label": "speaker property: language",
+   "kind": "one-hot",
+   "reference_level": "none",
+   "n_positive": 1694,
+   "retired_axis": false,
+   "spearman_raw": 0.06486837406981821,
+   "spearman_raw_ci95": [
+    0.04810541518278863,
+    0.08119856349314249
+   ],
+   "partial_all_others": 0.04526463673940811,
+   "partial_all_others_ci95": [
+    0.030327423699506893,
+    0.06067895764825934
+   ],
+   "lopo_delta_r2": 0.0009853573951559024,
+   "lopo_delta_r2_ci95": [
+    0.00043978820202318213,
+    0.0017776723451930823
+   ],
+   "lopo_delta_r2_refit": 0.000985357395155928,
+   "max_abs_rho_with_other_predictor": 0.12441860174684512,
+   "max_abs_rho_partner": "rb_align_max"
+  },
+  {
+   "key": "content_type__operation",
+   "label": "content type: operation",
+   "kind": "one-hot",
+   "reference_level": "syntax",
+   "n_positive": 1229,
+   "retired_axis": false,
+   "spearman_raw": -0.0757249069775881,
+   "spearman_raw_ci95": [
+    -0.09087673935621102,
+    -0.060733496709559624
+   ],
+   "partial_all_others": -0.043376910786869,
+   "partial_all_others_ci95": [
+    -0.05883972719142863,
+    -0.028090747900820678
+   ],
+   "lopo_delta_r2": 0.0009047323637406736,
+   "lopo_delta_r2_ci95": [
+    0.0003816443680543727,
+    0.001675582745265101
+   ],
+   "lopo_delta_r2_refit": 0.0009047323637405569,
+   "max_abs_rho_with_other_predictor": 0.10190524180465503,
+   "max_abs_rho_partner": "speaker_property__identity_disposition"
+  },
+  {
+   "key": "functional_role__mixed",
+   "label": "functional role: mixed",
+   "kind": "one-hot",
+   "reference_level": "input_side",
+   "n_positive": 1414,
+   "retired_axis": true,
+   "spearman_raw": 0.007978152105668603,
+   "spearman_raw_ci95": [
+    -0.0074392536841451674,
+    0.023192618509619463
+   ],
+   "partial_all_others": 0.039342298509800325,
+   "partial_all_others_ci95": [
+    0.024295871650172784,
+    0.05519343497161466
+   ],
+   "lopo_delta_r2": 0.0007440072297184036,
+   "lopo_delta_r2_ci95": [
+    0.0002818612873852162,
+    0.0014445737656362185
+   ],
+   "lopo_delta_r2_refit": 0.0007440072297184575,
+   "max_abs_rho_with_other_predictor": 0.09803094332563815,
+   "max_abs_rho_partner": "functional_role__unresolved"
+  },
+  {
+   "key": "footprint_var",
+   "label": "footprint variance",
+   "kind": "continuous (rank-transformed)",
+   "spearman_raw": 0.09165079334925545,
+   "spearman_raw_ci95": [
+    0.07655251191509349,
+    0.1067448781169754
+   ],
+   "partial_all_others": -0.03779024958671098,
+   "partial_all_others_ci95": [
+    -0.05416650964555064,
+    -0.022529933764133054
+   ],
+   "lopo_delta_r2": 0.0006863808358631297,
+   "lopo_delta_r2_ci95": [
+    0.00024212242946916826,
+    0.001402709531295567
+   ],
+   "lopo_delta_r2_refit": 0.0006863808358630319,
+   "max_abs_rho_with_other_predictor": 0.5259827391145142,
+   "max_abs_rho_partner": "write_norm"
+  },
+  {
+   "key": "rb_align_max",
+   "label": "rb_align (max over 3 traits)",
+   "kind": "continuous (rank-transformed)",
+   "spearman_raw": 0.2026850791309682,
+   "spearman_raw_ci95": [
+    0.1870227254576216,
+    0.21705687551868413
+   ],
+   "partial_all_others": -0.028766173247581267,
+   "partial_all_others_ci95": [
+    -0.043894988715062914,
+    -0.013378638350074228
+   ],
+   "lopo_delta_r2": 0.00039747395479658074,
+   "lopo_delta_r2_ci95": [
+    8.592817104388558e-05,
+    0.0009344056062589296
+   ],
+   "lopo_delta_r2_refit": 0.0003974739547966122,
+   "max_abs_rho_with_other_predictor": 0.5806435020243186,
+   "max_abs_rho_partner": "proj_var"
+  },
+  {
+   "key": "content_type__topic",
+   "label": "content type: topic",
+   "kind": "one-hot",
+   "reference_level": "syntax",
+   "n_positive": 1823,
+   "retired_axis": false,
+   "spearman_raw": -0.01944633471239772,
+   "spearman_raw_ci95": [
+    -0.03367885857131717,
+    -0.004664379181346908
+   ],
+   "partial_all_others": -0.028531133366740083,
+   "partial_all_others_ci95": [
+    -0.04423113786405294,
+    -0.013121174122350743
+   ],
+   "lopo_delta_r2": 0.0003909999364009361,
+   "lopo_delta_r2_ci95": [
+    8.240801720066675e-05,
+    0.0009356910113169171
+   ],
+   "lopo_delta_r2_refit": 0.00039099993640090425,
+   "max_abs_rho_with_other_predictor": 0.11314323880279743,
+   "max_abs_rho_partner": "speaker_property__language"
+  },
+  {
+   "key": "functional_role__unresolved",
+   "label": "functional role: unresolved",
+   "kind": "one-hot",
+   "reference_level": "input_side",
+   "n_positive": 1513,
+   "retired_axis": true,
+   "spearman_raw": 0.01082052724779923,
+   "spearman_raw_ci95": [
+    -0.004609597175141938,
+    0.026297754123836184
+   ],
+   "partial_all_others": 0.023310624442379742,
+   "partial_all_others_ci95": [
+    0.007391169376001939,
+    0.03938878357434343
+   ],
+   "lopo_delta_r2": 0.0002609328973512708,
+   "lopo_delta_r2_ci95": [
+    2.6187506807536678e-05,
+    0.0007469782657820242
+   ],
+   "lopo_delta_r2_refit": 0.0002609328973512959,
+   "max_abs_rho_with_other_predictor": 0.11114581443192316,
+   "max_abs_rho_partner": "interpretable__unresolved"
+  },
+  {
+   "key": "speaker_property__register_style",
+   "label": "speaker property: register_style",
+   "kind": "one-hot",
+   "reference_level": "none",
+   "n_positive": 1227,
+   "retired_axis": false,
+   "spearman_raw": 0.05061262399704668,
+   "spearman_raw_ci95": [
+    0.0351654497316443,
+    0.06519878344217254
+   ],
+   "partial_all_others": 0.020598648882120495,
+   "partial_all_others_ci95": [
+    0.004641913223539938,
+    0.03490751446865215
+   ],
+   "lopo_delta_r2": 0.0002037261368859731,
+   "lopo_delta_r2_ci95": [
+    1.0924177942076303e-05,
+    0.0005858643123700375
+   ],
+   "lopo_delta_r2_refit": 0.00020372613688590668,
+   "max_abs_rho_with_other_predictor": 0.16416099456975067,
+   "max_abs_rho_partner": "abstraction_ord"
+  },
+  {
+   "key": "speaker_property__identity_disposition",
+   "label": "speaker property: identity_disposition",
+   "kind": "one-hot",
+   "reference_level": "none",
+   "n_positive": 101,
+   "retired_axis": false,
+   "spearman_raw": 0.05758817160723312,
+   "spearman_raw_ci95": [
+    0.04338898749975872,
+    0.07051578419697634
+   ],
+   "partial_all_others": 0.00965603839694686,
+   "partial_all_others_ci95": [
+    -0.004416236327408956,
+    0.02330090837930457
+   ],
+   "lopo_delta_r2": 4.4753131703818495e-05,
+   "lopo_delta_r2_ci95": [
+    1.4169448138187906e-07,
+    0.0002604605088660552
+   ],
+   "lopo_delta_r2_refit": 4.4753131703823e-05,
+   "max_abs_rho_with_other_predictor": 0.10190524180465503,
+   "max_abs_rho_partner": "content_type__operation"
+  },
+  {
+   "key": "content_type__task_format",
+   "label": "content type: task_format",
+   "kind": "one-hot",
+   "reference_level": "syntax",
+   "n_positive": 134,
+   "retired_axis": false,
+   "spearman_raw": 0.03126413007620245,
+   "spearman_raw_ci95": [
+    0.016524589350558765,
+    0.04561851824405806
+   ],
+   "partial_all_others": 0.009160943473057638,
+   "partial_all_others_ci95": [
+    -0.006271299734433464,
+    0.02439599864511259
+   ],
+   "lopo_delta_r2": 4.028114655890595e-05,
+   "lopo_delta_r2_ci95": [
+    8.339934418886586e-08,
+    0.0002835669135102503
+   ],
+   "lopo_delta_r2_refit": 4.028114655896253e-05,
+   "max_abs_rho_with_other_predictor": 0.09002062552290083,
+   "max_abs_rho_partner": "speaker_property__register_style"
+  },
+  {
+   "key": "abstraction_unresolved",
+   "label": "abstraction: unresolved",
+   "kind": "missing indicator",
+   "note": "pairs with the median-imputed abstraction ordinal",
+   "spearman_raw": 0.0003914585410588064,
+   "spearman_raw_ci95": [
+    -0.014256987098269022,
+    0.01625515678468899
+   ],
+   "partial_all_others": 0.007092469049028501,
+   "partial_all_others_ci95": [
+    -0.007044859477750492,
+    0.021201274947482907
+   ],
+   "lopo_delta_r2": 2.4143582564623768e-05,
+   "lopo_delta_r2_ci95": [
+    5.2245393354103684e-08,
+    0.0002153130681026175
+   ],
+   "lopo_delta_r2_refit": 2.4143582564750687e-05,
+   "max_abs_rho_with_other_predictor": 0.30776756445450776,
+   "max_abs_rho_partner": "interpretable__unresolved"
+  },
+  {
+   "key": "interpretable__unresolved",
+   "label": "interpretable: unresolved",
+   "kind": "one-hot",
+   "reference_level": "no",
+   "n_positive": 99,
+   "retired_axis": false,
+   "spearman_raw": -0.005983380752253397,
+   "spearman_raw_ci95": [
+    -0.022366164920779124,
+    0.010775244312364872
+   ],
+   "partial_all_others": 0.0047338399695441655,
+   "partial_all_others_ci95": [
+    -0.010002504080903725,
+    0.019826812935784605
+   ],
+   "lopo_delta_r2": 1.0755283068255325e-05,
+   "lopo_delta_r2_ci95": [
+    3.4613247068636955e-08,
+    0.00018905043137989818
+   ],
+   "lopo_delta_r2_refit": 1.0755283068264454e-05,
+   "max_abs_rho_with_other_predictor": 0.30776756445450776,
+   "max_abs_rho_partner": "abstraction_unresolved"
+  },
+  {
+   "key": "speaker_property__unresolved",
+   "label": "speaker property: unresolved",
+   "kind": "one-hot",
+   "reference_level": "none",
+   "n_positive": 254,
+   "retired_axis": false,
+   "spearman_raw": 0.012559152274117583,
+   "spearman_raw_ci95": [
+    -0.001912745338803395,
+    0.027809456054769477
+   ],
+   "partial_all_others": 0.004709353055729623,
+   "partial_all_others_ci95": [
+    -0.008557784134538575,
+    0.017927941232482588
+   ],
+   "lopo_delta_r2": 1.0644299865841464e-05,
+   "lopo_delta_r2_ci95": [
+    3.3099159187166374e-08,
+    0.00015600282267030604
+   ],
+   "lopo_delta_r2_refit": 1.0644299865747442e-05,
+   "max_abs_rho_with_other_predictor": 0.07946465763001288,
+   "max_abs_rho_partner": "interpretable__unresolved"
+  },
+  {
+   "key": "content_type__unresolved",
+   "label": "content type: unresolved",
+   "kind": "one-hot",
+   "reference_level": "syntax",
+   "n_positive": 380,
+   "retired_axis": false,
+   "spearman_raw": -0.006036005290427625,
+   "spearman_raw_ci95": [
+    -0.020940223324662766,
+    0.00930042194095457
+   ],
+   "partial_all_others": 0.0020903503942299667,
+   "partial_all_others_ci95": [
+    -0.013869219223488143,
+    0.018334353626952443
+   ],
+   "lopo_delta_r2": 2.097128523818685e-06,
+   "lopo_delta_r2_ci95": [
+    3.437581405827396e-08,
+    0.00017811426366937203
+   ],
+   "lopo_delta_r2_refit": 2.097128523836922e-06,
+   "max_abs_rho_with_other_predictor": 0.1711202364355891,
+   "max_abs_rho_partner": "interpretable__unresolved"
+  }
+ ],
+ "metadata": {
+  "git_commit": "23a32c81133d5840d57b2ab6451bf38a2ca4f5b0",
+  "timestamp_utc": "2026-08-03T04:23:32.057894+00:00",
+  "python_version": "3.11.15",
+  "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+  "numpy_version": "2.2.6"
+ }
+}

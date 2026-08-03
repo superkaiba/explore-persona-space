@@ -126,6 +126,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+# Direct-submodule import (NOT ``from explore_persona_space.backends import
+# ...``): this module is itself imported DURING the package __init__'s
+# execution, so the submodule form is the cycle-safe binding (#1574 — the
+# same shape as the .artifacts / .base imports below). Bound as the MODULE so
+# tests can monkeypatch ``excerpt_digest.issue_trigger_dense`` at the shared
+# module object.
+import explore_persona_space.backends.excerpt_digest as excerpt_digest
 from explore_persona_space.backends.artifacts import (
     DEFAULT_HF_DATA_REPO,
     DEFAULT_HF_MODEL_REPO,
@@ -140,6 +147,7 @@ from explore_persona_space.backends.base import (
     RunHandle,
     RunSpec,
     recommend_lane_next_interval,
+    validate_env_pins,
     validate_lane_suffix,
 )
 
@@ -1246,7 +1254,15 @@ def render_startup_script(
        bound ``EPS_PERSIST_LOG_MAX_FILES`` (default 40), staged into
        ``/tmp/eps-worker-logs`` and uploaded as ONE ``upload_folder``
        commit (never a per-file ``upload_file`` loop — the #664
-       504-storm gotcha). As of #1339 a partial dir whose post-exclude
+       504-storm gotcha). As of #1605 the SAME sweep (shared budget,
+       shared tail cap, same single commit) ALSO walks ``/workspace/logs``
+       — the GCE lane's dispatcher per-phase log / pid / sentinel
+       convention dir (env-overridable
+       ``EPS_PERSIST_WORKSPACE_LOGS_DIR``) — staging those files under
+       ``worker_logs/workspace_logs/<rel>`` with ``*.pid``,
+       ``*.processed``, and the canonical workload.log excluded at walk
+       time (the #1415 loss class: the p3 traceback lived only in an
+       unswept ``/workspace/logs`` per-phase log). As of #1339 a partial dir whose post-exclude
        file count exceeds ``EPS_PERSIST_DIR_MAX_FILES_PER_COMMIT``
        (default 1000; ``< 1`` disables chunking with a WARN) uploads as
        newest-first staged batches (staging root
@@ -1422,6 +1438,23 @@ def render_startup_script(
     # single line). The hydra branch is the byte-identical pre-#588
     # lines, gated only by ``if spec.workload_cmd``.
     if spec.workload_cmd:
+        # #1669: launch env pins (WANDB_PROJECT et al., incident #1586) —
+        # WORKLOAD-CMD BRANCH ONLY (the hydra branch is pin-free by
+        # construction: dispatch_issue.py's --env-pin guard requires a
+        # non-empty --workload-cmd, which keeps the hydra-only
+        # byte-identity snapshot untouched). Re-validated here as defense
+        # in depth (the rendered startup script lands in instance metadata
+        # and the handle sidecar is a hand-editable JSON), shlex-quoted,
+        # and spliced immediately BEFORE the WANDB_PROJECT:-issue<N>
+        # default below so the `:-` default preserves the pin and a
+        # pin-less render is byte-identical. An inline `WANDB_PROJECT=...
+        # cmd` prefix in workload_cmd still supersedes the export for that
+        # command (bash per-command env semantics — the documented
+        # zero-code override).
+        env_pin_lines = [
+            f"export {k}={shlex.quote(str(v))}"
+            for k, v in sorted(validate_env_pins((spec.extra or {}).get("env_pins")).items())
+        ]
         workload_block = [
             "# === REPO_ROOT export (#641; trap #599) ===",
             "# The GCE startup script clones the repo to $WORKLOAD_ROOT",
@@ -1450,6 +1483,7 @@ def render_startup_script(
             "# Masks the trap for managed launches only; hand launches still",
             "# need the gotchas.md _ensure_repo_root_on_syspath() guidance.",
             'export PYTHONPATH="$WORKLOAD_ROOT${PYTHONPATH:+:$PYTHONPATH}"',
+            *env_pin_lines,
             "# === WandB project default (#601 follow-up r1) ===",
             "# HF-Trainer workloads that never set WANDB_PROJECT land in WandB's",
             "# global default project 'huggingface', violating the Upload Policy",
@@ -1557,9 +1591,21 @@ def render_startup_script(
             'if [ "$_EPS_UNPUSHED" != "0" ]; then',
             '  echo "[push-verify] ${_EPS_UNPUSHED} unpushed commit(s) on'
             ' ${_EPS_PUSH_BRANCH} — retrying push (#1205)"',
-            '  git -C "$WORKLOAD_ROOT" push origin "HEAD:${_EPS_PUSH_BRANCH}"'
-            ' || { sleep 20; git -C "$WORKLOAD_ROOT" push origin "HEAD:${_EPS_PUSH_BRANCH}"; }'
-            " || true",
+            '  git -C "$WORKLOAD_ROOT" push origin "HEAD:${_EPS_PUSH_BRANCH}" || {',
+            '    echo "[push-verify] push rejected: fetch + rebase onto'
+            ' origin/${_EPS_PUSH_BRANCH} before retry (#1880)"',
+            '    git -C "$WORKLOAD_ROOT" fetch origin "${_EPS_PUSH_BRANCH}" || true',
+            "    # Inline committer identity so a missing repo-level identity can never",
+            "    # kill the rebase at the first pick. A DIRTY tracked file makes the",
+            "    # rebase refuse to start -> the abort fires -> the retry push fails",
+            "    # non-fast-forward -> the existing bundle + exit 86 path below takes",
+            "    # over (fail-loud preserved; #1880).",
+            '    git -C "$WORKLOAD_ROOT" -c user.email=eps-workload@localhost'
+            ' -c user.name=eps-workload rebase "origin/${_EPS_PUSH_BRANCH}"'
+            ' || git -C "$WORKLOAD_ROOT" rebase --abort || true',
+            "    sleep 20",
+            '    git -C "$WORKLOAD_ROOT" push origin "HEAD:${_EPS_PUSH_BRANCH}"',
+            "  } || true",
             '  _EPS_UNPUSHED="$(git -C "$WORKLOAD_ROOT" rev-list --count'
             ' "origin/${_EPS_PUSH_BRANCH}..HEAD")"',
             '  if [ "$_EPS_UNPUSHED" != "0" ]; then',
@@ -1664,8 +1710,9 @@ def render_startup_script(
         # together; this is the HF-independent channel). ``-m 5`` so a wedged
         # metadata server can never eat the persist's 300s budget (the
         # done-grace READ uses the same cap). Values: ``attempted`` (entry) ->
-        # ``ok`` | ``failed_uploads`` | ``timeout`` | ``failed_rc<N>`` |
-        # ``skipped_no_token``. #1343: ``ok`` requires the verify gate — the
+        # ``ok`` | ``failed_uploads`` | ``timeout`` | ``failed_stream_flush``
+        # (rc 120 — dead stdout/fd-3 pipe; should be unreachable post-#1799) |
+        # ``failed_rc<N>`` | ``skipped_no_token``. #1343: ``ok`` requires the verify gate — the
         # transcript existence probe read True, or >=1 client-confirmed
         # ``upload_folder`` return; ``failed_uploads`` = rc 3, zero uploads
         # verifiably succeeded. A
@@ -1784,12 +1831,25 @@ def render_startup_script(
         'log_path = os.environ.get("EPS_LOG_PATH", "")',
         'root = Path(os.environ.get("WORKLOAD_ROOT", ""))',
         'transcript = os.environ.get("EPS_PERSIST_TRANSCRIPT", "/tmp/eps-crash-persist.log")',
+        "# #1799 (incident #1739): stdout is the STREAMER pipe — when the runner is",
+        "# dead (kernel-OOM unit teardown; the #491 scanner-overflow class) the pipe",
+        "# has no reader, an unguarded flush=True print raises BrokenPipeError before",
+        "# the FIRST upload, and the interpreter exits 120 (Py_FinalizeEx std-stream",
+        "# flush failure) with ZERO diagnostics delivered. The latch skips further",
+        "# prints once stdout is dead (one exception per line otherwise).",
+        '_STDOUT_DEAD = {"v": False}',
         "def _say(msg):",
         "    # every line is printed flush=True (eager fd-3 streaming) AND teed into the",
         "    # transcript file uploaded LAST — a poweroff-independent skip-vs-kill audit on",
         "    # HF (#854). The append is best-effort: stdout already carries the line, and a",
-        "    # transcript write failure must never break the persist itself.",
-        "    print(msg, flush=True)",
+        "    # transcript write failure must never break the persist itself. The stdout",
+        "    # write is GUARDED (#1799): a dead streamer pipe degrades to transcript-only",
+        "    # audit instead of killing the persist (BrokenPipeError is an OSError).",
+        '    if not _STDOUT_DEAD["v"]:',
+        "        try:",
+        "            print(msg, flush=True)",
+        "        except OSError:",
+        '            _STDOUT_DEAD["v"] = True',
         "    try:",
         '        with open(transcript, "a") as fh:',
         '            fh.write(msg + "\\n")',
@@ -1888,11 +1948,14 @@ def render_startup_script(
         "# failed upload's response, capped at EPS_PERSIST_RETRY_MAX_BACKOFF_S",
         "# (default 60s). Budget arithmetic vs the bash `timeout 300` (#854):",
         "# worst-case AGGREGATE sleep across ALL retrying units in one persist —",
-        "# 1 first bundle + every per-dir batch retry (typically ~3 partial dirs)",
-        "# — is (1 + n_dirs) x 60s ~= 240s of the 300s budget under a sustained",
-        "# storm; the poweroff bound then fires mid-persist BY DESIGN (the",
-        "# traceback-first ordering already landed the highest-value artifact;",
-        "# recovery is the issue<N>_partial/ regen path). A Retry-After above the",
+        "# 1 first bundle + every per-dir batch retry (typically ~3 named partial",
+        "# dirs; ~5+ once the #1890 analysis-tensors trees match at either root)",
+        "# — is (1 + n_dirs) x 60s ~= 240-360s+, meeting or exceeding the 300s",
+        "# budget under a sustained storm; the poweroff bound then fires",
+        "# mid-persist BY DESIGN (the traceback-first ordering already landed the",
+        "# highest-value artifacts — crash report, logs, eval/data dirs all",
+        "# precede the tensor trees; recovery is the issue<N>_partial/ regen",
+        "# path). A Retry-After above the",
         "# cap implies the storm outlasts the persist window anyway. float(ra)",
         "# deliberately ignores an HTTP-date Retry-After (ValueError -> fail-open",
         "# to the env default) — the persist must never crash on its own",
@@ -1952,53 +2015,103 @@ def render_startup_script(
         "#     (_env_int / LOG_FILE_CAP / LOG_MAX_FILES are hoisted above the first",
         "#     bundle's staging — shared with the #1517 canonical-log tail cap.)",
         "def _up_logs():",
-        '    logs_root = root / "logs"',
-        "    if not logs_root.is_dir():",
-        '        _say(f"[crash-persist] SKIP worker_logs: no such dir ({logs_root})")',
-        "        return",
+        "    # hoisted FIRST (#1605): the documented disable must gate BOTH roots.",
         "    if LOG_MAX_FILES < 1:",
         '        _say(f"[crash-persist] SKIP worker_logs:'
         ' EPS_PERSIST_LOG_MAX_FILES={LOG_MAX_FILES} < 1")',
         "        return",
-        "    tracked = set()",
-        "    try:",
-        "        _git = subprocess.run(",
-        '            ["git", "-C", str(root), "ls-files", "-z", "--", "logs"],',
-        "            capture_output=True, timeout=10,",
-        "            env={k: v for k, v in os.environ.items()",
-        '                 if not k.startswith("GIT_")})',
-        "        if _git.returncode == 0:",
-        '            tracked = {t for t in _git.stdout.decode("utf-8", "replace")',
-        '                       .split("\\0") if t}',
-        "        else:",
+        '    logs_root = root / "logs"',
+        "    entries = []  # (mtime, size, path, rel); rel = the staged/repo-relative name",
+        "    walked_any = False",
+        "    if logs_root.is_dir():",
+        "        walked_any = True",
+        "        tracked = set()",
+        "        try:",
+        "            _git = subprocess.run(",
+        '                ["git", "-C", str(root), "ls-files", "-z", "--", "logs"],',
+        "                capture_output=True, timeout=10,",
+        "                env={k: v for k, v in os.environ.items()",
+        '                     if not k.startswith("GIT_")})',
+        "            if _git.returncode == 0:",
+        '                tracked = {t for t in _git.stdout.decode("utf-8", "replace")',
+        '                           .split("\\0") if t}',
+        "            else:",
+        '                _say(f"[crash-persist] WARN worker_logs git-tracked exclude"',
+        '                     f" unavailable (git rc={_git.returncode}); sweeping all")',
+        "        except Exception as exc:",
         '            _say(f"[crash-persist] WARN worker_logs git-tracked exclude"',
-        '                 f" unavailable (git rc={_git.returncode}); sweeping all")',
-        "    except Exception as exc:",
-        '        _say(f"[crash-persist] WARN worker_logs git-tracked exclude"',
-        '             f" unavailable ({exc}); sweeping all")',
-        "    n_tracked = 0",
-        "    entries = []",
-        "    for dirpath, dirnames, filenames in os.walk(logs_root):",
-        "        dirnames[:] = [d for d in dirnames",
-        '                       if d not in PRUNE and not (d.startswith("g") and'
+        '                 f" unavailable ({exc}); sweeping all")',
+        "        n_tracked = 0",
+        "        for dirpath, dirnames, filenames in os.walk(logs_root):",
+        "            dirnames[:] = [d for d in dirnames",
+        '                           if d not in PRUNE and not (d.startswith("g") and'
         ' d.endswith("_dl"))]',
-        "        for f in filenames:",
-        "            p = Path(dirpath) / f",
-        '            if tracked and "logs/" + p.relative_to(logs_root).as_posix() in tracked:',
-        "                n_tracked += 1",
-        "                continue",
-        "            try:",
-        "                st = p.stat()",
-        "            except OSError:",
-        "                continue",
-        "            entries.append((st.st_mtime, st.st_size, p))",
-        "    if n_tracked:",
-        '        _say(f"[crash-persist] EXCLUDED {n_tracked} git-tracked file(s) from"',
-        '             " worker_logs sweep (committed repo content, durable in git)")',
+        "            for f in filenames:",
+        "                p = Path(dirpath) / f",
+        '                if tracked and "logs/" + p.relative_to(logs_root).as_posix() in tracked:',
+        "                    n_tracked += 1",
+        "                    continue",
+        "                try:",
+        "                    st = p.stat()",
+        "                except OSError:",
+        "                    continue",
+        "                entries.append((st.st_mtime, st.st_size, p,",
+        "                                p.relative_to(logs_root).as_posix()))",
+        "        if n_tracked:",
+        '            _say(f"[crash-persist] EXCLUDED {n_tracked} git-tracked file(s) from"',
+        '                 " worker_logs sweep (committed repo content, durable in git)")',
+        "    else:",
+        "        # kept SKIP line; NO return: the workspace_logs sweep below still runs (#1605)",
+        '        _say(f"[crash-persist] SKIP worker_logs: no such dir ({logs_root})")',
+        "    # 1b-bis. dispatcher per-phase logs (#1605): /workspace/logs is the GCE lane's",
+        "    # own log/pid/sentinel convention dir (#610 pre-create), OUTSIDE",
+        "    # $WORKLOAD_ROOT/logs; the #1415 p3 traceback lived only here. Same newest-first",
+        "    # LOG_MAX_FILES budget, same LOG_FILE_CAP tail, same single worker_logs commit",
+        "    # (dispatch files stage under workspace_logs/<rel>). No git-tracked exclude:",
+        "    # the dir is outside the repo clone. Env override mirrors the #935",
+        "    # EPS_DONE_LOGS_DIR test-isolation knob.",
+        '    d_root = Path(os.environ.get("EPS_PERSIST_WORKSPACE_LOGS_DIR", "/workspace/logs"))',
+        "    try:",
+        "        same_dir = (d_root.is_dir() and logs_root.is_dir()",
+        "                    and d_root.resolve() == logs_root.resolve())",
+        "    except OSError:",
+        "        same_dir = False",
+        "    if not d_root.is_dir():",
+        '        _say(f"[crash-persist] SKIP workspace_logs: no such dir ({d_root})")',
+        "    elif same_dir:",
+        "        # degenerate WORKLOAD_ROOT=/workspace would double-count the same tree",
+        '        _say(f"[crash-persist] SKIP workspace_logs: same dir as worker logs root'
+        ' ({d_root})")',
+        "    else:",
+        "        walked_any = True",
+        "        n_excl = 0",
+        "        for dirpath, dirnames, filenames in os.walk(d_root):",
+        "            dirnames[:] = [d for d in dirnames",
+        '                           if d not in PRUNE and not (d.startswith("g") and'
+        ' d.endswith("_dl"))]',
+        "            for f in filenames:",
+        "                p = Path(dirpath) / f",
+        '                if f.endswith((".pid", ".processed")):',
+        "                    n_excl += 1  # detach pid files + poller drained-sentinel renames",
+        "                    continue",
+        "                try:",
+        "                    if log_path and p.resolve() == Path(log_path).resolve():",
+        "                        n_excl += 1  # canonical workload.log: staged tail-capped already",
+        "                        continue",
+        "                    st = p.stat()",
+        "                except OSError:",
+        "                    continue",
+        "                entries.append((st.st_mtime, st.st_size, p,",
+        '                                "workspace_logs/" + p.relative_to(d_root).as_posix()))',
+        "        if n_excl:",
+        '            _say(f"[crash-persist] EXCLUDED {n_excl} pid/drained-sentinel/canonical"',
+        '                 " file(s) from workspace_logs sweep")',
         "    if not entries:",
-        '        _say("[crash-persist] SKIP worker_logs: empty after cache/git-tracked excludes")',
+        "        if walked_any:",
+        '            _say("[crash-persist] SKIP worker_logs: empty after cache/git-tracked'
+        ' excludes")',
         "        return",
-        "    entries.sort(reverse=True)  # newest first: the crashing worker wrote last",
+        "    entries.sort(reverse=True)  # newest first: the crashing worker wrote last (4-tuple)",
         "    dropped = len(entries) - LOG_MAX_FILES",
         "    if dropped > 0:",
         '        _say(f"[crash-persist] SKIP {dropped} older worker log(s) beyond"',
@@ -2009,13 +2122,13 @@ def render_startup_script(
         "    # the count bound; best-effort — staging below recreates what it needs.",
         "    shutil.rmtree(staged_root, ignore_errors=True)",
         "    n_staged = 0",
-        "    for _, _, p in entries[:LOG_MAX_FILES]:",
+        "    for _, _, p, rel in entries[:LOG_MAX_FILES]:",
         "        try:",
+        "            # belt: the workspace_logs walk already excludes it at walk time (#1605)",
         "            if log_path and p.resolve() == Path(log_path).resolve():",
-        '                _say(f"[crash-persist] SKIP worker_logs/{p.relative_to(logs_root)}:"',
+        '                _say(f"[crash-persist] SKIP worker_logs/{rel}:"',
         '                     " is the canonical workload.log")',
         "                continue",
-        "            rel = p.relative_to(logs_root)",
         "            tmp = staged_root / rel",
         "            tmp.parent.mkdir(parents=True, exist_ok=True)",
         "            size = p.stat().st_size  # re-stat: may have grown/shrunk since the walk",
@@ -2173,6 +2286,34 @@ def render_startup_script(
         '    (root / "data" / f"issue{issue}", f"data_issue{issue}"),',
         "):",
         "    _up_dir(local, name)",
+        "# #1890: analysis-tensors staging trees (the Upload Policy #521 class) at BOTH",
+        "# live staging roots — the workload-root issue-scoped relative convention",
+        "# (analysis_tensors/issue_<N>/..., the #1739 shape; dispatch cwd is",
+        "# $WORKLOAD_ROOT) AND the GCE scratch-root flat convention",
+        "# (/workspace/analysis_tensors*, the resolve_base_dir(None) shape used by",
+        "# issue_823/952/1072; env-overridable following the #1605",
+        "# EPS_PERSIST_WORKSPACE_LOGS_DIR isolation precedent). The glob covers",
+        "# sibling dir names (analysis_tensors_lowdim, run_1072_lowdim.py). LAST in",
+        "# the dir sweep BY DESIGN: tensors are the largest class (412 MB in the",
+        "# #1739 incident), and the #854 traceback-first ordering must land the",
+        "# crash report + logs + eval/data dirs first — a budget timeout",
+        "# mid-tensor-upload is accepted. NOTE: IGNORE's store/** + **/store/**",
+        "# deliberately prune any subdir literally named store/ under these trees",
+        "# (the issue958 analysis_tensors/store/long shape) — store/ is the",
+        "# mirrored-on-HF durable class the workload uploads itself; crash-persist",
+        "# never re-uploads it.",
+        'ws_root = Path(os.environ.get("EPS_PERSIST_WS_TENSORS_ROOT", "/workspace"))',
+        "n_at = 0",
+        'for at_root, at_sfx in ((root, ""), (ws_root, "_ws")):',
+        "    if at_sfx and at_root == root:",
+        '        _say("[crash-persist] SKIP analysis_tensors ws pass: root == ws_root")',
+        "        continue",
+        '    for at_dir in sorted(at_root.glob("analysis_tensors*")):',
+        "        if at_dir.is_dir():",
+        "            n_at += 1",
+        '            _up_dir(at_dir, f"{at_dir.name}{at_sfx}")',
+        "if n_at == 0:",
+        '    _say(f"[crash-persist] SKIP analysis_tensors*: none at {root} or {ws_root}")',
         "# per-crash timestamped log copy — LAST among the artifacts (see the note above),",
         "# staged into the FINAL bundle (#1151: one upload_folder commit, no retry).",
         'final_stage = Path(os.environ.get("EPS_PERSIST_FINAL_STAGE_DIR", "/tmp/eps-crash-final"))',
@@ -2208,12 +2349,26 @@ def render_startup_script(
         '    _say(f"[crash-persist] VERIFY transcript on hub: {_verified}")',
         "except Exception as exc:",
         '    _say(f"[crash-persist] VERIFY probe FAILED (treated as unverified): {exc}")',
+        "# #1799: BOTH deliberate exits end with guarded std-stream flushes + os._exit —",
+        "# under a dead stdout pipe a plain sys.exit()/fall-off-the-end still runs",
+        "# Py_FinalizeEx, whose flush of the dirty stdout buffer fails and REWRITES a",
+        "# completed persist's rc to 120 (failed_stream_flush). os._exit skips finalize;",
+        "# nothing is lost — every print is flush=True and the transcript is a per-call",
+        "# open/append/close.",
+        "def _exit_now(rc):",
+        "    try:",
+        "        sys.stdout.flush()",
+        "        sys.stderr.flush()",
+        "    except OSError:",
+        "        pass",
+        "    os._exit(rc)",
         'if not _verified and OK_UPLOADS["n"] == 0:',
         '    _say("[crash-persist] VERIFY-FAIL: zero uploads verifiably succeeded'
         ' -> rc 3 (failed_uploads)")',
-        "    sys.exit(3)",
+        "    _exit_now(3)",
         '_n_ok = OK_UPLOADS["n"]',
         '_say(f"[crash-persist] VERIFY-OK: probe={_verified} client_confirmed={_n_ok}")',
+        "_exit_now(0)",
         "EPS_PERSIST_PY",
         # #1151: capture the `cd && timeout uv run python` compound's rc INSIDE
         # the subshell (set +e is global from the trap's first action, so a
@@ -2225,7 +2380,11 @@ def render_startup_script(
         # at-least-one, and the transcript stays the per-upload audit),
         # 3 = the verify gate FAILED (zero uploads verifiably succeeded ->
         # "failed_uploads", #1315), 124 = the 300s timeout killed it, 127 = uv
-        # missing, 1 = cd short-circuit OR a python top-level failure.
+        # missing, 1 = cd short-circuit OR a python top-level failure, 120 =
+        # std-stream flush failure at interpreter exit — dead stdout/fd-3 pipe
+        # (the runner was killed: kernel-OOM unit teardown / #491 scanner
+        # overflow); should be unreachable post-#1799 (the _say guard +
+        # os._exit ends the persist before finalize can rewrite its rc).
         '  _uprc=$?; { echo "$_uprc" >"${EPS_CRASH_PERSIST_RC:-/tmp/eps-crash-persist.rc}"; }'
         " 2>/dev/null || true;",
         # #854 eager bounded streamer, replacing `| cut -c1-2000 | tail -n 20`:
@@ -2239,7 +2398,16 @@ def render_startup_script(
         # the string assert in test_render_startup_script_persist_streams_eagerly
         # (the behavioral heredoc test runs the python WITHOUT this bash
         # streamer, so it does not exercise SIGPIPE protection). The
-        # `|| [ -n "$_l" ]` keeps a trailing unterminated line. Print-cap
+        # `|| [ -n "$_l" ]` keeps a trailing unterminated line. #1799: the
+        # group body executes in a PIPELINE SUBSHELL, where bash resets the
+        # top-level #607 `trap ':' PIPE` to default — so before the fix an
+        # EPIPE'd `printf >&3` (runner dead: kernel-OOM unit teardown, the
+        # #491 scanner-overflow class) SIGPIPE-killed the whole streamer,
+        # closing the persist python's stdout mid-persist. The re-armed
+        # handler (not SIG_IGN — children keep their own defaults, mirroring
+        # the top-level #607 choice) degrades a dead fd 3 to the guarded
+        # per-line write error the `2>/dev/null || true` already absorbs,
+        # keeping the read-to-EOF drain alive. Print-cap
         # sizing (#885, resized #1339): worst realistic chunked case ~= 16
         # base persist lines + ~43 worker-log lines (the #885 worst case) +
         # a chunk header + 30 batches x 2 lines + a summary ~= 122 — just
@@ -2249,7 +2417,8 @@ def render_startup_script(
         # either way (it has no line cap). A pathological
         # all-three-dirs-chunked crash may still truncate the serial view —
         # acceptable, the transcript is the audit of record (#854).
-        '  ) 2>&1 | { _n=0; while IFS= read -r _l || [ -n "$_l" ]; do _n=$((_n + 1));',
+        "  ) 2>&1 | { trap ':' PIPE; _n=0;"
+        ' while IFS= read -r _l || [ -n "$_l" ]; do _n=$((_n + 1));',
         '    if [ "$_n" -le 200 ]; then'
         " { printf '%s\\n' \"${_l:0:2000}\" >&3; } 2>/dev/null || true; fi;",
         "  done; } 2>/dev/null || true;",
@@ -2265,6 +2434,7 @@ def render_startup_script(
         '    (0)   _eps_persist_status "ok" ;;',
         '    (3)   _eps_persist_status "failed_uploads" ;;',
         '    (124) _eps_persist_status "timeout" ;;',
+        '    (120) _eps_persist_status "failed_stream_flush" ;;',
         '    (*)   _eps_persist_status "failed_rc${_prc}" ;;',
         "  esac; fi;",
         "}",
@@ -2458,6 +2628,10 @@ def render_startup_script(
         "def _say(msg):",
         "    # printed to the workload log (post-redirect stdout) AND teed into the",
         "    # transcript uploaded LAST — the durable skip-vs-kill audit (#854 pattern).",
+        "    # #1799 audit: deliberately UNGUARDED, unlike the crash-persist _say —",
+        "    # this helper's stdout is the post-`exec >>` workload log FILE (the",
+        "    # enclosing subshell ends `) || true`, no streamer pipeline), so the",
+        "    # dead-pipe BrokenPipeError/exit-120 exposure does not exist here.",
         "    print(msg, flush=True)",
         "    try:",
         '        with open(transcript, "a") as fh:',
@@ -2821,9 +2995,39 @@ def render_startup_script(
         f"  git clone --depth 1 --branch {shlex.quote(repo_branch)} "
         f'{shlex.quote(config.repo_url)} "$WORKLOAD_ROOT"',
         "else",
-        f'  git -C "$WORKLOAD_ROOT" fetch --depth 1 origin {shlex.quote(repo_branch)}',
-        f'  git -C "$WORKLOAD_ROOT" checkout {shlex.quote(repo_branch)}',
-        f'  git -C "$WORKLOAD_ROOT" reset --hard origin/{shlex.quote(repo_branch)}',
+        # Branch-switch-safe reuse (#1602; incident #779 att-20260722-155004):
+        # a reused workspace disk can hold a single-branch clone of a
+        # DIFFERENT branch. There, a bare `fetch origin <branch>` lands ONLY
+        # in FETCH_HEAD (the clone's configured single-branch refspec covers
+        # no other branch, so no local/remote-tracking ref is created); the
+        # old by-name `checkout <branch>` died with `error: pathspec
+        # '<branch>' did not match any file(s) known to git`, and the old
+        # tracking-ref reset against origin/<branch> would die the same way.
+        # Four steps: (0) converge the clone's fetch-refspec CONFIG to the
+        # fresh-clone-of-<branch> shape (set-branches): git updates
+        # remote-tracking refs ON PUSH by mapping through this config, so
+        # without it a committing workload's successful push leaves
+        # origin/<branch> stale and the workload-cmd shape's push-verify leg
+        # reads a false nonzero unpushed count post-workload (#1602 round-1
+        # critique probe: a healthy pushed run exits 86); byte-no-op on
+        # same-branch reuse; (1) fetch with an EXPLICIT forced destination
+        # refspec — creates/updates refs/remotes/origin/<branch>, which the
+        # workload-cmd shape's push-verify leg's `rev-list
+        # origin/<branch>..HEAD` reads post-workload (`+` tolerates a
+        # rebased/force-pushed tip on a stale disk); (2) `reset --hard
+        # FETCH_HEAD` FIRST — a crashed prior run can leave dirty tracked
+        # files that would abort a bare create-or-reset checkout carry-over
+        # (sibling form: scripts/bootstrap_pod.sh fetch + reset --hard
+        # FETCH_HEAD); (3) create or reset the local branch from FETCH_HEAD
+        # (works from any current branch or detached HEAD; conflict-free
+        # because the tree already matches FETCH_HEAD after (2)).
+        '  echo "[startup-script] reusing repo at $WORKLOAD_ROOT (HEAD was'
+        ' $(git -C "$WORKLOAD_ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown))"',
+        f'  git -C "$WORKLOAD_ROOT" remote set-branches origin {shlex.quote(repo_branch)}',
+        '  git -C "$WORKLOAD_ROOT" fetch --depth 1 origin '
+        + shlex.quote(f"+refs/heads/{repo_branch}:refs/remotes/origin/{repo_branch}"),
+        '  git -C "$WORKLOAD_ROOT" reset --hard FETCH_HEAD',
+        f'  git -C "$WORKLOAD_ROOT" checkout -B {shlex.quote(repo_branch)} FETCH_HEAD',
         "fi",
         "",
         "# === Install uv if missing + sync env ===",
@@ -2831,6 +3035,36 @@ def render_startup_script(
         "  curl -LsSf https://astral.sh/uv/install.sh | sh",
         '  export PATH="$HOME/.local/bin:$PATH"',
         "fi",
+        "# Persist uv on the default PATH for later non-login/sudo/setsid shells",
+        "# (#1794; founding incident #1739 exit-127). /usr/local/bin is on the",
+        "# default PATH incl. sudo secure_path — mirrors the pod-side b3d2dfbf1d",
+        "# pattern; the profile.d drop-in additionally covers login shells.",
+        "# Resolve uv from FIXED candidate paths FIRST (the immune b3d2dfbf1d",
+        "# shape) — never bare `command -v uv` as the primary source: GCE re-runs",
+        "# startup scripts on EVERY boot and same-name creates re-attach",
+        "# surviving boot disks (the #779 reuse class, _BOOT_DISK_REUSE_SLACK_SEC",
+        "# below), so `command -v` finds the PRIOR run's /usr/local/bin/uv",
+        "# symlink and `ln -sf` onto itself makes a self-referential ELOOP that",
+        "# kills the `uv sync` below (#1794 round 2).",
+        'UV_BIN=""',
+        'for cand in "${HOME:-/root}/.local/bin/uv" /root/.local/bin/uv; do',
+        '  if [ -x "$cand" ]; then UV_BIN="$cand"; break; fi',
+        "done",
+        'if [ -z "$UV_BIN" ]; then',
+        "  # PATH fallback (non-standard installs), canonicalized: readlink -f",
+        "  # resolves the symlink chain to the real file (and fails -> empty on",
+        "  # a poisoned self-loop), so with the guard below the symlink target",
+        "  # can never be /usr/local/bin/uv itself.",
+        '  UV_BIN="$(readlink -f "$(command -v uv 2>/dev/null || true)" 2>/dev/null || true)"',
+        "fi",
+        'if [ -n "$UV_BIN" ] && [ -x "$UV_BIN" ] && [ "$UV_BIN" != /usr/local/bin/uv ]; then',
+        '  ln -sf "$UV_BIN" /usr/local/bin/uv',
+        '  UVX_BIN="$(dirname "$UV_BIN")/uvx"',
+        '  if [ -x "$UVX_BIN" ] && [ "$UVX_BIN" != /usr/local/bin/uvx ]; then',
+        '    ln -sf "$UVX_BIN" /usr/local/bin/uvx',
+        "  fi",
+        "fi",
+        "printf 'export PATH=\"$HOME/.local/bin:$PATH\"\\n' > /etc/profile.d/eps-uv-path.sh",
         'cd "$WORKLOAD_ROOT"',
         # Pin the interpreter: the DLVM's system python is 3.10 (below
         # requires-python >=3.11), so an unpinned `uv sync` fetches the
@@ -2922,6 +3156,20 @@ def _base_gcloud_argv(config: GcpConfig, *cmd: str) -> list[str]:
     ]
 
 
+def effective_boot_disk_gb(*, spec: RunSpec, config: GcpConfig) -> int:
+    """The ``--boot-disk-size`` value the create argv carries (image-min clamped, #1336).
+
+    Shared by :func:`render_create_argv` (which renders it into the argv)
+    and the #1617 post-create boot-disk probe (:func:`_probe_boot_disk`'s
+    ``requested_gb``), so the size-mismatch comparison can never drift
+    from the value the create actually requested.
+    """
+    return max(
+        _GCP_IMAGE_MIN_BOOT_DISK_GB,
+        int(spec.extra.get("boot_disk_gb") or config.default_boot_disk_gb),
+    )
+
+
 def render_create_argv(
     *,
     spec: RunSpec,
@@ -3004,7 +3252,7 @@ def render_create_argv(
     max_run = spec.extra.get("max_run_duration") or config.default_max_run_duration
     _assert_max_run_within_flex_cap(max_run=max_run, provisioning=provisioning)
     requested_boot_disk_gb = int(spec.extra.get("boot_disk_gb") or config.default_boot_disk_gb)
-    boot_disk_gb = max(_GCP_IMAGE_MIN_BOOT_DISK_GB, requested_boot_disk_gb)
+    boot_disk_gb = effective_boot_disk_gb(spec=spec, config=config)
     if boot_disk_gb != requested_boot_disk_gb:
         logger.warning(
             "boot-disk clamped UP to the DLVM image minimum: requested %d GB < %d GB "
@@ -3176,6 +3424,27 @@ def render_describe_argv(*, config: GcpConfig, name: str, zone: str) -> list[str
     """Build a ``gcloud compute instances describe`` argv (JSON)."""
     argv = _base_gcloud_argv(config, "compute", "instances", "describe", name)
     argv += [f"--zone={zone}", "--format=json"]
+    return argv
+
+
+def render_delete_operations_list_argv(*, config: GcpConfig, name: str, zone: str) -> list[str]:
+    """Build a ``gcloud compute operations list`` argv probing for a server-side
+    delete operation targeting instance ``name`` (#1628 positive-issuance probe).
+
+    Zone-scoped (``--zones``); the ``targetLink~/instances/<name>$`` regex filter
+    anchors the instance name so a sibling suffix (``eps-issue-N`` vs
+    ``eps-issue-N-p2``) can never cross-match. Filter + projection live-verified
+    against the project 2026-07-23 (SDK 576.0.0). ``targetId`` rides in the
+    projection so the issuance probe can pin an op to THIS incarnation when the
+    pre-delete describe captured the instance id (#1029 name-reuse hardening).
+    """
+    argv = _base_gcloud_argv(config, "compute", "operations", "list")
+    argv += [
+        f"--zones={zone}",
+        f"--filter=operationType=delete AND targetLink~/instances/{name}$",
+        "--format=json(name,operationType,status,targetLink,insertTime,targetId)",
+        "--limit=10",
+    ]
     return argv
 
 
@@ -3663,6 +3932,204 @@ def default_gcloud_runner(
     )
 
 
+#: Wall-clock budget (s) for the post-delete bounded existence poll (#1628).
+#: Raised 300 -> 600 in the #1628 plan v2: the #1586 DWS cancel completed within
+#: ~10 min of the first delete attempt; 300s sync cap + 600s poll = a 15 min
+#: ceiling with margin.
+GCLOUD_DELETE_VERIFY_BUDGET_SEC = 600
+#: Interval (s) between existence probes (a describe is ~2s; <=30 probes/budget).
+GCLOUD_DELETE_VERIFY_POLL_SEC = 20
+#: Wall-clock budget (s) to observe the delete OPERATION server-side after a
+#: detached spawn — the Compute API returns the Operation at request time, so
+#: it lists within seconds; 60s covers a slow API tail.
+GCLOUD_DELETE_ISSUANCE_BUDGET_SEC = 60
+GCLOUD_DELETE_ISSUANCE_POLL_SEC = 5
+#: Max age (s) of a listed delete op that counts as OUR issuance. eps-issue-<N>
+#: names are reused across incarnations (live listing 2026-07-23: 3 stale DONE
+#: delete ops on one reused name); covers the 300s sync cap + margin.
+GCLOUD_DELETE_OP_RECENCY_SEC = 900
+#: stderr substrings (lowercased) marking a delete/operation ALREADY IN FLIGHT
+#: (the GCE concurrent-operation "not ready" class) — success-equivalent for
+#: ISSUANCE-probing, never a raise. Conservative; a miss falls toward today's
+#: behavior ("being deleted" is ungrounded — flagged needs-smoke in plan §11).
+_DELETE_IN_FLIGHT_STDERR_MARKERS = ("is not ready", "being deleted")
+
+
+def _delete_verify_budget_sec() -> int:
+    """Read the delete-verify poll budget (#1628), defaulting to 600s.
+
+    Read at CALL time from ``EPS_GCP_DELETE_VERIFY_BUDGET_SEC`` (the #783
+    ``backend_poll._gcp_queue_wait_seconds`` pattern) so ops can retune without
+    a restart. A missing / non-integer / NEGATIVE value falls back to
+    :data:`GCLOUD_DELETE_VERIFY_BUDGET_SEC`; ZERO is honored (one probe, then
+    deadline — the plan §5 test convention).
+    """
+    raw = os.environ.get("EPS_GCP_DELETE_VERIFY_BUDGET_SEC")
+    if raw is None:
+        return GCLOUD_DELETE_VERIFY_BUDGET_SEC
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        return GCLOUD_DELETE_VERIFY_BUDGET_SEC
+    return val if val >= 0 else GCLOUD_DELETE_VERIFY_BUDGET_SEC
+
+
+def _delete_verify_poll_sec() -> float:
+    """Interval between verify describes (``EPS_GCP_DELETE_VERIFY_POLL_SEC``; 0 = no-op sleep)."""
+    raw = os.environ.get("EPS_GCP_DELETE_VERIFY_POLL_SEC")
+    if raw is None:
+        return GCLOUD_DELETE_VERIFY_POLL_SEC
+    try:
+        val = float(raw)
+    except (TypeError, ValueError):
+        return GCLOUD_DELETE_VERIFY_POLL_SEC
+    return val if val >= 0 else GCLOUD_DELETE_VERIFY_POLL_SEC
+
+
+def _delete_issuance_budget_sec() -> int:
+    """Budget (s) for the issuance probe (``EPS_GCP_DELETE_ISSUANCE_BUDGET_SEC``; 0 = one probe)."""
+    raw = os.environ.get("EPS_GCP_DELETE_ISSUANCE_BUDGET_SEC")
+    if raw is None:
+        return GCLOUD_DELETE_ISSUANCE_BUDGET_SEC
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        return GCLOUD_DELETE_ISSUANCE_BUDGET_SEC
+    return val if val >= 0 else GCLOUD_DELETE_ISSUANCE_BUDGET_SEC
+
+
+def _delete_issuance_poll_sec() -> float:
+    """Interval between issuance probes (``EPS_GCP_DELETE_ISSUANCE_POLL_SEC``; 0 = no-op sleep)."""
+    raw = os.environ.get("EPS_GCP_DELETE_ISSUANCE_POLL_SEC")
+    if raw is None:
+        return GCLOUD_DELETE_ISSUANCE_POLL_SEC
+    try:
+        val = float(raw)
+    except (TypeError, ValueError):
+        return GCLOUD_DELETE_ISSUANCE_POLL_SEC
+    return val if val >= 0 else GCLOUD_DELETE_ISSUANCE_POLL_SEC
+
+
+#: Injectable detached-delete seam (#1628): fire-and-forget an argv, return None.
+DeleteSpawner = Callable[[Sequence[str]], None]
+
+
+def _default_delete_spawner(argv: Sequence[str]) -> None:
+    """Fire an ordinary synchronous ``gcloud ... instances delete`` WITHOUT
+    waiting (#1628). The detached child keeps gcloud's own server-side wait and
+    exits on its own (~minutes for a DWS cancel); we never join it.
+
+    ``start_new_session=True`` detaches it from our process group so a caller
+    SIGINT cannot kill the delete mid-flight; stdin/stdout/stderr go to DEVNULL
+    (no pipe-buffer blocking); CPython's subprocess machinery reaps the eventual
+    zombie opportunistically (``subprocess._active``).
+    """
+    subprocess.Popen(
+        list(argv),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Post-create boot-disk observability probe (#1617; incident #779)
+# ---------------------------------------------------------------------------
+
+#: Age threshold (seconds) above which a just-attached boot disk is classified
+#: REUSED. Fresh boot disks are seconds old at probe time (the probe runs right
+#: after the create call returns, itself capped at
+#: ``GCLOUD_DEFAULT_TIMEOUT_SEC`` = 300s); a surviving prior-attempt disk is at
+#: minimum hours old (#779: 20 days). 600s admits no false positives; a
+#: < 10-min relaunch-reuse is the documented false-negative window, where the
+#: size-mismatch arm still fires when sizes differ.
+_BOOT_DISK_REUSE_SLACK_SEC = 600
+
+#: The additive observability keys ``router._attempt_one_gcp_rung`` /
+#: the explicit-override gcp launch site lift onto the final
+#: ``epm:backend-selected`` marker ``extra`` (#1617). Exactly the union of
+#: keys :func:`_probe_boot_disk` can emit; reconnect handles never carry
+#: them (the probe runs on fresh creates only).
+BOOT_DISK_MARKER_EXTRA_KEYS: tuple[str, ...] = (
+    "boot_disk_reused",
+    "boot_disk_age_days",
+    "boot_disk_size_gb",
+    "boot_disk_requested_gb",
+    "boot_disk_size_mismatch",
+    "boot_disk_probe_error",
+)
+
+
+def render_disk_describe_argv(*, config: GcpConfig, name: str, zone: str) -> list[str]:
+    """``gcloud compute disks describe`` argv for the instance's same-name boot disk.
+
+    GCE boot disks share the instance's name (live-verified 2026-07-23:
+    all project disks, incl. lane-suffixed ``eps-issue-1481-impolite``,
+    match their instance names), so ``name`` is the instance name.
+    """
+    argv = _base_gcloud_argv(config, "compute", "disks", "describe", name)
+    argv += [f"--zone={zone}", "--format=json"]
+    return argv
+
+
+def _probe_boot_disk(
+    *,
+    config: GcpConfig,
+    name: str,
+    zone: str,
+    requested_gb: int,
+    runner: GcloudRunner,
+    now_fn: Callable[[], float] = time.time,
+) -> dict[str, Any]:
+    """Post-create boot-disk observability probe (#1617; incident #779).
+
+    Runs ONE fail-soft ``gcloud compute disks describe`` right after a
+    successful create and derives the realized boot-disk facts: gcloud
+    silently ATTACHES an existing same-name disk (ignoring
+    ``--boot-disk-size``) instead of creating a fresh one, so the disk's
+    ``creationTimestamp`` age is the reuse detector and its ``sizeGb`` the
+    realized size (#779: a 20-day-old 300 GB disk vs ``--boot-disk-gb 200``).
+
+    Returns the additive marker/handle fields (a subset of
+    :data:`BOOT_DISK_MARKER_EXTRA_KEYS`): on success
+    ``boot_disk_size_gb`` / ``boot_disk_age_days`` /
+    ``boot_disk_requested_gb`` / ``boot_disk_reused`` (+
+    ``boot_disk_size_mismatch: True`` only when realized != requested —
+    the #1010 omit-when-false pattern); on ANY failure a single
+    ``boot_disk_probe_error`` field. NEVER raises — observability must
+    never fail a live, billing VM launch (the ``_post_marker_nonfatal``
+    contract). A describe 404 on a FLEX_START create still PENDING in the
+    DWS queue (fresh disk not yet created) is an EXPECTED
+    ``boot_disk_probe_error``, not a health signal.
+    """
+    try:
+        result = runner(render_disk_describe_argv(config=config, name=name, zone=zone))
+        if result.returncode != 0:
+            return {
+                "boot_disk_probe_error": (
+                    f"disks describe rc={result.returncode}: {(result.stderr or '')[:200]}"
+                )
+            }
+        disk = json.loads(result.stdout)
+        size_gb = int(disk["sizeGb"])  # the API returns a numeric STRING, e.g. "300"
+        # RFC3339 with numeric UTC offset (e.g. 2026-07-17T13:27:21.488-07:00);
+        # py3.11 fromisoformat parses the offset form directly.
+        created = datetime.fromisoformat(disk["creationTimestamp"])
+        age_sec = max(0.0, now_fn() - created.timestamp())
+        fields: dict[str, Any] = {
+            "boot_disk_size_gb": size_gb,
+            "boot_disk_age_days": round(age_sec / 86400.0, 2),
+            "boot_disk_requested_gb": int(requested_gb),
+            "boot_disk_reused": age_sec > _BOOT_DISK_REUSE_SLACK_SEC,
+        }
+        if size_gb != int(requested_gb):
+            fields["boot_disk_size_mismatch"] = True  # omit-when-false (#1010 pattern)
+        return fields
+    except Exception as exc:  # observability must never fail a live launch
+        return {"boot_disk_probe_error": f"{type(exc).__name__}: {exc}"[:300]}
+
+
 #: Guest ``eps/phase`` values that mean the workload has FINISHED (terminal).
 #: A RUNNING VM that has published one of these but never auto-deleted is a
 #: wedged zombie — the workload is over, the VM is still billing — and the
@@ -3841,6 +4308,41 @@ _NONLIVE_INSTANCE_STATUSES: frozenset[str] = frozenset({"TERMINATED", "STOPPED",
 _ZOMBIE_GUEST_PHASES: frozenset[str] = _TERMINAL_GUEST_PHASES | frozenset({"wedged"})
 
 
+def _instance_observation_extras(inst: Mapping[str, Any]) -> dict[str, Any]:
+    """#1815: arm-N provenance extras read off one gcloud list instance dict.
+
+    Returns ``provisioning_model`` (``scheduling.provisioningModel``) +
+    ``gcp_launched_ts`` (``creationTimestamp`` → epoch seconds) for the
+    poller's queue-vanish arm N
+    (``backend_poll._flex_create_never_ran_young``) — BOTH fields ride the
+    SAME ``--format=json`` list response already in hand (the full v1 REST
+    instance resource; the janitor reads ``scheduling.maxRunDuration`` +
+    ``creationTimestamp`` off the same shape), so zero extra API calls.
+    Pre-#1815 reconnect handles lacked both, leaving arm N — and the #1029
+    young-death heuristic — inert on the reconnect path (the #1738 incident
+    handle). Named side effect (deliberate): ``gcp_launched_ts`` arms the
+    previously-inert #1029 heuristic branch for young terminated/not-found
+    deaths of reconnected instances — strictly closer to #1029's design
+    intent (``creationTimestamp`` ≈ the create-return launch ts); no counting
+    semantics change. Every missing/unparseable field simply leaves its key
+    absent, so arm N fail-safes (never fires).
+    """
+    out: dict[str, Any] = {}
+    sched = inst.get("scheduling")
+    if isinstance(sched, dict) and sched.get("provisioningModel"):
+        out["provisioning_model"] = str(sched["provisioningModel"])
+    created = inst.get("creationTimestamp")
+    if isinstance(created, str) and created:
+        try:
+            parsed = datetime.fromisoformat(created.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=UTC)
+            out["gcp_launched_ts"] = parsed.timestamp()
+        except ValueError:
+            pass  # unparseable -> key absent -> arm N fail-safes (never fires)
+    return out
+
+
 def reconnect_or_none(
     *,
     spec: RunSpec,
@@ -3890,6 +4392,16 @@ def reconnect_or_none(
     semantics — a probe flake fails the launch typed and RETRIABLE
     (re-run the same command; idempotent by design, the #736 exit-75
     precedent), never a silent reconnect and never a delete.
+
+    Instance-observation provenance (#1815): the reconnect handle's
+    ``extra`` UNCONDITIONALLY carries ``provisioning_model``
+    (``scheduling.provisioningModel``) + ``gcp_launched_ts``
+    (``creationTimestamp`` → epoch seconds) read from the already-fetched
+    list JSON, so the poller's queue-vanish arm N
+    (``backend_poll._flex_create_never_ran_young``) — and the #1029
+    young-death heuristic — work on reconnect-shaped handles (the #1738
+    incident shape). A missing/unparseable field leaves its key absent
+    (arm N fail-safes).
 
     Failover-prerequisite extras (#1122): when the spec carries a
     workload (``workload_cmd`` or ``hydra_args``), the reconnect
@@ -3986,6 +4498,9 @@ def reconnect_or_none(
         }
         if recovered_attempt_id is not None:
             extra["attempt_id"] = recovered_attempt_id
+        # #1815: instance-observation provenance for the poller's queue-vanish
+        # arm N — unconditional (instance observations, not workload keys).
+        extra.update(_instance_observation_extras(inst))
         # #1122: mirror the launch path's failover-prerequisite keys
         # (#659 MF1/MF2, #909 repo_branch, #677 gpu_count, #1010 footprint)
         # so an exit-75 same-command RERUN's reconnect handle — which
@@ -4016,6 +4531,10 @@ def reconnect_or_none(
                     for k, v in {
                         "boot_disk_gb": (spec.extra or {}).get("boot_disk_gb"),
                         "min_ram_gb": (spec.extra or {}).get("min_ram_gb"),
+                        # #1669: launch env pins — carried on the reconnect
+                        # handle so an exit-75 rerun's sidecar overwrite
+                        # stays failover-capable WITH the pins (#1586).
+                        "env_pins": (spec.extra or {}).get("env_pins"),
                     }.items()
                     if v
                 }
@@ -4738,9 +5257,13 @@ class GcpBackend(ComputeBackend):
         marker_poster: Callable[..., None] | None = None,
         marker_reader: Callable[..., dict[str, Any] | None] | None = None,
         startup_script_renderer: Callable[..., str] | None = None,
+        delete_spawner: DeleteSpawner | None = None,
     ) -> None:
         self._config = config or default_gcp_config()
         self._run = runner or default_gcloud_runner
+        # Detached-delete seam (#1628): fire-and-forget delete for DWS-queued
+        # (PENDING) instances so teardown never joins the slow queue cancel.
+        self._spawn_delete = delete_spawner or _default_delete_spawner
         # Lazy import default poster (matches SlurmBackend's pattern) so
         # this module stays importable without a configured task.py.
         if marker_poster is None:
@@ -5172,6 +5695,37 @@ class GcpBackend(ComputeBackend):
         instance_name = instance_name_for(spec.issue, lane_suffix_for(spec))
         # gcloud returns the instance object as a list with one entry.
         instance_id = _parse_instance_id(result.stdout, instance_name)
+        # #1617 (incident #779): fail-soft post-create boot-disk probe —
+        # gcloud silently attaches an existing same-name disk and IGNORES
+        # --boot-disk-size, so record the realized disk facts loudly. The
+        # probe never raises; fresh creates only (the reconnect early-return
+        # above never reaches here — nothing was created there to detect).
+        boot_disk_fields = _probe_boot_disk(
+            config=config,
+            name=instance_name,
+            zone=zone,
+            requested_gb=effective_boot_disk_gb(spec=spec, config=config),
+            runner=self._run,
+        )
+        if boot_disk_fields.get("boot_disk_reused"):
+            logger.warning(
+                "GCP create for issue=%d ATTACHED the pre-existing boot disk %s "
+                "(age %.1f d, %s GB): gcloud reuses a same-name disk and IGNORES "
+                "--boot-disk-size (#1617; incident #779).",
+                spec.issue,
+                instance_name,
+                boot_disk_fields.get("boot_disk_age_days", -1.0),
+                boot_disk_fields.get("boot_disk_size_gb"),
+            )
+        if boot_disk_fields.get("boot_disk_size_mismatch"):
+            logger.warning(
+                "GCP boot-disk SIZE MISMATCH for issue=%d: requested %s GB on the "
+                "create argv, realized %s GB — the attached disk's size wins; §9 "
+                "disk sizing does not apply to this instance (#1617).",
+                spec.issue,
+                boot_disk_fields.get("boot_disk_requested_gb"),
+                boot_disk_fields.get("boot_disk_size_gb"),
+            )
         handle = RunHandle(
             backend="gcp",
             cluster=None,
@@ -5242,9 +5796,20 @@ class GcpBackend(ComputeBackend):
                     for k, v in {
                         "boot_disk_gb": spec.extra.get("boot_disk_gb"),
                         "min_ram_gb": spec.extra.get("min_ram_gb"),
+                        # #1669: launch env pins — persisted so the async
+                        # GCP→RunPod failover reconstruction
+                        # (backend_poll._runspec_from_gcp_handle) forwards
+                        # them and the fresh RunPod launcher re-exports
+                        # them (#1586). Key OMITTED when absent/falsy.
+                        "env_pins": spec.extra.get("env_pins"),
                     }.items()
                     if v
                 },
+                # #1617: realized-boot-disk observability (additive keys —
+                # every existing reader uses .get(...)). `boot_disk_size_gb`
+                # is the REALIZED size, distinct from the spec-requested
+                # `boot_disk_gb` above.
+                **boot_disk_fields,
             },
         )
         handle = self._with_artifacts_declaration(
@@ -5290,6 +5855,10 @@ class GcpBackend(ComputeBackend):
                 # occupying the canonical name before create — so the
                 # name-reclaim is visible on the timeline.
                 "pre_launch_deleted_stale_instance": pre_launch_deleted_stale_instance,
+                # Additive fields (#1617): realized-boot-disk observability
+                # from the post-create probe (reuse age + realized size, or a
+                # fail-soft boot_disk_probe_error). sort_keys handles ordering.
+                **boot_disk_fields,
             },
             sort_keys=True,
         )
@@ -5434,6 +6003,15 @@ class GcpBackend(ComputeBackend):
                 drain_alarm_class,
             ) = self._drain_sentinels(handle, zone)
 
+            # #1574: per-tick trigger-dense declaration read (#1556 semantics
+            # — fresh read, so a mid-run `task.py add-tag <N> trigger-dense`
+            # takes effect on the next tick). VM-side by construction: this
+            # poll runs gcloud subprocesses from the orchestrator VM, never on
+            # the instance. The ``issue > 0`` guard mirrors _drain_sentinels'
+            # own pre-SSH skip — issue-less ad-hoc handles never read tags.
+            issue = int(handle.extra.get("issue") or 0)
+            trigger_dense = issue > 0 and excerpt_digest.issue_trigger_dense(issue, log=logger)
+
             def _with_drain(base: PollResult) -> PollResult:
                 return _overlay_drain(
                     base,
@@ -5442,6 +6020,8 @@ class GcpBackend(ComputeBackend):
                     alarm=drain_alarm,
                     log_tail=drain_log_tail,
                     log_mtime_ago=drain_log_mtime_ago,
+                    trigger_dense=trigger_dense,
+                    log_path=handle.log_path or "",
                 )
 
             # A RUNNING VM is ambiguous: booting, mid-workload, or DONE
@@ -5490,7 +6070,9 @@ class GcpBackend(ComputeBackend):
                 if relaunch is not None:
                     pid, log_abs = relaunch
                     return _with_drain(
-                        self._probe_relaunched_workload(handle, zone, pid=pid, log_path=log_abs)
+                        self._probe_relaunched_workload(
+                            handle, zone, pid=pid, log_path=log_abs, trigger_dense=trigger_dense
+                        )
                     )
             if phase == "done":
                 return _with_drain(
@@ -5929,6 +6511,15 @@ class GcpBackend(ComputeBackend):
           answered) but a matched sentinel set produced 0 processed markers
           (empty / unparseable body or a transient marker-post failure). NOT a
           reachability problem — the wedge gate must NEVER fire on this class.
+        * ``"control_plane"`` (#1837) — the drain SSH returned non-zero with
+          the gcloud CONTROL-PLANE signature (case-insensitive substring
+          ``could not fetch resource``): the API failed to fetch the instance
+          resource BEFORE any SSH probe ran, so it carries ZERO reachability
+          signal about the guest. Like ``"sentinel_processing"`` it leaves
+          ``PollResult.reachability_alarm`` False (the mapping keys on
+          ``== "transport"``) — the wedge gate must NEVER fire on this class
+          (incident #1739). Unmatched rc != 0 stderr keeps ``"transport"``;
+          the TimeoutExpired branch keeps ``"transport"`` unconditionally.
         * ``""`` — no alarm (clean drain), OR the pre-SSH config skip
           (``issue<=0`` — nothing was probed, so it carries no reachability
           signal).
@@ -6026,14 +6617,27 @@ class GcpBackend(ComputeBackend):
             logger.error("GCP poll: %s", alarm)
             return 0, None, alarm, "", None, "transport"
         if res.returncode != 0:
+            stderr_txt = (res.stderr or "").strip()
+            if "could not fetch resource" in stderr_txt.lower():
+                # CONTROL-PLANE class (#1837): the gcloud API failed to fetch
+                # the instance resource BEFORE any SSH/reachability probe ran —
+                # zero signal about the guest (incident #1739: one transient
+                # "Could not fetch resource: Internal error" on a healthy VM
+                # fired the wedge failover). Never counts toward the wedge
+                # streak: the L6120 mapping (== "transport") leaves
+                # PollResult.reachability_alarm False for this class, the same
+                # doctrinal split as "sentinel_processing".
+                alarm = (
+                    f"gcp sentinel drain SKIPPED by control-plane API error "
+                    f"(rc={res.returncode}): {stderr_txt[:300]}"
+                )
+                logger.error("GCP poll: %s", alarm)
+                return 0, None, alarm, "", None, "control_plane"
             # TRANSPORT class (#669): the drain SSH itself returned non-zero —
             # transport down / permission / timeout. This is the unreachable-VM
             # signature the poller's frozen-phase wedge gate reads (alarm_class
             # "transport" -> PollResult.reachability_alarm=True).
-            alarm = (
-                f"gcp sentinel drain FAILED (rc={res.returncode}): "
-                f"{(res.stderr or '').strip()[:300]}"
-            )
+            alarm = f"gcp sentinel drain FAILED (rc={res.returncode}): {stderr_txt[:300]}"
             logger.error("GCP poll: %s", alarm)
             return 0, None, alarm, "", None, "transport"
 
@@ -6231,7 +6835,13 @@ class GcpBackend(ComputeBackend):
         return int(pid_m.group(1)), log_m.group(1)
 
     def _probe_relaunched_workload(
-        self, handle: RunHandle, zone: str, *, pid: int, log_path: str
+        self,
+        handle: RunHandle,
+        zone: str,
+        *,
+        pid: int,
+        log_path: str,
+        trigger_dense: bool = False,
     ) -> PollResult:
         """Probe the relaunched workload's pid + log over ssh sudo.
 
@@ -6248,6 +6858,12 @@ class GcpBackend(ComputeBackend):
         * probe transport failure → typed ``stalled`` tick (the
           "couldn't ask" ≠ "not running" discipline, #535) — never read
           a probe failure as a terminal verdict.
+
+        ``trigger_dense`` (#1574): when the workload is declared
+        trigger-dense the EMITTED ``log_tail_excerpt`` at all three
+        classification sites is the shared #1556 structural digest of the
+        relaunch tail; the ``latest_phase`` done-corroboration below stays
+        on the RAW ``tail_full`` — detection is never gated.
         """
         quoted_log = shlex.quote(log_path)
         script = (
@@ -6291,6 +6907,23 @@ class GcpBackend(ComputeBackend):
         # and the done-corroboration below scans the UNtruncated text so a
         # long tail can never push the terminal line out of the parse.
         tail = tail_full[-2000:]
+
+        def _emit(status_: str, phase_: str, alive_: bool) -> str:
+            """#1574: the emitted excerpt for one classification site — the
+            shared digest of the FULL relaunch tail when trigger-dense, else
+            the raw last-2000 slice (byte-identical pre-#1574 behavior)."""
+            if not trigger_dense:
+                return tail
+            return excerpt_digest.digest_tail_excerpt(
+                tail_full,
+                status=status_,
+                current_phase=phase_,
+                pid_alive=alive_,
+                source="gcp_relaunch",
+                log_path=log_path,
+                mtime_sec_ago=min(mtime_ago, 10**9),
+            )
+
         if alive:
             return PollResult(
                 status="running",
@@ -6298,7 +6931,7 @@ class GcpBackend(ComputeBackend):
                 new_milestone=False,
                 last_log_mtime_sec_ago=mtime_ago,
                 pid_alive=True,
-                log_tail_excerpt=tail,
+                log_tail_excerpt=_emit("running", "relaunched_workload", True),
             )
         # pid dead: corroborate done from the relaunch log's phase lines,
         # reusing poll_pipeline's parser (same lazy-import pattern as
@@ -6320,7 +6953,7 @@ class GcpBackend(ComputeBackend):
                 new_milestone=True,
                 last_log_mtime_sec_ago=mtime_ago,
                 pid_alive=False,
-                log_tail_excerpt=tail,
+                log_tail_excerpt=_emit("done", "relaunched_workload_done", False),
             )
         return PollResult(
             status="dead",
@@ -6328,7 +6961,7 @@ class GcpBackend(ComputeBackend):
             new_milestone=True,
             last_log_mtime_sec_ago=mtime_ago,
             pid_alive=False,
-            log_tail_excerpt=tail,
+            log_tail_excerpt=_emit("dead", "relaunched_workload_exited", False),
         )
 
     def fetch_logs(self, handle: RunHandle) -> str:
@@ -6610,11 +7243,58 @@ class GcpBackend(ComputeBackend):
         the original #683 leak occurred on a run where teardown was NOT
         reached before the leak was observed — that path is closed by the
         watcher-side complement (see plan §10), not by this guard.
+
+        DWS-PENDING awareness (#1628/#1586): deleting a DWS-queued (PENDING)
+        instance is a slow server-side queue cancel (~10 min observed in
+        #1586), which exceeds the ``GCLOUD_DEFAULT_TIMEOUT_SEC`` subprocess
+        cap. A pre-delete describe therefore probes the status: a PENDING
+        instance gets a DETACHED delete spawn (never joined) + a positive
+        operations-list issuance probe + a bounded existence verify, so the
+        caller unblocks in seconds; issuance NOT observed falls through to
+        the synchronous delete (never a silent skip). On every path a
+        ``subprocess.TimeoutExpired`` from the synchronous delete is caught
+        and escalated to the same issuance probe + bounded verify instead of
+        propagating raw (the delete-side sibling of the #736 create-timeout
+        catch). Every teardown exit either confirms the instance absent
+        (404), positively confirms a server-side delete op is in flight
+        (PENDING fast return), or raises :class:`GcpBackendError`.
+        Pathological stacked ceiling (~37 min, every component individually
+        capped at its own subprocess/budget bound): pre-describe <=300s +
+        PENDING-path issuance (60s budget + one <=300s op-list overshoot) +
+        sync delete <=300s + escalation issuance (60s + <=300s overshoot) +
+        verify (600s budget + one <=300s describe overshoot).
         """
         config = self._config
         zone = handle.extra.get("zone") or config.primary_zone
+        # (1) PENDING probe — one cheap describe. ANY anomaly (probe error,
+        #     404, unparseable, absent/other status) falls through to the
+        #     sync path (fail-open: equivalent to today's behavior).
+        status, instance_id = self._pre_delete_status(handle, zone)
+        if status == "PENDING":
+            logger.warning(
+                "GCP teardown: %s is DWS-queued (PENDING); using detached delete + "
+                "issuance probe + bounded verify so the caller is not serialized "
+                "behind the slow DWS cancel (#1628/#1586).",
+                handle.pod_name,
+            )
+            if self._teardown_pending_detached(handle, zone, instance_id=instance_id):
+                return
+            # Issuance NOT observed -> NEVER skip: fall through to the
+            # synchronous delete below (fails toward today's behavior).
+        # (2) Synchronous delete — unchanged semantics + a NEW timeout catch.
         argv = render_delete_argv(config=config, name=handle.pod_name, zone=zone)
-        result = self._run(argv)
+        try:
+            result = self._run(argv)
+        except subprocess.TimeoutExpired:
+            logger.warning(
+                "GCP teardown: delete of %s exceeded the %ds subprocess cap "
+                "(slow-cancel signature, #1586); escalating to issuance probe + "
+                "bounded existence verify.",
+                handle.pod_name,
+                GCLOUD_DEFAULT_TIMEOUT_SEC,
+            )
+            self._escalate_slow_delete(handle, zone, instance_id=instance_id)
+            return
         if result.returncode == 0:
             self._confirm_deleted(handle, zone)
             return
@@ -6625,12 +7305,214 @@ class GcpBackend(ComputeBackend):
                 handle.pod_name,
             )
             return
+        if any(m in stderr_low for m in _DELETE_IN_FLIGHT_STDERR_MARKERS):
+            # A delete/operation already in flight (a concurrent janitor /
+            # finalize, or our own detached spawn) — probe for positive
+            # issuance evidence and verify instead of raising (#1628).
+            issuance = self._probe_delete_issuance(
+                handle, zone, budget_sec=_delete_issuance_budget_sec(), instance_id=instance_id
+            )
+            self._verify_delete_landed(handle, zone, issuance_confirmed=issuance)
+            return
         # Anything else is a real failure (auth blip, transient API
         # error). Raise so the orchestrator surfaces it rather than
         # silently leaving a VM up.
         raise GcpBackendError(
             f"gcloud delete {handle.pod_name} returned {result.returncode}: {result.stderr[:500]}"
         )
+
+    def _pre_delete_status(self, handle: RunHandle, zone: str) -> tuple[str | None, str | None]:
+        """One describe; ``(status, instance_id)``, or ``(None, None)`` on ANY anomaly.
+
+        Fail-open by design (#1628): a probe error / timeout / 404 /
+        unparseable payload / absent status all return ``None`` so teardown
+        takes the synchronous path — equivalent to today's behavior. A
+        pre-describe 404 deliberately returns ``None`` too: the sync delete
+        still runs and lands on the existing "was not found" success branch,
+        so missing-VM semantics are identical (no transient-404-skips-the-
+        delete residual). The instance ``id`` (when present) lets the
+        issuance probe pin delete ops to THIS incarnation (#1029 name reuse).
+        """
+        try:
+            probe = self._run(
+                render_describe_argv(config=self._config, name=handle.pod_name, zone=zone)
+            )
+        except Exception:  # incl. subprocess.TimeoutExpired — fail-open
+            return None, None
+        if probe.returncode != 0 or not probe.stdout.strip():
+            return None, None
+        try:
+            payload = json.loads(probe.stdout)
+        except json.JSONDecodeError:
+            return None, None
+        if not isinstance(payload, dict):
+            return None, None
+        status = (payload.get("status") or "").upper() or None
+        raw_id = payload.get("id")
+        instance_id = str(raw_id) if raw_id not in (None, "") else None
+        return status, instance_id
+
+    def _teardown_pending_detached(
+        self, handle: RunHandle, zone: str, *, instance_id: str | None
+    ) -> bool:
+        """Detached delete of a DWS-queued instance + positive-issuance probe (#1628).
+
+        Returns True when a RECENT server-side delete op was observed and the
+        bounded verify ran (fast path complete); False when no op was observed
+        within the issuance budget OR the spawn itself failed — the caller
+        then falls through to the synchronous delete (never a silent skip).
+        """
+        argv = render_delete_argv(config=self._config, name=handle.pod_name, zone=zone)
+        try:
+            # Fire-and-forget; the detached gcloud waits server-side on its
+            # own and exits alone. Never joined.
+            self._spawn_delete(argv)
+        except OSError as exc:
+            logger.warning(
+                "GCP teardown: detached delete spawn for %s failed (%s); "
+                "falling back to the synchronous delete (#1628).",
+                handle.pod_name,
+                exc,
+            )
+            return False
+        if self._probe_delete_issuance(
+            handle, zone, budget_sec=_delete_issuance_budget_sec(), instance_id=instance_id
+        ):
+            self._verify_delete_landed(handle, zone, issuance_confirmed=True)
+            return True
+        logger.warning(
+            "GCP teardown: no recent delete operation observed for %s within %ss "
+            "of the detached spawn; falling back to the synchronous delete (#1628).",
+            handle.pod_name,
+            _delete_issuance_budget_sec(),
+        )
+        return False
+
+    def _probe_delete_issuance(
+        self, handle: RunHandle, zone: str, *, budget_sec: float, instance_id: str | None = None
+    ) -> bool:
+        """True iff a RECENT server-side delete operation targets this instance (#1628).
+
+        Polls the zone-scoped, targetLink-filtered operations list through the
+        NORMAL runner (seconds per call). Rows older than
+        :data:`GCLOUD_DELETE_OP_RECENCY_SEC` — or with a missing/unparseable
+        ``insertTime`` — are IGNORED: instance names recur across incarnations
+        (#1029 boot loops), so a prior incarnation's delete op must never read
+        as our issuance. When the pre-delete describe captured the instance
+        ``id``, an op additionally must match ``targetId`` (the incarnation
+        pin); without an id the recency-guarded name match stands alone. Any
+        probe anomaly counts as not-observed this round (fails toward the
+        sync path).
+        """
+        deadline = time.monotonic() + budget_sec
+        poll = _delete_issuance_poll_sec()
+        op_argv = render_delete_operations_list_argv(
+            config=self._config, name=handle.pod_name, zone=zone
+        )
+        while True:
+            try:
+                r = self._run(op_argv)
+                if r.returncode == 0 and r.stdout.strip():
+                    now = datetime.now(UTC)
+                    for op in json.loads(r.stdout):
+                        try:
+                            age = (now - datetime.fromisoformat(op["insertTime"])).total_seconds()
+                        except (KeyError, TypeError, ValueError):
+                            continue  # unparseable/missing insertTime -> ignore (conservative)
+                        if age > GCLOUD_DELETE_OP_RECENCY_SEC:
+                            continue  # a prior incarnation's stale op
+                        if instance_id is not None and str(op.get("targetId") or "") != instance_id:
+                            continue  # a same-name op from ANOTHER incarnation
+                        logger.info(
+                            "GCP teardown: delete op %s observed for %s (status=%s, age=%.0fs).",
+                            op.get("name"),
+                            handle.pod_name,
+                            op.get("status"),
+                            age,
+                        )
+                        return True
+            except Exception:  # incl. TimeoutExpired, JSON errors
+                logger.debug(
+                    "GCP teardown: issuance probe anomaly for %s; not observed this round.",
+                    handle.pod_name,
+                    exc_info=True,
+                )
+            if time.monotonic() >= deadline:
+                return False
+            time.sleep(poll)
+
+    def _escalate_slow_delete(
+        self, handle: RunHandle, zone: str, *, instance_id: str | None = None
+    ) -> None:
+        """Post-``TimeoutExpired`` escalation: probe issuance, then bounded-verify (#1628).
+
+        ``subprocess.run(..., timeout=)`` killed the LOCAL gcloud child, but
+        the server-side operation it already issued persists — so POSITIVELY
+        confirm it via the operations list and feed the boolean forward. No
+        re-issue here; the verify's fall-throughs handle everything else.
+        """
+        issuance = self._probe_delete_issuance(
+            handle, zone, budget_sec=_delete_issuance_budget_sec(), instance_id=instance_id
+        )
+        self._verify_delete_landed(handle, zone, issuance_confirmed=issuance)
+
+    def _verify_delete_landed(
+        self, handle: RunHandle, zone: str, *, issuance_confirmed: bool
+    ) -> None:
+        """Bounded existence poll after a slow/detached delete (#1628).
+
+        404 -> success; PENDING + positive issuance -> loud in-flight fast
+        return (a queued instance bills no GPU; the gcp_audit janitor +
+        ``--max-run-duration`` fence remain the backstops); deadline
+        exhausted -> loud :class:`GcpBackendError`. Never returns silently:
+        an unconfirmed-issuance PENDING instance polls to the deadline and
+        raises. Each describe probe is individually guarded — a probe
+        exception counts as not-confirmed this round, never propagates raw.
+        """
+        budget = _delete_verify_budget_sec()
+        poll = _delete_verify_poll_sec()
+        deadline = time.monotonic() + budget
+        last_status: str | None = None
+        describe_argv = render_describe_argv(config=self._config, name=handle.pod_name, zone=zone)
+        while True:
+            try:
+                probe = self._run(describe_argv)
+            except Exception:  # incl. subprocess.TimeoutExpired — not confirmed this round
+                logger.debug(
+                    "GCP teardown: verify probe anomaly for %s; not confirmed this round.",
+                    handle.pod_name,
+                    exc_info=True,
+                )
+                probe = None
+            if probe is not None:
+                low = (probe.stderr or "").lower()
+                if probe.returncode != 0 and ("was not found" in low or "404" in low):
+                    logger.info("GCP teardown: %s confirmed deleted.", handle.pod_name)
+                    return
+                if probe.returncode == 0 and probe.stdout.strip():
+                    try:
+                        payload = json.loads(probe.stdout)
+                        if isinstance(payload, dict):
+                            last_status = (payload.get("status") or "").upper() or last_status
+                    except json.JSONDecodeError:
+                        pass
+                    if last_status == "PENDING" and issuance_confirmed:
+                        logger.warning(
+                            "GCP teardown: delete of DWS-queued %s is issued and in flight "
+                            "server-side; NOT blocking the caller on the slow DWS cancel "
+                            "(queued instances bill no GPU; backstops: gcp_audit janitor + "
+                            "--max-run-duration fence). (#1628)",
+                            handle.pod_name,
+                        )
+                        return  # the pivot-unblocking fast return
+            if time.monotonic() >= deadline:
+                raise GcpBackendError(
+                    f"gcloud delete of {handle.pod_name} did not confirm within "
+                    f"{budget}s (last_status={last_status!r}, "
+                    f"issuance_confirmed={issuance_confirmed}); gcp_audit janitor + "
+                    f"--max-run-duration fence remain the backstops"
+                )
+            time.sleep(poll)
 
     def _confirm_deleted(self, handle: RunHandle, zone: str) -> None:
         """Verify the post-delete instance is gone; re-issue the delete on a RUNNING zombie (#683).
@@ -6798,6 +7680,8 @@ def _overlay_drain(
     alarm: str,
     log_tail: str,
     log_mtime_ago: int | None = None,
+    trigger_dense: bool = False,
+    log_path: str = "",
 ) -> PollResult:
     """Thread sentinel-drain results into a coarse :class:`PollResult`.
 
@@ -6814,7 +7698,30 @@ def _overlay_drain(
     truthful ``last_log_mtime_sec_ago`` (the coarse poll hardwires
     ``10**9``) so phase-stuck zombies become detectable. Terminal results
     (``done`` / ``dead`` / ``stalled``) keep their own values.
+
+    ``trigger_dense`` / ``log_path`` (#1574): on a trigger-dense workload
+    the raw drain ``log_tail`` component is replaced by the shared #1556
+    structural digest BEFORE the merge. ONLY that component is digested —
+    the drain ``alarm`` (#608 fail-loud diagnosis; lane-built text, never
+    raw workload-log lines) and ``base.log_tail_excerpt`` (empty, or
+    already digested at its own construction site) stay intact: a
+    choke-point digest would swallow those structural diagnostics.
+    Additive kw-only defaults keep every pre-#1574 caller byte-identical.
     """
+    if trigger_dense and log_tail:
+        log_tail = excerpt_digest.digest_tail_excerpt(
+            log_tail,
+            status=base.status,
+            current_phase=base.current_phase,
+            pid_alive=base.pid_alive,
+            source="gcp_drain",
+            log_path=log_path,
+            mtime_sec_ago=(
+                log_mtime_ago
+                if log_mtime_ago is not None
+                else min(base.last_log_mtime_sec_ago, 10**9)
+            ),
+        )
 
     merged_gate = base.gate or gate
     merged = replace(
@@ -6941,6 +7848,7 @@ __all__ = [
     "STARTUP_SECRET_ENV_KEYS",
     "WIDE_A100_80_BY_WIDTH",
     "WIDTH_ELIGIBLE_INTENTS",
+    "DeleteSpawner",
     "GcloudRunResult",
     "GcloudRunner",
     "GcpBackend",
@@ -6966,6 +7874,7 @@ __all__ = [
     "region_for_zone",
     "render_create_argv",
     "render_delete_argv",
+    "render_delete_operations_list_argv",
     "render_describe_argv",
     "render_list_argv",
     "render_region_describe_argv",

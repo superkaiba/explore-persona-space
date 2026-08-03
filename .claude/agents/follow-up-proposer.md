@@ -384,7 +384,10 @@ as sessions — see SKILL.md Step 9b); `same` proposals run ON the
 parent via the same-issue follow-up loop, held at status
 `followups_running` with the `followup-auto` tag (top-ranked one per
 round, capped at 2 autonomous rounds per
-task — see SKILL.md Step 9b § Same-issue follow-up loop).
+task — see SKILL.md Step 9b § Same-issue follow-up loop; expensive
+band: at most one round is dispatchable under the current contract —
+a defensive bound, see Step 9b § Round caps / step R scope contract,
+#1588).
 Interactive sessions IGNORE the tag — the user still picks from the
 ranked list at Step 10b (which routes the pick by
 `question_relation`). Tag each proposal `yes` only if ALL of these

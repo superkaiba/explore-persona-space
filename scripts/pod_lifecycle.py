@@ -98,8 +98,10 @@ from runpod_api import (  # noqa: E402
     create_pod,
     current_account_hourly_burn,
     estimate_pod_hourly_rate,
+    get_account_pubkey,
     get_pod,
     list_team_pods,
+    read_vm_pubkey,
     resume_pod,
     stop_pod,
     terminate_pod,
@@ -374,9 +376,18 @@ def _write_metadata_file(
 _MANAGED_PREFIXES: tuple[str, ...] = ("pod-", "epm-issue-")
 
 
+def _is_managed_pod_name(name: str) -> bool:
+    """True if a pod NAME (as reported by the RunPod API) belongs to this
+    project — ``pod-*`` (canonical, incl. ``pod-<N>-<slug>`` follow-up pods,
+    #1334) or ``epm-issue-*`` (legacy). String-level twin of
+    :func:`_is_managed_pod` for callers holding only a name (the $/hr-cap
+    guard's burn-breakdown rows, #1600)."""
+    return any(name.startswith(p) for p in _MANAGED_PREFIXES)
+
+
 def _is_managed_pod(pod: PodInfo) -> bool:
     """True if this pod is one our project manages."""
-    return any(pod.name.startswith(p) for p in _MANAGED_PREFIXES)
+    return _is_managed_pod_name(pod.name)
 
 
 # Back-compat alias: external callers historically imported this name.
@@ -1597,6 +1608,13 @@ def _live_ssh_endpoint(issue: int) -> tuple[str | None, int | None]:
 # pre-flight with the projected total instead of mid-run (incidents #503,
 # #505 on 2026-06-05). Default 80.0 USD/hr; override via env to match
 # whatever the console cap is set to.
+#
+# The original single-tenant premise drifted (#1600): the team account is now
+# shared with the Anthropic-fellows cluster fleet, whose unmanaged pods alone
+# exceed any sane local cap, so the guard's burn sum is scoped to MANAGED
+# pods by default (see ``_burn_scope`` below). The guard's purpose is bounding
+# OUR spend (#503/#505/#506), not gating on pods we neither created nor can
+# stop.
 _DEFAULT_ACCOUNT_HOURLY_CAP_USD = 80.0
 
 
@@ -1617,6 +1635,41 @@ def _account_hourly_cap_usd() -> float:
             file=sys.stderr,
         )
         return _DEFAULT_ACCOUNT_HOURLY_CAP_USD
+
+
+# Scope of the pre-flight $/hr guard (#1600). The RunPod team account is
+# shared with the Anthropic-fellows cluster fleet (July 2026): ~80+ unmanaged
+# pods (~$2.7k/hr) that we neither created nor can stop, so an account-wide
+# burn sum permanently exceeds any sane local cap — 13/13 wait-for-capacity
+# refusals on #779 (2026-07-22). The guard exists to bound OUR spend
+# (#503/#505/#506); default scope is therefore 'managed'. Set
+# EPM_RUNPOD_BURN_SCOPE=all to restore the account-wide sum (correct for a
+# single-tenant account).
+_BURN_SCOPE_VALUES = ("managed", "all")
+
+
+def _burn_scope() -> str:
+    """Read EPM_RUNPOD_BURN_SCOPE (default ``managed``). Bad values fall
+    back to the default with a stderr WARN rather than crash the lifecycle
+    (mirrors :func:`_account_hourly_cap_usd`)."""
+    raw = os.environ.get("EPM_RUNPOD_BURN_SCOPE", "").strip().lower()
+    if not raw:
+        return "managed"
+    if raw in _BURN_SCOPE_VALUES:
+        return raw
+    print(
+        f"[pod_lifecycle] WARN: EPM_RUNPOD_BURN_SCOPE={raw!r} is not one of "
+        f"{_BURN_SCOPE_VALUES}; using 'managed'.",
+        file=sys.stderr,
+    )
+    return "managed"
+
+
+# Once-per-process latch for the unmanaged-burn WARN in
+# ``_assert_under_account_hourly_cap``: the wait loop re-runs the guard every
+# backoff tick (13 ticks on #779), and 13 identical WARNs is noise. Tests
+# reset via monkeypatch.
+_unmanaged_burn_warned = False
 
 
 def _assert_under_account_hourly_cap(
@@ -1661,19 +1714,55 @@ def _assert_under_account_hourly_cap(
         the API-side fix from #506 could even fire). Default OFF preserves
         the byte-identical SystemExit behavior for every pre-existing caller.
 
+    Scope (#1600): the burn sum this guard gates on is controlled by
+    ``EPM_RUNPOD_BURN_SCOPE`` (default ``managed`` — only the ``pod-*`` /
+    ``epm-issue-*`` pods our project manages; ``all`` restores the
+    account-wide sum). The team account is shared with the fellows cluster
+    fleet, whose burn must not gate our provisions. Under managed scope a
+    once-per-process stderr WARN fires when the excluded unmanaged burn
+    alone exceeds the cap, and every over-cap SystemExit message carries an
+    excluded-unmanaged summary line (count, $/hr, account-wide total) so
+    the full account picture stays visible.
+
     Per the "Fail fast — never hide failures" rule: if
     :func:`current_account_hourly_burn` raises (API unreachable), the
     exception propagates. We CANNOT make the decision without the live state,
     so we refuse the operation rather than silently letting RunPod surface it
     mid-run.
     """
+    global _unmanaged_burn_warned
     cap = _account_hourly_cap_usd()
     intended_rate = estimate_pod_hourly_rate(intended_gpu_type, intended_gpu_count)
-    current_total, breakdown = current_account_hourly_burn()
+    account_total, account_breakdown = current_account_hourly_burn()
+    # Read the scope AFTER the API call: list_team_pods() lazily loads .env
+    # (runpod_api._load_dotenv, non-overriding), so an .env-only
+    # EPM_RUNPOD_BURN_SCOPE is visible here even in a fresh process.
+    scope = _burn_scope()
+    if scope == "managed":
+        breakdown = [(n, r) for n, r in account_breakdown if _is_managed_pod_name(n)]
+        unmanaged = [(n, r) for n, r in account_breakdown if not _is_managed_pod_name(n)]
+        unmanaged_total = sum(r for _, r in unmanaged)
+        current_total = sum(r for _, r in breakdown)
+        if unmanaged_total > cap and not _unmanaged_burn_warned:
+            _unmanaged_burn_warned = True
+            print(
+                f"[pod_lifecycle] WARN: ${unmanaged_total:.2f}/hr of RUNNING burn on the "
+                f"shared team account is {len(unmanaged)} UNMANAGED pod(s) (not ours; "
+                f"excluded from the $/hr-cap guard — EPM_RUNPOD_BURN_SCOPE=all to "
+                f"include). Managed burn: ${current_total:.2f}/hr.",
+                file=sys.stderr,
+            )
+    else:
+        breakdown = account_breakdown
+        unmanaged = []
+        unmanaged_total = 0.0
+        current_total = account_total
     if skip_for_same_pod:
         # Subtract any RUNNING pod sharing the resumed pod's name (defensive
         # vs duplicate-provision races; in the normal resume path the stopped
-        # pod isn't in `breakdown` at all because it's EXITED).
+        # pod isn't in `breakdown` at all because it's EXITED). Resumed pods
+        # are managed-named by construction, so they survive the managed-
+        # scope filter above and the subtraction works under both scopes.
         for name, rate in breakdown:
             if name == skip_for_same_pod:
                 current_total -= rate
@@ -1689,20 +1778,26 @@ def _assert_under_account_hourly_cap(
         # terminal, and the loop heartbeat already prints attempt/elapsed.
         raise RunPodInsufficientBalanceError(
             f"local pre-flight: projected ${projected:.2f}/hr (current "
-            f"${current_total:.2f} + this pod ${intended_rate:.2f}) "
-            f"exceeds cap ${cap:.2f}/hr"
+            f"${current_total:.2f} [{scope} scope] + this pod "
+            f"${intended_rate:.2f}) exceeds cap ${cap:.2f}/hr"
         )
     breakdown_lines = (
         "\n".join(f"    {name:<30} ${rate:6.2f}/hr" for name, rate in breakdown[:10])
-        or "    (no other RUNNING pods)"
+        or "    (no other RUNNING pods in scope)"
     )
     omitted = max(0, len(breakdown) - 10)
     if omitted:
         breakdown_lines += f"\n    ... and {omitted} more"
+    if unmanaged:
+        breakdown_lines += (
+            f"\n    (excluded: {len(unmanaged)} unmanaged team pod(s), "
+            f"${unmanaged_total:.2f}/hr — account-wide total ${account_total:.2f}/hr; "
+            f"EPM_RUNPOD_BURN_SCOPE=all to include)"
+        )
     raise SystemExit(
         f"\nRefusing to {verb} {pod_label}: would exceed the RunPod account "
         f"hourly spending cap.\n"
-        f"  Current burn   : ${current_total:6.2f}/hr (sum of RUNNING pods)\n"
+        f"  Current burn   : ${current_total:6.2f}/hr (RUNNING pods, {scope} scope)\n"
         f"  This pod adds  : ${intended_rate:6.2f}/hr "
         f"({intended_gpu_count}x {_short_gpu_label(intended_gpu_type)})\n"
         f"  Projected total: ${projected:6.2f}/hr\n"
@@ -1836,6 +1931,22 @@ def _provision_wait_register_bootstrap(
 
     rc = _bootstrap(name, intent_label=intent_label)
     if rc != 0:
+        # Retry EXACTLY ONCE (#1931): the incident class (pod-1773-regsteer) was a
+        # transient apt/network-class failure whose manual full re-run succeeded
+        # immediately — bootstrap_pod.sh's steps are re-run-safe (the documented
+        # recovery IS a full re-run). Never more than one retry: a second failure
+        # is a persistent fault that must fail loud, not be masked.
+        # Known benign edge: a first-run death between bootstrap_pod.sh's `git init`
+        # and `reset --hard FETCH_HEAD` makes the retry take the existing-repo
+        # branch — correct but slower (full-depth fetch).
+        print(
+            f"\n[bootstrap-retry] bootstrap exited rc={rc} on {name}; retrying once "
+            f"(transient apt/network-class failures recover on re-run — incident "
+            f"pod-1773-regsteer, task #1931)...",
+            file=sys.stderr,
+        )
+        rc = _bootstrap(name, intent_label=intent_label)
+    if rc != 0:
         # Suffixed pods (#1334) get a --name-suffix-scoped terminate hint so the
         # discard recipe can never suggest an issue-wide destroy that would take
         # a healthy sibling pod-<N>'s volume with it.
@@ -1848,9 +1959,148 @@ def _provision_wait_register_bootstrap(
             f"`python scripts/pod.py terminate --issue {args.issue}{suffix_hint}` to discard.",
             file=sys.stderr,
         )
+        # Machine-greppable fail-loud provision verdict (#1931): the last stderr
+        # line before exit, so a caller observing only captured output can tell
+        # a degraded pod from a ready one without reading the exit code.
+        print(f"BOOTSTRAP-FAILED pod={name} rc={rc}", file=sys.stderr)
         sys.exit(rc)
 
+    # Machine-greppable success verdict (#1931). Emitted on BOTH streams via one
+    # token literal (grep contract: the token appears exactly once in this file):
+    # stdout for callers reading captured stdout, stderr so a 2>&1-less stderr
+    # capture sees both outcomes stream-consistently with BOOTSTRAP-FAILED.
+    ok_verdict = f"BOOTSTRAP-OK pod={name}"
+    print(ok_verdict)
+    print(ok_verdict, file=sys.stderr)
     print(f"\nDone. SSH with: ssh {name}")
+
+
+def _authorized_key_fields(line: str) -> tuple[str, str] | None:
+    """(key_type, base64_blob) from an authorized_keys-style line; None for
+    blank/unparseable lines. Scans for the FIRST token starting with a known
+    key-type prefix (``ssh-``, ``ecdsa-``, ``sk-``) and takes it plus the next
+    token — tolerating options-prefixed lines (``from="..." ssh-ed25519 AAA c``)
+    — rather than blindly taking parts[0:2]. Comments are deliberately
+    excluded: the console/API copy of a key routinely carries a different
+    trailing comment than the VM file (#1655)."""
+    parts = line.split()
+    for i, tok in enumerate(parts[:-1]):
+        if tok.startswith(("ssh-", "ecdsa-", "sk-")):
+            return (tok, parts[i + 1])
+    return None
+
+
+def decide_account_key_preflight(
+    vm_pubkey: str | None,
+    account_pubkey: str | None,  # None == query failed (fail-open row)
+    *,
+    query_error: str = "",
+) -> tuple[str, str]:
+    """Pure decision core for the #1655 plan §4.1 matrix: (verdict, message),
+    verdict in {'ok', 'warn', 'fail'}. The decision keys on the PARSED local
+    identity ``vm_fields`` (None ⟺ no usable local key identity: file
+    missing/unreadable/non-``ssh-``/or <2 tokens — per-key membership is then
+    UNDECIDABLE). ``fail`` ONLY when ``vm_fields`` is None AND
+    ``account_pubkey`` is a real (non-None) blob parsing to ZERO keys — the
+    one state where a fresh pod provably seeds no authorized key while the
+    PUBLIC_KEY injection (b66910d748) is unavailable. A failed query
+    (``account_pubkey=None``) can never fail."""
+    vm_fields = _authorized_key_fields(vm_pubkey) if vm_pubkey else None
+    if account_pubkey is None:
+        # Fail-open rows (query error): 'warn' — loudest wording when
+        # vm_fields is None (cannot verify either path).
+        if vm_fields is None:
+            return (
+                "warn",
+                "account-key preflight SKIPPED: the RunPod account-key query failed "
+                f"({query_error or 'unknown error'}) AND the VM pubkey file is "
+                "missing/malformed ($RUNPOD_SSH_PUBKEY_FILE or ~/.ssh/id_ed25519.pub) "
+                "— cannot verify either SSH-seeding path; proceeding fail-open per the "
+                "guardrail contract. Restore the pubkey file and check the account list "
+                "via RunPod console -> Settings -> SSH Public Keys.",
+            )
+        return (
+            "warn",
+            "account-key preflight SKIPPED: the RunPod account-key query failed "
+            f"({query_error or 'unknown error'}); proceeding fail-open — an unreachable "
+            "API cannot disprove key presence. Fresh EPS pods stay reachable via the "
+            "PUBLIC_KEY boot injection (b66910d748).",
+        )
+    account_fields = {
+        f for line in account_pubkey.splitlines() if (f := _authorized_key_fields(line)) is not None
+    }
+    if vm_fields is not None:
+        if vm_fields in account_fields:
+            return (
+                "ok",
+                "team account list contains the VM key (provider-side seeding not "
+                "verifiable from the list; the 2026-07-23 mode is covered by the "
+                "PUBLIC_KEY injection, b66910d748).",
+            )
+        return (
+            "warn",
+            "VM key absent from the RunPod team account key list — the SHARED team "
+            "list is mutated by fellows-cluster onboarding (live hazard class). Fresh "
+            "EPS pods stay reachable via the PUBLIC_KEY boot injection, but "
+            "pre-injection pod resumes / non-EPS tooling may refuse SSH. Re-add via "
+            "RunPod console -> Settings -> SSH Public Keys.",
+        )
+    # vm_fields is None (no usable local key identity) + query succeeded.
+    if not account_fields:
+        return (
+            "fail",
+            "VM pubkey file missing/malformed (~/.ssh/id_ed25519.pub or "
+            "$RUNPOD_SSH_PUBKEY_FILE) — the PUBLIC_KEY boot injection (b66910d748) is "
+            "unavailable — AND the RunPod team account key list (myself.pubKey) parses "
+            "to ZERO keys. A fresh pod would seed NO authorized key and refuse SSH "
+            "(the publickey-denied signature of 2026-07-23). Remediation: restore the "
+            "pubkey file, and/or re-add keys via RunPod console -> Settings -> "
+            "SSH Public Keys (the API mutation updateUserSettings REPLACES the whole "
+            "shared list — do not script it).",
+        )
+    return (
+        "warn",
+        "VM pubkey file missing/malformed — the PUBLIC_KEY boot injection is "
+        "unavailable AND the VM key's membership in the team account list cannot be "
+        f"verified (no local key identity). A fresh pod is reachable only if one of "
+        f"the {len(account_fields)} listed account keys is ours. Restore the pubkey "
+        "file ($RUNPOD_SSH_PUBKEY_FILE or ~/.ssh/id_ed25519.pub).",
+    )
+
+
+def _account_key_preflight(pod_label: str) -> None:
+    """Provision-time account-key guardrail (#1655) — read-only, warn-mostly;
+    ``sys.exit(1)`` only on the both-paths-broken row of
+    :func:`decide_account_key_preflight`. NEVER mutates the shared team key
+    list (the remediation mutation is named in the FAIL message for a
+    deliberate human, never called). Kill switch:
+    ``EPM_SKIP_ACCOUNT_KEY_PREFLIGHT=1``."""
+    if os.environ.get("EPM_SKIP_ACCOUNT_KEY_PREFLIGHT") == "1":
+        print(
+            "  account-key preflight: SKIPPED (EPM_SKIP_ACCOUNT_KEY_PREFLIGHT=1)",
+            file=sys.stderr,
+        )
+        return
+    vm_key = read_vm_pubkey()
+    account: str | None
+    query_error = ""
+    try:
+        account = get_account_pubkey()
+    except (RunPodError, OSError, ValueError) as exc:
+        # Fact-check correction (#1655 plan v2): RunPodError alone is NOT the
+        # complete fail-open catch — json.loads at runpod_api._graphql_once's
+        # caller sits OUTSIDE its try (json.JSONDecodeError ⊂ ValueError
+        # escapes), and a socket read-timeout in resp.read() raises raw
+        # TimeoutError (⊂ OSError, not URLError). All three classes are
+        # transient and MUST fail open (acceptance criterion 4).
+        account, query_error = None, str(exc)
+    verdict, msg = decide_account_key_preflight(vm_key, account, query_error=query_error)
+    if verdict == "ok":
+        print(f"  account-key preflight: OK ({pod_label}) — {msg}")
+        return
+    print(f"  account-key preflight [{verdict.upper()}] ({pod_label}): {msg}", file=sys.stderr)
+    if verdict == "fail":
+        sys.exit(1)
 
 
 def cmd_provision(args: argparse.Namespace) -> None:
@@ -1910,6 +2160,14 @@ def cmd_provision(args: argparse.Namespace) -> None:
                 file=sys.stderr,
             )
             sys.exit(1)
+
+    # Account-key preflight (#1655): read-only guardrail BEFORE any create —
+    # covers the CPU branch, the GPU branch (wait + one-shot), and --dry-run
+    # (the idempotency exit(1) above already fires in dry-run; same precedent
+    # as the #1177 warn placement). Runs ONCE per provision invocation —
+    # deliberately NOT inside _wait_mode_preflight, which fires per
+    # capacity-retry tick.
+    _account_key_preflight(name)
 
     # CPU-only intent branch (#747): a cheap CPU intent (cpu-small / cpu-mid)
     # resolves to a RunPod CPU instance_id (deployCpuPod), NOT a GPU spec. This

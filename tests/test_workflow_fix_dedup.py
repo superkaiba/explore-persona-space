@@ -298,8 +298,8 @@ def test_is_workflow_fix_session_true_on_driver_injected_body(fake_repo):
 
     target = ".claude/skills/daily/SKILL.md"
     fp = tw.wf_fix_fingerprint("change text for fix-a", "bug text for fix-a")
-    body, changed = ensure_wf_fix_provenance("## Goal\n\nx\n", target, fp)
-    assert changed is True
+    body, actions = ensure_wf_fix_provenance("## Goal\n\nx\n", target, fp)
+    assert actions == ["target", "fp-inject"]
     tid = tw.create_task(
         tw.NewTaskRequest(
             kind="infra",
@@ -310,6 +310,40 @@ def test_is_workflow_fix_session_true_on_driver_injected_body(fake_repo):
     )
     assert tw.is_workflow_fix_session(tid) is True
     assert tw.is_open_workflow_fix_task(target, fp) == tid
+
+
+def test_is_open_workflow_fix_task_matches_reconciled_dual_value_body(fake_repo):
+    """#1580 integration pin: a body RECONCILED by the driver (anchored line rewritten
+    to the tag-authoritative fp, old fp preserved as a labeled substring) keeps BOTH
+    fingerprint values individually matchable by the REAL orchestrator-channel dedup
+    predicate — the tag value via the ``wf-fix-fp:<fp>`` tag, the superseded body
+    value via the ``fingerprint: <fp>`` body-substring OR-leg."""
+    _, tw = fake_repo
+    scripts_dir = Path(__file__).resolve().parents[1] / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    from daily_drive_filings import ensure_wf_fix_provenance
+
+    target = ".claude/skills/daily/SKILL.md"
+    tag_fp = tw.wf_fix_fingerprint("change text for fix-b", "bug text for fix-b")
+    old_fp = "44d3a4598f5c"
+    assert old_fp != tag_fp
+    pre = (
+        "## Goal\n\nx\n\n## Provenance\n\n"
+        f"- workflow_fix_target: {target}\n- fingerprint: {old_fp}\n"
+    )
+    body, actions = ensure_wf_fix_provenance(pre, target, tag_fp)
+    assert actions == ["fp-reconcile"]
+    tid = tw.create_task(
+        tw.NewTaskRequest(
+            kind="infra",
+            title="daily-fix: reconciled dual-value body",
+            body=body,
+            tags=["wf-fix", f"wf-fix-fp:{tag_fp}"],
+        )
+    )
+    assert tw.is_open_workflow_fix_task(target, tag_fp) == tid
+    assert tw.is_open_workflow_fix_task(target, old_fp) == tid
 
 
 # ─── Primary dedup key: title prefix round-trips through the registry ───────

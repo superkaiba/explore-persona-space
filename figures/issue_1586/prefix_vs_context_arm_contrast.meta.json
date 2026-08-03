@@ -1,0 +1,375 @@
+{
+  "commit": "3ff6f79f5d",
+  "created": "2026-07-23T08:34:47Z",
+  "figsize": [
+    9.5,
+    9.0
+  ],
+  "points": [
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": -2.4915213584899902,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": -3.549736976623535,
+      "y": 0.28,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": -1.4333057403564453,
+      "y": -0.28,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": -0.804375410079956,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": -1.63517427444458,
+      "y": 1.28,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 0.02642345428466797,
+      "y": 0.72,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": -0.026279926300048828,
+      "y": 2.9,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 4.100156784057617,
+      "y": 3.1799999999999997,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": -4.152716636657715,
+      "y": 2.62,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 0.13041681051254272,
+      "y": 3.9,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 2.289911150932312,
+      "y": 4.18,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": -2.0290775299072266,
+      "y": 3.62,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 12.537486553192139,
+      "y": 6.300000000000001,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 15.717560768127441,
+      "y": 6.580000000000001,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 9.357412338256836,
+      "y": 6.0200000000000005,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 7.03798246383667,
+      "y": 7.300000000000001,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 9.075417518615723,
+      "y": 7.580000000000001,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 5.000547409057617,
+      "y": 7.0200000000000005,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 12.548172950744629,
+      "y": 9.200000000000001,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 11.145642280578613,
+      "y": 9.48,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 13.950703620910645,
+      "y": 8.920000000000002,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 7.77666449546814,
+      "y": 10.200000000000001,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 6.901106357574463,
+      "y": 10.48,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 8.652222633361816,
+      "y": 9.920000000000002,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 11.6304292678833,
+      "y": 12.600000000000001,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 7.649251937866211,
+      "y": 12.88,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 15.61160659790039,
+      "y": 12.320000000000002,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 8.213816165924072,
+      "y": 13.600000000000001,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 5.462287902832031,
+      "y": 13.88,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 10.965344429016113,
+      "y": 13.320000000000002,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": -0.8049368858337402,
+      "y": 15.500000000000002,
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 1.3052797317504883,
+      "y": 15.780000000000001,
+      "_kind": "errorbar",
+      "_group": 31
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": -2.9151535034179688,
+      "y": 15.220000000000002,
+      "_kind": "errorbar",
+      "_group": 32
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": -0.2543766498565674,
+      "y": 16.5,
+      "_kind": "errorbar",
+      "_group": 33
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 1.1800527572631836,
+      "y": 16.78,
+      "_kind": "errorbar",
+      "_group": 34
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": -1.6888060569763184,
+      "y": 16.22,
+      "_kind": "errorbar",
+      "_group": 35
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": -0.18726134300231934,
+      "y": 18.9,
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": -0.27223682403564453,
+      "y": 19.18,
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": -0.10228586196899414,
+      "y": 18.619999999999997,
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 0.29787135124206543,
+      "y": 19.9,
+      "_kind": "errorbar",
+      "_group": 39
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 0.4309868812561035,
+      "y": 20.18,
+      "_kind": "errorbar",
+      "_group": 40
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 0.16475582122802734,
+      "y": 19.619999999999997,
+      "_kind": "errorbar",
+      "_group": 41
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": -0.8282575607299805,
+      "y": 21.799999999999997,
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 1.3982863426208496,
+      "y": 22.08,
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": -3.0548014640808105,
+      "y": 21.519999999999996,
+      "_kind": "errorbar",
+      "_group": 44
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": -0.8421285152435303,
+      "y": 22.799999999999997,
+      "_kind": "errorbar",
+      "_group": 45
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": 0.5656313896179199,
+      "y": 23.08,
+      "_kind": "errorbar",
+      "_group": 46
+    },
+    {
+      "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)": -2.2498884201049805,
+      "y": 22.519999999999996,
+      "_kind": "errorbar",
+      "_group": 47
+    }
+  ],
+  "n_series": 48,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Prefix-arm vs context-arm method contrast (full fine-tune minus LoRA)\n(diamond = seed-pooled; labeled open circles = per-seed cells)",
+        "xlabel": "Mean activation-shift norm difference, full fine-tune minus LoRA\n(own-text capture, registered layer; 95% paired cluster-bootstrap CI, 2000 draws)",
+        "legend_labels": [
+          "prefix arm",
+          "context arm"
+        ],
+        "annotations": [
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137",
+          "s42",
+          "s137"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20"
+        ],
+        "yticklabels": [
+          "sycophancy, contrastive \u2014 prefix",
+          "sycophancy, contrastive \u2014 context",
+          "sycophancy, positive-only \u2014 prefix",
+          "sycophancy, positive-only \u2014 context",
+          "impolite, contrastive \u2014 prefix",
+          "impolite, contrastive \u2014 context",
+          "impolite, positive-only \u2014 prefix",
+          "impolite, positive-only \u2014 context",
+          "casual style, contrastive \u2014 prefix",
+          "casual style, contrastive \u2014 context",
+          "casual style, positive-only \u2014 prefix",
+          "casual style, positive-only \u2014 context",
+          "marker, contrastive \u2014 prefix",
+          "marker, contrastive \u2014 context",
+          "marker, positive-only \u2014 prefix",
+          "marker, positive-only \u2014 context"
+        ]
+      }
+    ]
+  }
+}

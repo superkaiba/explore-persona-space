@@ -79,6 +79,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | 12 Re-cost on power-raising recommendations (same round) | critic.md Statistics 12 | v2-owner: statistics-critic |
 | 13 OOD generalization folds (eval set fully disjoint from training) | critic.md Statistics 13 | v2-owner: statistics-critic |
 | 14 Fail-loud acceptance claims backed by committed tests | critic.md Statistics 14 | v2-owner: statistics-critic |
+| 15 Mapping-baselines pair (identity+bias baseline + kNN retrieval) | critic.md Statistics 15 | v2-owner: statistics-critic |
 
 ## C. Monolithic `critic` — Alternative Explanations lens items
 
@@ -114,7 +115,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | Step 2 fit-loop batched-helper naming (unconditional verdict line) | code-reviewer.md Step 2 | v2-owner: efficiency-critic |
 | Step 3 surrounding code + reachability | code-reviewer.md Step 3 | v2-owner: code-correctness-critic |
 | Step 3.5 cached-artifact coverage (`cached-artifact-coverage-unverified`) | code-reviewer.md Step 3.5 | v2-owner: code-correctness-critic |
-| Step 3.6 long-loop restartability | code-reviewer.md Step 3.6 | v2-owner: efficiency-critic |
+| Step 3.6 long-loop restartability + progress-line liveness | code-reviewer.md Step 3.6 | v2-owner: efficiency-critic |
 | Step 3.7 bug-class sibling sweep | code-reviewer.md Step 3.7 | v2-owner: code-correctness-critic |
 | Step 3.8 seam-stubbed production-body verification | code-reviewer.md Step 3.8 | v2-owner: code-correctness-critic |
 | Step 4 run / verify tests | code-reviewer.md Step 4 | v2-owner: code-correctness-critic |
@@ -152,6 +153,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | persona-vectors-recipe | LESSONS.md | v2-owner: methodology-baselines-critic |
 | plan-compute-sizing | LESSONS.md | v2-owner: efficiency-critic |
 | planner-section-reference | LESSONS.md | v2-owner: planner |
+| pm-audit-reference | LESSONS.md | v2-owner: research-pm agent (PM runtime persona; workflow-version-independent) |
 | pod-config | LESSONS.md | v2-owner: pod scripts + experimenter (runtime unchanged) |
 | pod-side-reporting | LESSONS.md | v2-owner: code-correctness-critic + experiment-implementer |
 | replication-fidelity | LESSONS.md | v2-owner: methodology-baselines-critic |
@@ -179,7 +181,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | interpretation-critic 7 lenses (overclaims / surprising patterns / alternatives / calibration / missing context / plot-prose match / raw-text plausibility) | interpretation-critic.md | retired: v2 agents do not interpret; the report-verifier interpretivity rubric (hypothesis-to-test allowed / asserted conclusion banned) + the plotter's many views + Thomas's TLDR replace it |
 | clean-result-critic markdown-structure lenses (title / v4-structure / figure three-beat / Takeaways quality / footer / voice / conciseness / mentor-title) | clean-result-critic.md lenses 1-9,12,14 | retired: the report-v1 template + verify_report.py + methodology-critic replace the markdown clean-result body |
 | humanize-on-results (prose TLDR normalization) | /issue humanize loop | retired: v2 agents write no prose TLDR; Thomas writes the TLDR (never lexicon/interpretivity-checked) |
-| methodology-doc export (docs/methodology/issue_<N>.md) | /issue Step 9a-quater | retired: the report's `## Methodology:` section IS the methodology reference |
+| methodology-doc export (docs/methodology/issue_<N>.md) | /issue Step 9a-quater | retired: the report's `## Methodology (shared)` section (+ per-result `**Methodology**` blocks) IS the methodology reference |
 
 ## G. Known GAPs (no v2 owner yet — state what must be built)
 

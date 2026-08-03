@@ -1,0 +1,50 @@
+{
+  "commit": "e857c9148c",
+  "created": "2026-07-29T00:30:32Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "induced (PRIMARY)",
+      "pooled R^2": 0.9258443713188171,
+      "_kind": "bar"
+    },
+    {
+      "category": "independently fit\n(SECONDARY, n<<d)",
+      "pooled R^2": 0.9295879602432251,
+      "_kind": "bar"
+    },
+    {
+      "category": "per-row context map",
+      "pooled R^2": 0.8887821435928345,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 3,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "cell_inst_own: averaged-grain reads",
+        "ylabel": "pooled R^2",
+        "xticklabels": [
+          "induced (PRIMARY)",
+          "independently fit\n(SECONDARY, n<<d)",
+          "per-row context map"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+ "description": "Analyzer-recomputed Tier-B untruncated (full 514-feature) ridge held-out interaction R^2 for the primary cell (context_L19_ridge, k=256, log space), per fold. repro_max_abs_dev = max abs deviation of the recomputed rank-truncated curve vs the committed tierb/units.jsonl obs_curve (0.0 = exact reproduction of the committed fits). GCV pinned lambda at the grid top (1e4) on all committed Tier-B fits and on the null draws (median 1e4), so this untruncated endpoint is conditional on that lambda-grid ceiling; rank truncation supplies the regularization the grid could not.",
+ "provenance": "task #1945 analyzer recompute from staged data/issue_1482/twoway_stage matrices with the run's seeds (run code scripts/issue1945_bcv_interaction.py at f7dbe1cb9a); persisted per interp-critique r1 request 5 (was /tmp/issue1945_tierb_fullridge_primary.json)",
+ "folds": {
+  "0": {
+   "repro_max_abs_dev": 0.0,
+   "full_ridge_r2_int": -0.004618156802509654,
+   "truncated_max": 0.0009032910731215372
+  },
+  "1": {
+   "repro_max_abs_dev": 0.0,
+   "full_ridge_r2_int": -0.0045892249033487875,
+   "truncated_max": 0.0009923728414547963
+  }
+ }
+}

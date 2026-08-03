@@ -1,0 +1,31 @@
+{
+  "metadata": {
+    "git_commit": "6ea044af6dc04467541186ec147d39fa1e788787",
+    "generated_utc": "2026-07-31T23:54:30.887865+00:00",
+    "python": "3.11.15",
+    "numpy": "2.2.6",
+    "scipy": "1.17.1",
+    "torch": "2.8.0+cu128",
+    "host": "cia-benchmark-vm",
+    "seed": 1945,
+    "parent_seed": 1482,
+    "b_draws": 8,
+    "stage_dir": "/home/thomasjiralerspong/explore-persona-space/data/issue_1482/twoway_stage",
+    "smoke": true,
+    "ru_maxrss_mb": 1333.96875
+  },
+  "recipe": "rows = sqrt(floor_i/d) * N(0, I_k) (parent isotropy assumption); share = vc_e(synth) / vc_e(observed subsample R), matched (n, k) geometry",
+  "per_cell": {
+    "context_L19_ridge": {
+      "floor_share_of_interaction": {
+        "raw": 0.00012577695205967794,
+        "normalized": 0.0089047634217118
+      },
+      "log_space_synth_note": "log-space synthetic share undefined \u2014 zero-valued K-resample floors produce identically-zero synthetic rows (log(0)); the raw + normalized shares carry the netting read",
+      "n_sub_per_fold": [
+        955,
+        982
+      ]
+    }
+  }
+}

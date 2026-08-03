@@ -1,0 +1,113 @@
+{
+ "cells_requested": [
+  "cell_inst_own",
+  "cell_pre_own"
+ ],
+ "cells_kept": [
+  "cell_inst_own",
+  "cell_pre_own"
+ ],
+ "gates": {
+  "cell_inst_own": {
+   "fve": 0.8122291397911054,
+   "l0": 59.68864370721096,
+   "pass": true
+  },
+  "cell_pre_own": {
+   "fve": 0.8002693838698677,
+   "l0": 67.85816479211849,
+   "pass": true
+  }
+ },
+ "gamma_layer19": {
+  "cell_inst_own": 0.654607355594635,
+  "cell_pre_own": 0.6766270995140076
+ },
+ "sink_map": {
+  "cell_inst_own": {
+   "gamma_layer19_all_tokens": 0.15771334406970444,
+   "exclusion_source": "sink_map",
+   "min_occ_effective": 20,
+   "n_sink_positions": 1,
+   "n_sink_token_ids": 0
+  },
+  "cell_pre_own": {
+   "gamma_layer19_all_tokens": 0.15082538785688754,
+   "exclusion_source": "sink_map",
+   "min_occ_effective": 20,
+   "n_sink_positions": 1,
+   "n_sink_token_ids": 0
+  }
+ },
+ "headline": null,
+ "judged_axes": "JUDGED-LABEL FREEZE (2026-07-28): judged feature-label axes are DEFERRED to the #1773-instrumented follow-up round \u2014 zero judge API calls this round (plan v14 Phase C)",
+ "evidence": {
+  "cell_inst_own": {
+   "n_union": 493,
+   "set_sizes": {
+    "tail_prefix": 100,
+    "ctrl_query_tail": 100,
+    "r2_ctx_top": 50,
+    "r2_ctx_bottom": 50,
+    "r2_pre_top": 50,
+    "r2_pre_bottom": 50,
+    "ctrl_activity_matched": 100,
+    "rb_cos_tail_raw": 50,
+    "rb_cos_tail_proj": 50
+   },
+   "unembedding_key": "lm_head.weight"
+  },
+  "cell_pre_own": {
+   "n_union": 272,
+   "set_sizes": {
+    "tail_prefix": 100,
+    "ctrl_query_tail": 100,
+    "rb_cos_tail_raw": 50,
+    "rb_cos_tail_proj": 50
+   },
+   "unembedding_key": "lm_head.weight"
+  }
+ },
+ "rb_alignment_headline": {
+  "cell_inst_own": {
+   "obs_max_over_traits": {
+    "p50": 0.030835608020424843,
+    "p95": 0.07992947846651077,
+    "p99": 0.1272459179162979,
+    "max": 0.4242430329322815
+   },
+   "null_p95_of_per_draw_max": 0.0401611328125
+  },
+  "cell_pre_own": {
+   "obs_max_over_traits": {
+    "p50": 0.03173470497131348,
+    "p95": 0.08573062717914581,
+    "p99": 0.14203289151191711,
+    "max": 0.4444220960140228
+   },
+   "null_p95_of_per_draw_max": 0.0401611328125
+  }
+ },
+ "wall_s": 922.6090850830078,
+ "args": {
+  "cells": "cell_inst_own,cell_pre_own",
+  "seed": "0",
+  "hf_subdir": "crossed_core_sae",
+  "smoke_prefixes": "0",
+  "smoke_queries": "0",
+  "null_draws": "200"
+ },
+ "repro": {
+  "git_commit": "",
+  "torch": "2.8.0+cu128",
+  "transformers": "4.57.6",
+  "numpy": "2.2.6",
+  "timestamp_utc": "2026-07-29T00:23:41Z",
+  "corpus_rev": "e590170619e7691c1a95c7b1bb20bda5fd4065ad",
+  "rb_rev": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "sae": {
+   "k": 64,
+   "layer": 19
+  }
+ }
+}

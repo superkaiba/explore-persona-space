@@ -10,3 +10,9 @@ type: feedback
 3. If Claude's verification list is only dry-run probes, that's a verification gap, not evidence. FAIL — torch reads CVD lazily at first CUDA-context creation, the argparse-time write wins, all N shards pile on GPU 0 (surfaces only at production launch).
 
 This is the `train/sft.py:477` `+gpu_id` CLAUDE.md lesson un-generalized to NEW dispatchers. Origin: #488 r3 (`i488_phase1_predictors.py:540`). Companions: [[feedback_claude_trusts_green_tests_over_verifier_semantics]]; [[feedback_claude_synthetic_fixture_smoke_masks_args_grid_bug]].
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Claude DRY_RUN smoke misses CUDA init](feedback_claude_dry_run_smoke_misses_cuda_init.md) — dry-run probes never exercise CUDA init; unconditional `os.environ["CUDA_VISIBLE_DEVICES"]=` clobbers the shell's CVD, all shards pile on GPU 0. #488 r3.

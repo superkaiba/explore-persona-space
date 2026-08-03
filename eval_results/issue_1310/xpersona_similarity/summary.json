@@ -1,0 +1,63 @@
+{
+  "metadata": {
+    "git_commit": "3ba9d8f7d2474a4f66160561adb3205591fa8c1c",
+    "timestamp": "2026-07-22T07:32:14Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1310_xpersona_similarity.py",
+    "issue": 931
+  },
+  "models": [
+    "base",
+    "instruct"
+  ],
+  "personas": [
+    "Wren",
+    "HELIOS",
+    "Dana",
+    "Vex"
+  ],
+  "headline_layer": 19,
+  "gcv_dof_cap": 0.9,
+  "equality_gate_all_pass": true,
+  "per_model": {
+    "base": {
+      "equality_gate_worst_abs_delta": 0.0,
+      "within_r2_l19_mean": 0.18609529682855552,
+      "within_r2_l19_by_persona": {
+        "Wren": 0.19648846768114947,
+        "HELIOS": 0.1974782359913172,
+        "Dana": 0.21775009509535348,
+        "Vex": 0.13266438854640195
+      },
+      "offdiag_transfer_r2_l19_mean": -1.1027607860255981,
+      "offdiag_transfer_frac_of_within_mean": -5.925785362762506,
+      "operator_aligned_cosine_l19_mean": 0.989607688458944,
+      "operator_raw_cosine_l19_mean": 0.2265272016866098,
+      "operator_rotation_null_p975_mean": 0.0004229238652355041,
+      "reparam_recovery_l19_mean": 0.12638933418123358,
+      "reparam_ceiling_l19_mean": 0.1860952968285555,
+      "reparam_null_l19_mean": -0.020864378845902583,
+      "reparam_recovery_frac_of_ceiling_mean": 0.6747722677577389
+    },
+    "instruct": {
+      "equality_gate_worst_abs_delta": 0.0,
+      "within_r2_l19_mean": 0.3293383713484798,
+      "within_r2_l19_by_persona": {
+        "Wren": 0.3548299086061537,
+        "HELIOS": 0.40107670413358276,
+        "Dana": 0.3285635376004241,
+        "Vex": 0.2328833350537587
+      },
+      "offdiag_transfer_r2_l19_mean": -1.5568889050948609,
+      "offdiag_transfer_frac_of_within_mean": -4.727323144036212,
+      "operator_aligned_cosine_l19_mean": 0.9894309323705256,
+      "operator_raw_cosine_l19_mean": 0.31735166287946515,
+      "operator_rotation_null_p975_mean": 0.0004296533150109704,
+      "reparam_recovery_l19_mean": 0.29978417933376916,
+      "reparam_ceiling_l19_mean": 0.3293383713484798,
+      "reparam_null_l19_mean": -0.021791094763329483,
+      "reparam_recovery_frac_of_ceiling_mean": 0.9060079580935612
+    }
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "cell_id": "M_instruct_user_chat",
+  "n": 2000,
+  "n_train_approx": 1600,
+  "d_model": 3584,
+  "degenerate_regime": true,
+  "selectors": {
+    "gcv_unguarded": {
+      "r2": -1.4272499394226625,
+      "lambdas": [
+        0.01,
+        0.01,
+        0.01,
+        0.01,
+        0.01
+      ],
+      "lambda_geomean": 0.010000000000000004,
+      "lambda_at_grid_floor_frac": 1.0,
+      "wall_s": 4.3
+    },
+    "gcv_guarded": {
+      "r2": 0.24799153008959507,
+      "lambdas": [
+        10000.0,
+        10000.0,
+        10000.0,
+        10000.0,
+        10000.0
+      ],
+      "lambda_geomean": 10000.00000000001,
+      "lambda_at_grid_floor_frac": 0.0,
+      "wall_s": 4.3
+    },
+    "inner_group_cv": {
+      "r2": 0.24799153008959507,
+      "lambdas": [
+        10000.0,
+        10000.0,
+        10000.0,
+        10000.0,
+        10000.0
+      ],
+      "lambda_geomean": 10000.00000000001,
+      "lambda_at_grid_floor_frac": 0.0,
+      "wall_s": 15.5
+    }
+  },
+  "wall_s": 98.1,
+  "metadata": {
+    "script": "scripts/issue825_selector_audit.py",
+    "issue": 825,
+    "git_commit": "628d7e8d8f754c610f473d866140d0873e664bfb",
+    "headline_layer": 19,
+    "n_folds": 5,
+    "fold_seed": 0,
+    "dof_cap": 0.9,
+    "d_model": 3584,
+    "selector_definitions": {
+      "gcv_unguarded": "GCV_DOF_CAP=None, lambda_selection=gcv (committed #825 default)",
+      "gcv_guarded": "GCV_DOF_CAP=0.9, lambda_selection=gcv (registered mitigation)",
+      "inner_group_cv": "lambda_selection=inner-group-cv (summed inner-fold held-out RSS; never evaluates the GCV dof formula -> independent of GCV_DOF_CAP)"
+    }
+  }
+}

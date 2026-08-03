@@ -7,7 +7,7 @@ Phase 1.5.0 BEFORE the fact-checker + critic ensemble spawn. The plan-side
 sibling of ``scripts/verify_task_body.py`` (clean-result bodies): pure
 regex / string presence checks, NO LLM calls, no network, no side effects
 (the orchestrator running the adversarial-planner skill posts the
-``epm:plan-verify`` marker — never this script). Four disclosed read-only
+``epm:plan-verify`` marker — never this script). Six disclosed read-only
 exceptions: check 31, when its trigger fires and a pin-form satisfier names
 a ``tests/`` path, existence-``stat()``s the named pin-test file(s) under
 the repo root — read-only, no import, no network (#1557); check 34, when
@@ -16,11 +16,19 @@ the ratcheted workflow files the plan names and lazily imports
 ``scripts/workflow_lint.py`` for their size-cap constants — read-only, no
 writes, still no network; check 37, when its trigger fires, reads
 ``scripts/workflow_lint.py`` SOURCE TEXT to derive main()'s no-flags
-dispatch set — read-only, no import, no network; and check 41, when its
+dispatch set — read-only, no import, no network; check 41, when its
 trigger fires and the cheaper satisfiers leave survivors, path-loads
 ``scripts/select_step9c_tests.py`` and runs its pure selection functions
 over the plan's declared touched files — file reads under ``tests/``, no
-git, no network; measured ~0.7-0.9 s on the live tree.
+git, no network; check 42, when its trigger fires, invokes
+``git rev-parse --verify --quiet '<sha>^{commit}'`` per unique cited SHA
+— read-only, no network (git-local object DB read; #1683/#1414;
+retries once on a brief ``.git/index.lock`` collision, SKIPs on git
+unavailability); and check 44, when its trigger fires, pipes the plan's
+declared-committed paths through one batched
+``git check-ignore -v --stdin`` — read-only, no network (index-aware
+git-local ignore-rule + index read; #1900/#958/#734; same retry/SKIP
+fail-open contract as check 42); measured ~0.7-0.9 s on the live tree.
 
 Check catalog (id — classification — kind scope)
 ------------------------------------------------
@@ -43,8 +51,10 @@ Check catalog (id — classification — kind scope)
   c9  conditions/cells + seeds   WARN-only                 experiment only
   c10 marker-recipe ack          WARN-only, conditional    experiment only
   c11 dry-run test coverage      WARN-only, conditional    infra + batch only
-  c12 battery multiplier +       FAIL (experiment) / WARN  experiment +
-      batched commitment         (analysis), conditional   analysis
+  c12 battery multiplier +       battery: FAIL (experiment) experiment +
+      batched commitment         / WARN (analysis); screen  analysis
+      (+ pool-quadratic screens) class: WARN (both kinds);
+                                 conditional
   c13 empirical-null gate        FAIL (experiment) / WARN  experiment +
       p-floor attainability      (analysis), conditional   analysis
   c14 hypothesis branch         WARN-only, conditional    experiment +
@@ -102,12 +112,21 @@ Check catalog (id — classification — kind scope)
       persisted filename
   c41 regression-anchor named   WARN-only, conditional    infra + batch only
       test executed or gate-selected
+  c42 cited commit SHA          FAIL, conditional         all kinds
+      resolves
+  c43 /workspace sentinels vs   WARN-only, conditional    experiment only
+      unpinned auto lane
+  c44 declared-committed paths  WARN-only, conditional    all kinds
+      not gitignored
+  c45 change DV vs base-side    WARN-only, conditional    experiment only
+      predictor companion
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40, 41) also SKIP when their content trigger does not fire.
+37, 38, 39, 40, 41, 42, 43, 44, 45) also SKIP when their content trigger does
+not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -127,11 +146,16 @@ labeled-line forms):
   - ``N/A — no model training`` / ``N/A — no training hyperparameters``
     (check 1)
   - ``N/A — no behavioral construct`` (check 2)
-  - ``N/A — not a behavior-implantation`` (check 4)
+  - ``N/A — not a behavior-implantation`` /
+    ``N/A — no behavior implantation`` (check 4 — the alias reads more
+    naturally for measurement/geometry plans, #1689/#1700)
   - ``N/A — no artifact reuse`` (check 6)
   - ``N/A — not a replication`` (check 7)
   - ``N/A — no dry-run smoke`` (check 11)
-  - ``N/A — no draw battery`` (check 12; also check 32's battery branch)
+  - ``N/A — no draw battery`` (check 12, battery-class windows ONLY; also
+    check 32's battery branch)
+  - ``N/A — no pool screen`` (check 12, screen-class windows ONLY — the
+    class-scoped sibling of ``no draw battery``; #1901)
   - ``N/A — no empirical-null gate`` (check 13)
   - ``N/A — no fail-loud acceptance claim`` /
     ``N/A — fail-loud claim not test-backable`` (check 15)
@@ -168,9 +192,30 @@ labeled-line forms):
   - ``N/A — no revision-pinned reuse`` (check 35)
   - ``N/A — no numeric containment claims`` (check 36)
   - ``N/A — no no-flags bundling claim`` (check 37)
+  - ``N/A — not bundled into no-flags`` (check 37's proposed-new-check
+    pin-test arm)
   - ``N/A — no exit-0 acceptance criterion`` (check 38)
   - ``N/A — no off-pod phase`` (check 39)
   - ``N/A — no regression anchors`` (check 41)
+  - ``no sentinel dependence — auto-safe`` (check 43 — the
+    plan-compute-sizing.md rule's own escape phrase, standalone WITHOUT the
+    N/A prefix; hyphen / en-dash / em-dash variants tolerated; the
+    ``N/A — no sentinel dependence`` form is also accepted via the shared
+    helper. A genuinely sentinel-signaling plan instead pins a
+    drained lane: ``backend: runpod`` / ``backend: fellows`` — the fellows
+    drain landed at #1898; ``backend: gcp`` is REFUSED as of #2028)
+  - ``N/A — no committed outputs`` (check 44 — the commit-to-git vocabulary
+    is incidental or quotes a sibling/incident, not this plan's own declared
+    committed outputs; a plan genuinely committing outputs under a
+    gitignore-matched path instead notes the force-add + staged-index
+    verification in the same section as the declaration, or relocates the
+    output out of the ignored root)
+  - ``N/A — no base-side predictor vs change DV`` (check 45 — the
+    change-DV / base-side-predictor vocabulary is incidental or quotes a
+    sibling's design, not this plan's own predictor race; a plan genuinely
+    racing a base-side predictor against a trained-base change DV instead
+    registers a level/change companion column AND states the winner sign
+    convention — signed Spearman rho vs |rho|)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -212,7 +257,9 @@ import importlib.util
 import json
 import math
 import re
+import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from fractions import Fraction
@@ -737,6 +784,19 @@ def check_data_tier(plan: str, kind: str) -> CheckResult:
 # ─── Check 4 — contrastive negatives (WARN-only, conditional) ──────────────
 
 
+def _c4_na_escape_declared(plan: str) -> bool:
+    """Standalone c4 escape — accepts BOTH the canonical
+    ``N/A — not a behavior-implantation`` AND the measurement-plan alias
+    ``N/A — no behavior implantation`` (#1689/#1700; measurement/geometry
+    plans read awkwardly under the "not a behavior-implantation" wording,
+    so the alias makes the escape naturally discoverable). Both forms route
+    through ``_standalone_na_declared`` so the same anti-paste discipline
+    (standalone line, unwrapped, non-fenced) applies."""
+    return _standalone_na_declared(
+        plan, r"not a behavior[- ]implantation"
+    ) or _standalone_na_declared(plan, r"no behavior[- ]implantation")
+
+
 def check_contrastive_negatives(plan: str, kind: str) -> CheckResult:
     """Behavior-implantation plans must name a contrastive-negative set or
     one of the two named exemptions (.claude/rules/contrastive-negatives.md).
@@ -757,11 +817,12 @@ def check_contrastive_negatives(plan: str, kind: str) -> CheckResult:
             name,
             "not detected as behavior-implantation (no implant/leakage-marker vocabulary)",
         )
-    if _standalone_na_declared(plan, r"not a behavior[- ]implantation"):
+    if _c4_na_escape_declared(plan):
         return _pass(
             cid,
             name,
-            "explicit N/A declared on its own line, unwrapped (not a behavior-implantation)",
+            "explicit N/A declared on its own line, unwrapped "
+            "(not a behavior-implantation | no behavior implantation)",
         )
     if re.search(r"(?i)contrastive[- ]negatives?", text):
         lowered = text.lower()
@@ -788,7 +849,8 @@ def check_contrastive_negatives(plan: str, kind: str) -> CheckResult:
         "behavior-implantation vocabulary detected but no contrastive-negative set or named "
         "exemption — .claude/rules/contrastive-negatives.md (panel + ratio + disjointness); "
         "Methodology critic must gate this; or declare `N/A — not a behavior-implantation` "
-        "on its own line, unwrapped (no backticks/quotes)",
+        "(or `N/A — no behavior implantation` for measurement/geometry plans) on its own "
+        "line, unwrapped (no backticks/quotes)",
     )
 
 
@@ -987,12 +1049,35 @@ def _exempt_tldr_kill_pass(
     cid, name, kind, succ_solid, kill_solid, kill_tldr_hits, carrier_ok, section_name
 ):
     """PASS result for the #1291 exempt-kind acceptance — a kind-exempt plan
-    whose kill family is satisfied by a solid §0.0/TL;DR change-my-mind hit
-    (success family solid, no solid kill outside the TL;DR); None when the
-    acceptance does not apply (check_success_kill falls through to its
-    missing-family verdicts)."""
+    whose kill family is satisfied EITHER by (a) a solid §0.0/TL;DR
+    change-my-mind hit, OR (b) a solid ``acceptance criteri`` success anchor
+    whose enclosing section itself names acceptance criteria (#1668/#1700 —
+    for an infra fix the acceptance-criteria BLOCK IS the revert criterion,
+    even when it lives under §1 Goal / Motivation instead of a dedicated
+    ``## 7. Decision gates, success and kill criteria`` heading).
+    (Success family solid, no solid kill outside the TL;DR.) None when
+    the acceptance does not apply (``check_success_kill`` falls through to
+    its missing-family verdicts). ``kind: experiment`` is BYTE-UNCHANGED:
+    the guard on ``kind not in EXEMPT_KINDS`` gates both branches."""
     if kind not in EXEMPT_KINDS or not succ_solid or kill_solid:
         return None
+    # (b) Acceptance-criteria-block branch (#1668/#1700): iterate ALL solid
+    # success hits — the FIRST hit may sit under a non-acceptance section
+    # (e.g. §2 Design) while a later hit lands under the true acceptance
+    # heading. Fail-closed to the (a) TL;DR path when no hit's enclosing
+    # section names acceptance criteria.
+    for si, sa in succ_solid:
+        sec = section_name(si).lower()
+        if "acceptance criteri" in sec:
+            return _pass(
+                cid,
+                name,
+                f"success anchor {sa!r} in §{section_name(si)!r} — the acceptance-criteria "
+                "block SATISFIES the kill family for kind-exempt plans (the block IS the "
+                "revert criterion for a code/infra change; kind: experiment still requires "
+                "kill criteria outside the TL;DR — #1668/#1700, extending #1291)",
+            )
+    # (a) EXISTING: §0.0 TL;DR change-my-mind path (unchanged).
     tldr_solid = [(i, a) for i, a in kill_tldr_hits if carrier_ok(i)]
     if not tldr_solid:
         return None
@@ -1242,12 +1327,62 @@ def check_dryrun_test_coverage(plan: str, kind: str) -> CheckResult:
 # The count arm's lookbehind excludes range/scale-dash-preceded numbers —
 # "graded 0-100 draws" is judge-scale vocabulary, not a battery (calibration
 # false-FAIL on #779 v1); "1000 draws" after whitespace still triggers.
-_BATTERY_TRIGGER_RE = re.compile(
-    r"(?i)\b(null[- ]?(draws?|batter(y|ies))"
+# The two trigger alternations are kept as SOURCE STRINGS so c12 can TYPE
+# each trigger line by class (battery vs screen \u2014 evidence never crosses
+# class, the #1901 critic MF1) while both existing consumers (c12's trigger
+# windows, c32's battery-row classification at check_fit_basis_grounding)
+# keep reading the compiled UNION _BATTERY_TRIGGER_RE with no call-site
+# change. A line matching BOTH alternations types battery (stricter
+# evidence \u2014 the c32 both-families precedent). Screen tokens (#1901): the
+# rule's POOL-SCALE PILOTS clause names pool-quadratic candidate screens as
+# a covered ~pool-squared kernel class; #1901's screen shipped serial
+# (12,339 us/row, ~3.3 h realized vs the 1.0 h sub-budget) past a green
+# c12. Compound tokens by design (dedupe/near-dupe require an adjacent
+# screen/scan/pass noun) so bare data-prep prose ("deduplicated the prompt
+# list") never triggers; CamelCase helper names ("NearDupeGate") carry no
+# `[- ]` separator and do not match. `pairwise similarity` starts bare per
+# the #1967 task-body sketch.
+# CALIBRATION (2026-08-03, #1967): 3,420 persisted plans (tasks/*/*/plans/
+# v*.md), c12 + c32 pre/post, task-kind-resolved. Pre-tightening: 24 c12
+# verdict flips, 0 c32 flips. Adjudication + tuning decisions:
+#   (1) participle exclusion — screen(?!ed)/scan(?!ned)/filter(?!ed):
+#       "near-dupe screened (…) against the 1,400 pinned targets" is the
+#       banked-corpus DESCRIPTION shape (#1768 v1-v5 all-participle false
+#       flips), while own-phase forms are noun/verb-present ("train-pool
+#       near-dupe screen:", "near-dupe-screens the remaining train pool").
+#   (2) `pass` noun DROPPED from both alternations — corpus hits were
+#       absence-descriptions ("whose JSON records NO near-dupe pass",
+#       #1775 v2-v5) and linear data prep ("parse-and-dedupe pass", #448);
+#       no true positive needed it (under-trigger fails safe).
+#   (3) bare `pairwise[- ]similarity` KEPT — 0 corpus flips (6 mentions:
+#       fenced regex specs, kind-exempt infra plans, or verdict-unchanged).
+#   (4) screen-class polarity dropped FAIL->WARN per plan §8: the residual
+#       noun-form banked-screen refs ("banked near-dupe screen: 5-gram
+#       Jaccard 0.8" #1901 v1-v3; "n1m near-dupe screen covered val/test
+#       only" #779 v7-v10) are token-inseparable from the true own-phase
+#       noun form ("train-pool near-dupe screen: build NearDupeGate"), so
+#       no tightening zeroes false FAILs while preserving #1901 recall.
+#       Batteries keep FAIL. Post-tightening flip table (re-sweep at 3,423
+#       plans — the live corpus grew mid-calibration): 14 flips, all
+#       ->WARN — 7 true positives (#1738 v1-v4 own Phase-0 screen, the
+#       POOL-SCALE incident; #1901 v5-v7 own transposed screen, the recall
+#       demonstration) + 7 residual banked-ref WARNs (#1901 v1-v3, #779
+#       v7-v10); 0 new FAILs, 0 c32 flips; #1768/#1775/#448 no longer flip.
+_BATTERY_ALTERNATION = (
+    r"null[- ]?(draws?|batter(y|ies))"
     r"|permutation[- ](tests?|batter(y|ies)|nulls?|draws?)"
     r"|n_(draws|perms)\b"
-    r"|(?<![\d\u2013\u2014-])\d{3,}\s+(null[- ])?(draws|permutations|resamples))"
+    r"|(?<![\d\u2013\u2014-])\d{3,}\s+(null[- ])?(draws|permutations|resamples)"
 )
+_SCREEN_ALTERNATION = (
+    r"near[- ]dup(?:e|licate)?s?[- ](?:screen(?!ed)|scan(?!ned)|filter(?!ed))"
+    r"|dedup(?:e|lication)?[- ](?:screen(?!ed)|scan(?!ned))"
+    r"|pairwise[- ]similarity"
+    r"|similarity[- ]screen(?!ed)"
+)
+_BATTERY_CLASS_RE = re.compile(rf"(?i)\b(?:{_BATTERY_ALTERNATION})")
+_SCREEN_TRIGGER_RE = re.compile(rf"(?i)\b(?:{_SCREEN_ALTERNATION})")
+_BATTERY_TRIGGER_RE = re.compile(rf"(?i)\b(?:{_BATTERY_ALTERNATION}|{_SCREEN_ALTERNATION})")
 
 # Evidence (i): an explicit two-factor multiplier product where at least one
 # factor is draw-bearing ("1000 draws x 24 cells" satisfies; a grid-only
@@ -1293,6 +1428,27 @@ _MULT_ARITH_RE = re.compile(
 # MEASURED basis beside sizing arithmetic, so the guard would re-create the
 # very false-positive class #1086 fixes (guard REJECTED in plan v2 §11).
 
+# Evidence (i-screen): pool-quadratic sizing arithmetic for a SCREEN-class
+# window (#1901 critic MF1 — windows are TYPED: battery windows accept
+# _MULT_ARITH_RE ONLY, screen windows accept THIS regex ONLY; neither
+# class's evidence can satisfy the other, so "576 comparisons" in
+# Holm-correction prose can never green a battery and a draw product can
+# never green a screen): an explicit squared count ("13,674^2"), the
+# n(n-1)/2 pair-count form, a digit-bearing pair/comparison count
+# ("1.87e8 pairs", "576 comparisons"), or a pool product / squared pool
+# ("pool x pool", "pool squared", "pool" + superscript-two) — ASCII `x`
+# under the _MULT_TOKEN word-boundary discipline (#1099).
+# _DRAW_FACTOR / _MULT_ARITH_RE are byte-untouched by the screen extension.
+_SCREEN_ARITH_RE = re.compile(
+    rf"(?i)(?:\d[\d,_]*\s*(?:\^\s*2|²|\*\*\s*2)"
+    # MINUS SIGN (U+2212 — the unicode minus prose forms use; spelled as a
+    # regex escape so the source stays RUF001-clean); the ASCII hyphen sits
+    # FIRST in the class so it reads literal, never a range.
+    rf"|n\s*\(\s*n\s*[-\u2212]\s*1\s*\)\s*/\s*2"
+    rf"|\d[\d,_]*(?:\.\d+)?(?:e\d+)?\s*(?:pairwise\s+)?(?:pairs|comparisons)\b"
+    rf"|pool\s*(?:size\s*)?(?:{_MULT_TOKEN}|squared|²))"
+)
+
 # Evidence (ii): a named batched helper or an explicit vectorization
 # statement. A token whose only in-window occurrence sits inside a citation /
 # path of the rule file does NOT count — citing the rule is not an
@@ -1300,7 +1456,11 @@ _MULT_ARITH_RE = re.compile(
 # citation tokens are stripped from the window before this search).
 _BATCHED_COMMIT_RE = re.compile(
     r"(?i)\b(batched|vectoriz(?:e|ed|es|ation)|subset-sum|GEMM|one\s+(?:masked\s+)?matmul"
-    r"|perm_null_draws|randnorm_null_draws|vectorized_mlp_skill)\b"
+    r"|perm_null_draws|randnorm_null_draws|vectorized_mlp_skill"
+    # Named batched-screen implementations (#1901; the generic tokens above
+    # already cover "batched"/"vectorized" — #1901's own fix was a 175x
+    # vectorize): pairwise-distance / sketching / ANN-index helpers.
+    r"|cdist|minhash|faiss|LSH)\b"
 )
 _C12_RULE_CITATION_RE = re.compile(r"\S*vectorize-many-cell-fits\.md\S*")
 
@@ -1315,8 +1475,9 @@ def _trigger_windows(plan: str, trigger_re: re.Pattern[str], window_lines: int) 
     fence-only example is not a trigger — the line-preserving equivalent of
     searching ``strip_fences(plan)``); each WINDOW is raw text, so evidence
     inside adjacent tables/fences still counts. Shared by c12
-    (``_BATTERY_TRIGGER_RE``, ±15), c16 (``_C16_EXTRACT_RE`` ±3;
-    ``_C16_REGEN_RE`` at radius 0 = same-line adjacency), and c24
+    (``_MULT_ARITH_RE`` self-anchor windows, ±15 — the class-typed trigger
+    windows use ``_c12_typed_trigger_windows``), c16 (``_C16_EXTRACT_RE``
+    ±3; ``_C16_REGEN_RE`` at radius 0 = same-line adjacency), and c24
     (``_C24_TRIGGER_RE``, ±15)."""
     lines = plan.splitlines()
     mask = _fence_mask(lines)
@@ -1330,60 +1491,96 @@ def _trigger_windows(plan: str, trigger_re: re.Pattern[str], window_lines: int) 
     return windows
 
 
-def _battery_trigger_windows(plan: str) -> list[str]:
-    """Thin wrapper: c12's fence-masked ±15-raw-line trigger windows (see
-    ``_trigger_windows``; kept so the c12 name + radius stay greppable)."""
-    return _trigger_windows(plan, _BATTERY_TRIGGER_RE, _C12_WINDOW_LINES)
+def _c12_typed_trigger_windows(plan: str) -> tuple[list[str], list[str]]:
+    """c12's fence-masked ±``_C12_WINDOW_LINES``-raw-line trigger windows,
+    TYPED by the anchoring line's class (the #1901 critic MF1: battery vs
+    screen; evidence never crosses class). A line matching BOTH
+    alternations types battery — the stricter evidence class, the c32
+    both-families precedent. Returns ``(battery_windows,
+    screen_windows)``; window text is raw (evidence inside adjacent
+    tables/fences still counts), trigger detection is fence-masked."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    battery: list[str] = []
+    screen: list[str] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced:
+            continue
+        if _BATTERY_CLASS_RE.search(line):
+            dest = battery
+        elif _SCREEN_TRIGGER_RE.search(line):
+            dest = screen
+        else:
+            continue
+        lo = max(0, i - _C12_WINDOW_LINES)
+        hi = min(len(lines), i + _C12_WINDOW_LINES + 1)
+        dest.append("\n".join(lines[lo:hi]))
+    return battery, screen
 
 
-def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
-    """A plan naming a permutation/bootstrap/null-draw battery must carry,
-    NEAR a battery mention (± 15 raw lines), BOTH (i) explicit multiplier
-    arithmetic with a draw-bearing factor and (ii) a batched-implementation
-    commitment. A draw-bearing arithmetic line ALSO anchors its own ± 15
-    evidence window (#1086) — the §9 sizing block legitimately lives far
-    from the §4/§6 battery registration. Window-scoped, never
-    document-global — the document-global draft demonstrably false-PASSed
-    the motivating incident plan (#810 v1) via an unrelated footprint
-    product + helper boilerplate. FAIL (experiment) / WARN (analysis) /
-    SKIP otherwise; a SURFACE check per the module's scope discipline —
-    semantic adequacy of the arithmetic stays with the Phase 2 critics."""
-    cid, name = "c12_battery_multiplier", "battery multiplier + batched commitment"
-    if kind not in ("experiment", "analysis"):
-        return _skip(cid, name, "kind-exempt: battery sizing is an experiment|analysis plan shape")
-    windows = _battery_trigger_windows(plan)
-    if not windows:
-        return _skip(cid, name, "no permutation/null-draw battery named")
-    if _standalone_na_declared(plan, r"no draw battery"):
-        return _pass(cid, name, "explicit N/A declared (no draw battery)")
-    # #1086: a draw-bearing arithmetic line ANCHORS its own ±15 evidence
-    # window — the §9 sizing block legitimately lives far from the §4/§6
-    # battery registration (#833 v8: 58+ lines). Window-scoped discipline is
-    # preserved: only a line already carrying a draw-bearing product can
-    # anchor (a grid-only footprint product never anchors — the #810 v1
-    # false-PASS class), and the batched commitment must still sit within
-    # ±_C12_WINDOW_LINES raw lines of the anchor.
-    windows = windows + _trigger_windows(plan, _MULT_ARITH_RE, _C12_WINDOW_LINES)
+def _c12_screen_arith_anchor_windows(plan: str) -> list[str]:
+    """Screen-class SELF-ANCHOR windows (the #1086 draw-arith anchoring
+    mirrored): a non-fenced line carrying pool-quadratic arithmetic anchors
+    its own ±``_C12_WINDOW_LINES`` window — the §9 sizing block
+    legitimately lives far from the §4/§6 screen registration. A line ALSO
+    matching the draw-bearing ``_MULT_ARITH_RE`` types battery (self-anchor
+    both->battery typing, the critic's non-blocking note) and is excluded
+    here. The caller adds these ONLY when >=1 screen trigger fired in the
+    plan, so a stray pair count can never conjure a screen obligation on a
+    battery-only plan."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    out: list[str] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced or not _SCREEN_ARITH_RE.search(line) or _MULT_ARITH_RE.search(line):
+            continue
+        lo = max(0, i - _C12_WINDOW_LINES)
+        hi = min(len(lines), i + _C12_WINDOW_LINES + 1)
+        out.append("\n".join(lines[lo:hi]))
+    return out
+
+
+def _c12_class_verdict(
+    plan: str, windows: list[str], arith_re: re.Pattern[str], na_tail: str
+) -> tuple[str, bool, bool]:
+    """One c12 class's satisfaction read (extracted from
+    ``check_battery_multiplier`` for C901). Returns ``(verdict, any_arith,
+    any_commit)`` with verdict ``"escaped"`` (the class-scoped standalone
+    N/A is declared), ``"satisfied"`` (some window of THIS class carries
+    both its class-matched arithmetic and a batched commitment), or
+    ``"unsatisfied"`` (the any_* flags then drive the missing-detail)."""
+    if _standalone_na_declared(plan, na_tail):
+        return "escaped", False, False
     any_arith = False
     any_commit = False
     for window in windows:
-        has_arith = bool(_MULT_ARITH_RE.search(window))
+        has_arith = bool(arith_re.search(window))
         has_commit = bool(_BATCHED_COMMIT_RE.search(_C12_RULE_CITATION_RE.sub("", window)))
         any_arith = any_arith or has_arith
         any_commit = any_commit or has_commit
         if has_arith and has_commit:
-            return _pass(
-                cid,
-                name,
-                "a battery window carries both the multiplier arithmetic and a "
-                "batched-implementation commitment",
-            )
+            return "satisfied", True, True
+    return "unsatisfied", any_arith, any_commit
+
+
+def _c12_missing_for_class(cls: str, any_arith: bool, any_commit: bool) -> str:
+    """The per-class missing-evidence clause for c12's WARN/FAIL detail
+    (extracted from ``check_battery_multiplier`` for C901). Never carries a
+    literal matching the trigger/arith regexes (the anti-self-satisfy
+    discipline the pasted-detail pins enforce)."""
     missing: list[str] = []
     if not any_arith:
-        missing.append(
-            "the multiplier arithmetic with a draw-bearing factor "
-            "(draws times cells times folds at per-call cost = projected wall)"
-        )
+        if cls == "battery":
+            missing.append(
+                "the multiplier arithmetic with a draw-bearing factor "
+                "(draws times cells times folds at per-call cost = projected wall)"
+            )
+        else:
+            missing.append(
+                "the pool-quadratic sizing arithmetic (candidate-count squared, or half "
+                "the count times count-minus-one = pair total, at per-pair cost = "
+                "projected wall)"
+            )
     if not any_commit:
         missing.append(
             "a batched-implementation commitment (a named batched helper or an explicit "
@@ -1391,18 +1588,112 @@ def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
         )
     if not missing:
         missing.append(
-            "co-location: the multiplier arithmetic and the batched-implementation "
-            "commitment each appear somewhere, but never together near any battery mention "
-            "or draw-arithmetic sizing line"
+            "co-location: the class-matched arithmetic and the batched-implementation "
+            f"commitment each appear somewhere, but never together near any {cls}-class "
+            "trigger or sizing line"
         )
+    return " AND ".join(missing)
+
+
+def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
+    """A plan naming a permutation/bootstrap/null-draw battery — or a
+    pool-quadratic candidate SCREEN (#1901: the near-dupe class the
+    compute-sizing rule's POOL-SCALE PILOTS clause covers) — must carry,
+    NEAR a trigger mention (± 15 raw lines), BOTH (i) CLASS-MATCHED sizing
+    arithmetic — a draw-bearing multiplier product for battery-class
+    windows (``_MULT_ARITH_RE``), pool-quadratic arithmetic for
+    screen-class windows (``_SCREEN_ARITH_RE``); evidence never crosses
+    class (the #1901 critic MF1 — the #810 grid-only false-PASS guard is
+    preserved verbatim for batteries) — and (ii) a batched-implementation
+    commitment (common to both classes). An arithmetic line ALSO anchors
+    its own ± 15 evidence window (#1086; a screen-arith self-anchor counts
+    only when a screen trigger fired in the plan, and a line matching both
+    arithmetic regexes types battery). PASS requires every TRIGGERED class
+    independently satisfied — by a window of its own class, or by its
+    CLASS-SCOPED standalone escape (``N/A — no draw battery`` excuses
+    battery-class windows ONLY; ``N/A — no pool screen`` excuses
+    screen-class windows ONLY; the #1901 critic MF2 — the escape check
+    lives in the per-class satisfaction, never a pre-walk global return).
+    Window-scoped, never document-global — the document-global draft
+    demonstrably false-PASSed the motivating incident plan (#810 v1) via
+    an unrelated footprint product + helper boilerplate. Polarity
+    (2026-08-03 calibration; the plan §8 per-class switch): an unsatisfied
+    BATTERY class FAILs (experiment) / WARNs (analysis) — unchanged; an
+    unsatisfied SCREEN class WARNs for BOTH kinds, because the corpus
+    shows own-phase screen nouns are token-inseparable from banked-screen
+    references (#1901 v1-v3 / #779 v7-v10 — see the calibration record
+    above the trigger regexes), so screens surface as a WARN the planner
+    must resolve-or-carry, never a hard FAIL. SKIP otherwise; a SURFACE
+    check per the module's scope discipline — semantic adequacy of the
+    arithmetic stays with the Phase 2 critics."""
+    cid, name = "c12_battery_multiplier", "battery multiplier + batched commitment"
+    if kind not in ("experiment", "analysis"):
+        return _skip(cid, name, "kind-exempt: battery sizing is an experiment|analysis plan shape")
+    battery_trig, screen_trig = _c12_typed_trigger_windows(plan)
+    if not battery_trig and not screen_trig:
+        return _skip(cid, name, "no permutation/null-draw battery or pool-quadratic screen named")
+    # Per-class window sets: trigger windows plus class-typed self-anchor
+    # windows (#1086 — the sizing block legitimately lives far from the
+    # registration; #833 v8: 58+ lines). Window-scoped discipline is
+    # preserved per class: only a line already carrying that class's
+    # arithmetic can anchor (a grid-only footprint product never anchors a
+    # battery window — the #810 v1 false-PASS class — and a draw product
+    # never anchors a screen window), and the batched commitment must still
+    # sit within ±_C12_WINDOW_LINES raw lines of the anchor.
+    classes: list[tuple[str, list[str], re.Pattern[str], str]] = []
+    if battery_trig:
+        classes.append(
+            (
+                "battery",
+                battery_trig + _trigger_windows(plan, _MULT_ARITH_RE, _C12_WINDOW_LINES),
+                _MULT_ARITH_RE,
+                r"no draw battery",
+            )
+        )
+    if screen_trig:
+        classes.append(
+            (
+                "screen",
+                screen_trig + _c12_screen_arith_anchor_windows(plan),
+                _SCREEN_ARITH_RE,
+                r"no pool screen",
+            )
+        )
+    sat_parts: list[str] = []
+    failing: list[tuple[str, bool, bool]] = []
+    for cls, windows, arith_re, na_tail in classes:
+        verdict, any_arith, any_commit = _c12_class_verdict(plan, windows, arith_re, na_tail)
+        if verdict == "escaped":
+            sat_parts.append(f"{cls}: explicit N/A declared")
+        elif verdict == "satisfied":
+            sat_parts.append(
+                f"{cls}: a window carries both the class-matched sizing arithmetic and a "
+                "batched-implementation commitment"
+            )
+        else:
+            failing.append((cls, any_arith, any_commit))
+    if not failing:
+        return _pass(cid, name, "; ".join(sat_parts))
+    class_details = [
+        f"the {cls} class is missing {_c12_missing_for_class(cls, any_arith, any_commit)}"
+        for cls, any_arith, any_commit in failing
+    ]
     detail = (
-        f"plan names a permutation/bootstrap/null battery but is missing {' AND '.join(missing)}"
+        f"plan names a permutation/bootstrap/null battery and/or a pool-quadratic candidate "
+        f"screen but {'; '.join(class_details)}"
         " — a named battery defaults to a serial per-draw loop (#778: ~15 h realized vs 1 h"
-        " planned; #810: 308x); see .claude/rules/vectorize-many-cell-fits.md, or declare"
-        " 'N/A — no draw battery' on its own line, unwrapped (no backticks/quotes), if the"
-        " mention is incidental"
+        " planned; #810: 308x) and a named screen defaults to a serial per-candidate loop"
+        " (#1901: ~3.3 h realized vs the 1.0 h sub-budget); see"
+        " .claude/rules/vectorize-many-cell-fits.md +"
+        " .claude/rules/plan-compute-sizing.md (POOL-SCALE PILOTS). If a mention is"
+        " incidental, declare the CLASS-SCOPED escape on its own line, unwrapped (no"
+        " backticks/quotes): 'N/A — no draw battery' excuses battery-class windows ONLY;"
+        " 'N/A — no pool screen' excuses screen-class windows ONLY"
     )
-    if kind == "analysis":
+    battery_failing = any(cls == "battery" for cls, _a, _c in failing)
+    if kind == "analysis" or not battery_failing:
+        # Screen-class-only misses carry WARN polarity (2026-08-03 calibration,
+        # plan §8 per-class switch) — batteries keep FAIL for experiment plans.
         return _warn(cid, name, detail)
     return _fail(cid, name, detail)
 
@@ -2702,12 +2993,30 @@ def check_paired_contrast_source_coverage(plan: str, kind: str) -> CheckResult:
     triggers = _c18_registered_paired_lines(plan)
     if not triggers:
         return _skip(cid, name, "no registered paired contrast detected")
+    decls = _c18_coverage_declarations(plan)
     if _c18_na_escape_declared(plan):
         # #1258 (the #1223 c20 port): reachable ONLY when a registered paired
         # contrast WAS detected (the no-trigger case SKIPs above) — a PASS
         # here masks the row-coverage verification c18 exists to run (the
         # #810 v13 class). WARN, not FAIL: the trigger harvest may be a false
         # positive on quoted guidance; reviewers adjudicate.
+        #
+        # #1689/#1700 refinement: when a valid Row-coverage declaration ALSO
+        # co-occurs, the coverage decl is the DECISIVE load-bearing assertion
+        # (D1/D2 grammar unchanged; _c18_coverage_declarations gates it), and
+        # the N/A line is a spurious leftover paste — PASS on the coverage
+        # decl. The original masking case (N/A alone, no coverage decl) still
+        # WARNs, preserving c18's original defense.
+        if decls:
+            return _pass(
+                cid,
+                name,
+                f'row-coverage declaration found ("{decls[0][:90]}") — declaration surface '
+                "only; the co-occurring standalone `N/A — no paired contrast` line is "
+                "treated as a spurious leftover, not a masking claim (the coverage decl "
+                "is decisive; #1689/#1700). Whether the named sources truly contain every "
+                "registered row on both arms stays with the fact-checker.",
+            )
         return _warn(
             cid,
             name,
@@ -2720,7 +3029,6 @@ def check_paired_contrast_source_coverage(plan: str, kind: str) -> CheckResult:
             "fence/remove the registration-shaped prose the detector matched "
             "if it is quoted guidance rather than this plan's own registration",
         )
-    decls = _c18_coverage_declarations(plan)
     if decls:
         return _pass(
             cid,
@@ -2929,6 +3237,29 @@ _C20_CI_IDIOMS: list[tuple[re.Pattern[str], frozenset[str]]] = [
     ),
 ]
 
+# Negated-existence atoms (#1960; incident #1946): the prose form
+#   ``no <family-ref> <unit-noun> is|are <inner predicate>``
+# and the canonical machine form ``count(<family-ref>) == 0``. The span
+# consumes the leading NEGATOR (``no``/``zero``) so it never lands in
+# _C20_RESIDUE_RE residue; the prose inner predicate is a bounded run that
+# stops at ;,. comparators and newline, and BEFORE a top-level AND/OR
+# joiner — so a following sign/CI atom joins via the normal connective
+# gap, never swallowed (a ``with`` INSIDE the span is atom text, not a
+# joiner). The family-ref is BOUNDED by a closed unit-noun set so bare
+# "no <anything>" prose ("no binary verdict" — an _C20_OTHERWISE_RE token;
+# "no Δ_pool CI includes 0" — `CI` is not a unit noun) never matches and
+# stays residue (fail-closed). Semantics: ONE boolean cell-algebra axis
+# per lattice — values {zero, nonzero}; the atom binds {zero}; the
+# nonzero side is reachable only via ``⇔ otherwise``.
+_C20_NOEXIST_UNITS = r"(?:contrasts?|comparisons?|tests?|cells?|pairs?|arms?)"
+_C20_NOEXIST_PROSE_RE = re.compile(
+    r"(?i)\b(?:no|zero)\s+(?P<family>(?:[\w`*./_-]+\s+){0,5}?" + _C20_NOEXIST_UNITS + r")\s+"
+    r"(?:is|are)\s+(?P<pred>(?:(?!\b(?:and|or)\b)[^;,.<>≤≥\n])+)"
+)
+_C20_NOEXIST_COUNT_RE = re.compile(
+    r"(?i)\bcount\(\s*(?P<family>[^()\n]{1,120}?)\s*\)\s*==?\s*0(?!\.?\d)"
+)
+
 # OTHERWISE atom (complement label — fires iff no non-otherwise label fires).
 _C20_OTHERWISE_RE = re.compile(
     r"(?i)\botherwise\b|\ball other\b|\bneither\b[^.;\n]{0,40}\bfires?\b|\bno binary verdict\b"
@@ -2968,6 +3299,37 @@ _C20_QUANT_RE = re.compile(
     r"(?i)(?:at least\s+\d+|≥\s*\d+|>=\s*\d+)\s*(?:of|/)\s*\d+|\ball\s+\d+\b|\bfor (?:all|each)\b"
 )
 
+# Threshold-form atoms (#1689/#1700 — the tier-1 analogue of _C20_QUANT_RE):
+# ``<qty> <ineq> <nonzero>`` — ``rung ≥ 5``, ``≥ 8/9 pairs``, ``≤ 1 rung``,
+# ``≥ 20 percent``. Deliberately mirrors ``_C20_POINT_RE`` (same qty/cmp
+# capture shape) but the right-hand side captures ANY numeric literal
+# (int / decimal / fraction) — the ``_c20_has_threshold_atom`` filter
+# EXCLUDES ``0``, ``0.xxx`` and ``0/N`` after the fact so the sign-atom
+# scope (``qty ≥/> 0``) stays owned by ``_C20_POINT_RE``.
+_C20_THRESHOLD_RE = re.compile(
+    r"(?P<qty>[^\s,;()]+)\s*(?P<cmp>≥|>=|≤|<=|>|<)\s*(?P<thr>\d+(?:[./]\d+)?)"
+)
+
+
+def _c20_has_threshold_atom(segment: str) -> bool:
+    """True when ``segment`` carries a non-zero threshold-form inequality
+    atom (``rung ≥ 5``, ``≥ 8/9 pairs``, ``≤ 1 rung``). Zero-right-hand-side
+    matches (``qty ≥ 0``, ``qty ≥ 0.5``, ``qty ≥ 0/N``) are EXCLUDED —
+    those are sign atoms and stay with ``_C20_POINT_RE``. This is the
+    tier-1 detector for the #1689 shape (``rung ≥ 5`` / ``≥ 8/9 pairs``);
+    the parser correctly rejects them as outside the v1 cell algebra, so
+    ``_c20_tier1_result`` uses this + an ``⇔ otherwise`` complement to
+    SKIP the whole lattice (mirroring the tier-2 ``_C20_QUANT_RE`` SKIP)."""
+    for m in _C20_THRESHOLD_RE.finditer(segment):
+        thr = m.group("thr")
+        # Sign-atom exclusions (owned by _C20_POINT_RE): bare "0", "0.xxx"
+        # decimals, and "0/N" fractions.
+        if thr == "0" or thr.startswith("0.") or thr.startswith("0/"):
+            continue
+        return True
+    return False
+
+
 # Tier-2 segment machinery: sentence split, →/Consequence truncation, the
 # "confirmed if(f)" selector.
 _C20_SENT_SPLIT_RE = re.compile(r"(?<=\.)\s+")
@@ -3003,6 +3365,17 @@ def _c20_label_name(bold: str) -> str:
     """Short display name for a harvested label: the bold span up to its
     first parenthetical annotation, trailing colon stripped."""
     return bold.split(" (")[0].rstrip(": ").strip()
+
+
+def _c20_norm_family(fam: str) -> str:
+    """Normalized axis key for a negated-existence family-ref: casefold,
+    backticks/asterisks stripped, whitespace collapsed, trailing unit noun
+    singularized. Axis sharing requires IDENTICAL normalized keys; >1
+    distinct key per lattice fails closed to ``unparsed`` in
+    ``_c20_evaluate_lattice`` — light normalization errs toward WARN,
+    never a false FAIL."""
+    s = re.sub(r"\s+", " ", fam.replace("`", "").replace("*", "").casefold()).strip()
+    return re.sub(r"(contrast|comparison|test|cell|pair|arm)s$", r"\1", s)
 
 
 def _c20_any_ci_idiom(text: str) -> bool:
@@ -3069,18 +3442,37 @@ def _c20_segment(label_text: str) -> tuple[str | None, str | None]:
     return bearing[0], None
 
 
-def _c20_collect_atoms(segment: str) -> tuple[list[tuple[str, frozenset[str], int, int]], set]:
-    """All sign/CI atoms in ``segment`` as ``(axis, values, start, end)``
-    (sorted by position) plus the set of normalized POINT quantities. The
-    axis-binding lookback is clamped at the previous atom's span end so a
-    preceding atom's `paired` token never mis-binds a later primary atom."""
+def _c20_collect_atoms(
+    segment: str,
+) -> tuple[list[tuple[str, frozenset[str], int, int]], set, set]:
+    """All sign/CI/negated-existence atoms in ``segment`` as
+    ``(axis, values, start, end)`` (sorted by position) plus the set of
+    normalized POINT quantities and the set of normalized negated-existence
+    family keys. Negated-existence atoms are collected FIRST so their span
+    consumes the leading negator (no residue) and suppresses point/CI
+    matches falling inside it (#1960). The CI axis-binding lookback is
+    clamped at the previous atom's span end so a preceding atom's `paired`
+    token never mis-binds a later primary atom."""
     atoms: list[tuple[str, frozenset[str], int, int]] = []
     qtys: set[str] = set()
+    fams: set[str] = set()
+    neg_spans: list[tuple[int, int]] = []
+    for pat in (_C20_NOEXIST_PROSE_RE, _C20_NOEXIST_COUNT_RE):
+        for m in pat.finditer(segment):
+            if any(s < m.end() and m.start() < e for s, e in neg_spans):
+                continue  # already covered by an earlier negated-existence span
+            fams.add(_c20_norm_family(m.group("family")))
+            atoms.append(("famneg", frozenset({"zero"}), m.start(), m.end()))
+            neg_spans.append((m.start(), m.end()))
     for m in _C20_POINT_RE.finditer(segment):
+        if any(s < m.end() and m.start() < e for s, e in neg_spans):
+            continue  # inside a negated-existence span (e.g. count(... > 0) == 0)
         sign = "pos" if m.group("cmp") in _C20_POINT_POS else "neg"
         qtys.add(m.group("qty").strip("`*").casefold())
         atoms.append(("point", frozenset({sign}), m.start(), m.end()))
     for m in _C20_CI_TOKEN_RE.finditer(segment):
+        if any(s < m.end() and m.start() < e for s, e in neg_spans):
+            continue  # CI token inside a negated-existence span
         gm = _C20_CI_GAP_RE.match(segment, m.end())
         hit: tuple[re.Match[str], frozenset[str]] | None = None
         for pat, states in _C20_CI_IDIOMS:
@@ -3090,6 +3482,12 @@ def _c20_collect_atoms(segment: str) -> tuple[list[tuple[str, frozenset[str], in
                 break
         if hit is None:
             continue  # the stray CI token becomes completeness residue
+        if any(s < hit[0].end() and m.start() < e for s, e in neg_spans):
+            # The idiom tail crosses into a negated-existence span (a prose
+            # match anchored on the idiom's own `zero` token): suppress the
+            # CI atom — its CI/idiom tokens then land as residue, degrading
+            # the label to `unparsed` (fail-closed, never a wrong parse).
+            continue
         # Clamp the lookback at the previous atom's span end: a paired atom
         # < 40 chars BEFORE a primary atom would otherwise leak its `paired`
         # token into THIS atom's window, binding both atoms to the paired
@@ -3100,7 +3498,7 @@ def _c20_collect_atoms(segment: str) -> tuple[list[tuple[str, frozenset[str], in
         axis = "paired" if "paired" in lookback else "primary"
         atoms.append((axis, hit[1], m.start(), hit[0].end()))
     atoms.sort(key=lambda a: a[2])
-    return atoms, qtys
+    return atoms, qtys, fams
 
 
 def _c20_build_dnf(
@@ -3133,8 +3531,14 @@ def _c20_parse_predicate(segment: str) -> dict:
     token / comparator / idiom keyword / NEGATOR), any non-AND/OR/with
     joiner between atoms, or an otherwise-token mixed with predicate atoms
     marks the segment ``unparsed`` (reason in the returned dict)."""
-    out: dict = {"otherwise": False, "dnf": [], "unparsed": None, "point_qtys": set()}
-    atoms, out["point_qtys"] = _c20_collect_atoms(segment)
+    out: dict = {
+        "otherwise": False,
+        "dnf": [],
+        "unparsed": None,
+        "point_qtys": set(),
+        "famneg_keys": set(),
+    }
+    atoms, out["point_qtys"], out["famneg_keys"] = _c20_collect_atoms(segment)
     otherwise_spans = [(m.start(), m.end()) for m in _C20_OTHERWISE_RE.finditer(segment)]
     if otherwise_spans and atoms:
         out["unparsed"] = "an 'otherwise' token mixed with predicate atoms in one segment"
@@ -3175,6 +3579,9 @@ def _c20_enumerate(labels: list[dict]) -> tuple[list, list]:
     axes = {axis for lab in preds for conj in lab["parse"]["dnf"] for axis, _ in conj}
     primary_vals: tuple = _C20_CI_STATES if "primary" in axes else (None,)
     paired_vals: tuple = _C20_CI_STATES if "paired" in axes else (None,)
+    # Family-negation axis (#1960): boolean {zero, nonzero}; the atom binds
+    # {zero}, the nonzero side is reachable only via an otherwise-label.
+    famneg_vals: tuple = ("zero", "nonzero") if "famneg" in axes else (None,)
     cofires: list[tuple[dict, list[str]]] = []
     gaps: list[dict] = []
     for primary in primary_vals:
@@ -3186,21 +3593,27 @@ def _c20_enumerate(labels: list[dict]) -> tuple[list, list]:
             point_vals = {"below": ("neg",), "straddle": ("neg", "pos"), "above": ("pos",)}[primary]
         for point in point_vals:
             for paired in paired_vals:
-                cell = {"point": point, "primary": primary, "paired": paired}
-                fired = [
-                    lab
-                    for lab in preds
-                    if any(
-                        all(cell[axis] in values for axis, values in conj)
-                        for conj in lab["parse"]["dnf"]
-                    )
-                ]
-                if not fired and others:
-                    fired = others
-                if len(fired) >= 2:
-                    cofires.append((cell, [lab["name"] for lab in fired]))
-                elif not fired:
-                    gaps.append(cell)
+                for famneg in famneg_vals:
+                    cell = {
+                        "point": point,
+                        "primary": primary,
+                        "paired": paired,
+                        "famneg": famneg,
+                    }
+                    fired = [
+                        lab
+                        for lab in preds
+                        if any(
+                            all(cell[axis] in values for axis, values in conj)
+                            for conj in lab["parse"]["dnf"]
+                        )
+                    ]
+                    if not fired and others:
+                        fired = others
+                    if len(fired) >= 2:
+                        cofires.append((cell, [lab["name"] for lab in fired]))
+                    elif not fired:
+                        gaps.append(cell)
     return cofires, gaps
 
 
@@ -3214,6 +3627,10 @@ def _c20_cell_str(cell: dict) -> str:
         if v is not None:
             word = {"below": "wholly below 0", "straddle": "straddles 0", "above": "wholly above 0"}
             parts.append(f"{axis} CI {word[v]}")
+    if cell.get("famneg") is not None:
+        parts.append(
+            "no family member fires" if cell["famneg"] == "zero" else "≥1 family member fires"
+        )
     return "{" + ", ".join(parts) + "}"
 
 
@@ -3284,6 +3701,17 @@ def _c20_evaluate_lattice(labels: list[dict], *, tier: int, section_text: str) -
             "represent them (never silently collapsed onto one axis); restate the lattice "
             "over one point quantity or use the explicit ⇔ partition form",
         )
+    fams = set()
+    for lab in labels:
+        fams |= lab["parse"].get("famneg_keys", set())
+    if len(fams) > 1:
+        return (
+            "unparsed",
+            f"the lattice's labels reference {len(fams)} distinct negated-existence "
+            f"families ({', '.join(sorted(fams)[:4])}) — the v1 cell algebra carries a "
+            "single family-negation axis (never silently unified); restate over one "
+            "family with identical wording (prose or count(...) == 0 form, not mixed)",
+        )
     cofires, gaps = _c20_enumerate(labels)
     if cofires or gaps:
         detail = _c20_offender_detail(tier_desc, cofires, gaps)
@@ -3321,7 +3749,16 @@ def _c20_find_declaration(sections: list[str]) -> tuple[str, list[tuple[str, str
 
 def _c20_tier1_result(cid: str, name: str, kind: str, sec: str, clauses: list) -> CheckResult:
     """Tier-1 verdict: the plan CLAIMED a partition, so co-fire AND gap are
-    both FAIL-capable (WARN under kind=analysis); unparsed clauses WARN."""
+    both FAIL-capable (WARN under kind=analysis); unparsed clauses WARN.
+    #1689/#1700: when the tier-1 lattice uses THRESHOLD-form inequality
+    predicates (``rung ≥ 5``, ``≥ 8/9 pairs``, ``≤ 1 rung``) AND carries
+    an ``⇔ otherwise`` complement, the partition is exhaustive-by-
+    construction (the otherwise clause covers every residual cell) and
+    the co-fire risk on threshold predicates is Statistics-critic scope,
+    outside the v1 cell algebra — SKIP (mirrors the tier-2
+    ``_C20_QUANT_RE`` SKIP). Threshold-only lattices WITHOUT an
+    ``⇔ otherwise`` complement still route through the normal parse
+    (which correctly WARNs on the unparsed residue)."""
     if len(clauses) < 2:
         return _warn(
             cid,
@@ -3330,6 +3767,19 @@ def _c20_tier1_result(cid: str, name: str, kind: str, sec: str, clauses: list) -
             "`<label> ⇔ <predicate>` clauses parsed from it — the claimed partition is "
             "not machine-checkable; use the canonical form (`DISJOINT and exhaustive: "
             "<label> ⇔ <predicate>; …; <label> ⇔ otherwise`)",
+        )
+    # #1689/#1700: threshold-atoms + ⇔ otherwise ⇒ SKIP (see docstring).
+    has_otherwise = any(_C20_OTHERWISE_RE.search(cpred) for _, cpred in clauses)
+    uses_thresholds = any(_c20_has_threshold_atom(cpred) for _, cpred in clauses)
+    if has_otherwise and uses_thresholds:
+        return _skip(
+            cid,
+            name,
+            f"tier-1 lattice ({len(clauses)} clauses) uses threshold-form inequality "
+            "predicates (e.g. `rung ≥ 5`, `≥ 8/9 pairs`) closed by an `⇔ otherwise` "
+            "complement — the partition is exhaustive-by-construction and the "
+            "co-fire risk on threshold predicates is Statistics-critic scope, out "
+            "of v1 cell algebra (mirrors the tier-2 k-of-n SKIP; #1689/#1700)",
         )
     labels = []
     for clabel, cpred in clauses:
@@ -3372,6 +3822,7 @@ def _c20_tier2_result(cid: str, name: str, kind: str, lattices: list) -> CheckRe
                     "dnf": [],
                     "unparsed": reason,
                     "point_qtys": set(),
+                    "famneg_keys": set(),
                 }
             else:
                 lab["parse"] = _c20_parse_predicate(seg)
@@ -3405,7 +3856,13 @@ def check_verdict_lattice_coherence(plan: str, kind: str) -> CheckResult:
     co-fire with a COMPLETE parse — gaps degrade to WARN (gap precision
     depends on harvest recall), any unparsed label degrades the whole
     lattice to WARN, and quantified (k-of-n) predicates SKIP as out of the
-    v1 cell algebra. FAIL (experiment) / WARN (analysis) / SKIP otherwise;
+    v1 cell algebra. A negated-existence conjunct (``no <family-ref>
+    <unit-noun> is <predicate>``, or the canonical ``count(<family-ref>)
+    == 0`` machine form) parses as a single boolean family-negation axis
+    {zero, nonzero} whose nonzero side is reachable only via ``⇔
+    otherwise`` (#1960; incident #1946); >1 distinct normalized family per
+    lattice fails closed to WARN. FAIL (experiment) / WARN (analysis) /
+    SKIP otherwise;
     escape via a standalone ``N/A — no registered verdict lattice`` line —
     honored (SKIP path) only when no lattice is detected; when the escape
     co-occurs with a detected lattice (either tier) the check WARNs instead
@@ -5301,8 +5758,11 @@ def check_skillmd_prose_pin(plan: str, kind: str) -> CheckResult:
 # (MUST-level; #1395 widened the section + this check to draw batteries): a
 # §9 row looping a fit/solve/factorization over cells x folds x layers x
 # ... — or running a permutation/bootstrap/null-draw BATTERY (trigger:
-# c12's calibrated _BATTERY_TRIGGER_RE on basis-table rows; a row matching
-# both families is a fit row) — must ground its per-call basis on a
+# c12's calibrated _BATTERY_TRIGGER_RE on basis-table rows — since #1967
+# that union ALSO matches pool-quadratic screen rows, so a near-dupe /
+# pairwise-similarity screen row demands a measured/pilot-gated basis
+# exactly as the rule's POOL-SCALE clause requires (#1738/#1901); a row
+# matching both families is a fit row) — must ground its per-call basis on a
 # MEASURED 1-cell pilot (for a battery: one production-shape batched draw
 # block), a cited prior-issue measured figure, or a pre-registered
 # `pilot-gated` flag — an ASSERTED per-call cost is never a basis, and a
@@ -5440,7 +5900,9 @@ def check_fit_basis_grounding(plan: str, kind: str) -> CheckResult:
     loop/multiplicity signal (per-cell/per-fold vocabulary, an NxM product,
     an "N fits" count) — or, since #1395, a permutation/bootstrap/null-draw
     BATTERY row (trigger: c12's calibrated ``_BATTERY_TRIGGER_RE`` — battery
-    framing or a >=100-count draw vocabulary; a judge-style "N=5 draws" row
+    framing or a >=100-count draw vocabulary; since #1967 the union also
+    classifies pool-quadratic SCREEN rows here, per the rule's POOL-SCALE
+    clause; a judge-style "N=5 draws" row
     and a "graded 0-100" scale do NOT match; a row matching both families
     is a FIT row, so the fit branch + fit escape govern it) — must ground
     its basis — provenance vocabulary
@@ -6252,6 +6714,69 @@ _C37_NEG_RE = re.compile(
     r"(?i)\bnot\b|\bnever\b|\bno longer\b|\babsent\b|\bexcluded?\b|\boutside\b"
     r"|\bseparate(?:ly)?\b|\bonly\s+(?:in|under|when|via|on)\b|\bruns only\b"
 )
+# Pin-test arm (#1679): a hit whose flag has NO occurrence in the lint
+# source is a PROPOSED new check — unfalsifiable against the dispatch set
+# (the existence gate below), but #1385 v1 / #1648 v2 shipped exactly this
+# shape with no test named to keep the bundling true after a later
+# dispatch refactor (the silent-unbundling class; both were caught only by
+# a Phase-2 critic Must-Fix, then corrected in v2/v3 with a
+# test_<check>_bundled_in_no_flags pin). The pin arm uses a LOCALIZED
+# negation guard (the c41 _C41_NEG_WINDOW precedent): both founding
+# incident lines are long mixed-clause Plan-Summary lines carrying an
+# incidental negation token ("not allowed here" / "not a comment") FAR
+# from the claim, so the falsity arm's whole-line guard silently
+# un-triggers them (measured 2026-07-25: whole-line replay reads both
+# incidents SKIP; 40-char pre-window replay reads both WARN and their
+# corrected v2/v3 PASS via the pin-test satisfier).
+_C37_PIN_NEG_WINDOW = 40  # chars of pre-context a negation token guards (c41 parity)
+# Satisfier: the plan names a pytest following the house convention
+# test_<check>_bundled_in_no_flags (20 live exemplars across
+# tests/test_workflow_lint*.py, measured 2026-07-25 — incl. the
+# `*_source_pin` suffixed shapes, which the unanchored regex admits).
+# RAW-plan scan, fences INCLUDED — test enumerations and pytest commands
+# legitimately live in fenced blocks (the c41 satisfier-(a) precedent).
+# The literal `test_` prefix + [a-z0-9_] body is anti-paste armor: the
+# WARN detail names the convention only in its angle-bracketed template
+# form (test_<check>_bundled_in_no_flags), which `<` keeps unmatched.
+_C37_PIN_TEST_RE = re.compile(r"test_[a-z0-9_]*bundled_in_no_flags")
+
+
+def _c37_collect_hits(plan: str) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+    """``(hits, pin_hits)`` flag/line pairs over the plan's non-fenced
+    claim lines. ``hits`` is the falsity arm's whole-line-negation-guarded
+    set; ``pin_hits`` is the pin arm's localized pre-window-guarded
+    superset (#1679). Loop equivalence with the pre-#1679 falsity arm:
+    when ``line_negated`` is False, ``window_live`` is necessarily True
+    (no negation anywhere on the line implies none in any pre-window), so
+    ``hits`` receives exactly what the old whole-line-guarded loop
+    collected; when ``line_negated`` is True, ``hits`` receives nothing —
+    identical to the old guard. The pin arm only ADDS ``pin_hits`` rows
+    for window-live claims."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    hits: list[tuple[str, str]] = []
+    pin_hits: list[tuple[str, str]] = []
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced:
+            continue
+        claims = list(_C37_CLAIM_FWD_RE.finditer(line)) + list(_C37_CLAIM_INV_RE.finditer(line))
+        if not claims:
+            continue
+        line_negated = bool(_C37_NEG_RE.search(line))
+        window_live = any(
+            not _C37_NEG_RE.search(line[max(0, m.start() - _C37_PIN_NEG_WINDOW) : m.start()])
+            for m in claims
+        )
+        if line_negated and not window_live:
+            continue
+        for m in _C37_FLAG_RE.finditer(line):
+            if _C37_DEST_RE.search(line[max(0, m.start() - 12) : m.start()]):
+                continue  # "bundled into `--check-X`": X is the destination, not the subject
+            if not line_negated:
+                hits.append((m.group(1), line))
+            if window_live:
+                pin_hits.append((m.group(1), line))
+    return hits, pin_hits
 
 
 def _c37_lint_source() -> str | None:
@@ -6289,16 +6814,50 @@ def check_noflags_bundling_claim(plan: str, kind: str) -> CheckResult:
     ``--check-<flag>`` + a claim-verb-anchored no-flags assertion on one
     non-fenced line with no negation/scoping token; falsity = derived-set
     non-membership, restricted to flags that EXIST in the workflow_lint
-    source (a flag with no ``--check-<flag>`` occurrence there is a
-    PROPOSED new check — "add ``--check-newthing`` to the no-flags default
-    run" is forward-looking and unfalsifiable at plan time, never an
-    offender). NEVER FAILs (the c15/c34 doctrine: trigger and derivation
+    source. NEVER FAILs (the c15/c34 doctrine: trigger and derivation
     are text heuristics). Deliberately OUT of scope (v1, disclosed): the
     CONVERSE claim class (asserting a flag is NOT in the set when it IS —
     the negation guard drops every negated line unadjudicated), and the
     vocabulary-side false-negative class (a bundling claim phrased without
     a literal "no-flags"/"no flags" token, e.g. "the bare/default
-    workflow_lint run"). Calibration (2026-07-16, 838 corpus plan versions
+    workflow_lint run").
+
+    Pin-test arm (#1679): a claimed flag with NO ``--check-<flag>``
+    occurrence in the lint source is a PROPOSED new check — unfalsifiable
+    against the dispatch set at plan time (the pre-#1679 existence gate
+    read it "never an offender") — but #1385 v1 / #1648 v2 shipped exactly
+    this shape with no test named to keep the claimed bundling true after
+    a later dispatch refactor (the silent-unbundling class). Such a claim
+    now WARNs unless the plan names a pytest matching ``_C37_PIN_TEST_RE``
+    anywhere in the RAW plan (fences included) or declares the standalone
+    escape ``N/A — not bundled into no-flags``. The pin arm's claim
+    matches are guarded by a LOCALIZED pre-window negation check
+    (``_C37_PIN_NEG_WINDOW``, c41 parity) instead of the falsity arm's
+    whole-line guard — see the constant comment for the founding-incident
+    measurement. The falsity arm's trigger, whole-line guard, and WARN
+    detail are byte-preserved, and a falsity WARN takes PRECEDENCE over a
+    co-occurring pin-arm miss (one CheckResult per check; the pin WARN
+    deterministically resurfaces on the post-fix re-verify — every plan
+    revision is re-verified standalone).
+
+    Disclosed pin-arm limitations: (a) the satisfier is PLAN-GLOBAL — a
+    plan proposing TWO new checks that names one pin test passes for both
+    (the c34 scope-note-(a) precedent); (b) sibling-exemplar quotation —
+    a plan quoting a PRIOR check's REAL pin-test name as precedent
+    self-satisfies for its own new check (a false negative; the Phase-2
+    critics own test-shape adequacy); (c) a deliberately explicit-only
+    new check never triggers (it makes no bundling claim), and the
+    immediate-negation shape ("is NOT bundled into the no-flags default
+    run") stays guarded by design; (d) a benign micro-delta vs the
+    pre-#1679 loop on negated-line-only plans: the terminal SKIP detail
+    wording differs from the old no-claim SKIP, and the whole-check N/A
+    escape is now reachable (PASS instead of SKIP) when only negated-line
+    pin residue survives — WARN-free outcomes either way; (e) the
+    satisfier verifies the plan SURFACE (a test NAME, not its existence
+    or selection) — c41's anchor machinery and the code-reviewer own
+    implementation.
+
+    Calibration, falsity arm (2026-07-16, 838 corpus plan versions
     carrying ``--check-``, forced kind=infra): 174 WARN / 115 PASS /
     549 SKIP; the 20 NEWEST infra|batch plans (the forward-looking
     operative set) are 0 WARN; #1322 v1 WARNs while its corrected v2
@@ -6309,7 +6868,25 @@ def check_noflags_bundling_claim(plan: str, kind: str) -> CheckResult:
     by the endemic genuinely-false "no-flags run bundles/includes
     ``--check-asks``" claim (corrected #1007 v1→v2 — a true positive),
     with ~5% incidental false WARNs on historical long mixed-clause
-    lines, acceptable at WARN-only granularity."""
+    lines, acceptable at WARN-only granularity.
+
+    Calibration, pin arm (2026-07-25, landed-function replay over 2,763
+    persisted ``tasks/*/*/plans/v*.md`` versions, forced kind=infra):
+    +6 new WARNs vs the pre-#1679 check — 3 genuine incident-class
+    (#1234 v1 ``--check-executable-git-recipes``, #1520 v1
+    ``--check-hub-verify-calls``, #718 v2 ``--check-skill-circuit-breaker``
+    — each a bundling claim for a flag with no lint-source occurrence and
+    no pin test named), 2 placeholder false positives (#1176 v1/v2's
+    illustrative ``--check-x`` — the standalone escape is the designed
+    remedy), 1 borderline convention-prose (#968 v1's naming-convention
+    discussion of a suggested-then-rejected flag name). Full-corpus status
+    counts under the extended check: 206 WARN / 163 PASS / 2,394 SKIP
+    (falsity-arm mass unchanged in kind from the 2026-07-16 calibration).
+
+    Founding controls (plan-time source simulation — the landed flag
+    stripped from a copied lint source; reproduced through the landed
+    function 2026-07-25): #1385 v1 WARN / #1648 v2 WARN; corrected
+    #1385 v2 PASS / #1648 v3 PASS via the pin-test satisfier."""
     cid, name = (
         "c37_noflags_bundling_claim",
         "no-flags bundling claim matches workflow_lint dispatch",
@@ -6320,21 +6897,11 @@ def check_noflags_bundling_claim(plan: str, kind: str) -> CheckResult:
             name,
             "kind-exempt: --check-* bundling claims are an infra|batch (workflow-fix) shape",
         )
-    lines = plan.splitlines()
-    mask = _fence_mask(lines)
-    hits: list[tuple[str, str]] = []
-    for line, fenced in zip(lines, mask, strict=True):
-        if fenced:
-            continue
-        if not (_C37_CLAIM_FWD_RE.search(line) or _C37_CLAIM_INV_RE.search(line)):
-            continue
-        if _C37_NEG_RE.search(line):
-            continue
-        for m in _C37_FLAG_RE.finditer(line):
-            if _C37_DEST_RE.search(line[max(0, m.start() - 12) : m.start()]):
-                continue  # "bundled into `--check-X`": X is the destination, not the subject
-            hits.append((m.group(1), line))
-    if not hits:
+    # hits: falsity arm (whole-line negation guard); pin_hits: pin arm
+    # (localized pre-window guard, #1679) — see _c37_collect_hits for the
+    # loop-equivalence argument.
+    hits, pin_hits = _c37_collect_hits(plan)
+    if not hits and not pin_hits:
         return _skip(cid, name, "no --check-* no-flags bundling claim on a non-fenced line")
     if _standalone_na_declared(plan, r"no no[- ]flags bundling claim"):
         return _pass(cid, name, "explicit N/A declared (incidental --check/no-flags vocabulary)")
@@ -6352,28 +6919,87 @@ def check_noflags_bundling_claim(plan: str, kind: str) -> CheckResult:
         (flag, line)
         for flag, line in hits
         # Existence gate: a flag absent from the lint source outright is a
-        # PROPOSED new check (forward-looking claim) — skip, never an offender.
+        # PROPOSED new check — the falsity arm cannot adjudicate it; the
+        # pin arm below owns it (#1679).
         if f"--check-{flag}" in src and flag.replace("-", "_") not in dests
     ]
-    if not offenders:
+    if offenders:
+        # Falsity WARN, byte-preserved from pre-#1679. Takes precedence over
+        # a co-occurring pin-arm miss: one CheckResult per check; the pin
+        # WARN resurfaces on the post-fix re-verify.
+        flag, line = offenders[0]
+        more = f" (+{len(offenders) - 1} more)" if len(offenders) > 1 else ""
+        return _warn(
+            cid,
+            name,
+            f"`--check-{flag}` is NOT in workflow_lint.py main()'s no-flags dispatch set "
+            f"(no `args.check_{flag.replace('-', '_')} or no_flags` line) — the plan's bundling "
+            "claim is false; the flag runs only when passed explicitly (#1322 v1 shipped exactly "
+            "this claim for a pre-commit-only flag). "
+            f"Offending line: {line.strip()[:100]!r}{more}. "
+            "Remedies: correct the claim (name the explicit invocation that runs the flag), or "
+            "declare `N/A — no no-flags bundling claim` on its own line, unwrapped "
+            "(no backticks/quotes)",
+        )
+    # Pin-test arm (#1679): a proposed new check claiming no-flags bundling
+    # must name its test_<check>_bundled_in_no_flags pin test.
+    proposed = [(flag, line) for flag, line in pin_hits if f"--check-{flag}" not in src]
+    if proposed:
+        if _C37_PIN_TEST_RE.search(plan):
+            return _pass(
+                cid,
+                name,
+                f"{len(proposed)} proposed-new-check bundling claim(s) — the plan names a "
+                "test_*bundled_in_no_flags pin test",
+            )
+        if _standalone_na_declared(plan, r"not bundled into no[- ]flags"):
+            return _pass(
+                cid,
+                name,
+                "explicit N/A declared (proposed check deliberately not run on the bare "
+                "invocation, or the claim vocabulary is incidental)",
+            )
+        flag, line = proposed[0]
+        more = f" (+{len(proposed) - 1} more)" if len(proposed) > 1 else ""
+        # Paste-safety: the quoted excerpt is SANITIZED — case-insensitively,
+        # since the claim regexes are (?i) — so a pasted WARN detail can
+        # never carry a window-live claim match: the claim NOUN inside the
+        # quote is neutralized deterministically (`no-flags`/`no flags` →
+        # `no_flags`, which `no[- ]flags` cannot match), independent of
+        # where the claim sits in the original line.
+        excerpt = re.sub(r"(?i)no[- ]flags", "no_flags", line.strip()[:100])
+        return _warn(
+            cid,
+            name,
+            f"`--check-{flag}` is a PROPOSED new check — NOT yet in "
+            "scripts/workflow_lint.py — so its membership is unfalsifiable at plan time, "
+            "and the plan names no pin test keeping the claimed wiring true after a later "
+            "dispatch refactor (#1385 v1 / #1648 v2 shipped exactly this silent-unbundling "
+            f"shape). Offending line (claim noun neutralized): {excerpt!r}{more}. Remedies: "
+            "name the pin test in the plan's test enumeration — house convention "
+            "test_<check>_bundled_in_no_flags in tests/test_workflow_lint.py. Prefer the "
+            "in-process drifted-tree shape or the source-pin shape. Or declare "
+            "`N/A — not bundled into no-flags` on its own line, unwrapped "
+            "(no backticks/quotes)",
+        )
+    if hits:
         return _pass(
             cid,
             name,
             f"{len(hits)} no-flags bundling claim(s) — every named flag is in the live "
-            "dispatch set (or is a proposed new check, not yet in the lint source)",
+            "dispatch set",
         )
-    flag, line = offenders[0]
-    more = f" (+{len(offenders) - 1} more)" if len(offenders) > 1 else ""
-    return _warn(
+    # hits empty here: every claim line was whole-line negated and no
+    # proposed-new-check residue survived (every pin_hits flag exists in
+    # src) — the falsity arm deliberately does not adjudicate negated
+    # lines, so this is the same outcome class the pre-#1679 loop produced
+    # (SKIP). Preserves test_c37_pasted_warn_detail_does_not_retrigger_or_
+    # satisfy UNMODIFIED: a pasted falsity WARN detail is line-negated with
+    # window-live in-src claim residue, which must stay SKIP, never PASS.
+    return _skip(
         cid,
         name,
-        f"`--check-{flag}` is NOT in workflow_lint.py main()'s no-flags dispatch set "
-        f"(no `args.check_{flag.replace('-', '_')} or no_flags` line) — the plan's bundling "
-        "claim is false; the flag runs only when passed explicitly (#1322 v1 shipped exactly "
-        f"this claim for a pre-commit-only flag). Offending line: {line.strip()[:100]!r}{more}. "
-        "Remedies: correct the claim (name the explicit invocation that runs the flag), or "
-        "declare `N/A — no no-flags bundling claim` on its own line, unwrapped "
-        "(no backticks/quotes)",
+        "claim line(s) negation-guarded and no proposed-new-check residue — nothing adjudicable",
     )
 
 
@@ -6421,7 +7047,11 @@ def _c38_repo_wide_cmd(line: str) -> str | None:
     workflow_lint arg tail; a ``.py`` path / ``::`` node id / ``-k``
     filter in the pytest tail; any non-``.`` path token in the ruff tail.
     Arm B (the "no-flags default run" phrase) is suppressed when the line
-    already carries a SCOPED workflow_lint invocation (commentary shape)."""
+    already carries a SCOPED workflow_lint invocation (commentary shape).
+    Pytest arm: the scoped test additionally re-scans the rest of the line
+    past the arg-tail terminator, so a scoping ``::`` node id / ``tests?/…py``
+    path / ``-k`` filter written inside backticks after the word "pytest"
+    does NOT read as unscoped."""
     saw_scoped_lint = False
     for m in _C38_LINT_OCC_RE.finditer(line):
         tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
@@ -6432,8 +7062,13 @@ def _c38_repo_wide_cmd(line: str) -> str | None:
     if not saw_scoped_lint and _C38_NOFLAGS_RUN_RE.search(line):
         return "the workflow_lint no-flags default run"
     for m in _C38_PYTEST_OCC_RE.finditer(line):
-        tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
-        if not _C38_PYTEST_SCOPED_RE.search(tail):
+        rest = line[m.end() :]
+        tail = _C38_TAIL_SPLIT_RE.split(rest, 1)[0]
+        # A scoping token (`::` node id, `tests?/…py` path, or `-k` filter)
+        # may live PAST a backtick that terminates the arg tail — the
+        # ordinary prose shape "Concrete pytest node id: `tests/x.py::y`".
+        # Widen to the rest-of-line so the tail split does not hide it.
+        if not _C38_PYTEST_SCOPED_RE.search(tail) and not _C38_PYTEST_SCOPED_RE.search(rest):
             return "pytest (no path scope)"
     for m in _C38_RUFF_OCC_RE.finditer(line):
         tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
@@ -6463,8 +7098,11 @@ def check_exit0_repo_wide_baseline(plan: str, kind: str) -> CheckResult:
     assertion vocabulary (endemic; partially c37's subject); an
     assertion sentence separated from its fenced command by ≥1 line;
     "full suite" with no literal pytest token. Disclosed over-trigger
-    residual: a prose pytest mention with a non-scoping tail on an
-    assertion-bearing line. Deliberate reading (disclosed,
+    residual (narrowed 2026-07-27 for #1729): a bare unscoped `pytest`
+    assertion whose only nearby scoping token is on an unrelated line.
+    (The backticked-node-id class — a scoping ``::`` / ``tests?/…py`` /
+    ``-k`` token past the arg-tail terminator on the SAME line — is now
+    handled by the pytest arm's rest-of-line rescan.) Deliberate reading (disclosed,
     fact-checker-confirmed correct): an EMPTY arg tail — bare
     `ruff check` / bare `pytest` plus an assertion word — classifies
     REPO-WIDE and WARNs (both default to cwd/repo-wide; `all([]) is
@@ -6532,20 +7170,67 @@ def check_exit0_repo_wide_baseline(plan: str, kind: str) -> CheckResult:
 
 # ─── Check 39 — off-pod phase declaration (reads + outputs) ────────────────
 
-_C39_TRIGGER_RE = re.compile(r"(?i)\boff-pod\b|\bvm-side\b")
+# Calibration (DEVELOPMENT-SET numbers, fitted IN-SAMPLE — the tokens were
+# tuned on the same persisted-plan corpus they were measured on; ANY future
+# c39-regex change re-runs the corpus scan and records the realized numbers
+# here — the c33/c27/c32 gate precedent). Re-scan 2026-07-29 (#1796,
+# implementation-time, AS-SHIPPED regex) over 3,004 persisted plan-versions
+# (tasks/*/*/plans/v*.md, 1,264 distinct issues), mirroring the check's
+# gating exactly (stripped-prose per-line trigger; kind==experiment; raw
+# `off_pod_phases:` satisfier; standalone `N/A — no off-pod phase` escape).
+# Inverse-direction tokens KEPT: `vm-produced` — 5 pv triggered (issues
+# #1782/#1796 only, both kind:infra workflow-fix plans discussing this very
+# seam ⇒ kind-exempt), 0 would-WARN; ZERO in-prose non-compliant hits exist
+# in the corpus (#1773's own `VM-produced` prose lives INSIDE its fenced
+# off_pod_phases: block in already-compliant plans, invisible to the
+# stripped-prose trigger by design), so no in-corpus positive control
+# exists and the token is FORWARD-LOOKING per the c38 positive/negative-
+# control convention — the pinned WARN test is the synthetic positive
+# control. `produced on the vm` — 2 pv triggered (#548 v1, #778 v5), both
+# GENUINE cross-phase-read prose ("The off-pod primary read ... is produced
+# on the VM AFTER pod termination") and both ALREADY would-WARN under the
+# pre-#1796 off-pod/vm-side regex ⇒ 0 NEW would-WARNs, empty nuisance
+# class. Tokens DROPPED: `vm-built` / `vm-generated` — 0 corpus hits;
+# secondary variants gated on demonstrated recall (plan #1796 §3),
+# speculative widening declined. `git-clone lane` — 13 pv / 5 issues,
+# 7 would-WARN, nuisance class irreducible: artifact-reuse fitness-check
+# boilerplate (#1090 v5 "fetchability check (h) passes by construction
+# (git-clone lane, ...)") and COMPLIANT staging prose (#920 v1-v3
+# "committed to the issue branch before dispatch so the git-clone lane
+# stages it" — 3 NEW nuisance would-WARNs); dropped per the plan's
+# drop-by-default posture. Recent-era (issue >= 1000) NEW nuisance WARNs
+# from the SHIPPED tokens: 0. AS-SHIPPED delta confirmation: the widened
+# regex changes ZERO plan-version verdicts across the full corpus (0 newly
+# triggered pv, 0 newly would-WARN pv vs the pre-#1796 regex — every
+# shipped-token hit lives in a plan that already triggers on off-pod /
+# vm-side vocabulary elsewhere), i.e. purely forward-looking widening.
+_C39_TRIGGER_RE = re.compile(r"(?i)\boff-pod\b|\bvm-side\b|\bvm-produced\b|\bproduced on the vm\b")
 
 
 def check_off_pod_phase_declaration(plan: str, kind: str) -> CheckResult:
     """WARN-only, conditional, experiment-only: a plan whose non-fenced
     prose names an off-pod / VM-side phase must either carry the fenced
     ``off_pod_phases:`` declaration block (planner-section-reference.md § 9
-    — per phase: runs_on + reads[] with producing phase + permanent source
-    + outputs[] with off-pod dest; the block upload-verifier Steps 2.7/2.8
+    — since #1782 a direction-agnostic CROSS-PHASE READS rule: per phase
+    that reads another phase's outputs, runs_on + reads[] with producing
+    phase + permanent source the CONSUMING machine can fetch + outputs[]
+    with dest; the block upload-verifier Steps 2.7/2.8
     consume, #1535) or declare the standalone escape
-    ``N/A — no off-pod phase``. Mechanizes the #1526 gotchas.md off-pod
-    upload-set bullet at plan time (incident #1482: an off-pod judge died
+    ``N/A — no off-pod phase``. Mechanizes the #1526 gotchas.md
+    cross-machine upload-set bullet at plan time (incident #1482: an
+    off-pod judge died
     at VM launch on pod-only scratch never in the upload set; incident
-    #1426: a planned VM-side phase FAILed the verifier r1 by construction).
+    #1426: a planned VM-side phase FAILed the verifier r1 by construction;
+    incident #1773 — the inverse direction: a GCE phase crashed loading
+    VM-produced inputs never uploaded/staged). KNOWN MECHANICAL RESIDUAL
+    (narrowed by #1796): the trigger now ALSO fires on the corpus-
+    calibrated inverse-direction tokens (`vm-produced` /
+    `produced on the vm` — a pod/GCE/SLURM phase consuming VM-produced
+    inputs); inverse-direction prose using OTHER vocabulary (calibration
+    dropped `git-clone lane` as irreducibly noisy and `vm-built` /
+    `vm-generated` as zero-recall — see the calibration comment above
+    _C39_TRIGGER_RE) remains enforced by planner §9 + critic Methodology
+    item 10 only.
     NEVER FAILs — the trigger is a vocabulary heuristic (the c31/c34
     family), and legacy plans must not bounce retroactively. kind-exempt
     outside experiment: infra/batch/analysis/survey plans rarely dispatch
@@ -6577,10 +7262,13 @@ def check_off_pod_phase_declaration(plan: str, kind: str) -> CheckResult:
         "`off_pod_phases:` block — without the declaration the phase's READS are not "
         "plan-named (upload-verifier Step 2.8 cannot gate them at the cheap-fix window "
         "before the pod dies; the #1482 class) and its OUTPUTS false-FAIL the pod-side "
-        "Step 2.7 gate by construction (#1426). Add the fenced `off_pod_phases:` block "
-        "(template + worked example: planner-section-reference.md § 9 (off_pod_phases)), "
+        "Step 2.7 gate by construction (#1426). The rule is direction-agnostic (#1773): "
+        "declare EVERY dispatched phase that reads another phase's outputs, incl. a "
+        "pod/GCE/SLURM phase consuming VM-produced inputs. Add the fenced "
+        "`off_pod_phases:` block "
+        "(template + worked examples: planner-section-reference.md § 9 (off_pod_phases)), "
         "or declare `N/A — no off-pod phase` on its own line, unwrapped (no "
-        "backticks/quotes), if the vocabulary is incidental and no phase runs off the pod",
+        "backticks/quotes), if the vocabulary is incidental and no such phase exists",
     )
 
 
@@ -6746,7 +7434,8 @@ def check_regression_anchor_executed(plan: str, kind: str) -> CheckResult:
     (``select_step9c_tests.select_tests_with_reasons``) over the plan's
     declared touched files. #1536 plan v2 claimed two ``test_issue906_*``
     files "sit on the Step-9c mapped-scan path for sft.py edits" — measured
-    false: ``--map-files`` on sft.py is empty and the full selection returns
+    false: ``--map-files`` on sft.py is empty (pre-#1573; the mapping mode now
+    carries the src/scripts dependency arms) and the full selection returns
     56 tests without either anchor (the import map is one-hop; a test
     importing a helper that imports the touched module is never selected).
     NEVER FAILs (task-body constraint: an anchor claim can be legitimately
@@ -6894,6 +7583,637 @@ def check_regression_anchor_executed(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 42 — cited commit SHA resolves ─────────────────────────────────
+
+_C42_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c34/c41 pattern)
+
+# Cite-as-commit context patterns. Each anchors on a marker BEFORE (or
+# labeled inline with) the 7-40-char hex token — grammar ports from
+# ``.claude/rules/workflow-fix-on-bug.md`` clause (d) + the crash-fix
+# marker-note convention (``fix_sha=`` / ``merge_sha=``,
+# ``.claude/rules/crash-fix-rounds.md`` § fix-engaged signal element 4).
+_C42_CITE_PATTERNS = [
+    # "commit `<sha>`" / "commit <sha>"
+    re.compile(r"(?i)\bcommit\s+`?(?P<sha>[0-9a-f]{7,40})`?\b"),
+    # "landed in `<sha>`" / "landed at `<sha>`"
+    re.compile(r"(?i)\blanded\s+(?:in|at)\s+`?(?P<sha>[0-9a-f]{7,40})`?\b"),
+    # "merge `<sha>`" / "merged in <sha>" / "merged at <sha>"
+    re.compile(r"(?i)\bmerge(?:d)?\s+(?:in\s+|at\s+)?`?(?P<sha>[0-9a-f]{7,40})`?\b"),
+    # "`<sha>` (commit)" / "`<sha>` -- commit" (em/en dash or ASCII hyphen)
+    # / same for "merge". The dash class carries em dash + en dash + ASCII
+    # hyphen; the RUF001 en-dash flag is a false-positive here (the en
+    # dash is REAL plan text -- same rationale as NA_RE, and measurement
+    # plans use these interchangeably).
+    re.compile(
+        r"(?i)`(?P<sha>[0-9a-f]{7,40})`\s*(?:\(commit\)|[—–-]\s*(?:commit|merge))"  # noqa: RUF001
+    ),
+    # "**commit:** <sha>" / "**merge:** <sha>" / "**commit_sha:** <sha>"
+    re.compile(r"(?i)\*\*(?:commit|merge)(?:_sha)?:\*\*\s*`?(?P<sha>[0-9a-f]{7,40})`?\b"),
+    # "fix_sha=<sha>" / "fix_sha: <sha>" / "merge_sha=<sha>" / "merge_sha: <sha>"
+    re.compile(r"(?i)\b(?:fix_sha|merge_sha)\s*[:=]\s*`?(?P<sha>[0-9a-f]{7,40})`?\b"),
+]
+
+# Same-line disqualifiers: a hex captured by cite-context is dropped when
+# the line ALSO carries workflow-fix fingerprint / session-basename / HF
+# revision labels. These are the exclusion classes named in
+# ``.claude/rules/workflow-fix-on-bug.md`` clause (d): "cite the token as
+# what it actually is (transcript/session basename, HF revision,
+# fingerprint), labeled as such."
+_C42_EXCLUDE_LINE_PATTERNS = [
+    re.compile(r"(?i)\bfingerprint\s*[:=]"),
+    re.compile(r"(?i)\bsession(?:_id)?\s*[:=]|session\s+basename"),
+    re.compile(r"(?i)\brevision\s*[:=]|--revision|hf_revision|dataset_revision"),
+]
+
+
+def _c42_rev_parse(sha: str) -> bool | None:
+    """``True`` when ``sha`` resolves under
+    ``git rev-parse --verify --quiet '<sha>^{commit}'``, ``False`` when it
+    does not, ``None`` when git is unavailable (permission / OS / timeout —
+    the check fails OPEN via a caller-side SKIP). Retries ONCE on a
+    transient ``CalledProcessError`` / ``OSError`` after 0.1s (the plan's
+    Methodology-critic concern: a brief ``.git/index.lock`` collision on
+    the concurrent-committer repo root — the shared-VM #1201 shape — must
+    not spuriously fail the check)."""
+    cmd = ["git", "rev-parse", "--verify", "--quiet", f"{sha}^{{commit}}"]
+    for attempt in (1, 2):
+        try:
+            r = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=10,
+                cwd=str(_C42_REPO_ROOT),
+                check=False,
+            )
+            return r.returncode == 0
+        except subprocess.TimeoutExpired:
+            return None  # timeout is not retriable — the git command hung
+        except OSError:
+            if attempt == 1:
+                time.sleep(0.1)
+                continue
+            return None
+    return None  # unreachable (defensive; the loop always returns)
+
+
+def check_commit_sha_resolves(plan: str, kind: str) -> CheckResult:
+    """Every hex token the plan cites AS A COMMIT — ``commit `<sha>```,
+    ``landed in <sha>``, ``**commit:** <sha>``, ``fix_sha=<sha>`` — must
+    resolve under ``git rev-parse --verify --quiet '<sha>^{commit}'``.
+    Mirrors ``.claude/rules/workflow-fix-on-bug.md`` clause (d) on the
+    filing side.
+
+    FAIL (all kinds) — a typo'd commit SHA is a factual defect independent
+    of experiment kind (incident #1683: ``7c7095f40e`` was cited as the
+    fix commit; the real commit was ``7c8095f40e`` and the fact-checker
+    round burned proving the mismatch; #1414: transcript basename
+    ``fc2b61b7`` shipped as "the fix commit"). Bare hex tokens
+    (fingerprints, HF revisions, transcript basenames, arXiv ids) are OUT
+    OF SCOPE — the cite-context grammar in ``_C42_CITE_PATTERNS`` gates
+    entry, and ``_C42_EXCLUDE_LINE_PATTERNS`` drops same-line
+    disqualifiers. Hex tokens inside fenced code blocks are excluded via
+    ``_fence_mask``.
+
+    Fail-open on git unavailability: the check is a mechanical gate, not
+    a hard block on a broken git install / permission failure. A brief
+    ``.git/index.lock`` collision retries ONCE (0.1 s) before SKIPping."""
+    cid, name = "c42_commit_sha_resolves", "cited commit SHA resolves"
+    del kind  # this check is kind-blind — a typo'd commit is a factual defect for all
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    cited: list[tuple[int, str, str]] = []  # (line_idx, sha, matched_context)
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced:
+            continue
+        if any(p.search(line) for p in _C42_EXCLUDE_LINE_PATTERNS):
+            continue
+        for pat in _C42_CITE_PATTERNS:
+            for m in pat.finditer(line):
+                sha = m.group("sha").lower()
+                cited.append((i, sha, m.group(0)))
+    if not cited:
+        return _skip(cid, name, "no hex tokens cited as commits detected")
+    # Deduplicate by SHA (a plan may cite the same commit N times).
+    unique: dict[str, tuple[int, str]] = {}
+    for ln, sha, ctx in cited:
+        unique.setdefault(sha, (ln, ctx))
+    unresolved: list[tuple[str, str]] = []
+    for sha, (_ln, ctx) in unique.items():
+        result = _c42_rev_parse(sha)
+        if result is None:
+            # Fail-open on git unavailability — SKIP the whole check
+            # (rather than mixed-verdict FAIL some / skip others), because
+            # a partial run under a broken git install would mask the very
+            # positives the check is here to catch.
+            return _skip(
+                cid,
+                name,
+                "git rev-parse unavailable (permission / OS / timeout) — check inconclusive",
+            )
+        if not result:
+            unresolved.append((sha, ctx))
+    if not unresolved:
+        return _pass(
+            cid,
+            name,
+            f"all {len(unique)} cited commit SHA(s) resolve (verified via "
+            "`git rev-parse --verify --quiet '<sha>^{commit}'`)",
+        )
+    detail = (
+        f"{len(unresolved)} of {len(unique)} cited commit SHA(s) do NOT resolve as commits: "
+        + "; ".join(f"{sha} (context: {ctx!r})" for sha, ctx in unresolved[:4])
+        + (" …" if len(unresolved) > 4 else "")
+        + ". Remedy: verify the SHA at compose time — "
+        "`git rev-parse --verify --quiet '<sha>^{commit}'` — and re-derive the real "
+        "commit (`git log --oneline --since='14 days ago' -- <touched-file>`) or "
+        "cite the token as what it actually is (an HF revision, transcript basename, "
+        "fingerprint), labeled as such. Mirrors "
+        "`.claude/rules/workflow-fix-on-bug.md` clause (d)."
+    )
+    return _fail(cid, name, detail)
+
+
+# ─── Check 43 — /workspace sentinels need a /workspace-contract lane ───────
+
+# Trigger scans the RAW plan text (NOT strip_fences): sentinel declarations
+# live in fenced ``phase_outputs:`` YAML by design (the c30 convention — the
+# founding #1775 instance declared `/workspace/logs/issue-1775-p*.done`
+# inside a fenced block), so a stripped-prose scan would miss exactly the
+# founding shape. Two arms, same-line co-occurrence for arm (a):
+#   (a) a line carrying "sentinel" (case-insensitive) AND "/workspace/";
+#   (b) a `/workspace/logs/issue-` path (the poll_pipeline.py sentinel
+#       prefix), even with no "sentinel" token on the line.
+_C43_SENTINEL_WORD_RE = re.compile(r"(?i)\bsentinel")
+_C43_WS_LOGS_RE = re.compile(r"/workspace/logs/issue-")
+
+# Satisfier (raw scan too — a dispatch command lives in a fenced block): a
+# DRAINED-lane pin, `backend: runpod|fellows` (frontmatter / prose line) or
+# a `--backend runpod|fellows` dispatch flag. fellows joined the drained
+# set at #1898 (slurm_monitor.drain_cluster_sentinels); gcp LEFT the
+# pinnable set at #2028 (GCP provisioning disabled — an explicit gcp pin
+# now raises GcpDisabledError at route(), so it cannot satisfy this check).
+_C43_LANE_PIN_RE = re.compile(r"(?i)(?:\bbackend:\s*|--backend[=\s]+)(?:runpod|fellows)\b")
+
+# The rule's own escape phrase, standalone at line start (leading
+# list/blockquote/bold markers tolerated via the `_standalone_na_declared`
+# lstrip convention; case-insensitivity explicit; hyphen / en-dash /
+# em-dash variants tolerated). A label-prefixed MID-LINE mention (`**Lane /
+# sentinel contract:** no sentinel dependence — auto-safe ...`, the #1738
+# v4 shape) and any backtick/fence-wrapped paste are DELIBERATELY
+# unrecognized (the #1238 anti-paste doctrine) — declare the escape
+# unwrapped on its own line.
+_C43_ESCAPE_RE = re.compile(
+    r"(?i)^no sentinel dependence\s*[-–—]+\s*auto[-–— ]safe\b"  # noqa: RUF001 — real dash variants
+)
+
+
+def _c43_escape_declared(plan: str) -> bool:
+    """Standalone ``no sentinel dependence — auto-safe`` declaration (the
+    plan-compute-sizing.md rule's own phrase, no N/A prefix), or the
+    shared-helper ``N/A — no sentinel dependence`` form. Fenced lines and
+    wrapped pastes never satisfy (see ``_standalone_na_declared``)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced:
+            continue
+        if _C43_ESCAPE_RE.match(line.lstrip(" \t>*-")):
+            return True
+    return _standalone_na_declared(plan, r"no sentinel dependence\b")
+
+
+def check_sentinel_lane(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, experiment-only: a plan that declares
+    ``/workspace/...`` sentinel paths (gate sentinels, ``epm:results``
+    payloads — the pod-side signaling contract) while leaving the backend
+    on the unrestricted auto lane must either pin a DRAINED lane
+    (``backend: runpod`` / ``backend: fellows``, or a
+    ``--backend runpod|fellows`` dispatch flag; ``backend: gcp`` left the
+    pinnable set at #2028 — GCP provisioning disabled) or declare the
+    rule's own escape ``no sentinel dependence — auto-safe``. Mechanizes
+    ``plan-compute-sizing.md`` § "Sentinel-signaling workloads need a
+    /workspace-contract lane": on auto, a fellows capacity miss can
+    fall through to the DRAC/Mila SLURM lanes, where compute nodes have no
+    /workspace — the dispatcher dies FAIL-LOUD at ``mkdir -p
+    /workspace/logs`` and burns the submission (#608). fellows is a
+    DRAINED lane as of #1898 (``slurm_monitor.drain_cluster_sentinels``
+    reads its cluster-shared ``/workspace/logs`` each poll tick, the same
+    contract as GCP/RunPod), so every silent-loss path is closed and the
+    residual auto-lane hazard is the fail-loud DRAC/Mila burn. Founding
+    instance: #1775 plan v3 declared ``/workspace/logs/issue-1775-p*.done``
+    sentinels in a fenced ``phase_outputs`` block while §9 said "no
+    backend pin → auto lane"; only a Methodology critic caught it
+    (Must-Fix M1). NEVER FAILs — the disposition is sometimes legitimately
+    prose-satisfied in different words, and legacy plans must not bounce
+    retroactively (the c39/c31/c34 family convention). kind-exempt outside
+    experiment: infra workflow-fix plans (this check's own plan included)
+    legitimately QUOTE ``/workspace/...`` sentinel paths without
+    dispatching a sentinel-signaling workload. Trigger AND satisfiers scan
+    the RAW plan text (NOT strip_fences): the sentinel declarations and
+    the dispatch command both live in fenced blocks by design (unlike c39,
+    whose trigger is prose vocabulary)."""
+    cid, name = "c43_sentinel_lane", "/workspace sentinels vs unpinned auto lane"
+    if kind != "experiment":
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: sentinel-lane pinning is an experiment-plan (pod-dispatch) shape",
+        )
+    trigger_lines = [
+        ln
+        for ln in plan.splitlines()
+        if _C43_WS_LOGS_RE.search(ln) or ("/workspace/" in ln and _C43_SENTINEL_WORD_RE.search(ln))
+    ]
+    if not trigger_lines:
+        return _skip(cid, name, "no /workspace sentinel paths detected")
+    if _C43_LANE_PIN_RE.search(plan):
+        return _pass(
+            cid,
+            name,
+            "/workspace-contract (drained) lane pinned (backend:/--backend runpod|fellows)",
+        )
+    if _c43_escape_declared(plan):
+        return _pass(cid, name, "explicit escape declared (no sentinel dependence — auto-safe)")
+    shown = "; ".join(ln.strip()[:70] for ln in trigger_lines[:3])
+    return _warn(
+        cid,
+        name,
+        f"plan declares /workspace sentinel paths ({shown!r}) with no drained lane "
+        "pinned — on the auto lane a fellows capacity miss can fall through to the "
+        "DRAC/Mila SLURM lanes, where compute nodes have no /workspace: the dispatcher "
+        "dies fail-loud at `mkdir -p /workspace/logs` and burns the submission (#608). "
+        "fellows is a DRAINED lane as of #1898 (the VM-side poller drains its "
+        "/workspace/logs sentinels each tick, same contract as GCP/RunPod). Pin "
+        "`backend: fellows` or `backend: runpod` (or carry `--backend "
+        "runpod|fellows` in the dispatch command; `backend: gcp` is REFUSED as of "
+        "#2028 — GCP provisioning disabled), or declare `no sentinel "
+        "dependence — auto-safe` on its own line, unwrapped (no backticks/quotes), if "
+        "nothing in the run posts through sentinels (plan-compute-sizing.md "
+        "§ Sentinel-signaling workloads)",
+    )
+
+
+# ─── Check 44 — declared-committed paths not gitignored ────────────────────
+
+_C44_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c34/c41/c42 pattern)
+
+# Trigger: commit vocabulary on a line (raw scan, fences INCLUDED — the c43
+# precedent: committed-output declarations live in fenced ``phase_outputs:``
+# YAML and dispatch prose alike). Deliberately narrow — "committed to the
+# issue branch / git / main / the repo" and the "rides the git clone"
+# lane-reachability idiom — NOT the bare token "commit", which false-fires
+# on fix-commit citations (c42's surface) and git mechanics prose.
+_C44_COMMIT_VOCAB_RE = re.compile(
+    r"(?i)(?:\bcommit(?:ted|s)?\s+(?:to|into|on)\s+(?:the\s+)?"
+    r"(?:issue[-\s]branch|git\b|main\b|repo\b)"
+    r"|\brides?\s+the\s+git\s+clone\b)"
+)
+
+# Path-like token: at least one `/`; later segments may carry glob (`*`) and
+# brace (`{a,b}`) characters, expanded / reduced by ``_c44_expand_tokens``.
+_C44_PATH_TOKEN_RE = re.compile(r"[A-Za-z0-9_.\-]+(?:/[A-Za-z0-9_.\-{},*]+)+")
+
+# Same-section satisfier: an explicit force-add / staged-index-verification
+# note next to the declaration (the /issue Step 9a-ter § Staged-index
+# verification recipe). Plan-wide satisfiers are deliberately NOT accepted —
+# a global mention elsewhere must not silence a specific declared path.
+_C44_FORCE_ADD_RE = re.compile(
+    r"(?i)(?:git\s+add\s+(?:-f\b|--force\b)|\bforce[-\s]add"
+    r"|staged[-\s]index[-\s]verif|ls-files\s+--others\s+--ignored)"
+)
+
+
+def _c44_expand_tokens(line: str) -> list[str]:
+    """Repo-relative path tokens on one trigger line. Excluded: absolute
+    paths (``/workspace/...`` — pod-side, not repo paths) and URL tails
+    (``https://host/...``) — both arrive with a ``/`` immediately before the
+    token, the one shared signature. Brace groups (``{a.json,b.json}``)
+    expand to every member; glob-bearing tokens reduce to their deepest
+    literal directory prefix (check-ignore on the directory); trailing
+    sentence punctuation is stripped. Returns [] when nothing survives."""
+    out: list[str] = []
+    for m in _C44_PATH_TOKEN_RE.finditer(line):
+        if m.start() > 0 and line[m.start() - 1] == "/":
+            continue  # absolute path or URL tail — not a repo-relative path
+        tok = m.group(0).rstrip(".,")
+        bm = re.match(r"^(.*)\{([^{}]*)\}(.*)$", tok)
+        variants = (
+            [bm.group(1) + part + bm.group(3) for part in bm.group(2).split(",")] if bm else [tok]
+        )
+        for v in variants:
+            v = v.rstrip(".,")
+            if any(ch in v for ch in "*?{}"):
+                literal: list[str] = []
+                for comp in v.split("/"):
+                    if any(ch in comp for ch in "*?{}"):
+                        break
+                    literal.append(comp)
+                v = "/".join(literal)
+            if v:
+                out.append(v)
+    return out
+
+
+def _c44_check_ignore(paths: list[str]) -> dict[str, str] | None:
+    """Map each gitignore-MATCHED path in ``paths`` to its matching pattern,
+    via ONE batched, index-aware ``git check-ignore -v --stdin`` call
+    (deliberately never ``--no-index``: a tracked path rides the clone
+    regardless of ignore rules — the #1900 post-fix state — so the index
+    consult is load-bearing). Exit 0/1 are both healthy (some/none ignored);
+    a matched pattern beginning with ``!`` (negation) reads as NOT-ignored —
+    some git versions print negation-matched paths under ``-v``. Returns
+    ``None`` when git is unavailable (timeout / OSError after one 0.1 s
+    retry / exit ≥ 2) — the caller SKIPs fail-open, the c42 contract."""
+    cmd = ["git", "check-ignore", "-v", "--stdin"]
+    payload = "\n".join(paths) + "\n"
+    for attempt in (1, 2):
+        try:
+            r = subprocess.run(
+                cmd,
+                input=payload,
+                capture_output=True,
+                text=True,
+                timeout=10,
+                cwd=str(_C44_REPO_ROOT),
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            return None  # timeout is not retriable — the git command hung
+        except OSError:
+            if attempt == 1:
+                time.sleep(0.1)
+                continue
+            return None
+        if r.returncode >= 2:
+            return None
+        ignored: dict[str, str] = {}
+        for out_line in r.stdout.splitlines():
+            head, sep, path = out_line.rpartition("\t")
+            if not sep:
+                continue
+            parts = head.split(":", 2)
+            pattern = parts[2] if len(parts) == 3 else head
+            if pattern.startswith("!"):
+                continue  # negation pattern — the path is NOT ignored
+            ignored[path] = pattern
+        return ignored
+    return None  # unreachable (defensive; the loop always returns)
+
+
+def _c44_heads(lines: list[str], mask: list[bool]) -> list[tuple[int, int]]:
+    """Fence-unmasked ``##``/``###`` heading positions as (line_idx, level)."""
+    heads: list[tuple[int, int]] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced:
+            continue
+        m = _HEADING_RE.match(line.strip())
+        if m and len(m.group(1)) in (2, 3):
+            heads.append((i, len(m.group(1))))
+    return heads
+
+
+def _c44_section_span(heads: list[tuple[int, int]], idx: int, n_lines: int) -> tuple[int, int]:
+    """[start, end) of the ``##``/``###`` section containing line ``idx`` —
+    the nearest preceding heading to the next heading of the same or higher
+    level; the preamble (before the first ``##``/``###``) is its own
+    section."""
+    prev: tuple[int, int, int] | None = None
+    for j, (h_idx, lvl) in enumerate(heads):
+        if h_idx <= idx:
+            prev = (j, h_idx, lvl)
+        else:
+            break
+    if prev is None:
+        return 0, heads[0][0] if heads else n_lines
+    j, h_idx, lvl = prev
+    for h2_idx, lvl2 in heads[j + 1 :]:
+        if lvl2 <= lvl:
+            return h_idx, h2_idx
+    return h_idx, n_lines
+
+
+def check_committed_paths_not_gitignored(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, ALL kinds: a plan that declares output/config
+    paths as committed-to-git while a live ``.gitignore`` rule would silently
+    skip them under a plain ``git add`` (rc=0, no error — the #958
+    signature) must note the force-add / staged-index verification in the
+    SAME section as the declaration. A gitignore-eaten "committed" input
+    strands the git-clone lanes (GCP, fellows) at their first config read
+    (the #734 shape). Founding instance: #1900's plan declared
+    ``data/issue_1900/config/{subset.json,arms.json}`` committed to the
+    issue branch while ``data/*`` matched — caught only by the round-1
+    Methodology critic; the fix force-added them (index-aware default
+    ``git check-ignore`` correctly reads the post-fix tracked state as
+    not-ignored). WARN, never FAIL: the declaration may be satisfiable by an
+    implementation-time force-add the plan simply forgot to note — the
+    critic ensemble stays the judgment layer. Fail-open SKIP when git is
+    unavailable (the c42 contract). Trigger AND path extraction scan the RAW
+    plan text (fences INCLUDED, the c43 precedent); the
+    ``N/A — no committed outputs`` escape short-circuits BEFORE any git
+    access (the c34 NA idiom)."""
+    cid, name = "c44_committed_paths_gitignored", "declared-committed paths not gitignored"
+    del kind  # all kinds — a gitignore-eaten declared output strands any kind's lanes
+    if _standalone_na_declared(plan, r"no committed outputs\b"):
+        return _skip(cid, name, "explicit escape declared (N/A — no committed outputs)")
+    lines = plan.splitlines()
+    vocab_idx = [i for i, line in enumerate(lines) if _C44_COMMIT_VOCAB_RE.search(line)]
+    if not vocab_idx:
+        return _skip(cid, name, "no committed-output declarations detected")
+    declared: list[tuple[int, str]] = []  # (line_idx, repo-relative path)
+    for i in vocab_idx:
+        for tok in _c44_expand_tokens(lines[i]):
+            declared.append((i, tok))
+    if not declared:
+        return _skip(cid, name, "commit vocabulary without extractable repo paths")
+    unique_paths = sorted({p for _, p in declared})
+    ignored = _c44_check_ignore(unique_paths)
+    if ignored is None:
+        return _skip(cid, name, "git check-ignore unavailable — check inconclusive")
+    if not ignored:
+        return _pass(
+            cid,
+            name,
+            f"none of the {len(unique_paths)} declared-committed path(s) match a live "
+            ".gitignore rule (index-aware `git check-ignore`; tracked paths read not-ignored)",
+        )
+    mask = _fence_mask(lines)
+    heads = _c44_heads(lines, mask)
+    offenders: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for i, p in declared:
+        if p not in ignored or p in seen:
+            continue
+        start, end = _c44_section_span(heads, i, len(lines))
+        if _C44_FORCE_ADD_RE.search("\n".join(lines[start:end])):
+            continue  # same-section force-add / staged-index-verification note
+        seen.add(p)
+        offenders.append((p, ignored[p]))
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            "every gitignore-matched declared-committed path carries a same-section "
+            "force-add / staged-index-verification note",
+        )
+    shown = "; ".join(f"`{p}` (matched by `{rule}`)" for p, rule in offenders[:4])
+    more = " …" if len(offenders) > 4 else ""
+    return _warn(
+        cid,
+        name,
+        f"plan declares {len(offenders)} committed output path(s) a live .gitignore rule "
+        f"would silently skip under a plain `git add` (rc=0, no error — the #958 signature): "
+        f'{shown}{more}. A gitignore-eaten "committed" input strands the git-clone lanes '
+        "(GCP/fellows) at their first read (#734; founding instance #1900: "
+        "`data/issue_1900/config/` declared committed while `data/*` matched). Remedy: "
+        "force-add with staged-index verification (`git add -f` + `git ls-files --others "
+        "--ignored --exclude-standard` per /issue SKILL.md Step 9a-ter § Staged-index "
+        "verification) noted in the SAME section as the declaration, or relocate the output "
+        "out of the ignored root, or drop the committed claim; if the vocabulary is "
+        "incidental, declare `N/A — no committed outputs` on its own line, unwrapped "
+        "(no backticks/quotes)",
+    )
+
+
+# ─── Check 45 — trained-base change DV vs base-side predictor companion ────
+
+# Trigger arm (a): a change-DV signature anywhere in the STRIPPED plan prose
+# (fenced command/code blocks must neither satisfy nor trip — the c39
+# convention): `trained - base` (hyphen / U+2212 minus / en dash, spaced or
+# not), `post - pre`, or a `Delta log P` / `delta log P` delta form. Word
+# boundaries on `base`/`pre` keep `trained-baseline` / `post-prefix` (this
+# project's prefix-mapping vocabulary) from false-firing.
+_C45_CHANGE_DV_RE = re.compile(
+    r"(?i)\btrained\s*[-−–]\s*base\b|\bpost\s*[-−–]\s*pre\b|(?:Δ|\bdelta\b)\s*log\s*P"  # noqa: RUF001 — real minus/en-dash plan text
+)
+
+# Trigger arm (b): a base-side predictor RACED — one stripped line carrying
+# BOTH a base-side-quantity token AND a predictor-context token (the same-line
+# conjunction keeps generic "base rate" prose from firing alone). Grounded on
+# the founding #1900 v4 Plan-Summary instance: "incumbent P7 (base behavioral
+# propensity) raced and partialled".
+_C45_BASE_SIDE_RE = re.compile(
+    r"(?i)\bbase (?:behavioral )?propensit(?:y|ies)\b"
+    r"|\bbase[- ]side (?:predictors?|propensit(?:y|ies))\b"
+    r"|\bbase log ?P\b|\bbase rates?\b|\bbase judge scores?\b"
+)
+_C45_PREDICTOR_CTX_RE = re.compile(
+    r"(?i)\b(?:predictors?|candidates?|champions?|race[sd]?|incumbents?|horses?)\b"
+)
+
+# Satisfier (i): companion-column registration (grounded on #1900 v5
+# § "Registered DV-identity companion columns" — "level companion" /
+# "change companion" labels).
+_C45_COMPANION_RE = re.compile(
+    r"(?i)\bcompanion columns?\b|\blevel companions?\b"
+    r"|\b(?:graded[- ])?change companions?\b|\blevel[- ]DV companions?\b"
+)
+
+# Satisfier (ii): a stated winner sign convention (grounded on #1900 v5
+# "Winner-selection convention (registered): the champion argmax is over
+# SIGNED Spearman rho").
+_C45_SIGN_CONVENTION_RE = re.compile(
+    r"(?i)\bwinner[- ]selection convention\b|\bsign conventions?\b"
+    r"|\bsigned (?:Spearman )?(?:ρ|rho)\b"  # noqa: RUF001 — real rho char in plan text
+)
+# Degenerate-|rho| guard (critic MF1): bare `|rho|` / `absolute` is NOT a
+# standalone satisfier — predictor-race plans near-universally carry
+# incidental max-|rho| prose in their selection-symmetric sections (#1900 v4,
+# the must-WARN fixture) — it counts ONLY on a line also carrying a
+# winner/convention/champion/argmax context token.
+_C45_ABS_RHO_RE = re.compile(r"(?i)\|(?:ρ|rho)\||\babsolute\b")  # noqa: RUF001 — real rho char in plan text
+_C45_WINNER_CTX_RE = re.compile(r"(?i)\b(?:winners?|conventions?|champions?|argmax)\b")
+
+
+def _c45_escape_declared(plan: str) -> bool:
+    """Standalone ``N/A — no base-side predictor vs change DV`` declaration
+    (see ``_standalone_na_declared`` for the anti-paste rationale)."""
+    return _standalone_na_declared(plan, r"no base[- ]side predictor vs change DV\b")
+
+
+def check_change_dv_base_predictor_companion(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, experiment-only: a plan that races a
+    BASE-SIDE predictor (base propensity / base log P / base rate / base
+    judge score in a predictor-candidate roster) against a
+    ``trained - base`` (or ``post - pre`` / ``Delta log P``) CHANGE dependent
+    variable must register BOTH (i) a level (or change) COMPANION column
+    and (ii) a stated WINNER SIGN CONVENTION (signed rho vs |rho|), or declare
+    the standalone escape ``N/A — no base-side predictor vs change DV``.
+    Mechanizes the #559/#605 pattern (critic-lens-reference.md Statistics
+    lens item 2, "Inherited-positive DV-swap"): the base term enters the
+    change DV with a mechanical ~ -1 coefficient, so per-panel DV identity
+    can manufacture — or destroy — the champion verdict (#605: base-to-level
+    rho +0.28/+0.19 vs base-to-delta rho -0.43/-0.54). Founding instance: #1900
+    round 1, where only the Stats-lens critic caught it (Must-Fix; v5
+    registered the "Registered DV-identity companion columns" block + the
+    "Winner-selection convention" line this check's satisfiers are
+    grounded on). NEVER FAILs — the trigger is a vocabulary heuristic and
+    a legitimate disposition is sometimes prose-satisfied in different
+    words (the c39/c31/c34/c43 family convention); the LLM Statistics
+    critic remains the FAIL authority. kind-exempt outside experiment:
+    infra workflow-fix plans (this check's own plan included) legitimately
+    QUOTE the trigger vocabulary without racing predictors (the c43
+    precedent). Trigger AND satisfiers scan STRIPPED prose (fenced blocks
+    masked — the c39 convention)."""
+    cid, name = (
+        "c45_change_dv_base_predictor_companion",
+        "trained-base change DV vs base-side predictor companion",
+    )
+    if kind != "experiment":
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: base-predictor-vs-change-DV racing is an experiment-plan shape",
+        )
+    text = strip_fences(plan)
+    if not _C45_CHANGE_DV_RE.search(text):
+        return _skip(cid, name, "no trained-base / post-pre / Delta log P change-DV signature")
+    race_lines = [
+        ln
+        for ln in text.splitlines()
+        if _C45_BASE_SIDE_RE.search(ln) and _C45_PREDICTOR_CTX_RE.search(ln)
+    ]
+    if not race_lines:
+        return _skip(
+            cid,
+            name,
+            "no base-side predictor raced (no line carries both a base-side quantity "
+            "and predictor-race vocabulary)",
+        )
+    if _c45_escape_declared(plan):
+        return _pass(cid, name, "explicit N/A declared (no base-side predictor vs change DV)")
+    has_companion = bool(_C45_COMPANION_RE.search(text))
+    has_convention = bool(_C45_SIGN_CONVENTION_RE.search(text)) or any(
+        _C45_ABS_RHO_RE.search(ln) and _C45_WINNER_CTX_RE.search(ln) for ln in text.splitlines()
+    )
+    if has_companion and has_convention:
+        return _pass(cid, name, "companion column registered and winner sign convention stated")
+    if has_companion:
+        missing = "a stated winner sign convention (signed rho vs |rho|)"
+    elif has_convention:
+        missing = "a registered level/change companion column"
+    else:
+        missing = (
+            "a registered level/change companion column AND a stated winner sign "
+            "convention (signed rho vs |rho|)"
+        )
+    shown = "; ".join(ln.strip()[:70] for ln in race_lines[:2])
+    return _warn(
+        cid,
+        name,
+        f"plan races a base-side predictor against a trained-base CHANGE DV ({shown!r}) "
+        f"without {missing} — the base term enters the change DV with a mechanical ~ -1 "
+        "coefficient, so per-panel DV identity can manufacture the champion verdict "
+        "(#559/#605: base-to-level rho +0.28/+0.19 vs base-to-delta rho -0.43/-0.54; the #1900 "
+        "round-1 Stats Must-Fix; critic-lens-reference.md Statistics lens item 2). "
+        "Register a level (or graded-change) companion column for the base-side "
+        "candidate AND state the winner-selection convention (signed Spearman rho vs "
+        "|rho|), or declare `N/A — no base-side predictor vs change DV` on its own "
+        "line, unwrapped (no backticks/quotes), if no base-side predictor is raced "
+        "against a change DV",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -6936,6 +8256,10 @@ CHECKS = [
     check_exit0_repo_wide_baseline,
     check_off_pod_phase_declaration,
     check_regression_anchor_executed,
+    check_commit_sha_resolves,
+    check_sentinel_lane,
+    check_committed_paths_not_gitignored,
+    check_change_dv_base_predictor_companion,
 ]
 
 

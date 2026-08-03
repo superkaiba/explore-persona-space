@@ -1,0 +1,160 @@
+{
+  "commit": "15a8d91fd8",
+  "created": "2026-07-29T18:07:54Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "interaction rank r (log2 scale; r=0 plotted at 0.5)": 0.5,
+      "held-out R2 (48 answer PCs, novel-prefix folds)": 0.8604008188197775,
+      "series": "additive stitch + rank-r bilinear (outer test, exploratory curve)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "interaction rank r (log2 scale; r=0 plotted at 0.5)": 1.0,
+      "held-out R2 (48 answer PCs, novel-prefix folds)": 0.8813610819629347,
+      "series": "additive stitch + rank-r bilinear (outer test, exploratory curve)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "interaction rank r (log2 scale; r=0 plotted at 0.5)": 2.0,
+      "held-out R2 (48 answer PCs, novel-prefix folds)": 0.8887230686881995,
+      "series": "additive stitch + rank-r bilinear (outer test, exploratory curve)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "interaction rank r (log2 scale; r=0 plotted at 0.5)": 4.0,
+      "held-out R2 (48 answer PCs, novel-prefix folds)": 0.8940088772799702,
+      "series": "additive stitch + rank-r bilinear (outer test, exploratory curve)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "interaction rank r (log2 scale; r=0 plotted at 0.5)": 8.0,
+      "held-out R2 (48 answer PCs, novel-prefix folds)": 0.8997921782748642,
+      "series": "additive stitch + rank-r bilinear (outer test, exploratory curve)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "interaction rank r (log2 scale; r=0 plotted at 0.5)": 16.0,
+      "held-out R2 (48 answer PCs, novel-prefix folds)": 0.9061658317433855,
+      "series": "additive stitch + rank-r bilinear (outer test, exploratory curve)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "interaction rank r (log2 scale; r=0 plotted at 0.5)": 32.0,
+      "held-out R2 (48 answer PCs, novel-prefix folds)": 0.9097103851923526,
+      "series": "additive stitch + rank-r bilinear (outer test, exploratory curve)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "interaction rank r (log2 scale; r=0 plotted at 0.5)": 64.0,
+      "held-out R2 (48 answer PCs, novel-prefix folds)": 0.9111619133901657,
+      "series": "additive stitch + rank-r bilinear (outer test, exploratory curve)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "interaction rank r (log2 scale; r=0 plotted at 0.5)": 0.0,
+      "held-out R2 (48 answer PCs, novel-prefix folds)": 0.8490649758186659,
+      "series": "additive stitch ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "interaction rank r (log2 scale; r=0 plotted at 0.5)": 1.0,
+      "held-out R2 (48 answer PCs, novel-prefix folds)": 0.8490649758186659,
+      "series": "additive stitch ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "interaction rank r (log2 scale; r=0 plotted at 0.5)": 0.0,
+      "held-out R2 (48 answer PCs, novel-prefix folds)": 0.9141531678184993,
+      "series": "full-context ridge",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "interaction rank r (log2 scale; r=0 plotted at 0.5)": 1.0,
+      "held-out R2 (48 answer PCs, novel-prefix folds)": 0.9141531678184993,
+      "series": "full-context ridge",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "interaction rank r (log2 scale; r=0 plotted at 0.5)": 32.0,
+      "held-out R2 (48 answer PCs, novel-prefix folds)": 0.0,
+      "series": "r* = 32 (inner validation)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "interaction rank r (log2 scale; r=0 plotted at 0.5)": 32.0,
+      "held-out R2 (48 answer PCs, novel-prefix folds)": 1.0,
+      "series": "r* = 32 (inner validation)",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 14,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Gap closure: additive stitch to rank-r bilinear vs stitch-MLP vs full context",
+        "xlabel": "interaction rank r (log2 scale; r=0 plotted at 0.5)",
+        "ylabel": "held-out R2 (48 answer PCs, novel-prefix folds)",
+        "legend_labels": [
+          "additive stitch + rank-r bilinear (outer test, exploratory curve)",
+          "additive stitch ridge",
+          "full-context ridge",
+          "stitch-MLP (95% cluster CI band)",
+          "r* = 32 (inner validation)"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{2^{-3}}$",
+          "$\\mathdefault{2^{-2}}$",
+          "$\\mathdefault{2^{-1}}$",
+          "$\\mathdefault{2^{0}}$",
+          "$\\mathdefault{2^{1}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{3}}$",
+          "$\\mathdefault{2^{4}}$",
+          "$\\mathdefault{2^{5}}$",
+          "$\\mathdefault{2^{6}}$",
+          "$\\mathdefault{2^{7}}$",
+          "$\\mathdefault{2^{8}}$"
+        ],
+        "yticklabels": [
+          "0.84",
+          "0.85",
+          "0.86",
+          "0.87",
+          "0.88",
+          "0.89",
+          "0.90",
+          "0.91",
+          "0.92",
+          "0.93"
+        ]
+      }
+    ],
+    "series": [
+      "additive stitch + rank-r bilinear (outer test, exploratory curve)",
+      "additive stitch ridge",
+      "full-context ridge",
+      "r* = 32 (inner validation)"
+    ]
+  }
+}

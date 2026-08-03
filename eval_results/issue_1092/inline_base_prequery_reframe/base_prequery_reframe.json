@@ -1,0 +1,147 @@
+{
+  "read": "#1092 base-model pre-query-disposition reframe (inline free-analysis, 0 GPU)",
+  "source_artifacts": [
+    "eval_results/issue_1092/inline_prefixend_monitoring/results.json",
+    "eval_results/issue_1092/inline_prefixend_monitoring/readout_constructions.json"
+  ],
+  "layer": 14,
+  "note": "Splits the one-line 'base reads collapse' aside into two phenomena: (1) base sycophancy has near-zero between-prefix target signal (reliability 0.078, ceiling 0.278) so there is little to read; (2) base hallucination has real signal (averaged read 0.62 ~= 0.88 of ceiling 0.709) that only forms POST-query -- the pre-query prefix-end state does not carry it (supervised 0.05, raw r_B proj 0.02, both CIs straddle 0), the clean mirror of the instruct model whose prefix-end state holds the disposition before the query (r_B proj 0.665 sycophancy, -0.43 hallucination).",
+  "table": {
+    "instruct/sycophancy": {
+      "model": "instruct",
+      "trait": "sycophancy",
+      "cell": "cell_inst_own",
+      "n_prefixes": 149,
+      "n_rows": 7152,
+      "target_reliability": 0.7400576116475931,
+      "target_split_half_r_aligned": 0.5873741676517025,
+      "ceiling": 0.8602660121425193,
+      "supervised_prefix_end_r": 0.7592700278999972,
+      "supervised_averaged_context_r": 0.7741656872855981,
+      "supervised_prefix_end_ci95": [
+        0.7007159135913165,
+        0.8168144609164475
+      ],
+      "supervised_averaged_context_ci95": [
+        0.7197105482852546,
+        0.8289186938461517
+      ],
+      "supervised_prefix_end_frac_ceiling": 0.8825991230421989,
+      "supervised_averaged_context_frac_ceiling": 0.8999143013421097,
+      "raw_rb_prefix_end_r": 0.665071002058869,
+      "raw_rb_averaged_context_r": 0.03683248536964268,
+      "raw_rb_prefix_end_ci95": [
+        0.5719550185329919,
+        0.7544789804435102
+      ],
+      "raw_rb_averaged_context_ci95": [
+        -0.12033716942140701,
+        0.1839733459195604
+      ],
+      "map_mediated_prefix_end_r": -0.7142103097022202,
+      "map_mediated_averaged_context_r": -0.704932509274403
+    },
+    "instruct/hallucination": {
+      "model": "instruct",
+      "trait": "hallucination",
+      "cell": "cell_inst_own",
+      "n_prefixes": 149,
+      "n_rows": 7152,
+      "target_reliability": 0.8319654795240327,
+      "target_split_half_r_aligned": 0.7122781603963311,
+      "ceiling": 0.9121214170953518,
+      "supervised_prefix_end_r": 0.8878730633333515,
+      "supervised_averaged_context_r": 0.8866189910617008,
+      "supervised_prefix_end_ci95": [
+        0.8489871767018442,
+        0.9215015089321126
+      ],
+      "supervised_averaged_context_ci95": [
+        0.8516710876293065,
+        0.9194090087903287
+      ],
+      "supervised_prefix_end_frac_ceiling": 0.973415432082256,
+      "supervised_averaged_context_frac_ceiling": 0.9720405358807785,
+      "raw_rb_prefix_end_r": -0.4300467129306446,
+      "raw_rb_averaged_context_r": -0.21372741000367013,
+      "raw_rb_prefix_end_ci95": [
+        -0.5801713042291576,
+        -0.2611656421209057
+      ],
+      "raw_rb_averaged_context_ci95": [
+        -0.36290530058433584,
+        -0.03529504984872272
+      ],
+      "map_mediated_prefix_end_r": 0.8479041335885555,
+      "map_mediated_averaged_context_r": 0.8502735756349422
+    },
+    "base/sycophancy": {
+      "model": "base",
+      "trait": "sycophancy",
+      "cell": "cell_pre_own",
+      "n_prefixes": 50,
+      "n_rows": 2400,
+      "target_reliability": 0.07753639692549158,
+      "target_split_half_r_aligned": 0.04033178927366487,
+      "ceiling": 0.2784535812761107,
+      "supervised_prefix_end_r": 0.013330103940736799,
+      "supervised_averaged_context_r": 0.1342869105385693,
+      "supervised_prefix_end_ci95": [
+        -0.10051363273527042,
+        0.378063932978739
+      ],
+      "supervised_averaged_context_ci95": [
+        -0.18134320881044041,
+        0.42590479387432767
+      ],
+      "supervised_prefix_end_frac_ceiling": 0.0478719069787034,
+      "supervised_averaged_context_frac_ceiling": 0.48225959214872616,
+      "raw_rb_prefix_end_r": 0.018060274921402452,
+      "raw_rb_averaged_context_r": 0.06488786111741775,
+      "raw_rb_prefix_end_ci95": [
+        -0.483739337820415,
+        0.08604244153812748
+      ],
+      "raw_rb_averaged_context_ci95": [
+        -0.21893367410390088,
+        0.3576154585233277
+      ],
+      "map_mediated_prefix_end_r": -0.088237503071371,
+      "map_mediated_averaged_context_r": -0.049245261955946674
+    },
+    "base/hallucination": {
+      "model": "base",
+      "trait": "hallucination",
+      "cell": "cell_pre_own",
+      "n_prefixes": 50,
+      "n_rows": 2399,
+      "target_reliability": 0.5030769318955306,
+      "target_split_half_r_aligned": 0.33607400581552216,
+      "ceiling": 0.7092791635847838,
+      "supervised_prefix_end_r": 0.05167986841460372,
+      "supervised_averaged_context_r": 0.6212681690724128,
+      "supervised_prefix_end_ci95": [
+        -0.00868667394641686,
+        0.581881426324831
+      ],
+      "supervised_averaged_context_ci95": [
+        0.4363293176291301,
+        0.7663981975593748
+      ],
+      "supervised_prefix_end_frac_ceiling": 0.07286252165283882,
+      "supervised_averaged_context_frac_ceiling": 0.8759148738170276,
+      "raw_rb_prefix_end_r": 0.024291624327637897,
+      "raw_rb_averaged_context_r": 0.19559817360916365,
+      "raw_rb_prefix_end_ci95": [
+        -0.026771478384633212,
+        0.5348504551975368
+      ],
+      "raw_rb_averaged_context_ci95": [
+        -0.07910162428777023,
+        0.4293129851385465
+      ],
+      "map_mediated_prefix_end_r": 0.19003744477696474,
+      "map_mediated_averaged_context_r": 0.4451477254062428
+    }
+  }
+}

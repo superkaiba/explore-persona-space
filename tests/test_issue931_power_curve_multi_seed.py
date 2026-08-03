@@ -195,16 +195,19 @@ class TestRegisteredBlock:
 
 
 class TestCollectLambdas:
-    def test_default_off_and_flag_collects(self):
+    def test_default_on_and_flag_off_suppresses(self):
+        # #1887 defaults flip: collect_lambdas now defaults TRUE (selected-
+        # lambda logging into cell payloads by default); the prior default-off
+        # surface stays reachable via the explicit collect_lambdas=False.
         rng = np.random.default_rng(0)
         n, n_layers, d = 30, 2, 5
         X = rng.normal(size=(n, n_layers, d)).astype(np.float32)
         Y = (0.5 * X + rng.normal(scale=0.1, size=(n, n_layers, d))).astype(np.float32)
         conv = np.array([f"c{i}" for i in range(n)])
         kw = dict(n_folds=3, seed=0, null_draws=0, collect_cosines=False)
-        sw_off = fit825.heldout_r2_sweep(X, Y, conv, **kw)
-        assert sw_off["gcv_lambda"] is None  # default preserves prior surface
-        sw_on = fit825.heldout_r2_sweep(X, Y, conv, collect_lambdas=True, **kw)
+        sw_off = fit825.heldout_r2_sweep(X, Y, conv, collect_lambdas=False, **kw)
+        assert sw_off["gcv_lambda"] is None  # explicit off preserves prior surface
+        sw_on = fit825.heldout_r2_sweep(X, Y, conv, **kw)  # default ON (#1887)
         lam = sw_on["gcv_lambda"]
         assert lam.shape == (n_layers, 3)
         assert np.isfinite(lam).all()

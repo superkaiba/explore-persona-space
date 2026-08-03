@@ -1,0 +1,154 @@
+{
+  "metadata": {
+    "git_commit": "ca0709990daf79bd86bc80bcaa9ccdf3b3edd829",
+    "timestamp": "2026-07-22T07:18:24Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1310_xpersona_similarity.py",
+    "issue": 931
+  },
+  "model_kind": "base",
+  "gcv_dof_cap": 0.9,
+  "rotation_null_note": "EFFICIENCY DEVIATION from issue1345_operator_comparison: the 20-draw raw-cosine rotation null uses ONE shared orthogonal-matrix bank across pairs+models (a paired null; identical target) instead of fresh per-pair draws (~6x fewer 3584x3584 fp64 QRs).",
+  "headline_layer": 19,
+  "lambda_per_persona": {
+    "Wren": 10000.0,
+    "HELIOS": 10000.0,
+    "Dana": 3162.2776601683795,
+    "Vex": 10000.0
+  },
+  "pairs": {
+    "Wren~HELIOS": {
+      "raw_cosine": 0.24619242161128116,
+      "rotation_null": {
+        "n_draws": 20,
+        "null_mean": -6.485176781549527e-05,
+        "null_std": 0.0002528847655814813,
+        "null_p975": 0.00038026488857180826,
+        "analytic_sd_1_over_d": 0.00027901785714285713,
+        "shared_bank": true
+      },
+      "aligned_cosine_procrustes_optimum": 0.995928222208967,
+      "lambda_a": 10000.0,
+      "lambda_b": 10000.0,
+      "principal_angle_cos_k10": {
+        "mean_cos": 0.43249783071006453,
+        "min_cos": 0.01669556387412748
+      },
+      "principal_angle_cos_k50": {
+        "mean_cos": 0.4882774252614786,
+        "min_cos": 0.0015655525435596396
+      }
+    },
+    "Wren~Dana": {
+      "raw_cosine": 0.25999663748391544,
+      "rotation_null": {
+        "n_draws": 20,
+        "null_mean": -3.824640870395861e-05,
+        "null_std": 0.0002449981061816917,
+        "null_p975": 0.0004353102100016184,
+        "analytic_sd_1_over_d": 0.00027901785714285713,
+        "shared_bank": true
+      },
+      "aligned_cosine_procrustes_optimum": 0.9762564046559259,
+      "lambda_a": 10000.0,
+      "lambda_b": 3162.2776601683795,
+      "principal_angle_cos_k10": {
+        "mean_cos": 0.5628583419645077,
+        "min_cos": 0.06433467121714154
+      },
+      "principal_angle_cos_k50": {
+        "mean_cos": 0.5794251685128166,
+        "min_cos": 0.0016515651181121958
+      }
+    },
+    "Wren~Vex": {
+      "raw_cosine": 0.2280584683283654,
+      "rotation_null": {
+        "n_draws": 20,
+        "null_mean": -3.522640585218119e-06,
+        "null_std": 0.00021480472394194518,
+        "null_p975": 0.00032963958564847856,
+        "analytic_sd_1_over_d": 0.00027901785714285713,
+        "shared_bank": true
+      },
+      "aligned_cosine_procrustes_optimum": 0.995781271168677,
+      "lambda_a": 10000.0,
+      "lambda_b": 10000.0,
+      "principal_angle_cos_k10": {
+        "mean_cos": 0.48898206244209,
+        "min_cos": 0.0031115216994909863
+      },
+      "principal_angle_cos_k50": {
+        "mean_cos": 0.5244738068645214,
+        "min_cos": 0.0006839314426877179
+      }
+    },
+    "HELIOS~Dana": {
+      "raw_cosine": 0.2045522479600846,
+      "rotation_null": {
+        "n_draws": 20,
+        "null_mean": 2.727168513113569e-05,
+        "null_std": 0.0002778683055211594,
+        "null_p975": 0.0005325968159484157,
+        "analytic_sd_1_over_d": 0.00027901785714285713,
+        "shared_bank": true
+      },
+      "aligned_cosine_procrustes_optimum": 0.9868144945182843,
+      "lambda_a": 10000.0,
+      "lambda_b": 3162.2776601683795,
+      "principal_angle_cos_k10": {
+        "mean_cos": 0.41189227331448847,
+        "min_cos": 0.02122449742889162
+      },
+      "principal_angle_cos_k50": {
+        "mean_cos": 0.4878206325331479,
+        "min_cos": 0.0009205582095343102
+      }
+    },
+    "HELIOS~Vex": {
+      "raw_cosine": 0.19977855998997182,
+      "rotation_null": {
+        "n_draws": 20,
+        "null_mean": -6.247628925811013e-05,
+        "null_std": 0.00030940481291684066,
+        "null_p975": 0.00036950072924593483,
+        "analytic_sd_1_over_d": 0.00027901785714285713,
+        "shared_bank": true
+      },
+      "aligned_cosine_procrustes_optimum": 0.9967471949166811,
+      "lambda_a": 10000.0,
+      "lambda_b": 10000.0,
+      "principal_angle_cos_k10": {
+        "mean_cos": 0.410039447130859,
+        "min_cos": 0.10241177830899537
+      },
+      "principal_angle_cos_k50": {
+        "mean_cos": 0.491423072966407,
+        "min_cos": 0.013225477144374725
+      }
+    },
+    "Dana~Vex": {
+      "raw_cosine": 0.22058487474604052,
+      "rotation_null": {
+        "n_draws": 20,
+        "null_mean": 8.098046720062155e-05,
+        "null_std": 0.0002198851981475824,
+        "null_p975": 0.0004902309619967686,
+        "analytic_sd_1_over_d": 0.00027901785714285713,
+        "shared_bank": true
+      },
+      "aligned_cosine_procrustes_optimum": 0.9861185432851292,
+      "lambda_a": 3162.2776601683795,
+      "lambda_b": 10000.0,
+      "principal_angle_cos_k10": {
+        "mean_cos": 0.5512158295887584,
+        "min_cos": 0.1117712152954777
+      },
+      "principal_angle_cos_k50": {
+        "mean_cos": 0.5556894637525197,
+        "min_cos": 0.027377096663155447
+      }
+    }
+  }
+}

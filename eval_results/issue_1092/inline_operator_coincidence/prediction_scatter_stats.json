@@ -1,0 +1,10 @@
+{
+ "cell_inst_own": {
+  "slope_refit_on_induced": 0.9932551433852893,
+  "r2_ind_explains_ref": 0.9256333661310736,
+  "r2_induced": 0.935504559387362,
+  "r2_refit": 0.8730516830227373,
+  "n_points": 47808,
+  "wall_s": 1430.5
+ }
+}

@@ -189,19 +189,23 @@ def test_fu4_round_default_unchanged():
 
 def test_fmt_pers_r256_train_config_carries_rank(fu5_round):
     """The brief's unit check: the built TrainLoraConfig for fmt-pers-r256
-    carries r=256/alpha=64; use_rslora is hardcoded True inside train_lora
-    (recipe.py docstring + the source assert below), so r/alpha + the hardcode
-    together pin the gamma=alpha/sqrt(r) regime the plan's alpha policy needs."""
+    carries r=256/alpha=64 with use_rslora True on the BUILT config; the
+    default rides the TrainLoraConfig dataclass field and train_lora threads
+    it into LoraConfig (``use_rslora=cfg.use_rslora``), so r/alpha + the
+    built cfg + the field default + the threading together pin the
+    gamma=alpha/sqrt(r) regime the plan's alpha policy needs."""
     run = {r.run_id: r for r in fu4.FU5_RUNS}["fmt-pers-r256"]
     spec = fu4.fu4_recipe_spec(run.behavior, run.lr, lora_r=run.lora_r, lora_alpha=run.lora_alpha)
     cfg = build_train_config(spec, run_name=run.run_name, seed=42)
     assert (cfg.lora_r, cfg.lora_alpha, cfg.lr) == (256, 64, 1e-4)
+    assert cfg.use_rslora is True
     assert cfg.epochs == fu4.FU4_EPOCHS and cfg.save_steps == fu4.FU4_SAVE_STEPS
     import inspect
 
-    from explore_persona_space.train.sft import train_lora
+    from explore_persona_space.train.sft import TrainLoraConfig, train_lora
 
-    assert "use_rslora=True" in inspect.getsource(train_lora)
+    assert TrainLoraConfig().use_rslora is True
+    assert "use_rslora=cfg.use_rslora" in inspect.getsource(train_lora)
 
 
 def test_assert_adapter_rank_gate(fu5_round, tmp_path):

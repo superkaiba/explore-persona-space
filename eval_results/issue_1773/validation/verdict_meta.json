@@ -1,0 +1,15 @@
+{
+ "git_commit": "d122a947ed764fb9def8c37ec88b79a77fe65d64",
+ "numpy": "2.2.6",
+ "python": "3.11.15",
+ "timestamp_utc": "2026-07-29T06:35:14.443151+00:00",
+ "task": 1773,
+ "seed": 17732026,
+ "verdicts": {
+  "abstraction": "SEARCH-INDEX-ONLY",
+  "speaker_property": "SEARCH-INDEX-ONLY",
+  "content_type": "SEARCH-INDEX-ONLY",
+  "functional_role": "SEARCH-INDEX-ONLY",
+  "interpretable": "SEARCH-INDEX-ONLY"
+ }
+}

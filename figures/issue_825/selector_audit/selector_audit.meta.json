@@ -1,0 +1,7 @@
+{
+  "script": "scripts/issue825_selector_audit_fig.py",
+  "inputs": [
+    "eval_results/issue_825/selector_audit/results.json"
+  ],
+  "note": "One colour per lambda selector across all three panels. Panels (a,b): mean over 3 subsample seeds (1 draw at the full-n level). Panel (c): single full-cell fit per selector. All reads layer 19, grouped 5-fold, fold seed 0."
+}

@@ -1578,3 +1578,338 @@ def test_prior_failure_marker_cuda_ima_real_parser_realistic_body(monkeypatch):
     ]
     monkeypatch.setattr(TW, "list_events", lambda issue: benign, raising=False)
     assert bp._prior_failure_marker_is_cuda_ima(689) is False
+
+
+# ---------------------------------------------------------------------------
+# 15. #1668 attempt-keyed identity (T1-T10) + pre-terminate liveness probe
+#     (T11/T12). Hermeticity: EVERY lease-touching pin routes through
+#     ``_real_lease_store_in`` AND seeds a base lease — the stamp silently
+#     no-ops leaseless, so an unseeded mismatch test would pass VACUOUSLY;
+#     T3/T4/T5/T8/T9 carry explicit positive-control legs. Handle fixtures
+#     share the production-faithful RunPod shape (same canonical pod-<N> name,
+#     same job_id="") and differ ONLY in ``extra["runpod_attempt_id"]``.
+#     T11/T12 monkeypatch ONLY the named probe seam
+#     (``bp._runpod_wedge_liveness_probe``), never the functions under test.
+# ---------------------------------------------------------------------------
+
+_ATTEMPT_A = "rp-20260724T010000Z-aaaa"
+_ATTEMPT_B = "rp-20260724T054033Z-03ce"  # the live #1586 watcher-failover attempt id
+
+
+def _attempt_handle(attempt_id, *, pod_name: str = "pod-689", issue: int = 689) -> RunHandle:
+    """A production-faithful RunPod handle: canonical ``pod-<N>`` name,
+    ``job_id=""`` (launch does not capture the pod_id — runpod.py's
+    truthful-empty contract), attempt id in ``extra`` when given (None = a
+    legacy pre-#598 handle)."""
+    extra: dict = {"issue": issue}
+    if attempt_id is not None:
+        extra["runpod_attempt_id"] = attempt_id
+    return RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="",
+        pod_name=pod_name,
+        scratch_dir="/workspace",
+        log_path=f"/workspace/logs/issue-{issue}.log",
+        extra=extra,
+    )
+
+
+def test_runpod_handle_identity_includes_attempt_id_when_present():
+    """T1: the identity dict carries the ``runpod_attempt_id`` key iff ``extra``
+    has a truthy value (acceptance criterion 4 — presence check, not a count)."""
+    ident = bp._runpod_handle_identity(_attempt_handle(_ATTEMPT_A))
+    assert ident == {"pod_name": "pod-689", "job_id": "", "runpod_attempt_id": _ATTEMPT_A}
+    assert "runpod_attempt_id" in ident
+
+
+def test_runpod_handle_identity_legacy_handle_omits_attempt_key():
+    """T2: no / empty attempt id (or a non-dict ``extra``) -> exactly the 2-key
+    legacy dict — the back-compat identity for pre-#598 sidecars."""
+    two_key = {"pod_name": "pod-689", "job_id": ""}
+    assert bp._runpod_handle_identity(_attempt_handle(None)) == two_key
+    assert bp._runpod_handle_identity(_attempt_handle("")) == two_key
+
+    class _NonDictExtraHandle:
+        pod_name = "pod-689"
+        job_id = ""
+        extra = None
+
+    assert bp._runpod_handle_identity(_NonDictExtraHandle()) == two_key
+
+
+def test_wedge_guard_fresh_attempt_does_not_match_stale_lease_stamp(tmp_path, monkeypatch):
+    """T3 (fails pre-fix): a stale LEASE stamp from attempt A must not blind a
+    fresh attempt B on the same canonical pod name (the sentinel is absent, so
+    the lease arm decides)."""
+    store = _real_lease_store_in(tmp_path, monkeypatch)
+    handle_a = _attempt_handle(_ATTEMPT_A)
+    handle_b = _attempt_handle(_ATTEMPT_B)
+    bp._stamp_runpod_wedge_failover(689, handle_a)
+    # POSITIVE CONTROL (non-vacuity): the stamp actually landed on the lease.
+    lease = store.read(689)
+    assert lease is not None
+    assert lease.runpod_wedge_failover_of == bp._runpod_handle_identity(handle_a)
+    sidecar = _empty_sidecar(tmp_path)
+    # Fresh attempt: the stale stamp must NOT match -> live poll.
+    assert bp._runpod_wedge_already_handled(689, handle_b, sidecar) is False
+
+
+def test_wedge_guard_fresh_attempt_does_not_match_stale_sentinel(tmp_path, monkeypatch):
+    """T4 (fails pre-fix): a stale SENTINEL from attempt A must not blind a
+    fresh attempt B (empty lease — no stamp — so the sentinel arm decides)."""
+    _real_lease_store_in(tmp_path, monkeypatch)  # pin the store; base lease carries NO stamp
+    handle_a = _attempt_handle(_ATTEMPT_A)
+    handle_b = _attempt_handle(_ATTEMPT_B)
+    sidecar = _empty_sidecar(tmp_path)
+    bp._write_runpod_wedge_sentinel(
+        bp._runpod_wedge_sentinel_path(sidecar), issue=689, handle=handle_a
+    )
+    # POSITIVE CONTROL: the sentinel arm matches the SAME attempt.
+    assert bp._runpod_wedge_already_handled(689, handle_a, sidecar) is True
+    # Fresh attempt: no match -> live poll.
+    assert bp._runpod_wedge_already_handled(689, handle_b, sidecar) is False
+
+
+def test_wedge_guard_same_attempt_refire_short_circuits_both_arms(tmp_path, monkeypatch):
+    """T5 (req c, #689 both-records contract): a re-fired tick on the SAME
+    wedged attempt short-circuits via the LEASE arm (seeded + stamped — the
+    mandatory positive control against vacuous passes), and, with the lease
+    record cleared, via the SENTINEL arm."""
+    from explore_persona_space.backends import router as R
+
+    store = _real_lease_store_in(tmp_path, monkeypatch)
+    handle_a = _attempt_handle(_ATTEMPT_A)
+    sidecar = _empty_sidecar(tmp_path)
+    # LEASE arm.
+    bp._stamp_runpod_wedge_failover(689, handle_a)
+    assert bp._runpod_wedge_already_handled(689, handle_a, sidecar) is True
+    # Clear the lease record; with the sentinel still absent the guard reads False
+    # (proves the next True comes from the SENTINEL arm, not lease residue).
+    store.write(
+        R.Lease(issue=689, spec_hash="h", attempt_id="a", backend="runpod", job_id="pod-fresh-1")
+    )
+    assert bp._runpod_wedge_already_handled(689, handle_a, sidecar) is False
+    # SENTINEL arm.
+    bp._write_runpod_wedge_sentinel(
+        bp._runpod_wedge_sentinel_path(sidecar), issue=689, handle=handle_a
+    )
+    assert bp._runpod_wedge_already_handled(689, handle_a, sidecar) is True
+
+
+def _seed_1586_legacy_artifacts(tmp_path, monkeypatch):
+    """Hand-seed the EXACT #1586 incident artifacts: the 2-key legacy lease
+    field + the 2-key legacy sentinel payload (both measured 2026-07-25)."""
+    from explore_persona_space.backends import router as R
+
+    store = _real_lease_store_in(tmp_path, monkeypatch)
+    store.write(
+        R.Lease(
+            issue=1586,
+            spec_hash="h",
+            attempt_id="a",
+            backend="runpod",
+            job_id="",
+            runpod_wedge_failover_of={"job_id": "", "pod_name": "pod-1586"},
+        )
+    )
+    sidecar = tmp_path / "issue-1586-handle.json"
+    sidecar.write_text(json.dumps({"backend": "runpod", "pod_name": "pod-1586", "extra": {}}))
+    bp._runpod_wedge_sentinel_path(sidecar).write_text(
+        json.dumps(
+            {
+                "issue": 1586,
+                "reason": "runpod_noport_wedge_failover",
+                "runpod_wedge": {"job_id": "", "pod_name": "pod-1586"},
+            }
+        )
+    )
+    return sidecar
+
+
+def test_wedge_guard_legacy_record_does_not_blind_modern_handle(tmp_path, monkeypatch):
+    """T6 (the #1586 incident regression pin; fails pre-fix): the EXACT legacy
+    2-key lease + sentinel records must NOT match a modern (attempt-bearing)
+    handle — fail-toward-live-poll, the chosen back-compat direction."""
+    sidecar = _seed_1586_legacy_artifacts(tmp_path, monkeypatch)
+    modern = _attempt_handle(_ATTEMPT_B, pod_name="pod-1586", issue=1586)
+    assert bp._runpod_wedge_already_handled(1586, modern, sidecar) is False
+
+
+def test_wedge_guard_legacy_handle_vs_legacy_record_still_short_circuits(tmp_path, monkeypatch):
+    """T7 (back-compat preservation): a LEGACY handle (no attempt id) against a
+    legacy 2-key record still short-circuits — today's behavior preserved."""
+    sidecar = _seed_1586_legacy_artifacts(tmp_path, monkeypatch)
+    legacy = _attempt_handle(None, pod_name="pod-1586", issue=1586)
+    assert bp._runpod_wedge_already_handled(1586, legacy, sidecar) is True
+
+
+def test_cuda_ima_guard_fresh_attempt_does_not_match_stale_stamp(tmp_path, monkeypatch):
+    """T8 (fails pre-fix): the CUDA-IMA layer-1 mirror of T3 — a stale
+    ``runpod_cuda_ima_failover_of`` stamp from attempt A must not blind a
+    fresh attempt B (lease arm; sentinel absent)."""
+    store = _real_lease_store_in(tmp_path, monkeypatch)
+    handle_a = _attempt_handle(_ATTEMPT_A)
+    handle_b = _attempt_handle(_ATTEMPT_B)
+    bp._stamp_runpod_cuda_ima_failover(689, handle_a)
+    # POSITIVE CONTROL (non-vacuity): the stamp actually landed.
+    lease = store.read(689)
+    assert lease is not None
+    assert lease.runpod_cuda_ima_failover_of == bp._runpod_handle_identity(handle_a)
+    sidecar = _empty_sidecar(tmp_path)
+    assert bp._runpod_cuda_ima_already_handled(689, handle_b, sidecar) is False
+
+
+def test_cuda_ima_guard_same_attempt_refire_short_circuits(tmp_path, monkeypatch):
+    """T9: the CUDA-IMA mirror of T5 — a re-fired tick on the SAME crashed
+    attempt short-circuits via the lease arm, then via the sentinel arm."""
+    from explore_persona_space.backends import router as R
+
+    store = _real_lease_store_in(tmp_path, monkeypatch)
+    handle_a = _attempt_handle(_ATTEMPT_A)
+    sidecar = _empty_sidecar(tmp_path)
+    bp._stamp_runpod_cuda_ima_failover(689, handle_a)
+    assert bp._runpod_cuda_ima_already_handled(689, handle_a, sidecar) is True
+    store.write(
+        R.Lease(issue=689, spec_hash="h", attempt_id="a", backend="runpod", job_id="pod-fresh-1")
+    )
+    assert bp._runpod_cuda_ima_already_handled(689, handle_a, sidecar) is False
+    bp._write_runpod_cuda_ima_sentinel(
+        bp._runpod_cuda_ima_sentinel_path(sidecar), issue=689, handle=handle_a
+    )
+    assert bp._runpod_cuda_ima_already_handled(689, handle_a, sidecar) is True
+
+
+def test_cuda_ima_once_more_bound_any_stamp_unchanged(tmp_path, monkeypatch):
+    """T10: the layer-2 once-more bound is DELIBERATELY identity-independent
+    (#775, unchanged by #1668): ANY non-null stamp bounds the run, even while
+    the identity-keyed layer-1 correctly reads False for a fresh attempt."""
+    _real_lease_store_in(tmp_path, monkeypatch)
+    handle_a = _attempt_handle(_ATTEMPT_A)
+    handle_b = _attempt_handle(_ATTEMPT_B)
+    assert bp._lease_has_any_runpod_cuda_ima_failover(689) is False
+    bp._stamp_runpod_cuda_ima_failover(689, handle_a)
+    assert bp._lease_has_any_runpod_cuda_ima_failover(689) is True
+    assert bp._lease_records_runpod_cuda_ima_failover(689, handle_b) is False
+
+
+def test_wedge_failover_liveness_probe_success_skips_terminate_and_clears_clock(
+    tmp_path, monkeypatch
+):
+    """T11 (D9): a matured wedge whose pod ANSWERS the liveness probe is a
+    sustained API port-misreport on a HEALTHY pod — no terminate, no relaunch,
+    a NON-terminal running JSON, and the sidecar's no-port clock is REMOVED
+    (a genuine wedge must re-mature from scratch)."""
+    terminated = _failover_with_mocked_gate(monkeypatch)
+    relaunched: list = []
+    monkeypatch.setattr(
+        bp,
+        "_relaunch_fresh_runpod",
+        lambda **kw: relaunched.append(kw) or {"status": "running"},
+        raising=False,
+    )
+    monkeypatch.setattr(
+        bp, "_runpod_wedge_liveness_probe", lambda handle, **kw: True, raising=False
+    )
+    sidecar = tmp_path / "issue-689-handle.json"
+    sidecar.write_text(
+        json.dumps(
+            {
+                "backend": "runpod",
+                "pod_name": "pod-689",
+                "extra": {"runpod_noport_first_seen_ts": 1784874699.56},
+            }
+        )
+    )
+    out = bp._failover_wedged_runpod(
+        issue=689, handle=_attempt_handle(_ATTEMPT_B), result=_dead_poll(), sidecar=sidecar
+    )
+    assert out["status"] == "running"  # NON-terminal
+    assert out["current_phase"] == bp.RUNPOD_WORKLOAD_OBSERVED_PHASE
+    assert terminated == []  # terminate_pod NOT called
+    assert relaunched == []  # the router relaunch NOT called
+    extra = json.loads(sidecar.read_text())["extra"]
+    assert "runpod_noport_first_seen_ts" not in extra  # clock cleared
+
+
+def test_wedge_failover_liveness_probe_failure_proceeds_to_terminate(tmp_path, monkeypatch):
+    """T12 (D9 fail-open): probe False -> the established terminate + relaunch
+    path proceeds exactly as today (a true wedge is never suppressed)."""
+    terminated = _failover_with_mocked_gate(monkeypatch)
+    relaunched: list = []
+    monkeypatch.setattr(
+        bp,
+        "_relaunch_fresh_runpod",
+        lambda **kw: relaunched.append(kw) or {"status": "running"},
+        raising=False,
+    )
+    monkeypatch.setattr(
+        bp, "_runpod_wedge_liveness_probe", lambda handle, **kw: False, raising=False
+    )
+    sidecar = _empty_sidecar(tmp_path)
+    out = bp._failover_wedged_runpod(
+        issue=689, handle=_attempt_handle(_ATTEMPT_B), result=_dead_poll(), sidecar=sidecar
+    )
+    assert terminated == ["pod-id-55"]  # terminate fired exactly once
+    assert len(relaunched) == 1  # the fresh relaunch fires
+    assert out["status"] == "running"
+
+
+def test_liveness_probe_real_body_ssh_outcomes(monkeypatch):
+    """Production-body coverage for the T11/T12 seam (code-style § One
+    production-body test per seam-stubbed function): execute the REAL
+    ``_runpod_wedge_liveness_probe`` body, faking ONLY the external
+    filesystem/network boundary — ``_resolve_pod_endpoint`` (pods.conf read;
+    a ``def``-mirroring fake) and ``subprocess.run`` (SSH; autospec'd,
+    returning a real ``CompletedProcess``). Reaches the endpoint-resolution
+    call, the ssh argv construction, and the ``.returncode`` dereference."""
+    import subprocess as sp
+    from unittest import mock
+
+    import explore_persona_space.backends.runpod as RP
+
+    def fake_resolve(pod_name: str) -> tuple[str, int]:
+        assert pod_name == "pod-689"
+        return ("1.2.3.4", 41234)
+
+    monkeypatch.setattr(RP, "_resolve_pod_endpoint", fake_resolve, raising=True)
+    fake_run = mock.create_autospec(
+        sp.run, return_value=sp.CompletedProcess(args=["ssh"], returncode=0)
+    )
+    monkeypatch.setattr(bp.subprocess, "run", fake_run, raising=True)
+
+    # rc == 0 -> reachable -> True.
+    assert bp._runpod_wedge_liveness_probe(_attempt_handle(_ATTEMPT_A)) is True
+    argv = fake_run.call_args.args[0]
+    assert argv[0] == "ssh" and "BatchMode=yes" in argv and "root@1.2.3.4" in argv
+    assert "41234" in argv  # the resolved port is threaded into -p
+    assert fake_run.call_args.kwargs.get("timeout") == 15  # timeout_sec + 5
+
+    # rc != 0 -> unreachable -> False (the established terminate path proceeds).
+    fake_run.return_value = sp.CompletedProcess(args=["ssh"], returncode=255)
+    assert bp._runpod_wedge_liveness_probe(_attempt_handle(_ATTEMPT_A)) is False
+
+
+def test_liveness_probe_real_body_fail_open_on_errors(monkeypatch):
+    """The REAL probe body's fail-open legs: a missing pods.conf row
+    (``_resolve_pod_endpoint`` raises ``RunPodWorkloadStartError``) and an SSH
+    timeout (``subprocess.TimeoutExpired``) each return False — LOGGED, never
+    raised — so a true wedge is never suppressed by a probe defect."""
+    import subprocess as sp
+    from unittest import mock
+
+    import explore_persona_space.backends.runpod as RP
+
+    def raise_resolve(pod_name: str) -> tuple[str, int]:
+        raise RP.RunPodWorkloadStartError(f"pod {pod_name!r} has no pods.conf row")
+
+    monkeypatch.setattr(RP, "_resolve_pod_endpoint", raise_resolve, raising=True)
+    assert bp._runpod_wedge_liveness_probe(_attempt_handle(_ATTEMPT_A)) is False
+
+    def ok_resolve(pod_name: str) -> tuple[str, int]:
+        return ("1.2.3.4", 41234)
+
+    monkeypatch.setattr(RP, "_resolve_pod_endpoint", ok_resolve, raising=True)
+    fake_run = mock.create_autospec(sp.run, side_effect=sp.TimeoutExpired(cmd=["ssh"], timeout=15))
+    monkeypatch.setattr(bp.subprocess, "run", fake_run, raising=True)
+    assert bp._runpod_wedge_liveness_probe(_attempt_handle(_ATTEMPT_A)) is False

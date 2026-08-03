@@ -5,8 +5,27 @@ This module is the canonical replacement for
 selector dispatches on a single ``backend:`` frontmatter and falls back to
 RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
 
+**#2028 policy gate — GCP PROVISIONING DISABLED.** While
+:data:`GCP_PROVISIONING_DISABLED` is ``True`` (the standing state, user
+directive 2026-08-02) no dispatch path may CREATE a new GCP instance (GPU or
+CPU): the auto chain's default order carries no ``gcp`` rung, an explicit
+``backend: gcp`` pin raises :class:`GcpDisabledError`
+(``reason: gcp_backend_disabled``), a ``gcp``-bearing
+``EPM_AUTO_LANE_ORDER`` / ``RouterConfig.lane_order`` raises at validation,
+and the #1596/#1601 queue-loss on-demand retry legs refuse up front (falling
+through to the re-drivable ``no_compute_available`` terminal). Paths that
+only ACT ON existing GCP handles — poll, teardown, crash persist, the
+GCP→RunPod failovers of an in-flight handle, the ``gcp_audit.py`` janitor —
+are deliberately UNGATED (in-flight cleanup + rollback support). CPU intents
+route RunPod-only (``cpu-bigmem`` gained the ``cpu5m-16-128`` RunPod row,
+superseding the #677 no-RunPod-lane terminal for it; the typed terminal
+stays as the fail-loud floor for a future unmapped CPU intent). The GCP
+ladder / failover prose below is therefore scoped to IN-FLIGHT handles plus
+the single-constant rollback (flip the constant to ``False``); it is not
+reachable for fresh dispatches while the flag is on.
+
 1. **Explicit override** — ``spec.backend == "runpod" | "gcp" | "nibi" |
-   "fir" | "mila"`` runs that lane directly. RunPod is ALSO reachable on
+   "fir" | "mila" | "fellows"`` runs that lane directly. RunPod is ALSO reachable on
    the auto chain — as the COST-ORDERED TERMINAL FALLBACK, never first:
    when every cheaper GCP rung + free SLURM lane is exhausted on the
    CAPACITY path (item 8, ``reason: auto_fallback_runpod``, #656), when a
@@ -15,18 +34,31 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    intents (item 8a, ``cpu-small`` / ``cpu-mid``, #747). Full failover
    policy: ``.claude/rules/compute-backend-failover.md`` (canonical).
 2. **Auto** — walk the resolved auto lane order. The STANDING DEFAULT is
-   **GCP first** (:data:`DEFAULT_AUTO_LANE_ORDER` =
-   ``("gcp", "nibi", "fir", "mila")``): credits-backed GCP capacity is
-   consumed BEFORE the free SLURM lanes. The order is overridable via the
+   **fellows first, then the free DRAC/Mila SLURM lanes**
+   (:data:`DEFAULT_AUTO_LANE_ORDER` = ``("fellows", "nibi", "fir",
+   "mila")`` while GCP provisioning is disabled by policy — the #2028
+   banner above; the flag-off rollback build re-inserts ``gcp`` after
+   ``fellows``, restoring the #1609 fellows-then-GCP order in which
+   credits-backed GCP capacity was consumed BEFORE the free DRAC/Mila
+   lanes). The order is overridable via the
    ``EPM_AUTO_LANE_ORDER`` env var (comma-separated lanes, validated —
-   ``runpod`` and unknown names raise loudly) or per-call via
+   ``runpod``, ``gcp``-while-disabled, and unknown names raise loudly)
+   or per-call via
    :attr:`RouterConfig.lane_order`; there is deliberately NO date logic —
    flipping the order back is a human action (env override or a default
    edit), never a clock. Contiguous SLURM lanes in the order are ranked
    among themselves by tz-corrected ``estimate_start_seconds`` (a ranking
    HINT, never a gate), the best is submitted and parked up to
    ``FREE_WAIT`` (default 600 s) to reach RUNNING; PENDING-at-cap triggers
-   cancel + the next lane. GCP has no synchronous ``route()``-time park —
+   cancel + the next lane. On the fellows lane, a PENDING-at-cap AUTO
+   submit additionally walks the cluster's granted-QoS fallback ladder
+   (high-eur → normal-eur → low-eur, ``ClusterConfig.qos_ladder``) —
+   scancel the parked job, re-submit under the next rung's
+   ``--qos``/``--partition`` overrides, park each fallback rung a shorter
+   ``EPS_FELLOWS_LADDER_RUNG_WAIT_SECONDS`` cap (default 300 s) — before
+   the lane yields (#1899; worst case <=~24 min: 1200 s of parks + up to
+   3x60 s cancel graces). Explicit ``backend: fellows`` pins never walk
+   (the #1609 pinned-queue-wait exemption). GCP has no synchronous ``route()``-time park —
    its "park" is the provision call itself — but a FLEX_START instance that
    stays PENDING (queued for capacity) is bounded by the ASYNC poller's
    queue-wait timeout (``EPS_GCP_QUEUE_WAIT_SECONDS``, task #783), which
@@ -144,10 +176,12 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    GCP is exhausted (capacity) OR crashes its workload — the CPU analogue
    of item 8 / item 5, keyed on that POSITIVE map (the single source of
    truth, checked by both the synchronous terminal rung and the async
-   poller). ``cpu-bigmem`` is ABSENT from the map, so it keeps the #677
-   ``cpu_exhausted_no_runpod_lane`` typed terminal VERBATIM (the >50 GB
-   analysis lane has no cheap RunPod equivalent) — it does NOT fall over
-   to RunPod. RunPod CPU pods are on-demand only; a CPU no-capacity miss
+   poller). ``cpu-bigmem`` is mapped too as of #2028 (``cpu5m-16-128``,
+   16 vCPU / 128 GB memory-optimized — GCP provisioning removed, so the
+   >50 GB analysis lane needs a RunPod home); the #677
+   ``cpu_exhausted_no_runpod_lane`` typed terminal STAYS as the fail-loud
+   floor for a future UNMAPPED CPU intent. RunPod CPU pods are on-demand
+   only; a CPU no-capacity miss
    surfaces :class:`RunPodNoCapacityError` → terminal. As of #1010 the rung
    also gates a plan-STATED footprint (``spec.extra["boot_disk_gb"]`` /
    ``["min_ram_gb"]``) against :data:`RUNPOD_CPU_INSTANCE_CAPS`, raising the
@@ -193,13 +227,20 @@ import hashlib
 import json
 import logging
 import os
+import subprocess
 import time
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    # Import-cycle-safe: router.py has NO runtime slurm.py import edge
+    # (verified #1899 — slurm.py never imports router); the ladder is
+    # fetched via a function-scope lazy import in _qos_rungs_for_lane.
+    from explore_persona_space.backends.slurm import QosRung
 
 from explore_persona_space.backends.base import (
     BackendKind,
@@ -211,6 +252,7 @@ from explore_persona_space.backends.base import (
     validate_lane_suffix,
 )
 from explore_persona_space.backends.gcp import (
+    BOOT_DISK_MARKER_EXTRA_KEYS,
     EXPLICIT_WIDE_DEGRADE_INTENTS,
     INTENT_TO_MACHINE,
     WIDE_A100_80_BY_WIDTH,
@@ -236,6 +278,31 @@ logger = logging.getLogger(__name__)
 #: "Mid-review" — supersedes the 6 h ``DEFAULT_MAX_WAIT_SECONDS`` from
 #: :mod:`selector` and the ``EPM_CLUSTER_MAX_WAIT_SECONDS`` env knob).
 FREE_WAIT_SECONDS: int = 600
+
+#: Env knob for the fellows-lane queue-wait cap (#1609 fast-start guard).
+#: Read at CALL time so ops can retune without a restart, mirroring
+#: ``EPS_GCP_QUEUE_WAIT_SECONDS`` (``backend_poll._gcp_queue_wait_seconds``).
+#: Unset/malformed/non-positive -> the caller-supplied default
+#: (``cfg.free_wait_seconds``; production 600 s) — so with the env var
+#: unset, behavior is byte-identical to pre-amendment for EVERY lane.
+FELLOWS_QUEUE_WAIT_ENV = "EPS_FELLOWS_QUEUE_WAIT_SECONDS"
+
+#: Env knob for the PER-RUNG park cap on the fellows QoS fallback ladder
+#: (rungs 2+ — normal-eur / low-eur re-submits; #1899). Rung 1 (the
+#: primary high-eur submit) keeps the :data:`FELLOWS_QUEUE_WAIT_ENV` /
+#: ``cfg.free_wait_seconds`` cap above, so behavior when the ladder never
+#: fires is byte-identical. Read at CALL time; unset/malformed/
+#: non-positive -> :data:`FELLOWS_LADDER_RUNG_WAIT_DEFAULT`.
+FELLOWS_LADDER_RUNG_WAIT_ENV = "EPS_FELLOWS_LADDER_RUNG_WAIT_SECONDS"
+
+#: Default per-rung park cap (seconds) for fellows ladder rungs 2+.
+#: 300 = half the 600 s FREE_WAIT_SECONDS rung-1 cap: total worst-case
+#: lane latency is the cap-sum (600 + 2x300 = 1200 s of parks + up to
+#: 3x60 s cancel graces + 2 re-submits ~= <=~24 min before GCP), and
+#: 300 s comfortably covers the SLURM main+backfill scheduling cycles
+#: (O(30-60 s)) needed to start a job when per-QoS headroom exists
+#: (#1899 plan §11 item 1).
+FELLOWS_LADDER_RUNG_WAIT_DEFAULT: int = 300
 
 #: Default poll interval inside the park watchdog. The SLURM scheduler
 #: state updates on multi-second cycles; faster polling burns ssh round
@@ -295,12 +362,13 @@ ROUTE_REASON_PREPARE_FAILED: str = "backend_prepare_failed"
 #: never skipping a cheaper rung.
 ROUTE_REASON_RUNPOD_FALLBACK: str = "auto_fallback_runpod"
 #: A CPU-only intent WITHOUT a RunPod-CPU lane (gpu_count==0 AND not in
-#: :data:`RUNPOD_CPU_INSTANCE_FOR_INTENT` — i.e. ``cpu-bigmem``, #677) reached
-#: the RunPod terminal rung — either the GCP lane was capacity-exhausted OR a
-#: GCP CPU workload crashed (sync failover). ``cpu-bigmem`` has no cheap RunPod
-#: equivalent (#747 added a RunPod CPU lane ONLY for the mapped cheap intents
-#: cpu-small / cpu-mid), so surface a typed terminal instead of attempting an
-#: unservable RunPod launch. DISTINCT from :data:`ROUTE_REASON_RUNPOD_FALLBACK` /
+#: :data:`RUNPOD_CPU_INSTANCE_FOR_INTENT`, #677) reached the RunPod terminal
+#: rung — either the earlier lanes were capacity-exhausted OR a GCP CPU
+#: workload crashed (sync failover). As of #2028 EVERY current CPU intent is
+#: mapped (cpu-small / cpu-mid #747; cpu-bigmem #2028), so this terminal is a
+#: fail-loud FLOOR for a future unmapped CPU intent rather than a live path —
+#: it surfaces a typed terminal instead of attempting an unservable RunPod
+#: launch. DISTINCT from :data:`ROUTE_REASON_RUNPOD_FALLBACK` /
 #: :data:`ROUTE_REASON_NO_COMPUTE` so the marker trail shows the
 #: CPU-unservable cause, and DISTINCT from ``no_compute_available`` so the
 #: watcher's capacity-retry pass (which keys on ``no_compute_available``) does
@@ -313,11 +381,12 @@ ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD: str = "cpu_exhausted_no_runpod_lane"
 #: ``instanceId`` (``deployCpuPod``). A CPU intent in this map FALLS OVER
 #: GCP→RunPod CPU when the GCP CPU lane is exhausted (capacity) OR crashes its
 #: workload (the CPU analogue of the GPU GCP→RunPod failover, #656/#658),
-#: keyed on this POSITIVE map — NOT on ``gpu_count == 0`` alone, which would
-#: wrongly route ``cpu-bigmem`` to RunPod. A CPU intent NOT in this map
-#: (``cpu-bigmem`` — the >50 GB large-footprint analysis lane, with no cheap
-#: RunPod equivalent) keeps the #677 typed
-#: :class:`CpuExhaustedNoRunpodLaneError` terminal verbatim. This is the SINGLE
+#: keyed on this POSITIVE map — NOT on ``gpu_count == 0`` alone. As of #2028
+#: (GCP provisioning removed) ``cpu-bigmem`` — the >50 GB large-footprint
+#: analysis lane — is mapped too (``cpu5m-16-128``, memory-optimized); a CPU
+#: intent NOT in this map (a future unmapped intent) keeps the #677 typed
+#: :class:`CpuExhaustedNoRunpodLaneError` terminal verbatim as the fail-loud
+#: floor. This is the SINGLE
 #: SOURCE OF TRUTH for the CPU intent → RunPod instance_id mapping:
 #: ``scripts/gpu_heuristics.resolve_cpu_intent`` and
 #: ``scripts/backend_poll._is_gcp_async_workload_failure`` both import THIS
@@ -337,6 +406,11 @@ ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD: str = "cpu_exhausted_no_runpod_lane"
 RUNPOD_CPU_INSTANCE_FOR_INTENT: dict[str, str] = {
     "cpu-small": "cpu3g-2-8",  # 2 vCPU / 8 GB, gen-3 general purpose
     "cpu-mid": "cpu3c-8-16",  # 8 vCPU / 16 GB, gen-3 compute-optimized
+    # #2028: GCP provisioning removed -> the >50 GB analysis lane needs a
+    # RunPod home; supersedes the #677 "cpu-bigmem has no RunPod lane"
+    # terminal FOR THIS INTENT (the typed terminal stays as the fail-loud
+    # floor for a future unmapped CPU intent).
+    "cpu-bigmem": "cpu5m-16-128",  # 16 vCPU / 128 GB, gen-5 memory-optimized
 }
 
 
@@ -369,6 +443,10 @@ class RunPodCpuInstanceCaps:
 #:     measured 50 GB overlay. An unverified value above the honored floor
 #:     would be an unverified ALLOW cap re-creating the #958 shape inside
 #:     the "accepted" band; a later df-verified probe may raise it to 80.
+#:   * ``cpu5m-16-128`` -> 240 (#2028); verified_by: live cpuFlavors GraphQL
+#:     2026-08-02 — diskLimitPerVcpu 15 GB/vCPU x 16 vCPU = 240 (flavor
+#:     cpu5m, ramMultiplier 8, maxVcpu 32, stock High); NOT
+#:     accept/reject-probed (derived from the documented flavor limit).
 #: Keys MUST cover every value of :data:`RUNPOD_CPU_INSTANCE_FOR_INTENT`
 #: (pinned by tests/test_router.py::
 #: test_runpod_cpu_instance_caps_cover_every_mapped_instance); the
@@ -377,6 +455,7 @@ class RunPodCpuInstanceCaps:
 RUNPOD_CPU_INSTANCE_CAPS: dict[str, RunPodCpuInstanceCaps] = {
     "cpu3g-2-8": RunPodCpuInstanceCaps(vcpu=2, ram_gb=8, max_container_disk_gb=20),
     "cpu3c-8-16": RunPodCpuInstanceCaps(vcpu=8, ram_gb=16, max_container_disk_gb=50),
+    "cpu5m-16-128": RunPodCpuInstanceCaps(vcpu=16, ram_gb=128, max_container_disk_gb=240),
 }
 
 #: Reason token for a RunPod CPU fallback refused because the plan's STATED
@@ -524,9 +603,12 @@ ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC: str = "gcp_workload_failover_ru
 #: this is a create that SUCCEEDED but the instance never dequeued). Same
 #: RunPod target + terminal rung, distinct detection cause so the
 #: ``epm:backend-selected`` marker trail tells a queue timeout apart from a
-#: crash and a capacity miss. A queue-timeout cancel is a CLEAN advance: it
-#: does NOT touch the per-day GCP attempt counter (that bumps only on a
-#: create, inside ``_attempt_one_gcp_rung``, which the poller never re-enters).
+#: crash and a capacity miss. A queue-timeout cancel is a CLEAN advance: the
+#: timeout->RunPod FAILOVER leg never touches the per-day GCP attempt counter
+#: (that bumps only on a create, inside ``_attempt_one_gcp_rung``); the #1601
+#: on-demand RETRY leg (:data:`ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY`
+#: below) DOES re-enter the rung and burns attempts normally — the same
+#: two-leg split the queue-vanish sibling carries (#1596).
 ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD: str = "gcp_queue_timeout_failover_runpod"
 
 #: The ASYNC poller detected a GCP PRE-WORKLOAD BOOT LOOP (#1029): N (default
@@ -543,13 +625,19 @@ ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD: str = "gcp_queue_timeout_failove
 #: detection cause so the ``epm:backend-selected`` marker trail tells a boot
 #: loop apart from a crash, a queue timeout, and a capacity miss. The trigger
 #: never touches the per-day GCP attempt counter (that bumps only on a create,
-#: inside ``_attempt_one_gcp_rung``, which the poller never re-enters).
+#: inside ``_attempt_one_gcp_rung``, which the poller never re-enters on this
+#: path — the #1596/#1601 on-demand retry legs are the poller paths that do,
+#: and they burn attempts by design).
 ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD: str = "gcp_boot_loop_failover_runpod"
 
 #: The ASYNC poller detected a GCP FLEX_START instance that VANISHED while
-#: PENDING (#1116/#1112): the create SUCCEEDED and the instance sat in the DWS
-#: capacity queue (last observed ``current_phase == "pending"``, per the
-#: sidecar phase clock), then disappeared from instances-list entirely (a dead
+#: PENDING (#1116/#1112/#1815): the create SUCCEEDED and the instance sat in
+#: the DWS capacity queue — last observed ``current_phase == "pending"`` per
+#: a SAME-incarnation/legacy sidecar phase clock (arm P), OR never observed
+#: past the queue at all: no clock record for this incarnation + FLEX_START
+#: provenance + a young ``gcp_launched_ts`` (arm N, #1815; the arm rides the
+#: marker evidence as ``vanish_arm``, never a new reason string) — then
+#: disappeared from instances-list entirely (a dead
 #: ``terminal_instance not found`` poll, NO delete operation) — the queue
 #: dropped the request server-side, a pure CAPACITY event. DISTINCT from
 #: :data:`ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD` (the instance there
@@ -561,10 +649,42 @@ ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD: str = "gcp_boot_loop_failover_runpod
 #: :data:`ROUTE_REASON_RUNPOD_FALLBACK` (capacity exhaustion at create time —
 #: this create SUCCEEDED). Same RunPod target + terminal rung, distinct
 #: detection cause so the ``epm:backend-selected`` marker trail tells a queue
-#: vanish apart from every sibling. The trigger never touches the per-day GCP
-#: attempt counter (that bumps only on a create, inside
-#: ``_attempt_one_gcp_rung``, which the poller never re-enters).
+#: vanish apart from every sibling. The vanish→RunPod failover LEG never
+#: touches the per-day GCP attempt counter (that bumps only on a create,
+#: inside ``_attempt_one_gcp_rung``); the #1596 on-demand RETRY leg
+#: (:data:`ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY` below) DOES re-enter
+#: the rung and burns attempts normally.
 ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD: str = "gcp_queue_vanish_failover_runpod"
+
+#: The poller RETRIED the GCP ladder's STANDARD (on-demand) rungs after a
+#: #1116 queue-vanish failover's RunPod terminal rung REFUSED for
+#: capacity/cap reasons with CLEAN provision residue (#1596/#1112). DISTINCT
+#: from :data:`ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD` — that reason
+#: labels the vanish's GCP→RunPod leg (a RunPod launch); THIS one labels the
+#: RunPod-refused→GCP-on-demand leg (a fresh GCP create via
+#: :func:`retry_gcp_ondemand_after_queue_vanish`, which re-enters
+#: :func:`_attempt_one_gcp_rung` and therefore DOES burn
+#: ``gcp_attempts_today`` — unlike every poller-side failover above, whose
+#: no-burn is structural). Rides the existing ``epm:backend-selected``
+#: marker ``reason`` field + the poller's running-JSON ``current_phase``
+#: (additive value per the documented-drift precedent — no ``workflow.yaml``
+#: schema change). NOT in the watcher's ``TRANSIENT_CAPACITY_REASONS``: it
+#: labels a LAUNCH, never a terminal (retry exhaustion falls through to the
+#: re-drivable ``no_compute_available`` terminal unchanged).
+ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY: str = "queue_vanish_gcp_ondemand_retry"
+
+#: The poller RETRIED the GCP ladder's STANDARD (on-demand) rungs after a
+#: #783 queue-TIMEOUT failover's RunPod terminal rung REFUSED for
+#: capacity/cap reasons with CLEAN provision residue (#1601/#779). The
+#: queue-timeout sibling of :data:`ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY`
+#: (#1596) — same mechanism (:func:`retry_gcp_ondemand_after_queue_vanish`,
+#: which re-enters :func:`_attempt_one_gcp_rung` and therefore DOES burn
+#: ``gcp_attempts_today``), distinct trigger label so the marker trail tells
+#: a timed-out queue apart from a vanished one. Additive value per the
+#: documented-drift precedent — no ``workflow.yaml`` schema change. NOT in
+#: the watcher's ``TRANSIENT_CAPACITY_REASONS``: it labels a LAUNCH, never a
+#: terminal (retry exhaustion falls through to ``no_compute_available``).
+ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY: str = "queue_timeout_gcp_ondemand_retry"
 
 #: Default N for the #1029 pre-workload boot-loop breaker: the Nth CONSECUTIVE
 #: same-rung pre-workload boot death fails over to RunPod, and a rung whose
@@ -602,25 +722,90 @@ ROUTE_REASON_RUNPOD_WORKLOAD_START_FAILED: str = "runpod_workload_start_failed"
 #: ``manual_attention`` while the transport stays broken.
 PARK_MAX_CONSECUTIVE_PROBE_FAILURES: int = 3
 
+#: #2028 (user directive 2026-08-02): GCP may not provision ANY new instance
+#: (GPU or CPU). While ``True`` (the standing state): the auto chain's
+#: default order carries no ``gcp`` rung, an explicit ``backend: gcp`` pin
+#: raises :class:`GcpDisabledError` (``reason: gcp_backend_disabled``), a
+#: ``gcp``-bearing :data:`ENV_AUTO_LANE_ORDER` / ``RouterConfig.lane_order``
+#: raises at validation (the ``runpod`` refusal precedent), and the
+#: #1596/#1601 queue-loss GCP on-demand retry legs refuse up front (falling
+#: through to the re-drivable ``no_compute_available`` terminal). Paths that
+#: only ACT ON existing GCP handles — poll, teardown, crash persist, the
+#: GCP→RunPod failovers of an in-flight handle, the ``gcp_audit.py`` janitor
+#: — are deliberately UNGATED (in-flight cleanup + rollback support).
+#: Rollback = flip to ``False`` (all gated code paths reactivate;
+#: :data:`DEFAULT_AUTO_LANE_ORDER` rebuilds with the gcp rung on next
+#: import). Deliberately NO env re-enable override — a stale shell must not
+#: resurrect a policy the user removed; the constant flip is the sanctioned
+#: lever.
+GCP_PROVISIONING_DISABLED: bool = True
+
+
+def gcp_provisioning_disabled() -> bool:
+    """Dynamic read of :data:`GCP_PROVISIONING_DISABLED` (#2028).
+
+    Runtime checks call THIS helper (never the constant directly) so tests
+    can ``monkeypatch.setattr(router, "GCP_PROVISIONING_DISABLED", False)``
+    to keep the gated GCP ladder / failover code paths test-covered — the
+    rollback lever stays exercised. Returns the module attribute's current
+    value.
+    """
+    return GCP_PROVISIONING_DISABLED
+
+
+#: An explicit ``backend: gcp`` pin was refused because GCP provisioning is
+#: disabled by policy (#2028, :data:`GCP_PROVISIONING_DISABLED`). This is a
+#: POLICY refusal, not a capacity outcome: it is deliberately NOT in the
+#: watcher's ``TRANSIENT_CAPACITY_REASONS`` (nothing will "free up" — the fix
+#: is a human changing the pin, or a deliberate rollback flip of the
+#: constant), so the watcher's capacity-retry pass never re-drives it. The
+#: token rides ``classify_terminal_exception``'s ``epm:failure`` note
+#: (``issue_dispatch.py``).
+ROUTE_REASON_GCP_DISABLED: str = "gcp_backend_disabled"
+
 #: SLURM free-lane subset (DRAC + Mila), in legacy precedence order.
 #: Kept as a public constant for callers that need "the free lanes";
 #: the AUTO chain's order is :data:`DEFAULT_AUTO_LANE_ORDER` /
 #: :func:`auto_lane_order`. RunPod is NEVER in either list — it's
-#: override-only by deliberate design.
+#: override-only by deliberate design. The ``fellows`` lane (#1609) is a
+#: free SLURM lane too but is deliberately NOT in this legacy tuple —
+#: it sits AHEAD of the (rollback-only) gcp rung in the auto order (see
+#: :data:`DEFAULT_AUTO_LANE_ORDER`), not in the post-GCP tail.
 DEFAULT_FREE_LANE_ORDER: tuple[BackendKind, ...] = ("nibi", "fir", "mila")
 
-#: Standing default auto lane order: **GCP first** (credits-backed GCP
-#: capacity is consumed BEFORE the free SLURM lanes), then the SLURM
-#: lanes in legacy precedence. This is an unconditional default — NO
-#: date logic; flipping back to free-first later is a deliberate human
-#: action (set :data:`ENV_AUTO_LANE_ORDER` or edit this default), never
-#: a clock.
-DEFAULT_AUTO_LANE_ORDER: tuple[BackendKind, ...] = ("gcp", *DEFAULT_FREE_LANE_ORDER)
+
+def _default_auto_lane_order() -> tuple[BackendKind, ...]:
+    """Build the standing default auto lane order from the #2028 policy flag.
+
+    Flag ON (the standing state): ``("fellows", "nibi", "fir", "mila")`` —
+    no gcp rung anywhere on the auto chain. Flag OFF (rollback): the #1609
+    fellows-then-GCP order ``("fellows", "gcp", "nibi", "fir", "mila")``.
+    Reads the module-level constant at CALL time so a test/rollback flip is
+    honored; the module-level :data:`DEFAULT_AUTO_LANE_ORDER` snapshot is
+    built once at import.
+    """
+    if GCP_PROVISIONING_DISABLED:
+        return ("fellows", *DEFAULT_FREE_LANE_ORDER)
+    return ("fellows", "gcp", *DEFAULT_FREE_LANE_ORDER)
+
+
+#: Standing default auto lane order: **fellows first** (the free
+#: Anthropic-fellows charmander H200 SLURM lane, #1609), then the legacy
+#: free DRAC/Mila SLURM lanes in precedence order. Built conditionally from
+#: :data:`GCP_PROVISIONING_DISABLED` (#2028): while the flag is on there is
+#: NO gcp rung; the flag-off rollback build re-inserts ``gcp`` after
+#: ``fellows`` (credits-backed GCP capacity consumed BEFORE the free
+#: DRAC/Mila lanes — the #1609 order). This is an unconditional default —
+#: NO date logic; flipping the order back is a deliberate human action (set
+#: :data:`ENV_AUTO_LANE_ORDER` or flip the policy constant), never a clock.
+DEFAULT_AUTO_LANE_ORDER: tuple[BackendKind, ...] = _default_auto_lane_order()
 
 #: Env override for the auto lane order — comma-separated lane names,
-#: e.g. ``EPM_AUTO_LANE_ORDER=nibi,fir,mila,gcp`` to restore free-first.
+#: e.g. ``EPM_AUTO_LANE_ORDER=nibi,fir,mila`` to bypass fellows.
 #: Validated by :func:`auto_lane_order`: ``runpod`` raises loudly
-#: (real-money safety — never silently dropped), as do unknown names,
+#: (real-money safety — never silently dropped), ``gcp`` raises while
+#: :data:`GCP_PROVISIONING_DISABLED` is on (#2028 — the rollback lever is
+#: the constant flip, never a lane-order override), as do unknown names,
 #: ``auto``/``cluster`` literals, and duplicates.
 ENV_AUTO_LANE_ORDER: str = "EPM_AUTO_LANE_ORDER"
 
@@ -658,18 +843,20 @@ ENV_SPOT_MAX_GPU_HOURS: str = "EPS_GCP_SPOT_MAX_GPU_HOURS"
 #: that wants a free-cluster lane must name it (``"nibi"`` / ``"fir"``)
 #: or leave ``backend`` unset to auto-route. Passing ``"cluster"`` here
 #: is treated as a stringly-typed miswire.
-_VALID_BACKEND_VALUES: frozenset[str] = frozenset({"runpod", "nibi", "fir", "gcp", "mila", "auto"})
+_VALID_BACKEND_VALUES: frozenset[str] = frozenset(
+    {"runpod", "nibi", "fir", "gcp", "mila", "fellows", "auto"}
+)
 
 #: Lanes the AUTO chain may contain — :data:`_VALID_BACKEND_VALUES`
 #: minus ``runpod`` (override-only; real money) and ``auto`` (the
 #: sentinel itself, not a lane).
-_AUTO_LANE_VALUES: frozenset[str] = frozenset({"gcp", "nibi", "fir", "mila"})
+_AUTO_LANE_VALUES: frozenset[str] = frozenset({"gcp", "nibi", "fir", "mila", "fellows"})
 
 #: Lanes whose kind IS a SLURM cluster name. The shared ``SlurmBackend``
 #: resolves its target cluster from ``spec.cluster`` per call, so every
 #: router site that touches one of these lanes MUST thread the lane kind
 #: into ``spec.cluster`` via :func:`_spec_for_lane` first.
-_PER_CLUSTER_LANES: frozenset[str] = frozenset({"nibi", "fir", "mila"})
+_PER_CLUSTER_LANES: frozenset[str] = frozenset({"nibi", "fir", "mila", "fellows"})
 
 
 # ---------------------------------------------------------------------------
@@ -679,6 +866,22 @@ _PER_CLUSTER_LANES: frozenset[str] = frozenset({"nibi", "fir", "mila"})
 
 class RouteError(RuntimeError):
     """Base class for router-terminal errors."""
+
+
+class GcpDisabledError(RouteError):
+    """Terminal: an explicit ``backend: gcp`` pin while GCP provisioning is
+    disabled by policy (#2028, :data:`GCP_PROVISIONING_DISABLED`).
+
+    Raised by :func:`route` at the explicit-override branch BEFORE any
+    wiring / ladder work (a policy refusal must never spend a reconnect
+    probe or a create attempt). Deliberately a DIRECT :class:`RouteError`
+    subclass — NOT :class:`NoComputeAvailableError` — because this is not a
+    capacity outcome: ``classify_terminal_exception`` (``issue_dispatch.py``)
+    maps it to ``failure_class: infra`` / ``status: blocked`` with
+    ``reason: gcp_backend_disabled``, which is NOT in the watcher's
+    ``TRANSIENT_CAPACITY_REASONS`` — the fix is a human changing the pin
+    (or a deliberate rollback flip of the constant), never an auto-retry.
+    """
 
 
 class NoComputeAvailableError(RouteError):
@@ -704,11 +907,13 @@ class NoComputeAvailableError(RouteError):
 
 class CpuExhaustedNoRunpodLaneError(NoComputeAvailableError):
     """Terminal: a CPU-only intent WITHOUT a RunPod-CPU lane (gpu_count==0 AND
-    not in :data:`RUNPOD_CPU_INSTANCE_FOR_INTENT` — i.e. ``cpu-bigmem``, #677)
-    reached the RunPod terminal rung — the GCP lane was capacity-exhausted OR a
-    GCP CPU workload crashed (sync failover) — and ``cpu-bigmem`` has no cheap
-    RunPod equivalent. (The mapped cheap CPU intents cpu-small / cpu-mid DO fall
-    over to RunPod CPU as of #747 and never raise this.)
+    not in :data:`RUNPOD_CPU_INSTANCE_FOR_INTENT`, #677) reached the RunPod
+    terminal rung — the earlier lanes were capacity-exhausted OR a GCP CPU
+    workload crashed (sync failover) — and the intent has no RunPod
+    equivalent. As of #2028 EVERY current CPU intent is mapped (cpu-small /
+    cpu-mid #747; cpu-bigmem #2028), so this is the fail-loud FLOOR for a
+    future unmapped CPU intent, not a live path — it is deliberately KEPT,
+    never deleted.
 
     A :class:`NoComputeAvailableError` SUBCLASS so existing callers that catch
     the base class still catch it, but ``classify_terminal_exception``
@@ -1096,8 +1301,10 @@ class Lease:
     #: DURABLE idempotency record for the RunPod RUNNING-but-no-port host-wedge
     #: failover (#664/#689). The exact sibling of ``gcp_failover_of``: when this
     #: lease's fresh-pod re-provision was a failover OF a specific WEDGED RunPod
-    #: pod, this holds that wedged pod's stable identity
-    #: (``{"pod_name": ..., "job_id": ...}``). The poller
+    #: pod, this holds that wedged ATTEMPT's stable identity
+    #: (``{"pod_name": ..., "job_id": ..., "runpod_attempt_id": ...}`` — the
+    #: attempt key present whenever the handle carries one, #1668; a legacy
+    #: pre-#598 record holds the 2-key form). The poller
     #: (``scripts/backend_poll.py``) stamps it AFTER the fresh-pod relaunch
     #: succeeds, so even when EDQUOT / a read-only-fs / out-of-inodes fails BOTH
     #: the ``.claude/cache`` sidecar write AND the same-dir wedge sentinel write,
@@ -1109,7 +1316,9 @@ class Lease:
     #: failover (#775). The exact sibling of ``runpod_wedge_failover_of``: when
     #: this lease's fresh-host re-provision was a failover OF a specific RunPod
     #: pod that crashed twice with the SAME CUDA-IMA crash signature, this holds
-    #: that crashed pod's stable identity (``{"pod_name": ..., "job_id": ...}``).
+    #: that crashed ATTEMPT's stable identity (``{"pod_name": ..., "job_id":
+    #: ..., "runpod_attempt_id": ...}`` — attempt key per #1668, as its
+    #: sibling).
     #: A SEPARATE field from ``runpod_wedge_failover_of`` so a no-port wedge
     #: failover and a CUDA-IMA repeat failover on the SAME issue do not
     #: cross-suppress (each gets its own one bounded pivot). The poller
@@ -1120,6 +1329,23 @@ class Lease:
     #: fresh host with this field already set routes to terminal
     #: ``failure_class: code``. ``None`` for every non-CUDA-IMA-failover lease.
     runpod_cuda_ima_failover_of: dict[str, Any] | None = None
+    #: DURABLE provision-intent breadcrumb for a RunPod failover provision
+    #: (#1838). Stamped by the poller (``scripts/backend_poll.py``) BEFORE the
+    #: RunPod failover provision leg runs (crash-ordered write-before-create),
+    #: and CLEARED on every attempt COMPLETION: :func:`_lease_after_submit`
+    #: clears it on ANY successful submit (all six call sites / all backends),
+    #: and backend_poll's attempt-completion handlers (the
+    #: ``NoComputeAvailableError`` / ``RunPodWorkloadStartError`` branches of
+    #: both failover funnels) clear it on the failure exits. Only a KILLED
+    #: attempt (the #1739 shape: a poll tick killed between pod-create and
+    #: lease/handle write) leaves it standing — so an unsuperseded intent plus
+    #: a live in-window ``pod-<N>`` is positive interrupted-attempt-residue
+    #: evidence the retry may reap. Shape: ``{"pod_name", "issue", "ts",
+    #: "token", "reason", "reap_count"}``; ``reap_count`` bounds reap cycles
+    #: at 2 per un-cleared-intent episode (backend_poll
+    #: ``_PROVISION_INTENT_MAX_REAPS``). ``None`` for every lease with no
+    #: in-flight failover provision.
+    runpod_provision_intent: dict[str, Any] | None = None
     #: Per-rung consecutive pre-workload boot-death streaks (#1029). Keyed by
     #: the GCP ladder-rung label (e.g. ``"flexstart_l4"``; the poller's
     #: ``"unknown_rung"`` fallback pools pre-#1029 handles that lack the
@@ -1148,6 +1374,7 @@ class Lease:
             "gcp_failover_of": self.gcp_failover_of,
             "runpod_wedge_failover_of": self.runpod_wedge_failover_of,
             "runpod_cuda_ima_failover_of": self.runpod_cuda_ima_failover_of,
+            "runpod_provision_intent": self.runpod_provision_intent,
             "gcp_boot_death_streaks": self.gcp_boot_death_streaks,
         }
 
@@ -1156,6 +1383,7 @@ class Lease:
         raw_failover = payload.get("gcp_failover_of")
         raw_wedge_failover = payload.get("runpod_wedge_failover_of")
         raw_cuda_ima_failover = payload.get("runpod_cuda_ima_failover_of")
+        raw_provision_intent = payload.get("runpod_provision_intent")
         raw_boot_streaks = payload.get("gcp_boot_death_streaks")
         return cls(
             issue=int(payload["issue"]),
@@ -1173,6 +1401,9 @@ class Lease:
             ),
             runpod_cuda_ima_failover_of=(
                 raw_cuda_ima_failover if isinstance(raw_cuda_ima_failover, dict) else None
+            ),
+            runpod_provision_intent=(
+                raw_provision_intent if isinstance(raw_provision_intent, dict) else None
             ),
             gcp_boot_death_streaks=(raw_boot_streaks if isinstance(raw_boot_streaks, dict) else {}),
         )
@@ -1340,6 +1571,9 @@ def _validate_auto_lane_order(
     * ``runpod`` is FORBIDDEN — RunPod spends real money and stays
       override-only; an order that smuggles it in is a real-money safety
       violation, not a preference.
+    * ``gcp`` is FORBIDDEN while :data:`GCP_PROVISIONING_DISABLED` is on
+      (#2028; the ``runpod`` refusal precedent) — a lane order that smuggles
+      it in would silently re-enable a policy-removed provisioning surface.
     * Unknown lane names (typos, the ``auto`` sentinel, the legacy
       ``cluster`` literal) raise.
     * Duplicates raise (a duplicated lane would be attempted twice).
@@ -1353,6 +1587,13 @@ def _validate_auto_lane_order(
                 f"auto lane order from {source} contains 'runpod' — RunPod spends "
                 "real money and is reachable ONLY via an explicit backend override, "
                 "never on the auto chain. Remove it from the order."
+            )
+        if lane == "gcp" and gcp_provisioning_disabled():
+            raise RouteError(
+                f"auto lane order from {source} contains 'gcp' — GCP provisioning "
+                "is DISABLED by policy (#2028; router.GCP_PROVISIONING_DISABLED). "
+                "Remove it from the order; rollback is flipping that constant to "
+                "False, never a lane-order override."
             )
         if lane not in _AUTO_LANE_VALUES:
             raise RouteError(
@@ -1368,10 +1609,12 @@ def auto_lane_order() -> tuple[BackendKind, ...]:
     """Resolve the auto-chain lane order: env override, else the standing default.
 
     * :data:`ENV_AUTO_LANE_ORDER` set (non-empty) → parse the
-      comma-separated lane list and validate it (``runpod`` / unknown
-      names / duplicates raise loudly — never silently dropped).
-    * Otherwise → :data:`DEFAULT_AUTO_LANE_ORDER` (GCP first,
-      unconditionally — no date gate of any kind).
+      comma-separated lane list and validate it (``runpod`` /
+      ``gcp``-while-disabled (#2028) / unknown names / duplicates raise
+      loudly — never silently dropped).
+    * Otherwise → :data:`DEFAULT_AUTO_LANE_ORDER` (fellows first, then the
+      free SLURM lanes; the gcp rung exists only in the flag-off rollback
+      build — no date gate of any kind; #1609/#2028).
     """
     raw = os.environ.get(ENV_AUTO_LANE_ORDER, "").strip()
     if not raw:
@@ -1707,6 +1950,76 @@ def cancel_and_wait(
 # ---------------------------------------------------------------------------
 
 
+def _fellows_queue_wait_seconds(default: int) -> int:
+    """Fellows queue-wait cap: env knob at call time, else ``default``.
+
+    Mirrors ``backend_poll._gcp_queue_wait_seconds`` semantics: the
+    :data:`FELLOWS_QUEUE_WAIT_ENV` value is read on every call (ops can
+    retune without a restart); a missing / malformed / non-positive value
+    falls back to ``default`` (the caller passes ``cfg.free_wait_seconds``,
+    so unset-env behavior is byte-identical to pre-#1609-amendment).
+    """
+    raw = os.environ.get(FELLOWS_QUEUE_WAIT_ENV)
+    if raw is None:
+        return default
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        return default
+    return val if val > 0 else default
+
+
+def _park_cap_for_lane(kind: BackendKind, cfg: RouterConfig) -> int:
+    """Per-lane park cap: fellows honors ``EPS_FELLOWS_QUEUE_WAIT_SECONDS``.
+
+    Every other lane (nibi / fir / mila) keeps ``cfg.free_wait_seconds``
+    verbatim — the #1609 fast-start knob is fellows-only by design.
+    """
+    if kind == "fellows":
+        return _fellows_queue_wait_seconds(cfg.free_wait_seconds)
+    return cfg.free_wait_seconds
+
+
+def _fellows_ladder_rung_wait_seconds() -> int:
+    """Fellows QoS-ladder rung-2+ park cap (#1899): env knob, else 300 s.
+
+    Same guard semantics as :func:`_fellows_queue_wait_seconds`: read at
+    call time; a missing / malformed / non-positive value falls back to
+    :data:`FELLOWS_LADDER_RUNG_WAIT_DEFAULT`.
+    """
+    raw = os.environ.get(FELLOWS_LADDER_RUNG_WAIT_ENV)
+    if raw is None:
+        return FELLOWS_LADDER_RUNG_WAIT_DEFAULT
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        return FELLOWS_LADDER_RUNG_WAIT_DEFAULT
+    return val if val > 0 else FELLOWS_LADDER_RUNG_WAIT_DEFAULT
+
+
+def _qos_rungs_for_lane(
+    kind: BackendKind, spec: RunSpec
+) -> tuple[list[QosRung | None], str | None]:
+    """``[None]`` (= the cluster's pinned primary QoS) + the fellows qos_ladder (#1899).
+
+    Returns ``(rungs, primary_qos)``: ``rungs[0]`` is always ``None`` —
+    the primary submit runs with NO spec-extra overrides, so its render,
+    lease keying, and spec hash stay byte-identical to pre-#1899 —
+    followed by the cluster row's :class:`~.slurm.QosRung` fallback
+    entries. ``primary_qos`` is the cluster's own ``qos`` (fellows:
+    ``high-eur``), for ``realized_qos`` bookkeeping. Non-fellows lanes
+    return ``([None], None)`` — the walk degenerates to today's
+    single-pass semantics. No try/except: ``spec.cluster`` is threaded by
+    ``_spec_for_lane``; a lookup failure is a code bug and must fail loud.
+    """
+    if kind != "fellows":
+        return [None], None
+    from explore_persona_space.backends.slurm import get_cluster_config  # lazy import (#1899)
+
+    cluster = get_cluster_config(spec.cluster or "fellows")
+    return [None, *cluster.qos_ladder], cluster.qos
+
+
 def park_until_running_or_cap(
     *,
     backend: ComputeBackend,
@@ -1887,10 +2200,11 @@ def route(
     Optional injections:
 
     * ``free_backends`` — map of free-lane kind → backend instance
-      (e.g. ``{"nibi": slurm, "fir": slurm, "mila": mila}``). Auto
-      routing visits these at their position in the resolved lane order
-      (:attr:`RouterConfig.lane_order`, else :func:`auto_lane_order` —
-      env override, else the GCP-first standing default). A missing
+      (e.g. ``{"nibi": slurm, "fir": slurm, "mila": mila, "fellows":
+      slurm}``). Auto routing visits these at their position in the
+      resolved lane order (:attr:`RouterConfig.lane_order`, else
+      :func:`auto_lane_order` — env override, else the fellows-first,
+      GCP-second standing default, #1609). A missing
       kind is skipped (e.g. ``mila`` absent → router skips Mila even
       when the socket is alive).
     * ``gcp_backend`` — the GCP fallback-ladder target. When ``None`` and
@@ -1989,7 +2303,7 @@ def route(
             on_launched=on_launched,
         )
 
-    if spec.backend in {"nibi", "fir", "mila"}:
+    if spec.backend in {"nibi", "fir", "mila", "fellows"}:
         free = (free_backends or {}).get(spec.backend)
         if free is None:
             raise RouteError(
@@ -2016,6 +2330,17 @@ def route(
         )
 
     if spec.backend == "gcp":
+        if gcp_provisioning_disabled():
+            # #2028 policy gate: refuse BEFORE the wiring check / any
+            # reconnect or ladder work — a policy refusal must never spend
+            # a probe or a create attempt.
+            raise GcpDisabledError(
+                f"backend override 'gcp' refused for issue {spec.issue}: GCP "
+                "provisioning is DISABLED by policy (#2028; "
+                "router.GCP_PROVISIONING_DISABLED). Re-dispatch without the gcp "
+                "pin (the auto chain routes fellows -> free SLURM lanes), or flip "
+                "the constant to False for a deliberate rollback."
+            )
         if gcp_backend is None:
             raise RouteError("backend override 'gcp' requested but no gcp_backend wired")
         return _override_gcp_with_ladder(
@@ -2045,7 +2370,11 @@ def route(
         order_source = (
             f"{ENV_AUTO_LANE_ORDER} env override"
             if os.environ.get(ENV_AUTO_LANE_ORDER, "").strip()
-            else "default (GCP-first standing order)"
+            else (
+                "default (fellows-first standing order; gcp disabled #2028)"
+                if gcp_provisioning_disabled()
+                else "default (fellows-then-GCP standing order)"
+            )
         )
     logger.info(
         "route(): issue=%d auto lane order = %s (source: %s)",
@@ -2689,13 +3018,17 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
     BEFORE any length / pin branching, splitting by whether the intent has a
     cheap RunPod-CPU lane (:data:`RUNPOD_CPU_INSTANCE_FOR_INTENT`):
 
-    * ``cpu-bigmem`` (NOT in the map, #677) yields exactly one on-demand CPU
-      rung (``ondemand_<gpu_kind>``) and NEVER picks up a spot / flex / A100-40
-      rung — a reliable machine for a long HF-store download.
-    * ``cpu-small`` / ``cpu-mid`` (mapped, #747) yield a GCP SPOT rung
-      (``spot_<gpu_kind>``) THEN an on-demand rung WHEN the job is short
-      (:func:`_is_short_job`), else on-demand only — the CPU analogue of the
-      GPU length-aware axis; still NO flex / A100-40 rung.
+    * an UNMAPPED CPU intent (none today — cpu-bigmem was mapped by #2028)
+      yields exactly one on-demand CPU rung (``ondemand_<gpu_kind>``) and
+      NEVER picks up a spot / flex / A100-40 rung — a reliable machine for a
+      long HF-store download.
+    * mapped CPU intents (``cpu-small`` / ``cpu-mid`` #747; ``cpu-bigmem``
+      #2028) yield a GCP SPOT rung (``spot_<gpu_kind>``) THEN an on-demand
+      rung WHEN the job is short (:func:`_is_short_job`), else on-demand only
+      — the CPU analogue of the GPU length-aware axis; still NO flex /
+      A100-40 rung. (While :data:`GCP_PROVISIONING_DISABLED` is on this
+      ladder is reachable only via the rollback flip — fresh CPU dispatches
+      land straight on the RunPod terminal rung.)
 
     The short-circuit is load-bearing because :func:`_is_short_job` floors
     ``gpu_count`` to 1, so without it the GPU ladder would (mis)classify a CPU
@@ -2726,21 +3059,22 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
     # CPU-only intent (#677/#747): no GPU fallback ladder applies (the A100-40
     # rung is a "smaller GPU" fallback; the flex rung queues for GPU capacity —
     # neither makes sense for a CPU machine). The branch below splits by whether
-    # the CPU intent has a cheap RunPod-CPU lane (#747): cpu-bigmem (no lane) is
-    # reliable on-demand only, while cpu-small/cpu-mid (mapped) take a GCP SPOT
-    # rung on a SHORT/restartable job. This MUST come before the length-aware
+    # the CPU intent has a RunPod-CPU lane (#747/#2028): an UNMAPPED intent
+    # (none today) is reliable on-demand only, while mapped intents take a GCP
+    # SPOT rung on a SHORT/restartable job. This MUST come before the length-aware
     # branching below: _is_short_job floors gpu_count to 1 via
     # max(1, machine.gpu_count) in _estimated_gpu_hours, so a CPU job WOULD
     # otherwise be (mis)classified by the GPU ladder — the short-circuit is
     # load-bearing, not redundant. It also precedes the caller provisioning-model
     # pin so a pinned CPU launch never silently picks up the A100-40 fallback rung.
     if base.gpu_count == 0:
-        # cpu-bigmem (no RunPod-CPU lane, #677): reliable single on-demand rung —
-        # it may download a big HF store, so a mid-download spot preemption is
-        # costly. Yield exactly the on-demand CPU rung, NO spot/flex/A100-40.
+        # UNMAPPED CPU intent (no RunPod-CPU lane, #677; none today — cpu-bigmem
+        # was mapped by #2028): reliable single on-demand rung — it may download
+        # a big HF store, so a mid-download spot preemption is costly. Yield
+        # exactly the on-demand CPU rung, NO spot/flex/A100-40.
         if spec.intent not in RUNPOD_CPU_INSTANCE_FOR_INTENT:
             return [(spec, f"ondemand_{_machine_label(base)}")]
-        # Cheap CPU intent (cpu-small / cpu-mid, #747): spot-first on a SHORT /
+        # Mapped CPU intent (cpu-small / cpu-mid #747; cpu-bigmem #2028): spot-first on a SHORT /
         # restartable job (the CPU analogue of the GPU length-aware axis,
         # _is_short_job), else on-demand only. NO A100-40 rung (that is a GPU
         # fallback) and NO flex rung (flex queues for GPU capacity — pointless
@@ -3033,25 +3367,26 @@ def _runpod_terminal_rung(
     equivalent (:func:`_translated_runpod_intent`) before the launch, so the
     rung actually fires instead of dying in ``gpu_heuristics.resolve_intent``.
     """
-    # CPU-intent guard (#677, RELAXED for mapped intents #747). RunPod's GPU
-    # mutation (podFindAndDeployOnDemand) is GPU-only, BUT #747 adds a RunPod
-    # CPU lane (deployCpuPod) for the cheap CPU intents in
-    # RUNPOD_CPU_INSTANCE_FOR_INTENT. So the relaxed rule:
-    #   * a CPU intent IN the map (cpu-small / cpu-mid) FALLS OVER to RunPod CPU
-    #     when the GCP CPU lane is exhausted (capacity) OR its workload crashed
-    #     (sync failover) -- it proceeds to the RunPod launch below, where the
-    #     runpod_spec carries --intent <cpu-small|cpu-mid>, which
+    # CPU-intent guard (#677, RELAXED for mapped intents #747/#2028). RunPod's
+    # GPU mutation (podFindAndDeployOnDemand) is GPU-only, BUT #747 added a
+    # RunPod CPU lane (deployCpuPod) for the CPU intents in
+    # RUNPOD_CPU_INSTANCE_FOR_INTENT (cpu-small / cpu-mid; cpu-bigmem joined
+    # at #2028 when GCP provisioning was removed). So the relaxed rule:
+    #   * a CPU intent IN the map FALLS OVER to RunPod CPU when the earlier
+    #     lanes are exhausted (capacity) OR a GCP workload crashed (sync
+    #     failover) -- it proceeds to the RunPod launch below, where the
+    #     runpod_spec carries --intent <cpu-*>, which
     #     pod_lifecycle.py/gpu_heuristics (Surface 5) resolves to the RunPod CPU
     #     instance_id via this SAME RUNPOD_CPU_INSTANCE_FOR_INTENT map;
-    #   * a CPU intent NOT in the map (cpu-bigmem -- the >50 GB analysis lane,
-    #     no cheap RunPod equivalent) STILL raises the TYPED
+    #   * a CPU intent NOT in the map (none today -- the fail-loud floor for a
+    #     future unmapped CPU intent) STILL raises the TYPED
     #     CpuExhaustedNoRunpodLaneError verbatim (#677), so the orchestrator's
     #     classify_terminal_exception (issue_dispatch.py) posts an epm:failure
     #     note carrying reason: cpu_exhausted_no_runpod_lane (DISTINCT from the
     #     generic no_compute_available note). The watcher's capacity-retry pass
     #     keys on no_compute_available, so the distinct reason means it does NOT
-    #     auto-retry a structurally-CPU-unservable cpu-bigmem RunPod launch --
-    #     correct: no lane will ever free up to make RunPod accept it.
+    #     auto-retry a structurally-CPU-unservable RunPod launch -- correct: no
+    #     lane will ever free up to make RunPod accept it.
     machine = machine_for_intent(spec)
     if machine.gpu_count == 0 and spec.intent not in RUNPOD_CPU_INSTANCE_FOR_INTENT:
         _post_terminal_failure_marker(
@@ -3196,7 +3531,10 @@ def _runpod_terminal_rung(
             # Lazy import (module convention — matches the existing lazy
             # ``backends.runpod`` import below; runpod.py imports only ``base``
             # at module top, so no cycle either way — lazy is belt-and-braces).
-            from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+            from explore_persona_space.backends.runpod import (
+                EXIT_STILL_WAITING,
+                RunPodWorkloadStartError,
+            )
 
             partial_handle = exc.handle if isinstance(exc, RunPodWorkloadStartError) else None
             if partial_handle is not None:
@@ -3256,6 +3594,51 @@ def _runpod_terminal_rung(
                     reason=ROUTE_REASON_RUNPOD_WORKLOAD_START_FAILED,
                     chosen_kind="runpod",
                     attempts=attempts,
+                )
+                raise
+            # Exit-75 still-waiting (#1603, incident #1586): pod_lifecycle's
+            # bounded wait-for-capacity loop reached its per-process budget —
+            # NOTHING provisioned, NOTHING billing; the contract is "re-run
+            # the same command to continue waiting" (state-free wait,
+            # pod_lifecycle._emit_still_waiting_and_exit). NOT a failure: do
+            # NOT post the terminal failure marker (the orchestrator would
+            # post epm:failure + set-status blocked — the #1586 mis-park) and
+            # do NOT collapse into NoComputeAvailableError. Re-raise verbatim
+            # — returncode + cmd + stderr tail ride the exception (the #1465
+            # relay preserved them for exactly this consumer) — so the sync
+            # producer contract (dispatch_issue._provision_still_waiting →
+            # exit 75, still_waiting: true + rerun: true) covers the terminal
+            # rung exactly as it covers the explicit `backend: runpod`
+            # override. The ASYNC wrapper
+            # (failover_to_runpod_after_async_workload_crash) converts this
+            # to NoComputeAvailableError so the poller's terminal contract is
+            # byte-unchanged.
+            if (
+                isinstance(exc, subprocess.CalledProcessError)
+                and exc.returncode == EXIT_STILL_WAITING
+            ):
+                attempts.append(
+                    RouteAttempt(
+                        kind="runpod",
+                        cluster=None,
+                        est_start_seconds_raw=0.0,
+                        est_start_seconds_clamped=0.0,
+                        outcome="runpod_still_waiting",
+                        detail=(
+                            "runpod terminal rung STILL WAITING for capacity "
+                            f"(pod_lifecycle exit {EXIT_STILL_WAITING}: wait-for-capacity "
+                            "budget reached; nothing provisioned, nothing billing; "
+                            "re-run the same launch command to continue waiting)"
+                        ),
+                        elapsed_seconds=now_fn() - started_at,
+                    )
+                )
+                logger.warning(
+                    "route: runpod terminal rung still WAITING for capacity on "
+                    "issue %d (exit-%d still-waiting contract, #1603; NOT a "
+                    "failure — re-run the same launch command).",
+                    spec.issue,
+                    EXIT_STILL_WAITING,
                 )
                 raise
             # RunPod is the LAST resort — ANY OTHER failure here (prepare /
@@ -3398,6 +3781,13 @@ def failover_to_runpod_after_async_workload_crash(
     propagates here unchanged — the poller maps it to a terminal infra JSON
     with ``reason: no_compute_available`` (re-drivable by the watcher's
     capacity-retry pass once a lane frees).
+
+    Exit-75 still-waiting (#1603): the rung re-raises pod_lifecycle's
+    still-waiting ``CalledProcessError`` VERBATIM for the sync launch path
+    (dispatch_issue's exit-75 re-run contract); on THIS async leg no
+    orchestrator re-runs "the same command", so the wrapper converts rc=75
+    to :class:`NoComputeAvailableError` (terminal marker posted) — every
+    ``backend_poll`` consumer sees the same type as today.
     """
     store = lease_store or LeaseStore()
     now_fn = now_fn or time.monotonic
@@ -3421,23 +3811,217 @@ def failover_to_runpod_after_async_workload_crash(
             "lane has no backend-side executor for hydra runs (named residual, #909)",
             spec.issue,
         )
-    return _runpod_terminal_rung(
-        spec=replace(spec, backend="runpod"),
-        runpod_backend=runpod_backend,
-        store=store,
-        attempts=[],
-        started_at=now_fn(),
-        now_fn=now_fn,
-        marker_poster=marker_poster,
-        on_launched=on_launched,
-        residual_gap=residual_gap,
-        reason=reason,
-        failover_evidence=evidence,
-        # M3b (#669): the GCP-crash identity (pod_name/job_id) this failover is
-        # OF, so the in-flock re-check + stamp can make N concurrent triggerers
-        # launch RunPod exactly once. None on the legacy single-triggerer path
-        # leaves the existing #659 behavior unchanged.
-        gcp_failover_of_identity=gcp_failover_of_identity,
+    attempts: list[RouteAttempt] = []
+    try:
+        return _runpod_terminal_rung(
+            spec=replace(spec, backend="runpod"),
+            runpod_backend=runpod_backend,
+            store=store,
+            attempts=attempts,
+            started_at=now_fn(),
+            now_fn=now_fn,
+            marker_poster=marker_poster,
+            on_launched=on_launched,
+            residual_gap=residual_gap,
+            reason=reason,
+            failover_evidence=evidence,
+            # M3b (#669): the GCP-crash identity (pod_name/job_id) this failover is
+            # OF, so the in-flock re-check + stamp can make N concurrent triggerers
+            # launch RunPod exactly once. None on the legacy single-triggerer path
+            # leaves the existing #659 behavior unchanged.
+            gcp_failover_of_identity=gcp_failover_of_identity,
+        )
+    except subprocess.CalledProcessError as exc:
+        from explore_persona_space.backends.runpod import EXIT_STILL_WAITING
+
+        if exc.returncode != EXIT_STILL_WAITING:
+            # Defensive: the rung converts every non-75 CalledProcessError to
+            # NoComputeAvailableError before this wrapper sees it (currently
+            # unreachable) — cheap insurance against future rung edits.
+            raise
+        # Exit-75 still-waiting on an ASYNC failover leg (#1603): no
+        # orchestrator re-runs "the same command" here — the poller owns a
+        # bounded tick — so surface the typed capacity terminal the poller
+        # already maps (reason: no_compute_available, re-drivable by the
+        # watcher's capacity-retry pass). The #1596/#1601 queue-loss legs'
+        # clean-residue GCP-STANDARD retry gates on this same type, and an
+        # exit-75 IS a clean-residue capacity outcome by construction
+        # (nothing provisioned, nothing billing).
+        _post_terminal_failure_marker(
+            spec=spec,
+            marker_poster=marker_poster,
+            reason=ROUTE_REASON_NO_COMPUTE,
+            chosen_kind="runpod",
+            attempts=attempts,
+        )
+        raise NoComputeAvailableError(
+            "runpod async-failover leg still WAITING for capacity when the "
+            f"wait-for-capacity budget expired (pod_lifecycle exit "
+            f"{EXIT_STILL_WAITING}: nothing provisioned, nothing billing); "
+            "surfaced as the re-drivable no-compute terminal for the poller",
+            attempts=[_attempt_to_dict(a) for a in attempts],
+        ) from exc
+
+
+def retry_gcp_ondemand_after_queue_vanish(
+    *,
+    spec: RunSpec,
+    gcp_backend: ComputeBackend,
+    marker_poster: Callable[..., None] | None = None,
+    on_launched: Callable[[RunHandle], None] | None = None,
+    lease_store: LeaseStore | None = None,
+    now_fn: Callable[[], float] | None = None,
+    config: RouterConfig | None = None,
+    gcp_failover_of_identity: dict[str, Any] | None = None,
+    reason: str = ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY,
+) -> RouteResult | None:
+    """Retry the GCP ladder's STANDARD (on-demand) rungs after a queue-vanish
+    (#1596/#1112) or queue-timeout (#1601/#779) RunPod refusal.
+
+    The GCP-target sibling of
+    :func:`failover_to_runpod_after_async_workload_crash` (same seam-defaulting
+    shape): when a #1116 queue-vanish or #783 queue-timeout failover's RunPod
+    terminal rung raised
+    :class:`NoComputeAvailableError` with CLEAN provision residue, the poller
+    (``scripts/backend_poll.py``) calls this to walk EXACTLY the on-demand
+    rungs a caller ``provisioning_model="STANDARD"`` pin enumerates
+    (:func:`_gcp_ladder_specs`'s pin branch — base machine, then A100-40 when
+    the intent fits 40 GB, pinned wide rungs when width is declared) via
+    :func:`_attempt_one_gcp_rung` — inheriting the cap accounting
+    (``count_attempt_cap=True``: the retry IS a fresh create, so it BURNS
+    ``gcp_attempts_today``, unlike the poller-side failovers whose no-burn is
+    structural), the headroom/boot-loop skips, the zone ladder, the marker
+    posts, and the in-flock lease writes for free.
+
+    Returns the launched :class:`RouteResult` (final ``epm:backend-selected``
+    marker labeled ``reason`` — default
+    :data:`ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY`; the #1601
+    queue-timeout caller passes
+    :data:`ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY` — while
+    intermediate per-rung markers wear the generic ``auto_fallback_gcp``
+    reason, accepted trail noise), or ``None`` when a CONCURRENT triggerer
+    already launched the retry (the rung's #1596 in-flock
+    ``failover_of_identity`` short-circuit — the caller preserves the winner's
+    sidecar instead of double-provisioning).
+
+    Raises:
+    * :class:`NoComputeAvailableError` — H100 intents up front (there is no
+      on-demand H100 pool and ``gcp.render_create_argv`` refuses
+      H100+STANDARD; never build a rung guaranteed to crash), and on
+      exhaustion / daily-cap hit (the caller falls through to today's
+      re-drivable ``no_compute_available`` terminal, keeping the watcher
+      capacity-retry backstop reachable).
+    * :class:`gcp.GcpWorkloadError` — a workload-class create failure on the
+      retry re-raises the UNDERLYING error (``_GcpWorkloadFailover.__cause__``,
+      always set: the rung raises ``from exc``) instead of cascading back to
+      RunPod, which just refused; the caller maps it to a distinct
+      non-re-drivable terminal.
+    """
+    store = lease_store or LeaseStore()
+    now_fn = now_fn or time.monotonic
+    cfg = config or RouterConfig()
+    attempts: list[RouteAttempt] = []
+    started_at = now_fn()
+    if gcp_provisioning_disabled():
+        # #2028 policy gate: the retry would CREATE a fresh GCP instance —
+        # refused. This leg fires AFTER a RunPod capacity refusal, so it must
+        # NOT re-enter RunPod either: raise the typed capacity terminal so the
+        # poller caller falls through to the existing re-drivable
+        # ``no_compute_available`` terminal (the same shape as rung
+        # exhaustion — the watcher capacity-retry backstop stays reachable).
+        attempts.append(
+            RouteAttempt(
+                kind="gcp",
+                cluster=None,
+                est_start_seconds_raw=0.0,
+                est_start_seconds_clamped=0.0,
+                outcome="ondemand_retry_gcp_disabled",
+                detail=(
+                    "queue-loss on-demand retry refused: GCP provisioning is "
+                    "DISABLED by policy (#2028; router.GCP_PROVISIONING_DISABLED); "
+                    "falling through to the re-drivable no_compute_available terminal"
+                ),
+                elapsed_seconds=now_fn() - started_at,
+            )
+        )
+        raise NoComputeAvailableError(
+            "queue-loss on-demand retry refused: GCP provisioning is disabled "
+            "by policy (#2028; router.GCP_PROVISIONING_DISABLED)",
+            attempts=[_attempt_to_dict(a) for a in attempts],
+        )
+    machine = machine_for_intent(spec)
+    if str(machine.gpu_kind).startswith("H100"):
+        attempts.append(
+            RouteAttempt(
+                kind="gcp",
+                cluster=None,
+                est_start_seconds_raw=0.0,
+                est_start_seconds_clamped=0.0,
+                outcome="ondemand_retry_unservable_h100",
+                detail=(
+                    f"queue-vanish on-demand retry: {machine.machine_type} resolves to "
+                    f"{machine.gpu_kind} and GCP offers no on-demand H100 pool "
+                    f"(render_create_argv refuses H100+STANDARD); refusing up front"
+                ),
+                elapsed_seconds=now_fn() - started_at,
+            )
+        )
+        raise NoComputeAvailableError(
+            "queue-vanish on-demand retry: no on-demand H100 pool "
+            f"({machine.machine_type} / {machine.gpu_kind})",
+            attempts=[_attempt_to_dict(a) for a in attempts],
+        )
+    # STANDARD pin on the caller spec: _gcp_ladder_specs' pin branch then
+    # enumerates EXACTLY the on-demand rungs (single source of truth for rung
+    # shape / labels / A100-40 eligibility / width — never a hand-built list;
+    # spot/flex are structurally absent under the pin).
+    pinned = replace(
+        spec,
+        backend="gcp",
+        extra={**dict(spec.extra or {}), "provisioning_model": "STANDARD"},
+    )
+    underlying: BaseException | None = None
+    try:
+        for rung_spec, rung_label in _gcp_ladder_specs(pinned):
+            outcome = _attempt_one_gcp_rung(
+                spec=rung_spec,
+                rung_label=rung_label,
+                gcp_backend=gcp_backend,
+                store=store,
+                attempts=attempts,
+                started_at=started_at,
+                cfg=cfg,
+                now_fn=now_fn,
+                marker_poster=marker_poster,
+                on_launched=on_launched,
+                terminal=True,
+                reason=reason,
+                count_attempt_cap=True,
+                failover_of_identity=gcp_failover_of_identity,
+            )
+            if isinstance(outcome, RouteResult):
+                return outcome
+            if outcome == "already_launched":
+                # A concurrent triggerer's retry already launched (in-flock
+                # gcp_failover_of match) — the caller preserves ITS sidecar.
+                return None
+            if outcome == "cap_hit":
+                break
+            # "advance" -> next on-demand rung.
+    except _GcpWorkloadFailover as sig:
+        # A workload-class create failure on the RETRY must NOT cascade back
+        # to RunPod — it just refused for capacity. Re-raise the UNDERLYING
+        # GcpWorkloadError typed for the caller (__cause__ is always set: the
+        # rung raises `from exc`); hoisted out of the except clause so the
+        # original chain is preserved verbatim (no B904 re-chaining).
+        underlying = sig.__cause__
+        if underlying is None:  # unreachable today — fail LOUD, never a
+            raise  # silent capacity mislabel of a workload failure
+    if underlying is not None:
+        raise underlying
+    raise NoComputeAvailableError(
+        "queue-vanish on-demand retry: STANDARD rungs exhausted",
+        attempts=[_attempt_to_dict(a) for a in attempts],
     )
 
 
@@ -3539,7 +4123,16 @@ def _override_free_or_gcp(
                 # Explicit-override reconnect — `kind` may be ANY backend
                 # here, so merge the gcp marker extras only when the
                 # reconnected lane is gcp (#631 round-3 marker-coverage fix).
-                extra=_gcp_marker_extras(spec) if kind == "gcp" else {},
+                # The handle's live-derived provisioning_model overrides the
+                # spec default (#1892; handle side #1815).
+                extra=(
+                    {
+                        **_gcp_marker_extras(spec),
+                        **_live_provisioning_extras_from_handle(handle),
+                    }
+                    if kind == "gcp"
+                    else {}
+                ),
             )
             _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
             return result
@@ -3659,18 +4252,23 @@ def _override_free_or_gcp(
                 elapsed_seconds=now_fn() - started_at,
                 # Explicit `backend: gcp` fresh launch — only reached when
                 # kind == "gcp" (guarded above), so the gcp marker extras
-                # always apply (#631 round-3 marker-coverage fix).
-                extra=_gcp_marker_extras(spec),
+                # always apply (#631 round-3 marker-coverage fix). #1617:
+                # also lift the fresh handle's boot-disk probe fields.
+                extra={**_gcp_marker_extras(spec), **_boot_disk_extras_from_handle(handle)},
             )
             _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
             return result
 
         # SLURM-style free lane: run the park watchdog (under the flock).
+        # #1609: the cap is per-lane — fellows honors the
+        # EPS_FELLOWS_QUEUE_WAIT_SECONDS env knob, every other lane keeps
+        # cfg.free_wait_seconds verbatim.
+        cap = _park_cap_for_lane(kind, cfg)
         started, reason, terminal_status = park_until_running_or_cap(
             backend=backend,
             handle=handle,
             is_started=is_started,
-            cap_seconds=cfg.free_wait_seconds,
+            cap_seconds=cap,
             poll_interval=cfg.poll_interval,
             now_fn=now_fn,
             sleep_fn=sleep_fn,
@@ -3696,6 +4294,47 @@ def _override_free_or_gcp(
                 cluster=spec.cluster,
                 attempts=attempts,
                 elapsed_seconds=now_fn() - started_at,
+            )
+            _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
+            return result
+
+        # #1609 fast-start guard, pinned exemption: an explicit `backend:
+        # fellows` pin may wait indefinitely (pinned = deliberate). On
+        # park_cap_exceeded the job is still PENDING (or otherwise
+        # not-running) at the cap — not terminal, not probe-unknown: do NOT
+        # scancel — return the live PENDING handle and let the async poll
+        # loop track it to RUNNING (slurm_monitor maps PENDING->status
+        # "running" and never stall-classifies PENDING, so the wait is
+        # unbounded poll-side). Precedent: _override_runpod ("just submit.
+        # No park") + the GCP flex PENDING handle. Blocking route() past the
+        # cap is a non-starter (the per-issue flock serializes the tick
+        # cron; the CLI would hang). terminal_before_running and
+        # probe_failures_exceeded keep the existing paths below untouched.
+        if kind == "fellows" and reason == "park_cap_exceeded":
+            attempts.append(
+                RouteAttempt(
+                    kind=kind,
+                    cluster=spec.cluster,
+                    est_start_seconds_raw=None,
+                    est_start_seconds_clamped=None,
+                    outcome="pinned_queue_wait",
+                    detail=(
+                        f"park cap {cap}s exceeded; pinned fellows job stays queued "
+                        f"(pinned = deliberate; {FELLOWS_QUEUE_WAIT_ENV})"
+                    ),
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            result = RouteResult(
+                backend=backend,
+                handle=handle,
+                requested_kind=kind,
+                chosen_kind=kind,
+                reason=ROUTE_REASON_OVERRIDE,
+                cluster=spec.cluster,
+                attempts=attempts,
+                elapsed_seconds=now_fn() - started_at,
+                extra={"pinned_queue_wait": True, "park_cap_seconds": cap},
             )
             _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
             return result
@@ -3823,7 +4462,7 @@ def _override_free_or_gcp(
             attempts=attempts,
         )
         raise NoComputeAvailableError(
-            f"explicit override {kind!r} did not start within {cfg.free_wait_seconds}s "
+            f"explicit override {kind!r} did not start within {cap}s "
             f"(park: {reason}, cancel: {cancel_outcome})",
             attempts=[_attempt_to_dict(a) for a in attempts],
         )
@@ -3910,7 +4549,9 @@ def _override_gcp_with_ladder(
             cluster=None,
             attempts=attempts,
             elapsed_seconds=now_fn() - started_at,
-            extra=_gcp_marker_extras(spec),
+            # The handle's live-derived provisioning_model overrides the spec
+            # default — the #1776 incident seam (#1892; handle side #1815).
+            extra={**_gcp_marker_extras(spec), **_live_provisioning_extras_from_handle(handle)},
         )
         _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
         return result
@@ -4027,9 +4668,10 @@ def _auto_route(
     if cpu_only and free_backends:
         logger.info(
             "route: CPU-only intent %r — free SLURM lanes (%s) excluded from "
-            "the auto chain. The documented CPU chain is GCP E2 -> RunPod CPU "
-            "for mapped intents (#747) / GCP-only for cpu-bigmem (#677); the "
-            "SLURM lane has no 0-GPU sbatch render (#1464, incident #1336).",
+            "the auto chain. The documented CPU chain is RunPod CPU for mapped "
+            "intents (#747/#2028; GCP provisioning disabled — the E2 rung is "
+            "rollback-only); the SLURM lane has no 0-GPU sbatch render (#1464, "
+            "incident #1336).",
             spec.intent,
             ", ".join(sorted(free_backends)),
         )
@@ -4272,8 +4914,14 @@ def _record_reconnect(
         elapsed_seconds=now_fn() - started_at,
         # Auto-chain reconnect scan — `kind` is the reconnected lane (gcp
         # OR a free SLURM lane), so merge the gcp marker extras only for a
-        # gcp reconnect (#631 round-3 marker-coverage fix).
-        extra=_gcp_marker_extras(spec) if kind == "gcp" else {},
+        # gcp reconnect (#631 round-3 marker-coverage fix). The handle's
+        # live-derived provisioning_model overrides the spec default (#1892;
+        # handle side #1815).
+        extra=(
+            {**_gcp_marker_extras(spec), **_live_provisioning_extras_from_handle(handle)}
+            if kind == "gcp"
+            else {}
+        ),
     )
     _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
     return result
@@ -4430,187 +5078,278 @@ def _try_one_free_lane(
             return result
 
         # Launch (still under the flock — sealing the double-submit race).
+        # #1899: ONE attempt id for the whole lane attempt (per-submit
+        # identity is the SLURM job_id, re-persisted to the sidecar +
+        # lease per rung below). The fellows lane walks its granted-QoS
+        # ladder (high-eur -> normal-eur -> low-eur) on a queue-park
+        # timeout, re-submitting the SAME sbatch with only --qos (and
+        # possibly --partition) changed — every hard cluster rule (mem
+        # formula, NCCL exports, HF_HOME, SIGTERM trap, job-name suffix)
+        # is inherited verbatim from the unchanged cluster row. The <=3
+        # sequential submits, minutes apart, each AFTER a confirmed
+        # scancel of the predecessor, are NOT loop-spam (cluster rule 4).
+        # Non-fellows lanes have an empty ladder, so the loop degenerates
+        # to today's single-pass semantics. Worst-case flock hold grows
+        # to <=~24 min (600 + 2x300 s parks + up to 3 cancel graces + 2
+        # re-submits) — per-ISSUE flock only, same contention class as
+        # the pre-#1899 600 s park.
         threaded_spec, lease = _thread_attempt_id_into(spec, lease, write)
-        try:
-            handle = _prepare_and_launch(backend, threaded_spec, kind=kind, cluster=spec.cluster)
-        except BackendPrepareError as exc:
-            # Provision-class, pre-launch (nothing live) → next lane,
-            # same semantics as a launch failure but with a precise
-            # attempt-trail outcome.
-            attempts.append(
-                RouteAttempt(
-                    kind=kind,
-                    cluster=spec.cluster,
-                    est_start_seconds_raw=est_raw,
-                    est_start_seconds_clamped=est_clamped,
-                    outcome="prepare_failed",
-                    detail=exc.reason,
-                    elapsed_seconds=now_fn() - started_at,
+        rungs, primary_qos = _qos_rungs_for_lane(kind, spec)
+        for rung_idx, rung in enumerate(rungs):
+            if rung is None:
+                # Primary rung: NO extra overrides — render, spec hash,
+                # and lease keying stay byte-identical to pre-#1899.
+                rung_spec = threaded_spec
+            else:
+                rung_spec = replace(
+                    threaded_spec,
+                    extra={
+                        **threaded_spec.extra,
+                        "slurm_qos_override": rung.qos,
+                        **({"slurm_partition_override": rung.partition} if rung.partition else {}),
+                    },
                 )
-            )
-            logger.warning(
-                "route: free lane %s prepare failed (%s); trying next lane.",
-                kind,
-                exc.reason,
-            )
-            return None
-        except Exception as exc:
-            attempts.append(
-                RouteAttempt(
-                    kind=kind,
-                    cluster=spec.cluster,
-                    est_start_seconds_raw=est_raw,
-                    est_start_seconds_clamped=est_clamped,
-                    outcome="launch_failed",
-                    detail=f"{type(exc).__name__}: {exc}",
-                    elapsed_seconds=now_fn() - started_at,
-                )
-            )
-            logger.warning(
-                "route: free lane %s launch failed (%s); trying next lane.",
-                kind,
-                type(exc).__name__,
-            )
-            return None
-
-        # Persist the handle (sidecar hook) + launched id IMMEDIATELY
-        # (still under the flock).
-        _invoke_on_launched(on_launched, handle)
-        write(_lease_after_submit(lease, spec, kind, spec.cluster, handle))
-
-        # Park (still under the flock — wait IS contention surface, but
-        # the lock is per-ISSUE, not cross-issue, so the only callers
-        # serialized are the two we are deliberately serializing).
-        started, reason, terminal_status = park_until_running_or_cap(
-            backend=backend,
-            handle=handle,
-            is_started=is_started,
-            cap_seconds=cfg.free_wait_seconds,
-            poll_interval=cfg.poll_interval,
-            now_fn=now_fn,
-            sleep_fn=sleep_fn,
-        )
-        if started:
-            return _record_free_lane_started(
-                backend=backend,
-                handle=handle,
-                kind=kind,
-                est_raw=est_raw,
-                est_clamped=est_clamped,
-                spec=spec,
-                attempts=attempts,
-                started_at=started_at,
-                now_fn=now_fn,
-                marker_poster=marker_poster,
-                detail="park resolved to RUNNING",
-            )
-
-        # Park failed. Distinguish "never started" from "started and
-        # FAILED": a fast-failing job transitions PD→R→exit between
-        # polls, so "vanished before observed RUNNING" is NOT proof the
-        # cluster lacked capacity. If the scratch dir holds runtime
-        # artifacts (status.json / job.out), the job DID start — a
-        # WORKLOAD failure that must SURFACE (no GCP escalation: a
-        # workload bug would burn paid credit on a doomed re-run).
-        #
-        # GATED on the job being genuinely GONE (done/dead): ``stalled``
-        # covers LIVE jobs (RUNNING + stale heartbeat; SUSPENDED) and
-        # ``gate`` is a live wait — classifying those here raised BEFORE
-        # the cancel machine and orphaned a live job (round-6 M1, issue
-        # 535 attempt 2). stalled/gate fall through to cancel_and_wait.
-        if reason == "terminal_before_running" and terminal_status in ("done", "dead"):
-            evidence = _probe_started_evidence(started_evidence_probe, backend, handle)
-            if evidence is not None:
+            realized_qos = rung.qos if rung is not None else primary_qos
+            try:
+                handle = _prepare_and_launch(backend, rung_spec, kind=kind, cluster=spec.cluster)
+            except BackendPrepareError as exc:
+                # Provision-class, pre-launch (nothing live) → next lane,
+                # same semantics as a launch failure but with a precise
+                # attempt-trail outcome. No rung-continue on a launch
+                # failure: a broken endpoint will not heal between rungs.
                 attempts.append(
                     RouteAttempt(
                         kind=kind,
                         cluster=spec.cluster,
                         est_start_seconds_raw=est_raw,
                         est_start_seconds_clamped=est_clamped,
-                        outcome="workload_failure",
-                        detail=(
-                            "terminal before RUNNING with runtime artifacts "
-                            f"(phase={evidence.get('phase', '')!r})"
-                        ),
+                        outcome="prepare_failed",
+                        detail=exc.reason,
                         elapsed_seconds=now_fn() - started_at,
                     )
                 )
+                logger.warning(
+                    "route: free lane %s prepare failed (%s); trying next lane.",
+                    kind,
+                    exc.reason,
+                )
+                return None
+            except Exception as exc:
+                attempts.append(
+                    RouteAttempt(
+                        kind=kind,
+                        cluster=spec.cluster,
+                        est_start_seconds_raw=est_raw,
+                        est_start_seconds_clamped=est_clamped,
+                        outcome="launch_failed",
+                        detail=f"{type(exc).__name__}: {exc}",
+                        elapsed_seconds=now_fn() - started_at,
+                    )
+                )
+                logger.warning(
+                    "route: free lane %s launch failed (%s); trying next lane.",
+                    kind,
+                    type(exc).__name__,
+                )
+                return None
+
+            # Persist the handle (sidecar hook) + launched id IMMEDIATELY
+            # (still under the flock). The lease is REBOUND per rung so
+            # each rung's write recomputes from the NEW handle — a future
+            # Lease field must never be clobbered from a stale base
+            # (#1899 review note).
+            _invoke_on_launched(on_launched, handle)
+            lease = _lease_after_submit(lease, spec, kind, spec.cluster, handle)
+            write(lease)
+
+            # Park (still under the flock — wait IS contention surface, but
+            # the lock is per-ISSUE, not cross-issue, so the only callers
+            # serialized are the two we are deliberately serializing).
+            # #1609: the rung-1 cap is per-lane — fellows honors the
+            # EPS_FELLOWS_QUEUE_WAIT_SECONDS env knob, every other lane
+            # keeps cfg.free_wait_seconds verbatim. #1899: fallback rungs
+            # (2+) park the shorter EPS_FELLOWS_LADDER_RUNG_WAIT_SECONDS
+            # cap (default 300 s).
+            cap = (
+                _park_cap_for_lane(kind, cfg)
+                if rung_idx == 0
+                else _fellows_ladder_rung_wait_seconds()
+            )
+            started, reason, terminal_status = park_until_running_or_cap(
+                backend=backend,
+                handle=handle,
+                is_started=is_started,
+                cap_seconds=cap,
+                poll_interval=cfg.poll_interval,
+                now_fn=now_fn,
+                sleep_fn=sleep_fn,
+            )
+            if started:
+                # #1899: fellows starts record the realized QoS tier on
+                # the attempt detail + RouteResult.extra (-> the
+                # epm:backend-selected marker), so a mid-run SIGTERM
+                # death is attributable to a preemptible tier. Non-fellows
+                # lanes keep the pre-#1899 detail/extra byte-identical.
+                return _record_free_lane_started(
+                    backend=backend,
+                    handle=handle,
+                    kind=kind,
+                    est_raw=est_raw,
+                    est_clamped=est_clamped,
+                    spec=spec,
+                    attempts=attempts,
+                    started_at=started_at,
+                    now_fn=now_fn,
+                    marker_poster=marker_poster,
+                    detail=(
+                        f"park resolved to RUNNING (qos={realized_qos})"
+                        if kind == "fellows"
+                        else "park resolved to RUNNING"
+                    ),
+                    extra=({"realized_qos": realized_qos} if kind == "fellows" else None),
+                )
+
+            # Park failed. Distinguish "never started" from "started and
+            # FAILED": a fast-failing job transitions PD→R→exit between
+            # polls, so "vanished before observed RUNNING" is NOT proof the
+            # cluster lacked capacity. If the scratch dir holds runtime
+            # artifacts (status.json / job.out), the job DID start — a
+            # WORKLOAD failure that must SURFACE (no GCP escalation: a
+            # workload bug would burn paid credit on a doomed re-run).
+            # Applies on ANY rung (#1899): a workload bug re-crashes under
+            # every QoS, so walking on would burn queue time for nothing.
+            #
+            # GATED on the job being genuinely GONE (done/dead): ``stalled``
+            # covers LIVE jobs (RUNNING + stale heartbeat; SUSPENDED) and
+            # ``gate`` is a live wait — classifying those here raised BEFORE
+            # the cancel machine and orphaned a live job (round-6 M1, issue
+            # 535 attempt 2). stalled/gate fall through to cancel_and_wait.
+            if reason == "terminal_before_running" and terminal_status in ("done", "dead"):
+                evidence = _probe_started_evidence(started_evidence_probe, backend, handle)
+                if evidence is not None:
+                    attempts.append(
+                        RouteAttempt(
+                            kind=kind,
+                            cluster=spec.cluster,
+                            est_start_seconds_raw=est_raw,
+                            est_start_seconds_clamped=est_clamped,
+                            outcome="workload_failure",
+                            detail=(
+                                "terminal before RUNNING with runtime artifacts "
+                                f"(phase={evidence.get('phase', '')!r})"
+                            ),
+                            elapsed_seconds=now_fn() - started_at,
+                        )
+                    )
+                    _post_terminal_failure_marker(
+                        spec=spec,
+                        marker_poster=marker_poster,
+                        reason=ROUTE_REASON_WORKLOAD_FAILURE,
+                        chosen_kind=kind,
+                        attempts=attempts,
+                        extra={"evidence": evidence},
+                    )
+                    raise WorkloadSurfacedError(
+                        f"{kind} job {handle.job_id} went terminal before RUNNING but "
+                        f"left runtime artifacts (phase={evidence.get('phase', '')!r}) — "
+                        "workload failure, no auto-fallback",
+                        chosen_kind=kind,
+                        evidence=evidence,
+                    )
+
+            # Genuine never-started park failure → cancel state machine,
+            # then KEEP (raced), CONTINUE (cancelled: next rung on a
+            # fellows queue-park timeout, else next lane), or RAISE
+            # (manual_attention).
+            cancel_outcome = cancel_and_wait(
+                backend=backend,
+                handle=handle,
+                is_live_after_cancel=is_live_after_cancel,
+                is_running_after_cancel=is_running_after_cancel,
+                grace_seconds=cfg.cancel_grace_seconds,
+                poll_interval=min(2.0, cfg.poll_interval),
+                now_fn=now_fn,
+                sleep_fn=sleep_fn,
+            )
+            if cancel_outcome == "raced_to_running":
+                race_extra: dict[str, Any] = {"cancel_race": True}
+                if kind == "fellows":
+                    race_extra["realized_qos"] = realized_qos
+                return _record_free_lane_started(
+                    backend=backend,
+                    handle=handle,
+                    kind=kind,
+                    est_raw=est_raw,
+                    est_clamped=est_clamped,
+                    spec=spec,
+                    attempts=attempts,
+                    started_at=started_at,
+                    now_fn=now_fn,
+                    marker_poster=marker_poster,
+                    detail="cancel-race; job started during scancel",
+                    extra=race_extra,
+                )
+
+            # #1609: make the fellows queue-timeout fall-through grep-able on
+            # the attempts trail (no new ROUTE_REASON_* constant — the final
+            # reason stays the existing auto_fallback_gcp / auto_started
+            # convention). #1899: the detail additionally names the rung's
+            # QoS + position and the env knob governing THIS rung's cap.
+            detail = f"cancel_outcome={cancel_outcome}"
+            if kind == "fellows" and reason == "park_cap_exceeded":
+                cap_env = FELLOWS_QUEUE_WAIT_ENV if rung_idx == 0 else FELLOWS_LADDER_RUNG_WAIT_ENV
+                detail += (
+                    f"; fellows_queue_timeout cap={cap}s qos={realized_qos} "
+                    f"rung={rung_idx + 1}/{len(rungs)} ({cap_env})"
+                )
+            attempts.append(
+                RouteAttempt(
+                    kind=kind,
+                    cluster=spec.cluster,
+                    est_start_seconds_raw=est_raw,
+                    est_start_seconds_clamped=est_clamped,
+                    outcome=reason,
+                    detail=detail,
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            if cancel_outcome == "manual_attention":
+                # cancel grace expired without confirming the free-lane job
+                # is dead. Silently escalating (to the next rung OR to GCP)
+                # would risk a duplicate run sharing the attempt-id
+                # namespace → raise so the orchestrator surfaces the
+                # orphaned id + parks. Applies on ANY rung (#1899): an
+                # unconfirmed-dead job is the same double-submit hazard on
+                # every rung.
                 _post_terminal_failure_marker(
                     spec=spec,
                     marker_poster=marker_poster,
-                    reason=ROUTE_REASON_WORKLOAD_FAILURE,
+                    reason=ROUTE_REASON_NO_COMPUTE,
                     chosen_kind=kind,
                     attempts=attempts,
-                    extra={"evidence": evidence},
+                    extra={"manual_attention": True, "orphaned_job_id": str(handle.job_id)},
                 )
-                raise WorkloadSurfacedError(
-                    f"{kind} job {handle.job_id} went terminal before RUNNING but "
-                    f"left runtime artifacts (phase={evidence.get('phase', '')!r}) — "
-                    "workload failure, no auto-fallback",
-                    chosen_kind=kind,
-                    evidence=evidence,
+                raise ManualAttentionRequiredError(
+                    kind=kind,
+                    cluster=spec.cluster,
+                    orphaned_job_id=str(handle.job_id),
+                    attempts=[_attempt_to_dict(a) for a in attempts],
                 )
-
-        # Genuine never-started park failure → cancel state machine,
-        # then KEEP (raced), CONTINUE to next lane (cancelled), or
-        # RAISE (manual_attention).
-        cancel_outcome = cancel_and_wait(
-            backend=backend,
-            handle=handle,
-            is_live_after_cancel=is_live_after_cancel,
-            is_running_after_cancel=is_running_after_cancel,
-            grace_seconds=cfg.cancel_grace_seconds,
-            poll_interval=min(2.0, cfg.poll_interval),
-            now_fn=now_fn,
-            sleep_fn=sleep_fn,
-        )
-        if cancel_outcome == "raced_to_running":
-            return _record_free_lane_started(
-                backend=backend,
-                handle=handle,
-                kind=kind,
-                est_raw=est_raw,
-                est_clamped=est_clamped,
-                spec=spec,
-                attempts=attempts,
-                started_at=started_at,
-                now_fn=now_fn,
-                marker_poster=marker_poster,
-                detail="cancel-race; job started during scancel",
-                extra={"cancel_race": True},
-            )
-
-        attempts.append(
-            RouteAttempt(
-                kind=kind,
-                cluster=spec.cluster,
-                est_start_seconds_raw=est_raw,
-                est_start_seconds_clamped=est_clamped,
-                outcome=reason,
-                detail=f"cancel_outcome={cancel_outcome}",
-                elapsed_seconds=now_fn() - started_at,
-            )
-        )
-        if cancel_outcome == "manual_attention":
-            # cancel grace expired without confirming the free-lane job
-            # is dead. Silently escalating to GCP would risk a duplicate
-            # run sharing the attempt-id namespace → raise so the
-            # orchestrator surfaces the orphaned id + parks.
-            _post_terminal_failure_marker(
-                spec=spec,
-                marker_poster=marker_poster,
-                reason=ROUTE_REASON_NO_COMPUTE,
-                chosen_kind=kind,
-                attempts=attempts,
-                extra={"manual_attention": True, "orphaned_job_id": str(handle.job_id)},
-            )
-            raise ManualAttentionRequiredError(
-                kind=kind,
-                cluster=spec.cluster,
-                orphaned_job_id=str(handle.job_id),
-                attempts=[_attempt_to_dict(a) for a in attempts],
-            )
-        return None
+            if not (
+                kind == "fellows"
+                and reason == "park_cap_exceeded"
+                and cancel_outcome == "cancelled"
+            ):
+                # Every non-ladder outcome (non-fellows lanes;
+                # probe_failures_exceeded; stalled/gate-cancelled; ...)
+                # keeps today's exact next-lane semantics.
+                return None
+            # else: fellows queue-park timeout with a CONFIRMED-dead
+            # cancel — fall through to the next granted-QoS rung (#1899).
+            # The no-double-submit invariant holds: raced_to_running
+            # returned above, manual_attention raised above, so a rung
+            # re-submit only ever follows a confirmed `cancelled`.
+        return None  # ladder exhausted → advance to the next lane (GCP)
 
 
 def _record_free_lane_started(
@@ -4776,15 +5515,31 @@ def _attempt_one_gcp_rung(
     reason: str = ROUTE_REASON_AUTO_FALLBACK_GCP,
     requested_kind: BackendKind | None = None,
     count_attempt_cap: bool = True,
+    failover_of_identity: dict[str, Any] | None = None,
 ) -> RouteResult | str:
     """Attempt ONE GCP ladder rung. Returns a launched :class:`RouteResult`,
     or ``"advance"`` (this rung failed/skipped — try the next rung), or
-    ``"cap_hit"`` (per-day attempt cap reached — stop issuing creates).
+    ``"cap_hit"`` (per-day attempt cap reached — stop issuing creates), or
+    ``"already_launched"`` (``failover_of_identity`` only: the in-flock lease
+    already records a failover of that identity — a CONCURRENT triggerer won;
+    no create, no counter bump).
 
     ``count_attempt_cap=False`` (the explicit ``backend: gcp`` pin) skips
     BOTH the cap-check and the per-day counter bump — an explicit user ask
     attempts regardless of the auto-escalation cap (pre-#656 explicit-gcp
     behavior never touched the counter).
+
+    ``failover_of_identity`` (#1596, keyword-only, default ``None`` =
+    byte-identical for every existing caller) is the VANISHED GCP run's
+    stable identity (``{"pod_name": ..., "job_id": ...}``) when this rung is
+    the queue-vanish on-demand RETRY
+    (:func:`retry_gcp_ondemand_after_queue_vanish`). Two in-flock touch
+    points give the retry an exactly-once bound STRONGER than the RunPod
+    path's post-hoc ``_stamp_lease_failover_of``: (1) immediately after the
+    lease materialization the rung short-circuits ``"already_launched"``
+    when ``lease.gcp_failover_of`` already matches the identity; (2) the
+    post-launch lease write stamps ``gcp_failover_of`` in the SAME flock
+    transaction as the create — no launch→stamp window at all.
 
     The rung-spec already carries its machine override + provisioning model
     (via :func:`_with_machine`), so the headroom pre-check, the create, the
@@ -4878,6 +5633,28 @@ def _attempt_one_gcp_rung(
                 # Suffixed anyway for consistency (#934).
                 attempt_id=_make_attempt_id(spec.extra.get("lane_suffix")),
             )
+        # #1596 in-flock exactly-once short-circuit (queue-vanish on-demand
+        # retry only; failover_of_identity is None for every other caller). A
+        # CONCURRENT second triggerer that acquires the flock AFTER the first
+        # stamped sees the matching gcp_failover_of and returns WITHOUT a
+        # create or a counter bump. NOTE: a ``backend="runpod"`` lease stamped
+        # with the same old-handle identity ALSO matches — that flow should be
+        # unreachable (the poller's shared-core pre-check fires first), and
+        # the match direction is conservatively correct either way: never
+        # double-provision.
+        if (
+            failover_of_identity is not None
+            and lease is not None
+            and lease.gcp_failover_of == failover_of_identity
+        ):
+            logger.warning(
+                "route: GCP rung %s for issue %d already launched by a concurrent "
+                "queue-vanish on-demand retry (in-flock gcp_failover_of match, #1596); "
+                "returning already_launched — NO second create.",
+                rung_label,
+                spec.issue,
+            )
+            return "already_launched"
         today = _today_utc_iso()
         attempts_already_today = lease.gcp_attempts_today if lease.gcp_attempts_date == today else 0
         if count_attempt_cap and attempts_already_today >= cfg.max_gcp_attempts_per_day:
@@ -5065,7 +5842,14 @@ def _attempt_one_gcp_rung(
         # Persist the handle (sidecar hook) + launched id IMMEDIATELY
         # (still under the flock).
         _invoke_on_launched(on_launched, gcp_handle)
-        write(_lease_after_submit(lease, spec, "gcp", None, gcp_handle))
+        submitted = _lease_after_submit(lease, spec, "gcp", None, gcp_handle)
+        if failover_of_identity is not None:
+            # #1596: stamp the exactly-once record in the SAME flock
+            # transaction as the create (_lease_after_submit mutates the
+            # materialized lease in place and never touches gcp_failover_of;
+            # assigning on its return value is equivalent either way).
+            submitted.gcp_failover_of = failover_of_identity
+        write(submitted)
 
     attempts.append(
         RouteAttempt(
@@ -5109,6 +5893,10 @@ def _attempt_one_gcp_rung(
             # requested_gpus != realized_gpu_count.
             "requested_gpus": _declared_width(spec),
             "realized_gpu_count": int(machine.gpu_count),
+            # #1617: realized-boot-disk observability lifted off the fresh
+            # gcp handle (empty on a reconnect handle — same additive-extra
+            # class as realized_gpu_count, no marker SCHEMA change).
+            **_boot_disk_extras_from_handle(gcp_handle),
             **_gcp_marker_extras(spec),
         },
     )
@@ -5253,10 +6041,19 @@ def _lease_already_failed_over(
     GCP run's stable identity (``pod_name``/``job_id``), so a genuinely-new GCP
     crash on the same issue (fresh dispatch → new identity) does NOT match and
     still gets its own single failover.
+
+    #1596 cross-rung extension: a ``backend="gcp"`` lease carrying the SAME
+    identity ALSO matches — the queue-vanish on-demand retry
+    (:func:`retry_gcp_ondemand_after_queue_vanish`) stamps ``gcp_failover_of``
+    in-flock on a GCP lease, and a concurrent second vanish-triggerer racing
+    toward THIS RunPod rung must short-circuit on that stamp rather than
+    launch a paid RunPod pod alongside the GCP retry. The identity comparison
+    is unchanged, so a fresh GCP dispatch (new pod_name/job_id, no stamp)
+    never matches.
     """
     return (
         lease is not None
-        and lease.backend == "runpod"
+        and lease.backend in ("runpod", "gcp")
         and lease.gcp_failover_of == gcp_failover_of_identity
     )
 
@@ -5336,6 +6133,11 @@ def _lease_after_submit(
     ``attempt_id`` to THIS launch's id, so preserving it here records the
     id the launch actually used. Absent lease → fresh one with the
     spec's attempt_id (or a freshly minted one if none).
+
+    #1838: ANY successful submit also SUPERSEDES a standing
+    ``runpod_provision_intent`` breadcrumb — the attempt COMPLETED, so the
+    intent must not linger and mis-attribute a later live ``pod-<N>`` as
+    interrupted-attempt residue.
     """
     if lease is None:
         lease = Lease(
@@ -5349,6 +6151,7 @@ def _lease_after_submit(
     lease.cluster = cluster
     lease.job_id = str(handle.job_id)
     lease.submitted_at = float(time.time())  # wall-clock, not monotonic
+    lease.runpod_provision_intent = None  # #1838 supersession on every submit
     return lease
 
 
@@ -5492,6 +6295,35 @@ def _post_marker_nonfatal(
         )
 
 
+def _boot_disk_extras_from_handle(handle: RunHandle | None) -> dict[str, Any]:
+    """Lift the #1617 post-create boot-disk keys off a freshly-launched gcp handle.
+
+    ``GcpBackend.launch`` threads the post-create boot-disk probe fields
+    (reuse age + realized size, or a fail-soft ``boot_disk_probe_error``)
+    onto ``handle.extra`` on FRESH creates only; reconnect handles never
+    carry the keys by construction, so this lift is empty there — the
+    reconnect ``RouteResult`` sites deliberately do not call it. Mirrors
+    the ``realized_gpu_count`` lift pattern (#1121). Pure function, no IO.
+    """
+    if handle is None or not getattr(handle, "extra", None):
+        return {}
+    return {k: handle.extra[k] for k in BOOT_DISK_MARKER_EXTRA_KEYS if k in handle.extra}
+
+
+def _live_provisioning_extras_from_handle(handle: RunHandle | None) -> dict[str, Any]:
+    """Reconnect-marker override (#1892): prefer the HANDLE's live-derived
+    provisioning_model (gcp.reconnect_or_none reads scheduling.provisioningModel
+    off the live instance, #1815) over _gcp_marker_extras' spec default —
+    the #1776 reconnect marker said STANDARD while the instance was FLEX_START,
+    driving a wrong disarmed-gate diagnosis. Returns {} when the handle carries
+    no value (fail-open to the spec-derived fallback). Pure function, no IO.
+    """
+    v = (getattr(handle, "extra", None) or {}).get("provisioning_model")
+    if not v:
+        return {}
+    return {"provisioning_model": str(v), "provisioning_model_source": "live-instance"}
+
+
 def _gcp_marker_extras(spec: RunSpec) -> dict[str, Any]:
     """Build the GCP ``epm:backend-selected`` ``extra`` dict for ``spec``.
 
@@ -5505,7 +6337,17 @@ def _gcp_marker_extras(spec: RunSpec) -> dict[str, Any]:
 
     Safe to call unguarded on any gcp-chosen result. ``provisioning_model``
     reads only ``spec.extra`` (no intent lookup), so it is always
-    populated. ``quota_pool`` resolves the intent's machine: it is ``None``
+    populated — which means it is the SPEC-derived value (the fresh-launch
+    plan), correct on fresh launches but potentially stale on reconnects.
+    The THREE gcp reconnect seams — the explicit-override generic composer
+    (``_override_free_or_gcp``), the ``_override_gcp_with_ladder``
+    reconnect, and the auto-chain ``_record_reconnect`` composer — therefore
+    merge :func:`_live_provisioning_extras_from_handle` OVER this dict
+    (``{**_gcp_marker_extras(spec), **_live_provisioning_extras_from_handle(handle)}``)
+    so the marker reports the live instance's provisioning model when the
+    reconnect handle carries one (#1892; handle side #1815 — the #1776
+    reconnect marker said STANDARD while the instance was FLEX_START).
+    ``quota_pool`` resolves the intent's machine: it is ``None``
     when the (gpu_kind, pool) pair has no quota mapping AND — per the round-4
     fix below — when the intent itself is unmapped. The reconnect paths
     (``router.py`` explicit-override + auto-chain) call this AFTER an
@@ -5704,7 +6546,9 @@ __all__ = [
     "ENV_AUTO_LANE_ORDER",
     "ENV_GCP_SPOT_FALLBACK",
     "ENV_SPOT_MAX_GPU_HOURS",
+    "FELLOWS_QUEUE_WAIT_ENV",
     "FREE_WAIT_SECONDS",
+    "GCP_PROVISIONING_DISABLED",
     "LEASE_STORE_DIRNAME",
     "MAX_GCP_ATTEMPTS_PER_DAY",
     "PARK_MAX_CONSECUTIVE_PROBE_FAILURES",
@@ -5712,6 +6556,7 @@ __all__ = [
     "ROUTE_REASON_AUTO_STARTED",
     "ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD",
     "ROUTE_REASON_CPU_FALLBACK_INFEASIBLE",
+    "ROUTE_REASON_GCP_DISABLED",
     "ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD",
     "ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD",
     "ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD",
@@ -5719,6 +6564,8 @@ __all__ = [
     "ROUTE_REASON_NO_COMPUTE",
     "ROUTE_REASON_OVERRIDE",
     "ROUTE_REASON_PREPARE_FAILED",
+    "ROUTE_REASON_QUEUE_TIMEOUT_GCP_ONDEMAND_RETRY",
+    "ROUTE_REASON_QUEUE_VANISH_GCP_ONDEMAND_RETRY",
     "ROUTE_REASON_RECONNECT",
     "ROUTE_REASON_RUNPOD_FALLBACK",
     "ROUTE_REASON_WORKLOAD_FAILURE",
@@ -5730,6 +6577,7 @@ __all__ = [
     "CpuExhaustedNoRunpodLaneError",
     "CpuFallbackInfeasibleError",
     "GcpAttemptCapExceededError",
+    "GcpDisabledError",
     "Lease",
     "LeaseStore",
     "ManualAttentionRequiredError",
@@ -5746,8 +6594,10 @@ __all__ = [
     "default_is_live",
     "default_is_started",
     "failover_to_runpod_after_async_workload_crash",
+    "gcp_provisioning_disabled",
     "park_until_running_or_cap",
     "rank_lanes",
+    "retry_gcp_ondemand_after_queue_vanish",
     "route",
     "spec_hash",
 ]

@@ -50,3 +50,9 @@ barred amendment, capture loss). Here the test is "does the impl match the regis
 statistic?" — if yes, Codex's "should be a different statistic" is out-of-scope
 re-litigation; if no (impl silently swapped in a different statistic than the plan
 named), THAT is the binding defect. The pivot is the plan's registered source, always.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Codex flags the registered noise-floor/reliability statistic as a unit-mismatch bug](feedback_codex_flags_registered_noise_floor_statistic.md) — "wrong kind of quantity / wrong units" FAIL on a verdict-logic scalar; read the PLAN's registered noise-floor SOURCE fn + how the parent USES it before crediting; faithful re-impl of the registered statistic = out-of-scope, PASS. #661 r2.

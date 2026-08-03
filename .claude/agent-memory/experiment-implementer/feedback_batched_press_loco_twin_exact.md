@@ -30,3 +30,9 @@ or FLOP-floor justification; also check for duplicate deterministic fits
 dispatch (e.g. `fitM._ridge_loco_pred(path=...)`) when the shared serial
 function has other legitimate callers. Impl: `_ridge_predict_loco_batched` in
 `scripts/issue658_fit_predictors.py` (#811 r14, commit d38a262db5).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Batched PRESS-LOCO twin exact + enumerate every loop before attesting "batched"](feedback_batched_press_loco_twin_exact.md) — nested-CV LOCO ridge batches EXACTLY (fold-chunk bmm+eigh, rtol<=1e-7); a round that batched floors left the LOCO chain serial (30-43d realized) (#811 r14)

@@ -10,3 +10,9 @@ A dispatcher hardcoding both an HF dataset revision SHA and a file path dies in 
 **Why:** #477 v5 recovery diagnostic (2026-06-05) — `i477_reval_confirm.py:113` 404'd on `issue472_neg_geometry/persona_bank.json` @ `66d7db7a`.
 
 **How to apply:** CODE-class, not infra — don't fix experimenter-side. Post `epm:failure v1 failure_class: code` with: the pinned SHA, the exact 404'd path, the script+line, and the recommendation that the implementer verify via `HfApi().list_repo_tree(repo_id, revision=<sha>, repo_type="dataset")` then re-pin or fix the path. Same HF listing/path family as [[feedback_snapshot_download_truncated_siblings]], but this one is a loud single-file 404, not a silent empty fetch.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [HF Hub pinned-revision 404](feedback_hf_hub_pinned_rev_404.md) — hf_hub_download(revision, filename) 404s when the pair doesn't coexist; code-class, implementer verifies via list_repo_tree (#477 v5)

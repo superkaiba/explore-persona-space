@@ -58,11 +58,12 @@ import json
 import logging
 import os
 import re
+import shlex
 import subprocess
 import sys
 import time
 from collections import deque
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -73,6 +74,7 @@ from explore_persona_space.backends.base import (
     PollResult,
     RunHandle,
     RunSpec,
+    validate_env_pins,
 )
 
 if TYPE_CHECKING:
@@ -109,6 +111,17 @@ _GPU_VOLUME_FLOOR_GB = 200
 # bounds a pathological single line, worst case ~24 KB << the 50k marker cap.
 _POD_LIFECYCLE_TAIL_MAX_LINES = 60
 _POD_LIFECYCLE_TAIL_MAX_LINE_CHARS = 400
+
+
+#: pod_lifecycle.py's structured still-waiting exit (EX_TEMPFAIL, #603): the
+#: bounded wait-for-capacity loop reached its per-process wall-clock budget
+#: with NOTHING provisioned and NOTHING billing — the caller RE-RUNS the same
+#: command to continue waiting (the wait loop is state-free). Mirrored (not
+#: imported) from ``scripts/pod_lifecycle.py::EXIT_STILL_WAITING`` — this
+#: module's imports stay ``base``-only by documented convention (see the
+#: _GPU_VOLUME_FLOOR_GB note above). Parity pinned by
+#: tests/test_dispatch_issue_cli.py::test_exit_still_waiting_matches_pod_lifecycle.
+EXIT_STILL_WAITING = 75
 
 
 class PodLifecycleProcessError(subprocess.CalledProcessError):
@@ -311,6 +324,24 @@ _LAUNCH_OK_RE = re.compile(r"LAUNCH-OK pid=(\d+)")
 #: Double-fire guard line from the launch script (exit 5): the live PID.
 _ALREADY_RUNNING_PID_RE = re.compile(r"ALREADY-RUNNING pid=(\d+)")
 
+#: Local ssh bound (seconds) for each branch-sync attempt (#1858). The
+#: remote sync script self-bounds its three git mutation ops with
+#: ``timeout -k 10`` at 120/20/20 — worst case 190 s when every TERM needs
+#: the 10 s KILL grace — and the remote bounds MUST fire before this local
+#: bound so a FUSE-hung git is killed REMOTELY (its ``.git/index.lock``
+#: hold dies with it) instead of surviving a local ``TimeoutExpired`` that
+#: kills only the local ssh client (incident #1769 fu1: the orphaned
+#: remote git held the lock and wedged the launch terminally). 240 keeps
+#: ~50 s of ssh-connect + script overhead over the 190 s remote worst case
+#: (raised from the pre-#1858 flat 180 s to preserve remote-fires-first).
+SYNC_SSH_TIMEOUT_SECONDS = 240
+
+#: Reap-script (#1858) terminal report line: ``REAP-OK killed=<n>
+#: survivors=<m> lock_removed=yes``. ``survivors>0`` = git pids that
+#: outlived SIGKILL (uninterruptible D-state — the MooseFS mount itself is
+#: wedged, so a sync retry is futile).
+_SYNC_REAP_OK_RE = re.compile(r"REAP-OK killed=(\d+) survivors=(\d+) lock_removed=yes")
+
 
 class RunPodWorkloadStartError(RuntimeError):
     """A requested ``--workload-cmd`` execution did not start on the pod (#909).
@@ -334,6 +365,69 @@ class RunPodWorkloadStartError(RuntimeError):
         #: FALSE (the #931 incident: the mislabel invited a second paid
         #: dispatch while pod-931 billed invisibly).
         self.handle = handle
+
+
+class RunPodProvisionBranchMismatchError(RunPodWorkloadStartError):
+    """Post-bootstrap branch assertion failed — the pod is not on the requested branch (#1698).
+
+    Raised by :func:`_assert_pod_on_branch` when the ``--repo-branch`` value
+    threaded from the orchestrator (``spec.extra["repo_branch"]``) does NOT
+    match the on-pod ``git rev-parse --abbrev-ref HEAD`` after
+    ``bootstrap_pod.sh`` completes. This surfaces a PLUMBING regression LOUD
+    instead of running stale code for 25+ minutes: the #1689 R8/R9 shape
+    landed the pod on ``main`` twice while every plan-level probe read the
+    branch value as correctly threaded.
+
+    Subclasses :class:`RunPodWorkloadStartError` so the existing partial-handle
+    machinery at :meth:`RunPodBackend.launch`'s ``#954`` catch site wraps it
+    into a partial-handle failure — the pod exists and BILLS, so the
+    failover / diagnostics contract is identical to any other workload-start
+    failure. The pod is left RUNNING for SSH diagnosis (the
+    RunPod-as-diagnosis-lane doctrine).
+    """
+
+
+def _assert_pod_on_branch(pod_name: str, expected_branch: str) -> None:
+    """Post-bootstrap fail-loud: pod HEAD branch MUST equal ``expected_branch`` (#1698).
+
+    SSH-probes ``git rev-parse --abbrev-ref HEAD`` on the pod's
+    ``/workspace/explore-persona-space`` clone and raises
+    :class:`RunPodProvisionBranchMismatchError` on ANY mismatch — the pod
+    landed on the wrong branch, the plumbing dropped the requested value
+    (``bootstrap_pod.sh:52`` defaults ``BOOTSTRAP_BRANCH=main``), and the
+    workload would silently run stale code.
+
+    Called by :meth:`RunPodBackend.launch` immediately AFTER
+    ``_run_pod_lifecycle_relay`` returns, and ONLY when the launch explicitly
+    requested a non-``main`` branch via ``spec.extra["repo_branch"]``: the
+    default-``main`` case is a no-op (the assertion binds only to launches
+    that named a specific branch). See :meth:`RunPodBackend.launch` for the
+    bind condition.
+    """
+    host, port = _resolve_pod_endpoint(pod_name)
+    out = _ssh_pod_run(
+        host,
+        port,
+        "cd /workspace/explore-persona-space && git rev-parse --abbrev-ref HEAD",
+        timeout=30,
+        context=f"post-bootstrap branch verify on {pod_name}",
+    )
+    # git rev-parse --abbrev-ref HEAD prints ONE line: the branch name (or
+    # 'HEAD' on a detached checkout). Take the last non-empty line so a
+    # bootstrap that appended a trailing progress line does not corrupt the
+    # comparison — the branch line itself is the last real content.
+    actual = ""
+    for line in out.splitlines():
+        stripped = line.strip()
+        if stripped:
+            actual = stripped
+    if actual != expected_branch:
+        raise RunPodProvisionBranchMismatchError(
+            f"pod {pod_name!r} bootstrapped onto branch {actual!r}, expected "
+            f"{expected_branch!r} — the --repo-branch plumbing dropped the "
+            f"value (bootstrap_pod.sh:52 defaults BOOTSTRAP_BRANCH=main when "
+            f"the env var is unset); refusing to proceed on stale code"
+        )
 
 
 def _resolve_pod_endpoint(pod_name: str) -> tuple[str, int]:
@@ -431,6 +525,14 @@ def _render_branch_sync_script(branch: str) -> str:
     pod-side ``HEAD == FETCH_HEAD`` verification never trusts pull stdout.
     (Pod-side ``reset --hard`` is sanctioned — the VM-tree ban does not
     apply to the disposable pod clone.)
+
+    #1858: each git MUTATION op self-bounds with ``timeout -k 10`` (120 s
+    fetch / 20 s checkout / 20 s reset — worst case 190 s, under the
+    ``SYNC_SSH_TIMEOUT_SECONDS`` local bound) so a MooseFS-FUSE-hung git
+    is killed REMOTELY, releasing its ``.git/index.lock`` hold, instead of
+    surviving the local ssh timeout as an orphaned lock-holder (incident
+    #1769 fu1). The rev-parse verification lines stay bare — ref reads,
+    not FUSE-heavy object-store ops.
     """
     if not _BRANCH_RE.fullmatch(branch):
         raise RunPodWorkloadStartError(
@@ -443,13 +545,61 @@ def _render_branch_sync_script(branch: str) -> str:
             'export PATH="/root/.local/bin:$PATH"',
             "cd /workspace/explore-persona-space",
             "pgrep -x git >/dev/null 2>&1 || rm -f .git/index.lock",
-            f'git fetch origin "refs/heads/{branch}"',
-            f'git checkout -q -f -B "{branch}" FETCH_HEAD',
-            "git reset --hard -q FETCH_HEAD",
+            f'timeout -k 10 120 git fetch origin "refs/heads/{branch}"',
+            f'timeout -k 10 20 git checkout -q -f -B "{branch}" FETCH_HEAD',
+            "timeout -k 10 20 git reset --hard -q FETCH_HEAD",
             "HEAD_SHA=$(git rev-parse HEAD); FETCH_SHA=$(git rev-parse FETCH_HEAD)",
             '[ "$HEAD_SHA" = "$FETCH_SHA" ] || '
             '{ echo "SYNC-MISMATCH head=$HEAD_SHA fetch=$FETCH_SHA" >&2; exit 3; }',
             'echo "SYNC-OK $HEAD_SHA"',
+        ]
+    )
+
+
+def _render_sync_reap_script(clone_dir: str = "/workspace/explore-persona-space") -> str:
+    """Remote reap script (#1858): SIGKILL leftover git pids + clear the lock.
+
+    Runs after a FAILED branch-sync attempt, before the single retry. The
+    MODAL designed path is ZERO live git pids (the sync script's per-op
+    remote ``timeout`` already killed the hung git), so the ``pgrep -x
+    git`` enumerations are GUARDED (``|| true``) — an empty match yields
+    ``killed=0 survivors=0`` and exit 0, never a ``set -eu`` death (the
+    critic round-1 Must-Fix). Any live git pids are SIGKILLed with a
+    bounded ~10 s death-wait poll, survivors re-enumerated (a pid that
+    outlives SIGKILL is in uninterruptible D-state — the MooseFS mount
+    itself is wedged), then ``.git/index.lock`` is removed UNCONDITIONALLY.
+    Always emits ``REAP-OK killed=<n> survivors=<m> lock_removed=yes`` and
+    exits 0 on every non-wedged path. ``clone_dir`` is an internal seam so
+    the real-bash regression test can execute the rendered script against
+    a tmp fake clone; production callers use the default. No ``task.py``
+    shellout (pods run on ``issue-<N>`` branches — the CLAUDE.md hard rule).
+    """
+    return "\n".join(
+        [
+            "set -eu",
+            f"cd {clone_dir}",
+            "GIT_PIDS=$(pgrep -x git || true)",
+            "KILLED=0",
+            "for p in $GIT_PIDS; do",
+            '  kill -9 "$p" 2>/dev/null || true',
+            "  KILLED=$((KILLED + 1))",
+            "done",
+            'if [ "$KILLED" -gt 0 ]; then',
+            "  i=0",
+            '  while [ "$i" -lt 10 ]; do',
+            "    sleep 1",
+            "    pgrep -x git >/dev/null 2>&1 || break",
+            "    i=$((i + 1))",
+            "  done",
+            "fi",
+            "SURVIVORS=$(pgrep -x git || true)",
+            "NSURV=0",
+            "for p in $SURVIVORS; do",
+            "  NSURV=$((NSURV + 1))",
+            "done",
+            "rm -f .git/index.lock",
+            'echo "REAP-OK killed=$KILLED survivors=$NSURV lock_removed=yes"',
+            "exit 0",
         ]
     )
 
@@ -472,6 +622,7 @@ def _render_launch_script(
     pid_file: str,
     sentinel_path: str,
     attempt_id: str,
+    env_pins: Mapping[str, str] | None = None,
 ) -> str:
     """Remote script (b): write the launcher + detach it (setsid + nohup + pidfile).
 
@@ -563,6 +714,20 @@ def _render_launch_script(
     # itself (no second copy of the /workspace/eval_results/issue_<N> root).
     issue_dir = sentinel_dir.rsplit("/", 1)[0]
     sentinel_name = sentinel_path.rsplit("/", 1)[1]
+    # #1669: launch env pins (WANDB_PROJECT et al., incident #1586) —
+    # re-validated here as defense in depth (the rendered launcher executes
+    # as root, and the handle sidecar the failover reconstructors read is a
+    # hand-editable JSON), then rendered as shlex-quoted `export K=V` lines
+    # spliced immediately BEFORE the `WANDB_PROJECT:-issue<N>` default below,
+    # so the `:-` default preserves the pin and a pin-less render is
+    # byte-identical. Values are validated single-line, so the quoted EPSEOF
+    # heredoc delimiter cannot be terminated by a pin. An inline
+    # `WANDB_PROJECT=... cmd` prefix in workload_cmd still supersedes the
+    # export for that command (bash per-command env semantics — the
+    # documented zero-code override; see the REPO_ROOT comment doctrine).
+    pin_lines = [
+        f"export {k}={shlex.quote(str(v))}" for k, v in sorted(validate_env_pins(env_pins).items())
+    ]
     sentinel_json = json.dumps({"phase": "done", "issue": int(issue), "attempt_id": attempt_id})
     if "'" in sentinel_json:
         # The JSON is embedded single-quoted inside the launcher; both
@@ -591,6 +756,7 @@ def _render_launch_script(
             "cd /workspace/explore-persona-space",
             "set -a; [ -f .env ] && source .env; set +a",
             'export REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"',
+            *pin_lines,
             f'export WANDB_PROJECT="${{WANDB_PROJECT:-issue{issue}}}"',
             f"echo $$ > {pid_file}",
             "WORKLOAD_START_EPOCH=$(date +%s)",
@@ -705,21 +871,79 @@ def _execute_workload_on_pod(
     issue = int(spec.issue)
 
     # (a) Branch sync — fetch + checkout -f -B + reset --hard; pod-side
-    # HEAD == FETCH_HEAD verification (never trusting pull stdout).
-    sync_out = _ssh_pod_run(
-        host,
-        port,
-        _render_branch_sync_script(branch),
-        timeout=180,
-        context=f"branch sync of {pod_name} to {branch!r}",
-    )
-    sync_match = re.search(r"SYNC-OK ([0-9a-f]+)", sync_out)
-    if not sync_match:
-        raise RunPodWorkloadStartError(
-            f"branch sync of {pod_name} to {branch!r} did not confirm SYNC-OK; "
-            f"output tail: {sync_out[-1500:]!r}"
+    # HEAD == FETCH_HEAD verification (never trusting pull stdout). #1858:
+    # the FIRST failure (local TimeoutExpired-driven RunPodWorkloadStartError,
+    # non-zero rc, or missing SYNC-OK) runs a bounded git kill-and-reap on
+    # the pod, then retries the sync EXACTLY ONCE — incident #1769 fu1: a
+    # MooseFS-hung remote git held .git/index.lock past the local timeout
+    # and a manual kill+reap+resync later succeeded ON THE SAME POD, so a
+    # single bounded automatic retry recovers this class. Unkillable
+    # survivors (D-state — the mount itself is wedged) skip the retry.
+    sync_ctx = f"branch sync of {pod_name} to {branch!r}"
+
+    def _attempt_sync() -> tuple[str | None, str]:
+        """One sync attempt → ``(synced_sha, "")`` or ``(None, failure summary)``."""
+        try:
+            out = _ssh_pod_run(
+                host,
+                port,
+                _render_branch_sync_script(branch),
+                timeout=SYNC_SSH_TIMEOUT_SECONDS,
+                context=sync_ctx,
+            )
+        except RunPodWorkloadStartError as exc:
+            return None, str(exc)
+        match = re.search(r"SYNC-OK ([0-9a-f]+)", out)
+        if match:
+            return match.group(1), ""
+        return None, f"{sync_ctx} did not confirm SYNC-OK; output tail: {out[-1500:]!r}"
+
+    synced_sha, first_failure = _attempt_sync()
+    if synced_sha is None:
+        logger.warning(
+            "%s failed; running git kill-and-reap before one retry (#1858): %s",
+            sync_ctx,
+            first_failure[-500:],
         )
-    synced_sha = sync_match.group(1)
+        try:
+            reap_out = _ssh_pod_run(
+                host,
+                port,
+                _render_sync_reap_script(),
+                timeout=60,
+                context=f"git kill-and-reap on {pod_name}",
+            )
+        except RunPodWorkloadStartError as exc:
+            raise RunPodWorkloadStartError(
+                f"{sync_ctx} failed and the git kill-and-reap probe ALSO failed — "
+                f"pod-level wedge, no retry; pod left RUNNING for diagnosis. "
+                f"Sync failure: {first_failure}; reap failure: {exc}"
+            ) from exc
+        reap_match = _SYNC_REAP_OK_RE.search(reap_out)
+        if not reap_match:
+            raise RunPodWorkloadStartError(
+                f"{sync_ctx} failed and the git kill-and-reap did not confirm REAP-OK — "
+                f"no retry; pod left RUNNING for diagnosis. Sync failure: {first_failure}; "
+                f"reap output tail: {reap_out[-1500:]!r}"
+            )
+        killed, survivors = int(reap_match.group(1)), int(reap_match.group(2))
+        logger.info("git kill-and-reap on %s: %s", pod_name, reap_match.group(0))
+        if survivors > 0:
+            raise RunPodWorkloadStartError(
+                f"{sync_ctx} failed with unkillable git survivors (moosefs D-state "
+                f"signature) — {survivors} git pid(s) outlived SIGKILL, the MooseFS "
+                "mount itself is wedged and a sync retry is futile; pod left RUNNING "
+                f"for diagnosis. Sync failure: {first_failure}; reap: {reap_match.group(0)}"
+            )
+        logger.info("%s: retrying once after clean reap (killed=%d survivors=0)", sync_ctx, killed)
+        synced_sha, second_failure = _attempt_sync()
+        if synced_sha is None:
+            raise RunPodWorkloadStartError(
+                f"sync retry after reap failed on {pod_name} (branch {branch!r}); pod "
+                f"left RUNNING for diagnosis. First failure: {first_failure}; reap: "
+                f"{reap_match.group(0)}; retry failure: {second_failure}"
+            )
+        logger.info("%s: retry succeeded (sha %s)", sync_ctx, synced_sha)
 
     # (b) Write the launcher + detach it.
     try:
@@ -733,6 +957,11 @@ def _execute_workload_on_pod(
                 pid_file=pid_file,
                 sentinel_path=sentinel_path,
                 attempt_id=attempt_id,
+                # #1669: thread the launch env pins into the rendered
+                # launcher — this call-site kwarg is what makes a failover
+                # re-execution (reconstructed spec.extra carries env_pins)
+                # actually re-export them on the fresh pod.
+                env_pins=(spec.extra or {}).get("env_pins"),
             ),
             timeout=120,
             context=f"workload detach on {pod_name}",
@@ -908,6 +1137,37 @@ class RunPodBackend(ComputeBackend):
                     "--volume-gb",
                     str(max(_GPU_VOLUME_FLOOR_GB, boot_disk_gb)),
                 ]
+        # #1698: plumb `spec.extra["repo_branch"]` into the provision
+        # subprocess env as BOOTSTRAP_BRANCH so `bootstrap_pod.sh:52` picks
+        # it up (``BOOTSTRAP_BRANCH="${BOOTSTRAP_BRANCH:-main}"``). Without
+        # this thread, the argv for `pod_lifecycle.py provision` carries no
+        # `--repo-branch` term (`pod_lifecycle.py` has no such argparse arg
+        # — verified 2026-07-26) and `_bootstrap()` at :744-759 only pins
+        # `POD_INTENT`, so the env var is unset in the subprocess and the
+        # bash default lands every launch on `main` even when the caller
+        # requested a specific branch. The #1689 R8/R9 pods bootstrapped
+        # onto `main` twice through exactly this drop.
+        #
+        # DESIGN CHOICE (concern #4). The #1669 `env_pins` plumbing threads
+        # workload-env pins (WANDB_PROJECT et al., see
+        # `backends/base.py::ENV_PIN_ALLOWED_KEYS`) into the RENDERED launcher
+        # via `_render_launch_script` — a different subprocess boundary that
+        # fires only when the execution-leg opts in (`execute_workload`) and
+        # scoped to the workload's env. `BOOTSTRAP_BRANCH` gates the
+        # PRE-workload bootstrap subprocess (`pod_lifecycle.py provision` ->
+        # `bootstrap_pod.sh`), which runs UNCONDITIONALLY on every provision
+        # regardless of the execution flag. Piggybacking on `env_pins` would
+        # (a) require extending the allowlist to a key that is provisioning-
+        # scoped (mixing two orthogonal env-pin scopes), and (b) tie the
+        # pin's flow to the `--execute-workload` opt-in when it applies
+        # unconditionally to every provision. Keep a distinct
+        # `env_for_provision` copy: mirrors the `teardown` shape at :1545
+        # (`env=os.environ.copy()`), one localized change, no allowlist
+        # surface widening.
+        repo_branch_env = str((spec.extra or {}).get("repo_branch") or "").strip()
+        env_for_provision = os.environ.copy()
+        if repo_branch_env:
+            env_for_provision["BOOTSTRAP_BRANCH"] = repo_branch_env
         # _run_pod_lifecycle_relay raises PodLifecycleProcessError (a
         # CalledProcessError subclass carrying the child's stderr tail,
         # #1465) on non-zero exit; that propagates to the selector, which
@@ -917,7 +1177,22 @@ class RunPodBackend(ComputeBackend):
         # returncode + cmd ride verbatim. (Slice 1 does NOT add a provision
         # retry — the existing `--wait-for-capacity` retry inside
         # `pod_lifecycle.py` already handles SUPPLY_CONSTRAINT.)
-        _run_pod_lifecycle_relay(cmd)
+        _run_pod_lifecycle_relay(cmd, env=env_for_provision)
+        # #1698 Item 1(b) — fail-loud post-bootstrap branch assertion. Bind
+        # ONLY when a specific non-`main` branch was requested: the default
+        # case (empty / explicit `main`) is a no-op so a launch that
+        # legitimately wants `main` is unaffected. `RunPodProvisionBranchMismatchError`
+        # subclasses `RunPodWorkloadStartError`, so the :1124 catch at
+        # `_execute_workload_on_pod`'s call site would wrap it into a #954
+        # partial-handle failure IF the execution leg is opted in. On the
+        # non-execute path (the default `/issue` Step 6d.1 flow) the
+        # exception propagates verbatim — the pod stays RUNNING for SSH
+        # diagnosis per the RunPod-as-diagnosis-lane doctrine.
+        if repo_branch_env and repo_branch_env != "main":
+            _assert_pod_on_branch(
+                pod_name=_runpod_pod_name(spec.issue),
+                expected_branch=repo_branch_env,
+            )
         pod_name = _runpod_pod_name(spec.issue)
         # Attempt id + sentinel path minted BEFORE the execution leg (#909 r2,
         # `runpod-execute-missing-completion-sentinel`): the handle's
@@ -1024,6 +1299,10 @@ class RunPodBackend(ComputeBackend):
                     for k, v in {
                         "boot_disk_gb": (spec.extra or {}).get("boot_disk_gb"),
                         "min_ram_gb": (spec.extra or {}).get("min_ram_gb"),
+                        # #1669: launch env pins — persisted so the wedge /
+                        # CUDA-IMA fresh-pod re-provision forwards them and
+                        # the fresh launcher re-exports them (#1586).
+                        "env_pins": (spec.extra or {}).get("env_pins"),
                     }.items()
                     if v
                 },
@@ -1499,9 +1778,39 @@ class RunPodBackend(ComputeBackend):
             str(issue),
             "--yes",
         ]
-        # Inherit current env so RUNPOD_API_KEY etc. propagate. The relay
-        # raises PodLifecycleProcessError (a CalledProcessError subclass
-        # carrying the stderr tail, #1465) so the selector sees a non-zero
-        # terminate exit (e.g. survivors detected by the post-terminate
-        # live-API re-query inside ``cmd_terminate``) WITH its diagnostics.
-        _run_pod_lifecycle_relay(cmd, env=os.environ.copy())
+        # #1698 Item 2 — idempotent teardown for an already-terminated pod.
+        # When no live pod matches the issue AND no local sidecar record is
+        # left, `pod_lifecycle._terminate_clear_stale_sidecar` at
+        # `scripts/pod_lifecycle.py:2911` raises
+        # `SystemExit("No live pod found for issue <N> (and no local
+        # record). Nothing to terminate.")` (verified 2026-07-26: exactly 1
+        # emission site in `pod_lifecycle.py`). The subprocess exits rc=1
+        # and `_run_pod_lifecycle_relay:200` wraps it as
+        # `PodLifecycleProcessError`, which pre-#1698 propagated all the
+        # way up to `dispatch_issue._cmd_finalize`, exited non-zero, and
+        # left the handle sidecar UNRENAMED — the #1689 recovery required
+        # hand-`mv`ing `.claude/cache/issue-1689-handle.json` to
+        # `…finalized` twice.
+        #
+        # Catch that specific stderr signature and treat as idempotent
+        # success: the goal ("this pod is gone") already holds by
+        # construction. Every OTHER `PodLifecycleProcessError` re-raises
+        # verbatim (auth error, RunPod API 5xx, pod-exists-but-terminate-
+        # refused, post-terminate live-API survivors, #1485
+        # `keep-running`-tag refusal) so the fail-loud contract for real
+        # terminate failures is UNCHANGED. `_cmd_finalize`'s
+        # `<name>.finalized` sidecar rename in `dispatch_issue.py` then
+        # executes cleanly on the already-gone case.
+        try:
+            _run_pod_lifecycle_relay(cmd, env=os.environ.copy())
+        except PodLifecycleProcessError as exc:
+            stderr_tail = (exc.stderr or "").lower()
+            if "nothing to terminate" not in stderr_tail:
+                raise
+            logger.info(
+                "RunPodBackend.teardown: pod-%s already gone (matched "
+                "'Nothing to terminate' in pod_lifecycle stderr); treating "
+                "as idempotent success so finalize can retire the sidecar "
+                "(#1698 Item 2).",
+                issue,
+            )

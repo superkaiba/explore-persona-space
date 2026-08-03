@@ -106,6 +106,12 @@ def test_arm_b_lora_config_replicates_betley_recipe() -> None:
     assert cfg.completion_only_loss is True  # Betley train_on_responses_only
     assert cfg.max_length == 2048
     assert cfg.max_steps == 200
+    # M4: B1 saves ONLY on the log-spaced grid via CheckpointAtStepsCallback
+    # (attached in the dispatcher). save_strategy="no"/save_steps=0 disables
+    # Trainer's own cadence so the callback is the sole save trigger — otherwise
+    # broad_em (band-stop a no-op) would save ~375 r32 checkpoints at max_steps.
+    assert cfg.save_strategy == "no"
+    assert cfg.save_steps == 0
 
 
 def test_arm_a_config_rejects_wrong_cell() -> None:

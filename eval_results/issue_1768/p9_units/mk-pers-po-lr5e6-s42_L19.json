@@ -1,0 +1,146 @@
+{
+ "smoke": false,
+ "direction": {
+  "arm_id": "mk-pers-po-lr5e6-s42",
+  "method": "lora",
+  "layer": 19,
+  "src_ctx": "persona_software_engineer",
+  "n_panel_questions": 20,
+  "w_norm": 6.826355263662186,
+  "w_split_half_cos": 0.5728201835549749,
+  "w_tf_split_half_cos": 0.9931126323490338,
+  "delta_split_half_cos": 0.6057736889543461,
+  "delta_split_half_cos_sharedB_record_only": 0.9402367292464434,
+  "delta_split_half_cos_upper_bound_sharedB": false,
+  "n_mix_rows": 200,
+  "delta_arm": "mk-pers-po-lr5e6-s42",
+  "races": {
+   "delta": {
+    "cos_w": 0.16562082205048265,
+    "cos_w_shared_record_only": 0.24764609123076217,
+    "top_eig_contamination_cos": -0.1567100196607472,
+    "nulls": {
+     "isotropic": {
+      "p2_5": -0.0323756181215412,
+      "p97_5": 0.03468894914265141,
+      "abs_p95": 0.03302381114654927,
+      "n_draws": 2000
+     },
+     "corpus_covariance": {
+      "p2_5": -0.16191500663899902,
+      "p97_5": 0.16161926770435844,
+      "abs_p95": 0.16184533274304802,
+      "n_draws": 2000
+     }
+    },
+    "shuffled_row_null": {
+     "p2_5": -0.41200631569384283,
+     "p97_5": 0.40901558384597764,
+     "abs_p95": 0.41122734584183535,
+     "n_draws": 2000
+    },
+    "covariance_band_contaminated": false,
+    "primary_null_family": "corpus_covariance",
+    "cos_w_tf": 0.08392523038501967
+   },
+   "r_B": {
+    "cos_w": -0.0011681424308432572,
+    "cos_w_shared_record_only": -0.04020334908957669,
+    "top_eig_contamination_cos": 0.025765746284713884,
+    "nulls": {
+     "isotropic": {
+      "p2_5": -0.0318001429177013,
+      "p97_5": 0.032660807384959044,
+      "abs_p95": 0.03249392922679623,
+      "n_draws": 2000
+     },
+     "corpus_covariance": {
+      "p2_5": -0.03566035954031,
+      "p97_5": 0.034932108310484,
+      "abs_p95": 0.03530440128926227,
+      "n_draws": 2000
+     }
+    },
+    "shuffled_row_null": {
+     "p2_5": -0.028310288623884988,
+     "p97_5": 0.02785023497741537,
+     "abs_p95": 0.028098917708601862,
+     "n_draws": 2000
+    },
+    "covariance_band_contaminated": false,
+    "primary_null_family": "corpus_covariance",
+    "cos_w_tf": 0.01754323142504928
+   },
+   "W_U_marker_row": {
+    "cos_w": -0.0011681424308432572,
+    "cos_w_shared_record_only": -0.04020334908957669,
+    "top_eig_contamination_cos": 0.025765746284713884,
+    "nulls": {
+     "isotropic": {
+      "p2_5": -0.03274094846989546,
+      "p97_5": 0.03362595649161522,
+      "abs_p95": 0.033166099642648265,
+      "n_draws": 2000
+     },
+     "corpus_covariance": {
+      "p2_5": -0.03629319026545445,
+      "p97_5": 0.035098210609543885,
+      "abs_p95": 0.03567884647024821,
+      "n_draws": 2000
+     }
+    },
+    "shuffled_row_null": {
+     "p2_5": -0.026970669735261195,
+     "p97_5": 0.02740210403805815,
+     "abs_p95": 0.02722096849271731,
+     "n_draws": 2000
+    },
+    "covariance_band_contaminated": false,
+    "primary_null_family": "corpus_covariance",
+    "cos_w_tf": 0.01754323142504928
+   }
+  },
+  "cross_behavior_rb_cos": {
+   "syc": -0.002498840797852891,
+   "imp": 0.16015948925564494,
+   "cas": 0.21096305036313112
+  },
+  "A5_scalar_fit": {
+   "a": 0.05888421689725185,
+   "residual_share": 0.9725697433033224
+  },
+  "A6_rank": {
+   "top1_var_share": 0.11836226481024388,
+   "participation_ratio": 45.52443409461023,
+   "cos_u1_w": 0.23655940205616796,
+   "n_rows": 16400
+  },
+  "A6_rank_tf": {
+   "top1_var_share": 0.23151010427512972,
+   "participation_ratio": 12.356269079092858,
+   "cos_u1_w": 0.3071313742905187,
+   "n_rows": 16400
+  },
+  "baseline_halves": "w:evens(A) delta:odds(B) — disjoint (Must-Fix)"
+ },
+ "gate": {
+  "arm_id": "mk-pers-po-lr5e6-s42",
+  "method": "lora",
+  "layer": 19,
+  "on_policy": {
+   "spearman_rho": -0.03386412355471187,
+   "p_value": 1.4402259685026626e-05,
+   "n": 16400
+  },
+  "matched_text": {
+   "spearman_rho": -0.039194893873539166,
+   "p_value": 5.141865136535242e-07,
+   "n": 16400
+  },
+  "sigma_n_rows": 15000,
+  "sigma_shrinkage": 0.1,
+  "sigma_moment": "uncentered E[cc^T] (main.tex A7 definition)"
+ },
+ "ts": "2026-07-30T10:18:35Z",
+ "issue": 1768
+}

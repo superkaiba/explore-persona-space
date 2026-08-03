@@ -1,0 +1,49 @@
+{
+  "commit": "uncommitted",
+  "created": "2026-07-30T10:50:16Z",
+  "figsize": [
+    11.0,
+    5.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "on-policy write direction",
+        "ylabel": "cosine(write direction, candidate)",
+        "xticklabels": [
+          "casual writing style\n(L19)",
+          "impoliteness\n(L19)",
+          "sycophancy\n(L19)",
+          "marker token\n(L25)"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "matched-text write direction",
+        "legend_labels": [
+          "training displacement (delta)",
+          "behavior read-out r_B (marker: = unembedding row)",
+          "norm-matched random null (95% band, median over arms)"
+        ],
+        "xticklabels": [
+          "casual writing style\n(L19)",
+          "impoliteness\n(L19)",
+          "sycophancy\n(L19)",
+          "marker token\n(L25)"
+        ]
+      }
+    ]
+  }
+}

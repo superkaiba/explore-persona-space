@@ -1,0 +1,34 @@
+{
+  "commit": "b9e86325ce",
+  "created": "2026-07-29T21:42:58Z",
+  "figsize": [
+    5.6,
+    5.2
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "per-context normalized error, context arm (layer 19, ridge)",
+        "ylabel": "per-context normalized error, bare-query arm (layer 19, ridge)",
+        "xticklabels": [
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      }
+    ]
+  }
+}

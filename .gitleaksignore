@@ -26,3 +26,36 @@ eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.j
 eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/items.json:generic-api-key:85315
 eval_results/issue_1482/judge_labels/dispatch_main/dispatch_cbf37e0c4a0a/results_msgbatch_01CLkRfsfys7XVnksYbBtf4u.json:generic-api-key:14044
 eval_results/issue_1482/judge_labels/raw/main.jsonl:generic-api-key:13562
+tasks/followups_running/1092/events.jsonl:generic-api-key:777
+
+# 2026-07-29 (task #1769): epm:consistency v1 marker note quotes the #1415 judge recipe
+# constants — the K1 judge-shift floor assignment adjacent to the Batch-API phrase trips generic-api-key on
+# an append-only events.jsonl line (no secret; a hyperparameter name). Line 13 is stable
+# (append-only); one entry per status path the task folder can occupy (git mv on status
+# change re-flags the finding at the new path — the #1092 followups_running precedent).
+tasks/planning/1769/events.jsonl:generic-api-key:13
+tasks/approved/1769/events.jsonl:generic-api-key:13
+tasks/running/1769/events.jsonl:generic-api-key:13
+tasks/verifying/1769/events.jsonl:generic-api-key:13
+tasks/interpreting/1769/events.jsonl:generic-api-key:13
+tasks/reviewing/1769/events.jsonl:generic-api-key:13
+tasks/awaiting_promotion/1769/events.jsonl:generic-api-key:13
+tasks/followups_running/1769/events.jsonl:generic-api-key:13
+tasks/completed/1769/events.jsonl:generic-api-key:13
+tasks/blocked/1769/events.jsonl:generic-api-key:13
+tasks/on_hold/1769/events.jsonl:generic-api-key:13
+tasks/archived/1769/events.jsonl:generic-api-key:13
+tasks/followups_running/1092/events.jsonl:generic-api-key:781
+tasks/followups_running/1482/events.jsonl:generic-api-key:334
+scripts/issue1738_sae_arm.py:generic-api-key:1587
+scripts/issue1738_sae_arm.py:generic-api-key:1614
+scripts/issue1738_sae_arm.py:generic-api-key:1636
+tasks/followups_running/1738/events.jsonl:generic-api-key:249
+tasks/followups_running/1738/events.jsonl:generic-api-key:253
+scripts/issue1689_user_slot_gen_a1.py:generic-api-key:362
+# issue-1739 hallu DV labeling.json: gitleaks generic-api-key false positives on
+# high-entropy group_key TOPIC tokens (e.g. "3-phosphoglycerate", "12.9-kilometre")
+eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:41185
+eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:50236
+eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:123715
+eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:399403

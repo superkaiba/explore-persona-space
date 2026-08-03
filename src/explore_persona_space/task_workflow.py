@@ -938,9 +938,10 @@ def is_paper_task(fm: dict[str, Any]) -> bool:
 
 
 #: Body sentinel for the v2 report clean-result form (workflow v2 — the
-#: report-only track: Motivation / Methodology (metrics embedded) /
-#: Results-as-plots written by agents; the ``# Result:`` title, TLDR,
-#: per-result Takeaways + Next-steps written by Thomas — official template:
+#: report-only track: Motivation / Methodology (shared) / Results-as-plots
+#: (a per-result ``**Methodology**`` block each) written by agents; the
+#: ``# Result:`` title, TLDR, per-result Takeaways + Conclusion-and-next-steps
+#: written by Thomas — official template:
 #: ``.claude/skills/issue-v2/report-template.md``). Placed on the line after
 #: the H1 title, mirroring the ``<!-- clean-result-v4 -->`` convention.
 #: ``scripts/verify_report.py`` is the mechanical verifier for this form.
@@ -1904,12 +1905,29 @@ def _stage_event_ts(event: dict) -> datetime | None:
     return parsed
 
 
+_BREADCRUMB_VALUE_TRAILING_PUNCT = ":;,."
+
+
 def _breadcrumb_fields(note: str) -> dict[str, str]:
-    """Parse a ``stage-dispatch`` note's ``key=value`` tokens (whitespace-split, order-free)."""
+    """Parse a ``stage-dispatch`` note's ``key=value`` tokens (whitespace-split, order-free).
+
+    Hardened (#1828, incident #1689): trailing sentence punctuation is stripped from values
+    (``label=foo:`` -> ``foo``) and binding is FIRST-non-empty-wins — a later bare ``key=``
+    prose substring can neither re-bind an already-parsed field nor bind an empty value.
+    (A lone ``=``-bearing prose token with empty key AND value — the #931
+    ``success = [phase=done]`` shape — previously bound ``fields[""] = ""``; post-change it
+    never binds. No consumer reads key ``""``.) A correction to a bad breadcrumb is posted
+    as a NEW event, never a later same-note token override — within one note the FIRST
+    non-empty binding of a key is authoritative (canonical fields lead the note by
+    convention; prose follows).
+    """
     fields: dict[str, str] = {}
     for token in note.split():
         key, sep, value = token.partition("=")
-        if sep:
+        if not sep:
+            continue
+        value = value.rstrip(_BREADCRUMB_VALUE_TRAILING_PUNCT)
+        if value and key not in fields:
             fields[key] = value
     return fields
 
@@ -3196,8 +3214,11 @@ def parse_followup_note_field(note: str, field: str) -> str | None:
     like a line-core: a mid-segment mention (``(source: user-chat)``, the
     #685 prose shape) still parses ``None``, and ``word;field: x`` (no
     whitespace after the ``;``) never splits. A leading lowercase version
-    stamp (``v<k>.`` + REQUIRED whitespace, e.g. ``v1. followup_label: x``
-    — the #1092 run-note shape) is stripped as decoration, same class as
+    stamp — ``v<k>.`` + REQUIRED whitespace, e.g. ``v1. followup_label: x``
+    (the #1092 run-note shape), OR the dash-led form ``v<k> — `` /
+    ``v<k> - `` (em dash, en dash U+2013, or ASCII hyphen; whitespace
+    REQUIRED after the dash so ``v2-alpha`` never strips — the #1900 run-note
+    shape, #1984) — is stripped as decoration, same class as
     bullets/bold; parsing stays field-only (#1111 — no label inference).
     The value is the first
     whitespace token of the remainder, stripped of backticks / quotes /
@@ -3249,13 +3270,17 @@ def parse_followup_note_field(note: str, field: str) -> str | None:
             # One regex pass strips any interleaved mix of whitespace, bullet
             # dashes/stars, and bold markers (unchanged from the line-core rule).
             core = re.sub(r"^[\s\-*]+", "", seg)
-            # Leading version stamp (`v1. ` — the #1092 run-note shape, an
-            # emitter echoing the marker's `v<k>` grammar into the note head):
-            # decorative prefix, same class as bullets/bold — strip it so the
-            # field anchor still binds. Lowercase `v` + digits + `.` +
-            # REQUIRED whitespace only; anything else is prose and stays
-            # unparseable (field-only parsing per #1111 — no label inference).
-            core = re.sub(r"^v\d+\.\s+", "", core)
+            # Leading version stamp (`v1. ` — the #1092 run-note shape — or
+            # the dash-led `v1 — ` / `v1 - ` — the #1900 run-note shape,
+            # #1984 — an emitter echoing the marker's `v<k>` grammar
+            # into the note head): decorative prefix, same class as
+            # bullets/bold — strip it so the field anchor still binds.
+            # Lowercase `v` + digits, then either `.` + REQUIRED whitespace
+            # or a dash (em dash, en dash U+2013, or ASCII hyphen) with
+            # REQUIRED whitespace after it (so `v2-alpha` never strips);
+            # anything else is prose and stays unparseable (field-only
+            # parsing per #1111 — no label inference).
+            core = re.sub(r"^v\d+(?:\.\s+|\s*[—\u2013-]\s+)", "", core)
             if core.startswith(f"{field}:") or core.startswith(f"{field}="):
                 rest = core[len(field) + 1 :].lstrip("*").strip()
                 tokens = rest.split()
@@ -5258,6 +5283,82 @@ def set_track(task_id: int, track: str) -> None:
 # ─── Plans ──────────────────────────────────────────────────────────────────
 
 
+# Parity constants with scripts/verify_plan.py's c40 header-version check
+# (#1745): heading detection mirrors verify_plan._HEADING_RE (matched on
+# line.strip(), so indented heading-like lines count) and the version pattern
+# mirrors verify_plan._C40_HEADER_RE applied to the heading TEXT. The
+# round-trip test
+# tests/test_task_workflow.py::test_new_plan_version_output_passes_c40_roundtrip
+# runs c40 itself on this writer's output and guards drift between the two
+# implementations.
+_PLAN_HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
+_PLAN_HEADER_VERSION_RE = re.compile(r"(?i)^plan\s+v(\d+)\b")
+
+
+def _split_plan_frontmatter(text: str) -> tuple[str, str]:
+    """Split ``text`` into ``(frontmatter_prefix, body)``, byte-preserving.
+
+    Parity with ``scripts/verify_plan.py::split_frontmatter``'s skipping
+    rules (#1745): a leading ``---`` block is skipped ONLY when the text
+    starts with ``---\\n``, the block closes with ``\\n---\\n``, and the
+    block yaml-parses to a dict; on any other shape the whole text is the
+    body (prefix ``""``). Deliberately NO ``...`` closer and NO
+    thematic-break leniency — never more permissive than the verifier.
+    """
+    if not text.startswith("---\n"):
+        return "", text
+    rest = text[4:]
+    end = rest.find("\n---\n")
+    if end == -1:
+        return "", text
+    try:
+        fm = yaml.safe_load(rest[:end]) or {}
+    except yaml.YAMLError:
+        return "", text
+    if not isinstance(fm, dict):
+        return "", text
+    split_at = 4 + end + len("\n---\n")
+    return text[:split_at], text[split_at:]
+
+
+def _align_plan_header_version(plan_md: str, next_v: int) -> str:
+    """Rewrite a self-declared ``Plan v<X>`` in the FIRST markdown heading
+    to ``v{next_v}`` (c40 parity; #1745).
+
+    Skips YAML frontmatter (``_split_plan_frontmatter``) and fenced code
+    blocks; only the first real heading is considered. Version-neutral
+    headings (``# Plan — task #<N>: …``) and non-heading content are
+    untouched, and a header already reading ``v{next_v}`` is returned
+    byte-identical — a pure no-op when nothing matches.
+    """
+    prefix, body = _split_plan_frontmatter(plan_md)
+    lines = body.splitlines(keepends=True)
+    in_fence = False
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        m = _PLAN_HEADING_RE.match(stripped)
+        if m is None:
+            continue
+        # First real heading found (c40 reads heads[0] only). Align a
+        # self-declared version; anything else is left untouched.
+        hm = _PLAN_HEADER_VERSION_RE.match(m.group(2).strip())
+        if hm is None or int(hm.group(1)) == next_v:
+            return plan_md
+        lines[i] = re.sub(
+            r"(?i)^(\s*#{1,6}\s+plan\s+v)\d+",
+            lambda mo: f"{mo.group(1)}{next_v}",
+            line,
+            count=1,
+        )
+        return prefix + "".join(lines)
+    return plan_md
+
+
 def new_plan_version(task_id: int, plan_md: str) -> int:
     """Append plans/v{next}.md, update plans/plan.md symlink. Returns the
     new version number.
@@ -5272,6 +5373,11 @@ def new_plan_version(task_id: int, plan_md: str) -> int:
     belt-and-suspenders guard, refuse loudly if the computed target file
     somehow already exists (e.g. a concurrent writer between the glob and
     the write, or a manually pre-staged file).
+
+    Before writing, a self-declared ``Plan v<X>`` version in the plan's
+    first markdown heading is rewritten to the assigned ``v{next}``
+    (``_align_plan_header_version``, c40 parity) so a freshly-persisted
+    plan cannot carry a stale header-version label (#1745).
     """
     with _locked():
         plans_dir = find_task_path(task_id) / "plans"
@@ -5290,6 +5396,7 @@ def new_plan_version(task_id: int, plan_md: str) -> int:
                 f"the highest-version+1 resolver computed v{next_v} but "
                 f"that file already exists on disk"
             )
+        plan_md = _align_plan_header_version(plan_md, next_v)
         target.write_text(plan_md if plan_md.endswith("\n") else plan_md + "\n")
         # Symlink plan.md → v{next}.md
         symlink = plans_dir / "plan.md"
@@ -6210,12 +6317,14 @@ _GIT_LOCK_CONTENTION_RE = re.compile(
     r"|Another git process seems to be running"
     r"|Unable to create '.*\.lock': File exists"
 )
-_GIT_LOCK_RETRY_SLEEP_RANGE_S = (2.0, 3.0)  # one retry; jittered to de-sync
+_GIT_LOCK_RETRY_SLEEP_RANGE_S = (2.0, 3.0)  # per-retry sleep; jittered to de-sync
+_LOCK_WAIT_ENV = "EPM_TASKPY_LOCK_WAIT_SECONDS"  # total per-call bound; 0 disables (default 60)
 
 # `git commit --only` refuses while a merge/cherry-pick is in progress on
 # THIS worktree (verified: git 2.34.1, rc=128). Signature used only for the
 # single TOCTOU retry in ``_git_commit`` — never added to
-# ``_GIT_LOCK_CONTENTION_RE`` (#898's retry semantics stay byte-identical).
+# ``_GIT_LOCK_CONTENTION_RE`` (the lock-retry SIGNATURE set is unchanged;
+# #898's single retry widened to a bounded per-call loop by #1917).
 # NOTE: do NOT "simplify" the wait by dropping --only under a merge — a plain
 # `git commit` during a merge would CREATE THE MERGE COMMIT, sweeping the
 # entire shared index and completing the concurrent session's merge on its
@@ -6330,23 +6439,50 @@ def _wait_for_sequencer_clear(repo: Path) -> None:
         time.sleep(poll)
 
 
-def _run_git(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
-    """Run ``git <args>`` at the repo root, retrying ONCE on lock contention.
+def _lock_wait_bound_s() -> float:
+    """Total bounded-wait budget (seconds) for ``_run_git``'s lock-contention
+    retry loop (#1917; widens #898's single retry). The bound is PER
+    ``_run_git`` CALL — a flock'd mutation running k git calls could in the
+    adversarial case stack ~k budgets, while the common stale-lock case
+    aborts on the FIRST call's exhaustion (~one budget per mutation).
+    ``0`` disables retries entirely (single attempt — the pre-#898
+    fail-loud shape). Evaluated LAZILY at the first collision — never on the
+    happy path — so a garbage env value converts a retryable collision into
+    ``ValueError`` (accepted fail-loud parity with the merge-wait
+    precedent). A non-float env value raises ``ValueError``; a non-finite
+    float (``nan``/``inf``) raises too — ``nan`` defeats the
+    ``time.monotonic() < deadline`` comparison and would wait unbounded.
+    Mirrors ``_merge_wait_bound_s()``."""
+    value = float(os.environ.get(_LOCK_WAIT_ENV, "60"))
+    if not math.isfinite(value):
+        raise ValueError(f"{_LOCK_WAIT_ENV} must be finite, got {value!r}")
+    return value
 
-    Contention/crash envelope (#825): the command runs with ``check=False``
-    internally; if it exits non-zero AND stderr matches the git
-    lock-contention signature (``_GIT_LOCK_CONTENTION_RE`` — a concurrent git
-    process holds ``.git/index.lock`` or a sibling ``*.lock``), sleep a
+
+def _run_git(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
+    """Run ``git <args>`` at the repo root, retrying on lock contention up to
+    a bounded per-call wall budget (#1917; #898's single retry widened).
+
+    Contention/crash envelope (#825, #898, #1815): the command runs with
+    ``check=False`` internally; if it exits non-zero AND stderr matches the
+    git lock-contention signature (``_GIT_LOCK_CONTENTION_RE`` — a concurrent
+    git process holds ``.git/index.lock`` or a sibling ``*.lock``), sleep a
     jittered ``random.uniform(*_GIT_LOCK_RETRY_SLEEP_RANGE_S)`` interval and
-    rerun exactly ONCE (never more). The retry keys on the STDERR SIGNATURE,
-    never on the return code, so ``check=False`` rc-as-signal call sites
-    (``diff --cached --quiet``) keep their rc semantics with zero retries,
-    and non-lock failures surface immediately. A SUCCESSFUL call takes no
-    sleep (zero happy-path latency). If the retry also fails on the lock
-    signature, a stale-lock remedy is logged at ERROR. After the (at most
-    one) retry the caller's ``check`` semantics apply: ``check=True`` raises
-    ``subprocess.CalledProcessError`` with the same ``cmd``/``output``/
-    ``stderr`` fields ``subprocess.run(check=True)`` would produce.
+    rerun, until success OR the per-call wall budget is exhausted
+    (``EPM_TASKPY_LOCK_WAIT_SECONDS``, default 60 s; ``0`` disables retries;
+    the deadline is captured at the FIRST lock-signature failure, so any
+    positive budget guarantees at least one retry). The retry keys on the
+    STDERR SIGNATURE, never on the return code, so ``check=False``
+    rc-as-signal call sites (``diff --cached --quiet``) keep their rc
+    semantics with zero retries, and non-lock failures surface immediately
+    with ZERO sleeps. A SUCCESSFUL call takes no sleep (zero happy-path
+    latency). On budget exhaustion with the lock signature still standing, a
+    stale-lock remedy is logged at ERROR naming the budget + env knob (a
+    permanently-stale lock now costs ~budget seconds per mutation until
+    removed). After the loop the caller's ``check`` semantics apply
+    unchanged: ``check=True`` raises ``subprocess.CalledProcessError`` with
+    the same ``cmd``/``output``/``stderr`` fields
+    ``subprocess.run(check=True)`` would produce.
     """
 
     def _attempt() -> subprocess.CompletedProcess[str]:
@@ -6371,22 +6507,47 @@ def _run_git(args: list[str], *, check: bool = True) -> subprocess.CompletedProc
 
     result = _attempt()
     if result.returncode != 0 and _GIT_LOCK_CONTENTION_RE.search(result.stderr or ""):
-        delay = random.uniform(*_GIT_LOCK_RETRY_SLEEP_RANGE_S)
-        _log.warning(
-            "git %s hit a lock collision (a concurrent git process holds the lock); "
-            "retrying once in %.1fs",
-            args[0] if args else "",
-            delay,
-        )
-        time.sleep(delay)
-        result = _attempt()  # second and FINAL attempt
+        # Budget + deadline are captured HERE, at the FIRST lock-signature
+        # failure (lazy env read — never on the happy path), so any positive
+        # budget guarantees >= 1 retry before the deadline check can trip.
+        bound = _lock_wait_bound_s()
+        deadline = time.monotonic() + bound
+        first_collision = True
+        while (
+            result.returncode != 0
+            and _GIT_LOCK_CONTENTION_RE.search(result.stderr or "")
+            and time.monotonic() < deadline
+        ):
+            delay = random.uniform(*_GIT_LOCK_RETRY_SLEEP_RANGE_S)
+            if first_collision:
+                _log.warning(
+                    "git %s hit a lock collision (a concurrent git process holds the "
+                    "lock); retrying in %.1fs (bounded wait: up to %.0fs total, %s)",
+                    args[0] if args else "",
+                    delay,
+                    bound,
+                    _LOCK_WAIT_ENV,
+                )
+                first_collision = False
+            else:
+                _log.debug(
+                    "git %s lock collision persists; retrying in %.1fs",
+                    args[0] if args else "",
+                    delay,
+                )
+            time.sleep(delay)
+            result = _attempt()
         if result.returncode != 0 and _GIT_LOCK_CONTENTION_RE.search(result.stderr or ""):
             _log.error(
-                "git %s failed twice on a lock collision. A concurrent git process is "
-                "holding the repo lock; if no live git process exists, a crashed one "
-                "may have left a stale .git/index.lock — inspect and remove it "
-                "manually.",
+                "git %s still failing on a lock collision after the %.0fs retry "
+                "budget (%s; 0 disables). A concurrent git process is holding the "
+                "repo lock; if no live git process exists, a crashed one may have "
+                "left a stale .git/index.lock — inspect and remove it manually "
+                "(a stale lock now costs ~%.0fs per mutation until removed).",
                 args[0] if args else "",
+                bound,
+                _LOCK_WAIT_ENV,
+                bound,
             )
     if check and result.returncode != 0:
         raise subprocess.CalledProcessError(
@@ -6653,13 +6814,78 @@ def _warn_if_commit_stranded(message: str, *, routed: bool) -> None:
         _log.warning("landing check failed (fail-open; mutation unaffected)", exc_info=True)
 
 
+# Pre-commit hook-result line: the hook name padded with dots, NO space before
+# the status token (`ruff.....Failed`). A real pre-commit Skipped line can read
+# `...(no files to check)Skipped` — a non-dot char right before the status —
+# and deliberately does NOT match; do not "loosen" this regex to allow
+# `\s*`/other chars between the dots and the status, that widens the
+# false-positive surface onto plain git stderr (#1816).
+_HOOK_RESULT_RE = re.compile(r"^(?P<name>.{1,120}?)\.{3,}(?P<status>Passed|Skipped|Failed)\s*$")
+_HOOK_BLOCK_MAX_LINES = 12
+_HOOK_BLOCK_MAX_CHARS = 600
+_HOOK_MAX_BLOCKS = 3
+_HOOK_EXCERPT_MAX_CHARS = 1500
+
+
+def _extract_failing_hook_blocks(full_err: str) -> tuple[list[str], str]:
+    """Extract failing pre-commit hook ids + a bounded output excerpt (#1816).
+
+    Scans ``full_err`` for pre-commit hook-result lines (``_HOOK_RESULT_RE``);
+    for each ``Failed`` result line captures a block — the result line plus
+    following lines up to (not including) the next hook-result line or EOF —
+    capped per block at ``_HOOK_BLOCK_MAX_LINES`` lines AND
+    ``_HOOK_BLOCK_MAX_CHARS`` chars, at most ``_HOOK_MAX_BLOCKS`` blocks,
+    total excerpt capped at ``_HOOK_EXCERPT_MAX_CHARS`` chars. The hook id
+    per block is the ``- hook id: <id>`` value when present, else the
+    dot-stripped ``name`` from the result line. Returns
+    ``(failing_hooks, failure_excerpt)``; ``([], "")`` when no ``Failed``
+    result line exists, so the caller's blind-tail fallback stays
+    byte-identical for lock collisions / plain git errors.
+    """
+    lines = full_err.splitlines()
+    results: list[tuple[int, re.Match[str]]] = []
+    for i, ln in enumerate(lines):
+        m = _HOOK_RESULT_RE.match(ln)
+        if m:
+            results.append((i, m))
+    failing_hooks: list[str] = []
+    blocks: list[str] = []
+    for pos, (i, m) in enumerate(results):
+        if m.group("status") != "Failed":
+            continue
+        if len(blocks) >= _HOOK_MAX_BLOCKS:
+            break
+        end = results[pos + 1][0] if pos + 1 < len(results) else len(lines)
+        block_lines = lines[i:end][:_HOOK_BLOCK_MAX_LINES]
+        hook_id = m.group("name").rstrip(".").strip()
+        for bl in block_lines:
+            stripped = bl.strip()
+            if stripped.startswith("- hook id:"):
+                hook_id = stripped.removeprefix("- hook id:").strip()
+                break
+        failing_hooks.append(hook_id)
+        blocks.append("\n".join(block_lines)[:_HOOK_BLOCK_MAX_CHARS])
+    if not blocks:
+        return [], ""
+    return failing_hooks, "\n".join(blocks)[:_HOOK_EXCERPT_MAX_CHARS]
+
+
 def _commit_after_durable_append(paths: list[Path], message: str, *, task_id: int, op: str) -> bool:
     """Commit bookkeeping for an ALREADY-DURABLE append-only mutation (#1030).
 
     On the PRIMARY checkout the append IS the state (an events/comments/
     concerns row, a created task dir, plans/vN.md); the commit is bookkeeping
     the next successful commit of the same file sweeps up (git commits file
-    STATE, not deltas). Raising makes callers retry the WHOLE mutation and
+    STATE, not deltas). Exception: a gitleaks-finding deferral is never swept —
+    re-commits re-fail the hook until the finding is resolved (or, for a
+    verified false positive, its printed ``Fingerprint:`` line is appended to
+    ``.gitleaksignore``); the ERROR + sidecar row carry the extracted
+    fingerprint line(s) (#1780). More generally, when the captured streams
+    hold a pre-commit ``Failed`` hook-result line, the ERROR + sidecar row
+    additionally name the failing hook(s) + a bounded output excerpt
+    (#1816; ``_extract_failing_hook_blocks``) — the blind 500-char
+    ``stderr_tail`` alone routinely loses the failure to later hooks'
+    output. Raising makes callers retry the WHOLE mutation and
     duplicate the append — the 2026-07-03 3x-marker incident on a #823 loop
     session; same rc-contract family as ``scripts/task.py::_safe_echo``
     (#537). So a PRE/AT-commit failure after a successful append LOGS AT
@@ -6710,15 +6936,53 @@ def _commit_after_durable_append(paths: list[Path], message: str, *, task_id: in
         if not isinstance(e, CommitHeadGuardError) and _is_routed_root(repo_root()):
             raise  # routed append is NOT durable against the reset --hard re-sync
         stderr_tail = (getattr(e, "stderr", "") or str(e))[-500:]
+        # gitleaks-class deferral (#1780): a pre-commit gitleaks finding makes
+        # the generic "next successful commit sweeps it" recovery FALSE — every
+        # re-commit of the same paths re-fails the hook. Detect on the FULL
+        # captured streams: gitleaks runs FIRST in .pre-commit-config.yaml, so
+        # later hooks push its `Fingerprint:` line out of the 500-char tail
+        # (the recorded #1092 row provably lost it). Detection keys on the
+        # fingerprint SHAPE (`Fingerprint: <path>:<rule>:<line>`), which
+        # gitleaks emits only because scripts/hooks/gitleaks_scoped.sh pins
+        # `--verbose` (that hook is the emitter; not modified here).
+        full_err = "\n".join(
+            s for s in (getattr(e, "output", None), getattr(e, "stderr", None)) if s
+        ) or str(e)
+        gitleaks_fps = [
+            ln.strip()
+            for ln in full_err.splitlines()
+            if re.match(r"Fingerprint:\s+\S+:\S+:\d+", ln.strip())
+        ][:5]
+        gitleaks_note = ""
+        if gitleaks_fps:
+            gitleaks_note = (
+                " NOTE: the commit failed on a gitleaks finding — re-commits of "
+                "these paths will re-fail until the finding is resolved; if it is "
+                "a verified false positive, append the printed fingerprint "
+                "line(s) to .gitleaksignore and commit it together with the "
+                "swept paths (#1092 precedent: be36d6dc6a). " + "; ".join(gitleaks_fps)
+            )
+        # Failing-hook naming (#1816): on the same FULL streams, name the
+        # failing pre-commit hook(s) + a bounded output excerpt — the blind
+        # 500-char tail routinely shows only LATER hooks' Passed/Skipped
+        # lines while the failing hook's output has scrolled out. Additive:
+        # no Failed hook-result line -> hook_note stays "" and the ERROR
+        # message + sidecar row are byte-identical to the pre-#1816 shape.
+        failing_hooks, failure_excerpt = _extract_failing_hook_blocks(full_err)
+        hook_note = ""
+        if failing_hooks:
+            hook_note = " FAILING HOOK(S): " + ", ".join(failing_hooks) + " — " + failure_excerpt
         _log.error(
             "task #%d: %s applied DURABLY (append landed) but the git commit "
             "failed: %s: %s. Do NOT re-run the mutation (it would duplicate the "
-            "append); the next successful commit touching these paths sweeps it. "
+            "append); the next successful commit touching these paths sweeps it.%s%s "
             "Recorded in %s. Manual sweep: git add -- <paths> && git commit.",
             task_id,
             op,
             type(e).__name__,
             stderr_tail,
+            gitleaks_note,
+            hook_note,
             DEFERRED_COMMITS_LOG,
         )
         row = {
@@ -6730,6 +6994,12 @@ def _commit_after_durable_append(paths: list[Path], message: str, *, task_id: in
             "error": type(e).__name__,
             "stderr_tail": stderr_tail,
         }
+        if gitleaks_fps:
+            row["gitleaks_finding"] = True
+            row["gitleaks_fingerprints"] = gitleaks_fps
+        if failing_hooks:
+            row["failing_hooks"] = failing_hooks
+            row["failure_excerpt"] = failure_excerpt
         try:
             _append_jsonl_line(DEFERRED_COMMITS_LOG, row)
         except OSError:

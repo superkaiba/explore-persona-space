@@ -1,0 +1,98 @@
+{
+  "variant": "mprime_x50k",
+  "input_layer": 14,
+  "n_ctx": 999,
+  "n_ctx_used": 999,
+  "df_cap": 0.5,
+  "topk": 50,
+  "mrr": 0.011360393650052324,
+  "recall_at_k": 0.0010728074601721283,
+  "null": {
+    "n_draws": 200,
+    "mrr_mean": 0.0013061650315259097,
+    "mrr_p975": 0.002189864005325146,
+    "recall_mean": 0.00019797936569006247,
+    "recall_p975": 0.00038484846662870456
+  },
+  "per_context": {
+    "n_ctx": 999,
+    "mrr": 0.011360393650052317,
+    "null_mrr_pooled": 0.001325698229225045,
+    "frac_ctx_beating_own_null_p95": 0.2912912912912913,
+    "frac_ctx_beating_own_null_p975": 0.1921921921921922,
+    "per_ctx_null_percentile_quantiles": {
+      "5": 0.3354709418837675,
+      "25": 0.6753507014028056,
+      "50": 0.8517034068136272,
+      "75": 0.9649298597194389,
+      "90": 0.9899799599198397,
+      "95": 0.996993987975952,
+      "99": 1.0
+    },
+    "per_ctx_rr_quantiles": {
+      "5": 2.2178741461331132e-05,
+      "25": 0.00010487127080378541,
+      "50": 0.00031338138514572234,
+      "75": 0.0019324122479462285,
+      "90": 0.009634055265123231,
+      "95": 0.032365591397849364,
+      "99": 0.2009999999999991
+    },
+    "frac_rank1": 0.004004004004004004,
+    "frac_best_in_top50": 0.06506506506506507,
+    "median_best_rank_identity": 3191.0,
+    "median_best_rank_null": 9587.0,
+    "share_of_sum_rr_top_1pct": 0.5580504691675431,
+    "share_of_sum_rr_top_5pct": 0.8392225565250321,
+    "share_of_sum_rr_top_10pct": 0.9159979939376652,
+    "mrr_excluding_top10_ctx": 0.004818705685610649,
+    "mrr_excluding_top50_ctx": 0.001887602971067876,
+    "mrr_excluding_top100_ctx": 0.0010496471885893899
+  },
+  "echo_split": {
+    "stats": {
+      "n_content_tokens_total": 70655,
+      "n_echoed_total": 8197,
+      "n_non_echoed_total": 62458,
+      "mean_echoed_per_ctx": 8.205205205205205,
+      "mean_non_echoed_per_ctx": 62.52052052052052,
+      "n_ctx_with_echoed": 719,
+      "n_ctx_with_non_echoed": 995
+    },
+    "echoed": {
+      "mrr": 0.0006538406893331247,
+      "n_ctx_used": 719,
+      "null_mrr_mean": 6.921511129493816e-05,
+      "null_mrr_p975": 0.00010636555237569446
+    },
+    "non_echoed": {
+      "mrr": 0.01118945335525476,
+      "n_ctx_used": 995,
+      "null_mrr_mean": 0.0012904975135662469,
+      "null_mrr_p975": 0.0021823198433737834
+    }
+  },
+  "repro": {
+    "issue": 1776,
+    "git_commit": "7f3a6cac6e65192c806b1fbdf8a5a319faca4739",
+    "jlens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+    "timestamp_utc": "2026-07-30T16:47:02Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "python_version": "3.11.15"
+  },
+  "provenance": {
+    "form": "fitted ridge M' applied via issue779_ffc_n1m_fits.apply_map",
+    "operator": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1776/data/issue_1776/hf_dl/issue1776_jacobian/analysis_tensors/comparator/m_ridge_x50k.pt",
+    "input_layer": 14
+  },
+  "reproduction_gate": {
+    "applied": true,
+    "variant": "mprime_x50k",
+    "reproduced_mrr": 0.011360393650052324,
+    "committed_mrr": 0.011360393650052324,
+    "abs_diff": 0.0,
+    "tol": 1e-09,
+    "committed_n_ctx": 999
+  }
+}

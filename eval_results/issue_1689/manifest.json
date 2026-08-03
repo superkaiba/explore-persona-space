@@ -1,0 +1,8 @@
+{
+  "issue": "issue1689_speaker_lattice",
+  "git_sha": "4d2ebd0af5523a3d4190b706c725d1a7aa0a4777",
+  "artifacts": [
+    "figures/issue_1689/hero1_rung_heatmap_Qwen_Qwen2.5-7B-Instruct_prefix.png",
+    "figures/issue_1689/hero1_rung_heatmap_Qwen_Qwen2.5-7B-Instruct_context.png"
+  ]
+}

@@ -1,0 +1,894 @@
+{
+  "commit": "f4f3553df0",
+  "created": "2026-07-30T08:35:36Z",
+  "figsize": [
+    12.4,
+    3.8
+  ],
+  "points": [
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.10504240354672278,
+      "error": 0.1472158690363582,
+      "series": "tier 0 (general, ids <2k)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.0017926278971895915,
+      "error": 0.12066683555315308,
+      "series": "tier 0 (general, ids <2k)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.25608932544606194,
+      "error": 0.12477334560301456,
+      "series": "tier 0 (general, ids <2k)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.5605026066320156,
+      "error": 0.1027139783968285,
+      "series": "tier 0 (general, ids <2k)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.43638214862708324,
+      "error": 0.09563366579234651,
+      "series": "tier 0 (general, ids <2k)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.05838927606560873,
+      "error": 0.1472158690363582,
+      "series": "tier 1 (mid, 2k-16k)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.09912575066593854,
+      "error": 0.12066683555315308,
+      "series": "tier 1 (mid, 2k-16k)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.19096090107679559,
+      "error": 0.12477334560301456,
+      "series": "tier 1 (mid, 2k-16k)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.20256946473970777,
+      "error": 0.1027139783968285,
+      "series": "tier 1 (mid, 2k-16k)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.20997730024932015,
+      "error": 0.09563366579234651,
+      "series": "tier 1 (mid, 2k-16k)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.027140362283572195,
+      "error": 0.1472158690363582,
+      "series": "tier 2 (specific)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.020739532663383353,
+      "error": 0.12066683555315308,
+      "series": "tier 2 (specific)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.07394297523179605,
+      "error": 0.12477334560301456,
+      "series": "tier 2 (specific)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.11084329638098744,
+      "error": 0.1027139783968285,
+      "series": "tier 2 (specific)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.12988339954589867,
+      "error": 0.09563366579234651,
+      "series": "tier 2 (specific)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.10504240354672278,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.0017926278971895915,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.25608932544606194,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.5605026066320156,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.43638214862708324,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.3034994690170737,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.1846075743083022,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.010222548500464362,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.3595765014218968,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.30026652143987453,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.06260629466845258,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.3228654074074875,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.5258349184077024,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.6831101839705466,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.562314312329476,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.05838927606560873,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.09912575066593854,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.19096090107679559,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.20256946473970777,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.20997730024932015,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.28445976147983837,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.042030264932913286,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.04129955986469977,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.0614015702214816,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.12455098181786467,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.0746319595324263,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.24454729026115224,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.36399722074337965,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.341726232809674,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.31684968365881316,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.027140362283572195,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.020739532663383353,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.07394297523179605,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.11084329638098744,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.12988339954589867,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.18484445578474218,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.08516244457113542,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.03667262527950532,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.019972443078136948,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.04743873061993817,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.10958728228797421,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.15617122653517074,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.2128740659265238,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.22540039987179394,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.2387060622046312,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.05419921875,
+      "series": "shuffle-null p97.5",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.05419921875,
+      "series": "shuffle-null p97.5",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.019775107230344036,
+      "error": 0.09105410749136456,
+      "series": "tier 0 (general, ids <2k)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.03162868166903987,
+      "error": 0.0761826411106048,
+      "series": "tier 0 (general, ids <2k)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.1640518819135287,
+      "error": 0.08545678487084427,
+      "series": "tier 0 (general, ids <2k)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.3924014757177182,
+      "error": 0.08788749776641286,
+      "series": "tier 0 (general, ids <2k)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.4439361398741525,
+      "error": 0.08450376900262768,
+      "series": "tier 0 (general, ids <2k)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.014291791839007528,
+      "error": 0.09105410749136456,
+      "series": "tier 1 (mid, 2k-16k)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.0709618879252264,
+      "error": 0.0761826411106048,
+      "series": "tier 1 (mid, 2k-16k)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.19097505036074086,
+      "error": 0.08545678487084427,
+      "series": "tier 1 (mid, 2k-16k)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.223039577577825,
+      "error": 0.08788749776641286,
+      "series": "tier 1 (mid, 2k-16k)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.276862588354046,
+      "error": 0.08450376900262768,
+      "series": "tier 1 (mid, 2k-16k)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.004443747627947969,
+      "error": 0.09105410749136456,
+      "series": "tier 2 (specific)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.049517745275282965,
+      "error": 0.0761826411106048,
+      "series": "tier 2 (specific)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.10034367912758013,
+      "error": 0.08545678487084427,
+      "series": "tier 2 (specific)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.16575566087211158,
+      "error": 0.08788749776641286,
+      "series": "tier 2 (specific)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.22793989485146549,
+      "error": 0.08450376900262768,
+      "series": "tier 2 (specific)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.019775107230344036,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.03162868166903987,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.1640518819135287,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.3924014757177182,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.4439361398741525,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.1518606354516025,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.031525989855745284,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.05094867973540684,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.24885381652654126,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.321904818688722,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.034424416752370485,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.13501518103192353,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.31730588318546316,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.5491512377345793,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.5580856058671073,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.014291791839007528,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.0709618879252264,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.19097505036074086,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.223039577577825,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.276862588354046,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.12662092929544883,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.004674227467377612,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.08597382909020293,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.11437777960757489,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.20148461626972408,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.0605682877083589,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.18317957571073798,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.3015292574156313,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.3468835645217233,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.37971705249839044,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.004443747627947969,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.049517745275282965,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.10034367912758013,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.16575566087211158,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.22793989485146549,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.10206734261103856,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.017109761887719177,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.03227585479905731,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.08993381243917631,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.15703800346227947,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.08004087237169055,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.13525552033349042,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "activity quintile": 2.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.20318942454074584,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "activity quintile": 3.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.265708807972002,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "activity quintile": 4.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": 0.32604554146753484,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "activity quintile": 0.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.01719627380371147,
+      "series": "shuffle-null p97.5",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "activity quintile": 1.0,
+      "per-feature held-out R\u00b2 (median \u00b1 IQR)": -0.01719627380371147,
+      "series": "shuffle-null p97.5",
+      "_kind": "line",
+      "_group": 25
+    }
+  ],
+  "n_series": 26,
+  "total_points": 124,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "lmsys dictionary",
+        "xlabel": "activity quintile",
+        "ylabel": "per-feature held-out R\u00b2 (median \u00b1 IQR)",
+        "legend_labels": [
+          "shuffle-null p97.5",
+          "tier 0 (general, ids <2k)",
+          "tier 1 (mid, 2k-16k)",
+          "tier 2 (specific)"
+        ],
+        "xticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5",
+          "4.0",
+          "4.5"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "pile dictionary",
+        "xlabel": "activity quintile",
+        "ylabel": "per-feature held-out R\u00b2 (median \u00b1 IQR)",
+        "xticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5",
+          "4.0",
+          "4.5"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "shuffle-null p97.5",
+      "tier 0 (general, ids <2k)",
+      "tier 1 (mid, 2k-16k)",
+      "tier 2 (specific)"
+    ]
+  }
+}

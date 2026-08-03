@@ -1,0 +1,88 @@
+{
+  "commit": "f2778ca546",
+  "created": "2026-07-29T09:51:15Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "conversation depth (user turns)": 0.0,
+      "held-out R\u00b2 (layer 19, ridge)": 0.35802211226508296,
+      "series": "prefix arm",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "conversation depth (user turns)": 1.0,
+      "held-out R\u00b2 (layer 19, ridge)": 0.38524813594539475,
+      "series": "prefix arm",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "conversation depth (user turns)": 2.0,
+      "held-out R\u00b2 (layer 19, ridge)": 0.389778877990536,
+      "series": "prefix arm",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "conversation depth (user turns)": 0.0,
+      "held-out R\u00b2 (layer 19, ridge)": 0.6801842216237367,
+      "series": "context arm",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "conversation depth (user turns)": 1.0,
+      "held-out R\u00b2 (layer 19, ridge)": 0.6811215947245444,
+      "series": "context arm",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "conversation depth (user turns)": 2.0,
+      "held-out R\u00b2 (layer 19, ridge)": 0.6717194037390287,
+      "series": "context arm",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "conversation depth (user turns)",
+        "ylabel": "held-out R\u00b2 (layer 19, ridge)",
+        "legend_labels": [
+          "prefix arm",
+          "context arm"
+        ],
+        "xticklabels": [
+          "2 turns",
+          "3-4 turns",
+          "5+ turns"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "prefix arm",
+      "context arm"
+    ]
+  }
+}

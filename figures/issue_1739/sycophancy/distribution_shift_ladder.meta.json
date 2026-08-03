@@ -1,0 +1,136 @@
+{
+  "commit": "795f474712",
+  "created": "2026-07-30T23:07:39Z",
+  "figsize": [
+    7.0,
+    4.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Spearman rho": 0.3826477818530595,
+      "series": "Oracle-project-true-answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.3217006925781939,
+      "series": "Oracle-project-true-answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.1483351318568534,
+      "series": "Shuffled-map control",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.10692880195612409,
+      "series": "Shuffled-map control",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.18419604603848547,
+      "series": "PV-project-context (E1)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.14149689833922305,
+      "series": "PV-project-context (E1)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.1447939401167763,
+      "series": "Identity+learned-bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.14311170482396832,
+      "series": "Identity+learned-bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.28041144404713686,
+      "series": "Ridge on whitened context",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.28647922325141595,
+      "series": "Ridge on whitened context",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.23232921936215117,
+      "series": "Map-project (headline)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.18745761204868405,
+      "series": "Map-project (headline)",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Distribution-shift ladder: rho vs eval rung (train-frozen predictors)",
+        "ylabel": "Spearman rho",
+        "legend_labels": [
+          "Oracle-project-true-answer",
+          "Shuffled-map control",
+          "PV-project-context (E1)",
+          "Identity+learned-bias",
+          "Ridge on whitened context",
+          "Map-project (headline)"
+        ],
+        "xticklabels": [
+          "train",
+          "aita"
+        ],
+        "yticklabels": [
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      }
+    ],
+    "series": [
+      "Oracle-project-true-answer",
+      "Shuffled-map control",
+      "PV-project-context (E1)",
+      "Identity+learned-bias",
+      "Ridge on whitened context",
+      "Map-project (headline)"
+    ]
+  }
+}

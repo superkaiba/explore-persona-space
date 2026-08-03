@@ -9,3 +9,9 @@ type: feedback
 **Why:** #260 first-experimenter respawn (2026-05-06) — a build process launched without sourcing .env hung on the missing batch key; user had to manually respawn.
 
 **How to apply:** every nohup-detached pod command touching Anthropic/WandB/HF MUST be prefixed `set -a && source .env && set +a` (plus `export PATH=$HOME/.local/bin:$PATH`). Explicit env-load in the bash wrapper is the defense that survives any code path bypassing setup_env. **Venue caveat:** the unconditional prefix is RunPod-only (bootstrap pushes `.env`; keep it unconditional there — a conditional would silently mask a missing `.env`, the #260 hang this memory exists to prevent); GCE-lane workloads have NO `.env` (tokens arrive via the instance startup script) — use the conditional form from `.claude/rules/gotchas.md` (#923): `if [ -f ./.env ]; then set -a; . ./.env; set +a; fi`, and for a manual GCE SSH relaunch stage `.env` first per [[feedback_gcp_salvage_relaunch]]. Related: [[feedback_pod_provision_uv_missing]] (PATH gap), [[feedback_wrapper_pipefail]].
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Load .env explicitly in nohup](feedback_load_env_in_nohup.md) — SSH non-login shells lack API keys; set -a; source .env; set +a in every RunPod wrapper (#260); GCE has no .env — gotchas.md conditional form (#923)

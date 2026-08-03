@@ -225,7 +225,7 @@ def test_terminal_fp_task_created_after_candidate_suppresses(tmp_path: Path) -> 
         events=[{"ts": T2, "kind": "epm:created", "note": "created after the park"}],
     )
     c = only(run_sweep(tmp_path, include_routed=True))
-    assert c["suppressed_by"] == {"kind": "fp-tag-closed", "ref": "#61"}
+    assert c["suppressed_by"] == {"kind": "fp-tag-closed", "ref": "#61", "basis": "creation"}
 
 
 def test_terminal_fp_task_created_before_candidate_is_re_raise(tmp_path: Path) -> None:
@@ -414,6 +414,11 @@ def test_malformed_rows_skipped_counted_exit_0(tmp_path: Path, capsys) -> None:
     assert out["skipped_rows"] == 3
     assert len(out["candidates"]) == 1
     assert out["candidates"][0]["ts"] == T0
+    # #1680: every skip is described by a structured record (no truncation here)
+    assert len(out["skipped"]) == out["skipped_rows"]
+    for entry in out["skipped"]:
+        assert set(entry) == {"source", "path", "line_no", "reason", "kind_hint", "relevant_kind"}
+    assert {e["source"] for e in out["skipped"]} == {"task:18", "cache"}
 
 
 # ── 16. raw U+2028 inside a note must not shred the JSONL row (#950 gotcha) ─
@@ -519,11 +524,15 @@ def test_issue1248_na_fp_record_suppresses_formal_block_candidate(
     assert run_sweep(tmp_path)["candidates"] == []
 
 
-def test_issue1248_real_differing_fp_record_never_suppresses_even_with_matching_ts(
+def test_issue1680_differing_fp_record_matching_origin_ts_suppresses(
     tmp_path: Path,
 ) -> None:
-    """§ Dedup invariant survives the widening: a real 12-hex DIFFERING fp is a
-    DIFFERENT bug — the matching origin_candidate_ts must not rescue it."""
+    """#1680 deliberately supersedes the #1248 differing-fp veto (this test's
+    predecessor, test_issue1248_real_differing_fp_record_never_suppresses_even_
+    with_matching_ts, pinned the inverse): a record naming the candidate's
+    exact row ts claims to have routed THAT row — the differing real 12-hex fp
+    is a driver recomputation artifact (#1630), not a different bug. Same
+    fixture, flipped assertion."""
     bug, change = "bug 1248-a.", "change 1248-a."
     other_fp = wf_fix_fingerprint("unrelated change.", "unrelated bug.")
     make_task(
@@ -539,7 +548,9 @@ def test_issue1248_real_differing_fp_record_never_suppresses_even_with_matching_
             ),
         ],
     )
-    assert only(run_sweep(tmp_path))["suppressed"] is False
+    c = only(run_sweep(tmp_path, include_routed=True))
+    assert c["suppressed"] is True
+    assert c["suppressed_by"]["kind"] == "same-stream-filed"
 
 
 def test_issue1248_na_fp_record_mismatched_origin_ts_does_not_suppress(tmp_path: Path) -> None:
@@ -598,10 +609,15 @@ def test_issue1248_na_fp_record_incompatible_target_file_does_not_suppress(
     assert only(run_sweep(tmp_path))["suppressed"] is False
 
 
-def test_issue1248_structured_real_fp_key_vetoes_ts_fallback(tmp_path: Path) -> None:
-    """A cache-stream filed row with a STRUCTURED differing 12-hex `fingerprint`
-    key (no note) hits the _FP_SHAPE_RE.fullmatch veto branch -> never suppresses,
-    even with a matching structured origin_candidate_ts."""
+def test_issue1680_structured_differing_fp_matching_structured_ts_suppresses(
+    tmp_path: Path,
+) -> None:
+    """#1680 supersedes the #1248 structured-fp veto (predecessor:
+    test_issue1248_structured_real_fp_key_vetoes_ts_fallback): a cache-stream
+    filed row with a STRUCTURED differing 12-hex `fingerprint` key (no note)
+    and a matching structured origin_candidate_ts now suppresses — the exact
+    row-ts claim overrides the recomputed-fp mismatch. Same fixture, flipped
+    assertion."""
     root = tmp_path / "tasks"
     root.mkdir()
     cache = tmp_path / "workflow-fix-events.jsonl"
@@ -624,7 +640,7 @@ def test_issue1248_structured_real_fp_key_vetoes_ts_fallback(tmp_path: Path) -> 
         },
     ]
     cache.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
-    assert only(run_sweep(root, cache, include_routed=True))["suppressed"] is False
+    assert only(run_sweep(root, cache, include_routed=True))["suppressed"] is True
 
 
 def test_issue1248_comma_separated_record_target_file_is_prefix_compatible(
@@ -875,3 +891,812 @@ def test_casual_parked_negation_near_recursion_guard_not_enumerated(tmp_path: Pa
         ],
     )
     assert run_sweep(tmp_path, include_routed=True)["candidates"] == []
+
+
+# ── 20. #1599: merge/close-time subsumption for terminal fp-tag hits ────────
+#
+# Byte-verbatim fixture rows: each _RAW_1599_* constant is the EXACT JSONL line
+# from the live tasks/completed/1579/events.jsonl (lines 1 / 25 / 27; ts values
+# verified 2026-07-22). The incident temporal shape: #1577's fp-computable-class
+# park at 2026-07-21T10:59:07Z sat BETWEEN #1579's terminal status flip
+# (10:46:50Z) and its Step 10d merge (11:00:26Z) — 79 s before the merge — so
+# the pre-#1599 creation-only key read it as a genuine re-raise. The close rule
+# is max over {epm:merged, epm:done, epm:promoted, terminal epm:status-changed}
+# because marker order varies (#1577 posted epm:done AFTER epm:merged).
+
+_RAW_1599_CREATED = r"""{"ts": "2026-07-21T06:38:56Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}"""  # noqa: E501
+_RAW_1599_FLIP = r"""{"ts": "2026-07-21T10:46:50Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "reviewing", "to": "completed", "note": "Step 10 auto-complete: kind=infra, code-review PASS r1, test-verdict PASS (4236 passed, compare clean), completion audit PASS. No children."}"""  # noqa: E501
+_RAW_1599_MERGED = r"""{"ts": "2026-07-21T11:00:26Z", "kind": "epm:merged", "version": 1, "by": "unknown", "note": "Step 10d auto-merge: PR #1356 squash-merged to main (merge_form: squash; merge_attempts: 1; merge sha f0770307ce5c08bea3ed44f90d01d0ec762f425e; branch tip 3351767f5a certified by the pre-push lint gate: verdict pass, BASE_RC=0 GATED_RC=0 TG legs 0/0, pre-gate re-sync no-drift, choom=ok). Worktree kept."}"""  # noqa: E501
+
+# The real #1577 park ts (tasks/completed/1577/events.jsonl, verified 2026-07-22).
+_1599_PARK_TS = "2026-07-21T10:59:07Z"
+
+
+def _make_1599_fix_task(root: Path, fp: str) -> None:
+    """The byte-verbatim #1579 fixture: a completed infra fix task carrying fp."""
+    # round-trip guard: the embedded fixture lines are single valid JSON rows
+    assert json.loads(_RAW_1599_CREATED)["ts"] == "2026-07-21T06:38:56Z"
+    flip = json.loads(_RAW_1599_FLIP)
+    assert (flip["ts"], flip["to"]) == ("2026-07-21T10:46:50Z", "completed")
+    assert json.loads(_RAW_1599_MERGED)["ts"] == "2026-07-21T11:00:26Z"
+    make_task(
+        root,
+        1579,
+        "completed",
+        body_extra=f"- fingerprint: {fp}\n",
+        raw_event_lines=[_RAW_1599_CREATED, _RAW_1599_FLIP, _RAW_1599_MERGED],
+    )
+
+
+def test_issue1599_terminal_fp_task_merged_after_park_suppresses(tmp_path: Path) -> None:
+    """#1599 red-green + durability pin (acceptance criterion 1): a candidate
+    parked BETWEEN the fix task's terminal status flip and its Step 10d merge
+    is subsumed — the epm:merged arm, not the status flip, decides (the park ts
+    postdates the flip, so a status-changed-only key would NOT suppress)."""
+    bug, change = "bug 1599-a.", "change 1599-a."
+    fp = wf_fix_fingerprint(change, bug)
+    make_task(
+        tmp_path,
+        1577,
+        "completed",
+        events=[cand_row(_1599_PARK_TS, block_note("a/b.md", bug, change))],
+    )
+    _make_1599_fix_task(tmp_path, fp)
+    c = only(run_sweep(tmp_path, include_routed=True))
+    assert c["suppressed"] is True
+    assert c["suppressed_by"] == {"kind": "fp-tag-closed", "ref": "#1579", "basis": "close"}
+    # and the DEFAULT (unsuppressed) listing drops it
+    assert run_sweep(tmp_path)["candidates"] == []
+
+
+def test_issue1599_candidate_parked_after_merge_is_re_raise(tmp_path: Path) -> None:
+    """Criterion 2: a candidate parked AFTER the fix task's merge/close is a
+    genuine re-raise and stays enumerated."""
+    bug, change = "bug 1599-b.", "change 1599-b."
+    fp = wf_fix_fingerprint(change, bug)
+    make_task(
+        tmp_path,
+        30,
+        "completed",
+        events=[cand_row("2026-07-21T12:00:00Z", block_note("a/b.md", bug, change))],
+    )
+    _make_1599_fix_task(tmp_path, fp)
+    c = only(run_sweep(tmp_path))
+    assert c["suppressed"] is False
+
+
+def test_issue1599_unparseable_events_fail_open_to_enumeration(tmp_path: Path) -> None:
+    """Criterion 3: unreadable / garbage / ts-less events.jsonl → neither the
+    creation nor the close ts parses → enumerated (fail-open preserved)."""
+    bug, change = "bug 1599-c.", "change 1599-c."
+    fp = wf_fix_fingerprint(change, bug)
+    make_task(tmp_path, 31, "archived", events=[cand_row(T1, block_note("a/b.md", bug, change))])
+    make_task(
+        tmp_path,
+        65,
+        "completed",
+        body_extra=f"- fingerprint: {fp}\n",
+        raw_event_lines=[
+            "{this is not json",
+            json.dumps({"kind": "epm:status-changed", "to": "completed", "note": "no ts"}),
+        ],
+    )
+    c = only(run_sweep(tmp_path))
+    assert c["suppressed"] is False
+
+
+def test_issue1599_creation_after_park_takes_creation_basis(tmp_path: Path) -> None:
+    """Ordering pin: creation-after-park decides FIRST (the pre-#1599 rule),
+    even when a later epm:merged row would also decide."""
+    bug, change = "bug 1599-d.", "change 1599-d."
+    fp = wf_fix_fingerprint(change, bug)
+    make_task(tmp_path, 32, "archived", events=[cand_row(T0, block_note("a/b.md", bug, change))])
+    make_task(
+        tmp_path,
+        66,
+        "completed",
+        body_extra=f"- fingerprint: {fp}\n",
+        events=[
+            {"ts": T2, "kind": "epm:created", "note": "created after the park"},
+            {"ts": "2026-07-07T10:00:00Z", "kind": "epm:merged", "note": "merged later still"},
+        ],
+    )
+    c = only(run_sweep(tmp_path, include_routed=True))
+    assert c["suppressed_by"] == {"kind": "fp-tag-closed", "ref": "#66", "basis": "creation"}
+
+
+def test_issue1599_non_terminal_to_status_change_is_not_a_close_signal(tmp_path: Path) -> None:
+    """Criterion 5: an epm:status-changed row with a NON-terminal ``to`` is
+    never a close signal (the structured-``to`` discrimination)."""
+    bug, change = "bug 1599-e.", "change 1599-e."
+    fp = wf_fix_fingerprint(change, bug)
+    make_task(tmp_path, 33, "archived", events=[cand_row(T1, block_note("a/b.md", bug, change))])
+    make_task(
+        tmp_path,
+        67,
+        "completed",
+        body_extra=f"- fingerprint: {fp}\n",
+        events=[
+            {"ts": T0, "kind": "epm:created", "note": "created before the park"},
+            {"ts": T2, "kind": "epm:status-changed", "from": "approved", "to": "reviewing"},
+        ],
+    )
+    c = only(run_sweep(tmp_path))
+    assert c["suppressed"] is False
+
+
+def test_issue1599_archived_close_via_terminal_status_change(tmp_path: Path) -> None:
+    """Criterion 6 (the archived shape, grounded on tasks/archived/1101): an
+    archived task closes via its ``to: archived`` status-changed row alone —
+    archived tasks carry no epm:merged / epm:done rows."""
+    bug, change = "bug 1599-f.", "change 1599-f."
+    fp = wf_fix_fingerprint(change, bug)
+    make_task(tmp_path, 34, "archived", events=[cand_row(T1, block_note("a/b.md", bug, change))])
+    make_task(
+        tmp_path,
+        68,
+        "archived",
+        body_extra=f"- fingerprint: {fp}\n",
+        events=[
+            {"ts": T0, "kind": "epm:created", "note": "created before the park"},
+            {"ts": T2, "kind": "epm:status-changed", "from": "proposed", "to": "archived"},
+        ],
+    )
+    c = only(run_sweep(tmp_path, include_routed=True))
+    assert c["suppressed_by"] == {"kind": "fp-tag-closed", "ref": "#68", "basis": "close"}
+
+
+def test_issue1599_close_equal_to_park_ts_is_not_subsumption(tmp_path: Path) -> None:
+    """Tie boundary (advisory): closed == cand_ts does NOT suppress — the rule
+    is strict ``closed > cand_ts``, mirroring the creation check."""
+    bug, change = "bug 1599-g.", "change 1599-g."
+    fp = wf_fix_fingerprint(change, bug)
+    make_task(tmp_path, 35, "archived", events=[cand_row(T1, block_note("a/b.md", bug, change))])
+    make_task(
+        tmp_path,
+        69,
+        "completed",
+        body_extra=f"- fingerprint: {fp}\n",
+        events=[
+            {"ts": T0, "kind": "epm:created", "note": "created before the park"},
+            {"ts": T1, "kind": "epm:merged", "note": "merged at exactly the park ts"},
+        ],
+    )
+    c = only(run_sweep(tmp_path))
+    assert c["suppressed"] is False
+
+
+def test_issue1599_done_only_close_arm_suppresses(tmp_path: Path) -> None:
+    """epm:done-only close arm (advisory): a completed task with neither an
+    epm:merged row nor a terminal status-changed row still closes via epm:done."""
+    bug, change = "bug 1599-h.", "change 1599-h."
+    fp = wf_fix_fingerprint(change, bug)
+    make_task(tmp_path, 36, "archived", events=[cand_row(T1, block_note("a/b.md", bug, change))])
+    make_task(
+        tmp_path,
+        70,
+        "completed",
+        body_extra=f"- fingerprint: {fp}\n",
+        events=[
+            {"ts": T0, "kind": "epm:created", "note": "created before the park"},
+            {"ts": T2, "kind": "epm:done", "note": "outcome recorded"},
+        ],
+    )
+    c = only(run_sweep(tmp_path, include_routed=True))
+    assert c["suppressed_by"] == {"kind": "fp-tag-closed", "ref": "#70", "basis": "close"}
+
+
+def test_issue1599_scan_continues_past_non_suppressing_terminal_hit(tmp_path: Path) -> None:
+    """Multi-hit continue-scanning (advisory): a terminal fp hit that fails
+    BOTH temporal checks does not end the scan — a later fp-bearing body may
+    still decide."""
+    bug, change = "bug 1599-i.", "change 1599-i."
+    fp = wf_fix_fingerprint(change, bug)
+    make_task(tmp_path, 37, "archived", events=[cand_row(T1, block_note("a/b.md", bug, change))])
+    # sorts first (completed/71 < completed/72): created before the park, no close rows
+    make_task(
+        tmp_path,
+        71,
+        "completed",
+        body_extra=f"- fingerprint: {fp}\n",
+        events=[{"ts": T0, "kind": "epm:created", "note": "created before the park"}],
+    )
+    # sorts second: closes after the park → decides
+    make_task(
+        tmp_path,
+        72,
+        "completed",
+        body_extra=f"- fingerprint: {fp}\n",
+        events=[
+            {"ts": T0, "kind": "epm:created", "note": "created before the park"},
+            {"ts": T2, "kind": "epm:merged", "note": "merged after the park"},
+        ],
+    )
+    c = only(run_sweep(tmp_path, include_routed=True))
+    assert c["suppressed_by"] == {"kind": "fp-tag-closed", "ref": "#72", "basis": "close"}
+
+
+# ── 21. #1680: ts-claim precedence over differing fps + structured skips ────
+
+
+def test_issue1680_1630_shape_driver_recomputed_fp_record_suppresses(tmp_path: Path) -> None:
+    """The #1630 regression shape near-verbatim: the /daily driver recomputed
+    the fp from ABRIDGED origin text (differing from the sweep-canonical fp)
+    but named the candidate's exact row ts — the record must close it. A
+    DECOY full-ISO ts (a DIFFERENT candidate's row ts) planted inside the
+    abridged `origin_candidate:` tail must NOT close that other candidate
+    (pins _record_origin_ts's field-segment bounding at the ' / ' separator)."""
+    bug_a, change_a = "bug 1630-a.", "change 1630-a."
+    bug_b, change_b = "bug 1630-b.", "change 1630-b."
+    driver_fp = wf_fix_fingerprint("abridged change.", "abridged bug.")
+    make_task(
+        tmp_path,
+        1630,
+        "completed",
+        events=[
+            cand_row(T0, block_note("scripts/workflow_lint.py", bug_a, change_a)),
+            cand_row(T1, block_note("scripts/workflow_lint.py", bug_b, change_b)),
+            filed_row(
+                T2,
+                "filed_task: #1648 / target_file: scripts/workflow_lint.py / "
+                f"fingerprint: {driver_fp} / session_spawned: best-effort (driver) / "
+                f"source: daily-parked-candidate-sweep / origin_candidate_ts: {T0} / "
+                f"origin_candidate: abridged tail quoting a decoy row ts {T1} verbatim",
+            ),
+        ],
+    )
+    by_ts = {c["ts"]: c for c in run_sweep(tmp_path, include_routed=True)["candidates"]}
+    assert by_ts[T0]["suppressed"] is True
+    assert by_ts[T0]["suppressed_by"] == {"kind": "same-stream-filed", "ref": "#1648"}
+    # the decoy ts sits OUTSIDE the origin_candidate_ts field's value segment
+    assert by_ts[T1]["suppressed"] is False
+
+
+def test_issue1680_differing_fp_record_nonmatching_ts_not_suppressed(tmp_path: Path) -> None:
+    """Dedup doctrine preserved: a differing-fp record whose origin_candidate_ts
+    names a DIFFERENT row is a different bug — never suppresses."""
+    other_fp = wf_fix_fingerprint("unrelated change.", "unrelated bug.")
+    make_task(
+        tmp_path,
+        26,
+        "completed",
+        events=[
+            cand_row(T0, block_note("a/b.md", "bug 1680-b.", "change 1680-b.")),
+            filed_row(
+                T2,
+                f"filed_task: #96 / target_file: a/b.md / fingerprint: {other_fp} / "
+                f"origin_candidate_ts: {T1}",
+            ),
+        ],
+    )
+    assert only(run_sweep(tmp_path))["suppressed"] is False
+
+
+def test_issue1680_differing_fp_record_no_origin_ts_not_suppressed(tmp_path: Path) -> None:
+    """Pure fp-mismatch with NO row-ts claim keeps the #1248 outcome: a
+    differing real fp is a different bug (workflow-fix-on-bug.md § Dedup)."""
+    other_fp = wf_fix_fingerprint("unrelated change.", "unrelated bug.")
+    make_task(
+        tmp_path,
+        27,
+        "completed",
+        events=[
+            cand_row(T0, block_note("a/b.md", "bug 1680-c.", "change 1680-c.")),
+            filed_row(T1, f"filed_task: #97 / target_file: a/b.md / fingerprint: {other_fp}"),
+        ],
+    )
+    assert only(run_sweep(tmp_path))["suppressed"] is False
+
+
+def test_issue1680_differing_fp_matching_ts_incompatible_target_file_not_suppressed(
+    tmp_path: Path,
+) -> None:
+    """The target_file prefix-compatibility veto survives the #1680 widening."""
+    other_fp = wf_fix_fingerprint("unrelated change.", "unrelated bug.")
+    make_task(
+        tmp_path,
+        28,
+        "completed",
+        events=[
+            cand_row(T0, block_note("a/b.md", "bug 1680-d.", "change 1680-d.")),
+            filed_row(
+                T1,
+                f"filed_task: #98 / target_file: some/other.py / fingerprint: {other_fp} / "
+                f"origin_candidate_ts: {T0}",
+            ),
+        ],
+    )
+    assert only(run_sweep(tmp_path))["suppressed"] is False
+
+
+def test_issue1680_differing_fp_matching_ts_missing_target_file_abstains_suppresses(
+    tmp_path: Path,
+) -> None:
+    """Behavior-table row-3 abstain sub-case: with a matching row-ts claim and
+    NO target_file on the record side, the veto abstains (the inherited #1248
+    semantics) and the exact row ts decides — suppressed."""
+    other_fp = wf_fix_fingerprint("unrelated change.", "unrelated bug.")
+    make_task(
+        tmp_path,
+        29,
+        "completed",
+        events=[
+            cand_row(T0, block_note("a/b.md", "bug 1680-e.", "change 1680-e.")),
+            filed_row(T1, f"filed_task: #99 / fingerprint: {other_fp} / origin_candidate_ts: {T0}"),
+        ],
+    )
+    assert only(run_sweep(tmp_path, include_routed=True))["suppressed"] is True
+
+
+def test_issue1680_multi_ts_record_closes_each_listed_candidate(tmp_path: Path) -> None:
+    """A record whose origin_candidate_ts lists several full-ISO timestamps
+    (`TS1 + TS2 + TS3`, the live #1630 v4 corrective shape) closes EACH listed
+    park; unlisted timestamps stay enumerated."""
+    make_task(
+        tmp_path,
+        30,
+        "completed",
+        events=[
+            cand_row(T0, PROSE_NOTE),
+            cand_row(T1, PROSE_NOTE),
+            cand_row(T2, PROSE_NOTE),
+            filed_row(
+                "2026-07-07T10:00:00Z",
+                "filed_task: #1650 / fingerprint: n/a (prose park) / "
+                f"origin_candidate_ts: {T0} + {T2} / origin_candidate: abridged",
+            ),
+        ],
+    )
+    by_ts = {c["ts"]: c for c in run_sweep(tmp_path, include_routed=True)["candidates"]}
+    assert by_ts[T0]["suppressed"] is True
+    assert by_ts[T2]["suppressed"] is True
+    assert by_ts[T1]["suppressed"] is False
+
+
+def test_issue1680_same_second_sibling_residual_both_suppressed(tmp_path: Path) -> None:
+    """Pins the ACCEPTED residual (documented in the module docstring; #1680
+    kill criterion 1): two DISTINCT formal blocks at the SAME second on the
+    same task with compatible target_files are indistinguishable to the
+    ts+target_file key — one differing-fp record naming that second closes
+    BOTH. Live candidate rows are minutes apart, and a false closure
+    additionally requires a wrong-fp record on top; if this residual ever
+    fires on live evidence, the fix direction reverts to fp-primacy.
+    (Enumerator note: one row yields at most ONE Candidate — _extract_fields
+    parses the FIRST formal block per note — so the two same-second
+    candidates here are necessarily two distinct rows.)"""
+    other_fp = wf_fix_fingerprint("unrelated change.", "unrelated bug.")
+    make_task(
+        tmp_path,
+        31,
+        "completed",
+        events=[
+            cand_row(T0, block_note("a/b.md", "bug 1680-f.", "change 1680-f.")),
+            cand_row(T0, block_note("a/b.md", "bug 1680-g.", "change 1680-g.")),
+            filed_row(
+                T1,
+                f"filed_task: #100 / target_file: a/b.md / fingerprint: {other_fp} / "
+                f"origin_candidate_ts: {T0}",
+            ),
+        ],
+    )
+    result = run_sweep(tmp_path, include_routed=True)
+    assert len(result["candidates"]) == 2
+    assert all(c["suppressed"] for c in result["candidates"])
+
+
+def test_issue1680_present_but_unparseable_origin_ts_no_target_file_fallback(
+    tmp_path: Path,
+) -> None:
+    """The #1248 absent-vs-unparseable distinction survives _record_origin_ts:
+    a PRESENT origin_candidate_ts with no parseable full-ISO token is a
+    non-match and never falls through to the legacy target_file key — on the
+    fp-less primary path AND the fp-bearing ts-claim branch."""
+    # fp-less park: the record's target_file matches EXACTLY, but the present
+    # (garbage) ts field blocks the legacy target_file fallback
+    make_task(
+        tmp_path,
+        32,
+        "completed",
+        events=[
+            cand_row(T0, PROSE_NOTE),
+            filed_row(
+                T1,
+                "filed_task: #101 / target_file: scripts/codex_task.py / "
+                "fingerprint: n/a (prose park) / origin_candidate_ts: not-a-timestamp",
+            ),
+        ],
+    )
+    assert only(run_sweep(tmp_path))["suppressed"] is False
+
+    # fp-bearing candidate: differing fp + garbage ts field -> non-match
+    other_fp = wf_fix_fingerprint("unrelated change.", "unrelated bug.")
+    make_task(
+        tmp_path / "b",
+        33,
+        "completed",
+        events=[
+            cand_row(T0, block_note("a/b.md", "bug 1680-h.", "change 1680-h.")),
+            filed_row(
+                T1,
+                f"filed_task: #102 / target_file: a/b.md / fingerprint: {other_fp} / "
+                "origin_candidate_ts: not-a-timestamp",
+            ),
+        ],
+    )
+    assert only(run_sweep(tmp_path / "b"))["suppressed"] is False
+
+
+def test_issue1680_note_and_structured_ts_fields_union(tmp_path: Path) -> None:
+    """_record_origin_ts UNIONS the note-form field and the structured key: a
+    record carrying T0 in its note and T2 in its structured
+    origin_candidate_ts key closes fp-less parks at BOTH timestamps."""
+    root = tmp_path / "tasks"
+    root.mkdir()
+    cache = tmp_path / "workflow-fix-events.jsonl"
+    rows = [
+        {"ts": T0, "marker": "epm:workflow-fix-candidate v1", "note": PROSE_NOTE},
+        {"ts": T2, "marker": "epm:workflow-fix-candidate v1", "note": PROSE_NOTE},
+        {
+            "ts": "2026-07-07T10:00:00Z",
+            "marker": "epm:workflow-fix-task-filed v1",
+            "note": (
+                f"filed_task: #103 / fingerprint: n/a (prose park) / origin_candidate_ts: {T0}"
+            ),
+            "origin_candidate_ts": T2,
+        },
+    ]
+    cache.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    result = run_sweep(root, cache, include_routed=True)
+    assert [c["suppressed"] for c in result["candidates"]] == [True, True]
+
+
+def test_issue1680_skipped_record_json_decode_error_irrelevant_kind(tmp_path: Path) -> None:
+    """The #1333:152 shape: a truncated raw line of an IRRELEVANT marker kind
+    is a benign skip — relevant_kind False, fully attributed."""
+    truncated = (
+        '{"ts": "2026-07-11T00:00:00Z", "kind": "epm:experiment-implementation", "note": "trunc'
+    )
+    make_task(
+        tmp_path,
+        1333,
+        "completed",
+        events=[cand_row(T0, PROSE_NOTE)],
+        raw_event_lines=[truncated],
+    )
+    out = run_sweep(tmp_path)
+    assert out["skipped_rows"] == 1
+    (entry,) = out["skipped"]
+    assert entry["reason"] == "json-decode-error"
+    assert entry["kind_hint"] == "epm:experiment-implementation"
+    assert entry["relevant_kind"] is False
+    assert entry["source"] == "task:1333"
+    assert entry["path"].endswith("completed/1333/events.jsonl")
+    assert entry["line_no"] == 2
+
+
+def test_issue1680_skipped_record_relevant_kind_malformed_line(tmp_path: Path) -> None:
+    """A malformed line of CANDIDATE kind is a possible lost park ->
+    relevant_kind True (investigate)."""
+    truncated = (
+        '{"ts": "2026-07-11T00:00:00Z", "kind": "epm:workflow-fix-candidate", "note": "parked trunc'
+    )
+    make_task(tmp_path, 34, "completed", raw_event_lines=[truncated])
+    out = run_sweep(tmp_path)
+    (entry,) = out["skipped"]
+    assert entry["reason"] == "json-decode-error"
+    assert entry["kind_hint"] == "epm:workflow-fix-candidate"
+    assert entry["relevant_kind"] is True
+
+
+def test_issue1680_skipped_record_missing_ts_and_non_dict(tmp_path: Path) -> None:
+    """A ts-less candidate row is relevant by construction (only kind-matched
+    rows reach the ts check); a valid-JSON non-dict line is unknown
+    (kind_hint None -> relevant_kind None, investigate)."""
+    make_task(
+        tmp_path,
+        35,
+        "completed",
+        events=[{"kind": CAND_KIND, "note": "parked — but no ts"}],
+        raw_event_lines=["[1, 2, 3]"],
+    )
+    out = run_sweep(tmp_path)
+    assert out["skipped_rows"] == 2
+    by_reason = {e["reason"]: e for e in out["skipped"]}
+    ts_less = by_reason["missing-or-unparseable-ts"]
+    assert ts_less["kind_hint"] == CAND_KIND
+    assert ts_less["relevant_kind"] is True
+    non_dict = by_reason["non-dict-row"]
+    assert non_dict["kind_hint"] is None
+    assert non_dict["relevant_kind"] is None
+
+
+def test_issue1680_skipped_list_capped_total_preserved(tmp_path: Path) -> None:
+    """The emitted list caps at _SKIPPED_EMIT_CAP while skipped_rows keeps the
+    TRUE total — skipped_rows > len(skipped) is the truncation signal."""
+    n = spc._SKIPPED_EMIT_CAP + 1
+    make_task(tmp_path, 36, "completed", raw_event_lines=["{bad json"] * n)
+    out = run_sweep(tmp_path)
+    assert out["skipped_rows"] == n
+    assert len(out["skipped"]) == spc._SKIPPED_EMIT_CAP
+
+
+# ── 18. unmatched_record_fps advisory (#1703) ──────────────────────────
+
+
+def test_unmatched_record_fp_emitted_when_fp_differs_from_candidate(tmp_path: Path) -> None:
+    """Filed record carries a real fp differing from the candidate's
+    enumerated fp AND names the candidate's ts (the #1630 drift shape):
+    the record still SUPPRESSES via the #1680 ts fallback, AND the
+    unmatched fp is recorded in the advisory for investigation."""
+    bug, change = "drift bug.", "drift change."
+    cand_fp = wf_fix_fingerprint(change, bug)
+    drift_fp = "abcdef012345"  # 12 hex, ≠ cand_fp
+    assert drift_fp != cand_fp
+    make_task(
+        tmp_path,
+        100,
+        "completed",
+        events=[
+            cand_row(T0, block_note("a/b.md", bug, change)),
+            filed_row(
+                T1,
+                f"filed_task: #200 / target_file: a/b.md / "
+                f"fingerprint: {drift_fp} / origin_candidate_ts: {T0}",
+            ),
+        ],
+    )
+    result = run_sweep(tmp_path, include_routed=True)
+    # Suppression semantics UNCHANGED — the ts fallback closes the park.
+    c = only(result)
+    assert c["suppressed"] is True
+    assert c["suppressed_by"]["kind"] == "same-stream-filed"
+    # NEW: the drift is surfaced in the advisory field.
+    assert result["unmatched_record_fps"] == [{"source": "task:100", "ref": "#200", "fp": drift_fp}]
+
+
+def test_unmatched_advisory_empty_when_all_fps_match(tmp_path: Path) -> None:
+    """Normal suppression case (test 3): filed fp EQUALS candidate fp.
+    Advisory is EMPTY — the field exists but no drift surfaced."""
+    bug, change = "bug one.", "change one."
+    fp = wf_fix_fingerprint(change, bug)
+    make_task(
+        tmp_path,
+        101,
+        "completed",
+        events=[
+            cand_row(T0, block_note("a/b.md", bug, change)),
+            filed_row(T1, f"filed_task: #201 / fingerprint: {fp}"),
+        ],
+    )
+    result = run_sweep(tmp_path, include_routed=True)
+    assert result["unmatched_record_fps"] == []
+    assert only(result)["suppressed"] is True  # semantics preserved
+
+
+def test_unmatched_advisory_ignores_prose_and_na_fp_records(tmp_path: Path) -> None:
+    """Fail-soft: a filed record with prose-only fp values (n/a, empty
+    string, missing entirely) contributes NOTHING to the advisory —
+    never raises."""
+    make_task(
+        tmp_path,
+        102,
+        "completed",
+        events=[
+            cand_row(T0, PROSE_NOTE),
+            filed_row(T1, "filed_task: #202 / fingerprint: n/a (prose park)"),
+            filed_row(T2, "filed_task: #203 / target_file: scripts/codex_task.py"),
+        ],
+    )
+    result = run_sweep(tmp_path, include_routed=True)
+    assert result["unmatched_record_fps"] == []
+
+
+def test_unmatched_advisory_dedupes_within_stream(tmp_path: Path) -> None:
+    """A drift fp appearing in TWO filed records on the same stream
+    emits ONCE (advisory dedup — one investigation entry per drift)."""
+    bug, change = "d bug.", "d change."
+    drift_fp = "cafebabe0011"
+    make_task(
+        tmp_path,
+        103,
+        "completed",
+        events=[
+            cand_row(T0, block_note("a/b.md", bug, change)),
+            filed_row(
+                T1,
+                f"filed_task: #301 / fingerprint: {drift_fp} / origin_candidate_ts: {T0}",
+            ),
+            filed_row(
+                T2,
+                f"filed_task: #302 / fingerprint: {drift_fp} / origin_candidate_ts: {T0}",
+            ),
+        ],
+    )
+    result = run_sweep(tmp_path, include_routed=True)
+    assert len(result["unmatched_record_fps"]) == 1
+    entry = result["unmatched_record_fps"][0]
+    assert entry["fp"] == drift_fp
+    assert entry["source"] == "task:103"
+
+
+def test_unmatched_advisory_isolates_across_streams(tmp_path: Path) -> None:
+    """A drift fp on task:X does not surface on task:Y's stream — the
+    advisory is per-source."""
+    bug_x, change_x = "x bug.", "x change."
+    bug_y, change_y = "y bug.", "y change."
+    fp_y = wf_fix_fingerprint(change_y, bug_y)  # matches y's candidate
+    drift_fp = "deadbeef0022"  # matches neither
+    make_task(
+        tmp_path,
+        104,
+        "completed",
+        events=[
+            cand_row(T0, block_note("a/b.md", bug_x, change_x)),
+            filed_row(
+                T1,
+                f"filed_task: #401 / fingerprint: {drift_fp} / origin_candidate_ts: {T0}",
+            ),
+        ],
+    )
+    make_task(
+        tmp_path,
+        105,
+        "completed",
+        events=[
+            cand_row(T0, block_note("c/d.md", bug_y, change_y)),
+            filed_row(T1, f"filed_task: #402 / fingerprint: {fp_y}"),
+        ],
+    )
+    result = run_sweep(tmp_path, include_routed=True)
+    # Only task:104 contributes to the advisory.
+    assert result["unmatched_record_fps"] == [{"source": "task:104", "ref": "#401", "fp": drift_fp}]
+
+
+def test_unmatched_advisory_extracts_from_structured_fingerprint_key(tmp_path: Path) -> None:
+    """A filed record carrying its fp under a STRUCTURED ``fingerprint``
+    key (not the note) still contributes to the advisory."""
+    bug, change = "s bug.", "s change."
+    drift_fp = "0123456789ab"
+    row = {
+        "ts": T1,
+        "kind": FILED_KIND,
+        "version": 1,
+        "by": "unknown",
+        "note": "filed_task: #501 (structured fp key)",
+        "fingerprint": drift_fp,
+    }
+    make_task(
+        tmp_path,
+        106,
+        "completed",
+        events=[cand_row(T0, block_note("e/f.md", bug, change)), row],
+    )
+    result = run_sweep(tmp_path, include_routed=True)
+    assert result["unmatched_record_fps"] == [{"source": "task:106", "ref": "#501", "fp": drift_fp}]
+
+
+# ── #1741: URGENT fast-path park accept arms (#1681 grammar; incident #1718) ─
+
+# Byte-verbatim fixture row: _RAW_1718_CAND is the EXACT JSONL line from the
+# live #1718 events.jsonl (the 2026-07-27 urgent fast-path park — leads
+# `URGENT-PARK`, formal block carries urgency: main-red + failing_test +
+# wf_fix, ZERO occurrences of the word "parked"). Pre-#1741 the predicate
+# never enumerated it, so BOTH consumers (the watcher's urgent-park router
+# and the nightly /daily Step C sweep) were blind for ~16 h while main
+# stayed red. Consumed via make_task(raw_event_lines=...), so the sweep
+# parses the same bytes the live tree carries.
+
+_RAW_1718_CAND = r"""{"ts": "2026-07-27T14:38:28Z", "kind": "epm:workflow-fix-candidate", "version": 1, "by": "unknown", "note": "URGENT-PARK workflow-fix candidate raised from #1718 Step 10d merge attempt (autonomous session).\n\n## Context\n\n- Session: task #1718 (workflow-fix session — carries `workflow_fix_target: scripts/workflow_lint.py` Provenance; recursion guard ACTIVE).\n- Blocked action: `/issue 1718` Step 10d local merge (`git merge origin/main` after `gh pr merge --squash` reported CONFLICTING).\n- Blocker: pristine `origin/main` fails the agent-spec-size ratchet. Verified two ways:\n  (a) `git show origin/main:.claude/agents/planner.md | wc -c` = 40900 (over the 40000 FAIL threshold).\n  (b) In a scratch worktree detached at `origin/main` (SHA `0a056258de4de8e209ddd1535269ebf38aa477f2` at diagnosis time; `f36fdb2f84` post-`task #1725: set-body` commit), `uv run python scripts/workflow_lint.py --check-agent-spec-size` prints `workflow_lint: .claude/agents/planner.md: 40900 bytes exceeds the 40000-byte agent-spec FAIL threshold — relocate per-scenario content to .claude/rules/ (see #829). workflow_lint: FAIL (1 error(s))`.\n\n- My branch alone is GREEN — `tests/test_workflow_lint_agent_spec_size.py::test_live_tree_passes` PASSES on `issue-1718` @ `a6d4a4b9a4` (planner.md there = 39371 bytes). The failure entered my worktree only via the merge that pulled origin/main's planner.md at 40900 bytes.\n\n## Why urgent-park (per `.claude/rules/workflow-fix-on-bug.md` § Recursion guard \"Urgent fast path\", #1681)\n\n- My session is a workflow-fix session ⇒ recursion guard PARKS the candidate; the orchestrator does NOT auto-file/spawn.\n- Every intervening Step 10d merge attempt across the fleet must re-classify this red vs the baseline ledger; the #1643-class fleet-wide cost applies.\n- Direct evidence exists: `test_live_tree_passes` FAILs on pristine `origin/main`, and my in-worktree merge attempt fired the same failure through the pre-commit hook (`workflow-lint-agent-spec-size`).\n\n## Post-park action\n\n- Parking #1718 at status `blocked` with `epm:failure v1 failure_class: infra reason: main-red-planner-md-ratchet-blocks-step10d-merge`.\n- The autonomous-session watcher's `urgent_wf_park_pass` (every 10 min) will detect the token, VERIFY the claim (one bounded pytest run of the named node, expecting rc=1), and file+dispatch via `scripts/file_infra_task.py` — `epm:workflow-fix-task-filed` will land on #1718 with the routed record.\n- Once the routed fix lands (planner.md trimmed to <40 KB and merged to main), a fresh `/issue 1718` respawn (via the completed-unmerged watcher pass or manual) can retry Step 10d cleanly.\n\n## Bug details\n\n- **File:** `.claude/agents/planner.md`\n- **Current size (origin/main):** 40900 bytes\n- **FAIL threshold:** 40000 bytes (`AGENT_SPEC_FAIL_BYTES` in `scripts/workflow_lint.py`)\n- **Overage:** 900 bytes\n- **Policy stance (per #829 / #838):** planner.md was DELIBERATELY not grandfathered — it was structurally trimmed to ≤20 KB and per-scenario content moved to `.claude/rules/`. Concurrent growth pushed it past 40 KB without an offsetting relocation.\n- **Correct fix (per the workflow_lint hook message itself):** \"relocate per-scenario content to .claude/rules/ (see #829)\".\n\n<!-- workflow-fix-candidate v1 -->\ntarget_file: .claude/agents/planner.md\nbug_observed: origin/main planner.md is 40900 bytes, exceeds the 40000-byte AGENT_SPEC_FAIL threshold; pristine origin/main fails workflow_lint --check-agent-spec-size and tests/test_workflow_lint_agent_spec_size.py::test_live_tree_passes\nwhy_workflow_gap: planner.md was deliberately NOT grandfathered per #829/#838 (structurally trimmed to <=20 KB, per-scenario content moved to .claude/rules/); concurrent growth pushed it past 40 KB without a relocation, so every Step 10d merge that pulls origin/main hits the pre-commit ratchet hook and cannot land — fleet-wide per-hour cost until fixed\nproposed_change: Relocate per-scenario content in .claude/agents/planner.md to .claude/rules/ subfiles per #829 so planner.md falls below 40000 bytes\ndiff_sketch: |\n  # Scenario-specific content trimming; the spawned session's planner+implementer\n  # will identify the largest relocatable per-scenario sections per the #829\n  # protocol. Verify with:\n  #   uv run pytest tests/test_workflow_lint_agent_spec_size.py::test_live_tree_passes\n  #   uv run python scripts/workflow_lint.py --check-agent-spec-size\nconfidence: high\nrelated_task: #1718\nurgency: main-red\nfailing_test: tests/test_workflow_lint_agent_spec_size.py::test_live_tree_passes\nwf_fix: true\n<!-- /workflow-fix-candidate -->\n\nFingerprint (sha256(normalize(proposed_change) + \"||\" + normalize(bug_observed))[:12]): 06bc0203d759\n"}"""  # noqa: E501
+
+_1718_TS = "2026-07-27T14:38:28Z"
+_1718_FP = "06bc0203d759"
+
+
+def test_issue1741_urgent_park_lead_note_enumerated(tmp_path: Path) -> None:
+    """Arm (a): the verbatim #1718 URGENT-PARK note enumerates with its fp."""
+    # round-trip guard: the embedded fixture line is a single valid JSON row
+    row = json.loads(_RAW_1718_CAND)
+    assert row["ts"] == _1718_TS
+    # the incident's defining property: no "parked" token anywhere
+    assert "parked" not in row["note"].lower()
+    make_task(tmp_path, 1718, "blocked", raw_event_lines=[_RAW_1718_CAND])
+    c = only(run_sweep(tmp_path))
+    assert c["source"] == "task:1718"
+    assert c["formal_block"] is True
+    assert c["fingerprint"] == _1718_FP
+    assert c["target_file"] == ".claude/agents/planner.md"
+    assert c["suppressed"] is False
+
+
+def test_issue1741_urgent_block_token_enumerated_without_lead(tmp_path: Path) -> None:
+    """Arm (b) independently: `urgency: main-red` INSIDE the formal block
+    enumerates with neither an URGENT-PARK lead nor any "parked" token."""
+    bug = "check c99 fails on origin/main after the ratchet landed."
+    change = "raise the size cap for the offending file."
+    note = (
+        "Recursion-guard candidate surfaced for the nightly sweep (no routing "
+        "performed by this session).\n\n"
+        "<!-- workflow-fix-candidate v1 -->\n"
+        "target_file: .claude/agents/planner.md\n"
+        f"bug_observed: {bug}\n"
+        "why_workflow_gap: the ratchet lacks headroom\n"
+        f"proposed_change: {change}\n"
+        "urgency: main-red\n"
+        "failing_test: tests/test_x.py::test_y\n"
+        "wf_fix: true\n"
+        "confidence: high\n"
+        "related_task: #1718\n"
+        "<!-- /workflow-fix-candidate -->\n"
+    )
+    assert "parked" not in note.lower() and not note.lower().startswith("urgent-park")
+    make_task(tmp_path, 42, "completed", events=[cand_row(T0, note)])
+    c = only(run_sweep(tmp_path))
+    assert c["formal_block"] is True
+    assert c["fingerprint"] == wf_fix_fingerprint(change, bug)
+    assert c["target_file"] == ".claude/agents/planner.md"
+
+
+def test_issue1741_urgent_park_suppressed_by_matching_filed_record(tmp_path: Path) -> None:
+    """The #1718→#1740 no-double-route pin: a LATER same-stream filed record
+    carrying the matching fp suppresses the urgent park (suppression rule 1)."""
+    rec = filed_row(
+        "2026-07-28T06:41:05Z",
+        "filed_task: #1740 / target_file: .claude/agents/planner.md / "
+        f"fingerprint: {_1718_FP} / session_spawned: true / "
+        f"source: daily-parked-candidate-sweep / origin_candidate_ts: {_1718_TS}",
+    )
+    make_task(tmp_path, 1718, "blocked", events=[rec], raw_event_lines=[_RAW_1718_CAND])
+    assert run_sweep(tmp_path)["candidates"] == []
+    c = only(run_sweep(tmp_path, include_routed=True))
+    assert c["suppressed"] is True
+    assert c["suppressed_by"] == {"kind": "same-stream-filed", "ref": "#1740"}
+
+
+def test_issue1741_urgency_token_outside_block_not_enumerated(tmp_path: Path) -> None:
+    """Prose QUOTING the grammar (`urgency: main-red` with NO formal block, no
+    park token) stays out — the casual-mention exclusion is not widened."""
+    note = (
+        "Discussion of the #1681 urgent fast path: a parking session adds\n"
+        "urgency: main-red\n"
+        "failing_test: tests/test_x.py::test_y\n"
+        "inside its formal block; the router verifies before filing."
+    )
+    make_task(tmp_path, 43, "completed", events=[cand_row(T0, note)])
+    assert run_sweep(tmp_path)["candidates"] == []
+    assert run_sweep(tmp_path, include_routed=True)["candidates"] == []
+
+
+def test_issue1741_routed_urgent_note_suppressed(tmp_path: Path) -> None:
+    """A mis-tagged ROUTED urgent-block candidate (`routed: filed #999` note
+    lead) is enumerated by arm (b) but closed by its later same-stream filed
+    record — the routed corner the arm-(b) rationale leans on (rule 1)."""
+    bug = "some urgent bug."
+    change = "some urgent change."
+    fp = wf_fix_fingerprint(change, bug)
+    note = (
+        "routed: filed #999\n\n"
+        "<!-- workflow-fix-candidate v1 -->\n"
+        "target_file: a/b.md\n"
+        f"bug_observed: {bug}\n"
+        "why_workflow_gap: gap\n"
+        f"proposed_change: {change}\n"
+        "urgency: main-red\n"
+        "failing_test: tests/test_x.py::test_y\n"
+        "wf_fix: true\n"
+        "confidence: high\n"
+        "related_task: #999\n"
+        "<!-- /workflow-fix-candidate -->\n"
+    )
+    make_task(
+        tmp_path,
+        44,
+        "completed",
+        events=[
+            cand_row(T0, note),
+            filed_row(T1, f"filed_task: #999 / target_file: a/b.md / fingerprint: {fp}"),
+        ],
+    )
+    assert run_sweep(tmp_path)["candidates"] == []
+    c = only(run_sweep(tmp_path, include_routed=True))
+    assert c["suppressed"] is True
+    assert c["suppressed_by"] == {"kind": "same-stream-filed", "ref": "#999"}

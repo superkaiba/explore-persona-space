@@ -1,0 +1,97 @@
+{
+  "commit": "3ba9d8f7d2",
+  "created": "2026-07-22T07:32:16Z",
+  "figsize": [
+    9.5,
+    4.4
+  ],
+  "text": {
+    "suptitle": "Cross-persona map transfer: source map -> target points (held out)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "base  (L19, diagonal = within)",
+        "xlabel": "target persona (points predicted)",
+        "ylabel": "source persona (fitted map)",
+        "annotations": [
+          "0.20",
+          "-1.53",
+          "-0.24",
+          "-0.80",
+          "-1.74",
+          "0.20",
+          "-2.11",
+          "-1.58",
+          "-0.22",
+          "-1.67",
+          "0.22",
+          "-0.79",
+          "-0.69",
+          "-1.18",
+          "-0.70",
+          "0.13"
+        ],
+        "xticklabels": [
+          "Wren",
+          "HELIOS",
+          "Dana",
+          "Vex"
+        ],
+        "yticklabels": [
+          "Wren",
+          "HELIOS",
+          "Dana",
+          "Vex"
+        ]
+      },
+      {
+        "title": "instruct  (L19, diagonal = within)",
+        "xlabel": "target persona (points predicted)",
+        "ylabel": "source persona (fitted map)",
+        "annotations": [
+          "0.35",
+          "-0.90",
+          "-0.86",
+          "-1.75",
+          "-1.02",
+          "0.40",
+          "-2.13",
+          "-2.31",
+          "-0.84",
+          "-2.31",
+          "0.33",
+          "-2.59",
+          "-1.11",
+          "-1.61",
+          "-1.26",
+          "0.23"
+        ],
+        "xticklabels": [
+          "Wren",
+          "HELIOS",
+          "Dana",
+          "Vex"
+        ],
+        "yticklabels": [
+          "Wren",
+          "HELIOS",
+          "Dana",
+          "Vex"
+        ]
+      },
+      {
+        "ylabel": "held-out R\u00b2 (fold-test-mean)",
+        "yticklabels": [
+          "\u22123.0",
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5"
+        ]
+      }
+    ]
+  }
+}

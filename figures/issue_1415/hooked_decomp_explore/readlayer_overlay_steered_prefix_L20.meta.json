@@ -1,0 +1,234 @@
+{
+  "commit": "9c9dc0a19f",
+  "created": "2026-07-23T03:59:16Z",
+  "figsize": [
+    4.6,
+    3.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "y": 13.459010226385933,
+      "series": "read L21 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "y": 6.864346027374268,
+      "series": "read L21 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "y": 3.989586185131754,
+      "series": "read L21 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "y": 1.6778712086379528,
+      "series": "read L21 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "y": 1.2903310294662202,
+      "series": "read L21 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "y": 1.189337038568088,
+      "series": "read L21 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "y": 1.1314785382045167,
+      "series": "read L21 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "y": 1.112825030993138,
+      "series": "read L21 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "y": 1.1421748655182975,
+      "series": "read L21 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "y": 1.0990403331816196,
+      "series": "read L21 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "y": 1.05871337598988,
+      "series": "read L21 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "y": 1.328322661774499,
+      "series": "read L21 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "y": 3.3425257163388387,
+      "series": "read L21 (headline)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "y": 33.041485513959614,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "y": 19.653113876070297,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "y": 12.390347276415143,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "y": 7.160961070231029,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "y": 5.778772813933236,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "y": 5.258495718240738,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "y": 4.9382645189762115,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "y": 4.508653836590903,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "y": 4.329968188490186,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "y": 4.112238260252135,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "y": 3.93693599317755,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "y": 4.513959062950952,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "y": 8.681424524102892,
+      "series": "read L24",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 26,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "direct magnitude by read layer \u2014 steered/prefix/L20",
+        "legend_labels": [
+          "read L21 (headline)",
+          "read L24"
+        ],
+        "xticklabels": [
+          "first",
+          "tok2_5",
+          "dec1",
+          "dec2",
+          "dec3",
+          "dec4",
+          "dec5",
+          "dec6",
+          "dec7",
+          "dec8",
+          "dec9",
+          "dec10",
+          "last"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ]
+      }
+    ],
+    "series": [
+      "read L21 (headline)",
+      "read L24"
+    ]
+  }
+}

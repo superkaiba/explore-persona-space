@@ -47,3 +47,11 @@ transient-looking fake errors ("500 ..." messages) will sleep for real.
 Regression pins:
 `tests/test_upload_sharded.py::test_verify_fallback_retries_429_then_success`,
 `tests/test_hub_staging_retry.py` (#1402 class arm + staging helpers).
+
+## Merged sibling index rows (#1891 curation, 2026-07-30)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the ~25 KB loader truncation limit (task #1891). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [Hub queue-full 429 + LocalEntryNotFoundError mask](feedback_hub_queue_full_429_and_localentrynotfound_mask.md) — wrap every Hub call in hub.retry_transient; a 429 on hf_hub_download's HEAD surfaces as a 404-shaped LocalEntryNotFoundError (#1345 r5)
+- [Hub verify-path retry + prefix batching](feedback_hub_verify_retry_transient.md) — one unretried per-file file_exists HEAD let a single 429 kill a run post-upload (#1335); retry_transient + one prefix listing
+- [Hub upload retry + skip-set pairing](feedback_hub_upload_no_path_transport_retry.md) — hub._upload swallows 429/Xet-queue returning empty; bounded 5xx retry (4xx loud) + fresh-listing verify (#1315 #542)

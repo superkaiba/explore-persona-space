@@ -1,0 +1,839 @@
+{
+  "directions": {
+    "base.Wren->HELIOS": {
+      "within": {
+        "r2_foldmean": 0.1974782359913172,
+        "r2_global": 0.20730715205184957,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -1.525974111000402,
+        "r2_global": -1.4950371462705196,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": -0.00023147209315199646,
+        "r2_global": 0.012018901194169485,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": -0.000904335085246899,
+        "r2_global": 0.011354279117356758,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -7.727302724475909,
+        "tier15": -0.0011721397651241624,
+        "tier15d": -0.00457941646433717
+      },
+      "fractions_global": {
+        "naive": -7.211700761277141,
+        "tier15": 0.05797629785181477,
+        "tier15d": 0.054770320295157694
+      }
+    },
+    "base.Wren->Dana": {
+      "within": {
+        "r2_foldmean": 0.21775009509535348,
+        "r2_global": 0.2294080200887616,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -0.23835149944349454,
+        "r2_global": -0.21989626051604994,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": 0.03760500478468387,
+        "r2_global": 0.05194764464683688,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": 0.04168090251707579,
+        "r2_global": 0.05596279899051504,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -1.0946103116011023,
+        "tier15": 0.17269799477339615,
+        "tier15d": 0.1914162310644392
+      },
+      "fractions_global": {
+        "naive": -0.9585378071392996,
+        "tier15": 0.2264421471696478,
+        "tier15d": 0.2439443876847119
+      }
+    },
+    "base.Wren->Vex": {
+      "within": {
+        "r2_foldmean": 0.13266438854640195,
+        "r2_global": 0.1435518931022568,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -0.7979501057286162,
+        "r2_global": -0.7753807684284755,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": -0.03886358509187571,
+        "r2_global": -0.02582292140156195,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": -0.04248216983663422,
+        "r2_global": -0.02939608271694283,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -6.014802574162679,
+        "tier15": -0.2929466265793131,
+        "tier15d": -0.3202228593679852
+      },
+      "fractions_global": {
+        "naive": -5.401397025646649,
+        "tier15": -0.17988562075713918,
+        "tier15d": -0.20477669838880508
+      }
+    },
+    "base.HELIOS->Wren": {
+      "within": {
+        "r2_foldmean": 0.19648846768114947,
+        "r2_global": 0.2067350054810243,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -1.7397050233945959,
+        "r2_global": -1.7047677636869412,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": -0.03040335583450493,
+        "r2_global": -0.01726344867697338,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": -0.027621614919485227,
+        "r2_global": -0.014517181071655116,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -8.853980306964845,
+        "tier15": -0.15473353827483555,
+        "tier15d": -0.14057626508802565
+      },
+      "fractions_global": {
+        "naive": -8.246149507773698,
+        "tier15": -0.08350520337281704,
+        "tier15d": -0.07022120437647708
+      }
+    },
+    "base.HELIOS->Dana": {
+      "within": {
+        "r2_foldmean": 0.21775009509535348,
+        "r2_global": 0.2294080200887616,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -2.107982390360148,
+        "r2_global": -2.061663911622758,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": -0.02472123884018318,
+        "r2_global": -0.009449746614171195,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": -0.014806642019425276,
+        "r2_global": 0.00031709227737397594,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -9.68074153738971,
+        "tier15": -0.11353032396774691,
+        "tier15d": -0.06799832630585717
+      },
+      "fractions_global": {
+        "naive": -8.986886817754094,
+        "tier15": -0.04119187555219272,
+        "tier15d": 0.0013822196680451184
+      }
+    },
+    "base.HELIOS->Vex": {
+      "within": {
+        "r2_foldmean": 0.13266438854640195,
+        "r2_global": 0.1435518931022568,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -1.5768892932117362,
+        "r2_global": -1.5445420754228167,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": -0.0958645880774811,
+        "r2_global": -0.08210840127074093,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": -0.097343787461039,
+        "r2_global": -0.08356903253624415,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -11.886304308862725,
+        "tier15": -0.7226098060516866,
+        "tier15d": -0.7337597416128829
+      },
+      "fractions_global": {
+        "naive": -10.75946852419834,
+        "tier15": -0.5719771400872601,
+        "tier15d": -0.582152075672838
+      }
+    },
+    "base.Dana->Wren": {
+      "within": {
+        "r2_foldmean": 0.19648846768114947,
+        "r2_global": 0.2067350054810243,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -0.21793018825715516,
+        "r2_global": -0.20239890188523435,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": 0.03914336305308119,
+        "r2_global": 0.05139639671188179,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": 0.036021141205706986,
+        "r2_global": 0.048313990054323463,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -1.1091245752437753,
+        "tier15": 0.19921455704260904,
+        "tier15d": 0.18332445476728987
+      },
+      "fractions_global": {
+        "naive": -0.9790257891463477,
+        "tier15": 0.24861003385611605,
+        "tier15d": 0.2337000932275985
+      }
+    },
+    "base.Dana->HELIOS": {
+      "within": {
+        "r2_foldmean": 0.1974782359913172,
+        "r2_global": 0.20730715205184957,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -1.6713592478065666,
+        "r2_global": -1.6386416730419118,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": 0.017731840009273747,
+        "r2_global": 0.02976220694319498,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": 0.013331175015777075,
+        "r2_global": 0.025415439262856943,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -8.463511127778423,
+        "tier15": 0.08979136318623683,
+        "tier15d": 0.06750705944306301
+      },
+      "fractions_global": {
+        "naive": -7.9044145695082975,
+        "tier15": 0.14356575086107573,
+        "tier15d": 0.12259798570046579
+      }
+    },
+    "base.Dana->Vex": {
+      "within": {
+        "r2_foldmean": 0.13266438854640195,
+        "r2_global": 0.1435518931022568,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -0.790192894897388,
+        "r2_global": -0.7677209324394092,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": -0.02239050344017146,
+        "r2_global": -0.009556623316868684,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": -0.03190613881449744,
+        "r2_global": -0.018952810668858566,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -5.95633013166154,
+        "tier15": -0.16877553716941865,
+        "tier15d": -0.240502663631828
+      },
+      "fractions_global": {
+        "naive": -5.348037673683175,
+        "tier15": -0.06657260388799738,
+        "tier15d": -0.1320275912722227
+      }
+    },
+    "base.Vex->Wren": {
+      "within": {
+        "r2_foldmean": 0.19648846768114947,
+        "r2_global": 0.2067350054810243,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -0.6867979552920909,
+        "r2_global": -0.6652875745265867,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": -0.0036854919953124288,
+        "r2_global": 0.00911370368422737,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": -0.0009906665602679166,
+        "r2_global": 0.011774164172941193,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -3.495360126715367,
+        "tier15": -0.01875678526483824,
+        "tier15d": -0.005041856002844477
+      },
+      "fractions_global": {
+        "naive": -3.2180693007389687,
+        "tier15": 0.04408398888723223,
+        "tier15d": 0.05695292940615185
+      }
+    },
+    "base.Vex->HELIOS": {
+      "within": {
+        "r2_foldmean": 0.1974782359913172,
+        "r2_global": 0.20730715205184957,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -1.1808962902780369,
+        "r2_global": -1.1541856793822096,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": -0.01318216778076442,
+        "r2_global": -0.0007731803516866087,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": -0.012443333525321787,
+        "r2_global": -4.339499710281913e-05,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -5.979880690902865,
+        "tier15": -0.0667525092807899,
+        "tier15d": -0.06301116405490324
+      },
+      "fractions_global": {
+        "naive": -5.567515003503287,
+        "tier15": -0.0037296366480073424,
+        "tier15d": -0.00020932706215541283
+      }
+    },
+    "base.Vex->Dana": {
+      "within": {
+        "r2_foldmean": 0.21775009509535348,
+        "r2_global": 0.2294080200887616,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -0.6991004326369472,
+        "r2_global": -0.6737786201627576,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": 0.013597980228014728,
+        "r2_global": 0.02829839845465454,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": 0.019030482608753063,
+        "r2_global": 0.03364993987281062,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -3.2105631564974004,
+        "tier15": 0.06244764312070738,
+        "tier15d": 0.08739597840551827
+      },
+      "fractions_global": {
+        "naive": -2.93703166917208,
+        "tier15": 0.12335400673309259,
+        "tier15d": 0.1466816193252133
+      }
+    },
+    "instruct.Wren->HELIOS": {
+      "within": {
+        "r2_foldmean": 0.40107670413358276,
+        "r2_global": 0.4104427014888319,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -0.9008322919135889,
+        "r2_global": -0.8711069659132369,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": 0.21269452051828208,
+        "r2_global": 0.22500644942385595,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": 0.20576550746826794,
+        "r2_global": 0.2181857926831533,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -2.2460349420183663,
+        "tier15": 0.5303088370035123,
+        "tier15d": 0.5130328073099344
+      },
+      "fractions_global": {
+        "naive": -2.122359498057586,
+        "tier15": 0.5482042891923085,
+        "tier15d": 0.5315864842807788
+      }
+    },
+    "instruct.Wren->Dana": {
+      "within": {
+        "r2_foldmean": 0.3285635376004241,
+        "r2_global": 0.3369816335784891,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -0.85687796533872,
+        "r2_global": -0.8335974647893274,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": 0.11977577106326365,
+        "r2_global": 0.13081153163981396,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": 0.12052805330282035,
+        "r2_global": 0.1315543821841182,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -2.6079520923006214,
+        "tier15": 0.36454371029120863,
+        "tier15d": 0.36683331992059964
+      },
+      "fractions_global": {
+        "naive": -2.473717798614587,
+        "tier15": 0.38818593835721793,
+        "tier15d": 0.39039036278360495
+      }
+    },
+    "instruct.Wren->Vex": {
+      "within": {
+        "r2_foldmean": 0.2328833350537587,
+        "r2_global": 0.24355129685696875,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -1.7490183887490658,
+        "r2_global": -1.7107889713637037,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": 0.009768318856453573,
+        "r2_global": 0.02353904530978712,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": -0.03604407943024679,
+        "r2_global": -0.021636259641090394,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -7.510277145186551,
+        "tier15": 0.04194511751645372,
+        "tier15d": -0.15477311599787244
+      },
+      "fractions_global": {
+        "naive": -7.024347615641747,
+        "tier15": 0.09664923001256275,
+        "tier15d": -0.0888365610050387
+      }
+    },
+    "instruct.HELIOS->Wren": {
+      "within": {
+        "r2_foldmean": 0.3548299086061537,
+        "r2_global": 0.36190588720203865,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -1.0151921045707986,
+        "r2_global": -0.9930902489690725,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": 0.16590006777821054,
+        "r2_global": 0.17504815654729644,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": 0.1817874760755538,
+        "r2_global": 0.19076131783202066,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -2.861066894159757,
+        "tier15": 0.4675481512533732,
+        "tier15d": 0.5123228670031033
+      },
+      "fractions_global": {
+        "naive": -2.7440566293265825,
+        "tier15": 0.4836841917677165,
+        "tier15d": 0.5271020024206616
+      }
+    },
+    "instruct.HELIOS->Dana": {
+      "within": {
+        "r2_foldmean": 0.3285635376004241,
+        "r2_global": 0.3369816335784891,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -2.1251087272167073,
+        "r2_global": -2.085927856530029,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": 0.07989165561976419,
+        "r2_global": 0.0914274609966873,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": 0.099436645336065,
+        "r2_global": 0.11072740653005253,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -6.467877545807031,
+        "tier15": 0.24315435669834676,
+        "tier15d": 0.3026405366288479
+      },
+      "fractions_global": {
+        "naive": -6.190034259075365,
+        "tier15": 0.27131289033706996,
+        "tier15d": 0.3285858797531828
+      }
+    },
+    "instruct.HELIOS->Vex": {
+      "within": {
+        "r2_foldmean": 0.2328833350537587,
+        "r2_global": 0.24355129685696875,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -2.3108896764485296,
+        "r2_global": -2.264846556520388,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": -0.038061086413966994,
+        "r2_global": -0.02362521697546427,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": -0.05948710019023995,
+        "r2_global": -0.044753268385639755,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -9.922949943649188,
+        "tier15": -0.16343413497226406,
+        "tier15d": -0.25543734237792487
+      },
+      "fractions_global": {
+        "naive": -9.29925886557883,
+        "tier15": -0.09700304322065974,
+        "tier15d": -0.18375294635331862
+      }
+    },
+    "instruct.Dana->Wren": {
+      "within": {
+        "r2_foldmean": 0.3548299086061537,
+        "r2_global": 0.36190588720203865,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -0.8422442470427058,
+        "r2_global": -0.8220392173391384,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": 0.11049945986207943,
+        "r2_global": 0.12025516129183089,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": 0.11056297971757612,
+        "r2_global": 0.12031798448586639,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -2.373656297326282,
+        "tier15": 0.31141529274165325,
+        "tier15d": 0.31159430768361857
+      },
+      "fractions_global": {
+        "naive": -2.2714170904885678,
+        "tier15": 0.33228296511434446,
+        "tier15d": 0.33245655497916043
+      }
+    },
+    "instruct.Dana->HELIOS": {
+      "within": {
+        "r2_foldmean": 0.40107670413358276,
+        "r2_global": 0.4104427014888319,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -2.3059311600665366,
+        "r2_global": -2.2542328161959286,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": 0.13232332065281482,
+        "r2_global": 0.1458920990591065,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": 0.11904125390280484,
+        "r2_global": 0.13281773804188657,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -5.749352022446366,
+        "tier15": 0.3299202354289397,
+        "tier15d": 0.2968042089603811
+      },
+      "fractions_global": {
+        "naive": -5.492198565156521,
+        "tier15": 0.35545058671990104,
+        "tier15d": 0.3235962962920429
+      }
+    },
+    "instruct.Dana->Vex": {
+      "within": {
+        "r2_foldmean": 0.2328833350537587,
+        "r2_global": 0.24355129685696875,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -2.5938525389641955,
+        "r2_global": -2.5438743761058413,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": -0.012689897732290678,
+        "r2_global": 0.0013931454880810046,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": -0.06551059337798648,
+        "r2_global": -0.050692995442125355,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -11.13799121077269,
+        "tier15": -0.05449036415319863,
+        "tier15d": -0.28130219520801714
+      },
+      "fractions_global": {
+        "naive": -10.444922317945167,
+        "tier15": 0.005720131676815345,
+        "tier15d": -0.20814093825949123
+      }
+    },
+    "instruct.Vex->Wren": {
+      "within": {
+        "r2_foldmean": 0.3548299086061537,
+        "r2_global": 0.36190588720203865,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -1.1146790817879384,
+        "r2_global": -1.0914860911030027,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": 0.13636279886236502,
+        "r2_global": 0.14583484109026368,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": 0.13648084036736463,
+        "r2_global": 0.14595158796122176,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -3.1414462387531863,
+        "tier15": 0.3843046923468957,
+        "tier15d": 0.38463736302131346
+      },
+      "fractions_global": {
+        "naive": -3.015939031944143,
+        "tier15": 0.40296343952219127,
+        "tier15d": 0.40328602855731494
+      }
+    },
+    "instruct.Vex->HELIOS": {
+      "within": {
+        "r2_foldmean": 0.40107670413358276,
+        "r2_global": 0.4104427014888319,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -1.6067260571437223,
+        "r2_global": -1.5659619233630364,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": 0.14824728768786055,
+        "r2_global": 0.16156704617095852,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": 0.14716384425162987,
+        "r2_global": 0.1605005456862355,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -4.006031865188025,
+        "tier15": 0.369623281930843,
+        "tier15d": 0.36692194469269257
+      },
+      "fractions_global": {
+        "naive": -3.8152997182863686,
+        "tier15": 0.3936409286482458,
+        "tier15d": 0.39104251361770825
+      }
+    },
+    "instruct.Vex->Dana": {
+      "within": {
+        "r2_foldmean": 0.3285635376004241,
+        "r2_global": 0.3369816335784891,
+        "n_covered": 300
+      },
+      "naive": {
+        "r2_foldmean": -1.261314621895825,
+        "r2_global": -1.2329635200571052,
+        "n_covered": 300
+      },
+      "tier15": {
+        "r2_foldmean": 0.12377056755787252,
+        "r2_global": 0.1347562436034393,
+        "n_covered": 300
+      },
+      "tier15d": {
+        "r2_foldmean": 0.1240251397481772,
+        "r2_global": 0.13500762410956957,
+        "n_covered": 300
+      },
+      "fractions_foldmean": {
+        "naive": -3.838875826293748,
+        "tier15": 0.3767020785745057,
+        "tier15d": 0.3774768821092006
+      },
+      "fractions_global": {
+        "naive": -3.6588448663031534,
+        "tier15": 0.3998919530789566,
+        "tier15d": 0.40063792995449365
+      }
+    }
+  },
+  "gates": [
+    {
+      "name": "C.within.base.Wren",
+      "got": 0.19648846768114947,
+      "want": 0.19648846768114947,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "C.within.base.HELIOS",
+      "got": 0.1974782359913172,
+      "want": 0.1974782359913172,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "C.within.base.Dana",
+      "got": 0.21775009509535348,
+      "want": 0.21775009509535348,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "C.within.base.Vex",
+      "got": 0.13266438854640195,
+      "want": 0.13266438854640195,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "C.within.instruct.Wren",
+      "got": 0.3548299086061537,
+      "want": 0.3548299086061537,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "C.within.instruct.HELIOS",
+      "got": 0.40107670413358276,
+      "want": 0.40107670413358276,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "C.within.instruct.Dana",
+      "got": 0.3285635376004241,
+      "want": 0.3285635376004241,
+      "tol": 0.01,
+      "pass": true
+    },
+    {
+      "name": "C.within.instruct.Vex",
+      "got": 0.2328833350537587,
+      "want": 0.2328833350537587,
+      "tol": 0.01,
+      "pass": true
+    }
+  ],
+  "meta": {
+    "script": "scripts/issue1639_tier15_intercept_refit.py",
+    "git_commit": "d5e7b37fb9b5446d55379809fb18f53ec30e11f6",
+    "layer": 19,
+    "date": "2026-07-24",
+    "provenance": "user-chat inline free-analysis round (tier-1.5 intercept refit)",
+    "family": "C",
+    "wall_seconds": 174.84075617790222
+  }
+}

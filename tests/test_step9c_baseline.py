@@ -40,6 +40,8 @@ import getpass
 import importlib.util
 import json
 import os
+import re
+import shlex
 import subprocess
 
 # Import the helper by path (it lives under scripts/, not an importable package).
@@ -595,6 +597,61 @@ def test_compare_blind_strip_happy_path(tmp_path: Path, monkeypatch, capsys):
     assert out["new"] == []
     assert out["stripped"] == [{**NODE_A._asdict(), "via": "ledger"}]
     assert calls["pristine"] == []  # safe blind strip — no pristine run needed
+
+
+# --- Case 5b (#1742): urgent-park trigger on stripped workflow-invariant nodes --
+
+
+def _urgent_park_env(tmp_path: Path, monkeypatch, *, invariant: bool, pytest_rc: int = 1):
+    """Blind-strip fixture with NODE_A optionally a WORKFLOW_INVARIANT member."""
+    return _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(NODE_A.file, NODE_A.classname, NODE_A.name, "failed")],
+        pytest_rc=pytest_rc,
+        ledger_kw={"failing": (NODE_A,)},
+        reasons={NODE_A.file: ["invariant"]},
+        sel_attrs={"WORKFLOW_INVARIANT": (NODE_A.file,)} if invariant else None,
+    )
+
+
+def test_compare_stripped_workflow_invariant_emits_urgent_park(tmp_path, monkeypatch, capsys):
+    argv, _calls, _r, _w = _urgent_park_env(tmp_path, monkeypatch, invariant=True)
+    rc, out, err = _run_json(argv, capsys)
+    assert rc == 0
+    node_id = f"{NODE_A.file}::{NODE_A.name}"
+    assert out["urgent_park_required"] == [node_id]
+    # Fail-loud pin: the stderr demand line is EMITTED — never silently swallowed.
+    assert f"URGENT-PARK-REQUIRED: {node_id}" in err
+    assert "urgency: main-red" in err  # the demand names the routable grammar
+
+
+def test_compare_stripped_non_invariant_no_urgent_park(tmp_path, monkeypatch, capsys):
+    argv, _calls, _r, _w = _urgent_park_env(tmp_path, monkeypatch, invariant=False)
+    rc, out, err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["stripped"] == [{**NODE_A._asdict(), "via": "ledger"}]  # stripped, but...
+    assert out["urgent_park_required"] == []  # ...not a workflow-invariant member
+    assert "URGENT-PARK-REQUIRED" not in err
+
+
+def test_compare_urgent_park_non_json_stdout_line(tmp_path, monkeypatch, capsys):
+    argv, _calls, _r, _w = _urgent_park_env(tmp_path, monkeypatch, invariant=True)
+    argv.remove("--json")
+    rc = sb.main(argv)
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert f"  URGENT-PARK-REQUIRED: {NODE_A.file}::{NODE_A.name}" in captured.out
+
+
+def test_compare_indeterminate_payload_carries_empty_urgent_park(tmp_path, monkeypatch, capsys):
+    # pytest_rc outside {0,1} takes the _indeterminate_payload path (MF-1b);
+    # the #1742 field must ride the stable exit-2 shape too.
+    argv, _calls, _r, _w = _urgent_park_env(tmp_path, monkeypatch, invariant=True, pytest_rc=2)
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 2
+    assert out["indeterminate"] is True
+    assert out["urgent_park_required"] == []
 
 
 # --- Case 6 [A2]: node granularity — NEW node inside a known-red FILE -----------
@@ -1650,6 +1707,41 @@ def test_compare_file_anchored_scan_node_scratch_resolved(
         assert [n["name"] for n in out["new"]] == ["test_x"]
 
 
+@pytest.mark.parametrize("fails_on_main", [True, False])
+def test_compare_selector_tests_member_scratch_resolved(
+    tmp_path: Path, monkeypatch, capsys, fails_on_main
+):
+    """#1649 membership pin (end-to-end, REAL frozenset — no monkeypatch): a
+    failing tests/test_select_step9c_tests.py node on a dirty sparse root is
+    scratch-resolved strip-or-NEW (rc 0/1), never MF-4c exit 2 — the #1632
+    wedge shape (untracked third-party scripts/issue*_*.py dirt)."""
+    node = sb.Node(
+        file="tests/test_select_step9c_tests.py",
+        classname="tests.test_select_step9c_tests",
+        name="test_import_map_aggregate_parse_failure_warn",  # the #1632 node
+    )
+    argv, calls, root, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        glob_scan={node.file: ("tests/step9c_workflow_invariant_manifest.txt",)},
+        live_dirty=("scripts/issue1310_draft.py",),
+        pristine_failing=(node,) if fails_on_main else (),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    # Scratch oracle armed (not the root oracle) — proves the REAL literal admits it.
+    assert len(calls["scratch_created"]) == 1
+    assert calls["pristine_detail"] == [(node.file, root / "scratch-fake", root)]
+    if fails_on_main:
+        assert rc == 0 and out["indeterminate"] is False
+        assert out["stripped"] == [{**node._asdict(), "via": "pristine-scratch"}]
+    else:
+        assert rc == 1
+        assert [n["name"] for n in out["new"]] == [node.name]
+
+
 # --- #1251: scratch PYTHONPATH src-shadow (dirty src/ no longer refuses) -----------
 
 
@@ -2235,6 +2327,23 @@ def test_load_selector_module_real_body():
     assert callable(mod.select_tests_with_reasons) and callable(mod._matches_any)
 
 
+# Audited-benign banned-token hit lines for the drift pin below (#1649): raw-substring
+# scan, keyed by exact STRIPPED line text — a NEW hit line (or any rewording of an
+# audited one) fails loud, forcing a fresh anchoring audit. Raw-text scanning is kept
+# deliberately: a real git-common-dir escape can live inside a subprocess argv STRING,
+# which a strip-strings tokenizer scan would miss.
+_FILE_ANCHORED_BENIGN_TOKEN_LINES: dict[str, dict[str, tuple[str, ...]]] = {
+    "tests/test_select_step9c_tests.py": {
+        # fixture DATA: reasons-dict key naming the invariant test file (its :306)
+        "task_workflow": ('assert reasons["tests/test_task_workflow.py"] == ["invariant"]',),
+        # case-11 docstring narrating the retired #851 recipe (its :321)
+        "git-common-dir": (
+            "Incident #851: the prior --git-common-dir+dirname recipe pinned the MAIN",
+        ),
+    },
+}
+
+
 def test_file_anchored_scan_tests_live_tree_pin():
     """#1337 drift pin: every FILE_ANCHORED_SCAN_TESTS member is a live GLOB_SCAN_TESTS
     key whose source still derives its scan root from Path(__file__) and never touches
@@ -2243,7 +2352,11 @@ def test_file_anchored_scan_tests_live_tree_pin():
     Token-level, NOT dataflow-level: an imported helper that reached the live main
     root via repo_root() would still pass these token pins — membership additions
     stay must-ask, with a human verifying the whole scan chain by reading the source
-    (plan #1337 §10b / §11)."""
+    (plan #1337 §10b / §11). #1649: the flat `tok not in src` asserts became a per-line
+    scan with a per-member audited-benign-line allowlist
+    (_FILE_ANCHORED_BENIGN_TOKEN_LINES) — exact-stripped-line match only, so an
+    unaudited hit, a new benign hit, or a rewording of an audited line still fails
+    loud (semantics for the two pre-#1649 members are unchanged: zero hits)."""
     root = Path(sb.__file__).resolve().parents[1]
     sel = sb.load_selector_module(root)
     assert sb.FILE_ANCHORED_SCAN_TESTS, "allowlist unexpectedly empty"
@@ -2254,12 +2367,23 @@ def test_file_anchored_scan_tests_live_tree_pin():
         assert rel in sel.GLOB_SCAN_TESTS, f"{rel}: allowlisted but not a scan test"
         src = (root / rel).read_text()
         assert "Path(__file__).resolve().parents[1]" in src, f"{rel}: __file__ anchor gone"
-        assert "repo_root(" not in src, f"{rel}: repo_root() appeared — R-F' basis broken"
-        assert "task_workflow" not in src, f"{rel}: task_workflow import appeared"
-        # Extra negative tokens (verified 0-hit at #1337 implement time): escape
-        # channels back to the MAIN tree from a scratch cwd.
-        assert "git-common-dir" not in src, f"{rel}: git-common-dir escape appeared"
-        assert "Path.cwd()" not in src, f"{rel}: cwd-anchored scan appeared"
+        benign = _FILE_ANCHORED_BENIGN_TOKEN_LINES.get(rel, {})
+        # Banned tokens: escape channels back to the MAIN tree from a scratch cwd
+        # (repo_root()/task_workflow imports, git-common-dir, cwd-anchored scans).
+        for tok in ("repo_root(", "task_workflow", "git-common-dir", "Path.cwd()"):
+            allowed = benign.get(tok, ())
+            offending = [
+                ln.strip() for ln in src.splitlines() if tok in ln and ln.strip() not in allowed
+            ]
+            assert not offending, (
+                f"{rel}: unaudited {tok!r} hit(s) — re-audit anchoring: {offending[:3]}"
+            )
+
+
+def test_file_anchored_includes_selector_tests():
+    """#1649: removal reverts the #1632 wedge class (every trunk-red node in the
+    selector test file re-becomes MF-4c exit 2 on any dirty shared root)."""
+    assert "tests/test_select_step9c_tests.py" in sb.FILE_ANCHORED_SCAN_TESTS
 
 
 def test_ruff_helpers_real_body(tmp_path: Path):
@@ -2618,3 +2742,353 @@ def test_main_repo_root_and_resolve_work_root_real_body(monkeypatch):
     assert (main_root / ".git").is_dir()  # the MAIN root owns the real .git dir
     # The override path bypasses git entirely.
     assert sb.resolve_work_root(str(here)) == here
+
+
+# --- #1821: probe subcommand (single-flight liveness, self-/ancestor-excluding) ----
+#
+# Exit contract (docstring table): 0 = CLEAR (safe to launch), 3 = >=1 live
+# FOREIGN match (pid<TAB>args lines), 2 = usage / bad regex — deliberately
+# INVERTED vs pgrep so `probe && launch` composes. The subprocess cases below
+# execute the real /proc scan end-to-end (real-body coverage for
+# _ancestor_pids/_probe_matches/cmd_probe per code-style.md #906); only the
+# --issue derivation unit stubs _probe_matches to capture the compiled regex.
+
+
+def _unique_probe_issue() -> int:
+    """Per-process unique issue id: concurrent sessions running this file on
+    the shared VM must not cross-match each other's decoys/wrapper argvs."""
+    return 90_000_000 + os.getpid()
+
+
+def test_probe_ancestor_argv_self_match_defeated_clear():
+    """AC-3 (#1742 shape): the probe runs inside a bash whose -c command
+    string — and therefore its /proc cmdline — carries the LITERAL junit
+    path; bash is the probe's ancestor, so the probe must report CLEAR."""
+    issue = _unique_probe_issue()
+    cmd = (
+        f"{shlex.quote(sys.executable)} {shlex.quote(str(_HELPER_PATH))} "
+        f"probe --issue {issue}; rc=$?; "
+        f": /tmp/step9c-junit-issue-{issue}.xml; exit $rc"
+    )
+    proc = subprocess.run(["bash", "-c", cmd], capture_output=True, text=True, timeout=60)
+    assert proc.returncode == 0, (proc.returncode, proc.stdout, proc.stderr)
+    assert proc.stdout.strip() == ""
+
+
+def test_probe_detects_foreign_process_exit_3_with_line():
+    """AC-4: a live NON-ancestor process whose argv carries the derived
+    pattern is reported — exit 3 + one pid<TAB>args line (never swallowed
+    into exit 0). Decoy = a python child holding the junit filename as a
+    positional argv token (a bash comment decoy is stripped at parse time
+    and an exec-optimized simple command rewrites cmdline — not usable)."""
+    issue = _unique_probe_issue()
+    decoy = subprocess.Popen(
+        [sys.executable, "-c", "import time; time.sleep(60)", f"step9c-junit-issue-{issue}.xml"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    try:
+        deadline = time.time() + 20
+        while True:
+            proc = subprocess.run(
+                [sys.executable, str(_HELPER_PATH), "probe", "--issue", str(issue)],
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+            if proc.returncode == 3 or time.time() > deadline:
+                break
+            time.sleep(0.2)  # pre-exec fork window: decoy cmdline not yet rewritten
+        assert proc.returncode == 3, (proc.returncode, proc.stdout, proc.stderr)
+        rows = [line.split("\t", 1) for line in proc.stdout.splitlines() if line.strip()]
+        assert any(int(pid) == decoy.pid for pid, _args in rows), proc.stdout
+    finally:
+        decoy.kill()
+        decoy.wait()
+
+
+def test_probe_clear_exit_0_on_unmatched_pattern():
+    """Exit-code contract: no live match anywhere -> 0, empty stdout."""
+    sentinel = f"no-such-argv-token-{os.getpid()}-zz"
+    proc = subprocess.run(
+        [sys.executable, str(_HELPER_PATH), "probe", "--pattern", sentinel],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert proc.returncode == 0, (proc.returncode, proc.stdout, proc.stderr)
+    assert proc.stdout.strip() == ""
+
+
+def test_probe_bad_regex_exits_2():
+    """Fail-loud pin: a bad regex exits 2 with a stderr note — never a
+    silent CLEAR (the reason until-loops must use the --issue form)."""
+    proc = subprocess.run(
+        [sys.executable, str(_HELPER_PATH), "probe", "--pattern", "(unclosed"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert proc.returncode == 2, (proc.returncode, proc.stdout, proc.stderr)
+    assert "bad regex" in proc.stderr
+    assert proc.stdout.strip() == ""
+
+
+def test_probe_usage_errors_exit_2():
+    """--pattern / --issue are mutually exclusive, exactly one required
+    (argparse exits 2 on neither/both)."""
+    neither = subprocess.run(
+        [sys.executable, str(_HELPER_PATH), "probe"], capture_output=True, text=True, timeout=60
+    )
+    assert neither.returncode == 2
+    both = subprocess.run(
+        [sys.executable, str(_HELPER_PATH), "probe", "--pattern", "x", "--issue", "7"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert both.returncode == 2
+
+
+def test_probe_issue_flag_derives_junit_pattern(monkeypatch):
+    """AC-2: --issue N derives step9c-junit-issue-N\\.xml INTERNALLY (the
+    probe's own argv never carries the junit filename)."""
+    captured: list[str] = []
+
+    def fake_matches(pattern: re.Pattern[str]) -> list[tuple[int, str]]:
+        captured.append(pattern.pattern)
+        return []
+
+    monkeypatch.setattr(sb, "_probe_matches", fake_matches)
+    args = sb.build_parser().parse_args(["probe", "--issue", "424242"])
+    assert args.func(args) == 0
+    assert captured == [r"step9c-junit-issue-424242\.xml"]
+
+
+def test_probe_helpers_real_body():
+    """Real-body coverage (code-style.md #906) for the helpers the
+    derivation unit stubs: _ancestor_pids walks the real /proc (self +
+    parent present); _probe_matches runs a real full /proc scan."""
+    pids = sb._ancestor_pids()
+    assert os.getpid() in pids
+    assert os.getppid() in pids
+    assert 0 not in pids
+    # Real scan, no-match pattern: executes the full iteration/read/skip body.
+    assert sb._probe_matches(re.compile(f"zz-no-such-{os.getpid()}-token")) == []
+
+
+# --- #1962: probe --fleet (cross-issue gate-concurrency arbitration) --------------
+#
+# Fleet contract (docstring table): group live FOREIGN gate processes by issue
+# key via the FIXED FLEET_GATE_SIGNATURE_RE union (four gate artifact classes +
+# the ledger-refresh pseudo-issue); --exclude-issue N drops the caller's own
+# issue; exit 3 when the DISTINCT foreign-issue count >= EPM_GATE_FLEET_MAX
+# (default 2), else 0. Subprocess cases execute the real /proc scan end-to-end
+# (real-body coverage per code-style.md #906); on the shared VM ambient foreign
+# gates only ADD to the count, so subprocess assertions are exit-3-monotone or
+# use an implausibly high threshold. Deterministic grouping/threshold semantics
+# are pinned in-process with a stubbed _probe_matches (synthetic argvs).
+
+
+def test_probe_fleet_two_foreign_issues_exit_3_real_body():
+    """Real-body end-to-end: two decoys carrying two DIFFERENT signature
+    classes for two DISTINCT issues -> exit 3 at the default threshold (2),
+    one issue=<M> summary line each. Ambient-safe: concurrent foreign gates
+    can only ADD distinct issues (exit 3 is monotone)."""
+    own = _unique_probe_issue()
+    a, b = own + 1, own + 2
+    decoys = [
+        subprocess.Popen(
+            [sys.executable, "-c", "import time; time.sleep(60)", token],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        for token in (f"step9c-junit-issue-{a}.xml", f"issue-{b}-lint-gate-tree")
+    ]
+    try:
+        deadline = time.time() + 20
+        while True:
+            proc = subprocess.run(
+                [
+                    sys.executable,
+                    str(_HELPER_PATH),
+                    "probe",
+                    "--fleet",
+                    "--exclude-issue",
+                    str(own),
+                ],
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+            keys = {ln.split("\t")[0] for ln in proc.stdout.splitlines() if ln.strip()}
+            if {f"issue={a}", f"issue={b}"} <= keys or time.time() > deadline:
+                break
+            time.sleep(0.2)  # pre-exec fork window: decoy cmdline not yet rewritten
+        assert proc.returncode == 3, (proc.returncode, proc.stdout, proc.stderr)
+        assert {f"issue={a}", f"issue={b}"} <= keys, proc.stdout
+        for line in proc.stdout.splitlines():
+            if line.startswith((f"issue={a}\t", f"issue={b}\t")):
+                assert "\tpids=" in line, line
+    finally:
+        for decoy in decoys:
+            decoy.kill()
+            decoy.wait()
+
+
+def test_probe_fleet_env_threshold_honored_exit_0_real_body():
+    """EPM_GATE_FLEET_MAX honored end-to-end: with an implausibly high cap the
+    same two-decoy fleet reads exit 0 (summary lines still print) — the
+    real-body twin of the in-process threshold cases, deterministic on a
+    shared VM (ambient gates cannot reach the cap)."""
+    own = _unique_probe_issue()
+    a = own + 3
+    decoy = subprocess.Popen(
+        [sys.executable, "-c", "import time; time.sleep(60)", f"issue-{a}-surgical-outcome.txt"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    env = {**os.environ, "EPM_GATE_FLEET_MAX": "1000000"}
+    try:
+        deadline = time.time() + 20
+        while True:
+            proc = subprocess.run(
+                [sys.executable, str(_HELPER_PATH), "probe", "--fleet"],
+                capture_output=True,
+                text=True,
+                timeout=60,
+                env=env,
+            )
+            keys = {ln.split("\t")[0] for ln in proc.stdout.splitlines() if ln.strip()}
+            if f"issue={a}" in keys or time.time() > deadline:
+                break
+            time.sleep(0.2)
+        assert proc.returncode == 0, (proc.returncode, proc.stdout, proc.stderr)
+        assert f"issue={a}" in keys, proc.stdout  # below-threshold lines still print
+    finally:
+        decoy.kill()
+        decoy.wait()
+
+
+def test_probe_fleet_groups_all_signature_classes(monkeypatch):
+    """Distinct-issue grouping across all four artifact classes + the
+    group-less refresh alternate (pseudo-issue key 'refresh')."""
+    rows = [
+        (101, "timeout 4350s pytest --junitxml=/tmp/step9c-junit-issue-11.xml"),
+        (102, "bash -c lint > /tmp/issue-22-lint-gate-tree/out.txt"),
+        (103, "python inline_lint_gate.py /tmp/issue-33-r4-inline-payload.txt"),
+        (104, "bash -c gate > /tmp/issue-44-surgical-outcome.txt"),
+        (105, "/usr/bin/python scripts/step9c_baseline.py refresh --json"),
+    ]
+    monkeypatch.setattr(sb, "_probe_matches", lambda pattern: rows)
+    grouped = sb._fleet_gate_issues(None)
+    assert set(grouped) == {"11", "22", "33", "44", sb.FLEET_REFRESH_KEY}
+    assert all(len(v) == 1 for v in grouped.values())
+
+
+def test_probe_fleet_multi_issue_argv_attributes_to_all(monkeypatch):
+    """Critic concern 5: a wrapper argv referencing TWO issues' artifacts
+    attributes to EVERY matched issue (finditer over all capture groups),
+    never just group(1) of the first match."""
+    rows = [(201, "wrapper /tmp/step9c-junit-issue-55.xml /tmp/issue-66-lint-gate-tree")]
+    monkeypatch.setattr(sb, "_probe_matches", lambda pattern: rows)
+    grouped = sb._fleet_gate_issues(None)
+    assert set(grouped) == {"55", "66"}
+    assert grouped["55"] == rows
+    assert grouped["66"] == rows
+
+
+def test_probe_fleet_exclude_issue_drops_own(monkeypatch):
+    """--exclude-issue drops the caller's own issue from the foreign count
+    (its pids vanish entirely when they match no other issue)."""
+    rows = [
+        (301, "pytest --junitxml=/tmp/step9c-junit-issue-77.xml"),
+        (302, "bash -c lint > /tmp/issue-88-lint-gate-tree/out.txt"),
+    ]
+    monkeypatch.setattr(sb, "_probe_matches", lambda pattern: rows)
+    assert set(sb._fleet_gate_issues(77)) == {"88"}
+    assert set(sb._fleet_gate_issues(None)) == {"77", "88"}
+
+
+def test_probe_fleet_exit_semantics_and_env_threshold(monkeypatch, capsys):
+    """cmd_probe fleet routing: exit 3 at count >= threshold, 0 below; the
+    env threshold is honored; summary lines carry issue=<M>\\tpids=<k>."""
+    rows = [
+        (401, "pytest --junitxml=/tmp/step9c-junit-issue-1.xml"),
+        (402, "bash -c lint > /tmp/issue-2-lint-gate-tree/out.txt"),
+    ]
+    monkeypatch.setattr(sb, "_probe_matches", lambda pattern: rows)
+    args = sb.build_parser().parse_args(["probe", "--fleet"])
+    monkeypatch.delenv("EPM_GATE_FLEET_MAX", raising=False)
+    assert args.func(args) == 3  # count 2 >= default 2
+    out = capsys.readouterr().out
+    assert "issue=1\tpids=1\t" in out
+    assert "issue=2\tpids=1\t" in out
+    monkeypatch.setenv("EPM_GATE_FLEET_MAX", "3")
+    assert args.func(args) == 0  # count 2 < 3
+    monkeypatch.setenv("EPM_GATE_FLEET_MAX", "1")
+    assert args.func(args) == 3  # count 2 >= 1
+
+
+def test_probe_fleet_refresh_pseudo_issue_counts_toward_cap(monkeypatch, capsys):
+    """The ledger-refresh alternate counts as ONE gate under the reserved
+    pseudo-issue key and prints a recognizable issue=refresh line."""
+    rows = [
+        (501, "/usr/bin/python scripts/step9c_baseline.py refresh --json"),
+        (502, "pytest --junitxml=/tmp/step9c-junit-issue-9.xml"),
+    ]
+    monkeypatch.setattr(sb, "_probe_matches", lambda pattern: rows)
+    monkeypatch.delenv("EPM_GATE_FLEET_MAX", raising=False)
+    args = sb.build_parser().parse_args(["probe", "--fleet", "--exclude-issue", "9999"])
+    assert args.func(args) == 3  # refresh + issue 9 = 2 distinct >= default 2
+    out = capsys.readouterr().out
+    assert "issue=refresh\tpids=1\t" in out
+
+
+def test_probe_fleet_malformed_env_falls_back_to_default(monkeypatch, capsys):
+    """A malformed EPM_GATE_FLEET_MAX (non-int / < 1 / blank) falls back to
+    the default 2 with a stderr note — NEVER a crash or exit 2 (a wedged
+    env var must not wedge gate launches; until-loop safety)."""
+    rows = [(601, "pytest --junitxml=/tmp/step9c-junit-issue-1.xml")]
+    monkeypatch.setattr(sb, "_probe_matches", lambda pattern: rows)
+    args = sb.build_parser().parse_args(["probe", "--fleet"])
+    for bad in ("banana", "0", "-3", " ", ""):
+        monkeypatch.setenv("EPM_GATE_FLEET_MAX", bad)
+        assert args.func(args) == 0, bad  # count 1 < default 2
+    err = capsys.readouterr().err
+    assert "EPM_GATE_FLEET_MAX" in err  # the malformed-value stderr note
+
+
+def test_probe_fleet_usage_errors_exit_2():
+    """--exclude-issue without --fleet is a usage error (exit 2, stderr
+    note); --fleet is mutually exclusive with --pattern/--issue (argparse
+    exit 2). Exit 2 stays usage-only for the fleet form."""
+    for argv in (
+        ["probe", "--issue", "5", "--exclude-issue", "3"],
+        ["probe", "--pattern", "x", "--exclude-issue", "3"],
+        ["probe", "--fleet", "--pattern", "x"],
+        ["probe", "--fleet", "--issue", "5"],
+    ):
+        proc = subprocess.run(
+            [sys.executable, str(_HELPER_PATH), *argv],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        assert proc.returncode == 2, (argv, proc.returncode, proc.stdout, proc.stderr)
+
+
+def test_probe_fleet_helpers_real_body():
+    """Real-body coverage (code-style.md #906) for the fleet helpers the
+    unit cases stub: _fleet_gate_issues runs the real /proc scan through
+    _probe_matches (self-/ancestor-excluded by construction); _fleet_max
+    reads the real env."""
+    grouped = sb._fleet_gate_issues(None)
+    assert isinstance(grouped, dict)
+    own = sb._ancestor_pids()
+    for key, rows in grouped.items():
+        assert isinstance(key, str)
+        for pid, argv_text in rows:
+            assert pid not in own
+            assert isinstance(argv_text, str)
+    assert sb._fleet_max() >= 1

@@ -1,0 +1,102 @@
+{
+  "commit": "5f2b220a42",
+  "created": "2026-07-31T13:39:28Z",
+  "figsize": [
+    7.5,
+    3.8
+  ],
+  "points": [
+    {
+      "category": "casual writing / bare / contrastive (s42)",
+      "held-out-arm Spearman rho": 0.6386338150936078,
+      "_kind": "bar"
+    },
+    {
+      "category": "casual writing / persona / contrastive (s42)",
+      "held-out-arm Spearman rho": 0.6955701745999204,
+      "_kind": "bar"
+    },
+    {
+      "category": "casual writing / persona / contrastive full-FT (s42)",
+      "held-out-arm Spearman rho": 0.6584028945742554,
+      "_kind": "bar"
+    },
+    {
+      "category": "casual writing / persona / positive-only (s42)",
+      "held-out-arm Spearman rho": 0.7038569673190357,
+      "_kind": "bar"
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s137)",
+      "held-out-arm Spearman rho": 0.30768152956712774,
+      "_kind": "bar"
+    },
+    {
+      "category": "impoliteness / persona / contrastive (s42)",
+      "held-out-arm Spearman rho": 0.31309364818422303,
+      "_kind": "bar"
+    },
+    {
+      "category": "impoliteness / persona / contrastive full-FT (s42)",
+      "held-out-arm Spearman rho": 0.3151580282192803,
+      "_kind": "bar"
+    },
+    {
+      "category": "impoliteness / persona / positive-only (s42)",
+      "held-out-arm Spearman rho": 0.32920156952885726,
+      "_kind": "bar"
+    },
+    {
+      "category": "sycophancy / bare / contrastive (s42)",
+      "held-out-arm Spearman rho": 0.5758832770444035,
+      "_kind": "bar"
+    },
+    {
+      "category": "sycophancy / conversation / contrastive (s42)",
+      "held-out-arm Spearman rho": 0.6324443263091347,
+      "_kind": "bar"
+    },
+    {
+      "category": "sycophancy / persona / contrastive full-FT (s42)",
+      "held-out-arm Spearman rho": 0.5767518404475109,
+      "_kind": "bar"
+    },
+    {
+      "category": "sycophancy / persona / positive-only (s42)",
+      "held-out-arm Spearman rho": 0.6272701022320881,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Fitted combination predictor \u2014 leave-one-arm-out",
+        "ylabel": "held-out-arm Spearman rho",
+        "xticklabels": [
+          "casual writing / bare / contrastive (s42)",
+          "casual writing / persona / contrastive (s42)",
+          "casual writing / persona / contrastive full-FT (s42)",
+          "casual writing / persona / positive-only (s42)",
+          "impoliteness / persona / contrastive (s137)",
+          "impoliteness / persona / contrastive (s42)",
+          "impoliteness / persona / contrastive full-FT (s42)",
+          "impoliteness / persona / positive-only (s42)",
+          "sycophancy / bare / contrastive (s42)",
+          "sycophancy / conversation / contrastive (s42)",
+          "sycophancy / persona / contrastive full-FT (s42)",
+          "sycophancy / persona / positive-only (s42)"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75"
+        ]
+      }
+    ]
+  }
+}

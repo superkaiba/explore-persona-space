@@ -1,0 +1,18 @@
+{
+  "max_rel_diffs": [
+    1.761822647307667,
+    0.531006645601103,
+    0.07115241188573895
+  ],
+  "tolerance": 0.0001,
+  "passed": false,
+  "meta": {
+    "git_commit": "3177139d0a2bc09d1ecc8a6e95ff13e92817ec6e",
+    "timestamp_utc": "2026-07-29T05:42:58.043119+00:00",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "python": "3.11.15",
+    "fold_seed": 0,
+    "n_folds": 6
+  }
+}

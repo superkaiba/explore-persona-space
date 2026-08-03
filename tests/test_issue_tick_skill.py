@@ -85,6 +85,19 @@ def test_issue_tick_skill_branches_on_verdict():
         assert verdict in body, f"skill must document the {verdict} verdict branch"
 
 
+def test_issue_tick_skill_documents_human_active_noop():
+    """#1629: the human-activity screen (a human (non-cron) user message in
+    this session's transcript converts a would-be STALE-REDRIVE to HEALTHY)
+    is documented in the skill AND implemented + kill-switched in
+    tick_triage.py. Presence checks only — never counts."""
+    body = ISSUE_TICK_SKILL.read_text()
+    assert "human-active" in body, "skill must document the human-activity screen (#1629)"
+    assert "EPM_TICK_HUMAN_ACTIVE_PROBE" in body, "skill must name the kill switch"
+    triage = (ROOT / "scripts" / "tick_triage.py").read_text()
+    assert "EPM_TICK_HUMAN_ACTIVE_PROBE" in triage, "tick_triage must carry the kill switch"
+    assert "EPM_TICK_HUMAN_PROBE_DEBUG" in triage, "tick_triage must carry the debug telemetry env"
+
+
 def test_issue_tick_skill_title_refresh_moved_to_watcher():
     body = ISSUE_TICK_SKILL.read_text()
     # The per-tick title refresh moved to the watcher's gate-push pass
@@ -387,8 +400,12 @@ _EXIT_SITE_ANCHORS = {
     "park-mode-gate": ("run CRON-TEARDOWN before parking", "window"),
     "step9b-awaiting-promotion": ("Run CRON-TEARDOWN now.", "window"),
     "step9c-3x-fail": ("FAIL after 3 rounds — open it", "window"),
-    "step10-auto-complete": (
-        "Run CRON-TEARDOWN before applying the terminal status",
+    "step10-auto-complete-experiment": (
+        "If `epm:merged` is ALREADY present",
+        "window",
+    ),
+    "step10d-terminal-teardown": (
+        "The `/issue-tick` backstop stayed armed through the",
         "window",
     ),
     "resume-row-promote-pending-unmerged": ("Step 9b auto-merge was interrupted", "line"),

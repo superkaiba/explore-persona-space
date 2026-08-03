@@ -238,7 +238,7 @@ Expected output file: /tmp/codex-followup-critic-<N>-output.md
 Marker start tag: <!-- epm:followup-value-critique-codex v1 -->
 Marker end tag: <!-- /epm:followup-value-critique-codex -->
 Expected marker kind: epm:followup-value-critique-codex
-Expected marker version: 1
+Expected marker round (head sentinel): 1 (posted top-level version: auto, max+1 — multiple parks over a task's life re-post the kind)
 Codex effort: high
 Codex write mode: false (read-only redundancy screen)
 ```
@@ -247,7 +247,8 @@ The orchestrator dispatches `scripts/codex_task.py` with
 `run_in_background=true`, reads the output file when notified, extracts +
 validates the marker block, retries via a fresh dispatch on malformed
 output (cap retries at 2), posts via `task.py post-marker <N>
-epm:followup-value-critique-codex --version 1`. On `epm:codex-task-failed`
+epm:followup-value-critique-codex` (OMIT `--version` — it auto-derives
+max+1; the round lives in the block's head sentinel). On `epm:codex-task-failed`
 or persistent malformed output, the orchestrator falls back to
 single-Claude-critic per `workflow.yaml § ensemble_review`. On a
 trigger-dense round (recognition per trigger-dense-review.md "Fires

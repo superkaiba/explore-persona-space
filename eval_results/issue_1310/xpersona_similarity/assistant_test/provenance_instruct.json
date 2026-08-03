@@ -1,0 +1,90 @@
+{
+  "metadata": {
+    "git_commit": "43d49d3e27942f1c0703056b7368f9a790fbad64",
+    "timestamp": "2026-07-23T17:13:21Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1310_xpersona_assistant_test.py",
+    "issue": 931
+  },
+  "model_kind": "instruct",
+  "cells": [
+    "r1_qa_oneline",
+    "r2_op",
+    "r4_fictionframe"
+  ],
+  "cell_desc": {
+    "r1_qa_oneline": "assistant bare Q&A",
+    "r2_op": "Wren bare Q&A (on-policy)",
+    "r4_fictionframe": "Wren in scene"
+  },
+  "per_cell_kept_n": {
+    "r1_qa_oneline": 4423,
+    "r2_op": 4604,
+    "r4_fictionframe": 4841
+  },
+  "intersection_n": 4375,
+  "n_scenarios": 300,
+  "fold_grouping": "scenario (from r4_fictionframe qid->scenario map); shared across all 3 cells; leakage-safe for r4, stricter-but-harmless for r1/r2 (their #1335 native grouping is per-row/question)",
+  "pairing_key": "question id (row_id `q{q_idx:05d}` suffix)",
+  "arm": "ctx (X=x_spanmean v_C <=512 ctx tokens; Y=y reply-span mean)",
+  "reuse_fitness": {
+    "r1_qa_oneline": {
+      "render_config_hash": "f8bef34c378ac04f",
+      "code_sha": "b5043c0edd021cb3de3ce6c5dc93d51801f26804",
+      "shape_per_row": [
+        28,
+        3584
+      ],
+      "keys": [
+        "x_spanmean",
+        "x_prefixmean",
+        "y",
+        "x_last"
+      ],
+      "has_x_spanmean": true,
+      "has_y": true,
+      "n_rows": 4423,
+      "row_ids_carry_question": true
+    },
+    "r2_op": {
+      "render_config_hash": "755bddcf5d2b5369",
+      "code_sha": "b5043c0edd021cb3de3ce6c5dc93d51801f26804",
+      "shape_per_row": [
+        28,
+        3584
+      ],
+      "keys": [
+        "x_spanmean",
+        "x_prefixmean",
+        "y",
+        "x_last"
+      ],
+      "has_x_spanmean": true,
+      "has_y": true,
+      "n_rows": 4604,
+      "row_ids_carry_question": true
+    },
+    "r4_fictionframe": {
+      "render_config_hash": "1c5d9682b5a98bf3",
+      "code_sha": "b5043c0edd021cb3de3ce6c5dc93d51801f26804",
+      "shape_per_row": [
+        28,
+        3584
+      ],
+      "keys": [
+        "x_spanmean",
+        "x_prefixmean",
+        "y",
+        "x_last"
+      ],
+      "has_x_spanmean": true,
+      "has_y": true,
+      "n_rows": 4841,
+      "row_ids_carry_question": true
+    }
+  },
+  "hf_repo": "superkaiba1/explore-persona-space-data",
+  "hf_prefix": "issue1335_ablation_ladder/analysis_tensors",
+  "hf_revision": "a02089179f142e8d78ab6725f589f796fa03f4e9"
+}

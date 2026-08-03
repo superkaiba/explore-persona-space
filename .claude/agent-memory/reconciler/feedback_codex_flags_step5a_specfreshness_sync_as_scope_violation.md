@@ -1,6 +1,6 @@
 ---
 name: codex-flags-Step5a-spec-freshness-sync-as-out-of-scope
-description: Codex FAILs an experiment branch for "bundling .claude/* workflow-surface edits" when the commits are the PRESCRIBED Step 5a spec-freshness sync FROM main. Verify the commit title + that every changed .claude line already exists on main before crediting the scope-violation framing.
+description: Codex FAILs an experiment branch for "bundling .claude/* workflow-surface edits" when the commits are the PRESCRIBED Step 5a spec-freshness sync FROM origin/main (from local main pre-#1747). Verify the commit title (either era's form) + that every changed .claude file matches origin/main before crediting the scope-violation framing.
 metadata:
   type: feedback
 ---
@@ -12,16 +12,28 @@ separate workflow-spec PR" — DISCARD it as ungrounded if the commits are the
 mandated Step 5a spec-freshness sync. Two-check diagnostic:
 
 1. **Commit title.** `git log origin/main..HEAD --oneline -- '.claude/**'` — the
-   sync commits carry the VERBATIM title `issue-<N>: sync workflow-surface specs
-   from main (spec-freshness)`, which `.claude/skills/issue/SKILL.md` Step 5a
-   prescribes literally (the `git commit -m` line). Step 5a is MANDATORY
-   ("Spec-freshness check first ... applies at EVERY ensemble/agent fan-out")
-   and does exactly `git checkout main -- $SAFE_SPECS` over the workflow surface
-   (`.claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md`).
-2. **Direction of the change.** `git grep -c '<flagged line>' origin/main -- <path>`
-   for each changed `.claude/*` line — if it ALREADY EXISTS on main, the branch
-   is importing main's content INTO the worktree (bringing stale worktree specs
-   up to date), NOT introducing edits TO main. Worktrees load agent/skill specs
+   sync commits carry a VERBATIM prescribed title, in EITHER era's form: the
+   current `issue-<N>: sync workflow-surface specs from origin/main
+   (spec-freshness)` (#1747+) or the historical `issue-<N>: sync
+   workflow-surface specs from main (spec-freshness)` (pre-#1747 commits keep
+   the old title) — each is `.claude/skills/issue/SKILL.md` Step 5a's literal
+   `git commit -m` line of its era. Step 5a is MANDATORY ("Spec-freshness
+   check first ... applies at EVERY ensemble/agent fan-out") and does exactly
+   `git checkout origin/main -- $SAFE_SPECS` over the workflow surface
+   (the SKILL.md `SPECS=` list — `.claude/agents .claude/skills .claude/rules
+   .claude/workflow.yaml CLAUDE.md` plus the #1560/#1714 lint/guard family
+   entries; read the live list from Step 5a; sourced from local `main` before
+   #1747).
+2. **Direction of the change.** Prefer the whole-file check against
+   `origin/main:<file>`: blob-sha equality
+   (`git rev-parse origin/main:<path>` == `git rev-parse HEAD:<path>`, or an
+   empty `git diff origin/main -- <path>`) proves the synced file matches
+   origin/main BY CONSTRUCTION — the sync checks out origin/main's bytes, and
+   LOCAL `main` may lag origin and mismatch a correctly-synced file. Per-line
+   fallback: `git grep -c '<flagged line>' origin/main -- <path>`
+   for each changed `.claude/*` line — if it ALREADY EXISTS on origin/main, the
+   branch is importing main's content INTO the worktree (bringing stale worktree
+   specs up to date), NOT introducing edits TO main. Worktrees load agent/skill specs
    from the SESSION cwd, so a worktree cut before a later workflow fix runs STALE
    specs without this sync (incident #557 r2). The "no merge base" three-dot diff
    shows these as "changes" only because the branch's merge-base predates main's

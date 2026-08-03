@@ -1,0 +1,131 @@
+{
+  "commit": "0a6f324d02",
+  "created": "2026-08-02T00:32:59Z",
+  "figsize": [
+    8.0,
+    6.4
+  ],
+  "points": [
+    {
+      "P(winner) per draw": 0.00025,
+      "y": 0.0005,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": 0.07525,
+      "y": 0.1505,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": 0.1395,
+      "y": 0.279,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": "0.0",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": 0.0005,
+      "y": 0.001,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": "0.0",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": "0.0",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": "0.0",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": 0.0055,
+      "y": 0.011,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": 0.279,
+      "y": 0.558,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 10,
+  "text": {
+    "suptitle": "marker race \u2014 gray left marks = per-query-grain medians (parent run, span-mean position)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "\u0394 log P(marker) \u2014 within-arm Spearman rho",
+        "annotations": [
+          "med +0.16",
+          "+0.09",
+          "med +0.28",
+          "med +0.37",
+          "+0.38",
+          "med -0.02",
+          "+0.21",
+          "med -0.01",
+          "+0.38",
+          "med -0.12",
+          "+0.04",
+          "med -0.28",
+          "+0.24",
+          "med -0.20",
+          "+0.23",
+          "med +0.09",
+          "-0.37",
+          "med +0.43",
+          "+0.09"
+        ],
+        "xticklabels": [
+          "marker bare-context contrastive",
+          "marker conversation contrastive",
+          "marker ICL contrastive",
+          "marker persona contrastive",
+          "marker persona full fine-tune",
+          "marker persona positive-only"
+        ],
+        "yticklabels": [
+          "context similarity",
+          "nearest training rows (answer)",
+          "answer similarity",
+          "through-map context sim",
+          "through-map predicted-answer sim",
+          "whitened gate",
+          "read-out projection (direct)",
+          "read-out projection (through map)",
+          "base propensity",
+          "nearest training rows (context)"
+        ]
+      },
+      {
+        "title": "winner probability (rows as left panel)\nselection-inherited CI on max median [+0.30,+0.59]",
+        "xlabel": "P(winner) per draw",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

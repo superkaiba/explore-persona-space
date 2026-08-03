@@ -1,0 +1,2652 @@
+{
+  "commit": "9c9dc0a19f",
+  "created": "2026-07-23T03:58:49Z",
+  "figsize": [
+    5.2,
+    3.4
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "y": 7.200157642364502,
+      "series": "cross_00_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "y": 4.819563865661621,
+      "series": "cross_00_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "y": 3.2788197994232178,
+      "series": "cross_00_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "y": 1.3871256113052368,
+      "series": "cross_00_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "y": 0.9288575053215027,
+      "series": "cross_00_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "y": 0.7572546601295471,
+      "series": "cross_00_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "y": 0.7266100645065308,
+      "series": "cross_00_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "y": 0.6324012279510498,
+      "series": "cross_00_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "y": 0.5799601078033447,
+      "series": "cross_00_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "y": 0.5095587372779846,
+      "series": "cross_00_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "y": 0.4860721230506897,
+      "series": "cross_00_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "y": 0.5514274835586548,
+      "series": "cross_00_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "y": 1.0940958261489868,
+      "series": "cross_00_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "y": 7.571747303009033,
+      "series": "cross_01_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "y": 4.998495578765869,
+      "series": "cross_01_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "y": 2.3040201663970947,
+      "series": "cross_01_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "y": 0.8158551454544067,
+      "series": "cross_01_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "y": 0.5503191947937012,
+      "series": "cross_01_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "y": 0.4928308129310608,
+      "series": "cross_01_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "y": 0.42524516582489014,
+      "series": "cross_01_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "y": 0.41709381341934204,
+      "series": "cross_01_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "y": 0.4012698829174042,
+      "series": "cross_01_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "y": 0.38881468772888184,
+      "series": "cross_01_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "y": 0.35861361026763916,
+      "series": "cross_01_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "y": 0.4450654685497284,
+      "series": "cross_01_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "y": 0.9964959621429443,
+      "series": "cross_01_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "y": 7.458062171936035,
+      "series": "cross_02_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "y": 4.354019641876221,
+      "series": "cross_02_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "y": 2.7871742248535156,
+      "series": "cross_02_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "y": 1.4862327575683594,
+      "series": "cross_02_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "y": 0.9932389259338379,
+      "series": "cross_02_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "y": 0.8827304244041443,
+      "series": "cross_02_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "y": 0.7638865113258362,
+      "series": "cross_02_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "y": 0.7045443058013916,
+      "series": "cross_02_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "y": 0.7354604005813599,
+      "series": "cross_02_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "y": 0.6210592985153198,
+      "series": "cross_02_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "y": 0.5698536038398743,
+      "series": "cross_02_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 11.0,
+      "y": 0.6157429814338684,
+      "series": "cross_02_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 12.0,
+      "y": 1.5883384943008423,
+      "series": "cross_02_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "y": 8.990482330322266,
+      "series": "cross_03_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "y": 5.28904390335083,
+      "series": "cross_03_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "y": 3.9164910316467285,
+      "series": "cross_03_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "y": 2.104811668395996,
+      "series": "cross_03_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "y": 1.405450463294983,
+      "series": "cross_03_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "y": 1.294000506401062,
+      "series": "cross_03_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "y": 1.1933045387268066,
+      "series": "cross_03_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "y": 0.9850932955741882,
+      "series": "cross_03_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "y": 0.9047369360923767,
+      "series": "cross_03_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 9.0,
+      "y": 1.0055358409881592,
+      "series": "cross_03_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 10.0,
+      "y": 0.9452804923057556,
+      "series": "cross_03_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 11.0,
+      "y": 0.9080232977867126,
+      "series": "cross_03_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 12.0,
+      "y": 1.9174062013626099,
+      "series": "cross_03_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "y": 10.680776596069336,
+      "series": "cross_04_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": 5.0259904861450195,
+      "series": "cross_04_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": 2.390847682952881,
+      "series": "cross_04_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "y": 0.7527911067008972,
+      "series": "cross_04_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "y": 0.4586791396141052,
+      "series": "cross_04_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "y": 0.4527880847454071,
+      "series": "cross_04_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "y": 0.43425601720809937,
+      "series": "cross_04_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "y": 0.41812896728515625,
+      "series": "cross_04_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "y": 0.34008464217185974,
+      "series": "cross_04_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 9.0,
+      "y": 0.37984007596969604,
+      "series": "cross_04_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 10.0,
+      "y": 0.3853721022605896,
+      "series": "cross_04_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 11.0,
+      "y": 0.42003268003463745,
+      "series": "cross_04_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 12.0,
+      "y": 1.74921452999115,
+      "series": "cross_04_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "y": 7.698940277099609,
+      "series": "cross_05_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 3.620361566543579,
+      "series": "cross_05_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 1.6859463453292847,
+      "series": "cross_05_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": 0.6428140997886658,
+      "series": "cross_05_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 0.5022175312042236,
+      "series": "cross_05_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "y": 0.4712828993797302,
+      "series": "cross_05_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "y": 0.4357333481311798,
+      "series": "cross_05_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "y": 0.44799816608428955,
+      "series": "cross_05_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "y": 0.3857939541339874,
+      "series": "cross_05_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 9.0,
+      "y": 0.3729877471923828,
+      "series": "cross_05_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 10.0,
+      "y": 0.31706103682518005,
+      "series": "cross_05_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 11.0,
+      "y": 0.3358251452445984,
+      "series": "cross_05_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 12.0,
+      "y": 1.8260746002197266,
+      "series": "cross_05_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "y": 9.047896385192871,
+      "series": "cross_06_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "y": 5.494823932647705,
+      "series": "cross_06_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "y": 3.512556791305542,
+      "series": "cross_06_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "y": 1.7330771684646606,
+      "series": "cross_06_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "y": 1.3905577659606934,
+      "series": "cross_06_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "y": 1.2348908185958862,
+      "series": "cross_06_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "y": 1.037611722946167,
+      "series": "cross_06_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "y": 0.9845038652420044,
+      "series": "cross_06_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "y": 0.9116118550300598,
+      "series": "cross_06_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 9.0,
+      "y": 0.8826386332511902,
+      "series": "cross_06_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 10.0,
+      "y": 0.7842504978179932,
+      "series": "cross_06_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 11.0,
+      "y": 0.7619324922561646,
+      "series": "cross_06_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 12.0,
+      "y": 1.9444586038589478,
+      "series": "cross_06_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "y": 6.386655330657959,
+      "series": "cross_07_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 4.071081638336182,
+      "series": "cross_07_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": 2.8437435626983643,
+      "series": "cross_07_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": 1.5442559719085693,
+      "series": "cross_07_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": 1.092556118965149,
+      "series": "cross_07_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "y": 0.8661249279975891,
+      "series": "cross_07_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "y": 0.8177775740623474,
+      "series": "cross_07_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "y": 0.701678454875946,
+      "series": "cross_07_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "y": 0.710594892501831,
+      "series": "cross_07_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 9.0,
+      "y": 0.6566559076309204,
+      "series": "cross_07_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 10.0,
+      "y": 0.6347385048866272,
+      "series": "cross_07_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 11.0,
+      "y": 0.6238091588020325,
+      "series": "cross_07_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 12.0,
+      "y": 1.6954970359802246,
+      "series": "cross_07_evil_to_hallucination",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "y": 10.369619369506836,
+      "series": "cross_08_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "y": 7.1098432540893555,
+      "series": "cross_08_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "y": 5.057355880737305,
+      "series": "cross_08_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "y": 2.07602858543396,
+      "series": "cross_08_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "y": 1.9750086069107056,
+      "series": "cross_08_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "y": 1.8205537796020508,
+      "series": "cross_08_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.0,
+      "y": 1.4965840578079224,
+      "series": "cross_08_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 7.0,
+      "y": 1.3964955806732178,
+      "series": "cross_08_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 8.0,
+      "y": 1.1934376955032349,
+      "series": "cross_08_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 9.0,
+      "y": 1.1323661804199219,
+      "series": "cross_08_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 10.0,
+      "y": 1.4709452390670776,
+      "series": "cross_08_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 11.0,
+      "y": 1.1479723453521729,
+      "series": "cross_08_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 12.0,
+      "y": 3.61908221244812,
+      "series": "cross_08_sycophancy_to_evil",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "y": 9.043864250183105,
+      "series": "cross_09_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": 4.693100452423096,
+      "series": "cross_09_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "y": 2.5618345737457275,
+      "series": "cross_09_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "y": 1.2663270235061646,
+      "series": "cross_09_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "y": 0.9605366587638855,
+      "series": "cross_09_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "y": 0.7614023685455322,
+      "series": "cross_09_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 6.0,
+      "y": 0.6890456676483154,
+      "series": "cross_09_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 7.0,
+      "y": 0.656822144985199,
+      "series": "cross_09_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 8.0,
+      "y": 0.6327584385871887,
+      "series": "cross_09_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 9.0,
+      "y": 0.5976861715316772,
+      "series": "cross_09_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 10.0,
+      "y": 0.5814092755317688,
+      "series": "cross_09_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 11.0,
+      "y": 0.7546828389167786,
+      "series": "cross_09_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 12.0,
+      "y": 2.2845261096954346,
+      "series": "cross_09_sycophancy_to_hallucination",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "y": 8.384848594665527,
+      "series": "cross_10_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "y": 4.856518268585205,
+      "series": "cross_10_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "y": 2.1049563884735107,
+      "series": "cross_10_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "y": 0.538435697555542,
+      "series": "cross_10_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "y": 0.44974613189697266,
+      "series": "cross_10_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.0,
+      "y": 0.39304104447364807,
+      "series": "cross_10_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 6.0,
+      "y": 0.3525697886943817,
+      "series": "cross_10_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 7.0,
+      "y": 0.35828638076782227,
+      "series": "cross_10_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 8.0,
+      "y": 0.33355510234832764,
+      "series": "cross_10_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 9.0,
+      "y": 0.2977789640426636,
+      "series": "cross_10_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 10.0,
+      "y": 0.2798774540424347,
+      "series": "cross_10_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 11.0,
+      "y": 0.38279837369918823,
+      "series": "cross_10_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 12.0,
+      "y": 1.4947870969772339,
+      "series": "cross_10_hallucination_to_evil",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "y": 6.235605716705322,
+      "series": "cross_11_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "y": 3.458470344543457,
+      "series": "cross_11_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "y": 1.428530216217041,
+      "series": "cross_11_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "y": 0.5451177358627319,
+      "series": "cross_11_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "y": 0.4580755829811096,
+      "series": "cross_11_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "y": 0.41874098777770996,
+      "series": "cross_11_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 6.0,
+      "y": 0.38984501361846924,
+      "series": "cross_11_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 7.0,
+      "y": 0.40317681431770325,
+      "series": "cross_11_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 8.0,
+      "y": 0.4060036242008209,
+      "series": "cross_11_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 9.0,
+      "y": 0.35608622431755066,
+      "series": "cross_11_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 10.0,
+      "y": 0.34102359414100647,
+      "series": "cross_11_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 11.0,
+      "y": 0.41102078557014465,
+      "series": "cross_11_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 12.0,
+      "y": 1.4911311864852905,
+      "series": "cross_11_hallucination_to_sycophancy",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "y": 8.491467475891113,
+      "series": "cross_12_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "y": 3.964073657989502,
+      "series": "cross_12_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "y": 3.078895330429077,
+      "series": "cross_12_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "y": 1.6798864603042603,
+      "series": "cross_12_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "y": 1.22866690158844,
+      "series": "cross_12_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.0,
+      "y": 1.1843241453170776,
+      "series": "cross_12_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 6.0,
+      "y": 0.9511913657188416,
+      "series": "cross_12_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 7.0,
+      "y": 0.9224278330802917,
+      "series": "cross_12_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 8.0,
+      "y": 0.8512357473373413,
+      "series": "cross_12_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 9.0,
+      "y": 0.7710819244384766,
+      "series": "cross_12_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 10.0,
+      "y": 0.7855998873710632,
+      "series": "cross_12_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 11.0,
+      "y": 0.7422944903373718,
+      "series": "cross_12_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 12.0,
+      "y": 2.0317633152008057,
+      "series": "cross_12_evil_to_sycophancy",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 16.608036041259766,
+      "series": "m685_00_sycophancy",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 12.063582420349121,
+      "series": "m685_00_sycophancy",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "y": 9.134989738464355,
+      "series": "m685_00_sycophancy",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "y": 3.90295147895813,
+      "series": "m685_00_sycophancy",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "y": 2.7135143280029297,
+      "series": "m685_00_sycophancy",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.0,
+      "y": 2.5089313983917236,
+      "series": "m685_00_sycophancy",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 6.0,
+      "y": 2.543057680130005,
+      "series": "m685_00_sycophancy",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 7.0,
+      "y": 2.446897506713867,
+      "series": "m685_00_sycophancy",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 8.0,
+      "y": 1.929742693901062,
+      "series": "m685_00_sycophancy",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 9.0,
+      "y": 1.9655874967575073,
+      "series": "m685_00_sycophancy",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 10.0,
+      "y": 1.8066673278808594,
+      "series": "m685_00_sycophancy",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 11.0,
+      "y": 1.5999078750610352,
+      "series": "m685_00_sycophancy",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 12.0,
+      "y": 2.32901668548584,
+      "series": "m685_00_sycophancy",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "y": 17.874860763549805,
+      "series": "m685_01_refusal",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "y": 11.680974006652832,
+      "series": "m685_01_refusal",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "y": 6.265692710876465,
+      "series": "m685_01_refusal",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "y": 3.127103567123413,
+      "series": "m685_01_refusal",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "y": 1.7296302318572998,
+      "series": "m685_01_refusal",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.0,
+      "y": 1.1632786989212036,
+      "series": "m685_01_refusal",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 6.0,
+      "y": 0.9124735593795776,
+      "series": "m685_01_refusal",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 7.0,
+      "y": 0.7791506052017212,
+      "series": "m685_01_refusal",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 8.0,
+      "y": 0.9297446608543396,
+      "series": "m685_01_refusal",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 9.0,
+      "y": 0.8018118143081665,
+      "series": "m685_01_refusal",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 10.0,
+      "y": 0.7480987310409546,
+      "series": "m685_01_refusal",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 11.0,
+      "y": 0.967781126499176,
+      "series": "m685_01_refusal",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 12.0,
+      "y": 2.896158218383789,
+      "series": "m685_01_refusal",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "y": 14.038656234741211,
+      "series": "m685_02_evil",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "y": 9.350333213806152,
+      "series": "m685_02_evil",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "y": 6.597329139709473,
+      "series": "m685_02_evil",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "y": 3.55562424659729,
+      "series": "m685_02_evil",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "y": 2.552372694015503,
+      "series": "m685_02_evil",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "y": 2.1747896671295166,
+      "series": "m685_02_evil",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 6.0,
+      "y": 2.059014081954956,
+      "series": "m685_02_evil",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 7.0,
+      "y": 1.9307643175125122,
+      "series": "m685_02_evil",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 8.0,
+      "y": 1.8765980005264282,
+      "series": "m685_02_evil",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 9.0,
+      "y": 1.8931106328964233,
+      "series": "m685_02_evil",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 10.0,
+      "y": 1.7155755758285522,
+      "series": "m685_02_evil",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 11.0,
+      "y": 1.5176520347595215,
+      "series": "m685_02_evil",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 12.0,
+      "y": 2.0350418090820312,
+      "series": "m685_02_evil",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "y": 15.23719310760498,
+      "series": "m685_03_hedging",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "y": 10.226316452026367,
+      "series": "m685_03_hedging",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "y": 6.613474369049072,
+      "series": "m685_03_hedging",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.0,
+      "y": 2.859964370727539,
+      "series": "m685_03_hedging",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.0,
+      "y": 2.2448177337646484,
+      "series": "m685_03_hedging",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "y": 2.180917501449585,
+      "series": "m685_03_hedging",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 6.0,
+      "y": 1.5825742483139038,
+      "series": "m685_03_hedging",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 7.0,
+      "y": 1.3540840148925781,
+      "series": "m685_03_hedging",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 8.0,
+      "y": 1.4216654300689697,
+      "series": "m685_03_hedging",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 9.0,
+      "y": 1.4126107692718506,
+      "series": "m685_03_hedging",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 10.0,
+      "y": 1.2726999521255493,
+      "series": "m685_03_hedging",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 11.0,
+      "y": 1.7761846780776978,
+      "series": "m685_03_hedging",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 12.0,
+      "y": 2.4187376499176025,
+      "series": "m685_03_hedging",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.0,
+      "y": 14.92557144165039,
+      "series": "m685_04_terse [terse]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "y": 11.22201919555664,
+      "series": "m685_04_terse [terse]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "y": 4.627179145812988,
+      "series": "m685_04_terse [terse]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.0,
+      "y": 1.5943511724472046,
+      "series": "m685_04_terse [terse]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.0,
+      "y": 1.0912425518035889,
+      "series": "m685_04_terse [terse]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "y": 0.9447779059410095,
+      "series": "m685_04_terse [terse]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 6.0,
+      "y": 0.8692494034767151,
+      "series": "m685_04_terse [terse]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 7.0,
+      "y": 0.7612243890762329,
+      "series": "m685_04_terse [terse]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 8.0,
+      "y": 0.7354844212532043,
+      "series": "m685_04_terse [terse]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 9.0,
+      "y": 0.7641494870185852,
+      "series": "m685_04_terse [terse]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 10.0,
+      "y": 0.7155417203903198,
+      "series": "m685_04_terse [terse]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 11.0,
+      "y": 0.5807949304580688,
+      "series": "m685_04_terse [terse]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 12.0,
+      "y": 1.6960927248001099,
+      "series": "m685_04_terse [terse]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "y": 15.0055570602417,
+      "series": "m685_05_formal [formal]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "y": 10.002066612243652,
+      "series": "m685_05_formal [formal]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "y": 5.725797176361084,
+      "series": "m685_05_formal [formal]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.0,
+      "y": 2.9363019466400146,
+      "series": "m685_05_formal [formal]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.0,
+      "y": 2.3114166259765625,
+      "series": "m685_05_formal [formal]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 5.0,
+      "y": 1.8689968585968018,
+      "series": "m685_05_formal [formal]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 6.0,
+      "y": 1.6491546630859375,
+      "series": "m685_05_formal [formal]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 7.0,
+      "y": 1.5642491579055786,
+      "series": "m685_05_formal [formal]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 8.0,
+      "y": 1.4540555477142334,
+      "series": "m685_05_formal [formal]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 9.0,
+      "y": 1.3087761402130127,
+      "series": "m685_05_formal [formal]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 10.0,
+      "y": 1.2014983892440796,
+      "series": "m685_05_formal [formal]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 11.0,
+      "y": 1.2563579082489014,
+      "series": "m685_05_formal [formal]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 12.0,
+      "y": 1.9122580289840698,
+      "series": "m685_05_formal [formal]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "y": 11.499739646911621,
+      "series": "m685_06_villain [villain]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "y": 8.425872802734375,
+      "series": "m685_06_villain [villain]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "y": 6.2032341957092285,
+      "series": "m685_06_villain [villain]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 3.0,
+      "y": 3.042793035507202,
+      "series": "m685_06_villain [villain]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.0,
+      "y": 2.5478813648223877,
+      "series": "m685_06_villain [villain]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 5.0,
+      "y": 2.14337158203125,
+      "series": "m685_06_villain [villain]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "y": 1.9469504356384277,
+      "series": "m685_06_villain [villain]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 7.0,
+      "y": 1.3878722190856934,
+      "series": "m685_06_villain [villain]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 8.0,
+      "y": 1.3460936546325684,
+      "series": "m685_06_villain [villain]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 9.0,
+      "y": 1.5655782222747803,
+      "series": "m685_06_villain [villain]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 10.0,
+      "y": 1.3687447309494019,
+      "series": "m685_06_villain [villain]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 11.0,
+      "y": 1.242874026298523,
+      "series": "m685_06_villain [villain]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 12.0,
+      "y": 1.8483396768569946,
+      "series": "m685_06_villain [villain]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.0,
+      "y": 8.169940948486328,
+      "series": "m685_07_medical_doctor [medical_noise_target]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "y": 6.185857772827148,
+      "series": "m685_07_medical_doctor [medical_noise_target]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "y": 3.055253028869629,
+      "series": "m685_07_medical_doctor [medical_noise_target]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "y": 0.7200532555580139,
+      "series": "m685_07_medical_doctor [medical_noise_target]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 4.0,
+      "y": 0.469359427690506,
+      "series": "m685_07_medical_doctor [medical_noise_target]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 5.0,
+      "y": 0.4855196177959442,
+      "series": "m685_07_medical_doctor [medical_noise_target]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "y": 0.39884939789772034,
+      "series": "m685_07_medical_doctor [medical_noise_target]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 7.0,
+      "y": 0.40585967898368835,
+      "series": "m685_07_medical_doctor [medical_noise_target]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 8.0,
+      "y": 0.3192814886569977,
+      "series": "m685_07_medical_doctor [medical_noise_target]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 9.0,
+      "y": 0.3090510368347168,
+      "series": "m685_07_medical_doctor [medical_noise_target]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 10.0,
+      "y": 0.3032556176185608,
+      "series": "m685_07_medical_doctor [medical_noise_target]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 11.0,
+      "y": 0.6091192364692688,
+      "series": "m685_07_medical_doctor [medical_noise_target]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 12.0,
+      "y": 1.438630223274231,
+      "series": "m685_07_medical_doctor [medical_noise_target]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 0.0,
+      "y": 15.401124954223633,
+      "series": "m685_08_french_person",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.0,
+      "y": 8.845340728759766,
+      "series": "m685_08_french_person",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.0,
+      "y": 7.178129196166992,
+      "series": "m685_08_french_person",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "y": 2.991364002227783,
+      "series": "m685_08_french_person",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.0,
+      "y": 1.657649278640747,
+      "series": "m685_08_french_person",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 5.0,
+      "y": 1.6244544982910156,
+      "series": "m685_08_french_person",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 6.0,
+      "y": 1.5266685485839844,
+      "series": "m685_08_french_person",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "y": 1.5414164066314697,
+      "series": "m685_08_french_person",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 8.0,
+      "y": 1.3926186561584473,
+      "series": "m685_08_french_person",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 9.0,
+      "y": 1.3066961765289307,
+      "series": "m685_08_french_person",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 10.0,
+      "y": 1.2073484659194946,
+      "series": "m685_08_french_person",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 11.0,
+      "y": 1.269600510597229,
+      "series": "m685_08_french_person",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 12.0,
+      "y": 2.2304422855377197,
+      "series": "m685_08_french_person",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 10.488890647888184,
+      "series": "m685_09_comedian",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "y": 7.650802135467529,
+      "series": "m685_09_comedian",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.0,
+      "y": 4.2129740715026855,
+      "series": "m685_09_comedian",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 3.0,
+      "y": 1.7801461219787598,
+      "series": "m685_09_comedian",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 4.0,
+      "y": 1.5609047412872314,
+      "series": "m685_09_comedian",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 5.0,
+      "y": 1.126074194908142,
+      "series": "m685_09_comedian",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 6.0,
+      "y": 0.9599788784980774,
+      "series": "m685_09_comedian",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "y": 0.8965637683868408,
+      "series": "m685_09_comedian",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 8.0,
+      "y": 0.8696452379226685,
+      "series": "m685_09_comedian",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 9.0,
+      "y": 0.7297492027282715,
+      "series": "m685_09_comedian",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 10.0,
+      "y": 0.7719525694847107,
+      "series": "m685_09_comedian",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 11.0,
+      "y": 0.9569533467292786,
+      "series": "m685_09_comedian",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 12.0,
+      "y": 2.0045409202575684,
+      "series": "m685_09_comedian",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.0,
+      "y": 19.019968032836914,
+      "series": "m779_00_evil",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.0,
+      "y": 10.88444995880127,
+      "series": "m779_00_evil",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": 5.198244094848633,
+      "series": "m779_00_evil",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 3.0,
+      "y": 2.1890177726745605,
+      "series": "m779_00_evil",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 4.0,
+      "y": 1.8561978340148926,
+      "series": "m779_00_evil",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 5.0,
+      "y": 1.4469627141952515,
+      "series": "m779_00_evil",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 6.0,
+      "y": 1.218605399131775,
+      "series": "m779_00_evil",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "y": 1.3476005792617798,
+      "series": "m779_00_evil",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 8.0,
+      "y": 1.187069296836853,
+      "series": "m779_00_evil",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 9.0,
+      "y": 1.1110445261001587,
+      "series": "m779_00_evil",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 10.0,
+      "y": 1.1027439832687378,
+      "series": "m779_00_evil",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 11.0,
+      "y": 0.935055673122406,
+      "series": "m779_00_evil",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 12.0,
+      "y": 1.8766812086105347,
+      "series": "m779_00_evil",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.0,
+      "y": 13.957619667053223,
+      "series": "m779_01_sycophancy",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "y": 7.62434720993042,
+      "series": "m779_01_sycophancy",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 2.0,
+      "y": 4.628303050994873,
+      "series": "m779_01_sycophancy",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 3.0,
+      "y": 2.6198344230651855,
+      "series": "m779_01_sycophancy",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 4.0,
+      "y": 1.6663079261779785,
+      "series": "m779_01_sycophancy",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 5.0,
+      "y": 1.191192626953125,
+      "series": "m779_01_sycophancy",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 6.0,
+      "y": 1.1600791215896606,
+      "series": "m779_01_sycophancy",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 7.0,
+      "y": 1.013283610343933,
+      "series": "m779_01_sycophancy",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 8.0,
+      "y": 0.9318135380744934,
+      "series": "m779_01_sycophancy",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 9.0,
+      "y": 0.9718830585479736,
+      "series": "m779_01_sycophancy",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 10.0,
+      "y": 1.022737979888916,
+      "series": "m779_01_sycophancy",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 11.0,
+      "y": 1.1316077709197998,
+      "series": "m779_01_sycophancy",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 12.0,
+      "y": 1.7996976375579834,
+      "series": "m779_01_sycophancy",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 13.989337921142578,
+      "series": "m779_02_hallucination",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 8.835237503051758,
+      "series": "m779_02_hallucination",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.0,
+      "y": 4.209092617034912,
+      "series": "m779_02_hallucination",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 3.0,
+      "y": 1.8907496929168701,
+      "series": "m779_02_hallucination",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 4.0,
+      "y": 1.443171739578247,
+      "series": "m779_02_hallucination",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 5.0,
+      "y": 1.1376506090164185,
+      "series": "m779_02_hallucination",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 6.0,
+      "y": 1.0960890054702759,
+      "series": "m779_02_hallucination",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 7.0,
+      "y": 1.0404072999954224,
+      "series": "m779_02_hallucination",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "y": 0.8860794901847839,
+      "series": "m779_02_hallucination",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 9.0,
+      "y": 0.7926625609397888,
+      "series": "m779_02_hallucination",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 10.0,
+      "y": 0.7046743631362915,
+      "series": "m779_02_hallucination",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 11.0,
+      "y": 0.678794801235199,
+      "series": "m779_02_hallucination",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 12.0,
+      "y": 1.7450165748596191,
+      "series": "m779_02_hallucination",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.0,
+      "y": 11.608012199401855,
+      "series": "m779_03_evil",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.0,
+      "y": 9.599808692932129,
+      "series": "m779_03_evil",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 2.0,
+      "y": 5.691001892089844,
+      "series": "m779_03_evil",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 3.0,
+      "y": 2.3731541633605957,
+      "series": "m779_03_evil",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 4.0,
+      "y": 1.8545665740966797,
+      "series": "m779_03_evil",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 5.0,
+      "y": 1.695297360420227,
+      "series": "m779_03_evil",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 6.0,
+      "y": 1.3789751529693604,
+      "series": "m779_03_evil",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 7.0,
+      "y": 1.3402208089828491,
+      "series": "m779_03_evil",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "y": 1.2545311450958252,
+      "series": "m779_03_evil",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 9.0,
+      "y": 1.191164493560791,
+      "series": "m779_03_evil",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 10.0,
+      "y": 1.2142555713653564,
+      "series": "m779_03_evil",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 11.0,
+      "y": 1.229540467262268,
+      "series": "m779_03_evil",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 12.0,
+      "y": 2.3446359634399414,
+      "series": "m779_03_evil",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 0.0,
+      "y": 13.530070304870605,
+      "series": "m779_04_sycophancy",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "y": 7.418276786804199,
+      "series": "m779_04_sycophancy",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 2.0,
+      "y": 4.745748996734619,
+      "series": "m779_04_sycophancy",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 3.0,
+      "y": 2.9189062118530273,
+      "series": "m779_04_sycophancy",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 4.0,
+      "y": 1.656981348991394,
+      "series": "m779_04_sycophancy",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 5.0,
+      "y": 1.401848554611206,
+      "series": "m779_04_sycophancy",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 6.0,
+      "y": 1.2441818714141846,
+      "series": "m779_04_sycophancy",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 7.0,
+      "y": 1.1045335531234741,
+      "series": "m779_04_sycophancy",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 8.0,
+      "y": 0.9546451568603516,
+      "series": "m779_04_sycophancy",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 9.0,
+      "y": 0.9723846912384033,
+      "series": "m779_04_sycophancy",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 10.0,
+      "y": 0.9464583992958069,
+      "series": "m779_04_sycophancy",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 11.0,
+      "y": 1.2719881534576416,
+      "series": "m779_04_sycophancy",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 12.0,
+      "y": 2.0335283279418945,
+      "series": "m779_04_sycophancy",
+      "_kind": "line",
+      "_group": 27
+    }
+  ],
+  "n_series": 28,
+  "total_points": 364,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "per-pair direct magnitude \u2014 steered/prefix/L14 (read L17)",
+        "legend_labels": [
+          "cross_00_evil_to_sycophancy",
+          "cross_01_evil_to_hallucination",
+          "cross_02_sycophancy_to_evil",
+          "cross_03_sycophancy_to_hallucination",
+          "cross_04_hallucination_to_evil",
+          "cross_05_hallucination_to_sycophancy",
+          "cross_06_evil_to_sycophancy",
+          "cross_07_evil_to_hallucination",
+          "cross_08_sycophancy_to_evil",
+          "cross_09_sycophancy_to_hallucination",
+          "cross_10_hallucination_to_evil",
+          "cross_11_hallucination_to_sycophancy",
+          "cross_12_evil_to_sycophancy",
+          "m685_00_sycophancy",
+          "m685_01_refusal",
+          "m685_02_evil",
+          "m685_03_hedging",
+          "m685_04_terse [terse]",
+          "m685_05_formal [formal]",
+          "m685_06_villain [villain]",
+          "m685_07_medical_doctor [medical_noise_target]",
+          "m685_08_french_person",
+          "m685_09_comedian",
+          "m779_00_evil",
+          "m779_01_sycophancy",
+          "m779_02_hallucination",
+          "m779_03_evil",
+          "m779_04_sycophancy"
+        ],
+        "xticklabels": [
+          "first",
+          "tok2_5",
+          "dec1",
+          "dec2",
+          "dec3",
+          "dec4",
+          "dec5",
+          "dec6",
+          "dec7",
+          "dec8",
+          "dec9",
+          "dec10",
+          "last"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ]
+      }
+    ],
+    "series": [
+      "cross_00_evil_to_sycophancy",
+      "cross_01_evil_to_hallucination",
+      "cross_02_sycophancy_to_evil",
+      "cross_03_sycophancy_to_hallucination",
+      "cross_04_hallucination_to_evil",
+      "cross_05_hallucination_to_sycophancy",
+      "cross_06_evil_to_sycophancy",
+      "cross_07_evil_to_hallucination",
+      "cross_08_sycophancy_to_evil",
+      "cross_09_sycophancy_to_hallucination",
+      "cross_10_hallucination_to_evil",
+      "cross_11_hallucination_to_sycophancy",
+      "cross_12_evil_to_sycophancy",
+      "m685_00_sycophancy",
+      "m685_01_refusal",
+      "m685_02_evil",
+      "m685_03_hedging",
+      "m685_04_terse [terse]",
+      "m685_05_formal [formal]",
+      "m685_06_villain [villain]",
+      "m685_07_medical_doctor [medical_noise_target]",
+      "m685_08_french_person",
+      "m685_09_comedian",
+      "m779_00_evil",
+      "m779_01_sycophancy",
+      "m779_02_hallucination",
+      "m779_03_evil",
+      "m779_04_sycophancy"
+    ]
+  }
+}

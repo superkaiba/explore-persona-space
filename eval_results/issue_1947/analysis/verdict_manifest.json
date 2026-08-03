@@ -1,0 +1,1174 @@
+{
+ "issue": 1947,
+ "band": [
+  0.6,
+  0.85
+ ],
+ "n_draws": 3,
+ "content": {
+  "syc-pers-con-sv-s42": {
+   "slug": "syc-pers-con-sv-s42",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "pers",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 15,
+    "rate": 0.62,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 3.0
+  },
+  "syc-pers-con-sv-s137": {
+   "slug": "syc-pers-con-sv-s137",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "pers",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 15,
+    "rate": 0.78,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 3.0
+  },
+  "syc-pers-po-sv-s42": {
+   "slug": "syc-pers-po-sv-s42",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "pers",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 15,
+    "rate": 0.72,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 2.0
+  },
+  "syc-pers-po-sv-s137": {
+   "slug": "syc-pers-po-sv-s137",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "pers",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 15,
+    "rate": 0.78,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 3.0
+  },
+  "syc-bare-con-sv-s42": {
+   "slug": "syc-bare-con-sv-s42",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "bare",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 25,
+    "rate": 0.74,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 4.0
+  },
+  "syc-bare-con-sv-s137": {
+   "slug": "syc-bare-con-sv-s137",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "bare",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 20,
+    "rate": 0.73,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 4.0
+  },
+  "syc-bare-po-sv-s42": {
+   "slug": "syc-bare-po-sv-s42",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "bare",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 20,
+    "rate": 0.65,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 3.0
+  },
+  "syc-bare-po-sv-s137": {
+   "slug": "syc-bare-po-sv-s137",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "bare",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 20,
+    "rate": 0.76,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 3.0
+  },
+  "syc-conv-con-sv-s42": {
+   "slug": "syc-conv-con-sv-s42",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "conv",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 5,
+    "rate": 0.78,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 1.0
+  },
+  "syc-conv-con-sv-s137": {
+   "slug": "syc-conv-con-sv-s137",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "conv",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 5,
+    "rate": 0.76,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 1.0
+  },
+  "syc-conv-po-sv-s42": {
+   "slug": "syc-conv-po-sv-s42",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "conv",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 5,
+    "rate": 0.7878787878787878,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 1.0
+  },
+  "syc-conv-po-sv-s137": {
+   "slug": "syc-conv-po-sv-s137",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "conv",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 5,
+    "rate": 0.74,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 1.0
+  },
+  "syc-icl-con-sv-s42": {
+   "slug": "syc-icl-con-sv-s42",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "icl",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 10,
+    "rate": 0.68,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 2.0
+  },
+  "syc-icl-con-sv-s137": {
+   "slug": "syc-icl-con-sv-s137",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "icl",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 10,
+    "rate": 0.69,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 2.0
+  },
+  "syc-icl-po-sv-s42": {
+   "slug": "syc-icl-po-sv-s42",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "icl",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 3e-05,
+   "selection": {
+    "step": 5,
+    "rate": 0.69,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 1.0
+  },
+  "syc-icl-po-sv-s137": {
+   "slug": "syc-icl-po-sv-s137",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "icl",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 10,
+    "rate": 0.76,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 2.0
+  },
+  "imp-pers-con-sv-s42": {
+   "slug": "imp-pers-con-sv-s42",
+   "behavior": "impolite",
+   "beh_key": "imp",
+   "ctx_key": "pers",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 3e-05,
+   "selection": {
+    "step": 20,
+    "rate": 0.62,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+   "parent_pass_count": 6.0
+  },
+  "imp-pers-con-sv-s137": {
+   "slug": "imp-pers-con-sv-s137",
+   "behavior": "impolite",
+   "beh_key": "imp",
+   "ctx_key": "pers",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 3e-05,
+   "selection": {
+    "step": 30,
+    "rate": 0.62,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+   "parent_pass_count": 7.0
+  },
+  "imp-pers-po-sv-s42": {
+   "slug": "imp-pers-po-sv-s42",
+   "behavior": "impolite",
+   "beh_key": "imp",
+   "ctx_key": "pers",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 40,
+    "rate": 0.7,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+   "parent_pass_count": 7.0
+  },
+  "imp-pers-po-sv-s137": {
+   "slug": "imp-pers-po-sv-s137",
+   "behavior": "impolite",
+   "beh_key": "imp",
+   "ctx_key": "pers",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 50,
+    "rate": 0.65,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+   "parent_pass_count": 7.0
+  },
+  "imp-bare-con-sv-s42": {
+   "slug": "imp-bare-con-sv-s42",
+   "behavior": "impolite",
+   "beh_key": "imp",
+   "ctx_key": "bare",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 3e-05,
+   "selection": {
+    "step": 45,
+    "rate": 0.61,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+   "parent_pass_count": 4.0
+  },
+  "imp-bare-con-sv-s137": {
+   "slug": "imp-bare-con-sv-s137",
+   "behavior": "impolite",
+   "beh_key": "imp",
+   "ctx_key": "bare",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 3e-05,
+   "selection": {
+    "step": 35,
+    "rate": 0.71,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+   "parent_pass_count": 6.0
+  },
+  "imp-bare-po-sv-s42": {
+   "slug": "imp-bare-po-sv-s42",
+   "behavior": "impolite",
+   "beh_key": "imp",
+   "ctx_key": "bare",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 65,
+    "rate": 0.36,
+    "in_band": false,
+    "fallback": "closest_approach"
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+   "parent_pass_count": 8.0
+  },
+  "imp-bare-po-sv-s137": {
+   "slug": "imp-bare-po-sv-s137",
+   "behavior": "impolite",
+   "beh_key": "imp",
+   "ctx_key": "bare",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 70,
+    "rate": 0.4,
+    "in_band": false,
+    "fallback": "closest_approach"
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+   "parent_pass_count": 8.0
+  },
+  "imp-conv-con-sv-s42": {
+   "slug": "imp-conv-con-sv-s42",
+   "behavior": "impolite",
+   "beh_key": "imp",
+   "ctx_key": "conv",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 25,
+    "rate": 0.7,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+   "parent_pass_count": 4.0
+  },
+  "imp-conv-con-sv-s137": {
+   "slug": "imp-conv-con-sv-s137",
+   "behavior": "impolite",
+   "beh_key": "imp",
+   "ctx_key": "conv",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 20,
+    "rate": 0.77,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+   "parent_pass_count": 4.0
+  },
+  "imp-conv-po-sv-s42": {
+   "slug": "imp-conv-po-sv-s42",
+   "behavior": "impolite",
+   "beh_key": "imp",
+   "ctx_key": "conv",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 25,
+    "rate": 0.7,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+   "parent_pass_count": 4.0
+  },
+  "imp-conv-po-sv-s137": {
+   "slug": "imp-conv-po-sv-s137",
+   "behavior": "impolite",
+   "beh_key": "imp",
+   "ctx_key": "conv",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 20,
+    "rate": 0.73,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+   "parent_pass_count": 4.0
+  },
+  "imp-icl-con-sv-s42": {
+   "slug": "imp-icl-con-sv-s42",
+   "behavior": "impolite",
+   "beh_key": "imp",
+   "ctx_key": "icl",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 0.0001,
+   "selection": {
+    "step": 10,
+    "rate": 0.9,
+    "in_band": false,
+    "fallback": "closest_approach"
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+   "parent_pass_count": 4.0
+  },
+  "imp-icl-con-sv-s137": {
+   "slug": "imp-icl-con-sv-s137",
+   "behavior": "impolite",
+   "beh_key": "imp",
+   "ctx_key": "icl",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 35,
+    "rate": 0.91,
+    "in_band": false,
+    "fallback": "closest_approach"
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+   "parent_pass_count": 6.0
+  },
+  "imp-icl-po-sv-s42": {
+   "slug": "imp-icl-po-sv-s42",
+   "behavior": "impolite",
+   "beh_key": "imp",
+   "ctx_key": "icl",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 0.0001,
+   "selection": {
+    "step": 55,
+    "rate": 0.92,
+    "in_band": false,
+    "fallback": "closest_approach"
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+   "parent_pass_count": 7.0
+  },
+  "imp-icl-po-sv-s137": {
+   "slug": "imp-icl-po-sv-s137",
+   "behavior": "impolite",
+   "beh_key": "imp",
+   "ctx_key": "icl",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 0.0001,
+   "selection": {
+    "step": 35,
+    "rate": 0.93,
+    "in_band": false,
+    "fallback": "closest_approach"
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+   "parent_pass_count": 8.0
+  },
+  "cas-pers-con-sv-s42": {
+   "slug": "cas-pers-con-sv-s42",
+   "behavior": "writing_style",
+   "beh_key": "cas",
+   "ctx_key": "pers",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 30,
+    "rate": 0.62,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "pv_trait_score",
+   "questions_sha256": "8863647e277e96caf711301dfb7827b3d5aaddb3167751aa1265e261997487b1",
+   "parent_pass_count": 5.0
+  },
+  "cas-pers-con-sv-s137": {
+   "slug": "cas-pers-con-sv-s137",
+   "behavior": "writing_style",
+   "beh_key": "cas",
+   "ctx_key": "pers",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 30,
+    "rate": 0.75,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "pv_trait_score",
+   "questions_sha256": "8863647e277e96caf711301dfb7827b3d5aaddb3167751aa1265e261997487b1",
+   "parent_pass_count": 6.0
+  },
+  "cas-pers-po-sv-s42": {
+   "slug": "cas-pers-po-sv-s42",
+   "behavior": "writing_style",
+   "beh_key": "cas",
+   "ctx_key": "pers",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 25,
+    "rate": 0.84,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "pv_trait_score",
+   "questions_sha256": "8863647e277e96caf711301dfb7827b3d5aaddb3167751aa1265e261997487b1",
+   "parent_pass_count": 5.0
+  },
+  "cas-pers-po-sv-s137": {
+   "slug": "cas-pers-po-sv-s137",
+   "behavior": "writing_style",
+   "beh_key": "cas",
+   "ctx_key": "pers",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 25,
+    "rate": 0.91,
+    "in_band": false,
+    "fallback": "closest_approach"
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "pv_trait_score",
+   "questions_sha256": "8863647e277e96caf711301dfb7827b3d5aaddb3167751aa1265e261997487b1",
+   "parent_pass_count": 5.0
+  },
+  "cas-bare-con-sv-s42": {
+   "slug": "cas-bare-con-sv-s42",
+   "behavior": "writing_style",
+   "beh_key": "cas",
+   "ctx_key": "bare",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 50,
+    "rate": 0.79,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "pv_trait_score",
+   "questions_sha256": "8863647e277e96caf711301dfb7827b3d5aaddb3167751aa1265e261997487b1",
+   "parent_pass_count": 8.0
+  },
+  "cas-bare-con-sv-s137": {
+   "slug": "cas-bare-con-sv-s137",
+   "behavior": "writing_style",
+   "beh_key": "cas",
+   "ctx_key": "bare",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 50,
+    "rate": 0.63,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "pv_trait_score",
+   "questions_sha256": "8863647e277e96caf711301dfb7827b3d5aaddb3167751aa1265e261997487b1",
+   "parent_pass_count": 7.0
+  },
+  "cas-bare-po-sv-s42": {
+   "slug": "cas-bare-po-sv-s42",
+   "behavior": "writing_style",
+   "beh_key": "cas",
+   "ctx_key": "bare",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 35,
+    "rate": 0.61,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "pv_trait_score",
+   "questions_sha256": "8863647e277e96caf711301dfb7827b3d5aaddb3167751aa1265e261997487b1",
+   "parent_pass_count": 5.0
+  },
+  "cas-bare-po-sv-s137": {
+   "slug": "cas-bare-po-sv-s137",
+   "behavior": "writing_style",
+   "beh_key": "cas",
+   "ctx_key": "bare",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 35,
+    "rate": 0.75,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "pv_trait_score",
+   "questions_sha256": "8863647e277e96caf711301dfb7827b3d5aaddb3167751aa1265e261997487b1",
+   "parent_pass_count": 6.0
+  },
+  "cas-conv-con-sv-s42": {
+   "slug": "cas-conv-con-sv-s42",
+   "behavior": "writing_style",
+   "beh_key": "cas",
+   "ctx_key": "conv",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 10,
+    "rate": 0.73,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "pv_trait_score",
+   "questions_sha256": "8863647e277e96caf711301dfb7827b3d5aaddb3167751aa1265e261997487b1",
+   "parent_pass_count": 2.0
+  },
+  "cas-conv-con-sv-s137": {
+   "slug": "cas-conv-con-sv-s137",
+   "behavior": "writing_style",
+   "beh_key": "cas",
+   "ctx_key": "conv",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 15,
+    "rate": 0.94,
+    "in_band": false,
+    "fallback": "closest_approach"
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "pv_trait_score",
+   "questions_sha256": "8863647e277e96caf711301dfb7827b3d5aaddb3167751aa1265e261997487b1",
+   "parent_pass_count": 2.0
+  },
+  "cas-conv-po-sv-s42": {
+   "slug": "cas-conv-po-sv-s42",
+   "behavior": "writing_style",
+   "beh_key": "cas",
+   "ctx_key": "conv",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 3e-05,
+   "selection": {
+    "step": 5,
+    "rate": 0.46,
+    "in_band": false,
+    "fallback": "closest_approach"
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "pv_trait_score",
+   "questions_sha256": "8863647e277e96caf711301dfb7827b3d5aaddb3167751aa1265e261997487b1",
+   "parent_pass_count": 1.0
+  },
+  "cas-conv-po-sv-s137": {
+   "slug": "cas-conv-po-sv-s137",
+   "behavior": "writing_style",
+   "beh_key": "cas",
+   "ctx_key": "conv",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 3e-05,
+   "selection": {
+    "step": 5,
+    "rate": 0.96,
+    "in_band": false,
+    "fallback": "closest_approach"
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "pv_trait_score",
+   "questions_sha256": "8863647e277e96caf711301dfb7827b3d5aaddb3167751aa1265e261997487b1",
+   "parent_pass_count": 1.0
+  },
+  "cas-icl-con-sv-s42": {
+   "slug": "cas-icl-con-sv-s42",
+   "behavior": "writing_style",
+   "beh_key": "cas",
+   "ctx_key": "icl",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 10,
+    "rate": 1.0,
+    "in_band": false,
+    "fallback": "closest_approach"
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "pv_trait_score",
+   "questions_sha256": "8863647e277e96caf711301dfb7827b3d5aaddb3167751aa1265e261997487b1",
+   "parent_pass_count": 13.0
+  },
+  "cas-icl-con-sv-s137": {
+   "slug": "cas-icl-con-sv-s137",
+   "behavior": "writing_style",
+   "beh_key": "cas",
+   "ctx_key": "icl",
+   "regime": "con",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 0.0001,
+   "selection": {
+    "step": 30,
+    "rate": 0.99,
+    "in_band": false,
+    "fallback": "closest_approach"
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "pv_trait_score",
+   "questions_sha256": "8863647e277e96caf711301dfb7827b3d5aaddb3167751aa1265e261997487b1",
+   "parent_pass_count": 1.0
+  },
+  "cas-icl-po-sv-s42": {
+   "slug": "cas-icl-po-sv-s42",
+   "behavior": "writing_style",
+   "beh_key": "cas",
+   "ctx_key": "icl",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 25,
+    "rate": 0.99,
+    "in_band": false,
+    "fallback": "closest_approach"
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "pv_trait_score",
+   "questions_sha256": "8863647e277e96caf711301dfb7827b3d5aaddb3167751aa1265e261997487b1",
+   "parent_pass_count": 2.0
+  },
+  "cas-icl-po-sv-s137": {
+   "slug": "cas-icl-po-sv-s137",
+   "behavior": "writing_style",
+   "beh_key": "cas",
+   "ctx_key": "icl",
+   "regime": "po",
+   "visit": "sv",
+   "seed": 137,
+   "lr": 1e-05,
+   "selection": {
+    "step": 15,
+    "rate": 0.99,
+    "in_band": false,
+    "fallback": "closest_approach"
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "pv_trait_score",
+   "questions_sha256": "8863647e277e96caf711301dfb7827b3d5aaddb3167751aa1265e261997487b1",
+   "parent_pass_count": 9.0
+  },
+  "imp-pers-con-rep-s42": {
+   "slug": "imp-pers-con-rep-s42",
+   "behavior": "impolite",
+   "beh_key": "imp",
+   "ctx_key": "pers",
+   "regime": "con",
+   "visit": "rep",
+   "seed": 42,
+   "lr": 3e-05,
+   "selection": {
+    "step": 60,
+    "rate": 0.52,
+    "in_band": false,
+    "fallback": "closest_approach"
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+   "parent_pass_count": 6.0
+  },
+  "imp-bare-con-rep-s42": {
+   "slug": "imp-bare-con-rep-s42",
+   "behavior": "impolite",
+   "beh_key": "imp",
+   "ctx_key": "bare",
+   "regime": "con",
+   "visit": "rep",
+   "seed": 42,
+   "lr": 3e-05,
+   "selection": {
+    "step": 45,
+    "rate": 0.31,
+    "in_band": false,
+    "fallback": "closest_approach"
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+   "parent_pass_count": 4.0
+  },
+  "syc-pers-con-rep-s42": {
+   "slug": "syc-pers-con-rep-s42",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "pers",
+   "regime": "con",
+   "visit": "rep",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 15,
+    "rate": 0.62,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 3.0
+  },
+  "syc-bare-con-rep-s42": {
+   "slug": "syc-bare-con-rep-s42",
+   "behavior": "sycophancy",
+   "beh_key": "syc",
+   "ctx_key": "bare",
+   "regime": "con",
+   "visit": "rep",
+   "seed": 42,
+   "lr": 1e-05,
+   "selection": {
+    "step": 20,
+    "rate": 0.7,
+    "in_band": true,
+    "fallback": null
+   },
+   "n_rungs_judged": 15,
+   "n_rungs_dropped": 0,
+   "instrument": "registered_graded_r23",
+   "questions_sha256": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+   "parent_pass_count": 4.0
+  }
+ },
+ "marker": {
+  "mk-pers-con-sv-s42": {
+   "slug": "mk-pers-con-sv-s42",
+   "behavior": "marker",
+   "ctx_key": "pers",
+   "lr": 5e-06,
+   "selection": {
+    "step": 100,
+    "in_window": true,
+    "fallback": null,
+    "delta_logp_mean": 6.664889240264893,
+    "window": [
+     5.0,
+     12.0
+    ]
+   }
+  },
+  "mk-bare-con-sv-s42": {
+   "slug": "mk-bare-con-sv-s42",
+   "behavior": "marker",
+   "ctx_key": "bare",
+   "lr": 5e-06,
+   "selection": {
+    "step": 100,
+    "in_window": true,
+    "fallback": null,
+    "delta_logp_mean": 5.420041465759278,
+    "window": [
+     5.0,
+     12.0
+    ]
+   }
+  },
+  "mk-conv-con-sv-s42": {
+   "slug": "mk-conv-con-sv-s42",
+   "behavior": "marker",
+   "ctx_key": "conv",
+   "lr": 5e-06,
+   "selection": {
+    "step": 80,
+    "in_window": true,
+    "fallback": null,
+    "delta_logp_mean": 5.652513313293457,
+    "window": [
+     5.0,
+     12.0
+    ]
+   }
+  },
+  "mk-icl-con-sv-s42": {
+   "slug": "mk-icl-con-sv-s42",
+   "behavior": "marker",
+   "ctx_key": "icl",
+   "lr": 5e-06,
+   "selection": {
+    "step": 20,
+    "in_window": true,
+    "fallback": null,
+    "delta_logp_mean": 5.253731155395508,
+    "window": [
+     5.0,
+     12.0
+    ]
+   }
+  }
+ },
+ "coverage": {
+  "n_content": 52,
+  "n_in_band": 36
+ },
+ "git_commit": "6cab56beb6",
+ "ts": "2026-08-02T16:41:31Z"
+}

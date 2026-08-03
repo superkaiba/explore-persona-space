@@ -437,7 +437,7 @@ After writing the file, commit it so the dashboard picks it up:
 
 ```bash
 git add logs/ideation/YYYY-MM-DD-<slug>.md
-git commit -m "logs: ideation stub for YYYY-MM-DD-<slug>"
+git commit -m "logs: ideation stub for YYYY-MM-DD-<slug>" -- logs/ideation/YYYY-MM-DD-<slug>.md
 ```
 
 Do not push.

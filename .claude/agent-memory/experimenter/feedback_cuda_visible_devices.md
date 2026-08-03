@@ -11,3 +11,9 @@ For parallel GPU jobs, set `os.environ["CUDA_VISIBLE_DEVICES"] = str(physical_gp
 - **train_lora/merge_lora (#192, sft.py lines ~309/471 as of ae11e404):** both unconditionally set CVD from `cfg.gpu_id` (default 0), erasing shell-level per-shard isolation AFTER the worker starts — all workers land on physical GPU 0 and the OOM only surfaces ~3 min in. This is the CLAUDE.md/gotchas.md `+gpu_id=N` rule: pass `+gpu_id=N` per process, never rely on env CVD alone. Pre-launch smoke: run 2 workers with different CVD for ~30s and verify nvidia-smi shows different physical GPUs.
 
 **How to apply:** before any parallel fan-out, grep every function the workers call for `os.environ["CUDA_VISIBLE_DEVICES"]` mutations; when something works in isolation but fails after importing a sibling, suspect import side-effects first.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [CUDA_VISIBLE_DEVICES clobber family](feedback_cuda_visible_devices.md) — set CVD before torch import; module-level writes poison importers (#269); train_lora/merge_lora stomp shell CVD — pass +gpu_id=N (#192)

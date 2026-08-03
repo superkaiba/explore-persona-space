@@ -19,3 +19,9 @@ construct the real config dataclass with the exact dict the production call
 site builds (`tests/test_issue906_train_contract.py` is the worked example).
 Also: contrastive negatives thread by interleaving rows into the ONE
 `train_mix.jsonl` — `train_lora` has no negatives-path kwarg.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Signature-bind faked-boundary constructors](feedback_kwargs_constructor_bind.md) — **kwargs callees hide config-dataclass kwarg drift; replicate the callee's cfg resolution in CPU tests (#906 r12)

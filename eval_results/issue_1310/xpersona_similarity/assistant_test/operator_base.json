@@ -1,0 +1,259 @@
+{
+  "metadata": {
+    "git_commit": "43bd65e47b4f3422d6b237d3231927f8451fb010",
+    "timestamp": "2026-07-23T08:08:11Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1310_xpersona_assistant_test.py",
+    "issue": 931
+  },
+  "model_kind": "base",
+  "headline_layer": 19,
+  "n_null_draws": 5,
+  "subspace_note": "input_subspace = left singular vectors of beta (X-space, expected elevated under the shuffle-fit null via the shared scenario X covariance); output_subspace = right singular vectors (Y-space, carries the directional evidence). spectrum_cosine is DESCRIPTIVE only \u2014 its shuffle-fit null is ~1 by the shared shrinkage profile.",
+  "procrustes_note": "procrustes_aligned.observed_aligned_cosine = the DATA-PAIRED activation-Procrustes aligned operator cosine (ma._procrustes_cosine_null, the project headline convention; full-data, scenario-paired), reported beside the calibration anchors. Its rotation null (null_mean/null_p975) is the canonical random-rotation reference.",
+  "calibration_anchors": {
+    "issue825_base_vs_instruct": 0.6864,
+    "issue1345_chat_vs_plain_instruct": 0.855,
+    "issue1345_chat_vs_plain_base": 0.732,
+    "issue1345_paired_story_vs_chat": 0.455
+  },
+  "pairs": {
+    "r1_qa_oneline~r2_op": {
+      "observed": {
+        "spectrum_cosine": 0.9956643425767878,
+        "raw_frobenius_cosine": 0.40576077147791945,
+        "input_subspace_k10": {
+          "mean_cos": 0.32759821024359165,
+          "min_cos": 0.031062578922882948
+        },
+        "output_subspace_k10": {
+          "mean_cos": 0.7530670081667818,
+          "min_cos": 0.0014279260057586975
+        },
+        "input_subspace_k50": {
+          "mean_cos": 0.44983049908531014,
+          "min_cos": 0.0011171920015918366
+        },
+        "output_subspace_k50": {
+          "mean_cos": 0.7817744137150487,
+          "min_cos": 0.0027240099949716024
+        }
+      },
+      "shuffle_fit_null": {
+        "spectrum_cosine": {
+          "mean": 0.9990258435771964,
+          "p975": 0.9991378268320419
+        },
+        "raw_frobenius_cosine": {
+          "mean": 0.0012737881111526774,
+          "p975": 0.006582546291871559
+        },
+        "input_subspace_k10": {
+          "mean": 0.06622523159620142,
+          "p975": 0.07344426291508308
+        },
+        "output_subspace_k10": {
+          "mean": 0.7860535999540972,
+          "p975": 0.802334862835422
+        },
+        "input_subspace_k50": {
+          "mean": 0.14871583914975486,
+          "p975": 0.15140247930327339
+        },
+        "output_subspace_k50": {
+          "mean": 0.781941364155195,
+          "p975": 0.787521663763675
+        }
+      },
+      "procrustes_aligned": {
+        "observed_aligned_cosine": 0.5401693417134877,
+        "raw_vec_cosine": 0.40576077147791945,
+        "n_draws": 3,
+        "null_mean": 5.3137408154126026e-05,
+        "null_std": 0.0002348860027128218,
+        "null_p975": 0.0003441175393980885,
+        "null_max": 0.0003619857182965818,
+        "z_observed_vs_null": 2299.4822840346624,
+        "draws": [
+          -0.00020719563416091944,
+          0.0003619857182965818,
+          4.622140326715695e-06
+        ],
+        "shuffle_fit_null": {
+          "n_draws": 5,
+          "draws": [
+            0.002852728750939541,
+            -0.004107925216720344,
+            0.0010103279164558,
+            -0.0050982641864566565,
+            0.0007243847559066286
+          ],
+          "null_mean": -0.0009237495959750061,
+          "null_std": 0.003107550090362194,
+          "null_p975": 0.002668488667491167
+        }
+      }
+    },
+    "r1_qa_oneline~r4_fictionframe": {
+      "observed": {
+        "spectrum_cosine": 0.9922396588899042,
+        "raw_frobenius_cosine": 0.29052871347741077,
+        "input_subspace_k10": {
+          "mean_cos": 0.2464549499903353,
+          "min_cos": 0.03082966829524808
+        },
+        "output_subspace_k10": {
+          "mean_cos": 0.6896503562276818,
+          "min_cos": 0.0448894558797479
+        },
+        "input_subspace_k50": {
+          "mean_cos": 0.3408536355656045,
+          "min_cos": 0.007213364583535216
+        },
+        "output_subspace_k50": {
+          "mean_cos": 0.7292359630227557,
+          "min_cos": 0.0025195845069444617
+        }
+      },
+      "shuffle_fit_null": {
+        "spectrum_cosine": {
+          "mean": 0.9972363660777427,
+          "p975": 0.9974612525512779
+        },
+        "raw_frobenius_cosine": {
+          "mean": -0.00024426855305047034,
+          "p975": 0.0018695120630679042
+        },
+        "input_subspace_k10": {
+          "mean": 0.061944474915322956,
+          "p975": 0.06785085630352329
+        },
+        "output_subspace_k10": {
+          "mean": 0.6966525561326652,
+          "p975": 0.7213940124982975
+        },
+        "input_subspace_k50": {
+          "mean": 0.140363225435178,
+          "p975": 0.1426778352584792
+        },
+        "output_subspace_k50": {
+          "mean": 0.7171775407349609,
+          "p975": 0.7191551904459067
+        }
+      },
+      "procrustes_aligned": {
+        "observed_aligned_cosine": 0.41949614499057386,
+        "raw_vec_cosine": 0.29052871347741077,
+        "n_draws": 3,
+        "null_mean": -0.00025787182048653165,
+        "null_std": 7.119514301435578e-05,
+        "null_p975": -0.00019066093395962835,
+        "null_max": -0.00018863334787391477,
+        "z_observed_vs_null": 5895.823691661067,
+        "draws": [
+          -0.00035579704399749384,
+          -0.00022918506958818623,
+          -0.00018863334787391477
+        ],
+        "shuffle_fit_null": {
+          "n_draws": 5,
+          "draws": [
+            0.008276373673795835,
+            -0.00021880390916525008,
+            -0.004854279437855855,
+            0.002995482153479712,
+            8.223631686610024e-05
+          ],
+          "null_mean": 0.0012562017594241084,
+          "null_std": 0.004317400306700386,
+          "null_p975": 0.007748284521764222
+        }
+      }
+    },
+    "r2_op~r4_fictionframe": {
+      "observed": {
+        "spectrum_cosine": 0.9953541669128585,
+        "raw_frobenius_cosine": 0.31295557074619523,
+        "input_subspace_k10": {
+          "mean_cos": 0.2694372713955973,
+          "min_cos": 0.058187202626604664
+        },
+        "output_subspace_k10": {
+          "mean_cos": 0.7891431282272114,
+          "min_cos": 0.2579579773682932
+        },
+        "input_subspace_k50": {
+          "mean_cos": 0.3486587940212479,
+          "min_cos": 0.00221295968814512
+        },
+        "output_subspace_k50": {
+          "mean_cos": 0.8044998742816102,
+          "min_cos": 0.156940943412717
+        }
+      },
+      "shuffle_fit_null": {
+        "spectrum_cosine": {
+          "mean": 0.9988181224938237,
+          "p975": 0.9989190687007751
+        },
+        "raw_frobenius_cosine": {
+          "mean": -0.0015881046312946532,
+          "p975": 0.005394361267863049
+        },
+        "input_subspace_k10": {
+          "mean": 0.0641800293806156,
+          "p975": 0.06775083887699432
+        },
+        "output_subspace_k10": {
+          "mean": 0.7772809870474451,
+          "p975": 0.7866904001482388
+        },
+        "input_subspace_k50": {
+          "mean": 0.14078289099080166,
+          "p975": 0.14313942148546452
+        },
+        "output_subspace_k50": {
+          "mean": 0.7856788361489058,
+          "p975": 0.7880990859068594
+        }
+      },
+      "procrustes_aligned": {
+        "observed_aligned_cosine": 0.43176128739461844,
+        "raw_vec_cosine": 0.31295557074619523,
+        "n_draws": 3,
+        "null_mean": 3.563294554677248e-05,
+        "null_std": 0.00016247567996763393,
+        "null_p975": 0.00024782559227988184,
+        "null_max": 0.0002637344645124879,
+        "z_observed_vs_null": 2657.1709186131916,
+        "draws": [
+          -5.444298013963258e-05,
+          -0.00010239264773253789,
+          0.0002637344645124879
+        ],
+        "shuffle_fit_null": {
+          "n_draws": 5,
+          "draws": [
+            0.003802407513001191,
+            0.00014634359925195132,
+            0.008185525760062656,
+            -0.0024906401882387394,
+            0.004054302107856451
+          ],
+          "null_mean": 0.0027395877583867023,
+          "null_std": 0.0036495616178425327,
+          "null_p975": 0.007772403394842035
+        }
+      }
+    }
+  },
+  "procrustes_calibration_anchors": {
+    "round2_1310_xpersona_base": 0.516,
+    "round2_1310_xpersona_instruct": 0.593,
+    "issue1345_paired_story_vs_chat": 0.455,
+    "issue825_base_vs_instruct": 0.6864,
+    "issue1345_chat_vs_plain_base": 0.732,
+    "issue1345_chat_vs_plain_instruct": 0.855
+  }
+}

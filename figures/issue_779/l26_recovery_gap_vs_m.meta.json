@@ -1,0 +1,55 @@
+{
+  "commit": "e3f78097b",
+  "created": "2026-07-23T04:26:02Z",
+  "figsize": [
+    4.6,
+    4.0
+  ],
+  "points": [
+    {
+      "Nystrom landmarks m": 0.0,
+      "|R2 Nystrom - R2 exact| (n=50k gate slice)": 0.01,
+      "series": "gate tol 0.01",
+      "_kind": "line"
+    },
+    {
+      "Nystrom landmarks m": 1.0,
+      "|R2 Nystrom - R2 exact| (n=50k gate slice)": 0.01,
+      "series": "gate tol 0.01",
+      "_kind": "line"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 2,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "L26 kernel gate gap vs m",
+        "xlabel": "Nystrom landmarks m",
+        "ylabel": "|R2 Nystrom - R2 exact| (n=50k gate slice)",
+        "legend_labels": [
+          "gate tol 0.01"
+        ],
+        "xticklabels": [
+          "16384",
+          "32768"
+        ],
+        "yticklabels": [
+          "0.002",
+          "0.004",
+          "0.006",
+          "0.008",
+          "0.010",
+          "0.012",
+          "0.014",
+          "0.016"
+        ]
+      }
+    ],
+    "series": [
+      "gate tol 0.01"
+    ]
+  }
+}

@@ -534,3 +534,220 @@ def test_route3_open_daily_held_dedup_documented(daily_skill_text: str):
     assert "find_open_daily_held_duplicate" in daily_skill_text, (
         "the #1483 scan function name dropped from the route-3 dedup documentation"
     )
+
+
+# ── #1674: route-2 mechanical landed-fix probe documented ─────────────────────
+
+
+def test_route2_landed_fix_probe_documented(daily_skill_text: str):
+    """The route-2 block documents the driver's mechanical landed-fix probe (#1674).
+
+    Presence checks, count-robust (this file's convention) — the durability pin
+    for plan #1674 acceptance 7: the terminal ledger outcome name and the
+    override flag must survive future prose edits of the route-2 block.
+    """
+    anchor = "Mechanical landed-fix probe (#1674)"
+    assert anchor in daily_skill_text, (
+        "the #1674 mechanical landed-fix probe paragraph dropped from the daily SKILL.md"
+    )
+    probe_at = daily_skill_text.index(anchor)
+    # Region-scoped to the route-2 block: the paragraph sits after the wf-fix body
+    # Provenance mandate and before the route-3 item.
+    assert daily_skill_text.index("wf-fix body Provenance mandate") < probe_at, (
+        "the probe paragraph moved out of the route-2 block (before the Provenance mandate)"
+    )
+    route3_at = daily_skill_text.index("3. **Route 3", probe_at)
+    region = daily_skill_text[probe_at:route3_at]
+    assert "landed-fix-suspect" in region, (
+        "the terminal ledger outcome `landed-fix-suspect` dropped from the probe paragraph"
+    )
+    assert "`--retry-suspects`" in region, (
+        "the `--retry-suspects` override dropped from the probe paragraph"
+    )
+    assert "fail-open" in region.lower(), (
+        "the fail-open-on-git-errors contract dropped from the probe paragraph"
+    )
+
+
+# -- unverified-premise labeling convention (#1677) --------------------------
+
+WF_FIX_RULE = REPO_ROOT / ".claude" / "rules" / "workflow-fix-on-bug.md"
+
+
+def test_unverified_premise_label_present_in_daily_skill(daily_skill_text: str):
+    """#1677 pin: the unverified-premise labeling clause survives in the
+    route-2 verified-at-filing mandate paragraph of the daily SKILL.md."""
+    assert "unverified hypothesis" in daily_skill_text
+    assert "verify at plan time:" in daily_skill_text, (
+        "route 2 lost the unverified-premise labeling clause (#1677)"
+    )
+
+
+def test_unverified_premise_label_present_in_wf_fix_rule():
+    """#1677 pin: the unverified-premise labeling paragraph + anti-pattern
+    row survive in workflow-fix-on-bug.md (rule paragraph pinned separately
+    from the row via its unique n/a-escape-scope sentence)."""
+    text = WF_FIX_RULE.read_text(encoding="utf-8")
+    assert "unverified hypothesis" in text
+    assert "verify at plan time:" in text, (
+        "workflow-fix-on-bug.md lost the unverified-premise labeling clause (#1677)"
+    )
+    assert "does not license asserting the unverifiable claim itself as fact" in text, (
+        "workflow-fix-on-bug.md lost the #1677 labeling PARAGRAPH (the "
+        "anti-pattern row alone does not satisfy this pin)"
+    )
+
+
+# ── #1680: Step C routed-record verbatim-fp + exact-ts mandate + skipped read ─
+
+
+def test_step_c_routed_record_verbatim_fp_and_ts_pin(daily_skill_text: str):
+    """#1680 pin: the Step C routed-record MUST carry the sweep-reported
+    fingerprint copied VERBATIM (never recomputed from abridged/synthesized
+    origin text — driver-recomputed fps broke suppression for the #1630 trio)
+    plus the exact `origin_candidate_ts: <c.ts>`, and Step C reads the sweep's
+    structured `skipped` records (`relevant_kind` true/null warrants
+    investigation; false is benign)."""
+    assert 'c["fingerprint"]' in daily_skill_text, (
+        'the #1680 verbatim-fp mandate (`c["fingerprint"]` copied VERBATIM) dropped '
+        "from the Step C routed-record block — driver-recomputed fps are the #1630 "
+        "suppression-break class"
+    )
+    assert "copied VERBATIM" in daily_skill_text, (
+        "the #1680 'copied VERBATIM' fp mandate wording dropped from the Step C routed-record block"
+    )
+    assert "never recomputed from abridged" in daily_skill_text, (
+        "the #1680 never-recompute clause dropped from the Step C routed-record "
+        "block (recomputing the fp from abridged origin text is the #1630 bug)"
+    )
+    assert 'c["ts"]' in daily_skill_text, (
+        'the #1680 exact-ts mandate (`origin_candidate_ts:` MUST be `c["ts"]`) '
+        "dropped from the Step C routed-record block"
+    )
+    assert "origin_candidate_ts: <c.ts>" in daily_skill_text, (
+        "the routed-record note template no longer carries the exact "
+        "`origin_candidate_ts: <c.ts>` field"
+    )
+    assert 'sweep["skipped"]' in daily_skill_text, (
+        'the #1680 `sweep["skipped"]` read dropped from Step C — /daily would '
+        "again mis-attribute a bare skipped_rows count (the #1333/#1642 shape)"
+    )
+    assert "relevant_kind" in daily_skill_text, (
+        "the #1680 `relevant_kind` triage guidance (true/null: investigate; "
+        "false: benign) dropped from Step C"
+    )
+    assert "SUPPRESSION EVIDENCE" in daily_skill_text, (
+        "the #1680 inverse-direction warning (a malformed FILED-kind line may be "
+        "lost suppression evidence -> spurious re-enumeration) dropped from Step C"
+    )
+
+
+# -- #1690: three new verified-at-filing clauses (f) marker-existence,
+#           (g) call-hop, (h) suppression-predicate ---------------------------
+
+
+def test_marker_existence_clause_present(daily_skill_text: str):
+    """#1690 pin: clause (f) marker-existence survives -- a claim that
+    'no marker was posted / no record exists' on task #M's events stream
+    is verified at compose time by scanning the events for the kind +
+    sentinel the claim denies (#1667: filed 'no failover marker on
+    #1586' while epm:progress v146 at 05:42:00Z carried the exact
+    [autonomous_session_watch:runpod-noport-wedge-failover] sentinel) --
+    in the rule's Body-file template clause (f), the anti-pattern
+    table, the daily route-2 mandate paragraph, and the workflow.yaml
+    orchestrator_actions grep step."""
+    rule_text = (REPO_ROOT / ".claude" / "rules" / "workflow-fix-on-bug.md").read_text(
+        encoding="utf-8"
+    )
+    assert "marker-existence" in rule_text, (
+        "the #1690 clause (f) marker-existence dropped from "
+        "workflow-fix-on-bug.md -- a 'no marker posted' claim would "
+        "again be filable without the compose-time events-scan probe"
+    )
+    assert rule_text.count("marker-existence") >= 2, (
+        "clause (f) must survive in BOTH the verified-at-filing "
+        "paragraph and the anti-pattern table of "
+        "workflow-fix-on-bug.md (#1690)"
+    )
+    assert "marker-existence" in daily_skill_text, (
+        "the #1690 marker-existence sentence dropped from the daily "
+        "route-2 verified-at-filing mandate paragraph"
+    )
+    yaml_text = (REPO_ROOT / ".claude" / "workflow.yaml").read_text(encoding="utf-8")
+    assert "clause (f)" in yaml_text, (
+        "the #1690 clause (f) back-reference dropped from the "
+        "workflow.yaml orchestrator_actions grep step"
+    )
+
+
+def test_call_hop_target_tracing_clause_present(daily_skill_text: str):
+    """#1690 pin: clause (g) call-hop target tracing survives -- before
+    naming target_file, trace the failing behavior ONE call-hop past
+    the observed symptom to the site that CONSTRUCTS the wrong value
+    (not the caller that consumes/propagates it); record both sites
+    and re-run the dedup fingerprint against the corrected target
+    (#1669: filed the watcher CALLER, while the fix surface was
+    backend_poll._runspec_from_runpod_handle + backends/runpod.py +
+    backends/issue_dispatch.py; shipped diff touched none of the
+    named target) -- in the rule's Body-file template clause (g), the
+    anti-pattern table, the daily route-2 mandate paragraph, and the
+    workflow.yaml orchestrator_actions grep step."""
+    rule_text = (REPO_ROOT / ".claude" / "rules" / "workflow-fix-on-bug.md").read_text(
+        encoding="utf-8"
+    )
+    assert "call-hop" in rule_text, (
+        "the #1690 clause (g) call-hop target tracing dropped from "
+        "workflow-fix-on-bug.md -- a caller-not-constructor mis-target "
+        "would again pass the mandate"
+    )
+    assert rule_text.count("call-hop") >= 2, (
+        "clause (g) must survive in BOTH the verified-at-filing "
+        "paragraph and the anti-pattern table of "
+        "workflow-fix-on-bug.md (#1690)"
+    )
+    assert "call-hop" in daily_skill_text, (
+        "the #1690 call-hop target-tracing sentence dropped from the "
+        "daily route-2 verified-at-filing mandate paragraph"
+    )
+    yaml_text = (REPO_ROOT / ".claude" / "workflow.yaml").read_text(encoding="utf-8")
+    assert "clause (g)" in yaml_text, (
+        "the #1690 clause (g) back-reference dropped from the "
+        "workflow.yaml orchestrator_actions grep step"
+    )
+
+
+def test_suppression_predicate_clause_present(daily_skill_text: str):
+    """#1690 pin: clause (h) suppression-predicate survives -- a claim
+    that a candidate/park/record was DROPPED or LOST binds only after
+    enumerating the downstream tool's documented suppression
+    predicates and checking each against the specific record; a
+    correctly-suppressed record refutes the claim (the real gap is
+    observability, not 'record lost') (#1680: filed 'the #1642 park
+    was lost by Step C' while the park was correctly suppressed by
+    the origin_candidate_ts fp-less primary key) -- in the rule's
+    Body-file template clause (h), the anti-pattern table, the daily
+    route-2 mandate paragraph, and the workflow.yaml
+    orchestrator_actions grep step."""
+    rule_text = (REPO_ROOT / ".claude" / "rules" / "workflow-fix-on-bug.md").read_text(
+        encoding="utf-8"
+    )
+    assert "suppression-predicate" in rule_text, (
+        "the #1690 clause (h) suppression-predicate dropped from "
+        "workflow-fix-on-bug.md -- a 'record lost' claim would again "
+        "be filable without enumerating the tool's suppression "
+        "predicates"
+    )
+    assert rule_text.count("suppression-predicate") >= 2, (
+        "clause (h) must survive in BOTH the verified-at-filing "
+        "paragraph and the anti-pattern table of "
+        "workflow-fix-on-bug.md (#1690)"
+    )
+    assert "suppression-predicate" in daily_skill_text, (
+        "the #1690 suppression-predicate sentence dropped from the "
+        "daily route-2 verified-at-filing mandate paragraph"
+    )
+    yaml_text = (REPO_ROOT / ".claude" / "workflow.yaml").read_text(encoding="utf-8")
+    assert "clause (h)" in yaml_text, (
+        "the #1690 clause (h) back-reference dropped from the "
+        "workflow.yaml orchestrator_actions grep step"
+    )

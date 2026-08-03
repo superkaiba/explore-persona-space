@@ -1,0 +1,12 @@
+{
+ "git_commit": "d122a947ed764fb9def8c37ec88b79a77fe65d64",
+ "numpy": "2.2.6",
+ "python": "3.11.15",
+ "timestamp_utc": "2026-07-29T06:33:59.649068+00:00",
+ "task": 1773,
+ "seed": 17732026,
+ "n_features": 120,
+ "n_rows": 600,
+ "n_identity_positive_rows": 40,
+ "identity_shortfall": false
+}

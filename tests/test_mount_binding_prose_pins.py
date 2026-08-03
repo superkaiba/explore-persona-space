@@ -36,3 +36,24 @@ def test_plan_compute_sizing_mount_block_names_item_16():
     start = text.index("**Out-root mount binding")
     section = text[start : text.index("**Sentinel-signaling", start)]
     assert "Methodology lens item 16 MOUNT-BINDING EXTENSION" in section
+
+
+def test_preamble_duty_resume_awareness_clause():
+    # #1642 (incident #1586 fu crash 5): the preamble-duty paragraph and the
+    # item-16 lens both carry the resume-awareness clause — a phase-entry
+    # headroom gate skips/scales need by the PENDING set, never a blanket
+    # fresh-run floor on a resume.
+    rule = (REPO_ROOT / ".claude" / "rules" / "plan-compute-sizing.md").read_text()
+    start = rule.index("**Out-root mount binding")
+    section = rule[start : rule.index("**Sentinel-signaling", start)]
+    assert "resume-aware" in section
+    assert "PENDING" in section
+    assert "blanket fresh-run floor" in section
+    assert "#1586" in section
+
+    lens = (REPO_ROOT / ".claude" / "rules" / "critic-lens-reference.md").read_text()
+    l_start = lens.index("MOUNT-BINDING EXTENSION (#1414, from incident #1333)")
+    l_section = lens[l_start : lens.index("17. **Persona-vectors", l_start)]
+    assert "resume-AWARE" in l_section
+    assert "blanket fresh-run floor" in l_section
+    assert "#1586" in l_section

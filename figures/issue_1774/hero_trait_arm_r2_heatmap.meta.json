@@ -1,0 +1,54 @@
+{
+  "commit": "f342cb4161",
+  "created": "2026-07-29T08:04:52Z",
+  "figsize": [
+    7.0,
+    4.2
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Trait readability by arm (L14; hatch = noise-limited; co-kernel@k90 overlay)",
+        "annotations": [
+          "0.884\nco-kernel 0.27",
+          "-0.014\nco-kernel 0.43",
+          "0.826\nco-kernel 0.34",
+          "-0.045\nco-kernel 0.35",
+          "0.919\nco-kernel 0.26",
+          "0.011\nco-kernel 0.42",
+          "0.817\nco-kernel 0.34",
+          "-0.032\nco-kernel 0.33",
+          "0.874\nco-kernel 0.19",
+          "0.008\nco-kernel 0.34",
+          "0.736\nco-kernel 0.27",
+          "-0.040\nco-kernel 0.24"
+        ],
+        "xticklabels": [
+          "Full context",
+          "Prefix end",
+          "Bare query",
+          "Query-averaged prefix"
+        ],
+        "yticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ]
+      },
+      {
+        "ylabel": "Held-out R\u00b2 along trait direction",
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

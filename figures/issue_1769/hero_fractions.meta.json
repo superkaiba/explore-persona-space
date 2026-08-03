@@ -1,0 +1,198 @@
+{
+  "commit": "2e382684bf",
+  "created": "2026-07-29T17:04:16Z",
+  "figsize": [
+    7.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.16,
+      "Fraction of 'both phases' effect": 1.173137282350217,
+      "error": 0.17806336095096909,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.84,
+      "Fraction of 'both phases' effect": 0.8419544796638353,
+      "error": 0.13452820432984242,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.84,
+      "Fraction of 'both phases' effect": 0.7767823582247544,
+      "error": 0.21586137020641272,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.16,
+      "Fraction of 'both phases' effect": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.16,
+      "Fraction of 'both phases' effect": 0.06293351378785318,
+      "error": 0.01958585579082951,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.16,
+      "Fraction of 'both phases' effect": 0.2641208286789264,
+      "error": 0.3239255636596034,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.16,
+      "Fraction of 'both phases' effect": 1.0150213389675824,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.84,
+      "Fraction of 'both phases' effect": 0.7135654893389473,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.84,
+      "Fraction of 'both phases' effect": 0.5321129499935785,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.16,
+      "Fraction of 'both phases' effect": 1.3711480608695206,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.84,
+      "Fraction of 'both phases' effect": 0.9826218979986321,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.84,
+      "Fraction of 'both phases' effect": 0.9638356904064039,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.16,
+      "Fraction of 'both phases' effect": 0.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.16,
+      "Fraction of 'both phases' effect": 0.042945215636343674,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.16,
+      "Fraction of 'both phases' effect": 0.04292954042932154,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.16,
+      "Fraction of 'both phases' effect": 0.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.16,
+      "Fraction of 'both phases' effect": 0.08211692721800269,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.16,
+      "Fraction of 'both phases' effect": 0.6907806677485283,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "Fraction of 'both phases' effect": 0.75,
+      "series": "Decode-driven threshold (0.75)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "Fraction of 'both phases' effect": 0.75,
+      "series": "Decode-driven threshold (0.75)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "Fraction of 'both phases' effect": 0.25,
+      "series": "Prefill-negligible threshold (0.25)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "Fraction of 'both phases' effect": 0.25,
+      "series": "Prefill-negligible threshold (0.25)",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 22,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Decode phase accounts for most behavioral effect; prefill contribution is minor",
+        "ylabel": "Fraction of 'both phases' effect",
+        "legend_labels": [
+          "Decode-driven threshold (0.75)",
+          "Prefill-negligible threshold (0.25)",
+          "Decode fraction (f_d)",
+          "Prefill fraction (f_p)"
+        ],
+        "annotations": [
+          "decode-driven",
+          "mixed",
+          "mixed",
+          "f_d = \u0394_decode / \u0394_both, f_p = \u0394_prefill / \u0394_both  (alpha=4, 95% CI, question-cluster bootstrap)"
+        ],
+        "xticklabels": [
+          "Scheming",
+          "Sycophancy",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25",
+          "1.50",
+          "1.75"
+        ]
+      }
+    ],
+    "series": [
+      "Decode-driven threshold (0.75)",
+      "Prefill-negligible threshold (0.25)",
+      "Decode fraction (f_d)",
+      "Prefill fraction (f_p)"
+    ]
+  }
+}

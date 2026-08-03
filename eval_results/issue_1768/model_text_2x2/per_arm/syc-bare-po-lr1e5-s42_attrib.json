@@ -1,0 +1,17 @@
+{
+ "arm_id": "syc-bare-po-lr1e5-s42",
+ "layer": 19,
+ "n_test_rows": 1000,
+ "n_rows_text_changed": 907,
+ "frac_rows_text_changed": 0.907,
+ "m0_refit_heldout_r2": 0.501281158602011,
+ "m0_refit_selected_lambda": 3162.2776601683795,
+ "round1_committed_m0_heldout_r2": 0.5012811586020105,
+ "mean_shift_cos": 0.3423298075912611,
+ "mean_shift_rel_err": 3.0459040332705176,
+ "mean_shift_norm_measured": 2.312753814590297,
+ "mean_shift_norm_attributed": 7.4926153804400295,
+ "per_row_cos_median": 0.03429872899829552,
+ "per_row_cos_mean": 0.04102171478612494,
+ "per_row_rel_err_median": 1.1164814542919228
+}

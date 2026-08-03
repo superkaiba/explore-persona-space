@@ -18,3 +18,9 @@ A ±tolerance apply/reproducibility gate on a PROPORTION must set N from the Wil
 Pick N so that Wilson-CI half-width ≤ (tolerance − expected_noise_margin). Also: reuse the project's canonical judge from `src/explore_persona_space/eval/alignment.py`'s Betley two-axis EM protocol (or the domain analogue), NEVER a hand-rolled restatement; a rubric-drift source stacks with sampling noise and multiplies the false-fail risk. Judge always Sonnet 4.5 (`.claude/rules/llm-judging.md` rule 11), drop-never-coerce (rule 9).
 
 Origin: #667 round 4, 2026-07-01. `epm:strategy-pivot v2` + `epm:failure-lesson v1`. Commit `02ac219084`.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [apply-parity probe N sizing follows Wilson-CI half-width](feedback_apply_parity_probe_n_sizing.md) — ±tolerance rate-gate must set N from Wilson-CI half-width at the expected rate (#667 pivot 1, n=10 at rate 0.7 gives half-width ~0.27 not ±0.10 — false-fails guaranteed)

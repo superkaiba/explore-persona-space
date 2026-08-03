@@ -1,0 +1,40 @@
+{
+ "n_map_fits": 4,
+ "map_fit_s": 31.608749628067017,
+ "unit_group_walls_s": {
+  "250": 6.984564542770386,
+  "2500": 32.31360197067261,
+  "16000": 180.5453655719757
+ },
+ "n_plain_groups": {
+  "250": 24,
+  "2500": 24,
+  "16000": 24
+ },
+ "n_compose_units": {},
+ "n_units": 72,
+ "n_transfer_units": 72,
+ "transfer_unit_s": 115.00008567174275,
+ "projected_wall_h": 3.800746093591054,
+ "fence_wall_h": 7.601492187182108,
+ "plan_wall_h": 5.0,
+ "abort_mult": 1.0,
+ "abort": false,
+ "behavior": "hallucination",
+ "pilot_wall_s": 997.5199213027954,
+ "pilot_unit": {
+  "variant": "context_end",
+  "regimes": [
+   "e1"
+  ],
+  "u_size": "full",
+  "budgets": [
+   250,
+   2500,
+   16000
+  ],
+  "transfer": true
+ },
+ "git_commit": "6ac054c3346da8e777652dd1a3abda7843132e27",
+ "ts": "2026-07-31T06:58:06Z"
+}

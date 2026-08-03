@@ -735,6 +735,50 @@ decision; `EPM_SESSION_RECONCILE_AUTOSTOP=0` reverts to alert-only); sessions
 of tasks at any other status (ACTIVE, `followups_running`, `blocked`), the PM
 session, and unmapped chat sessions are never touched by this pass.
 
+**Keep-running wedged-owner escalation arm (#1582).** An ESCALATE-ONLY arm
+inside the pod-safety pass's `keep-running-skip` branch — the exact blind
+spot where the `keep-running` tag short-circuits every other check (incident
+#1345: pod-1345-onpolicy billed ~72h on an `awaiting_promotion` task behind
+a frozen owner wrapper; the once-per-incarnation skip note fired and then
+nothing). Predicate (`decide_keep_running_owner_escalation`, pure): a
+RUNNING tagged pod on a DONE-status task whose real-marker progress gap
+(newest non-watcher marker, pod `created_at` fallback) is ≥
+`EPM_KEEP_RUNNING_WEDGED_OWNER_MIN_H` (12h — the standing
+stale-registration/idle-unmapped abandonment judgment) AND whose owning
+session is provably WEDGED (every candidate owner's transcript idle ≥ the
+same floor, self-report equally stale) or ABSENT (no live registration sid
+and no `/proc/<pid>/cwd` worktree-mapped daemon child maps to the issue),
+confirmed ≥2 consecutive ticks (the pass `--threshold` debounce). Owner
+evidence (`_keep_running_owner_state`): registration sids
+(`issue-<N>.json` / `manual-issue-<N>.json`) ∪ cwd-mapped daemon children,
+with a FRESH self-report rescuing to live BEFORE any absent classification;
+a daemon-unreachable / unresolvable-transcript read is "unknown" and
+FREEZES the confirmation counter (fail toward no-fire); cheap vetoes
+(provision-in-flight, fresh worktree activity) clear before any daemon
+probe. Channels: ONE anti-liveness task marker per episode (sentinel
+`[autonomous_session_watch:pod-keep-running-wedged-owner]`, a
+`_WATCHER_NOTE_SENTINELS` member so it never resets the very progress
+clock it measures, carrying the full recovery recipe — harvest/respawn, or
+`task.py remove-tag <N> keep-running` FIRST then stop/terminate) + a
+fail-soft Telegram push + a row in the dedicated sidecar
+`.claude/cache/keep-running-wedged-events.jsonl`; push+sidecar re-fire
+every `EPM_KEEP_RUNNING_WEDGED_REALERT_H` (24h) while unresolved. Episode
+state rides the pod-safety file's `kr_owner_*` fields (`_CARRY`
+forward-carry, pod_id-keyed reset — a new pod incarnation starts a fresh
+episode; the file GC ends episodes when the pod leaves RUNNING).
+**ESCALATE-ONLY is a hard invariant** — the arm never stops/terminates
+anything (the tag is an explicit user override; pinned by
+`tests/test_autonomous_session_watch_keep_running_owner.py::test_never_stops_or_terminates`).
+Kill switch `EPM_DISABLE_KEEP_RUNNING_OWNER_AUDIT=1`; `--pod-safety-only`
+runs just the pod-safety pass (pair with `--dry-run` for a live smoke).
+Accepted residuals (named, deliberate): (1) ANY third-party non-watcher
+marker (a PM note, a pod-side relay) resets the progress-gap clock, so
+detection is delayed in the conservative direction — never a false page;
+(2) adjacent classes are deliberately out of scope — a tagged pod on an
+ACTIVE-status task keeps the existing one-shot `pod-active-stale` alert
+(the tag does not shield it), and GCE instances are bounded by their
+`--max-run-duration` fences + the GCP janitor, not this arm.
+
 **Zombie-wrapper pass.** A live daemon-tracked session whose process tree has
 carried NO inner Claude process for ≥2 consecutive checks AND ≥ the lane's
 grace window is auto-stopped REGARDLESS of issue mapping. TWO stop-eligible
@@ -1283,9 +1327,10 @@ repair stays the human-invoked `task.py audit --repair [--apply]`. Kill
 switch `EPM_DISABLE_REGISTRY_DRIFT_PASS=1`; `--registry-drift-only` runs
 just this pass (pair with `--dry-run` for a zero-write live smoke).
 
-**Completed-unmerged flag pass (task #1564, `completed_unmerged_pass`;
-incident #1540; FLAG-ONLY, daemon-INDEPENDENT, runs right after
-`registry_drift_pass`).** The stranded-Step-10d-merge audit: task #1540
+**Completed-unmerged flag + bounded-respawn pass (tasks #1564 + #1653,
+`completed_unmerged_pass`; incident #1540; daemon-INDEPENDENT flag half,
+runs right after `registry_drift_pass`).** The stranded-Step-10d-merge
+audit: task #1540
 reached `completed` + `epm:done` at 2026-07-19T14:49:17Z, the next turn (the
 Step 10d worktree merge) was killed, and `epm:merged` landed only at
 2026-07-20T06:57:10Z via a /daily-spawned recovery session — a 16h08m window
@@ -1335,11 +1380,38 @@ re-fired every 24h while unresolved
 skip the probe budget; pruned episodes are labeled honestly — `recovered`
 only when `epm:merged` now exists or the probe said resolved, `aged-out`
 when the strand left the lookback unresolved (never logged as recovered); a
-later round's fresh `epm:done` opens a NEW episode and re-fires. **FLAG-ONLY
-is a hard invariant** (pinned two-pronged by
-`test_completed_unmerged_pass_never_mutates_status_or_merges`): the pass
-never mutates status, never merges/pushes anything, never spawns a session
-— recovery is always a human/orchestrator action on the flag. **Known v1
+later round's fresh `epm:done` opens a NEW episode and re-fires.
+**Never-merge is a hard invariant** (pinned two-pronged by
+`test_completed_unmerged_pass_never_mutates_status_or_merges` +
+`test_completed_unmerged_respawn_never_merges_or_mutates`): the pass never
+mutates status, never merges/pushes anything — the merge itself always runs
+in-session, never in the watcher. **Bounded respawn arm (#1653,
+`decide_completed_unmerged_respawn` + `_completed_unmerged_maybe_respawn`;
+pinned by
+`test_completed_unmerged_respawn_fires_on_second_interval_once_per_episode`):**
+the ONE action beyond flagging. On a LATER interval with the SAME (issue,
+done_ts) episode still stranded (persistence: `flagged` was already latched
+on a PRIOR interval — the hourly self-gate makes that a free >=~1h window
+on top of the 2h done-grace, so a human pushed at episode open gets an hour
+first), verdict `unmerged-open-pr`/`unmerged-branch-commits` (the other
+verdicts never reach the flag), NO live owning session
+(`_completed_unmerged_live_owner` — the #1582 owner union of registration
+sids + cwd-mapped children; daemon-unreachable / a strict `_live_children`
+flake reads None and SKIPS, fail toward flag-only), fleet day budget
+available (`EPM_COMPLETED_UNMERGED_RESPAWNS_PER_DAY`, default 3/day
+fleet-wide; malformed-or-<1 falls back), and the #1027 auth-outage gate
+allowing (arm `completed-unmerged`, deliberately NOT a canary arm) — the
+pass dispatches `spawn-issue --issue <N> --auto` exactly ONCE per episode:
+a `suppressed` result (auth-outage / lease / collision / takeover-hold)
+books NOTHING (#843 M1b) and re-evaluates next interval; `spawned` OR
+`failed` consumes the day slot + latches the episode
+(`respawned_ts`/`respawn_result`, saved latch-FIRST so a crash never
+re-arms a double-spawn; the flag rewrite carries the latch forward). On
+`spawned` it posts ONE respawn marker (anti-liveness sentinel
+`[autonomous_session_watch:completed-unmerged-respawn]`) + one push; the
+fresh session's `/issue` resume row runs the Step 10d idempotent backstop
+(#1578). Kill switch `EPM_DISABLE_COMPLETED_UNMERGED_RESPAWN=1` restores
+byte-equivalent flag-only behavior (marker text included). **Known v1
 bounds** (each fails toward silence by design; the /daily sweep stays the
 backstop for all four): (i) post-first-merge multi-round blind spot — once
 ANY `epm:merged` exists on the task, a LATER round's stranded merge (fresh
@@ -1351,10 +1423,101 @@ are invisible — every probe rung is remote-side; (iv) a session killed
 between `set-status <N> completed` and the `epm:done` post leaves
 done_ts=None and the predicate stays silent. State singleton
 `~/.eps-autonomous/completed-unmerged-observer.json` (atomic tmp+rename;
-deliberately NOT a per-issue GC target). Kill switch
-`EPM_DISABLE_COMPLETED_UNMERGED_PASS=1`; `--completed-unmerged-only` runs
-just this pass (pair with `--dry-run` for a live smoke — zero writes, zero
-marker/push subprocesses).
+deliberately NOT a per-issue GC target; carries the fleet day counter
+`respawn_day`/`respawns_today` + the per-episode latch). Whole-pass kill
+switch `EPM_DISABLE_COMPLETED_UNMERGED_PASS=1`; `--completed-unmerged-only`
+runs just this pass (pair with `--dry-run` for a live smoke — zero writes,
+zero marker/push/spawn subprocesses).
+
+**Partial-bundle reconciliation pass (task #1704, `partial_bundle_pass`;
+motivating incident #1345; daemon-INDEPENDENT, runs right after
+`completed_unmerged_pass`).** The reader-back of the GCP EXIT-trap
+crash-persist path — `_eps_persist_diagnostics` (`backends/gcp.py`)
+uploads partial artifacts to `superkaiba1/explore-persona-space-data`
+under `issue<N>_partial/<attempt_id>/` on every non-zero rc, but nothing
+ever reads those bundles back, so a bundle carrying a COMPLETED result
+whose workload upload path never fired is indistinguishable from a
+genuinely-partial persist. This pass lists the `issue<N>_partial/`
+prefixes for recently-touched non-`proposed` REGISTRY tasks
+(`EPM_PARTIAL_BUNDLE_LOOKBACK_H`, default 168 h), groups by attempt_id,
+classifies each bundle via `_classify_bundle_completeness` (four states:
+`complete` — transcript + result payload / `workload_ts_backstop` —
+weaker signal, workload_<ts>.log + result / `no_result_payload` — silent
+skip / `persist_killed` — silent skip), extracts the bundle-relative
+paths under `eval_results_issue_<N>/`, and compares against ONE
+read-only `git ls-tree -r --name-only HEAD -- eval_results/issue_<N>/`
+at `PROJECT_ROOT` (semantic contract: "landed on `main`", NEVER a
+worktree HEAD). Any bundle-relative path with NO committed counterpart
+flags. **Channels:** one row per firing to the dedicated sidecar
+`.claude/cache/partial-bundle-events.jsonl` (with
+`completeness_signal` recording the classifier's return
+verbatim — the operator can weigh backstop vs primary firings at a
+glance) + ONE deduped fail-soft `_telegram_push` per (issue,
+attempt_id, band); NO task markers (the `verdict_disagree_pass`
+posture — the escalation target is a HUMAN, not the next dispatch).
+**Cadence + bounds:** hourly self-gate (`EPM_PARTIAL_BUNDLE_INTERVAL_HOURS`,
+default 1.0; the attempt stamp is saved BEFORE the collect, so a
+crashing pass is bounded to one error row per interval) with a per-pass
+listing cap (`EPM_PARTIAL_BUNDLE_LISTING_CAP`, default 50) + a persisted
+cursor `enum_cursor_idx` in `~/.eps-autonomous/partial-bundle-observer.json`
+so tail-of-list issues never starve; per-episode dedup keyed on `(issue,
+attempt_id, band)` with a 168 h re-alert TTL
+(`EPM_PARTIAL_BUNDLE_REALERT_HOURS`) — mirrors the registry-drift
+weekly re-alert for a persistent, un-remediable-until-user condition.
+**Fail-soft PER ISSUE** (never per pass): a retry-exhausted Hub error
+for ONE issue writes ONE `partial-bundle-hub-error` sidecar row and
+continues to the next; a git failure for ONE issue writes ONE
+`partial-bundle-git-error` sidecar row and continues. **ESCALATE-ONLY
+is a hard invariant:** the pass NEVER auto-commits bundle contents,
+NEVER deletes a bundle (crash forensics are durable record), NEVER
+posts task markers — pinned by `tests/test_autonomous_session_watch.py::test_partial_bundle_pass_never_mutates_state`
+(argv spy on every `subprocess.run` — every argv is `git ls-tree`
+under `PROJECT_ROOT`, with no `commit`/`add`/`push`/`rm` anywhere) and
+`test_partial_bundle_pass_never_posts_task_markers`. Kill switch
+`EPM_DISABLE_PARTIAL_BUNDLE_AUDIT=1`; `--partial-bundle-only` runs
+just this pass (pair with `--dry-run` for a zero-write live smoke
+against the real data repo).
+
+**Urgent-park router pass (task #1681, `urgent_wf_park_pass`;
+daemon-INDEPENDENT, runs right after `completed_unmerged_pass`).** The
+"main is red" fast path for PARKED workflow-fix candidates: a park whose
+bug is a currently-failing test on origin/main otherwise waits up to ~24h
+for the nightly /daily Step C sweep while every session's Step 9c gate
+re-classifies the red (incident #1643: an 07:08Z park's red lived ~11.5h).
+**Predicate:** the parking session LABELS the park mechanically routable
+(the formal candidate block + `urgency: main-red` + `failing_test: <one
+pytest node id>` + `wf_fix: true|false` — grammar + emitter duty:
+`.claude/rules/workflow-fix-on-bug.md` § Recursion guard "Urgent fast
+path"; labeling is not routing — the guard invariant holds, only this
+non-guarded watcher acts). **Tiers:** a cheap mtime+substring candidate
+gate over ~48h-fresh events streams (deliberately NO read-size byte cap —
+the #1287 defeat mode) → authoritative enumeration by IMPORTING
+`sweep_parked_wf_candidates.sweep()` read-only (suppression rules 1–3 for
+free) → two-tier claim verification (a fresh step9c baseline-ledger hit
+whose `refreshed_at` postdates the park, else ONE bounded `uv run pytest
+<node>` subprocess per tick — timeout `EPM_URGENT_WF_PARK_PYTEST_TIMEOUT_S`,
+default 180s; rc==1 confirmed / rc==0 refuted / ANY other rc incl. rc=5
+no-tests-collected indeterminate, never an `rc != 0 → confirmed` shortcut)
+→ dedup belts (`task_workflow.is_open_workflow_fix_task` + a failing-node
+containment scan over open infra bodies) → file + dispatch via
+`scripts/file_infra_task.py` → the standard `epm:workflow-fix-task-filed`
+routed-record posted on the park's OWN stream BEFORE latching
+(sweep-reported fingerprint VERBATIM + `origin_candidate_ts` — the #1680
+lesson; note sentinel `[autonomous_session_watch:urgent-wf-park-router]`,
+a `_WATCHER_NOTE_SENTINELS` member so it never resets staleness clocks).
+**Fallback:** missing/malformed/refuted/unverifiable urgency → the park
+stays enumerated for the nightly sweep byte-unchanged; the router never
+synthesizes fields. **Bounds:** fleet per-UTC-day route cap
+`EPM_URGENT_WF_PARK_ROUTES_PER_DAY` (default 2; quiet-at-cap — sidecar row
+only, no latch, re-eligible tomorrow: the #1241 posture, chosen because a
+real backstop exists), per-candidate verdict latch (state singleton
+`~/.eps-autonomous/urgent-wf-park-router.json`; sidecar
+`.claude/cache/urgent-wf-park-events.jsonl`), ≤1 pytest subprocess per
+tick (further urgent parks defer to the next tick), indeterminate
+verification latched `unverifiable` after 2 attempts. Kill switch
+`EPM_DISABLE_URGENT_WF_PARK_PASS=1`; `--urgent-wf-park-only` runs just
+this pass (pair with `--dry-run` for a live smoke — zero writes, zero
+subprocesses).
 
 **Auth-outage guard pass (task #1027, `auth_outage_pass`).** Fleet-level
 respawn suppression for an Anthropic auth outage — or ANY fleet-wide

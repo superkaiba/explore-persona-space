@@ -115,3 +115,23 @@ overleaf_paper/
 # --smoke relocates every WRITE-target dir under a sibling smoke_scope/ so
 # mock artifacts never land at canonical production paths (review r1 C1(iii)).
 **/smoke_scope/
+
+# #1768/#1900 verdict-manifest lane-staging fallback cache — the READ path is
+# pinned inside issue1768_cells._load_manifest (module-adjacent by contract,
+# the SLURM rsync-exclude workaround), so it must live in scripts/; runtime
+# cache, never committed (r2 Minor 5 hygiene).
+scripts/.i1768_verdict_manifest.json
+
+# #1973 SLURM fetch_results out-of-tree staging (SlurmBackend.fetch_results
+# phase-1 pull dest at the repo root, merged into the live eval_results/ +
+# figures/ trees then removed; kept on failure for resume) — never committed.
+.slurm-results-staging/
+
+# Generated SAE-feature browsing pages served out of dashboard/public/. These
+# are regenerated from committed eval_results/ artifacts by their build scripts,
+# so the repo gains nothing by tracking them — and they are the surface most at
+# risk of carrying corpus-derived text into a PUBLIC repo, so an accidental
+# `git add -A` must never sweep them in. annotate-1773.html was previously kept
+# untracked by convention only; this makes it mechanical.
+dashboard/public/annotate-1773.html
+dashboard/public/sae-features-1482.html

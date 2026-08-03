@@ -1,0 +1,1387 @@
+{
+  "regime": {
+    "bins_version": "13bins-v1",
+    "bin_names": [
+      "first",
+      "tok2_5",
+      "dec1",
+      "dec2",
+      "dec3",
+      "dec4",
+      "dec5",
+      "dec6",
+      "dec7",
+      "dec8",
+      "dec9",
+      "dec10",
+      "last"
+    ],
+    "layers": [
+      7,
+      10,
+      14,
+      17,
+      20,
+      21,
+      24
+    ],
+    "headline_layers": [
+      14,
+      20
+    ],
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "n_draws": 10,
+    "revisions": {
+      "parent": "79dacd5239869e8de65c89a04437a606af436ad0",
+      "rep": "7ea5ae87e9b21342522a4ac66226f1daa29899d8"
+    },
+    "tiny": false,
+    "store_dtype": "float16"
+  },
+  "cells": {
+    "capture/gen1c/context/cross_00_evil_to_sycophancy/L20/a4": {
+      "completed_at": "2026-07-22T22:31:29.999956+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_00_evil_to_sycophancy/L20/a4": {
+      "completed_at": "2026-07-22T22:31:30.824458+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_01_evil_to_hallucination/L20/a4": {
+      "completed_at": "2026-07-22T22:31:31.573362+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_01_evil_to_hallucination/L20/a4": {
+      "completed_at": "2026-07-22T22:31:32.682495+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_02_sycophancy_to_evil/L20/a4": {
+      "completed_at": "2026-07-22T22:31:34.114648+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_02_sycophancy_to_evil/L20/a4": {
+      "completed_at": "2026-07-22T22:31:34.965871+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_03_sycophancy_to_hallucination/L20/a4": {
+      "completed_at": "2026-07-22T22:31:35.685392+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_03_sycophancy_to_hallucination/L20/a4": {
+      "completed_at": "2026-07-22T22:31:36.417434+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_04_hallucination_to_evil/L20/a4": {
+      "completed_at": "2026-07-22T22:31:37.614718+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_04_hallucination_to_evil/L20/a4": {
+      "completed_at": "2026-07-22T22:31:38.572094+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1b/cross_00_evil_to_sycophancy/c": {
+      "completed_at": "2026-07-22T22:31:38.880240+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_00_evil_to_sycophancy/cprime": {
+      "completed_at": "2026-07-22T22:31:39.174481+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_01_evil_to_hallucination/c": {
+      "completed_at": "2026-07-22T22:31:39.545350+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_01_evil_to_hallucination/cprime": {
+      "completed_at": "2026-07-22T22:31:40.074527+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_02_sycophancy_to_evil/c": {
+      "completed_at": "2026-07-22T22:31:40.335862+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_02_sycophancy_to_evil/cprime": {
+      "completed_at": "2026-07-22T22:31:40.657290+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_03_sycophancy_to_hallucination/c": {
+      "completed_at": "2026-07-22T22:31:40.857076+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_03_sycophancy_to_hallucination/cprime": {
+      "completed_at": "2026-07-22T22:31:41.472530+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_04_hallucination_to_evil/c": {
+      "completed_at": "2026-07-22T22:31:41.871698+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_04_hallucination_to_evil/cprime": {
+      "completed_at": "2026-07-22T22:31:42.186396+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_05_hallucination_to_sycophancy/c": {
+      "completed_at": "2026-07-22T22:31:42.680780+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_05_hallucination_to_sycophancy/cprime": {
+      "completed_at": "2026-07-22T22:31:42.890317+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_06_evil_to_sycophancy/c": {
+      "completed_at": "2026-07-22T22:31:43.251624+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_06_evil_to_sycophancy/cprime": {
+      "completed_at": "2026-07-22T22:31:43.531666+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_07_evil_to_hallucination/c": {
+      "completed_at": "2026-07-22T22:31:43.789247+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_07_evil_to_hallucination/cprime": {
+      "completed_at": "2026-07-22T22:31:44.336389+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_08_sycophancy_to_evil/c": {
+      "completed_at": "2026-07-22T22:31:44.507830+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_08_sycophancy_to_evil/cprime": {
+      "completed_at": "2026-07-22T22:31:44.796326+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_09_sycophancy_to_hallucination/c": {
+      "completed_at": "2026-07-22T22:31:45.084157+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_09_sycophancy_to_hallucination/cprime": {
+      "completed_at": "2026-07-22T22:31:45.523934+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_10_hallucination_to_evil/c": {
+      "completed_at": "2026-07-22T22:31:46.061722+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_10_hallucination_to_evil/cprime": {
+      "completed_at": "2026-07-22T22:31:46.501085+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_11_hallucination_to_sycophancy/c": {
+      "completed_at": "2026-07-22T22:31:47.019752+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_11_hallucination_to_sycophancy/cprime": {
+      "completed_at": "2026-07-22T22:31:47.290573+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_12_evil_to_sycophancy/c": {
+      "completed_at": "2026-07-22T22:31:47.641347+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/cross_12_evil_to_sycophancy/cprime": {
+      "completed_at": "2026-07-22T22:31:47.949523+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m685_00_sycophancy/c": {
+      "completed_at": "2026-07-22T22:31:48.464450+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m685_00_sycophancy/cprime": {
+      "completed_at": "2026-07-22T22:31:48.768081+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m685_01_refusal/c": {
+      "completed_at": "2026-07-22T22:31:49.308995+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m685_01_refusal/cprime": {
+      "completed_at": "2026-07-22T22:31:49.596904+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m685_02_evil/c": {
+      "completed_at": "2026-07-22T22:31:50.043515+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m685_02_evil/cprime": {
+      "completed_at": "2026-07-22T22:31:50.399829+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m685_03_hedging/c": {
+      "completed_at": "2026-07-22T22:31:50.943019+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m685_03_hedging/cprime": {
+      "completed_at": "2026-07-22T22:31:51.492028+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m685_04_terse/c": {
+      "completed_at": "2026-07-22T22:31:52.092222+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m685_04_terse/cprime": {
+      "completed_at": "2026-07-22T22:31:52.211950+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m685_05_formal/c": {
+      "completed_at": "2026-07-22T22:31:52.820379+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m685_05_formal/cprime": {
+      "completed_at": "2026-07-22T22:31:53.313407+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m685_06_villain/c": {
+      "completed_at": "2026-07-22T22:31:53.774511+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m685_06_villain/cprime": {
+      "completed_at": "2026-07-22T22:31:54.123624+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m685_07_medical_doctor/c": {
+      "completed_at": "2026-07-22T22:31:54.689017+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m685_07_medical_doctor/cprime": {
+      "completed_at": "2026-07-22T22:31:55.255259+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m685_08_french_person/c": {
+      "completed_at": "2026-07-22T22:31:55.682819+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m685_08_french_person/cprime": {
+      "completed_at": "2026-07-22T22:31:56.151916+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m685_09_comedian/c": {
+      "completed_at": "2026-07-22T22:31:56.645493+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m685_09_comedian/cprime": {
+      "completed_at": "2026-07-22T22:31:56.926196+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m779_00_evil/c": {
+      "completed_at": "2026-07-22T22:31:57.403270+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m779_00_evil/cprime": {
+      "completed_at": "2026-07-22T22:31:57.763701+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m779_01_sycophancy/c": {
+      "completed_at": "2026-07-22T22:31:58.138471+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m779_01_sycophancy/cprime": {
+      "completed_at": "2026-07-22T22:31:58.392644+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m779_02_hallucination/c": {
+      "completed_at": "2026-07-22T22:31:58.854317+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m779_02_hallucination/cprime": {
+      "completed_at": "2026-07-22T22:31:59.362536+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m779_03_evil/c": {
+      "completed_at": "2026-07-22T22:31:59.802644+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m779_03_evil/cprime": {
+      "completed_at": "2026-07-22T22:32:00.061731+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m779_04_sycophancy/c": {
+      "completed_at": "2026-07-22T22:32:00.505516+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1b/m779_04_sycophancy/cprime": {
+      "completed_at": "2026-07-22T22:32:00.702527+00:00",
+      "family": "gen1b"
+    },
+    "capture/gen1c/prefix/cross_00_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:32:46.189971+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_01_evil_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:32:46.567419+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_02_sycophancy_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:32:46.866472+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_03_sycophancy_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:32:47.085860+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_04_hallucination_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:32:47.541518+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_05_hallucination_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:32:48.071938+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_05_hallucination_to_sycophancy/L20/a4": {
+      "completed_at": "2026-07-22T22:32:48.629096+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_06_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:32:48.985051+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_06_evil_to_sycophancy/L20/a4": {
+      "completed_at": "2026-07-22T22:32:49.361916+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_07_evil_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:32:49.587453+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_07_evil_to_hallucination/L20/a4": {
+      "completed_at": "2026-07-22T22:32:49.888646+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_08_sycophancy_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:32:50.087161+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_08_sycophancy_to_evil/L20/a4": {
+      "completed_at": "2026-07-22T22:32:50.316623+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_09_sycophancy_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:32:50.688352+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_09_sycophancy_to_hallucination/L20/a4": {
+      "completed_at": "2026-07-22T22:32:50.943857+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_10_hallucination_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:32:51.440577+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_10_hallucination_to_evil/L20/a4": {
+      "completed_at": "2026-07-22T22:32:51.976604+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_11_hallucination_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:32:52.455076+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_11_hallucination_to_sycophancy/L20/a4": {
+      "completed_at": "2026-07-22T22:32:52.986769+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_12_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:32:53.401583+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/cross_12_evil_to_sycophancy/L20/a4": {
+      "completed_at": "2026-07-22T22:32:53.718498+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m685_00_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:32:54.164055+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m685_00_sycophancy/L20/a4": {
+      "completed_at": "2026-07-22T22:32:54.655773+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m685_01_refusal/L14/a4": {
+      "completed_at": "2026-07-22T22:32:55.171678+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m685_01_refusal/L20/a4": {
+      "completed_at": "2026-07-22T22:32:55.760765+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m685_02_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:32:56.175171+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m685_02_evil/L20/a4": {
+      "completed_at": "2026-07-22T22:32:56.622553+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m685_03_hedging/L14/a4": {
+      "completed_at": "2026-07-22T22:32:57.093901+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m685_03_hedging/L20/a4": {
+      "completed_at": "2026-07-22T22:32:57.616425+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m685_04_terse/L14/a4": {
+      "completed_at": "2026-07-22T22:32:58.156635+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m685_04_terse/L20/a4": {
+      "completed_at": "2026-07-22T22:32:58.753586+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m685_05_formal/L14/a4": {
+      "completed_at": "2026-07-22T22:32:59.301461+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m685_05_formal/L20/a4": {
+      "completed_at": "2026-07-22T22:32:59.876684+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m685_06_villain/L14/a4": {
+      "completed_at": "2026-07-22T22:33:00.368761+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m685_06_villain/L20/a4": {
+      "completed_at": "2026-07-22T22:33:00.786893+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m685_07_medical_doctor/L14/a4": {
+      "completed_at": "2026-07-22T22:33:01.402637+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m685_07_medical_doctor/L20/a4": {
+      "completed_at": "2026-07-22T22:33:02.071973+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m685_08_french_person/L14/a4": {
+      "completed_at": "2026-07-22T22:33:02.536278+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m685_08_french_person/L20/a4": {
+      "completed_at": "2026-07-22T22:33:03.027484+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m685_09_comedian/L14/a4": {
+      "completed_at": "2026-07-22T22:33:03.603760+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m685_09_comedian/L20/a4": {
+      "completed_at": "2026-07-22T22:33:04.107700+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m779_00_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:33:04.598441+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m779_00_evil/L20/a4": {
+      "completed_at": "2026-07-22T22:33:05.187712+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m779_01_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:33:05.596664+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m779_01_sycophancy/L20/a4": {
+      "completed_at": "2026-07-22T22:33:05.986371+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m779_02_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:33:06.420564+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m779_02_hallucination/L20/a4": {
+      "completed_at": "2026-07-22T22:33:06.871435+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m779_03_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:33:07.252069+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m779_03_evil/L20/a4": {
+      "completed_at": "2026-07-22T22:33:07.684814+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m779_04_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:33:08.020679+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/prefix/m779_04_sycophancy/L20/a4": {
+      "completed_at": "2026-07-22T22:33:08.420733+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_00_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:33:08.752450+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_01_evil_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:33:09.135780+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_02_sycophancy_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:33:09.425013+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_03_sycophancy_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:33:09.673078+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_04_hallucination_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:33:10.087143+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_05_hallucination_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:33:10.667374+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_05_hallucination_to_sycophancy/L20/a4": {
+      "completed_at": "2026-07-22T22:33:11.152111+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_06_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:33:11.539477+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_06_evil_to_sycophancy/L20/a4": {
+      "completed_at": "2026-07-22T22:33:11.927186+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_07_evil_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:33:12.262879+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_07_evil_to_hallucination/L20/a4": {
+      "completed_at": "2026-07-22T22:33:12.628692+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_08_sycophancy_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:33:12.809836+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_08_sycophancy_to_evil/L20/a4": {
+      "completed_at": "2026-07-22T22:33:13.002573+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_09_sycophancy_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:33:13.398979+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_09_sycophancy_to_hallucination/L20/a4": {
+      "completed_at": "2026-07-22T22:33:13.685144+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_10_hallucination_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:33:14.169052+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_10_hallucination_to_evil/L20/a4": {
+      "completed_at": "2026-07-22T22:33:14.736083+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_11_hallucination_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:33:15.206547+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_11_hallucination_to_sycophancy/L20/a4": {
+      "completed_at": "2026-07-22T22:33:15.777297+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_12_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:33:16.147577+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/cross_12_evil_to_sycophancy/L20/a4": {
+      "completed_at": "2026-07-22T22:33:16.517206+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m685_00_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:33:17.004297+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m685_00_sycophancy/L20/a4": {
+      "completed_at": "2026-07-22T22:33:17.464400+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m685_01_refusal/L14/a4": {
+      "completed_at": "2026-07-22T22:33:18.019792+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m685_01_refusal/L20/a4": {
+      "completed_at": "2026-07-22T22:33:18.562232+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m685_02_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:33:18.994354+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m685_02_evil/L20/a4": {
+      "completed_at": "2026-07-22T22:33:19.468146+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m685_03_hedging/L14/a4": {
+      "completed_at": "2026-07-22T22:33:20.007290+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m685_03_hedging/L20/a4": {
+      "completed_at": "2026-07-22T22:33:20.608718+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m685_04_terse/L14/a4": {
+      "completed_at": "2026-07-22T22:33:20.742552+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m685_04_terse/L20/a4": {
+      "completed_at": "2026-07-22T22:33:21.345471+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m685_05_formal/L14/a4": {
+      "completed_at": "2026-07-22T22:33:21.882930+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m685_05_formal/L20/a4": {
+      "completed_at": "2026-07-22T22:33:22.457929+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m685_06_villain/L14/a4": {
+      "completed_at": "2026-07-22T22:33:22.889954+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m685_06_villain/L20/a4": {
+      "completed_at": "2026-07-22T22:33:23.650432+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m685_07_medical_doctor/L14/a4": {
+      "completed_at": "2026-07-22T22:33:24.204773+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m685_07_medical_doctor/L20/a4": {
+      "completed_at": "2026-07-22T22:33:24.757027+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m685_08_french_person/L14/a4": {
+      "completed_at": "2026-07-22T22:33:25.253930+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m685_08_french_person/L20/a4": {
+      "completed_at": "2026-07-22T22:33:25.724287+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m685_09_comedian/L14/a4": {
+      "completed_at": "2026-07-22T22:33:26.140784+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m685_09_comedian/L20/a4": {
+      "completed_at": "2026-07-22T22:33:26.617438+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m779_00_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:33:27.131886+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m779_00_evil/L20/a4": {
+      "completed_at": "2026-07-22T22:33:27.584969+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m779_01_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:33:27.954873+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m779_01_sycophancy/L20/a4": {
+      "completed_at": "2026-07-22T22:33:28.332960+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m779_02_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:33:28.788014+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m779_02_hallucination/L20/a4": {
+      "completed_at": "2026-07-22T22:33:29.249291+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m779_03_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:33:29.661838+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m779_03_evil/L20/a4": {
+      "completed_at": "2026-07-22T22:33:30.122014+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m779_04_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:33:30.451734+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen1c/context/m779_04_sycophancy/L20/a4": {
+      "completed_at": "2026-07-22T22:33:30.838733+00:00",
+      "family": "gen1c"
+    },
+    "capture/gen_rep43/base/cross_00_evil_to_sycophancy/c": {
+      "completed_at": "2026-07-22T22:34:23.828183+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/cross_01_evil_to_hallucination/c": {
+      "completed_at": "2026-07-22T22:34:24.200156+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/cross_02_sycophancy_to_evil/c": {
+      "completed_at": "2026-07-22T22:34:24.476015+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/cross_03_sycophancy_to_hallucination/c": {
+      "completed_at": "2026-07-22T22:34:24.671998+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/cross_04_hallucination_to_evil/c": {
+      "completed_at": "2026-07-22T22:34:25.112763+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/cross_05_hallucination_to_sycophancy/c": {
+      "completed_at": "2026-07-22T22:34:25.629703+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/cross_06_evil_to_sycophancy/c": {
+      "completed_at": "2026-07-22T22:34:25.945079+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/cross_07_evil_to_hallucination/c": {
+      "completed_at": "2026-07-22T22:34:26.200636+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/cross_08_sycophancy_to_evil/c": {
+      "completed_at": "2026-07-22T22:34:26.381081+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/cross_09_sycophancy_to_hallucination/c": {
+      "completed_at": "2026-07-22T22:34:26.651914+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/cross_10_hallucination_to_evil/c": {
+      "completed_at": "2026-07-22T22:34:27.173474+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/cross_11_hallucination_to_sycophancy/c": {
+      "completed_at": "2026-07-22T22:34:27.669328+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/cross_12_evil_to_sycophancy/c": {
+      "completed_at": "2026-07-22T22:34:28.039667+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/m685_00_sycophancy/c": {
+      "completed_at": "2026-07-22T22:34:28.557376+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/m685_01_refusal/c": {
+      "completed_at": "2026-07-22T22:34:29.194656+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/m685_02_evil/c": {
+      "completed_at": "2026-07-22T22:34:29.634664+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/m685_03_hedging/c": {
+      "completed_at": "2026-07-22T22:34:30.152005+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/m685_04_terse/c": {
+      "completed_at": "2026-07-22T22:34:30.776109+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/m685_05_formal/c": {
+      "completed_at": "2026-07-22T22:34:31.343745+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/m685_06_villain/c": {
+      "completed_at": "2026-07-22T22:34:31.785698+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/m685_07_medical_doctor/c": {
+      "completed_at": "2026-07-22T22:34:32.420573+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/m685_08_french_person/c": {
+      "completed_at": "2026-07-22T22:34:32.864816+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/m685_09_comedian/c": {
+      "completed_at": "2026-07-22T22:34:33.427598+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/m779_00_evil/c": {
+      "completed_at": "2026-07-22T22:34:33.952608+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/m779_01_sycophancy/c": {
+      "completed_at": "2026-07-22T22:34:34.387292+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/m779_02_hallucination/c": {
+      "completed_at": "2026-07-22T22:34:34.854056+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/m779_03_evil/c": {
+      "completed_at": "2026-07-22T22:34:35.307821+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/base/m779_04_sycophancy/c": {
+      "completed_at": "2026-07-22T22:34:35.700859+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/cross_00_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:34:36.055609+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/cross_01_evil_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:34:36.427108+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/cross_02_sycophancy_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:34:36.728476+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/cross_03_sycophancy_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:34:37.010358+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/cross_04_hallucination_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:34:37.514633+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/cross_05_hallucination_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:34:38.092786+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/cross_06_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:34:38.429825+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/cross_07_evil_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:34:38.690898+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/cross_08_sycophancy_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:34:38.888271+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/cross_09_sycophancy_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:34:39.284596+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/cross_10_hallucination_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:34:39.793412+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/cross_11_hallucination_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:34:40.277517+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/cross_12_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:34:40.637300+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/m685_00_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:34:41.073360+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/m685_01_refusal/L14/a4": {
+      "completed_at": "2026-07-22T22:34:41.589706+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/m685_02_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:34:42.035203+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/m685_03_hedging/L14/a4": {
+      "completed_at": "2026-07-22T22:34:42.582296+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/m685_04_terse/L14/a4": {
+      "completed_at": "2026-07-22T22:34:43.141202+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/m685_05_formal/L14/a4": {
+      "completed_at": "2026-07-22T22:34:43.719885+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/m685_06_villain/L14/a4": {
+      "completed_at": "2026-07-22T22:34:44.154691+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/m685_07_medical_doctor/L14/a4": {
+      "completed_at": "2026-07-22T22:34:44.717661+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/m685_08_french_person/L14/a4": {
+      "completed_at": "2026-07-22T22:34:45.187287+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/m685_09_comedian/L14/a4": {
+      "completed_at": "2026-07-22T22:34:45.649867+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/m779_00_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:34:46.241061+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/m779_01_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:34:46.624744+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/m779_02_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:34:47.089248+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/m779_03_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:34:47.503498+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/prefix/m779_04_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:34:47.863044+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/cross_00_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:34:48.204537+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/cross_01_evil_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:34:48.583980+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/cross_02_sycophancy_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:34:48.873697+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/cross_03_sycophancy_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:34:49.138136+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/cross_04_hallucination_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:34:49.605206+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/cross_05_hallucination_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:34:50.173351+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/cross_06_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:34:50.528822+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/cross_07_evil_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:34:50.819290+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/cross_08_sycophancy_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:34:51.018564+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/cross_09_sycophancy_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:34:51.472328+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/cross_10_hallucination_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:34:52.037635+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/cross_11_hallucination_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:34:52.563977+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/cross_12_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:34:53.009588+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/m685_00_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:34:53.483743+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/m685_01_refusal/L14/a4": {
+      "completed_at": "2026-07-22T22:34:54.133525+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/m685_02_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:34:54.518242+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/m685_03_hedging/L14/a4": {
+      "completed_at": "2026-07-22T22:34:55.011634+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/m685_04_terse/L14/a4": {
+      "completed_at": "2026-07-22T22:34:55.148375+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/m685_05_formal/L14/a4": {
+      "completed_at": "2026-07-22T22:34:55.710643+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/m685_06_villain/L14/a4": {
+      "completed_at": "2026-07-22T22:34:56.094231+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/m685_07_medical_doctor/L14/a4": {
+      "completed_at": "2026-07-22T22:34:56.673129+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/m685_08_french_person/L14/a4": {
+      "completed_at": "2026-07-22T22:34:57.107478+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/m685_09_comedian/L14/a4": {
+      "completed_at": "2026-07-22T22:34:57.558474+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/m779_00_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:34:58.037623+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/m779_01_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:34:58.454729+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/m779_02_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:34:58.924090+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/m779_03_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:34:59.306822+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep43/context/m779_04_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:34:59.603098+00:00",
+      "family": "rep43"
+    },
+    "capture/gen_rep44/base/cross_00_evil_to_sycophancy/c": {
+      "completed_at": "2026-07-22T22:35:29.536157+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/cross_01_evil_to_hallucination/c": {
+      "completed_at": "2026-07-22T22:35:29.893152+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/cross_02_sycophancy_to_evil/c": {
+      "completed_at": "2026-07-22T22:35:30.172409+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/cross_03_sycophancy_to_hallucination/c": {
+      "completed_at": "2026-07-22T22:35:30.371354+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/cross_04_hallucination_to_evil/c": {
+      "completed_at": "2026-07-22T22:35:30.843906+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/cross_05_hallucination_to_sycophancy/c": {
+      "completed_at": "2026-07-22T22:35:31.409021+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/cross_06_evil_to_sycophancy/c": {
+      "completed_at": "2026-07-22T22:35:31.744306+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/cross_07_evil_to_hallucination/c": {
+      "completed_at": "2026-07-22T22:35:32.094317+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/cross_08_sycophancy_to_evil/c": {
+      "completed_at": "2026-07-22T22:35:32.277077+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/cross_09_sycophancy_to_hallucination/c": {
+      "completed_at": "2026-07-22T22:35:32.547996+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/cross_10_hallucination_to_evil/c": {
+      "completed_at": "2026-07-22T22:35:33.095922+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/cross_11_hallucination_to_sycophancy/c": {
+      "completed_at": "2026-07-22T22:35:33.642012+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/cross_12_evil_to_sycophancy/c": {
+      "completed_at": "2026-07-22T22:35:34.063555+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/m685_00_sycophancy/c": {
+      "completed_at": "2026-07-22T22:35:34.586499+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/m685_01_refusal/c": {
+      "completed_at": "2026-07-22T22:35:35.187375+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/m685_02_evil/c": {
+      "completed_at": "2026-07-22T22:35:35.591901+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/m685_03_hedging/c": {
+      "completed_at": "2026-07-22T22:35:36.109350+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/m685_04_terse/c": {
+      "completed_at": "2026-07-22T22:35:36.768023+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/m685_05_formal/c": {
+      "completed_at": "2026-07-22T22:35:37.381826+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/m685_06_villain/c": {
+      "completed_at": "2026-07-22T22:35:37.796174+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/m685_07_medical_doctor/c": {
+      "completed_at": "2026-07-22T22:35:38.361889+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/m685_08_french_person/c": {
+      "completed_at": "2026-07-22T22:35:38.795433+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/m685_09_comedian/c": {
+      "completed_at": "2026-07-22T22:35:39.310719+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/m779_00_evil/c": {
+      "completed_at": "2026-07-22T22:35:39.801354+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/m779_01_sycophancy/c": {
+      "completed_at": "2026-07-22T22:35:40.261534+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/m779_02_hallucination/c": {
+      "completed_at": "2026-07-22T22:35:40.720655+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/m779_03_evil/c": {
+      "completed_at": "2026-07-22T22:35:41.197131+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/base/m779_04_sycophancy/c": {
+      "completed_at": "2026-07-22T22:35:41.605565+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/cross_00_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:35:41.939725+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/cross_01_evil_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:35:42.320001+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/cross_02_sycophancy_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:35:42.595961+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/cross_03_sycophancy_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:35:42.824443+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/cross_04_hallucination_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:35:43.323382+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/cross_05_hallucination_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:35:43.872918+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/cross_06_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:35:44.239101+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/cross_07_evil_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:35:44.526355+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/cross_08_sycophancy_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:35:44.708595+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/cross_09_sycophancy_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:35:45.035520+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/cross_10_hallucination_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:35:45.554133+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/cross_11_hallucination_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:35:46.046352+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/cross_12_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:35:46.429642+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/m685_00_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:35:46.838405+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/m685_01_refusal/L14/a4": {
+      "completed_at": "2026-07-22T22:35:47.346284+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/m685_02_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:35:47.757770+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/m685_03_hedging/L14/a4": {
+      "completed_at": "2026-07-22T22:35:48.249277+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/m685_04_terse/L14/a4": {
+      "completed_at": "2026-07-22T22:35:48.728196+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/m685_05_formal/L14/a4": {
+      "completed_at": "2026-07-22T22:35:49.264073+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/m685_06_villain/L14/a4": {
+      "completed_at": "2026-07-22T22:35:49.779777+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/m685_07_medical_doctor/L14/a4": {
+      "completed_at": "2026-07-22T22:35:50.319969+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/m685_08_french_person/L14/a4": {
+      "completed_at": "2026-07-22T22:35:50.752634+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/m685_09_comedian/L14/a4": {
+      "completed_at": "2026-07-22T22:35:51.313602+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/m779_00_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:35:51.801871+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/m779_01_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:35:52.165834+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/m779_02_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:35:52.617372+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/m779_03_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:35:53.001164+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/prefix/m779_04_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:35:53.332419+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/cross_00_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:35:53.683969+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/cross_01_evil_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:35:54.060381+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/cross_02_sycophancy_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:35:54.361876+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/cross_03_sycophancy_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:35:54.613212+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/cross_04_hallucination_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:35:55.072324+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/cross_05_hallucination_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:35:55.625073+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/cross_06_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:35:56.004359+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/cross_07_evil_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:35:56.320565+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/cross_08_sycophancy_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:35:56.536236+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/cross_09_sycophancy_to_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:35:56.906521+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/cross_10_hallucination_to_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:35:57.445576+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/cross_11_hallucination_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:35:57.960430+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/cross_12_evil_to_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:35:58.389746+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/m685_00_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:35:58.856743+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/m685_01_refusal/L14/a4": {
+      "completed_at": "2026-07-22T22:35:59.471360+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/m685_02_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:35:59.884536+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/m685_03_hedging/L14/a4": {
+      "completed_at": "2026-07-22T22:36:00.373568+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/m685_04_terse/L14/a4": {
+      "completed_at": "2026-07-22T22:36:00.908700+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/m685_05_formal/L14/a4": {
+      "completed_at": "2026-07-22T22:36:01.386186+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/m685_06_villain/L14/a4": {
+      "completed_at": "2026-07-22T22:36:01.817883+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/m685_07_medical_doctor/L14/a4": {
+      "completed_at": "2026-07-22T22:36:02.414105+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/m685_08_french_person/L14/a4": {
+      "completed_at": "2026-07-22T22:36:03.010909+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/m685_09_comedian/L14/a4": {
+      "completed_at": "2026-07-22T22:36:03.496237+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/m779_00_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:36:03.948145+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/m779_01_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:36:04.326667+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/m779_02_hallucination/L14/a4": {
+      "completed_at": "2026-07-22T22:36:04.793793+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/m779_03_evil/L14/a4": {
+      "completed_at": "2026-07-22T22:36:05.201962+00:00",
+      "family": "rep44"
+    },
+    "capture/gen_rep44/context/m779_04_sycophancy/L14/a4": {
+      "completed_at": "2026-07-22T22:36:05.572184+00:00",
+      "family": "rep44"
+    }
+  }
+}

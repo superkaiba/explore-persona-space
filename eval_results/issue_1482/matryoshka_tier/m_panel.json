@@ -1,0 +1,55 @@
+{
+  "families": {
+    "lmsys": {
+      "floor": 240,
+      "cap": 16384,
+      "seed": 14824,
+      "n_clearing_by_tier": {
+        "0": 1640,
+        "1": 7382,
+        "2": 12125
+      },
+      "alloc_by_tier": {
+        "0": 1640,
+        "1": 6144,
+        "2": 8600
+      },
+      "n_panel": 16384,
+      "panel_tier_counts": {
+        "0": 1640,
+        "1": 6144,
+        "2": 8600
+      },
+      "per_tier_floor_warn": []
+    },
+    "pile": {
+      "floor": 240,
+      "cap": 16384,
+      "seed": 14824,
+      "n_clearing_by_tier": {
+        "0": 1639,
+        "1": 6161,
+        "2": 10958
+      },
+      "alloc_by_tier": {
+        "0": 1639,
+        "1": 6144,
+        "2": 8601
+      },
+      "n_panel": 16384,
+      "panel_tier_counts": {
+        "0": 1639,
+        "1": 6144,
+        "2": 8601
+      },
+      "per_tier_floor_warn": []
+    }
+  },
+  "metadata": {
+    "git_commit": "cc1109ba5826d8dfea2a330c44ee04e099ba57e8",
+    "timestamp_utc": "2026-07-30T06:03:05.901957Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1064-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all"
+  }
+}

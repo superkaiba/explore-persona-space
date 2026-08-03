@@ -48,3 +48,9 @@ minted on A100-80, only A100-80 will pass.
 Closed regression: task #667 `a36-readout-reextract-cos` round 1 (GCE
 attempt `att-20260625-105641`, 2026-06-28 22:46 UTC), round 2 relaunched
 on A100-80 same code.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [rsLoRA parity probe needs A100 intent, not eval](feedback_rslora_parity_probe_needs_a100_intent.md) — an rsLoRA parity probe minted on A100-80 (the #537/#667 line) FAILS on L4 (`--intent eval` → `g2-standard-4`, cc 8.9 bf16/TF32 precision mismatch); plan §9 naming "A100-80" requires `--intent lora-7b` (→ `a2-ultragpu-1g`), regardless of whether the workload is forward-pass-only — #667 a36 round 1

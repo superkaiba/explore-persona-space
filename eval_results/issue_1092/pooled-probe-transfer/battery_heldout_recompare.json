@@ -1,0 +1,484 @@
+{
+  "metadata": {
+    "script": "issue1092_battery_heldout_recompare.py",
+    "followup_label": "battery-heldout-recompare",
+    "git_commit": "2203693ca3dd8c5d63c774a9377123150d276b0c",
+    "timestamp_utc": "2026-07-23T21:24:46Z",
+    "python": "3.11.15",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128",
+    "traits": [
+      "hallucination",
+      "sycophancy",
+      "evil"
+    ],
+    "layers": [
+      14,
+      19
+    ],
+    "battery_stratum": "battery",
+    "cell": "cell_inst_own (instruct-own)",
+    "n_boot": 2000,
+    "seed": 0,
+    "design": "eval = 2400 battery-stratum rows (novel questions, disjoint from the query bank); train = non-battery scored rows. PRIMARY double-held-out (train prefixes \u2209 battery prefixes) vs SECONDARY novel-question (all non-battery). Monitoring arms (raw/5k/n1m) are matmul re-scores (no refit); the 3 probes are refit on the training pool with prefix-grouped CV \u03bb. All arms scored on the IDENTICAL battery eval rows.",
+    "banked_harness_leak_note": "the banked FITA_EXCLUDED_STRATA uses the literal 'battery_eval_only' which matches NO stratum, so the real 'battery' rows leak into the banked within-corpus train+CV pool; this recompare fixes the literal in-script only."
+  },
+  "reads": {
+    "hallucination": {
+      "L14": {
+        "n_eval": 2400,
+        "battery_score_std": 36.03894735683983,
+        "battery_score_mean": 27.803423611111107,
+        "battery_pos_gt50": 710,
+        "n_train_secondary": 5246,
+        "n_train_primary": 5246,
+        "prefix_overlap_battery_vs_nonbattery": 0,
+        "variants_coincide": true,
+        "label_flat": false,
+        "monitoring_reads": {
+          "raw": {
+            "r": -0.10417869135401522,
+            "r2": -10.713410497559009,
+            "ci_r": [
+              -0.1421357632318123,
+              -0.06644989001684215
+            ],
+            "n": 2400,
+            "n_valid_boot": 2000
+          },
+          "h_n5k_linear": {
+            "r": 0.22288178894987845,
+            "r2": -1.6331191019678837,
+            "ci_r": [
+              0.18627803706858734,
+              0.25476902998781914
+            ],
+            "n": 2400,
+            "n_valid_boot": 2000
+          },
+          "n1m_ridge": {
+            "r": 0.28702589356894187,
+            "r2": -1.0705788841281607,
+            "ci_r": [
+              0.25565043287313705,
+              0.3157130356608676
+            ],
+            "n": 2400,
+            "n_valid_boot": 2000
+          },
+          "n1m_mlp_w8192": {
+            "r": 0.32191085291575744,
+            "r2": -1.2599949825442214,
+            "ci_r": [
+              0.28952298525009046,
+              0.35270860008328936
+            ],
+            "n": 2400,
+            "n_valid_boot": 2000
+          },
+          "n1m_mlp_w32768": {
+            "r": 0.3429065915258425,
+            "r2": -1.1552638968047564,
+            "ci_r": [
+              0.3148472900603025,
+              0.36971242367704366
+            ],
+            "n": 2400,
+            "n_valid_boot": 2000
+          },
+          "n1m_krr_nystrom": {
+            "r": 0.27980231114071313,
+            "r2": -0.9792225745547298,
+            "ci_r": [
+              0.249122696122982,
+              0.30791213566985576
+            ],
+            "n": 2400,
+            "n_valid_boot": 2000
+          }
+        },
+        "refit_probes": {
+          "v_C": {
+            "secondary_novelq": {
+              "r": 0.7763447049024693,
+              "r2": 0.6017052125714324,
+              "ci_r": [
+                0.7168860601497287,
+                0.8262955152302169
+              ],
+              "n": 2400,
+              "n_valid_boot": 2000,
+              "n_train": 5246
+            },
+            "primary_double_heldout": {
+              "r": 0.7763447049024693,
+              "r2": 0.6017052125714324,
+              "ci_r": [
+                0.7168860601497287,
+                0.8262955152302169
+              ],
+              "n": 2400,
+              "n_valid_boot": 2000,
+              "n_train": 5246,
+              "coincides_with_secondary": true
+            }
+          },
+          "h_ridge": {
+            "secondary_novelq": {
+              "r": 0.7887458418396999,
+              "r2": 0.6061873367596289,
+              "ci_r": [
+                0.7597371947342156,
+                0.8179850300218255
+              ],
+              "n": 2400,
+              "n_valid_boot": 2000,
+              "n_train": 5246
+            },
+            "primary_double_heldout": {
+              "r": 0.7887458418396999,
+              "r2": 0.6061873367596289,
+              "ci_r": [
+                0.7597371947342156,
+                0.8179850300218255
+              ],
+              "n": 2400,
+              "n_valid_boot": 2000,
+              "n_train": 5246,
+              "coincides_with_secondary": true
+            }
+          },
+          "h_mlp": {
+            "secondary_novelq": {
+              "r": 0.7929289241662625,
+              "r2": 0.6236500574963204,
+              "ci_r": [
+                0.7573811163044658,
+                0.825474874696454
+              ],
+              "n": 2400,
+              "n_valid_boot": 2000,
+              "n_train": 5246
+            },
+            "primary_double_heldout": {
+              "r": 0.7929289241662625,
+              "r2": 0.6236500574963204,
+              "ci_r": [
+                0.7573811163044658,
+                0.825474874696454
+              ],
+              "n": 2400,
+              "n_valid_boot": 2000,
+              "n_train": 5246,
+              "coincides_with_secondary": true
+            }
+          }
+        }
+      }
+    },
+    "sycophancy": {
+      "L14": {
+        "n_eval": 2400,
+        "battery_score_std": 19.554422475020765,
+        "battery_score_mean": 9.871291666666666,
+        "battery_pos_gt50": 174,
+        "n_train_secondary": 5252,
+        "n_train_primary": 5252,
+        "prefix_overlap_battery_vs_nonbattery": 0,
+        "variants_coincide": true,
+        "label_flat": false,
+        "monitoring_reads": {
+          "raw": {
+            "r": 0.11359187930464619,
+            "r2": -0.9292061987056,
+            "ci_r": [
+              0.0739900888879485,
+              0.15140663316656464
+            ],
+            "n": 2400,
+            "n_valid_boot": 2000
+          },
+          "h_n5k_linear": {
+            "r": -0.05658739771466297,
+            "r2": -13.639576183477828,
+            "ci_r": [
+              -0.07609059517777982,
+              -0.034757346076676396
+            ],
+            "n": 2400,
+            "n_valid_boot": 2000
+          },
+          "n1m_ridge": {
+            "r": -0.053850823633316565,
+            "r2": -10.315603516391127,
+            "ci_r": [
+              -0.07877417673804689,
+              -0.027783828696731513
+            ],
+            "n": 2400,
+            "n_valid_boot": 2000
+          },
+          "n1m_mlp_w8192": {
+            "r": -0.05285068508635794,
+            "r2": -11.135275558823519,
+            "ci_r": [
+              -0.07673787428294568,
+              -0.02774073636072531
+            ],
+            "n": 2400,
+            "n_valid_boot": 2000
+          },
+          "n1m_mlp_w32768": {
+            "r": -0.03842120591019874,
+            "r2": -11.437060814143395,
+            "ci_r": [
+              -0.06504064258111474,
+              -0.012684085996175863
+            ],
+            "n": 2400,
+            "n_valid_boot": 2000
+          },
+          "n1m_krr_nystrom": {
+            "r": -0.020087394425322504,
+            "r2": -10.219337415487653,
+            "ci_r": [
+              -0.04388371121104976,
+              0.005783649161927384
+            ],
+            "n": 2400,
+            "n_valid_boot": 2000
+          }
+        },
+        "refit_probes": {
+          "v_C": {
+            "secondary_novelq": {
+              "r": 0.6593291517060278,
+              "r2": 0.4168701663718266,
+              "ci_r": [
+                0.581254389683763,
+                0.7224213676290279
+              ],
+              "n": 2400,
+              "n_valid_boot": 2000,
+              "n_train": 5252
+            },
+            "primary_double_heldout": {
+              "r": 0.6593291517060278,
+              "r2": 0.4168701663718266,
+              "ci_r": [
+                0.581254389683763,
+                0.7224213676290279
+              ],
+              "n": 2400,
+              "n_valid_boot": 2000,
+              "n_train": 5252,
+              "coincides_with_secondary": true
+            }
+          },
+          "h_ridge": {
+            "secondary_novelq": {
+              "r": 0.6696130416971598,
+              "r2": 0.4462750862064314,
+              "ci_r": [
+                0.6181205898758616,
+                0.7165342627744349
+              ],
+              "n": 2400,
+              "n_valid_boot": 2000,
+              "n_train": 5252
+            },
+            "primary_double_heldout": {
+              "r": 0.6696130416971598,
+              "r2": 0.4462750862064314,
+              "ci_r": [
+                0.6181205898758616,
+                0.7165342627744349
+              ],
+              "n": 2400,
+              "n_valid_boot": 2000,
+              "n_train": 5252,
+              "coincides_with_secondary": true
+            }
+          },
+          "h_mlp": {
+            "secondary_novelq": {
+              "r": 0.664798715094608,
+              "r2": 0.4349119581576998,
+              "ci_r": [
+                0.6167247935100618,
+                0.7076447875341647
+              ],
+              "n": 2400,
+              "n_valid_boot": 2000,
+              "n_train": 5252
+            },
+            "primary_double_heldout": {
+              "r": 0.664798715094608,
+              "r2": 0.4349119581576998,
+              "ci_r": [
+                0.6167247935100618,
+                0.7076447875341647
+              ],
+              "n": 2400,
+              "n_valid_boot": 2000,
+              "n_train": 5252,
+              "coincides_with_secondary": true
+            }
+          }
+        }
+      }
+    },
+    "evil": {
+      "L14": {
+        "n_eval": 2400,
+        "battery_score_std": 0.782490876766127,
+        "battery_score_mean": 0.036166666666666666,
+        "battery_pos_gt50": 0,
+        "n_train_secondary": 5252,
+        "n_train_primary": 5252,
+        "prefix_overlap_battery_vs_nonbattery": 0,
+        "variants_coincide": true,
+        "label_flat": true,
+        "monitoring_reads": {
+          "raw": {
+            "r": -0.0319287157844435,
+            "r2": -32365.65362055094,
+            "ci_r": [
+              -0.05471461245581472,
+              0.013146489949433684
+            ],
+            "n": 2400,
+            "n_valid_boot": 1998
+          },
+          "h_n5k_linear": {
+            "r": -0.04973353801001275,
+            "r2": -31682.1017900416,
+            "ci_r": [
+              -0.07949098573585191,
+              -0.011087187205769261
+            ],
+            "n": 2400,
+            "n_valid_boot": 1996
+          },
+          "n1m_ridge": {
+            "r": -0.03459191851379057,
+            "r2": -27525.272497999606,
+            "ci_r": [
+              -0.06238815875506587,
+              -0.0022731388645543713
+            ],
+            "n": 2400,
+            "n_valid_boot": 1999
+          },
+          "n1m_mlp_w8192": {
+            "r": -0.030126418105270492,
+            "r2": -27615.418556165747,
+            "ci_r": [
+              -0.05719947234529276,
+              -0.009841143265495015
+            ],
+            "n": 2400,
+            "n_valid_boot": 1996
+          },
+          "n1m_mlp_w32768": {
+            "r": -0.031796748228842424,
+            "r2": -27630.75218051854,
+            "ci_r": [
+              -0.058423080196813464,
+              -0.004609262341485848
+            ],
+            "n": 2400,
+            "n_valid_boot": 1999
+          },
+          "n1m_krr_nystrom": {
+            "r": -0.03410541946619643,
+            "r2": -27195.26118217817,
+            "ci_r": [
+              -0.06231245626158901,
+              -0.016291964908130802
+            ],
+            "n": 2400,
+            "n_valid_boot": 1996
+          }
+        },
+        "refit_probes": {
+          "v_C": {
+            "secondary_novelq": {
+              "r": -0.011660906169774672,
+              "r2": -0.15150781706401095,
+              "ci_r": [
+                -0.0253767289093486,
+                0.008099921639015333
+              ],
+              "n": 2400,
+              "n_valid_boot": 1998,
+              "n_train": 5252
+            },
+            "primary_double_heldout": {
+              "r": -0.011660906169774672,
+              "r2": -0.15150781706401095,
+              "ci_r": [
+                -0.0253767289093486,
+                0.008099921639015333
+              ],
+              "n": 2400,
+              "n_valid_boot": 1998,
+              "n_train": 5252,
+              "coincides_with_secondary": true
+            }
+          },
+          "h_ridge": {
+            "secondary_novelq": {
+              "r": 0.005496957785932376,
+              "r2": -0.09704941859481697,
+              "ci_r": [
+                -0.005990994264709233,
+                0.02134231796164933
+              ],
+              "n": 2400,
+              "n_valid_boot": 1995,
+              "n_train": 5252
+            },
+            "primary_double_heldout": {
+              "r": 0.005496957785932376,
+              "r2": -0.09704941859481697,
+              "ci_r": [
+                -0.005990994264709233,
+                0.02134231796164933
+              ],
+              "n": 2400,
+              "n_valid_boot": 1995,
+              "n_train": 5252,
+              "coincides_with_secondary": true
+            }
+          },
+          "h_mlp": {
+            "secondary_novelq": {
+              "r": -0.00873044403068599,
+              "r2": -0.12102104480164244,
+              "ci_r": [
+                -0.019411736181830865,
+                0.010752935208483494
+              ],
+              "n": 2400,
+              "n_valid_boot": 1998,
+              "n_train": 5252
+            },
+            "primary_double_heldout": {
+              "r": -0.00873044403068599,
+              "r2": -0.12102104480164244,
+              "ci_r": [
+                -0.019411736181830865,
+                0.010752935208483494
+              ],
+              "n": 2400,
+              "n_valid_boot": 1998,
+              "n_train": 5252,
+              "coincides_with_secondary": true
+            }
+          }
+        }
+      }
+    }
+  }
+}

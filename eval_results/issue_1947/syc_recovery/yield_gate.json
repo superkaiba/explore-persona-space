@@ -1,0 +1,14 @@
+{
+  "gate": {
+    "syc": {
+      "floor_n": 300,
+      "pass": true
+    }
+  },
+  "kept_behaviors": [
+    "syc"
+  ],
+  "dropped_behaviors": [],
+  "floor_n": 300,
+  "note": "plan §7 gate 2: >=240/300 -> equalize-down; <240 -> drop behavior; >=2 drops is a KILL (orchestrator decision)"
+}

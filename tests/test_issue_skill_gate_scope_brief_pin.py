@@ -37,6 +37,8 @@ What is pinned (plan #1305 §4.4 + the binding review concerns):
       deduplicated `hit-file list` field (#1533 — a count-only /
       glob-family summary omitted 7 hit files in #1494 round 1), and
       implementer.md's template keeps the never-truncate overflow rule.
+(viii) All five surfaces' pin-sweep field states its REALIZED sweep
+      universe (sweep_scope: selector-universe | repo-wide; #1651/#1634).
 """
 
 from __future__ import annotations
@@ -328,4 +330,68 @@ def test_gate_scope_duty_requires_verbatim_hit_file_list():
     ), (
         "experiment-implementer.md item 2b must record the verbatim hit-file "
         "list in `(c)` (duty-level record; Step 4.6 binding scope unchanged)"
+    )
+
+
+# --------------------------------------------------------------------------
+# Pin (viii) — sweep_scope universe token in the pin-sweep field (#1651)
+# --------------------------------------------------------------------------
+
+
+def test_gate_scope_pin_sweep_field_names_sweep_scope_universe():
+    # (#1651) the pin-sweep field must state its REALIZED sweep universe
+    # (`sweep_scope:` — selector-universe vs repo-wide) on all five
+    # surfaces; token-presence pin, rewording survives. Dropping the token
+    # re-opens the narrow-sweep-reads-as-exhaustive channel (#1634): the
+    # two implementer duties prescribe DIFFERENT universes (item 1 =
+    # selector enumeration; item 2b = all of tests/), so a scope-less
+    # field is ambiguous by construction.
+    impl_template = _region(
+        _IMPLEMENTER.read_text(encoding="utf-8"),
+        "### (c) How to verify",
+        "### (d) Needs human eyeball",
+        label="implementer.md (c) How to verify template",
+    )
+    assert "sweep_scope" in impl_template, (
+        "implementer.md's `(c)` Gate-scope template must carry the "
+        "sweep_scope universe token (#1651)"
+    )
+    assert "selector-universe" in impl_template, (
+        "implementer.md's template must name the selector-universe value "
+        "(item 1's prescribed universe; #1651)"
+    )
+    exp_checklist = _region(
+        _EXP_IMPLEMENTER.read_text(encoding="utf-8"),
+        "### After implementation (mandatory checklist)",
+        "### Smoke runs are same-turn, synchronous work",
+        label="experiment-implementer.md After implementation checklist",
+    )
+    assert "sweep_scope" in exp_checklist, (
+        "experiment-implementer.md item 2b must record the sweep_scope "
+        "universe token in `(c)` (#1651)"
+    )
+    assert "sweep_scope: repo-wide" in exp_checklist, (
+        "experiment-implementer.md item 2b must carry the compound contract "
+        "string `sweep_scope: repo-wide` (2b's prescribed universe — all of "
+        "tests/; the bare value `repo-wide` is pre-satisfied by the unrelated "
+        "staged-index `*.npz` prose, so only the compound form pins; #1651)"
+    )
+    assert "sweep_scope" in _region(
+        _CODE_REVIEWER.read_text(encoding="utf-8"),
+        "### Step 4.6",
+        "### Step 5: Security Sweep",
+        label="code-reviewer.md Step 4.6",
+    ), (
+        "code-reviewer.md Step 4.6 must enumerate the sweep_scope contract "
+        "field (missing token = present-but-terse, never absence; #1651)"
+    )
+    assert "sweep_scope" in _region(
+        _CODEX_CODE_REVIEWER.read_text(encoding="utf-8"),
+        "an un-CI-pinned BLOCKER-fix assertion ships unflagged.",
+        "**Workflow v2 addendum",
+        label="codex-code-reviewer.md Step 4.6 copy-list bullet",
+    ), "the Codex twin's Step 4.6 bullet must mirror the sweep_scope field (#1651/#1380)"
+    assert "sweep_scope" in _step4b_duty_bullet(), (
+        "the SKILL.md Step 4b gate-scope duty bullet must name the "
+        "sweep_scope universe token (#1651)"
     )

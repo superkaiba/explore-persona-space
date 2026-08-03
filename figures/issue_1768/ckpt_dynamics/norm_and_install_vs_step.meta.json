@@ -1,0 +1,3992 @@
+{
+  "commit": "0c840a697b",
+  "created": "2026-08-01T01:55:49Z",
+  "figsize": [
+    9.2,
+    3.7
+  ],
+  "points": [
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.747693990663949,
+      "series": "Writing style",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.9624988530210645,
+      "series": "Writing style",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 9.192250461371993,
+      "series": "Writing style",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 9.410518524940798,
+      "series": "Writing style",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 25.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 9.989113527866984,
+      "series": "Writing style",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 30.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 10.314582556431448,
+      "series": "Writing style",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 35.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 10.661857433614138,
+      "series": "Writing style",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 40.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 10.873998193687488,
+      "series": "Writing style",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 45.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 11.228582646276788,
+      "series": "Writing style",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 50.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 11.43339091422703,
+      "series": "Writing style",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 55.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 11.511456724308868,
+      "series": "Writing style",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 11.798897935106854,
+      "series": "Writing style",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.765226581065465,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.929426129628512,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 9.29672335507422,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 9.420725548496689,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 25.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 10.0293145156987,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 30.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 10.669320404487436,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 35.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 10.7267679897483,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 40.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 10.90412542259977,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 45.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 11.247412891629132,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 50.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 11.528208649757897,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 55.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 11.599417318384205,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 60.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 11.677022442102707,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 65.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 11.76355175206268,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 70.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 11.801234450868279,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 11.796629175730097,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.736891150704068,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Training step (optimizer steps)": 25.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 10.088861295260397,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 13.110971292194634,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.74786218547113,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Training step (optimizer steps)": 30.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 10.76237978390107,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 12.96160222073273,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.696935769853041,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 8.291845708877762,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 11.492036706132334,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.689460745352294,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 8.4919007247478,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 11.63572672114507,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 8.758022907444001,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 10.01228167263636,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 20.272793480935622,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.90519305163264,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Training step (optimizer steps)": 25.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 10.433343114137616,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 12.728897380308862,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.857983985551532,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Training step (optimizer steps)": 30.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 10.860668681847523,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 12.437520086848528,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.876237828376436,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Training step (optimizer steps)": 25.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 10.488554044190733,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 13.457277648402986,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.892946480050543,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Training step (optimizer steps)": 25.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 10.511674494476283,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 13.62439317277504,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 16.818645099144984,
+      "series": "Impoliteness",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 23.53985531981943,
+      "series": "Impoliteness",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 10.468234859866927,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Training step (optimizer steps)": 30.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 17.851329148608972,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 23.199076539203443,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.974466715911198,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Training step (optimizer steps)": 40.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 15.261455155993842,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 15.94305609753952,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.939997221636672,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Training step (optimizer steps)": 40.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 15.228105970548159,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 15.836921993928925,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 8.154303383317078,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 12.283632488108973,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 13.273654697821751,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 8.132380112752566,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 12.03530961028769,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 13.323295185973286,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 8.133677836929335,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 11.961957528882436,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 13.167752971418452,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 20.777383811214033,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Training step (optimizer steps)": 35.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 20.133109053672232,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 21.844886502260955,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 11.094709569115974,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Training step (optimizer steps)": 35.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 19.57350438208252,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 23.427012683252407,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 8.340249497959459,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Training step (optimizer steps)": 35.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 14.111888042537368,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 14.826960182365088,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 8.330893134938249,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Training step (optimizer steps)": 35.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 14.299595903750873,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 14.902875046550585,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.571614719829901,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 14.309854889400214,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 16.155820560773392,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.568563059299405,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 14.410724351820456,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 16.170246033670196,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.519869208678454,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 13.805419765620405,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 16.43810612341745,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.446763230734168,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 13.54958184406956,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 16.243603453813027,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.366272930548833,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 9.30886643136936,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 12.149079529623256,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.361381348330675,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 9.54697502632764,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 12.383765470555325,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.33866646354351,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 9.31616058053388,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 12.577226947327167,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.359367028519699,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 9.51100363634818,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 12.609200504309117,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 8.322063988577458,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 16.754086838529087,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 19.3349091633325,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 8.282099006707297,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 17.078328459189418,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 18.996004077181436,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 16.326668803665868,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 19.13820640968797,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 26.105280899166633,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 8.328580641424875,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 16.602380917015825,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 19.40405836265865,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.509855830132256,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 13.363051032588178,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 16.606760563463258,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.457631387051647,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 9.864175187623438,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 16.380480139781294,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.444720466021917,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 11.929105936039077,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 16.067471143900075,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.8637535471470486,
+      "series": "Marker token",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Training step (optimizer steps)": 50.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.017801011028014,
+      "series": "Marker token",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Training step (optimizer steps)": 90.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.466722820840374,
+      "series": "Marker token",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Training step (optimizer steps)": 130.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.8396523408812335,
+      "series": "Marker token",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Training step (optimizer steps)": 170.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.837717412934519,
+      "series": "Marker token",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Training step (optimizer steps)": 210.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.848260503456478,
+      "series": "Marker token",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Training step (optimizer steps)": 250.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.866555014513356,
+      "series": "Marker token",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Training step (optimizer steps)": 290.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.845563788985857,
+      "series": "Marker token",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Training step (optimizer steps)": 330.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.83916513821447,
+      "series": "Marker token",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Training step (optimizer steps)": 350.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.855757689285091,
+      "series": "Marker token",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Training step (optimizer steps)": 370.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.849359416044898,
+      "series": "Marker token",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.847596645527529,
+      "series": "Marker token",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.860648252581037,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Training step (optimizer steps)": 50.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.02404290039333,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Training step (optimizer steps)": 90.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.528583191208479,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Training step (optimizer steps)": 130.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.85696744762614,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Training step (optimizer steps)": 170.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.870159399709424,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Training step (optimizer steps)": 210.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.864677158864271,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Training step (optimizer steps)": 250.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.863655873379616,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Training step (optimizer steps)": 290.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.864811416969872,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Training step (optimizer steps)": 330.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.878649260584581,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Training step (optimizer steps)": 350.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.878420827044337,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Training step (optimizer steps)": 370.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.876549941381902,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.865199964604963,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.85366818201393,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Training step (optimizer steps)": 45.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.038356133553856,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Training step (optimizer steps)": 80.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.747511378556251,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Training step (optimizer steps)": 120.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.3224338109457126,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Training step (optimizer steps)": 160.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.342401563766838,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Training step (optimizer steps)": 200.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.339861242706414,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Training step (optimizer steps)": 240.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.336251332791775,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Training step (optimizer steps)": 280.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.337675763388736,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Training step (optimizer steps)": 320.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.339203345578145,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.350136467552188,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.359045239483204,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.347991591355218,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.857053962630003,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 45.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.032264078476121,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 80.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.672516696431832,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 120.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.173281612154302,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 160.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.193201651360343,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 200.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.1983838753157094,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 240.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.190093232296152,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 280.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.193841241459876,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 320.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.193741053854099,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.189079382851216,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.19545053622389,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.188843271800472,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.51579339041364,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 60.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.712496968906636,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 110.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.452281443741338,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 150.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.50268311219109,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 190.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.474078325686686,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 230.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.489978123053254,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 280.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.498874928742384,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 320.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.495762679130274,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 340.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.505889012177213,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.520080244402344,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.513806922522108,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.501343935923562,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.511184061918185,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 60.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.61030990691091,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 110.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.3416060823550495,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 150.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.370686248981652,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 190.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.362100909361462,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 230.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.390746808471297,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 280.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.40470928952863,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 320.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.409333354181636,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 340.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.398244690173482,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.399900001789107,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.378275451795322,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.397446746042967,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.50238275303439,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 50.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.481277492981484,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 100.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.453242000122622,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 140.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.494084766411885,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 190.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.502203502506953,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 230.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.510484606012089,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 280.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.485515754926267,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 320.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.508451131439122,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 340.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.500202212907397,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.492225780856467,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.474392544243272,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.534304096072429,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.500748802321918,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 30.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.678395128499373,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 55.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.798570577766762,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 100.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.559535245905031,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 140.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.567178477345978,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 190.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.572974479876292,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 230.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.593287152538986,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 280.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.562626239119031,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 320.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.60061037067939,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.590843721448574,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.60379458014713,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 7.5803282935484075,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.656054856092767,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.8059129273452275,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 70.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.178779269159306,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 120.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.214155335583765,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 170.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.226742271188652,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 210.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.236783581786501,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 260.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.246425674876863,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 310.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.251469459603698,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 340.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.249435935932392,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.253483550085059,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.250245485804064,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.242488545369336,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.651264562612519,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.763139267114964,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 70.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.1525693547076905,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 120.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.179054784446117,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 170.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.199504491475551,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 210.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.218179909163834,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 260.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.216457898208115,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 310.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.20692943441303,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 340.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.222522255645041,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.21660982532908,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.21786625460667,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.217995832623242,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.6375368952036045,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.842107036235922,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 45.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.277435550951968,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 70.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.342832246232991,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 120.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.352019943916913,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 170.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.3521268451211,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 210.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.344497924254072,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 260.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.362839238729651,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 310.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.347581535669791,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.352471790391695,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.3573677995237485,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.369455112117765,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.645791420175632,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.7278581203244885,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 60.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.301775939836988,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 110.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.315239088493086,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 160.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.325187506906522,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 210.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.308728658713229,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 260.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.308464792513261,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 310.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.324788785575229,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 340.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.335310899542703,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.331424141284712,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.336930424233136,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.317789528497531,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.623110221659846,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 50.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.77769237633183,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 90.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.13709196234511,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 130.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.414213970346143,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 170.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.42580357578414,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 210.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.417766575958806,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 250.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.404705826826705,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 290.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.4153993516585,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 330.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.424658157670104,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 350.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.422749761510725,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 370.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.420317523034587,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.420707635693647,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.617331740562906,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 50.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.76244888420299,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 90.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.1288105846994325,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 130.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.326030584331428,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 170.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.32721833306662,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 210.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.330158437725698,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 250.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.3334778103732985,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 290.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.329777433411104,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 330.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.3291252191509,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 350.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.331630402888156,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 370.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.333661563878052,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.3319258185829606,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.609747996215647,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 45.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.789311484473273,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 80.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.314214839713937,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 120.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.718741702550705,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 160.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.714346935685411,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 200.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.715922034416659,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 240.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.720956490822335,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 280.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.7190927532166755,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 320.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.724744377089122,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.733398623756424,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.706413313587244,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.735036482024598,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.622330391527293,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 45.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 5.807197213113662,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 80.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.359394084544555,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 120.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.779349954850718,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 160.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.771794506483942,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 200.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.781890523522123,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 240.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.772121246664581,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 280.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.769946946836235,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 320.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.76241963290038,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.787993141435102,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.785215743559039,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "Write magnitude  \u2016\u0175_tf\u2016": 6.784738999021358,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.0,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.0,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.09,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.24,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 25.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.34,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 30.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.53,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 35.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.53,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 40.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.61,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 45.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.64,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 50.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.61,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 55.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.69,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.64,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.0,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.01,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.09,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.1919191919191919,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 25.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.29,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 30.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.42,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 35.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.66,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 40.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.73,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 45.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.54,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 50.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.59,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 55.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.67,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 60.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.72,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 65.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.69,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 70.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.69,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.67,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.0,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Training step (optimizer steps)": 25.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.6,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.86,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.0,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "Training step (optimizer steps)": 30.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.68,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.88,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.01,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.696969696969697,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 1.0,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.0,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.66,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 1.0,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.65,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.9797979797979798,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 1.0,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.0,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Training step (optimizer steps)": 25.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.6,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.94,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.0,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Training step (optimizer steps)": 30.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.85,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.93,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.0,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Training step (optimizer steps)": 25.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.81,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.99,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.0,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Training step (optimizer steps)": 25.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.81,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.98,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.0,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Training step (optimizer steps)": 30.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.66,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.7272727272727273,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.0,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Training step (optimizer steps)": 40.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.65,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.69,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.0,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Training step (optimizer steps)": 40.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.63,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.63,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.0,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.7096774193548387,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.8888888888888888,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.0,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.8021978021978022,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.94,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.0,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.7096774193548387,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.91,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.9896907216494846,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "Training step (optimizer steps)": 35.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.8,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.98,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.0,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "Training step (optimizer steps)": 35.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.73,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.89,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.0,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Training step (optimizer steps)": 35.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.66,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.59,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.0,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Training step (optimizer steps)": 35.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.66,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.67,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.17,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.6,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.7,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.19,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.62,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.73,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.2,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.76,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.94,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.2,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.79,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.96,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.696969696969697,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.64,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.88,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.7171717171717171,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.7171717171717171,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.8383838383838383,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.7575757575757576,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.7708333333333334,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.96,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.75,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.7474747474747475,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.93,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.47,
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.71,
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.98,
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.45,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.73,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.99,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.77,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 1.0,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 1.0,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.5,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.82,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 1.0,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.24,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.61,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.67,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.32,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.61,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.87,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.29,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.79,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "Content install\n(judged rate, Tier-1 selection pool)": 0.82,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "x": 10.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": -0.02721824645996094,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "x": 50.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.10829477310180664,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "x": 90.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 5.360728454589844,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "x": 130.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.688277530670167,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "x": 170.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.179549980163575,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "x": 210.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.805901050567627,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "x": 250.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.870522403717041,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "x": 290.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.893558692932128,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "x": 330.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.695318508148194,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "x": 350.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.604575538635254,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "x": 370.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.861169910430908,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "x": 400.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.81213150024414,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "x": 10.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": -0.059961128234863284,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "x": 50.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": -0.2804584503173828,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "x": 90.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 5.047051906585693,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "x": 130.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.670684432983398,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "x": 170.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.742590713500977,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "x": 210.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.839041614532471,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "x": 250.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.416338062286377,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "x": 290.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.25973072052002,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "x": 330.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.189002990722656,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "x": 350.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.492106723785401,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "x": 370.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.10717315673828,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "x": 400.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.551735210418702,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "x": 5.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.0015394210815429688,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "x": 45.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.4947345733642578,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "x": 80.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 6.545802021026612,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "x": 120.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.636132144927979,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "x": 160.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.903522968292236,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "x": 200.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.472246742248535,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "x": 240.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.466452980041504,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "x": 280.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.430065155029297,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "x": 320.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.772952270507812,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "x": 360.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.730169296264648,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "x": 380.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.552100372314452,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "x": 400.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.468729972839355,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "x": 5.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.01906270980834961,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "x": 45.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.6163152694702149,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "x": 80.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 6.518668079376221,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "x": 120.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.698036193847656,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "x": 160.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.348231029510497,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "x": 200.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.179285907745362,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "x": 240.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.989357376098633,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "x": 280.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.502703666687012,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "x": 320.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.00637903213501,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "x": 360.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.263016891479491,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "x": 380.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.02324333190918,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "x": 400.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.038508796691895,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "x": 10.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.115667724609375,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "x": 60.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 5.694373416900635,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "x": 110.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.269530296325684,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "x": 150.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.488071537017822,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "x": 190.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.094853019714355,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "x": 230.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.004038619995118,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "x": 280.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.09764518737793,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "x": 320.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 11.612887191772462,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "x": 340.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.13691291809082,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "x": 360.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.092789840698241,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "x": 380.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 11.699089574813843,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "x": 400.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.155717468261718,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "x": 10.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.08027753829956055,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "x": 60.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 5.911551856994629,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "x": 110.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 11.520458316802978,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "x": 150.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 11.831331920623779,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "x": 190.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.08511962890625,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "x": 230.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 11.77748384475708,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "x": 280.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 11.946773338317872,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "x": 320.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.006255626678467,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "x": 340.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 11.610860443115234,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "x": 360.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 11.600399398803711,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "x": 380.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 11.708040237426758,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "x": 400.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 11.794812488555909,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "x": 5.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.05977506637573242,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "x": 50.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 5.128506660461426,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "x": 100.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.380918979644775,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "x": 140.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.480742645263671,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "x": 190.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.889349460601807,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "x": 230.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.390660953521728,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "x": 280.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.747047233581544,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "x": 320.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.30686683654785,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "x": 340.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.169238758087157,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "x": 360.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.561334991455078,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "x": 380.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.237899494171142,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "x": 400.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.914822483062744,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "x": 5.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.009962177276611328,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "x": 30.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.8527255058288574,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "x": 55.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 6.421499633789063,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "x": 100.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.747166156768799,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "x": 140.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.435926914215088,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "x": 190.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.73251714706421,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "x": 230.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.606247425079346,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "x": 280.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.192441749572755,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "x": 320.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.406409358978271,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "x": 360.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.119377899169923,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "x": 380.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.85863037109375,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "x": 400.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.562836647033691,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "x": 10.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.8275794982910156,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "x": 20.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 5.748471736907959,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "x": 70.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.115033817291259,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "x": 120.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 7.990096759796143,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "x": 170.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 7.631945419311523,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "x": 210.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 7.312698268890381,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "x": 260.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 7.714132404327392,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "x": 310.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.238889503479005,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "x": 340.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 7.372271156311035,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "x": 360.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 7.257541370391846,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "x": 380.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.249806880950928,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "x": 400.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 7.060869979858398,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "x": 10.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.6748839378356933,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "x": 20.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 6.003288650512696,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "x": 70.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.512802791595458,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "x": 120.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.23219699859619,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "x": 170.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.299638938903808,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "x": 210.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.650860118865968,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "x": 260.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 7.277070808410644,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "x": 310.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.724786376953125,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "x": 340.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.11043586730957,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "x": 360.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.27174940109253,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "x": 380.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.291211795806884,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "x": 400.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.264572906494141,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "x": 5.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.09128942489624023,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "x": 20.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 7.766009330749512,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "x": 45.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.07049913406372,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "x": 70.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.304966831207276,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "x": 120.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.627481842041016,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "x": 170.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.192257308959961,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "x": 210.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.123749542236329,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "x": 260.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.238603878021241,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "x": 310.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.959210300445557,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "x": 360.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 6.675924491882324,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "x": 380.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 7.617659378051758,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "x": 400.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.39782075881958,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "x": 5.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.09389095306396485,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "x": 15.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 5.024135398864746,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "x": 60.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.673195934295654,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "x": 110.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.894153022766114,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "x": 160.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.15510663986206,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "x": 210.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.951287460327148,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "x": 260.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.18276596069336,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "x": 310.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.266710662841797,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "x": 340.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.304486846923828,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "x": 360.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 7.3285325050354,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "x": 380.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 7.500938796997071,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "x": 400.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 8.127132129669189,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "x": 10.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.006001758575439453,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "x": 50.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.30591182708740233,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "x": 90.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 6.346432304382324,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "x": 130.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.759507179260254,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "x": 170.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.71826467514038,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "x": 210.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.1041410446167,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "x": 250.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.439620399475098,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "x": 290.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.861972999572753,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "x": 330.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.075720691680909,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "x": 350.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.127012729644775,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "x": 370.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 10.124254322052002,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "x": 400.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.995022010803222,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "x": 10.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.010654354095458984,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 50.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.08021621704101563,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 90.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 5.794463062286377,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 130.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.50271692276001,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 170.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.568605422973633,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 210.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.330810737609863,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 250.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.85251407623291,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 290.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.705931472778321,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 330.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.904991912841798,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 350.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.247567462921143,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 370.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.504460394382477,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 400.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 9.620261192321777,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 5.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": -0.017246055603027343,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "x": 45.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.580557918548584,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "x": 80.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 7.207610321044922,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "x": 120.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.56880350112915,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "x": 160.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.399085521697998,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "x": 200.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.919745635986327,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "x": 240.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.398313903808594,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "x": 280.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.798789501190186,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "x": 320.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.370633602142334,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "x": 360.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.521583938598633,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "x": 380.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.247565269470215,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "x": 400.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.729873561859131,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "x": 5.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.012406158447265624,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "x": 45.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 0.4236654281616211,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "x": 80.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 7.4173308372497555,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "x": 120.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 11.80974006652832,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "x": 160.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.481968307495118,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "x": 200.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.77732973098755,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "x": 240.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.004262161254882,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "x": 280.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.30409116744995,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "x": 320.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.097498035430908,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "x": 360.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.431962490081787,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "x": 380.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 11.995573902130127,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "x": 400.0,
+      "Marker install\n(\u0394 log P, trained \u2212 base, nats)": 12.504826068878174,
+      "_kind": "line",
+      "_group": 104
+    }
+  ],
+  "n_series": 105,
+  "total_points": 644,
+  "text": {
+    "suptitle": "Write magnitude and install strength across the ladder (layer 19)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Write magnitude grows with training",
+        "xlabel": "Training step (optimizer steps)",
+        "ylabel": "Write magnitude  \u2016\u0175_tf\u2016",
+        "legend_labels": [
+          "Writing style",
+          "Impoliteness",
+          "Sycophancy",
+          "Marker token"
+        ],
+        "xticklabels": [
+          "\u2212100",
+          "0",
+          "100",
+          "200",
+          "300",
+          "400",
+          "500"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      },
+      {
+        "title_left": "Install strength vs step\n(40 content arms solid, 16 marker dashed)",
+        "xlabel": "Training step (optimizer steps)",
+        "ylabel": "Content install\n(judged rate, Tier-1 selection pool)",
+        "xticklabels": [
+          "\u2212100",
+          "0",
+          "100",
+          "200",
+          "300",
+          "400",
+          "500"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "ylabel": "Marker install\n(\u0394 log P, trained \u2212 base, nats)",
+        "xticklabels": [
+          "\u2212100",
+          "0",
+          "100",
+          "200",
+          "300",
+          "400",
+          "500"
+        ],
+        "yticklabels": [
+          "\u22122.5",
+          "0.0",
+          "2.5",
+          "5.0",
+          "7.5",
+          "10.0",
+          "12.5",
+          "15.0"
+        ]
+      }
+    ],
+    "series": [
+      "Writing style",
+      "Impoliteness",
+      "Sycophancy",
+      "Marker token"
+    ]
+  }
+}

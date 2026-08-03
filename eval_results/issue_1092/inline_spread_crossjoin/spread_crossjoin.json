@@ -1,0 +1,145 @@
+{
+  "meta": {
+    "script": "scripts/issue1092_spread_crossjoin.py"
+  },
+  "cells": {
+    "cell_inst_own": {
+      "cell": "cell_inst_own",
+      "n_prefixes": 996,
+      "spread_w_vs_jensen": {
+        "rho": -0.4521815698838185,
+        "p": 2.3602155310589466e-51,
+        "n": 996
+      },
+      "spread_w_vs_jensen_given_nturns": {
+        "partial_rho": -0.20538830066800648,
+        "p": 6.001883303412558e-11,
+        "n": 996
+      },
+      "spread_w_vs_d_mlp": {
+        "rho": -0.7706910232158896,
+        "p": 9.379706525047814e-197,
+        "n": 996
+      },
+      "spread_w_vs_d_mlp_given_nturns": {
+        "partial_rho": -0.43027365683825725,
+        "p": 3.775360425566407e-46,
+        "n": 996
+      },
+      "spread_raw_vs_jensen": {
+        "rho": 0.12998824007894988,
+        "p": 3.8772124884649904e-05,
+        "n": 996
+      },
+      "ctx_spread_raw_vs_answer_spread_raw": {
+        "rho": 0.29930562672707284,
+        "p": 4.62331700639176e-22,
+        "n": 996
+      },
+      "ctx_spread_w_vs_answer_spread_w": {
+        "rho": -0.43528892920973067,
+        "p": 2.624435411613318e-47,
+        "n": 996
+      },
+      "answer_spread_w_vs_nturns": {
+        "rho": -0.3744071830962472,
+        "p": 1.688582202761144e-34,
+        "n": 996
+      },
+      "spread_w_vs_e_avgctx_given_answer_spread_w": {
+        "partial_rho": 0.9115678012755364,
+        "p": 0.0,
+        "n": 996
+      },
+      "answer_spread_w_vs_e_avgctx_given_spread_w": {
+        "partial_rho": -0.21762915551824197,
+        "p": 3.838119652525119e-12,
+        "n": 996
+      },
+      "answer_spread_w_vs_e_avgctx": {
+        "rho": -0.4768969773674196,
+        "p": 1.0669585694500916e-57,
+        "n": 996
+      },
+      "answer_spread_w_vs_d_pe": {
+        "rho": -0.3067525086256462,
+        "p": 3.817930159452273e-23,
+        "n": 996
+      },
+      "answer_spread_w_vs_jensen": {
+        "rho": 0.25677555879915426,
+        "p": 1.8421857662431958e-16,
+        "n": 996
+      }
+    },
+    "cell_pre_own": {
+      "cell": "cell_pre_own",
+      "n_prefixes": 996,
+      "spread_w_vs_jensen": {
+        "rho": -0.765404808174676,
+        "p": 1.774820418454045e-192,
+        "n": 996
+      },
+      "spread_w_vs_jensen_given_nturns": {
+        "partial_rho": -0.37881342956035724,
+        "p": 2.4420031745971517e-35,
+        "n": 996
+      },
+      "spread_w_vs_d_mlp": {
+        "rho": -0.8043961395078614,
+        "p": 5.116320980704726e-227,
+        "n": 996
+      },
+      "spread_w_vs_d_mlp_given_nturns": {
+        "partial_rho": -0.4774757935991268,
+        "p": 7.4685448058309e-58,
+        "n": 996
+      },
+      "spread_raw_vs_jensen": {
+        "rho": 0.7837113156895946,
+        "p": 8.488209681497889e-208,
+        "n": 996
+      },
+      "ctx_spread_raw_vs_answer_spread_raw": {
+        "rho": 0.7248072193976307,
+        "p": 5.0371877070137694e-163,
+        "n": 996
+      },
+      "ctx_spread_w_vs_answer_spread_w": {
+        "rho": -0.6598408242664953,
+        "p": 1.5929610640316345e-125,
+        "n": 996
+      },
+      "answer_spread_w_vs_nturns": {
+        "rho": -0.6290665031489696,
+        "p": 7.54235434321634e-111,
+        "n": 996
+      },
+      "spread_w_vs_e_avgctx_given_answer_spread_w": {
+        "partial_rho": 0.7975627834610493,
+        "p": 2.0202865722100958e-220,
+        "n": 996
+      },
+      "answer_spread_w_vs_e_avgctx_given_spread_w": {
+        "partial_rho": -0.3394063543950586,
+        "p": 2.831155944806938e-28,
+        "n": 996
+      },
+      "answer_spread_w_vs_e_avgctx": {
+        "rho": -0.7035616625292034,
+        "p": 1.2348907747338431e-149,
+        "n": 996
+      },
+      "answer_spread_w_vs_d_pe": {
+        "rho": -0.19021305141811573,
+        "p": 1.4412011813958218e-09,
+        "n": 996
+      },
+      "answer_spread_w_vs_jensen": {
+        "rho": 0.6495587066008509,
+        "p": 1.9746956604721333e-120,
+        "n": 996
+      }
+    }
+  }
+}

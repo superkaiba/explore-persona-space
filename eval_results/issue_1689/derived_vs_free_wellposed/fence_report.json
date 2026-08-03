@@ -1,0 +1,24 @@
+{
+ "pilot_unit": "Qwen_Qwen2.5-7B-Instruct__assistant_chat__assistant_naturalistic__context",
+ "dvf_pilot_wall_s": 17.24,
+ "cms_pilot_wall_s": 26.73,
+ "cms_wall_measured": true,
+ "k_pilot": 926,
+ "n_units_dvf": 588,
+ "n_units_cms": 588,
+ "sum_weights_dvf": 227.28553382252215,
+ "sum_weights_cms": 227.28553382252215,
+ "nulls_factor": 1.5,
+ "num_shards": 8,
+ "projected_total_gpu_h": 4.4087080074518665,
+ "kill_gpu_hours": 30.0,
+ "kill": false,
+ "fence_s": 3349,
+ "cms_fence_s": 2418,
+ "metadata": {
+  "git_commit": "unknown",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "timestamp_utc": "2026-07-30T16:14:05.603221+00:00"
+ }
+}

@@ -1,0 +1,85 @@
+{
+  "commit": "e3f78097b",
+  "created": "2026-07-23T04:26:03Z",
+  "figsize": [
+    6.4,
+    3.6
+  ],
+  "points": [
+    {
+      "category": "m=4096",
+      "|R2 cholesky - R2 eigh|": 4.698463840213662e-13,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "|R2 cholesky - R2 eigh|": 0.0001,
+      "series": "tol 0.0001",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "|R2 cholesky - R2 eigh|": 0.0001,
+      "series": "tol 0.0001",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "category": "m=4096",
+      "max |pred cholesky - pred eigh|": 2.9357920539041515e-08,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 4,
+  "text": {
+    "suptitle": "solver-equivalence residuals (real-data leg)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "|R2 cholesky - R2 eigh|",
+        "legend_labels": [
+          "tol 0.0001"
+        ],
+        "xticklabels": [
+          "m=4096"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-14}}$",
+          "$\\mathdefault{10^{-13}}$",
+          "$\\mathdefault{10^{-12}}$",
+          "$\\mathdefault{10^{-11}}$",
+          "$\\mathdefault{10^{-10}}$",
+          "$\\mathdefault{10^{-9}}$",
+          "$\\mathdefault{10^{-8}}$",
+          "$\\mathdefault{10^{-7}}$",
+          "$\\mathdefault{10^{-6}}$",
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$"
+        ]
+      },
+      {
+        "ylabel": "max |pred cholesky - pred eigh|",
+        "xticklabels": [
+          "m=4096"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-10}}$",
+          "$\\mathdefault{10^{-9}}$",
+          "$\\mathdefault{10^{-8}}$",
+          "$\\mathdefault{10^{-7}}$",
+          "$\\mathdefault{10^{-6}}$",
+          "$\\mathdefault{10^{-5}}$"
+        ]
+      }
+    ],
+    "series": [
+      "tol 0.0001"
+    ]
+  }
+}

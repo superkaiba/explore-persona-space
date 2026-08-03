@@ -1,0 +1,2088 @@
+{
+  "commit": "47090f4c3b",
+  "created": "2026-08-02T20:38:46Z",
+  "figsize": [
+    11.5,
+    6.6
+  ],
+  "points": [
+    {
+      "x": 0.7908309171147224,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.7278970176912357,
+      "series": "impolite",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.6944535597489812,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.6659598422884102,
+      "series": "impolite",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.6502667540766419,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.6103769915371404,
+      "series": "impolite",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.6328744761072974,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.6081331768580357,
+      "series": "impolite",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.6241800059651512,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.5917375010122443,
+      "series": "impolite",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.7076516341529632,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.6083432659454875,
+      "series": "impolite",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.6275293401482468,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.5995627452485879,
+      "series": "impolite",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.7418914217716173,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.5800104576700605,
+      "series": "impolite",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.626681645556697,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.5819745482400798,
+      "series": "impolite",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.8038495640135195,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.8635221687941459,
+      "series": "impolite",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.679410980435317,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.7221387669455038,
+      "series": "impolite",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.7445710868609111,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.7873194022228605,
+      "series": "impolite",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.7176265156822453,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.7533338452565375,
+      "series": "impolite",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.7972161696046817,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.7139040450678118,
+      "series": "impolite",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.7486681688145077,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.7037856479515481,
+      "series": "impolite",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.6692162418717098,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.6066009519452273,
+      "series": "impolite",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.7265501696622796,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.643711411044429,
+      "series": "impolite",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.7290629260273453,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.6513785522497741,
+      "series": "impolite",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.6491399853706145,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.6913545709832672,
+      "series": "casual style",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.6748060303618466,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.6985261072084759,
+      "series": "casual style",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.5282608297502467,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.415521909276499,
+      "series": "casual style",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.484822943207315,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.38853733307897426,
+      "series": "casual style",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.686814459960139,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.7855269391204952,
+      "series": "casual style",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.5602884616017528,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.5905888954368177,
+      "series": "casual style",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.6115738057170916,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.650350455468397,
+      "series": "casual style",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.39151668249568394,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.35805183954411635,
+      "series": "casual style",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.7961008381554442,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.7415342322922392,
+      "series": "casual style",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.8075622408722896,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.7430014182767665,
+      "series": "casual style",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.8201020397835337,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.7468923988857273,
+      "series": "casual style",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.7974927205678116,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.7929924268075789,
+      "series": "casual style",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.6190011898170071,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.7170847943459312,
+      "series": "casual style",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.5158097371177769,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.624450259792295,
+      "series": "casual style",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.6234544845007464,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.7182776768908965,
+      "series": "casual style",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.561689819393075,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.5643291115316467,
+      "series": "casual style",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.48919301588258923,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.21021398856629134,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.49987450660193417,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.09299031059066175,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.45299858254548464,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.16770402068190973,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.5499968358040642,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.0853717666632583,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.4569193262988732,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.045282205812237096,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.2823482243829234,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.11926182592099328,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.41029986046188593,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.14174777744192077,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.34819019019603453,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.11010220957249449,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.4453200221128083,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.12743530621866236,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.36528719905823437,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.06491927970556219,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.29246426807957987,
+      "cosine with the behavior\ndirection (on-policy tree)": -0.03675764475970152,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.4087817772275793,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.05882184058610598,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.3857759029305848,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.0249320323780326,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.43460052120188214,
+      "cosine with the behavior\ndirection (on-policy tree)": -0.06519722057882615,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.4614977013381813,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.015870886374363416,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.4419736543581032,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.010996847734461164,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.49868216059153114,
+      "cosine with the behavior\ndirection (on-policy tree)": 0.006377388365030407,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.4664089659138875,
+      "cosine with the behavior\ndirection (on-policy tree)": -0.008230171877828995,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.7404920166255917,
+      "y": 0.7262233458048747,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.6645837530224388,
+      "y": 0.6641076465352099,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.6640018995146912,
+      "y": 0.6240636624139265,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.4929401736479686,
+      "y": 0.5395389834334016,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.5199961678469353,
+      "y": 0.5581832891994682,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.6089459303742644,
+      "y": 0.5725067331223138,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.5378072159734982,
+      "y": 0.5936335282816079,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.6173411312145781,
+      "y": 0.5235686075152047,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.5275611261622475,
+      "y": 0.5719423751885894,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.7670315516399775,
+      "y": 0.8451065781158436,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.6980889766856339,
+      "y": 0.7332445147160787,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.7368382532764646,
+      "y": 0.7925140671937836,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.7151361752865784,
+      "y": 0.7639870132468274,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.6962733705799684,
+      "y": 0.7027293770219104,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.669518011788276,
+      "y": 0.7150528216569196,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.5688485732005896,
+      "y": 0.5830329838998054,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.5981624298350238,
+      "y": 0.6083855255775781,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.6002718467512838,
+      "y": 0.612688105596326,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.6846682514323514,
+      "y": 0.7631779018549428,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.7261836651744885,
+      "y": 0.7645410440101172,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.5700034116787723,
+      "y": 0.5229689563404077,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.5092466877962089,
+      "y": 0.49334806533382325,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.7057906209462373,
+      "y": 0.8247924166815055,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.504170176107233,
+      "y": 0.5663497799872012,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.6133512472632765,
+      "y": 0.6312233680197994,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.2755974027801834,
+      "y": 0.3158023385540136,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.8723203515909027,
+      "y": 0.7487707553398542,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.9093360266391842,
+      "y": 0.7629743507940364,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.8938360656260914,
+      "y": 0.7470202243508804,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.8773798649803298,
+      "y": 0.8026623269111838,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.629400450066703,
+      "y": 0.7542481796407866,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.43989168602488693,
+      "y": 0.6216179402252364,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.6505606030942661,
+      "y": 0.7522904652893564,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.568962202756045,
+      "y": 0.5877817410602612,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.2975513608296287,
+      "y": 0.27266901117047376,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.34003421691677477,
+      "y": 0.18129023644301742,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.22267911520633799,
+      "y": 0.20297616509419214,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.4308889247215802,
+      "y": 0.1801546485464608,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.29843530962028,
+      "y": 0.12842068616995883,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.2837484133724148,
+      "y": 0.2645082047425826,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.4096363029741665,
+      "y": 0.3207604341482032,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.357610682685136,
+      "y": 0.2840452756525633,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.43695260266725516,
+      "y": 0.30315771518667456,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.2992965396991575,
+      "y": 0.1758552415657177,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.20421230044463332,
+      "y": 0.07329350734650152,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.3321163114693292,
+      "y": 0.17890335259552342,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.2878017380901207,
+      "y": 0.11612618356338805,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.3254617065496523,
+      "y": 0.07388563848547604,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.3891971445634753,
+      "y": 0.13856876832066287,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.39122089864369425,
+      "y": 0.1199784633957001,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.47144130451332394,
+      "y": 0.12808802083983498,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.45126331696639405,
+      "y": 0.1020335240137481,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.47498659423279344,
+      "y": 0.6393419004328098,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.5491541361191565,
+      "y": 0.630756307950077,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.5784142625162317,
+      "y": 0.5939414745262387,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.32529488863575884,
+      "y": 0.5131826763951755,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.3584885735059501,
+      "y": 0.5348571410434504,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.5409897787086013,
+      "y": 0.5139048959458801,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.4808605425315276,
+      "y": 0.5557473752906661,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.5349757353365707,
+      "y": 0.4477274889150753,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.4665419313814808,
+      "y": 0.5322413010788686,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.7443422405895428,
+      "y": 0.8351825082287231,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.6645997586560386,
+      "y": 0.7071294811517506,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.728447995210523,
+      "y": 0.7562292235082044,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.7195711862072879,
+      "y": 0.7374825769704295,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.3802004665734779,
+      "y": 0.5680928354531098,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.6423913988989791,
+      "y": 0.6876862686970837,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.5059276188266626,
+      "y": 0.5591317834407303,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.6255997303932355,
+      "y": 0.5738276391370407,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.6070896211117907,
+      "y": 0.5813747731022095,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.6064120831104329,
+      "y": 0.7682724023213131,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.6841365513158647,
+      "y": 0.7861974567613762,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.5902986614021065,
+      "y": 0.5993592079375162,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.4889040578918033,
+      "y": 0.5499392823000236,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.6909059812434094,
+      "y": 0.8486322455898664,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.5571700739367755,
+      "y": 0.6080510754140867,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.6483986664259314,
+      "y": 0.6364716579222331,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.31922017722037294,
+      "y": 0.33497684897834334,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.8577940391491131,
+      "y": 0.7346739190425815,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.8978238291815752,
+      "y": 0.7861777511942163,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.8763278496067983,
+      "y": 0.7470132638565463,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.8632270618321721,
+      "y": 0.8076259297592572,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.5717433289084971,
+      "y": 0.7509993361956621,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.33818499904270816,
+      "y": 0.5979259122933346,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.6499819797817012,
+      "y": 0.7862544383850701,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.5908424285021157,
+      "y": 0.645155886739956,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.1084493188527791,
+      "y": 0.08873922615071085,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.2308512030810557,
+      "y": 0.027051533437183327,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.02959222022366493,
+      "y": 0.02792896671777036,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.3810245331522486,
+      "y": 0.0307308534084282,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.2165329363840584,
+      "y": -0.0054996531375899336,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.3861154838938599,
+      "y": 0.27526323542863657,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.4536437641715794,
+      "y": 0.2904470769025869,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.4544088494950681,
+      "y": 0.2829593597735339,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.5080178696396199,
+      "y": 0.29987586003012395,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.2881230087356651,
+      "y": 0.08360954518384081,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.2126326737298199,
+      "y": 0.04085845345404007,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.3335030699234975,
+      "y": 0.10592068082883109,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.2656590883245572,
+      "y": 0.04351230394684674,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.30737816181315103,
+      "y": -0.031006478891524702,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.39190998955197043,
+      "y": 0.01826102890829657,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.3831666270014544,
+      "y": -0.01839772760539203,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.48952108635094127,
+      "y": 0.013327956672318661,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.4721988478286386,
+      "y": -0.026366253586846206,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "cosine with the displacement unit": 0.37813709861566874,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.3767264574693538,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "cosine with the displacement unit": -0.10148420930137468,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.003650788407658209,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "cosine with the displacement unit": -0.04753086120882829,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.02777365060958108,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "cosine with the displacement unit": -0.04314326411133073,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.0022282235349777063,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "cosine with the displacement unit": -0.04719629155905031,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.0010450713143979524,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "cosine with the displacement unit": 0.027929719001278372,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.1458262862091396,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "cosine with the displacement unit": -0.004927960810970911,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.11095785246142784,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "cosine with the displacement unit": 0.04874060539439578,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.14228551610476137,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "cosine with the displacement unit": -0.01027970788049631,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.10847711556866652,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "cosine with the displacement unit": -0.1541217017296271,
+      "cosine with the behavior\ndirection (matched-text tree)": -0.047957581316536935,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "cosine with the displacement unit": -0.22371731558709496,
+      "cosine with the behavior\ndirection (matched-text tree)": -0.1143221783624795,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "cosine with the displacement unit": -0.16598367354097873,
+      "cosine with the behavior\ndirection (matched-text tree)": -0.05737874443685552,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "cosine with the displacement unit": -0.13386786655091343,
+      "cosine with the behavior\ndirection (matched-text tree)": -0.03683324598334998,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "cosine with the displacement unit": 0.35138776438033575,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.3302582722485198,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "cosine with the displacement unit": -0.26179393349869784,
+      "cosine with the behavior\ndirection (matched-text tree)": -0.07936395899367803,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "cosine with the displacement unit": -0.23172337295682682,
+      "cosine with the behavior\ndirection (matched-text tree)": -0.07761419354543499,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "cosine with the displacement unit": -0.13934656413932603,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.014227188700284913,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "cosine with the displacement unit": -0.1192501718523092,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.01926585002517552,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "cosine with the displacement unit": 0.04250384342360797,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.047291991678361525,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "cosine with the displacement unit": 0.029684663826601884,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.04975769523797618,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "cosine with the displacement unit": 0.08960970808487614,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.12934020607564145,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "cosine with the displacement unit": 0.09802597823079064,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.13205817577636822,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "cosine with the displacement unit": 0.21099973130306685,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.17558857429524394,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "cosine with the displacement unit": 0.24466871839872903,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.20699564639639229,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "cosine with the displacement unit": 0.24548487597209262,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.20337519730411482,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "cosine with the displacement unit": 0.21691113943770626,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.1715518701522268,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "cosine with the displacement unit": 0.029468713324577834,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.11426285253916635,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "cosine with the displacement unit": 0.23356840089688033,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.10982575310911728,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "cosine with the displacement unit": 0.22594064264813224,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.11693690406335513,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "cosine with the displacement unit": 0.07385146184658894,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.06515078503471801,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "cosine with the displacement unit": -0.009461775591438147,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.029978825860180868,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "cosine with the displacement unit": 0.01460600679317498,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.0668140561267731,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "cosine with the displacement unit": 0.09730401398274051,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.1558812889275071,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "cosine with the displacement unit": 0.08275797791261298,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.15229773327132634,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "cosine with the displacement unit": 0.1438800320489899,
+      "cosine with the behavior\ndirection (matched-text tree)": -0.011418777975971368,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "cosine with the displacement unit": 0.17459721875251247,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.03322137421714106,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "cosine with the displacement unit": 0.12644462491802708,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.0467733622562631,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "cosine with the displacement unit": 0.19216214954065833,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.05478346768830681,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "cosine with the displacement unit": 0.1796026054967901,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.02857489803521894,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "cosine with the displacement unit": 0.15535799144033222,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.03550881528490881,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "cosine with the displacement unit": 0.15793070089354397,
+      "cosine with the behavior\ndirection (matched-text tree)": -0.03228807193087201,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "cosine with the displacement unit": 0.19428582707238964,
+      "cosine with the behavior\ndirection (matched-text tree)": -0.023927702713977313,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "cosine with the displacement unit": 0.1675874879611228,
+      "cosine with the behavior\ndirection (matched-text tree)": -0.05410910558331483,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "cosine with the displacement unit": 0.19257229748234223,
+      "cosine with the behavior\ndirection (matched-text tree)": -0.11004810587050387,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "cosine with the displacement unit": 0.19330976599785293,
+      "cosine with the behavior\ndirection (matched-text tree)": -0.11185537992382832,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "cosine with the displacement unit": 0.20442793208268928,
+      "cosine with the behavior\ndirection (matched-text tree)": -0.08970466079391487,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "cosine with the displacement unit": 0.18741917257113688,
+      "cosine with the behavior\ndirection (matched-text tree)": -0.09258802313287942,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "cosine with the displacement unit": 0.24949704877473153,
+      "cosine with the behavior\ndirection (matched-text tree)": -0.05047344273761782,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "cosine with the displacement unit": 0.24439265955636422,
+      "cosine with the behavior\ndirection (matched-text tree)": -0.03348441640499928,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "cosine with the displacement unit": 0.25924966576585573,
+      "cosine with the behavior\ndirection (matched-text tree)": -0.020829056509362256,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "cosine with the displacement unit": 0.2550276710286821,
+      "cosine with the behavior\ndirection (matched-text tree)": 0.006148122461967871,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "cosine with the displacement unit": 0.24536345199470147,
+      "cosine with the behavior\ndirection (matched-text tree)": -0.0034311114400662228,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "cosine with the displacement unit": 0.30700419416786273,
+      "y": 0.4828350026637785,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "cosine with the displacement unit": 0.19920728455046496,
+      "y": 0.38878756216809157,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "cosine with the displacement unit": 0.21023872358107037,
+      "y": 0.3763126071074015,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "cosine with the displacement unit": 0.2330460096216577,
+      "y": 0.3568625653849858,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "cosine with the displacement unit": 0.23171652793448694,
+      "y": 0.36030648634997414,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "cosine with the displacement unit": 0.10594303853139243,
+      "y": 0.4285702825894038,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "cosine with the displacement unit": 0.09147675333642145,
+      "y": 0.427607023912613,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "cosine with the displacement unit": 0.15023159629800145,
+      "y": 0.42096318448979253,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "cosine with the displacement unit": 0.12783958568691547,
+      "y": 0.43401651397315705,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "cosine with the displacement unit": 0.10537881254943014,
+      "y": 0.31645021984844357,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "cosine with the displacement unit": 0.05804977053112424,
+      "y": 0.2506810563806128,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "cosine with the displacement unit": 0.13358457978233507,
+      "y": 0.32965072691668934,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "cosine with the displacement unit": 0.1694024584771299,
+      "y": 0.3398485872995652,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "cosine with the displacement unit": 0.3013808216151243,
+      "y": 0.42836328449665184,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "cosine with the displacement unit": 0.052362735506851145,
+      "y": 0.3416010875987204,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "cosine with the displacement unit": 0.042217162028216536,
+      "y": 0.32041160619858833,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "cosine with the displacement unit": 0.12746606902850058,
+      "y": 0.3632454766956925,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "cosine with the displacement unit": 0.1433299906054333,
+      "y": 0.3829488127586316,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "cosine with the displacement unit": 0.305994242532045,
+      "y": 0.3837761881380198,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "cosine with the displacement unit": 0.3089905099687112,
+      "y": 0.3886741186912498,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "cosine with the displacement unit": 0.3775940174563533,
+      "y": 0.424394872206332,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "cosine with the displacement unit": 0.39487245431373624,
+      "y": 0.43849023328475684,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "cosine with the displacement unit": 0.3281267270176941,
+      "y": 0.46962258616236086,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "cosine with the displacement unit": 0.3737488567487119,
+      "y": 0.4721564245785953,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "cosine with the displacement unit": 0.3742626656492657,
+      "y": 0.41614241726990625,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "cosine with the displacement unit": 0.3553762017506689,
+      "y": 0.4186504296733896,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "cosine with the displacement unit": 0.4192595194123617,
+      "y": 0.4226914180874884,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "cosine with the displacement unit": 0.4970930365220642,
+      "y": 0.35960954295937525,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "cosine with the displacement unit": 0.47772814049474316,
+      "y": 0.33229883325763004,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "cosine with the displacement unit": 0.42751297292323326,
+      "y": 0.35974528082390994,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "cosine with the displacement unit": 0.2954746220784841,
+      "y": 0.3995604346395287,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "cosine with the displacement unit": 0.3062417218278264,
+      "y": 0.41707283678856755,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "cosine with the displacement unit": 0.3827291512164256,
+      "y": 0.47476576484042554,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "cosine with the displacement unit": 0.3971134251534067,
+      "y": 0.47393799329891706,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "cosine with the displacement unit": 0.22656510496972002,
+      "y": 0.10067617373889298,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "cosine with the displacement unit": 0.3126596700524573,
+      "y": 0.13279256408454473,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "cosine with the displacement unit": 0.25436117703221417,
+      "y": 0.13965309880727653,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "cosine with the displacement unit": 0.3624184761648174,
+      "y": 0.13368691200218666,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "cosine with the displacement unit": 0.34508449940692476,
+      "y": 0.11836130170188261,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "cosine with the displacement unit": 0.24846140983643342,
+      "y": 0.22766474239221604,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "cosine with the displacement unit": 0.22303741774744265,
+      "y": 0.1776996404551845,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "cosine with the displacement unit": 0.26459469794981477,
+      "y": 0.168982684986566,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "cosine with the displacement unit": 0.20798120154461464,
+      "y": 0.14768664393423683,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "cosine with the displacement unit": 0.21923495961291478,
+      "y": 0.08312974843297077,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "cosine with the displacement unit": 0.2088780109945587,
+      "y": 0.06423042574219479,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "cosine with the displacement unit": 0.24168573618745057,
+      "y": 0.08368771753110525,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "cosine with the displacement unit": 0.2240186729434867,
+      "y": 0.057942141897415506,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "cosine with the displacement unit": 0.33016944836124096,
+      "y": 0.07570492315998384,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "cosine with the displacement unit": 0.34292576395257585,
+      "y": 0.09097434638456456,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "cosine with the displacement unit": 0.34098779036256427,
+      "y": 0.08541469548613023,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "cosine with the displacement unit": 0.38023957689302557,
+      "y": 0.09607745980184661,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "cosine with the displacement unit": 0.36819659085093653,
+      "y": 0.08278049190350249,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "cosine with the displacement unit": -0.07331169221131544,
+      "y": 0.3071105745210595,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "cosine with the displacement unit": 0.10413683506329757,
+      "y": 0.43593580438670704,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "cosine with the displacement unit": 0.08613521553920027,
+      "y": 0.40264102842528754,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "cosine with the displacement unit": 0.1891705652264795,
+      "y": 0.4322410620636119,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "cosine with the displacement unit": 0.17686732751696985,
+      "y": 0.42479324739119045,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "cosine with the displacement unit": 0.1304180939495471,
+      "y": 0.5437769466863592,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "cosine with the displacement unit": 0.08266715516208437,
+      "y": 0.5284469232686603,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "cosine with the displacement unit": 0.21135718885291216,
+      "y": 0.5061997651993809,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "cosine with the displacement unit": 0.15973639904685316,
+      "y": 0.5395278136666781,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "cosine with the displacement unit": 0.1625248090433038,
+      "y": 0.4696309078113945,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "cosine with the displacement unit": 0.1006278028248912,
+      "y": 0.36532134988558407,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "cosine with the displacement unit": 0.1961811769765721,
+      "y": 0.4297326328612394,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "cosine with the displacement unit": 0.21837235137732477,
+      "y": 0.4500257901664214,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "cosine with the displacement unit": -0.0564500111620849,
+      "y": 0.25895067986965714,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "cosine with the displacement unit": 0.034479237380602566,
+      "y": 0.4080192219467784,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "cosine with the displacement unit": 0.05627318488532402,
+      "y": 0.4125945145227786,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "cosine with the displacement unit": 0.1301478592510673,
+      "y": 0.4460189686865156,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "cosine with the displacement unit": 0.15346462833751254,
+      "y": 0.47282009240648365,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "cosine with the displacement unit": 0.1749189409615361,
+      "y": 0.38295790232071913,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "cosine with the displacement unit": 0.1763694259051375,
+      "y": 0.37897877469110164,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "cosine with the displacement unit": 0.36746077706198554,
+      "y": 0.49249734809702683,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "cosine with the displacement unit": 0.3512471611785181,
+      "y": 0.4982552747996837,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "cosine with the displacement unit": 0.34934997350036573,
+      "y": 0.5625970477486277,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "cosine with the displacement unit": 0.4435559703208702,
+      "y": 0.5637360644646239,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "cosine with the displacement unit": 0.4559361009008501,
+      "y": 0.48404958109260915,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "cosine with the displacement unit": 0.4220753954333049,
+      "y": 0.4988632019312993,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "cosine with the displacement unit": 0.22644121289476193,
+      "y": 0.3465442654405305,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "cosine with the displacement unit": 0.5359766410912858,
+      "y": 0.43269827705357083,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "cosine with the displacement unit": 0.498527416306265,
+      "y": 0.38099895072361994,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "cosine with the displacement unit": 0.4076032981651543,
+      "y": 0.41686911283068817,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "cosine with the displacement unit": 0.20870294006187842,
+      "y": 0.41606804724627855,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "cosine with the displacement unit": 0.21165383854086084,
+      "y": 0.42481816833320585,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "cosine with the displacement unit": 0.3945695283564388,
+      "y": 0.5609899100634469,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "cosine with the displacement unit": 0.40660778442145973,
+      "y": 0.559367500947081,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "cosine with the displacement unit": 0.0808718828775415,
+      "y": -0.10798442844917376,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "cosine with the displacement unit": 0.28265532129714627,
+      "y": -0.0027302066002699923,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "cosine with the displacement unit": 0.12779808784288177,
+      "y": -0.02020941871566982,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "cosine with the displacement unit": 0.3832892793147253,
+      "y": 0.019156225748880002,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "cosine with the displacement unit": 0.34076976489554944,
+      "y": 0.003941197837665224,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "cosine with the displacement unit": 0.40576364356778605,
+      "y": 0.16899201575393624,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "cosine with the displacement unit": 0.3388728143611382,
+      "y": 0.04792509802597229,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "cosine with the displacement unit": 0.38627878602867893,
+      "y": 0.06630266342265065,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "cosine with the displacement unit": 0.32898344461455953,
+      "y": 0.04201110893750026,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "cosine with the displacement unit": 0.24672128101206592,
+      "y": -0.05493764463211736,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "cosine with the displacement unit": 0.2244118347604826,
+      "y": -0.06759264799646189,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "cosine with the displacement unit": 0.2659564147045319,
+      "y": -0.03256266034032722,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "cosine with the displacement unit": 0.2390766715732472,
+      "y": -0.08833844433319687,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "cosine with the displacement unit": 0.32979626583921323,
+      "y": -0.09587875100557704,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "cosine with the displacement unit": 0.3818806289952771,
+      "y": -0.034401145047990474,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "cosine with the displacement unit": 0.35997751106106407,
+      "y": -0.05726645820541148,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "cosine with the displacement unit": 0.42319578905788735,
+      "y": -0.01622955810379838,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "cosine with the displacement unit": 0.4014376097795346,
+      "y": -0.03858480813113739,
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 312,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "grey dashed line = equal alignment with both candidate directions; one point per cell"
+    ],
+    "axes": [
+      {
+        "title_left": "layer 14",
+        "ylabel": "cosine with the behavior\ndirection (on-policy tree)",
+        "legend_labels": [
+          "impolite",
+          "casual style",
+          "sycophancy"
+        ],
+        "annotations": [
+          "imp",
+          "cas",
+          "syc"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "layer 19",
+        "annotations": [
+          "imp",
+          "cas",
+          "syc"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "layer 25",
+        "annotations": [
+          "imp",
+          "cas",
+          "syc"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "xlabel": "cosine with the displacement unit",
+        "ylabel": "cosine with the behavior\ndirection (matched-text tree)",
+        "annotations": [
+          "imp",
+          "cas",
+          "syc"
+        ],
+        "xticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "xlabel": "cosine with the displacement unit",
+        "annotations": [
+          "imp",
+          "cas",
+          "syc"
+        ],
+        "xticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "xlabel": "cosine with the displacement unit",
+        "annotations": [
+          "imp",
+          "cas",
+          "syc"
+        ],
+        "xticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "impolite",
+      "casual style",
+      "sycophancy"
+    ]
+  }
+}

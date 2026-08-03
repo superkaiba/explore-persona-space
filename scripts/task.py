@@ -26,8 +26,8 @@ Subcommands (see `task.py --help`):
     promote <N> useful|not-useful
     new-plan-version <N> --file path
     raise-concern <N> --concern-id <id> --severity BLOCKER|CONCERN|NIT
-                     --summary "..." --by <reviewer> --round <int> [--evidence ...]
-    address-concern <N> --concern-id <id> --by <implementer> --round <int> [--summary ...]
+                     --summary|--note "..." --by <reviewer> --round <int> [--evidence ...]
+    address-concern <N> --concern-id <id> --by <implementer> --round <int> [--summary|--note ...]
     defer-concern <N> --concern-id <id> --by user|reconciler --rationale "..."
     list-concerns <N> [--open-only] [--json]
     find <N>
@@ -132,14 +132,17 @@ def _safe_echo(text: str, *, context: str) -> None:
 
 
 _FIELD_LED_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*[:=]")
-_VERSION_STAMP_RE = re.compile(r"^v\d+\.\s+")
+_VERSION_STAMP_RE = re.compile(r"^v\d+(?:\.\s+|\s*[—\u2013-]\s+)")
 
 
 def _stripped_note_core(note: str) -> tuple[str, bool]:
     """Note HEAD after the same per-segment decoration strip
     task_workflow.parse_followup_note_field applies: the leading
     whitespace/bullet/bold mix, then a lowercase `v<k>. ` version stamp
-    (#1382). Returns (core, stamped); `stamped` records whether a stamp
+    (#1382) or its dash-led form `v<k> — ` / `v<k> - ` (em dash, en dash
+    U+2013, or ASCII hyphen; whitespace REQUIRED after the dash so `v2-alpha`
+    never strips — #1900/#1984; byte-parity with the parse-side strip).
+    Returns (core, stamped); `stamped` records whether a stamp
     was stripped so the poster-side stamp advisory can key on it."""
     core = re.sub(r"^[\s\-*]+", "", note)
     stamp = _VERSION_STAMP_RE.match(core)
@@ -151,7 +154,8 @@ def _stripped_note_core(note: str) -> tuple[str, bool]:
 def _looks_field_led(note: str) -> bool:
     """True when the note HEAD is a `field:` / `field=` line-core after the
     parse-side decoration strip — whitespace/bullet/bold, then the #1382
-    `v<k>. ` version stamp (stamp tolerance added with #1440, restoring the
+    `v<k>. ` version stamp or its #1900/#1984 dash-led form `v<k> — `
+    (stamp tolerance added with #1440, restoring the
     documented parity with parse_followup_note_field). Head-only by design
     (false-positive-averse; see #1178 plan §4 D2)."""
     core, _ = _stripped_note_core(note)
@@ -159,9 +163,11 @@ def _looks_field_led(note: str) -> bool:
 
 
 def _looks_stamped_field_led(note: str) -> bool:
-    """True when the note HEAD carries a `v<k>. ` version stamp followed by
-    field-led content — the #1092 run-note shape whose read-side absorption
-    is the #1382 parser tolerance. BOTH conditions required
+    """True when the note HEAD carries a `v<k>. ` version stamp (or its
+    #1900/#1984 dash-led form `v<k> — ` / `v<k> - `, en dash included)
+    followed by
+    field-led content — the #1092/#1900 run-note shapes whose read-side
+    absorption is the #1382/#1984 parser tolerance. BOTH conditions required
     (false-positive-averse: a prose note that happens to start "v2. " never
     warns — the parser tolerance likewise only acts when a field anchor
     binds after the strip)."""
@@ -659,10 +665,11 @@ def cmd_post_event(args: argparse.Namespace) -> None:
         with contextlib.suppress(OSError, ValueError):
             print(
                 f"WARNING: task.py post-marker {args.marker}: --note head "
-                "starts with a 'v<k>. ' version stamp before field-led "
+                "starts with a 'v<k>. ' (or dash-led 'v<k> — ') version "
+                "stamp before field-led "
                 "content. The marker version is recorded from --version on "
                 "the event row — do not echo it into the note head (field "
-                "parsers strip the stamp, #1382, so THIS note still "
+                "parsers strip the stamp, #1382/#1984, so THIS note still "
                 "parses). Do NOT re-post this marker — it was posted "
                 "successfully; drop the stamp from your NEXT marker's note "
                 "instead.",
@@ -948,6 +955,16 @@ def cmd_new_plan_version(args: argparse.Namespace) -> None:
         context="task.py new-plan-version",
     )
     print(f"  ({rel})", file=sys.stderr)
+    # #1745: the writer auto-aligns a self-declared `# Plan v<X>` first-heading
+    # version to the assigned version; surface it when it fired (compare the
+    # persisted bytes to the input, modulo the trailing-newline normalization).
+    persisted = (find_task_path(args.number) / "plans" / f"v{v}.md").read_text()
+    if persisted != (plan_md if plan_md.endswith("\n") else plan_md + "\n"):
+        print(
+            f"  (header version auto-aligned to v{v} — self-declared "
+            f"'Plan v<X>' headers are normalized at persist time; #1745)",
+            file=sys.stderr,
+        )
 
 
 def cmd_find(args: argparse.Namespace) -> None:
@@ -1775,10 +1792,12 @@ def main() -> None:
     )
     p.add_argument(
         "--summary",
+        "--note",
+        dest="summary",
         required=True,
         help="one-line description (<=200 chars; longer text is truncated at a word "
         "boundary with a warning, the full original shifted into --evidence when "
-        "--evidence is empty)",
+        "--evidence is empty); --note is an accepted alias, --summary is canonical",
     )
     p.add_argument("--by", required=True, help="reviewer name (e.g. code-reviewer, critic)")
     p.add_argument(
@@ -1821,11 +1840,12 @@ def main() -> None:
     p.add_argument(
         "--summary",
         "--rationale",
+        "--note",
         dest="summary",
         default=None,
         help="optional updated summary, <=200 chars (longer text is truncated at a "
         "word boundary with a warning); defaults to the original raised summary "
-        "(--rationale is an accepted alias, matching defer-concern's flag name)",
+        "(--rationale and --note are accepted aliases; --summary is canonical)",
     )
     p.set_defaults(func=cmd_address_concern)
 

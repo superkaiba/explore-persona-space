@@ -1,0 +1,61 @@
+{
+  "arm": "reduced_basis_k",
+  "cell_id": "onpolicy_assistant_story__R_instruct_r2_matched_prefix",
+  "committed_r2": 0.07839232451607359,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 3.33,
+  "fold_se": 0.002762094798068739,
+  "issue": 1345,
+  "k": 807,
+  "k_rule": "min(1024, floor(n_train_min/2), d_in)",
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T06:45:44Z"
+  },
+  "n_train_min": 1614,
+  "n_train_per_fold": [
+    1614,
+    1614,
+    1614,
+    1615,
+    1615
+  ],
+  "published_claim_ref": "eval_results/issue_1345/onpolicy_assistant_story/matched_row/cells_R_instruct_r2_matched_prefix.json @ L19",
+  "r2_per_fold": [
+    0.06644981562581587,
+    0.08050538541488783,
+    0.08160568515302491,
+    0.07540751541159896,
+    0.07940244124666407
+  ],
+  "r2_pooled": 0.07673332473624439,
+  "resume_key": {
+    "arm": "reduced_basis_k",
+    "cell_id": "onpolicy_assistant_story__R_instruct_r2_matched_prefix",
+    "issue": 1345,
+    "selector_regime": "reduced_basis_k",
+    "store_rev": "e151f8fd30a466cd9e2f05b9b86cf6dde76bca74+allow:matched:87c5a80269d4e91f307f8a77e0c0cbdd741b3ce2"
+  },
+  "selected_lambda_per_fold": [
+    316.22776601683796,
+    316.22776601683796,
+    316.22776601683796,
+    316.22776601683796,
+    316.22776601683796
+  ],
+  "selector_config": {
+    "gcv_dof_cap": null,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": false
+  },
+  "tripwire": {
+    "d": 3584,
+    "estimator_degenerate_suspect": false,
+    "n_train": 1614,
+    "reasons": []
+  },
+  "variant": "onpolicy_assistant_story"
+}

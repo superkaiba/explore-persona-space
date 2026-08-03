@@ -1,0 +1,13 @@
+{
+  "metadata": {
+    "git_commit": "unknown",
+    "timestamp": "2026-08-02T22:34:17Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1345_boundary_ablation_fits.py",
+    "pinned_parent_revision": "7159e5804d"
+  },
+  "round": "story_boundary_ablation",
+  "layer": 19,
+  "arms": {}
+}

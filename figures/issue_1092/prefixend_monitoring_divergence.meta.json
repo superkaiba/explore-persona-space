@@ -1,0 +1,7 @@
+{
+ "generated_utc": "2026-07-22T19:08:10.418306+00:00",
+ "git_commit": "68a2afc631771853134a8b60656dafd7a6dc032d",
+ "source": "scripts/issue1092_prefixend_divergence.py",
+ "data": "eval_results/issue_1092/inline_prefixend_monitoring/per_prefix_points.json",
+ "provenance": "held-out ridge predictions (banked round artifacts); judge = claude-sonnet-4-5-20250929 graded 0-100, 5 draws temp 1.0 mean-aggregated; model completions = instruct own-policy vLLM greedy (teacher-forced read)"
+}

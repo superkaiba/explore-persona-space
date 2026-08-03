@@ -1,0 +1,384 @@
+{
+  "commit": "c2fb3959d9",
+  "created": "2026-07-22T19:51:31Z",
+  "figsize": [
+    11.5,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "raw persona vector",
+      "top-10 LMSYS contexts (count)": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "pre-image\n(rank-truncated)",
+      "top-10 LMSYS contexts (count)": 5.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "pre-image\n(full rank)",
+      "top-10 LMSYS contexts (count)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "raw persona vector",
+      "top-10 LMSYS contexts (count)": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "pre-image\n(rank-truncated)",
+      "top-10 LMSYS contexts (count)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "pre-image\n(full rank)",
+      "top-10 LMSYS contexts (count)": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "raw persona vector",
+      "top-10 LMSYS contexts (count)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "pre-image\n(rank-truncated)",
+      "top-10 LMSYS contexts (count)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "pre-image\n(full rank)",
+      "top-10 LMSYS contexts (count)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "raw persona vector",
+      "top-10 LMSYS contexts (count)": 2.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "pre-image\n(rank-truncated)",
+      "top-10 LMSYS contexts (count)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "pre-image\n(full rank)",
+      "top-10 LMSYS contexts (count)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "raw persona vector",
+      "top-10 LMSYS contexts (count)": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "pre-image\n(rank-truncated)",
+      "top-10 LMSYS contexts (count)": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "pre-image\n(full rank)",
+      "top-10 LMSYS contexts (count)": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "raw persona vector",
+      "top-10 LMSYS contexts (count)": 2.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "pre-image\n(rank-truncated)",
+      "top-10 LMSYS contexts (count)": 2.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "pre-image\n(full rank)",
+      "top-10 LMSYS contexts (count)": 8.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "raw persona vector",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "pre-image\n(rank-truncated)",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "pre-image\n(full rank)",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "raw persona vector",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "pre-image\n(rank-truncated)",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "pre-image\n(full rank)",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "raw persona vector",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "pre-image\n(rank-truncated)",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "pre-image\n(full rank)",
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "raw persona vector",
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "pre-image\n(rank-truncated)",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "pre-image\n(full rank)",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "raw persona vector",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "pre-image\n(rank-truncated)",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "pre-image\n(full rank)",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "raw persona vector",
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "pre-image\n(rank-truncated)",
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "pre-image\n(full rank)",
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "raw persona vector",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "pre-image\n(rank-truncated)",
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "pre-image\n(full rank)",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "raw persona vector",
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "pre-image\n(rank-truncated)",
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "pre-image\n(full rank)",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "raw persona vector",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "pre-image\n(rank-truncated)",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "pre-image\n(full rank)",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "raw persona vector",
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "pre-image\n(rank-truncated)",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "pre-image\n(full rank)",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "raw persona vector",
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "pre-image\n(rank-truncated)",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "pre-image\n(full rank)",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "raw persona vector",
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "category": "pre-image\n(rank-truncated)",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "category": "pre-image\n(full rank)",
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 54,
+  "text": {
+    "suptitle": "Theme composition of each direction's 10 highest-projecting LMSYS contexts",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil (L14)",
+        "ylabel": "top-10 LMSYS contexts (count)",
+        "xticklabels": [
+          "raw persona vector",
+          "pre-image\n(rank-truncated)",
+          "pre-image\n(full rank)"
+        ],
+        "yticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ]
+      },
+      {
+        "title_left": "sycophancy (L26)",
+        "xticklabels": [
+          "raw persona vector",
+          "pre-image\n(rank-truncated)",
+          "pre-image\n(full rank)"
+        ]
+      },
+      {
+        "title_left": "hallucination (L17)",
+        "xticklabels": [
+          "raw persona vector",
+          "pre-image\n(rank-truncated)",
+          "pre-image\n(full rank)"
+        ]
+      }
+    ],
+    "series": [
+      "roleplay-creative",
+      "math",
+      "code",
+      "factual-explain",
+      "advice / rewrite",
+      "other"
+    ]
+  }
+}

@@ -1,0 +1,222 @@
+{
+  "per_layer": {
+    "26": {
+      "per_point": {
+        "mixed_1m": {
+          "selection": {
+            "mode": "mixed",
+            "n_target": 1000000,
+            "n_realized": 963444,
+            "n_lmsys": 529085,
+            "n_wildchat": 434359,
+            "full_lmsys_frac": 0.5492
+          },
+          "predictors": {
+            "krr_nystrom": {
+              "whole_map_r2": 0.7656031023383868,
+              "mean_cosine": 0.974074689629379,
+              "bootstrap_ci": {
+                "r2": {
+                  "point": 0.7656031023383868,
+                  "lo": 0.7512412616542363,
+                  "hi": 0.77922343427909
+                },
+                "mean_cosine": {
+                  "point": 0.974074689629379,
+                  "lo": 0.9724903847645575,
+                  "hi": 0.9757522100609639
+                },
+                "n_test": 1000
+              },
+              "fit_meta": {
+                "n_train": 963444,
+                "kernel": "RBF Nystrom (streaming Phi^TPhi)",
+                "m_centers": 32768,
+                "solver": "cholesky",
+                "whitener": [
+                  {
+                    "gamma": 8.188052265351295e-06,
+                    "solver": "cholesky",
+                    "jitter_eps": 1e-10,
+                    "device": "cuda"
+                  }
+                ],
+                "base_gamma": 8.188052265351295e-06,
+                "selected": {
+                  "gamma_mult": 1.0,
+                  "gamma": 8.188052265351295e-06,
+                  "lambda": 0.1,
+                  "val_r2": 0.7614366827748958
+                },
+                "val_grid": [
+                  {
+                    "gamma_mult": 1.0,
+                    "gamma": 8.188052265351295e-06,
+                    "lambda": 0.1,
+                    "val_r2": 0.7614366827748958
+                  },
+                  {
+                    "gamma_mult": 1.0,
+                    "gamma": 8.188052265351295e-06,
+                    "lambda": 10.0,
+                    "val_r2": 0.7256233297266941
+                  }
+                ],
+                "nystrom_gate_passed": true
+              },
+              "wall_time_s": 343.0,
+              "weights_file": "/workspace/eps-issue-779/eval_results/issue_779/l26-kernel-gate-recovery/weights_l26_m32768/L26/krr_nystrom.pt"
+            }
+          }
+        }
+      },
+      "solver_equivalence": {
+        "m": 4096,
+        "n_train": 50000,
+        "r2_eigh": 0.685986482385936,
+        "r2_cholesky": 0.6859864823864058,
+        "abs_dr2": 4.698463840213662e-13,
+        "max_abs_dpred": 2.9357920539041515e-08,
+        "tol": 0.0001,
+        "selected_eigh": {
+          "gamma_mult": 1.0,
+          "gamma": 8.37321464475155e-06,
+          "lambda": 0.1,
+          "val_r2": 0.6945366128988237
+        },
+        "selected_cholesky": {
+          "gamma_mult": 1.0,
+          "gamma": 8.37321464475155e-06,
+          "lambda": 0.1,
+          "val_r2": 0.6945366128979926
+        },
+        "cholesky_whitener": [
+          {
+            "gamma": 8.37321464475155e-06,
+            "solver": "cholesky",
+            "jitter_eps": 1e-10,
+            "device": "cuda"
+          }
+        ],
+        "pass": true
+      },
+      "nystrom_validation": {
+        "n": 50000,
+        "m_centers": 32768,
+        "solver": "cholesky",
+        "nystrom_whitener": [
+          {
+            "gamma": 8.37321464475155e-06,
+            "solver": "cholesky",
+            "jitter_eps": 1e-10,
+            "device": "cuda"
+          }
+        ],
+        "exact_r2": 0.7321946094333003,
+        "nystrom_r2": 0.727956462336393,
+        "gap": 0.004238147096907285,
+        "tol": 0.01,
+        "gate_passed": true,
+        "committed_n50k_exact_r2_widegrid": 0.8076,
+        "committed_n50k_exact_r2_smallgrid": 0.8066,
+        "exact_selected": {
+          "gamma_mult": 1.0,
+          "gamma": 8.09653852990178e-06,
+          "lambda": 0.1,
+          "val_r2": 0.7322066973784427
+        },
+        "nystrom_selected": {
+          "gamma_mult": 1.0,
+          "gamma": 8.37321464475155e-06,
+          "lambda": 0.1,
+          "val_r2": 0.7296012481704063
+        }
+      }
+    }
+  },
+  "layers": [
+    26
+  ],
+  "seed": 0,
+  "split": {
+    "orig_train_ids": 3600,
+    "n_new_captured": 959844,
+    "n_new_manifest": 960000,
+    "n_lmsys_manifest": 525485,
+    "n_wildchat_manifest": 434515,
+    "n_val": 400,
+    "n_test": 1000,
+    "val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+    "test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+    "pinned_val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+    "pinned_test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+    "pinned_source": "/workspace/eps-issue-779/eval_results/issue_779/fitter-fair-comparison/fair_comparison.json split params -> fixed_split, cross-checked vs constants",
+    "val_test_byte_identical_original": true,
+    "layers": [
+      26
+    ],
+    "near_dupe": {
+      "ngram": 5,
+      "jaccard_thresh": 0.8,
+      "n_targets": 1400,
+      "n_exact_drop": 435,
+      "n_near_drop": 30437
+    },
+    "manifest_new_prompt_sha256": "2b14762a15d316c602332a749ebd87c733d687d4165eb5d0038c298e0d27ce46",
+    "max_chunks": null
+  },
+  "lambda_grid": {
+    "n": 23,
+    "min": 0.001,
+    "max": 100000000.0
+  },
+  "krr_grid": {
+    "gamma_mult": [
+      1.0
+    ],
+    "lambdas": [
+      0.1,
+      10.0
+    ],
+    "nystrom_centers": 32768,
+    "solver": "cholesky"
+  },
+  "predictor_labels": {
+    "ridge": "primal ridge (linear, streaming X^TX)",
+    "mlp_w8192": "full-dim MLP (w=8192, protocol arm)",
+    "mlp_w32768": "full-dim MLP (w=32768, capacity arm)",
+    "residual_skip": "residual-skip (primal ridge + MLP w8192)",
+    "krr_nystrom": "RBF KRR (Nystrom, streaming Phi^TPhi)"
+  },
+  "fit_points": {
+    "lmsys_150k": {
+      "n_train_target": 150000,
+      "corpus_mode": "lmsys"
+    },
+    "lmsys_500k": {
+      "n_train_target": 500000,
+      "corpus_mode": "lmsys"
+    },
+    "mixed_500k": {
+      "n_train_target": 500000,
+      "corpus_mode": "mixed"
+    },
+    "mixed_1m": {
+      "n_train_target": 1000000,
+      "corpus_mode": "mixed"
+    }
+  },
+  "weights_dir": "/workspace/eps-issue-779/eval_results/issue_779/l26-kernel-gate-recovery/weights_l26_m32768",
+  "note": "multi-layer one-pass memmap rerun of the n1m fits (#779 n1m-nonlinear-map-behavior-readout): same fitters/grids/seed/pinned val-test as n1m_fits.json, refit at the capture layers with weights persisted for the behavior read-out.",
+  "metadata": {
+    "git_commit": "e3f78097b23dc89a68e6b6e0d3c09cfaf78638d4",
+    "timestamp_utc": "2026-07-23T04:07:20.755775Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1064-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue779_ffc_n1m_fits --layers",
+    "device": "cuda",
+    "prefetch": 6,
+    "max_chunks": null
+  }
+}

@@ -1,0 +1,1301 @@
+{
+  "commit": "9c9dc0a19f",
+  "created": "2026-07-23T03:58:33Z",
+  "figsize": [
+    12.4,
+    5.6
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "\u2016\u0394state\u2016/\u2016state\u2016 per bin": 0.19678387609672818,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "\u2016\u0394state\u2016/\u2016state\u2016 per bin": 0.1452740122292878,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "\u2016\u0394state\u2016/\u2016state\u2016 per bin": 0.08741816642802998,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "\u2016\u0394state\u2016/\u2016state\u2016 per bin": 0.04298788620961659,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "\u2016\u0394state\u2016/\u2016state\u2016 per bin": 0.028352073281648533,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "\u2016\u0394state\u2016/\u2016state\u2016 per bin": 0.025009303234715046,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "\u2016\u0394state\u2016/\u2016state\u2016 per bin": 0.024560584948853294,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "\u2016\u0394state\u2016/\u2016state\u2016 per bin": 0.026319148160952332,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "\u2016\u0394state\u2016/\u2016state\u2016 per bin": 0.02204812281200961,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "\u2016\u0394state\u2016/\u2016state\u2016 per bin": 0.01978090495133573,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "\u2016\u0394state\u2016/\u2016state\u2016 per bin": 0.020599262551247197,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "\u2016\u0394state\u2016/\u2016state\u2016 per bin": 0.022189448156713806,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "\u2016\u0394state\u2016/\u2016state\u2016 per bin": 0.044925408917406595,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "y": 0.15296879188885765,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "y": 0.05313288301041536,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "y": 0.024126597659482413,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "y": 0.008045237645578603,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "y": 0.006055076841176406,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "y": 0.005003348644068879,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "y": 0.0043490401785785384,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "y": 0.004201643119226968,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "y": 0.004141270108904369,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "y": 0.0037443507169486055,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "y": 0.003953136414375139,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "y": 0.004166809466075696,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "y": 0.01070634588458073,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "y": 0.17628553880288936,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "y": 0.12127332646431226,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "y": 0.08032706803653115,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "y": 0.03607296095512802,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "y": 0.02578784863830837,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "y": 0.02229008956494418,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "y": 0.01986543452537393,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "y": 0.018293257997995468,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "y": 0.016931227299954908,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "y": 0.016439001964135683,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "y": 0.015748241032731834,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 11.0,
+      "y": 0.016248831262041134,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 12.0,
+      "y": 0.028980284949650794,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "y": 0.12601444896129899,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "y": 0.0645382150806338,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "y": 0.03895678513094743,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "y": 0.01616424371533665,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "y": 0.012660712245823566,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "y": 0.011797490595684985,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "y": 0.011191864523286547,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "y": 0.011059052061594738,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "y": 0.011368965056876165,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 9.0,
+      "y": 0.010955354840304654,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 10.0,
+      "y": 0.010541636394277241,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 11.0,
+      "y": 0.01254917702425896,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 12.0,
+      "y": 0.02531506090071537,
+      "series": "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "cosine to counterfactual target": 0.19173667284693302,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "cosine to counterfactual target": 0.21267138927110604,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "cosine to counterfactual target": 0.22161449598414557,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "cosine to counterfactual target": 0.1155296904284374,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "cosine to counterfactual target": 0.11119219913546528,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "cosine to counterfactual target": 0.09343594294374011,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "cosine to counterfactual target": 0.09832020226167515,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "cosine to counterfactual target": 0.09475775408957686,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "cosine to counterfactual target": 0.09694913605095021,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 9.0,
+      "cosine to counterfactual target": 0.09650287002192012,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 10.0,
+      "cosine to counterfactual target": 0.09869881410018674,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 11.0,
+      "cosine to counterfactual target": 0.06641961028799415,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 12.0,
+      "cosine to counterfactual target": 0.051156337007081935,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "cosine to counterfactual target": 0.03354771643982682,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "cosine to counterfactual target": 0.031811650723234886,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "cosine to counterfactual target": 0.03232409861263696,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "cosine to counterfactual target": 0.03362885475299455,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "cosine to counterfactual target": 0.0331046969123038,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "cosine to counterfactual target": 0.03299905469053548,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "cosine to counterfactual target": 0.03262847816167388,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "cosine to counterfactual target": 0.032908941942755524,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "cosine to counterfactual target": 0.032426245218830245,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 9.0,
+      "cosine to counterfactual target": 0.03270360491909475,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 10.0,
+      "cosine to counterfactual target": 0.03199643477016909,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 11.0,
+      "cosine to counterfactual target": 0.03301142917161575,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 12.0,
+      "cosine to counterfactual target": 0.03215772664303219,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "y": 0.17187913560441562,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "y": 0.18638765825224773,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "y": 0.17440959897690586,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "y": 0.10135716798582248,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "y": 0.09238484240735748,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "y": 0.07879244027260159,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "y": 0.08174645852497113,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "y": 0.09373516825559948,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "y": 0.08916215615213982,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 9.0,
+      "y": 0.0921027695086585,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 10.0,
+      "y": 0.09822640348491925,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 11.0,
+      "y": 0.1061073659387018,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 12.0,
+      "y": 0.11221941034974796,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "y": 0.03269137903220666,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 0.03230467945298768,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": 0.032412543266993554,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": 0.032452104257658224,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": 0.03226840235057503,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "y": 0.03271756106674974,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "y": 0.0325052599693811,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "y": 0.03203849240100024,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "y": 0.0322910131045737,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 9.0,
+      "y": 0.03259877411915004,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 10.0,
+      "y": 0.03219903724616887,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 11.0,
+      "y": 0.03243056029450305,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 12.0,
+      "y": 0.032163687422729105,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "y": 0.13537812951420033,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "y": 0.14766575692088477,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "y": 0.1647340426487582,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "y": 0.10246939564655934,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "y": 0.09659421492168414,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "y": 0.09138606329049383,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.0,
+      "y": 0.0980529572116211,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 7.0,
+      "y": 0.08764621066594762,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 8.0,
+      "y": 0.08556761763923403,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 9.0,
+      "y": 0.09894854716757047,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 10.0,
+      "y": 0.10012060114448625,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 11.0,
+      "y": 0.07760495752362269,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 12.0,
+      "y": 0.07968039211950131,
+      "series": "cos(direct diff, target) (read L17)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "y": 0.03354771643982682,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": 0.031811650723234886,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "y": 0.03232409861263696,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "y": 0.03362885475299455,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "y": 0.0331046969123038,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "y": 0.03299905469053548,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 6.0,
+      "y": 0.03262847816167388,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 7.0,
+      "y": 0.032908941942755524,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 8.0,
+      "y": 0.032426245218830245,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 9.0,
+      "y": 0.03270360491909475,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 10.0,
+      "y": 0.03199643477016909,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 11.0,
+      "y": 0.03301142917161575,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 12.0,
+      "y": 0.03215772664303219,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "y": 0.09129228514419603,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "y": 0.10700073498966438,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "y": 0.10926640439512474,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "y": 0.06933194192658577,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "y": 0.056359665717796555,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.0,
+      "y": 0.049816205232803314,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 6.0,
+      "y": 0.0531070662795433,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 7.0,
+      "y": 0.054113350833566595,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 8.0,
+      "y": 0.05996670425936047,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 9.0,
+      "y": 0.06172282859084329,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 10.0,
+      "y": 0.0682304714240932,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 11.0,
+      "y": 0.08592196397616395,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 12.0,
+      "y": 0.09586287236639432,
+      "series": "cos(direct diff, target) (read L21)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "y": 0.03269137903220666,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "y": 0.03230467945298768,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "y": 0.032412543266993554,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "y": 0.032452104257658224,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "y": 0.03226840235057503,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "y": 0.03271756106674974,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 6.0,
+      "y": 0.0325052599693811,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 7.0,
+      "y": 0.03203849240100024,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 8.0,
+      "y": 0.0322910131045737,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 9.0,
+      "y": 0.03259877411915004,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 10.0,
+      "y": 0.03219903724616887,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 11.0,
+      "y": 0.03243056029450305,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 12.0,
+      "y": 0.032163687422729105,
+      "series": "random-direction null p97.5 (seed 14154)",
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 156,
+  "text": {
+    "suptitle": "Hooked-unhooked direct component per answer bin (mean over pairs; headline read layers pre-registered above steer)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "context arm, steer L14 \u2192 read L17",
+        "ylabel": "\u2016\u0394state\u2016/\u2016state\u2016 per bin",
+        "legend_labels": [
+          "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+          "2\u00d7 same-text jitter /\u2016state\u2016 (read L17)"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ]
+      },
+      {
+        "title_left": "context arm, steer L20 \u2192 read L21",
+        "legend_labels": [
+          "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+          "2\u00d7 same-text jitter /\u2016state\u2016 (read L21)"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ]
+      },
+      {
+        "title_left": "prefix arm, steer L14 \u2192 read L17",
+        "legend_labels": [
+          "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+          "2\u00d7 same-text jitter /\u2016state\u2016 (read L17)"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ]
+      },
+      {
+        "title_left": "prefix arm, steer L20 \u2192 read L21",
+        "legend_labels": [
+          "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+          "2\u00d7 same-text jitter /\u2016state\u2016 (read L21)"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ]
+      },
+      {
+        "ylabel": "cosine to counterfactual target",
+        "legend_labels": [
+          "cos(direct diff, target) (read L17)",
+          "random-direction null p97.5 (seed 14154)"
+        ],
+        "xticklabels": [
+          "first",
+          "tok2_5",
+          "dec1",
+          "dec2",
+          "dec3",
+          "dec4",
+          "dec5",
+          "dec6",
+          "dec7",
+          "dec8",
+          "dec9",
+          "dec10",
+          "last"
+        ],
+        "yticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      },
+      {
+        "legend_labels": [
+          "cos(direct diff, target) (read L21)",
+          "random-direction null p97.5 (seed 14154)"
+        ],
+        "xticklabels": [
+          "first",
+          "tok2_5",
+          "dec1",
+          "dec2",
+          "dec3",
+          "dec4",
+          "dec5",
+          "dec6",
+          "dec7",
+          "dec8",
+          "dec9",
+          "dec10",
+          "last"
+        ],
+        "yticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      },
+      {
+        "legend_labels": [
+          "cos(direct diff, target) (read L17)",
+          "random-direction null p97.5 (seed 14154)"
+        ],
+        "xticklabels": [
+          "first",
+          "tok2_5",
+          "dec1",
+          "dec2",
+          "dec3",
+          "dec4",
+          "dec5",
+          "dec6",
+          "dec7",
+          "dec8",
+          "dec9",
+          "dec10",
+          "last"
+        ],
+        "yticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      },
+      {
+        "legend_labels": [
+          "cos(direct diff, target) (read L21)",
+          "random-direction null p97.5 (seed 14154)"
+        ],
+        "xticklabels": [
+          "first",
+          "tok2_5",
+          "dec1",
+          "dec2",
+          "dec3",
+          "dec4",
+          "dec5",
+          "dec6",
+          "dec7",
+          "dec8",
+          "dec9",
+          "dec10",
+          "last"
+        ],
+        "yticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      }
+    ],
+    "series": [
+      "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L17)",
+      "2\u00d7 same-text jitter /\u2016state\u2016 (read L17)",
+      "direct \u2016hooked-unhooked\u2016/\u2016state\u2016 (read L21)",
+      "2\u00d7 same-text jitter /\u2016state\u2016 (read L21)",
+      "cos(direct diff, target) (read L17)",
+      "random-direction null p97.5 (seed 14154)",
+      "cos(direct diff, target) (read L21)"
+    ]
+  }
+}

@@ -1,4 +1,5 @@
-"""Regression tests for the plan-handoff convention (issue #282 [4/4]).
+"""Regression tests for the plan-handoff convention (issue #282 [4/4]); #1581 pins the
+edit-success pre-persist gate.
 
 CLAUDE.md documents that subagent dispatch must hand over the PATH to the
 cached plan (`.claude/plans/issue-<N>.md`), not the plan body. These tests
@@ -36,4 +37,30 @@ def test_claude_md_contains_plan_handoff_rule() -> None:
     body = (REPO_ROOT / "CLAUDE.md").read_text()
     assert "Plan handoff convention" in body, (
         "CLAUDE.md must include the 'Plan handoff convention' rule"
+    )
+
+
+AP_SKILL = REPO_ROOT / ".claude" / "skills" / "adversarial-planner" / "SKILL.md"
+ISSUE_SKILL = REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
+
+
+def test_adversarial_planner_edit_success_gate_pinned() -> None:
+    """#1581: a scripted plan edit gates its `new-plan-version` persist on
+    verified edit success (edit -> verify -> persist, &&-chained; an edit
+    failure aborts the persist loudly). Dropping this prose re-opens the
+    #1565/#1563 gap where an AssertionError'd edit script still persisted the
+    plan as an unmodified copy of the prior version."""
+    ap = AP_SKILL.read_text()
+    for token in (
+        "Edit-success gate",
+        "EDIT FAILED — not persisting",
+        "edit → verify → persist",
+        "never run the persist inside the same\nscript",
+    ):
+        assert token.replace("\n", " ") in ap.replace("\n", " "), (
+            f"adversarial-planner SKILL.md lost edit-success-gate token {token!r}"
+        )
+    issue = ISSUE_SKILL.read_text()
+    assert "Edit-success gate" in issue, (
+        "issue SKILL.md lost the edit-success-gate pointer next to its Goal-currency gate"
     )

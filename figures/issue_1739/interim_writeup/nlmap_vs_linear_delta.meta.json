@@ -1,0 +1,401 @@
+{
+  "commit": "82fa479c29",
+  "created": "2026-07-31T13:35:17Z",
+  "figsize": [
+    11.6,
+    6.2
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "median $\\Delta\\rho$ (nonlinear $-$ linear)": -0.05389267033645301,
+      "error": 0.0260699931648996,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "median $\\Delta\\rho$ (nonlinear $-$ linear)": -0.04521515010839548,
+      "error": 0.030605745601721693,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.81,
+      "median $\\Delta\\rho$ (nonlinear $-$ linear)": -0.04369388086924453,
+      "error": 0.01783360013123586,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.19,
+      "median $\\Delta\\rho$ (nonlinear $-$ linear)": -0.08696624964410743,
+      "error": 0.09855365013700912,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "median $\\Delta\\rho$ (nonlinear $-$ linear)": -0.07388073306403965,
+      "error": 0.035404279557551904,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.19,
+      "median $\\Delta\\rho$ (nonlinear $-$ linear)": -0.22306428712670215,
+      "error": 0.07516848015824165,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": -0.19,
+      "y": -0.038097195379305115,
+      "error": 0.01031231470373939,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.19,
+      "y": -0.03725603562314961,
+      "error": 0.010287464453585443,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.81,
+      "y": -0.04883557475330341,
+      "error": 0.03527925599922477,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.19,
+      "y": -0.05786022986030537,
+      "error": 0.023713008323408447,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.81,
+      "y": -0.03865316754676498,
+      "error": 0.024206636704607057,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 2.19,
+      "y": -0.17186785313666544,
+      "error": 0.04856968245683109,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": -0.19,
+      "y": -0.014895367679959394,
+      "error": 0.03480138802421094,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 0.19,
+      "y": -0.10304912540778949,
+      "error": 0.015085635076224686,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 0.81,
+      "y": -0.02679525276660938,
+      "error": 0.0321772251379166,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 1.19,
+      "y": -0.033831984275194155,
+      "error": 0.07333640228695024,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 1.81,
+      "y": -0.01957841935730502,
+      "error": 0.03818476533152394,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 2.19,
+      "y": -0.09243082358826396,
+      "error": 0.06529673770539407,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": -0.19,
+      "median $\\Delta\\rho$ (nonlinear $-$ linear)": -0.001611902538358118,
+      "error": 0.0070911891937458504,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 0.19,
+      "median $\\Delta\\rho$ (nonlinear $-$ linear)": -0.04034594860537527,
+      "error": 0.026245798536570972,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 0.81,
+      "median $\\Delta\\rho$ (nonlinear $-$ linear)": -0.015868343812227514,
+      "error": 0.010049972645179789,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 1.19,
+      "median $\\Delta\\rho$ (nonlinear $-$ linear)": -0.4911097308051896,
+      "error": 0.055600351811797066,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 1.81,
+      "median $\\Delta\\rho$ (nonlinear $-$ linear)": -0.03565545885107153,
+      "error": 0.037464365921787375,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 2.19,
+      "median $\\Delta\\rho$ (nonlinear $-$ linear)": -0.07740479193448296,
+      "error": 0.033350670732642966,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": -0.19,
+      "y": 1.3877787807814457e-17,
+      "error": 6.938893903907228e-18,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "x": 0.19,
+      "y": 1.3877787807814457e-17,
+      "error": 0.002020658898124311,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "x": 0.81,
+      "y": -0.0030369397180914377,
+      "error": 0.0028051847707748186,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "x": 1.19,
+      "y": -0.002103648546724306,
+      "error": 0.00046505286537502043,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "x": 1.81,
+      "y": 0.0035404445948646005,
+      "error": 0.001617158350212854,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "x": 2.19,
+      "y": 0.002350179561214258,
+      "error": 0.001916767230081635,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "x": -0.19,
+      "y": -0.0010437739433570969,
+      "error": 0.00544533461284195,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 0.19,
+      "y": 0.007949874541758203,
+      "error": 0.012973065480395842,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": 0.81,
+      "y": 0.00048187605913403014,
+      "error": 0.029788882413955418,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "x": 1.19,
+      "y": 0.0006647388391318593,
+      "error": 0.02501894474944838,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 1.81,
+      "y": 0.0009375292058756181,
+      "error": 0.010466265223771918,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 2.19,
+      "y": 0.001368212754171684,
+      "error": 0.009629266905096691,
+      "_kind": "bar",
+      "_group": 35
+    }
+  ],
+  "n_series": 36,
+  "total_points": 36,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil \u2014 context end state",
+        "ylabel": "median $\\Delta\\rho$ (nonlinear $-$ linear)",
+        "legend_labels": [
+          "MLP map (round B)",
+          "kernel-ridge map (round B)"
+        ],
+        "annotations": [
+          "negative = nonlinear worse; 216 matched cells"
+        ],
+        "xticklabels": [
+          "map -> PV proj.",
+          "map -> ridge\n(pred. answers)",
+          "map -> ridge\n(real answers)"
+        ],
+        "yticklabels": [
+          "\u22120.35",
+          "\u22120.30",
+          "\u22120.25",
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00"
+        ]
+      },
+      {
+        "title_left": "sycophancy \u2014 context end state",
+        "annotations": [
+          "negative = nonlinear worse; 180 matched cells"
+        ],
+        "xticklabels": [
+          "map -> PV proj.",
+          "map -> ridge\n(pred. answers)",
+          "map -> ridge\n(real answers)"
+        ],
+        "yticklabels": [
+          "\u22120.25",
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00"
+        ]
+      },
+      {
+        "title_left": "hallucination \u2014 context end state",
+        "annotations": [
+          "negative = nonlinear worse; 72 matched cells"
+        ],
+        "xticklabels": [
+          "map -> PV proj.",
+          "map -> ridge\n(pred. answers)",
+          "map -> ridge\n(real answers)"
+        ],
+        "yticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10"
+        ]
+      },
+      {
+        "title_left": "evil \u2014 prefix end state",
+        "ylabel": "median $\\Delta\\rho$ (nonlinear $-$ linear)",
+        "annotations": [
+          "negative = nonlinear worse; 216 matched cells"
+        ],
+        "xticklabels": [
+          "map -> PV proj.",
+          "map -> ridge\n(pred. answers)",
+          "map -> ridge\n(real answers)"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.5",
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1"
+        ]
+      },
+      {
+        "title_left": "sycophancy \u2014 prefix end state",
+        "annotations": [
+          "negative = nonlinear worse; 162 matched cells"
+        ],
+        "xticklabels": [
+          "map -> PV proj.",
+          "map -> ridge\n(pred. answers)",
+          "map -> ridge\n(real answers)"
+        ],
+        "yticklabels": [
+          "\u22120.008",
+          "\u22120.006",
+          "\u22120.004",
+          "\u22120.002",
+          "0.000",
+          "0.002",
+          "0.004",
+          "0.006"
+        ]
+      },
+      {
+        "title_left": "hallucination \u2014 prefix end state",
+        "annotations": [
+          "negative = nonlinear worse; 72 matched cells"
+        ],
+        "xticklabels": [
+          "map -> PV proj.",
+          "map -> ridge\n(pred. answers)",
+          "map -> ridge\n(real answers)"
+        ],
+        "yticklabels": [
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04"
+        ]
+      }
+    ],
+    "series": [
+      "MLP map (round B)",
+      "kernel-ridge map (round B)"
+    ]
+  }
+}

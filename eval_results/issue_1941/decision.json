@@ -1,0 +1,57 @@
+{
+ "verdict": "RETIRE",
+ "adopted_arm": null,
+ "qualifying_arms": [],
+ "per_arm": {
+  "c600": {
+   "kappa_uniform": 0.2986208617397232,
+   "kappa_ge_bar": false,
+   "ci_lb95": -0.05940961151385565,
+   "ci_lb95_ge_bar": false,
+   "content_drop_rate": 0.01525,
+   "drop_le_bar": false,
+   "qualifies": false
+  },
+  "n600": {
+   "kappa_uniform": 0.291654677715064,
+   "kappa_ge_bar": false,
+   "ci_lb95": -0.06955088942730321,
+   "ci_lb95_ge_bar": false,
+   "content_drop_rate": 0.016,
+   "drop_le_bar": false,
+   "qualifies": false
+  },
+  "r600": {
+   "kappa_uniform": 0.33944427911566394,
+   "kappa_ge_bar": false,
+   "ci_lb95": -0.02257534975041299,
+   "ci_lb95_ge_bar": false,
+   "content_drop_rate": 0.01775,
+   "drop_le_bar": false,
+   "qualifies": false
+  },
+  "b600": {
+   "kappa_uniform": 0.30461075287937955,
+   "kappa_ge_bar": false,
+   "ci_lb95": -0.06041386100565221,
+   "ci_lb95_ge_bar": false,
+   "content_drop_rate": 0.015,
+   "drop_le_bar": true,
+   "qualifies": false
+  }
+ },
+ "bars": {
+  "kappa_min": 0.6,
+  "delta_ci_lb95_min": 0.15,
+  "content_drop_max": 0.015,
+  "content_drop_denominator": "all launched draws per API arm (uniform + oversample)"
+ },
+ "usability_string": "unusable: inter-draw kappa 0.318 vs 0.63-0.71 siblings (#1941; RETIRE \u2014 no arm cleared the registered repair lattice)",
+ "wave2_ran": false,
+ "git_commit": "5c955a0e24d44e9e8b8df76d44b925cfa88db74b",
+ "numpy": "2.2.6",
+ "python": "3.11.15",
+ "timestamp_utc": "2026-08-01T01:41:13.315525+00:00",
+ "task": 1773,
+ "seed": 17732026
+}

@@ -1,0 +1,400 @@
+{
+  "commit": "ff548adcf6",
+  "created": "2026-08-01T18:52:06Z",
+  "figsize": [
+    13.799999999999999,
+    6.0
+  ],
+  "points": [
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.166016,
+      "y": 0.3320310317763309,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.184969,
+      "y": 0.36993884480922234,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.16243,
+      "y": 0.3248591190652355,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.154307,
+      "y": 0.30861374325367724,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.218003,
+      "y": 0.43600652488443115,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.144329,
+      "y": 0.28865703479217075,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.144989,
+      "y": 0.28997707216182045,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.2003,
+      "y": 0.4006008299023196,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.135448,
+      "y": 0.2708966742213749,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.165735,
+      "y": 0.33146945079335455,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.243547,
+      "y": 0.48709309921127164,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.119813,
+      "y": 0.23962505156568367,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.155184,
+      "y": 0.31036707343161246,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.242884,
+      "y": 0.4857681628499363,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.226933,
+      "y": 0.45386550675912307,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.208002,
+      "y": 0.41600309736464464,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.288591,
+      "y": 0.5771829871515332,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.246036,
+      "y": 0.4920727077297659,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.006584,
+      "y": 0.01316718358284379,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": -0.035836,
+      "y": -0.07167193323742276,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": -0.016265,
+      "y": -0.03253083015515844,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": -0.072225,
+      "y": -0.14444999866989328,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": -0.024629,
+      "y": -0.0492572286303771,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.070975,
+      "y": 0.14195081956374142,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.136221,
+      "y": 0.27244165096807266,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.03525,
+      "y": 0.07049972543549779,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.129725,
+      "y": 0.25944973897821333,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": -0.063954,
+      "y": -0.12790881638306714,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": -0.027668,
+      "y": -0.055336609754611694,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.115058,
+      "y": 0.23011500530484905,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.154598,
+      "y": 0.3091969829634755,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.129607,
+      "y": 0.25921413984973507,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.180984,
+      "y": 0.36196767458615114,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.13269,
+      "y": 0.265379439349715,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.091584,
+      "y": 0.18316703283678992,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.171877,
+      "y": 0.3437530831443958,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.179858,
+      "y": 0.35971516970357137,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.14756,
+      "y": 0.2951209223651727,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.323931,
+      "y": 0.647861850101968,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.23259,
+      "y": 0.4651809035937197,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.259079,
+      "y": 0.5181581862143823,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.174174,
+      "y": 0.3483474397974475,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.214469,
+      "y": 0.42893784320657746,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.186268,
+      "y": 0.37253583105939614,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.348508,
+      "y": 0.6970169345761461,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.120655,
+      "y": 0.24131016559238144,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.275694,
+      "y": 0.5513872553939475,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.349588,
+      "y": 0.6991763345325603,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": 0.11345,
+      "y": 0.22689969574576235,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": -0.093195,
+      "y": -0.186389114978124,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": -0.030178,
+      "y": -0.06035503983999038,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": -0.111194,
+      "y": -0.22238792168270327,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": -0.173527,
+      "y": -0.347053557114044,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "Spearman $\\rho$ at the frozen layer": -0.043845,
+      "y": -0.08768912875869903,
+      "_kind": "bar",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 54,
+  "text": {
+    "suptitle": "Persona-vector extraction regimes, whitened space (primary) vs raw space (deprecated)",
+    "fig_texts": [
+      "Filled bars are the whitened reads \u2014 the space the fitted map and the main grid actually live in. Dotted outlines are the\nsuperseded raw-space reads, which applied a whitened-fit map to un-whitened activations. Only out-of-sample rungs are\nshown; the frozen layer is picked by max |rho| on the train rung, so the sign is not pinned by selection."
+    ],
+    "axes": [
+      {
+        "title_left": "sycophancy / aita (out-of-sample, n=1304)",
+        "xlabel": "Spearman $\\rho$ at the frozen layer",
+        "legend_labels": [
+          "E1 paper-faithful synthetic",
+          "E2 matched-pair natural",
+          "E2p pooled natural",
+          "dotted outline = same read, raw space (deprecated)"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ],
+        "yticklabels": [
+          "PV proj. on context",
+          "map(context) -> PV proj.",
+          "PV proj. on TRUE answer"
+        ]
+      },
+      {
+        "title_left": "hallucination / nqopen (out-of-sample, n=3167)",
+        "xlabel": "Spearman $\\rho$ at the frozen layer",
+        "xticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      },
+      {
+        "title_left": "hallucination / simpleqa (out-of-sample, n=4021)",
+        "xlabel": "Spearman $\\rho$ at the frozen layer",
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "E1 paper-faithful synthetic",
+      "E2 matched-pair natural",
+      "E2p pooled natural"
+    ]
+  }
+}

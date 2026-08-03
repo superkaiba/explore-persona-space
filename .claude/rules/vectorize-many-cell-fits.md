@@ -127,7 +127,8 @@ solve one shared reduction + cheap per-λ updates.
 7. **Launch it protected + checkpointed — the launch form is part of the fix.**
    Any VM-side fit / battery / aggregation phase with projected wall-time >~15 min
    MUST use the canonical detached launch: `setsid` pid-capture wrapper +
-   `sudo -n choom -n -600` session sweep + the `pid= log= choom=ok|failed`
+   `sudo -n choom -n -600` session sweep + the
+   `pid= log= choom=ok|failed harvest=<abs output path>`
    breadcrumb — recipe owned by `.claude/skills/issue/SKILL.md`
    § "Detached VM-side long compute phases" (short form:
    `.claude/rules/code-style.md` § "Always run with `nohup`"); do not copy the
@@ -302,6 +303,16 @@ session/implementer/experimenter side and does not duplicate it. Outcomes:
   progress, so the width predicate below did not hold), and its earlier
   ~2.2–2.5× elapsed-vs-plan read was likewise correctly ridden out as a
   demonstrably-in-tail FLOP-bound phase.
+
+WHATEVER the signature outcome, the resolution re-post ALSO re-states
+the deviating row's basis (measured per-call × code-derived multiplier
+→ re-projected wall) and names any downstream fence/cap re-derived from
+it — the basis-currency duty of `.claude/rules/plan-compute-sizing.md`
+§ Per-cell fit phases; and when the deviating phase is a dominant
+bootstrap / permutation battery, the re-check includes the
+draw-necessity lever — descope N per the plan's pre-registered floor —
+BEFORE booking more wall (#1689: the battery was descoped only by user
+order).
 
 **Width re-evaluation on a negative signature — a negative signature settles
 VECTORIZATION, not WIDTH (#1092).** When the negative-signature phase is an

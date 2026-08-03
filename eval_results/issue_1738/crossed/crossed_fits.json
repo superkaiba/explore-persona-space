@@ -1,0 +1,578 @@
+{
+  "cells": {
+    "context_L14": {
+      "fitter": "ridge (shared-Gram primal, parent verbatim)",
+      "selection": "val-lambda (pinned val rows)",
+      "selected_lambda": 3162.2776601683795,
+      "val_r2_at_selected": 0.77101593285249,
+      "lambda_grid_edge": null,
+      "n_train": 88600,
+      "d": 3584,
+      "n_train_unique_x": 88600,
+      "holdout_r2": 0.7535629760957365,
+      "holdout_mean_cosine": 0.9686764627063085,
+      "bootstrap": {
+        "r2": {
+          "point": 0.7535629760957365,
+          "lo": 0.748661486585797,
+          "hi": 0.7582670600658745
+        },
+        "mean_cosine": {
+          "point": 0.9686764627063085,
+          "lo": 0.9679946928513675,
+          "hi": 0.9693549935747736
+        },
+        "n_test": 10000
+      }
+    },
+    "prefix_L14": {
+      "fitter": "ridge (shared-Gram primal, parent verbatim)",
+      "selection": "val-lambda (pinned val rows)",
+      "selected_lambda": 31622.776601683792,
+      "val_r2_at_selected": 0.029679963789803865,
+      "lambda_grid_edge": null,
+      "n_train": 88600,
+      "d": 3584,
+      "n_train_unique_x": 4430,
+      "holdout_r2": 0.04080121535241288,
+      "holdout_mean_cosine": 0.8759390599577811,
+      "bootstrap": {
+        "r2": {
+          "point": 0.04080121535241288,
+          "lo": 0.03892607453281931,
+          "hi": 0.04246765677932205
+        },
+        "mean_cosine": {
+          "point": 0.8759390599577811,
+          "lo": 0.87500973509516,
+          "hi": 0.8768469346187865
+        },
+        "n_test": 10000
+      }
+    },
+    "bare_L14": {
+      "fitter": "ridge (shared-Gram primal, parent verbatim)",
+      "selection": "val-lambda (pinned val rows)",
+      "selected_lambda": 0.001,
+      "val_r2_at_selected": 0.6574205412875304,
+      "lambda_grid_edge": "low",
+      "n_train": 88600,
+      "d": 3584,
+      "n_train_unique_x": 20,
+      "note": "rank(X) <= 20 BY CONSTRUCTION \u2014 the query-main-effect read; predictions take <= n_q distinct values (stated caveat)",
+      "holdout_r2": 0.6215976233746421,
+      "holdout_mean_cosine": 0.9514915691372829,
+      "bootstrap": {
+        "r2": {
+          "point": 0.6215976233746421,
+          "lo": 0.6141274290587896,
+          "hi": 0.6289625243483025
+        },
+        "mean_cosine": {
+          "point": 0.9514915691372829,
+          "lo": 0.95040912345555,
+          "hi": 0.9525780001461281
+        },
+        "n_test": 10000
+      }
+    },
+    "avg_L14": {
+      "fitter": "ridge (shared-Gram primal, parent verbatim)",
+      "selection": "inner CV within the train prefixes (never the val set)",
+      "selected_lambda": 1000.0,
+      "inner_cv": {
+        "cv_sse_by_lambda": {
+          "0.001": 2088953.5630398283,
+          "0.0031622776601683794": 1674323.6920061118,
+          "0.01": 1165396.275910323,
+          "0.03162277660168379": 735358.3493367728,
+          "0.1": 445459.6500302048,
+          "0.31622776601683794": 270312.5873883558,
+          "1.0": 169274.15300354044,
+          "3.1622776601683795": 111640.77341250195,
+          "10.0": 78670.5803608904,
+          "31.622776601683793": 59814.9999685861,
+          "100.0": 49321.60622283734,
+          "316.2277660168379": 44010.01810179229,
+          "1000.0": 42168.30745102156,
+          "3162.2776601683795": 42993.3691638062,
+          "10000.0": 46204.10217676123,
+          "31622.776601683792": 51754.493879636204,
+          "100000.0": 59898.32856261544,
+          "316227.7660168379": 72050.89286899622,
+          "1000000.0": 88876.37900492018,
+          "3162277.660168379": 106117.95397409779,
+          "10000000.0": 118821.6160832322,
+          "31622776.60168379": 125615.52376494075,
+          "100000000.0": 128361.7677611416
+        },
+        "n_folds": 5,
+        "seed": 42
+      },
+      "n_train": 4430,
+      "n_train_unique_x": 4430,
+      "d": 3584,
+      "regime_note": "n_train 4430 vs d 3584 (1.24x \u2014 stated per plan \u00a76 R1)",
+      "holdout_r2": 0.6824559508597619,
+      "holdout_mean_cosine": 0.9966519139751318,
+      "bootstrap": {
+        "r2": {
+          "point": 0.6824559508597619,
+          "lo": 0.6625711642795771,
+          "hi": 0.6995710926717856
+        },
+        "mean_cosine": {
+          "point": 0.9966519139751318,
+          "lo": 0.9962950220664712,
+          "hi": 0.9969511435714434
+        },
+        "n_test": 500
+      }
+    },
+    "context_L19": {
+      "fitter": "ridge (shared-Gram primal, parent verbatim)",
+      "selection": "val-lambda (pinned val rows)",
+      "selected_lambda": 1000.0,
+      "val_r2_at_selected": 0.8087440423646035,
+      "lambda_grid_edge": null,
+      "n_train": 88600,
+      "d": 3584,
+      "n_train_unique_x": 88600,
+      "holdout_r2": 0.7950205029401468,
+      "holdout_mean_cosine": 0.9717170781930538,
+      "bootstrap": {
+        "r2": {
+          "point": 0.7950205029401468,
+          "lo": 0.7909632322168341,
+          "hi": 0.7990521853574861
+        },
+        "mean_cosine": {
+          "point": 0.9717170781930538,
+          "lo": 0.9710756721241733,
+          "hi": 0.9723593458070242
+        },
+        "n_test": 10000
+      }
+    },
+    "prefix_L19": {
+      "fitter": "ridge (shared-Gram primal, parent verbatim)",
+      "selection": "val-lambda (pinned val rows)",
+      "selected_lambda": 100000.0,
+      "val_r2_at_selected": 0.03185818071100832,
+      "lambda_grid_edge": null,
+      "n_train": 88600,
+      "d": 3584,
+      "n_train_unique_x": 4430,
+      "holdout_r2": 0.04554182688146824,
+      "holdout_mean_cosine": 0.8672485641821948,
+      "bootstrap": {
+        "r2": {
+          "point": 0.04554182688146824,
+          "lo": 0.04347796737006583,
+          "hi": 0.04742879114061898
+        },
+        "mean_cosine": {
+          "point": 0.8672485641821948,
+          "lo": 0.8661493864294711,
+          "hi": 0.8683323576180203
+        },
+        "n_test": 10000
+      }
+    },
+    "bare_L19": {
+      "fitter": "ridge (shared-Gram primal, parent verbatim)",
+      "selection": "val-lambda (pinned val rows)",
+      "selected_lambda": 0.001,
+      "val_r2_at_selected": 0.6680343591054827,
+      "lambda_grid_edge": "low",
+      "n_train": 88600,
+      "d": 3584,
+      "n_train_unique_x": 20,
+      "note": "rank(X) <= 20 BY CONSTRUCTION \u2014 the query-main-effect read; predictions take <= n_q distinct values (stated caveat)",
+      "holdout_r2": 0.62660115814723,
+      "holdout_mean_cosine": 0.9483529322199767,
+      "bootstrap": {
+        "r2": {
+          "point": 0.62660115814723,
+          "lo": 0.6188972521999379,
+          "hi": 0.6341920795533477
+        },
+        "mean_cosine": {
+          "point": 0.9483529322199767,
+          "lo": 0.9471222667502539,
+          "hi": 0.9495969794825978
+        },
+        "n_test": 10000
+      }
+    },
+    "avg_L19": {
+      "fitter": "ridge (shared-Gram primal, parent verbatim)",
+      "selection": "inner CV within the train prefixes (never the val set)",
+      "selected_lambda": 1000.0,
+      "inner_cv": {
+        "cv_sse_by_lambda": {
+          "0.001": 5368170.866865798,
+          "0.0031622776601683794": 4430231.433081887,
+          "0.01": 3158836.6535749296,
+          "0.03162277660168379": 2006339.6586180143,
+          "0.1": 1206716.2822057987,
+          "0.31622776601683794": 720572.5106412115,
+          "1.0": 439558.6620675324,
+          "3.1622776601683795": 279142.391324524,
+          "10.0": 187764.05749447882,
+          "31.622776601683793": 136212.02416556654,
+          "100.0": 108101.13785721455,
+          "316.2277660168379": 94298.57630454082,
+          "1000.0": 89826.35784571373,
+          "3162.2776601683795": 92323.17103103366,
+          "10000.0": 101356.77622535512,
+          "31622.776601683792": 118128.26716891503,
+          "100000.0": 145511.52888124736,
+          "316227.7660168379": 187331.45920802382,
+          "1000000.0": 242137.4893682387,
+          "3162277.660168379": 298341.66286758106,
+          "10000000.0": 339029.5610772408,
+          "31622776.60168379": 358908.99515912833,
+          "100000000.0": 366397.8888845479
+        },
+        "n_folds": 5,
+        "seed": 42
+      },
+      "n_train": 4430,
+      "n_train_unique_x": 4430,
+      "d": 3584,
+      "regime_note": "n_train 4430 vs d 3584 (1.24x \u2014 stated per plan \u00a76 R1)",
+      "holdout_r2": 0.7573511437021234,
+      "holdout_mean_cosine": 0.9968755588447124,
+      "bootstrap": {
+        "r2": {
+          "point": 0.7573511437021234,
+          "lo": 0.738967268194199,
+          "hi": 0.7730353950306152
+        },
+        "mean_cosine": {
+          "point": 0.9968755588447124,
+          "lo": 0.9964462440792364,
+          "hi": 0.9972358769099553
+        },
+        "n_test": 500
+      }
+    },
+    "context_L26": {
+      "fitter": "ridge (shared-Gram primal, parent verbatim)",
+      "selection": "val-lambda (pinned val rows)",
+      "selected_lambda": 3162.2776601683795,
+      "val_r2_at_selected": 0.8308602142250284,
+      "lambda_grid_edge": null,
+      "n_train": 88600,
+      "d": 3584,
+      "n_train_unique_x": 88600,
+      "holdout_r2": 0.8266888030911883,
+      "holdout_mean_cosine": 0.9811567164269476,
+      "bootstrap": {
+        "r2": {
+          "point": 0.8266888030911883,
+          "lo": 0.8217686274335261,
+          "hi": 0.8315825179649371
+        },
+        "mean_cosine": {
+          "point": 0.9811567164269476,
+          "lo": 0.9806373691626317,
+          "hi": 0.9816598039445177
+        },
+        "n_test": 10000
+      }
+    },
+    "prefix_L26": {
+      "fitter": "ridge (shared-Gram primal, parent verbatim)",
+      "selection": "val-lambda (pinned val rows)",
+      "selected_lambda": 31622.776601683792,
+      "val_r2_at_selected": 0.011532283893903927,
+      "lambda_grid_edge": null,
+      "n_train": 88600,
+      "d": 3584,
+      "n_train_unique_x": 4430,
+      "holdout_r2": 0.02117650749770905,
+      "holdout_mean_cosine": 0.889404071741053,
+      "bootstrap": {
+        "r2": {
+          "point": 0.02117650749770905,
+          "lo": 0.019416255334528607,
+          "hi": 0.02276599761775583
+        },
+        "mean_cosine": {
+          "point": 0.889404071741053,
+          "lo": 0.8874870803770404,
+          "hi": 0.8912967909362299
+        },
+        "n_test": 10000
+      }
+    },
+    "bare_L26": {
+      "fitter": "ridge (shared-Gram primal, parent verbatim)",
+      "selection": "val-lambda (pinned val rows)",
+      "selected_lambda": 0.001,
+      "val_r2_at_selected": 0.7366586234557586,
+      "lambda_grid_edge": "low",
+      "n_train": 88600,
+      "d": 3584,
+      "n_train_unique_x": 20,
+      "note": "rank(X) <= 20 BY CONSTRUCTION \u2014 the query-main-effect read; predictions take <= n_q distinct values (stated caveat)",
+      "holdout_r2": 0.6893601439719051,
+      "holdout_mean_cosine": 0.9664202052705748,
+      "bootstrap": {
+        "r2": {
+          "point": 0.6893601439719051,
+          "lo": 0.6795957392036533,
+          "hi": 0.6989004657701057
+        },
+        "mean_cosine": {
+          "point": 0.9664202052705748,
+          "lo": 0.9653636747783402,
+          "hi": 0.9674615978432319
+        },
+        "n_test": 10000
+      }
+    },
+    "avg_L26": {
+      "fitter": "ridge (shared-Gram primal, parent verbatim)",
+      "selection": "inner CV within the train prefixes (never the val set)",
+      "selected_lambda": 1000.0,
+      "inner_cv": {
+        "cv_sse_by_lambda": {
+          "0.001": 108693538.41064636,
+          "0.0031622776601683794": 90485355.59586887,
+          "0.01": 65276599.91703528,
+          "0.03162277660168379": 41960965.833622605,
+          "0.1": 25281704.07756655,
+          "0.31622776601683794": 14879145.97141401,
+          "1.0": 8789735.135219611,
+          "3.1622776601683795": 5304188.587141127,
+          "10.0": 3334878.8996966463,
+          "31.622776601683793": 2253020.544156144,
+          "100.0": 1692190.187416623,
+          "316.2277660168379": 1433796.6012318437,
+          "1000.0": 1353113.991648504,
+          "3162.2776601683795": 1383248.1746679745,
+          "10000.0": 1489847.9780456107,
+          "31622.776601683792": 1660678.1678175651,
+          "100000.0": 1910534.0997485723,
+          "316227.7660168379": 2301174.938771844,
+          "1000000.0": 2889994.7920339466,
+          "3162277.660168379": 3509798.2168151373,
+          "10000000.0": 3901616.3300391706,
+          "31622776.60168379": 4069730.563182394,
+          "100000000.0": 4129165.7023014827
+        },
+        "n_folds": 5,
+        "seed": 42
+      },
+      "n_train": 4430,
+      "n_train_unique_x": 4430,
+      "d": 3584,
+      "regime_note": "n_train 4430 vs d 3584 (1.24x \u2014 stated per plan \u00a76 R1)",
+      "holdout_r2": 0.6886016957670109,
+      "holdout_mean_cosine": 0.9981270862715335,
+      "bootstrap": {
+        "r2": {
+          "point": 0.6886016957670109,
+          "lo": 0.663226465218746,
+          "hi": 0.7108735554587146
+        },
+        "mean_cosine": {
+          "point": 0.9981270862715335,
+          "lo": 0.9979628096762097,
+          "hi": 0.9982694721937114
+        },
+        "n_test": 500
+      }
+    }
+  },
+  "induced": {
+    "L14": {
+      "holdout_r2": 0.6467527713215435,
+      "holdout_mean_cosine": 0.9962773885888275,
+      "bootstrap": {
+        "r2": {
+          "point": 0.6467527713215435,
+          "lo": 0.6222846813175611,
+          "hi": 0.6668168525580139
+        },
+        "mean_cosine": {
+          "point": 0.9962773885888275,
+          "lo": 0.995876497729896,
+          "hi": 0.9966113800635276
+        },
+        "n_test": 500
+      },
+      "applied_lambda": 3162.2776601683795,
+      "definition": "per-row context-arm ridge (train rows) applied to x\u0304_p = mean_q cx(p,q), scored vs \u0233_p on holdout prefixes (the #1092 operator-coincidence design)",
+      "gap_induced_minus_independent_r2": -0.03570317953821833
+    },
+    "L19": {
+      "holdout_r2": 0.7452692393271909,
+      "holdout_mean_cosine": 0.9967161969884469,
+      "bootstrap": {
+        "r2": {
+          "point": 0.7452692393271909,
+          "lo": 0.7256242686765559,
+          "hi": 0.7620929659441299
+        },
+        "mean_cosine": {
+          "point": 0.9967161969884469,
+          "lo": 0.99628312603369,
+          "hi": 0.9970815127580841
+        },
+        "n_test": 500
+      },
+      "applied_lambda": 1000.0,
+      "definition": "per-row context-arm ridge (train rows) applied to x\u0304_p = mean_q cx(p,q), scored vs \u0233_p on holdout prefixes (the #1092 operator-coincidence design)",
+      "gap_induced_minus_independent_r2": -0.012081904374932506
+    },
+    "L26": {
+      "holdout_r2": 0.6828057007036379,
+      "holdout_mean_cosine": 0.9980884400884704,
+      "bootstrap": {
+        "r2": {
+          "point": 0.6828057007036379,
+          "lo": 0.6574582708861177,
+          "hi": 0.7052223305717703
+        },
+        "mean_cosine": {
+          "point": 0.9980884400884704,
+          "lo": 0.9979173597159477,
+          "hi": 0.9982336909675221
+        },
+        "n_test": 500
+      },
+      "applied_lambda": 3162.2776601683795,
+      "definition": "per-row context-arm ridge (train rows) applied to x\u0304_p = mean_q cx(p,q), scored vs \u0233_p on holdout prefixes (the #1092 operator-coincidence design)",
+      "gap_induced_minus_independent_r2": -0.005795995063373027
+    }
+  },
+  "stitch": {
+    "L14": {
+      "fitter": "ridge (shared-Gram primal, parent verbatim)",
+      "selection": "val-lambda (pinned val rows)",
+      "selected_lambda": 31622.776601683792,
+      "val_r2_at_selected": 0.6900157230719486,
+      "lambda_grid_edge": null,
+      "n_train": 88600,
+      "d": 7168,
+      "holdout_r2": 0.6625046847742257,
+      "holdout_mean_cosine": 0.9569455813606109,
+      "bootstrap": {
+        "r2": {
+          "point": 0.6625046847742257,
+          "lo": 0.6560914447293901,
+          "hi": 0.6687256603469053
+        },
+        "mean_cosine": {
+          "point": 0.9569455813606109,
+          "lo": 0.9560133774246717,
+          "hi": 0.9578804175116926
+        },
+        "n_test": 10000
+      },
+      "reference_r2": {
+        "context": 0.7535629760957365,
+        "prefix_only": 0.04080121535241288,
+        "bare_only": 0.6215976233746421
+      }
+    },
+    "L19": {
+      "fitter": "ridge (shared-Gram primal, parent verbatim)",
+      "selection": "val-lambda (pinned val rows)",
+      "selected_lambda": 31622.776601683792,
+      "val_r2_at_selected": 0.7028386435698031,
+      "lambda_grid_edge": null,
+      "n_train": 88600,
+      "d": 7168,
+      "holdout_r2": 0.6725020208430004,
+      "holdout_mean_cosine": 0.9547723688213906,
+      "bootstrap": {
+        "r2": {
+          "point": 0.6725020208430004,
+          "lo": 0.6661621424568581,
+          "hi": 0.6788122741384714
+        },
+        "mean_cosine": {
+          "point": 0.9547723688213906,
+          "lo": 0.9537379018004417,
+          "hi": 0.9558081250186243
+        },
+        "n_test": 10000
+      },
+      "reference_r2": {
+        "context": 0.7950205029401468,
+        "prefix_only": 0.04554182688146824,
+        "bare_only": 0.62660115814723
+      }
+    },
+    "L26": {
+      "fitter": "ridge (shared-Gram primal, parent verbatim)",
+      "selection": "val-lambda (pinned val rows)",
+      "selected_lambda": 31622.776601683792,
+      "val_r2_at_selected": 0.749472726994195,
+      "lambda_grid_edge": null,
+      "n_train": 88600,
+      "d": 7168,
+      "holdout_r2": 0.7103431461547515,
+      "holdout_mean_cosine": 0.968561816345216,
+      "bootstrap": {
+        "r2": {
+          "point": 0.7103431461547515,
+          "lo": 0.701599815291529,
+          "hi": 0.7190118707822857
+        },
+        "mean_cosine": {
+          "point": 0.968561816345216,
+          "lo": 0.9675861820689673,
+          "hi": 0.9695171218480987
+        },
+        "n_test": 10000
+      },
+      "reference_r2": {
+        "context": 0.8266888030911883,
+        "prefix_only": 0.02117650749770905,
+        "bare_only": 0.6893601439719051
+      }
+    }
+  },
+  "regime_fp": "998a4daa1f787c9b",
+  "transfer": {
+    "control": "lmsys_transfer",
+    "layer": 19,
+    "cells": {
+      "context": {
+        "n_train_lmsys": 45220,
+        "n_holdout_wildchat": 5340,
+        "n_holdout_lmsys": 4660,
+        "transfer_r2_wildchat_holdout": 0.7825067684196425,
+        "within_r2_lmsys_holdout": 0.7880364439889707,
+        "selected_lambda": 3162.2776601683795
+      },
+      "avg": {
+        "n_train_lmsys_prefixes": 2261,
+        "n_holdout_wildchat_prefixes": 267,
+        "n_holdout_lmsys_prefixes": 233,
+        "transfer_r2_wildchat_holdout": 0.7323339017160134,
+        "within_r2_lmsys_holdout": 0.7083409827470761,
+        "selected_lambda": 1000.0,
+        "selection": "inner CV within the LMSYS train prefixes"
+      }
+    }
+  },
+  "meta": {
+    "script": "scripts/issue1738_crossed_reads.py",
+    "git_commit": "9a1c79cf1825ae9f1223bc99bab81704602e095c",
+    "hf_prefix": "issue1738_crossed",
+    "layers": "14,19,26",
+    "n_boot": 10000,
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "python": "3.11.15",
+    "started_utc": "2026-07-30T16:22:44Z",
+    "wall_s": 1397.4
+  }
+}

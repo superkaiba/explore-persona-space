@@ -5,8 +5,9 @@ plus a pinned workflow-invariant literal set, for the ``/issue`` Step 9c
 test-verdict gate. Most cases inject a fake ``git diff`` runner and a
 ``tmp_path`` ``tests/`` tree so no real git / real branch state is needed.
 
-Two exceptions: the pinned-list test (case 6) asserts the literal
-``WORKFLOW_INVARIANT`` matches the LIVE repo ``tests/`` tree so an added/removed
+Two exceptions: the pinned-list tests (cases 6/6b) assert the literal
+``WORKFLOW_INVARIANT`` matches the LIVE repo ``tests/`` tree and the sorted
+manifest (``tests/step9c_workflow_invariant_manifest.txt``) so an added/removed
 invariant test forces a deliberate edit of the literal; and the #851 regression
 tests (cases 13-14) build a real throwaway git repo + worktree to pin the
 work-root resolution end to end (branch-new test selected, deleted-on-branch
@@ -17,7 +18,9 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import math
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -129,8 +132,8 @@ def test_pinned_invariant_list_matches_live_tree():
     """Every WORKFLOW_INVARIANT entry must exist in the real repo tests/ tree.
 
     Fails LOUDLY if any pinned invariant test was renamed/removed without
-    updating the literal — forcing a deliberate edit (plan §4a-note). This is
-    the only test that reads the live repo rather than a tmp_path fixture.
+    updating the literal — forcing a deliberate edit. Reads the live repo
+    rather than a tmp_path fixture (as does case 6b below).
     """
     repo_root = Path(sel.__file__).resolve().parents[1]
     missing = sel.missing_invariants(repo_root)
@@ -138,25 +141,80 @@ def test_pinned_invariant_list_matches_live_tree():
         f"WORKFLOW_INVARIANT entries missing from the live tests/ tree: {missing}. "
         "Update the literal in scripts/select_step9c_tests.py deliberately."
     )
-    # And it must be a non-trivial, de-duplicated set (no accidental shrink/dup).
-    # 38 = plan §5's verbatim enumerated list (31 files) + test_autonomous_session_watch.py
-    # (the #754 brief's one curated addition) + the 3 SKILL.md-content-pin suites added by
-    # #1242 (test_step10d_guard3 / test_step_completed_resume / test_issue_skill_exit_breadcrumb
-    # — SKILL.md diffs gate ONLY via this tuple, so their pins must live in it) + the #1268
-    # Step-10d repin/guard hardening pin suite (test_issue_skill_merge_resnapshot_pin) + the
-    # #1289 diff-base origin/main pin suite (test_diff_base_origin_main_pin — same tuple
-    # rationale: a SKILL.md-only recipe revert must still run the pin) + the #1397
-    # fit-loop batching review-lens pin suite (test_fit_loop_batching_review_pin —
-    # agent-`.md` diffs gate ONLY via this tuple) + the #1546 SKILL.md forensics-ingest
-    # pointer pin suite (test_issue_skill_forensics_ingest_pointer — same tuple
-    # rationale: a SKILL.md-only edit dropping the pointer must still run the pin) + the
-    # #1563 SKILL.md orchestrator-turn discipline pointer pin suite
-    # (test_issue_skill_orchestrator_turn_discipline_pointer — same tuple rationale:
-    # a SKILL.md-only edit dropping the pointer must still run the pin) + the #1572
-    # staged-index verification pin suite (test_issue_skill_staged_index_verification —
-    # same tuple rationale: a doc-site edit dropping the duty must still run the pin).
+    # De-duplicated (no accidental double-listing). Cardinality is deliberately
+    # NOT pinned as an integer (#1593): the retired `== N` count pin made every
+    # pair of same-window registering PRs conflict on one shared line (#1584);
+    # accidental-removal coverage lives in the manifest set-equality pin below
+    # (case 6b). Per-addition rationale belongs as an inline comment on the
+    # tuple entry itself, NOT in an accreting block here.
     assert len(sel.WORKFLOW_INVARIANT) == len(set(sel.WORKFLOW_INVARIANT))
-    assert len(sel.WORKFLOW_INVARIANT) == 41
+
+
+# --- Case 6b (#1593): tuple <-> sorted-manifest set-equality pin -------------
+# NOTE: this literal relpath is also the GLOB_SCAN_TESTS drift-pin anchor
+# (test_glob_scan_map_matches_live_tree asserts it appears verbatim here).
+_MANIFEST_RELPATH = "tests/step9c_workflow_invariant_manifest.txt"
+
+
+def _manifest_lines(path: Path) -> list[str]:
+    """Data lines of a WORKFLOW_INVARIANT manifest (blank + '#' lines skipped)."""
+    return [
+        ln.strip()
+        for ln in path.read_text().splitlines()
+        if ln.strip() and not ln.strip().startswith("#")
+    ]
+
+
+def _assert_manifest_matches(entries: tuple[str, ...], manifest: Path) -> None:
+    """Core two-place pin: manifest well-formed (unique, sorted) + set-equal."""
+    assert manifest.exists(), f"manifest missing: {manifest}"
+    lines = _manifest_lines(manifest)
+    assert len(lines) == len(set(lines)), f"duplicate lines in {manifest}"
+    assert lines == sorted(lines), (
+        f"{manifest} must stay sorted (python sorted()); add new entries at their sorted position."
+    )
+    tuple_set, manifest_set = set(entries), set(lines)
+    only_tuple = sorted(tuple_set - manifest_set)
+    only_manifest = sorted(manifest_set - tuple_set)
+    assert tuple_set == manifest_set, (
+        "WORKFLOW_INVARIANT (scripts/select_step9c_tests.py) and the manifest "
+        f"disagree. In tuple only (add its manifest line, or a manifest line "
+        f"was removed): {only_tuple}. In manifest only (add its tuple entry, "
+        f"or a tuple entry was removed): {only_manifest}."
+    )
+
+
+def test_workflow_invariant_matches_manifest():
+    """The tuple and the sorted manifest agree as SETS (#1593 count-pin
+    replacement): an accidental tuple-entry removal (file still on disk, so
+    missing_invariants() stays silent) fails HERE unless the manifest line
+    was removed too — a deliberate two-place change. Registration = one tuple
+    entry + one sorted manifest line; no shared line is ever edited, so
+    concurrent registrations 3-way-merge cleanly server-side (#1584)."""
+    repo_root = Path(sel.__file__).resolve().parents[1]
+    _assert_manifest_matches(sel.WORKFLOW_INVARIANT, repo_root / _MANIFEST_RELPATH)
+
+
+def test_manifest_pin_negative_paths(tmp_path: Path):
+    """The pin's predicates fire on removal / unsorted / duplicate / empty manifests."""
+    m = tmp_path / "manifest.txt"
+    m.write_text("# header\n\ntests/test_a.py\ntests/test_b.py\n")
+    _assert_manifest_matches(("tests/test_b.py", "tests/test_a.py"), m)  # order-free
+    with pytest.raises(AssertionError, match="disagree"):
+        _assert_manifest_matches(("tests/test_a.py",), m)  # dropped tuple entry
+    with pytest.raises(AssertionError, match="disagree"):  # dropped manifest line
+        _assert_manifest_matches(("tests/test_a.py", "tests/test_b.py", "tests/test_c.py"), m)
+    m.write_text("tests/test_b.py\ntests/test_a.py\n")
+    with pytest.raises(AssertionError, match="sorted"):
+        _assert_manifest_matches(("tests/test_a.py", "tests/test_b.py"), m)
+    m.write_text("tests/test_a.py\ntests/test_a.py\n")
+    with pytest.raises(AssertionError, match="duplicate"):
+        _assert_manifest_matches(("tests/test_a.py",), m)
+    # Empty / comments-only manifest: zero data lines against a non-empty tuple
+    # is a loud set mismatch, never a silent pass (critic concern 1).
+    m.write_text("# header only\n\n")
+    with pytest.raises(AssertionError, match="disagree"):
+        _assert_manifest_matches(("tests/test_a.py",), m)
 
 
 # --- Case 7: determinism — identical sorted output across two invocations ----
@@ -397,6 +455,10 @@ def test_empty_diff_note_at_main_checkout_real_git(tmp_path: Path, monkeypatch, 
     captured = capsys.readouterr()
     # The #851 shape is no longer silent:
     assert "NOTE — empty diff" in captured.err
+    # #1717 defect (d): the NOTE names uncommitted edits as a likely cause
+    # (case-insensitive substring pin — the widened NOTE writes
+    # "empty diff — commit first;" mid-sentence).
+    assert "commit first" in captured.err.lower()
     # Provenance breadcrumb names the main checkout + branch:
     assert f"work root {repo.resolve()}" in captured.err
     assert "(branch: main)" in captured.err
@@ -408,8 +470,11 @@ def test_empty_diff_note_at_main_checkout_real_git(tmp_path: Path, monkeypatch, 
         "timeout --kill-after=60s "
         f"{sel.recommended_timeout_s(sorted(sel.WORKFLOW_INVARIANT))}s uv run pytest "
     )
-    assert line.startswith(prefix) and line.endswith(" -v --tb=short")
-    files = line.removeprefix(prefix).removesuffix(" -v --tb=short").split()
+    # #1746: the printed command carries --continue-on-collection-errors so a
+    # collection-broken selected file reports per-file instead of aborting rc=2.
+    suffix = " --continue-on-collection-errors -v --tb=short"
+    assert line.startswith(prefix) and line.endswith(suffix)
+    files = line.removeprefix(prefix).removesuffix(suffix).split()
     assert files == sorted(sel.WORKFLOW_INVARIANT)
 
 
@@ -645,6 +710,170 @@ def test_cli_map_files_missing_test_warns(tmp_path: Path, capsys):
     assert "pair dropped" in captured.err
 
 
+# --- #1613: zero-resolution guard (source-file argument / deletion-only list) ---
+@pytest.mark.parametrize("suffix", [".py", ".sh"])
+def test_cli_map_files_source_file_argument_exit2(tmp_path: Path, capsys, suffix: str):
+    """A .py/.sh FILE argument whose content lines resolve to zero repo paths
+    with zero pairs is a usage error: exit 2, empty stdout, one tab-free
+    stderr ERROR line (#1613 — the #1610 malformed-verify shape). An existing
+    ABSOLUTE-path content line must not silence the guard (for absolute f,
+    ``work_root / f`` yields f itself; the existence scan skips such lines)."""
+    repo = _make_tree(tmp_path, [])
+    abs_line = tmp_path / "abs_exists.txt"
+    abs_line.write_text("present\n")
+    if suffix == ".py":
+        content = f"import os\n\nX = 1\n{abs_line}\n\ndef f():\n    return 1\n"
+    else:
+        content = f"#!/usr/bin/env bash\nset -euo pipefail\necho hi\n{abs_line}\n"
+    src = tmp_path / f"some_module{suffix}"
+    src.write_text(content)
+    rc = sel.main(["--map-files", str(src), "--repo-root", str(repo)])
+    assert rc == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "looks like a source file" in captured.err
+    assert "\t" not in captured.err
+    assert "recommended-timeout-s=" not in captured.err
+
+
+def test_cli_map_files_valid_list_zero_pairs_no_guard_exit0(tmp_path: Path, capsys):
+    """A valid path-list whose paths EXIST but map to no pairs stays silent-clean
+    (rc 0, empty stdout, no #1613 guard line): zero-PAIR alone never fires it."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "docs").mkdir()
+    (repo / "docs" / "foo.md").write_text("# doc\n")
+    listing = tmp_path / "payload.txt"
+    listing.write_text("docs/foo.md\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "ZERO existing repo paths" not in captured.err
+    assert "ERROR" not in captured.err
+
+
+def test_cli_map_files_zero_resolution_list_warns_exit0(tmp_path: Path, capsys):
+    """A path-list resolving to ZERO existing repo paths with zero pairs (the
+    deletion-only ``git diff --name-only`` shape — status-D paths absent from
+    the worktree) draws one hedged tab-free stderr WARN, rc 0 — never exit 2.
+    An empty / whitespace-only FILE never fires the guard at all (rc 0)."""
+    repo = _make_tree(tmp_path, [])
+    listing = tmp_path / "payload.txt"
+    listing.write_text("docs/nope.md\nexternal/gone.md\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "WARN — --map-files input" in captured.err
+    assert "deletion-only" in captured.err
+    assert "\t" not in captured.err
+    assert "recommended-timeout-s=" not in captured.err
+    # Empty / whitespace-only FILE: `files` is empty, so the guard must NOT fire.
+    listing.write_text("\n   \n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "ZERO existing repo paths" not in captured.err
+    assert "looks like a source file" not in captured.err
+
+
+def test_cli_map_files_pairs_suppress_zero_resolution_guard(tmp_path: Path, capsys):
+    """A nonexistent (deleted) eligible .py payload that still glob-scan-maps to
+    pairs suppresses the guard entirely (the ``not all_pairs`` conjunct):
+    mapped stdout, no #1613 line from either arm."""
+    repo = _make_tree(tmp_path, [])
+    listing = tmp_path / "payload.txt"
+    listing.write_text("scripts/issue123_foo.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert captured.out != ""
+    assert "ZERO existing repo paths" not in captured.err
+    assert "looks like a source file" not in captured.err
+
+
+# --- #1791: hostile --map-files content must reach the #1613 diagnostic -------
+# (not crash at a content-derived filesystem probe). The three line shapes:
+# a bare >NAME_MAX prose line (OSError Errno 36 at the guard's exists() scan),
+# an arm-eligible scripts/<300 chars>.py line (OSError at the stem probe,
+# which runs BEFORE the guard), and a scripts/*.py glob-metachar line
+# (ValueError "Invalid pattern" at the content-derived stem glob). The CLI
+# cases use a BARE work root (the test_cli_map_files_missing_test_dropped
+# precedent): the scripts/ lines match the broad scripts/**/*.py scan glob,
+# and against a _make_tree root the resulting pairs would legitimately
+# SUPPRESS the guard (the `all_pairs` conjunct) — the bare root drops those
+# pairs so the guard's verdict is what these cases pin.
+_HOSTILE_LINES = (
+    "lorem ipsum dolor sit amet consectetur adipiscing " * 8,
+    "scripts/" + "x" * 300 + ".py",
+    "scripts/*.py",
+)
+
+
+def test_cli_map_files_hostile_lines_py_argument_exit2(tmp_path: Path, capsys):
+    """A .py-named --map-files arg holding all three hostile line shapes
+    reaches the #1613 source-file ERROR: rc 2, empty stdout, no traceback
+    (an uncaught OSError/ValueError would propagate and fail this test)."""
+    bare = tmp_path / "bare"
+    bare.mkdir()
+    src = tmp_path / "some_module.py"
+    src.write_text("\n".join(_HOSTILE_LINES) + "\n")
+    rc = sel.main(["--map-files", str(src), "--repo-root", str(bare)])
+    assert rc == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "looks like a source file" in captured.err
+
+
+def test_cli_map_files_hostile_lines_list_argument_warns_exit0(tmp_path: Path, capsys):
+    """The same three hostile lines in a .md-named arg take the #1613 hedged
+    WARN branch: rc 0, empty stdout, no traceback."""
+    bare = tmp_path / "bare"
+    bare.mkdir()
+    listing = tmp_path / "notes.md"
+    listing.write_text("\n".join(_HOSTILE_LINES) + "\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(bare)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "ZERO existing repo paths" in captured.err
+    assert "looks like a source file" not in captured.err
+
+
+def test_cli_map_files_binary_argument_exit1(tmp_path: Path, capsys):
+    """A mis-passed BINARY (undecodable) --map-files arg takes the existing
+    rc-1 "cannot read" path — UnicodeDecodeError is a ValueError (#1791) —
+    never an uncaught traceback."""
+    repo = _make_tree(tmp_path, [])
+    blob = tmp_path / "payload.bin"
+    blob.write_bytes(b"\x80\x81\xfe\x00")
+    rc = sel.main(["--map-files", str(blob), "--repo-root", str(repo)])
+    assert rc == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "cannot read --map-files input" in captured.err
+
+
+def test_safe_exists_unstatable_paths_false(tmp_path: Path):
+    """_safe_exists: a >NAME_MAX path reads as absent (no OSError escape);
+    stat-able paths are byte-identical to Path.exists()."""
+    assert sel._safe_exists(tmp_path / ("x" * 300)) is False
+    assert sel._safe_exists(tmp_path / "nul\x00name") is False
+    assert sel._safe_exists(tmp_path) is True
+    assert sel._safe_exists(tmp_path / "absent.txt") is False
+
+
+def test_safe_glob_invalid_pattern_empty(tmp_path: Path):
+    """_safe_glob: a content-derived invalid pattern yields [] (no ValueError
+    escape); a valid pattern returns exactly sorted(root.glob(...))."""
+    (tmp_path / "test_alpha.py").write_text("# stub\n")
+    (tmp_path / "test_beta.py").write_text("# stub\n")
+    assert sel._safe_glob(tmp_path, "test_***.py") == []
+    assert sel._safe_glob(tmp_path, "test_*alpha*.py") == sorted(tmp_path.glob("test_*alpha*.py"))
+    assert sel._safe_glob(tmp_path, "test_*alpha*.py") == [tmp_path / "test_alpha.py"]
+
+
 # --- #1289: diff-base resolution (fetched origin/main default) -----------------
 def _git_out(cwd: Path, *args: str) -> str:
     """Hermetic git runner that RETURNS stdout (rev-parse probes for cases 30-32)."""
@@ -878,7 +1107,11 @@ def test_import_map_dotted_scripts_import(tmp_path: Path):
     repo = _make_import_tree(tmp_path, {"test_consumer.py": "from scripts.widgetlib import x\n"})
     tests, untested, reasons = sel.select_tests_with_reasons(["scripts/widgetlib.py"], repo)
     assert "tests/test_consumer.py" in tests
-    assert reasons["tests/test_consumer.py"] == ["import-map:scripts/widgetlib.py"]
+    # #1688: the dotted-ref arm also fires on the literal `scripts.widgetlib` text.
+    assert reasons["tests/test_consumer.py"] == [
+        "dotted-ref:scripts/widgetlib.py",
+        "import-map:scripts/widgetlib.py",
+    ]
     assert untested == []
 
 
@@ -904,8 +1137,12 @@ def test_import_map_src_package_module(tmp_path: Path):
         "import-map:src/explore_persona_space/foo/bar.py"
     ]
     assert "tests/test_flat_consumer.py" in tests
+    # #1688: the contiguous dotted text `explore_persona_space.task_widget` also
+    # fires the dotted-ref arm (the pkg_consumer form above stays import-only —
+    # `explore_persona_space.foo.bar` is not contiguous in its text).
     assert reasons["tests/test_flat_consumer.py"] == [
-        "import-map:src/explore_persona_space/task_widget.py"
+        "dotted-ref:src/explore_persona_space/task_widget.py",
+        "import-map:src/explore_persona_space/task_widget.py",
     ]
     assert untested == []
 
@@ -1023,14 +1260,27 @@ def test_import_map_relative_import_skipped(tmp_path: Path):
 
 # --- Case 48: aggregate parse-failure WARN (systemic-breakage signal) -----------
 def test_import_map_aggregate_parse_failure_warn(tmp_path: Path, capsys):
-    """>5% of scanned test files failing to parse emits ONE extra summary WARN."""
-    files = {f"test_broken_{i}.py": "import widgetlib\ndef broken(:\n" for i in range(3)}
-    files["test_ok.py"] = "import widgetlib\n"
-    repo = _make_import_tree(tmp_path, files)  # 3 broken / ~43 scanned ≈ 7% > 5%
+    """>5% of scanned test files failing to parse emits ONE extra summary WARN.
+
+    The broken-stub count is sized PROPORTIONALLY to the seeded fixture tree:
+    ``_make_tree`` seeds one stub per live ``WORKFLOW_INVARIANT`` /
+    ``GLOB_SCAN_TESTS`` member, so a hardcoded count is a registry-growth
+    knife-edge — at 60 members a fixed 3 broken files read 3/60 = 5.00%,
+    which the strict ``> 5%`` gate does NOT fire (#1632: both aggregate-WARN
+    tests went red on trunk when the registry grew).
+    """
+    repo = _make_import_tree(tmp_path, {"test_ok.py": "import widgetlib\n"})
+    # Count exactly what the scanner enumerates (recursive test_*.py), then add
+    # enough broken files to clear the strict >5% threshold at ANY registry size.
+    n_pre = len(list((repo / "tests").rglob("test_*.py")))
+    n_broken = math.ceil(0.05 * n_pre) + 1
+    assert n_broken / (n_pre + n_broken) > 0.05  # self-check: aggregate WARN must fire
+    for i in range(n_broken):
+        (repo / "tests" / f"test_broken_{i}.py").write_text("import widgetlib\ndef broken(:\n")
     tests, _, _ = sel.select_tests_with_reasons(["scripts/widgetlib.py"], repo)
     assert "tests/test_ok.py" in tests
     err = capsys.readouterr().err
-    assert err.count("import-map cannot parse") == 3  # one per-file WARN each
+    assert err.count("import-map cannot parse") == n_broken  # one per-file WARN each
     assert err.count("systemic tests/ breakage") == 1  # exactly one aggregate WARN
 
 
@@ -1205,15 +1455,23 @@ def test_rules_pin_unreadable_test_file_warns_not_crash(tmp_path: Path, capsys):
 # --- Case 59: aggregate read-failure WARN (systemic-breakage signal) ---------------
 def test_rules_pin_aggregate_read_failure_warn(tmp_path: Path, capsys):
     """>5% of scanned test files unreadable emits ONE extra summary WARN
-    (mirrors the import-map arm's #1299 aggregate signal, case 48)."""
+    (mirrors the import-map arm's #1299 aggregate signal, case 48).
+
+    Broken-stub count sized proportionally to the seeded tree — the same
+    #1632 registry-growth knife-edge as case 48 (a fixed 3 broken files read
+    3/60 = 5.00% at 60 seeded members, failing the strict ``> 5%`` gate).
+    """
     repo = _make_tree(tmp_path, [])
-    for i in range(3):
-        (repo / "tests" / f"test_bad_{i}.py").write_bytes(b"\xff\xfe bad")
     (repo / "tests" / "test_ok_pin.py").write_text('R = ".claude/rules/some-rule.md"\n')
+    n_pre = len(list((repo / "tests").rglob("test_*.py")))
+    n_broken = math.ceil(0.05 * n_pre) + 1
+    assert n_broken / (n_pre + n_broken) > 0.05  # self-check: aggregate WARN must fire
+    for i in range(n_broken):
+        (repo / "tests" / f"test_bad_{i}.py").write_bytes(b"\xff\xfe bad")
     tests, _, _ = sel.select_tests_with_reasons([".claude/rules/some-rule.md"], repo)
     assert "tests/test_ok_pin.py" in tests
     err = capsys.readouterr().err
-    assert err.count("rules-pin scan cannot read") == 3  # one per-file WARN each
+    assert err.count("rules-pin scan cannot read") == n_broken  # one per-file WARN each
     assert err.count("systemic tests/ breakage") == 1  # exactly one aggregate WARN
 
 
@@ -1298,7 +1556,12 @@ def test_literal_path_pin_selected(tmp_path: Path):
     repo = _make_import_tree(tmp_path, {"test_pin_x.py": 'LIVE = ["scripts/foo_helper.py"]\n'})
     tests, _, reasons = sel.select_tests_with_reasons(["scripts/foo_helper.py"], repo)
     assert "tests/test_pin_x.py" in tests
-    assert reasons["tests/test_pin_x.py"] == ["literal-path:scripts/foo_helper.py"]
+    # #1688: the basename inside the full-path literal is the documented
+    # harmless duplicate (basename-ref rides along; union dedupes pairs).
+    assert reasons["tests/test_pin_x.py"] == [
+        "basename-ref:scripts/foo_helper.py",
+        "literal-path:scripts/foo_helper.py",
+    ]
 
 
 # --- Case 53: THE durability pin — the #1498 founding case on the LIVE tree ------
@@ -1352,7 +1615,10 @@ def test_literal_path_only_grows_selection(tmp_path: Path):
     assert set(t_with) >= set(t_without)
     for test, rs in r_without.items():
         assert r_with[test] == rs  # pre-existing reason lists preserved verbatim
-    assert r_with["tests/test_pins.py"] == ["literal-path:scripts/widgetlib.py"]
+    assert r_with["tests/test_pins.py"] == [
+        "basename-ref:scripts/widgetlib.py",  # #1688 in-path duplicate
+        "literal-path:scripts/widgetlib.py",
+    ]
     # orphan.py has no test in either tree; widgetlib.py is stem-mapped in both.
     assert u_without == ["scripts/orphan.py"]
     assert u_with == ["scripts/orphan.py"]
@@ -1366,7 +1632,10 @@ def test_literal_path_unreadable_file_warns_not_crash(tmp_path: Path, capsys):
     )
     tests, _, reasons = sel.select_tests_with_reasons(["scripts/foo_helper.py"], repo)
     assert "tests/test_good_pin.py" in tests  # the valid hit still selected
-    assert reasons["tests/test_good_pin.py"] == ["literal-path:scripts/foo_helper.py"]
+    assert reasons["tests/test_good_pin.py"] == [
+        "basename-ref:scripts/foo_helper.py",  # #1688 in-path duplicate
+        "literal-path:scripts/foo_helper.py",
+    ]
     assert "tests/test_undecodable.py" not in tests  # read failed -> both arms skip
     err = capsys.readouterr().err
     assert "import-map cannot parse" in err
@@ -1383,7 +1652,10 @@ def test_literal_path_syntax_error_file_still_matched(tmp_path: Path, capsys):
     )
     tests, untested, reasons = sel.select_tests_with_reasons(["scripts/foo_helper.py"], repo)
     assert "tests/test_broken_pin.py" in tests
-    assert reasons["tests/test_broken_pin.py"] == ["literal-path:scripts/foo_helper.py"]
+    assert reasons["tests/test_broken_pin.py"] == [
+        "basename-ref:scripts/foo_helper.py",  # #1688: raw-text arm, parse not needed
+        "literal-path:scripts/foo_helper.py",
+    ]
     assert untested == ["scripts/foo_helper.py"]  # literal hit never sets matched
     err = capsys.readouterr().err
     assert err.count("import-map cannot parse") == 1
@@ -1419,7 +1691,10 @@ def test_literal_path_init_py_triggers_scan_zero_parses(tmp_path: Path, capsys):
     )
     tests, _, reasons = sel.select_tests_with_reasons(["scripts/__init__.py"], repo)
     assert "tests/test_pkg_pin.py" in tests
-    assert reasons["tests/test_pkg_pin.py"] == ["literal-path:scripts/__init__.py"]
+    assert reasons["tests/test_pkg_pin.py"] == [
+        "basename-ref:scripts/__init__.py",  # #1688 in-path duplicate
+        "literal-path:scripts/__init__.py",
+    ]
     assert "import-map cannot parse" not in capsys.readouterr().err  # zero parses
 
 
@@ -1449,18 +1724,20 @@ def test_cli_json_carries_literal_path_reason(tmp_path: Path, monkeypatch, capsy
     payload = json.loads(capsys.readouterr().out)
     assert "tests/test_pin.py" in payload["tests"]
     assert payload["selection_reasons"]["tests/test_pin.py"] == [
-        "literal-path:scripts/widgetlib.py"
+        "basename-ref:scripts/widgetlib.py",  # #1688 in-path duplicate
+        "literal-path:scripts/widgetlib.py",
     ]
     # The WARN still reaches the JSON consumer: literal hits never suppress it.
     assert payload["untested_touched"] == ["scripts/widgetlib.py"]
 
 
-# --- Case 63: --map-files mode ignores literal-path pins (GLOB_SCAN_TESTS-only) --
-def test_map_files_ignores_literal_path_hits(tmp_path: Path, capsys):
-    """The Step 10d mapping mode (#1147) stays pure GLOB_SCAN_TESTS path
-    arithmetic (zero file reads): a payload naming a literal-PINNED but
-    not-scan-globbed file yields EMPTY stdout + rc 0 (pins the deliberate
-    #1498 scoping decision, plan R4)."""
+# --- Case 63 (#1573, REPLACES test_map_files_ignores_literal_path_hits): the
+# --- mapping mode now INCLUDES literal-path pins — the deliberate contract flip
+def test_map_files_includes_literal_path_hits(tmp_path: Path, capsys):
+    """The Step 10d mapping mode carries the src/scripts dependency arms
+    (#1573): a payload naming a literal-PINNED but not-scan-globbed file now
+    maps to its pinning test (A2 — flips the #1498-era case-63 scoping pin;
+    the old GLOB_SCAN-only contract is the founding bug of #1573)."""
     repo = _make_import_tree(
         tmp_path, {"test_pin.py": 'LIVE = ["src/explore_persona_space/widgetlib.py"]\n'}
     )
@@ -1468,4 +1745,1023 @@ def test_map_files_ignores_literal_path_hits(tmp_path: Path, capsys):
     listing.write_text("src/explore_persona_space/widgetlib.py\n")
     rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
     assert rc == 0
-    assert capsys.readouterr().out == ""
+    out = capsys.readouterr().out
+    assert out.splitlines() == ["tests/test_pin.py\tsrc/explore_persona_space/widgetlib.py"]
+
+
+# --- Cases 64+ (#1573): the --map-files src/scripts dependency arms ---------------
+
+
+# --- Case 64: THE durability pin — the founding sft.py edge on the LIVE tree ------
+def test_cli_map_files_import_edge_sft_regression(tmp_path: Path, capsys):
+    """No fixtures (the test_rules_pin_live_tree_known_pairs convention): the
+    real tree's tests/test_artifacts_recipe.py statically imports
+    ``train_lora`` from src/explore_persona_space/train/sft.py (and
+    ``inspect.getsource``s it), yet ``--map-files`` on that payload emitted
+    ZERO pairs pre-#1573 — the founding incident (the ``use_rslora`` change,
+    commit d7908a3837, broke test_rslora_engine_pin with no gate firing).
+    Also pins the WORKFLOW_INVARIANT exclusion on the live tree: sft.py
+    literal-hits the 2400 s tests/test_workflow_lint.py (LIVE_WORKFLOW_HELPERS)
+    which must NOT reach the 600 s-class TG legs (A1 + A4 live half)."""
+    repo_root = Path(sel.__file__).resolve().parents[1]
+    listing = tmp_path / "payload.txt"
+    listing.write_text("src/explore_persona_space/train/sft.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo_root)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    lines = captured.out.splitlines()
+    assert "tests/test_artifacts_recipe.py\tsrc/explore_persona_space/train/sft.py" in lines
+    assert not any(line.startswith("tests/test_workflow_lint.py\t") for line in lines)
+    assert "recommended-timeout-s=" in captured.err
+
+
+# --- Case 65: the stem arm maps a DYNAMIC-import (importorskip) test (A3) ---------
+def test_map_files_stem_pair_maps_dynamic_import_test(tmp_path: Path, capsys):
+    """A stem-named test that loads the touched module DYNAMICALLY
+    (``pytest.importorskip`` — invisible to the import arm's ast scan) is
+    mapped via the stem arm; this is the mechanism that closes the
+    dynamic-import getsource subclass (plan D4)."""
+    repo = _make_import_tree(
+        tmp_path,
+        {"test_widgetlib_exactness.py": 'import pytest\nw = pytest.importorskip("widgetlib")\n'},
+    )
+    listing = tmp_path / "payload.txt"
+    listing.write_text("scripts/widgetlib.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    lines = capsys.readouterr().out.splitlines()
+    assert "tests/test_widgetlib_exactness.py\tscripts/widgetlib.py" in lines
+
+
+# --- Case 66: WORKFLOW_INVARIANT members excluded from the dependency arms (A4) ---
+def test_map_files_excludes_invariant_hits(tmp_path: Path, capsys):
+    """An invariant-named test importing the touched module is EXCLUDED from
+    the --map-files pairs (mirror of the rules-pin asymmetry, case 62) while
+    a non-invariant importer of the SAME module is included."""
+    repo = _make_import_tree(
+        tmp_path,
+        {"test_consumer_x.py": "import widgetlib\n"},
+    )
+    # Overwrite an invariant stub with a REAL import of the touched module.
+    (repo / "tests" / "test_verify_plan.py").write_text("import widgetlib\n")
+    listing = tmp_path / "payload.txt"
+    listing.write_text("scripts/widgetlib.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    lines = capsys.readouterr().out.splitlines()
+    assert "tests/test_consumer_x.py\tscripts/widgetlib.py" in lines
+    assert not any(line.startswith("tests/test_verify_plan.py\t") for line in lines)
+
+
+# --- Case 67: the zero-mapped fail-loud floor (A5) --------------------------------
+def test_map_files_zero_mapped_code_file_warns_rc0(tmp_path: Path, capsys):
+    """An eligible src/scripts .py payload with ZERO pairs across all arms
+    draws exactly one tab-free stderr WARN; rc stays 0 and stdout stays empty
+    (consumers treat helper rc!=0 as crash-class fail-closed)."""
+    bare = tmp_path / "bare"  # no tests/ tree at all
+    bare.mkdir()
+    listing = tmp_path / "payload.txt"
+    listing.write_text("src/explore_persona_space/widgetlib.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(bare)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert (
+        captured.err.count("no mapped tests for code file src/explore_persona_space/widgetlib.py")
+        == 1
+    )
+    assert not any("\t" in line for line in captured.err.splitlines())
+
+
+# --- Case 68: the machine-greppable sizing line (A6) -------------------------------
+def test_map_files_sizing_line(tmp_path: Path, capsys):
+    """A non-empty map prints ONE tab-free `recommended-timeout-s=<T>` stderr
+    line: floor 300 for small maps, the #1046 formula above it."""
+    repo = _make_import_tree(
+        tmp_path,
+        {
+            "test_consumer_a.py": "from explore_persona_space.widgetlib import f\n",
+            "test_consumer_b.py": "from explore_persona_space.widgetlib import f\n",
+        },
+    )
+    listing = tmp_path / "payload.txt"
+    listing.write_text("src/explore_persona_space/widgetlib.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    # 2 tests: 120 + 2*30 = 180 -> floored at MAP_TIMEOUT_FLOOR_S = 600.
+    assert "recommended-timeout-s=600" in captured.err
+    assert not any("\t" in line for line in captured.err.splitlines())
+    assert len(captured.out.splitlines()) == 2
+    # 17 tests clear the floor: (120 + 17*30) * 2.0 dispersion = 1260 (#1697).
+    repo17 = _make_import_tree(
+        tmp_path / "seventeen",
+        {
+            f"test_consumer_{i}.py": "from explore_persona_space.widgetlib import f\n"
+            for i in range(17)
+        },
+    )
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo17)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert "recommended-timeout-s=1260" in captured.err
+    assert not any("\t" in line for line in captured.err.splitlines())
+
+
+# --- Case 69: recommended_timeout_s floor kwarg (D2) -------------------------------
+def test_recommended_timeout_s_floor_kwarg():
+    """Default floor unchanged (TIMEOUT_FLOOR_S = 900, diff-path callers
+    byte-identical); an explicit floor= is honored; the formula wins above it."""
+    assert sel.MAP_TIMEOUT_FLOOR_S == 600
+    two = ["tests/test_a.py", "tests/test_b.py"]
+    assert sel.recommended_timeout_s(two) == sel.TIMEOUT_FLOOR_S  # default floor binds
+    assert sel.recommended_timeout_s(two, floor=sel.MAP_TIMEOUT_FLOOR_S) == 600
+    forty = [f"tests/test_x{i}.py" for i in range(40)]
+    expected = sel.TIMEOUT_BASE_S + 40 * sel.TIMEOUT_PER_FILE_S  # 1320 > both floors
+    assert sel.recommended_timeout_s(forty, floor=sel.MAP_TIMEOUT_FLOOR_S) == expected
+    assert sel.recommended_timeout_s(forty) == expected
+
+
+# --- Case 69-bis (#1697): --map-files dispersion factor ---------------------------
+def test_recommended_timeout_s_map_dispersion():
+    """The --map-files path applies MAP_TIMEOUT_DISPERSION=2.0 to base+per_file,
+    but NOT to the SLOW_TESTS surcharge; diff-path (default dispersion=1.0)
+    stays byte-identical. Ties to #1697 (the #1675/#1682 undersized-bound trap
+    at 780 s vs 728-752 s measured walls, ~1.04-1.07x)."""
+    assert sel.MAP_TIMEOUT_DISPERSION == 2.0
+
+    # The exact #1682/#1675 shape: 26 tests, no SLOW_TESTS members in the map.
+    # NOTE: tests/test_workflow_lint_x{i}.py filenames are NOT in SLOW_TESTS —
+    # only the exact `tests/test_workflow_lint.py` key matches (single-file
+    # per-key surcharge, not a glob-family), so these 26 synthetic tests
+    # contribute 0 surcharge and exercise the base+per_file*dispersion path
+    # cleanly.
+    twenty_six = [f"tests/test_workflow_lint_x{i}.py" for i in range(26)]
+    # Base+per_file only: 120 + 30*26 = 900. Times 2.0 dispersion = 1800.
+    assert (
+        sel.recommended_timeout_s(
+            twenty_six, floor=sel.MAP_TIMEOUT_FLOOR_S, dispersion=sel.MAP_TIMEOUT_DISPERSION
+        )
+        == 1800
+    )
+    # Diff-path default: dispersion=1.0, byte-identical to today's arithmetic.
+    assert sel.recommended_timeout_s(twenty_six) == 900
+
+    # SLOW_TESTS surcharge is NOT re-scaled by dispersion (already headroom'd).
+    with_wl = [*twenty_six, "tests/test_workflow_lint.py"]
+    # Dispersed base: (120 + 30*27) * 2 = 1860. Plus 2400 surcharge = 4260.
+    expected_map = (
+        round(sel.MAP_TIMEOUT_DISPERSION * (sel.TIMEOUT_BASE_S + 27 * sel.TIMEOUT_PER_FILE_S))
+        + sel.SLOW_TESTS["tests/test_workflow_lint.py"]
+    )
+    assert (
+        sel.recommended_timeout_s(
+            with_wl, floor=sel.MAP_TIMEOUT_FLOOR_S, dispersion=sel.MAP_TIMEOUT_DISPERSION
+        )
+        == expected_map
+    )
+    assert expected_map == 4260  # explicit sanity — 1860 + 2400
+
+    # Diff-path with SLOW_TESTS unchanged: 120 + 30*27 + 2400 = 4130.
+    assert sel.recommended_timeout_s(with_wl) == (
+        sel.TIMEOUT_BASE_S + 27 * sel.TIMEOUT_PER_FILE_S + 2400
+    )
+
+
+# --- Case 70: dependency_map_pairs unit — import + literal + stem union, sorted ----
+def test_dependency_map_pairs_import_and_literal_union(tmp_path: Path):
+    """One function-level read: import hits + literal hits + stem hits union
+    into sorted unique (test, matched_path) pairs; a test hit by BOTH the
+    import and literal arms appears once."""
+    repo = _make_import_tree(
+        tmp_path,
+        {
+            "test_widgetlib.py": "# stub\n",  # stem arm (exact) — no import needed
+            "test_imports_w.py": "import widgetlib\n",  # import arm
+            # BOTH arms hit this one -> dedupes to one pair:
+            "test_both_w.py": 'import widgetlib\nLIVE = ["scripts/widgetlib.py"]\n',
+        },
+    )
+    pairs = sel.dependency_map_pairs(["scripts/widgetlib.py"], repo)
+    assert pairs == sorted(pairs)
+    assert pairs == [
+        ("tests/test_both_w.py", "scripts/widgetlib.py"),
+        ("tests/test_imports_w.py", "scripts/widgetlib.py"),
+        ("tests/test_widgetlib.py", "scripts/widgetlib.py"),
+    ]
+
+
+# --- Cases 71+ (#1579): the .sh stem/literal arms ---------------------------------
+# A .sh-only diff previously selected ZERO stem-matched tests, returned zero
+# --map-files pairs, and skipped the untested_touched WARN entirely (all three
+# code-file arms were .py-gated). These cases pin the .sh extension of the stem
+# arm + the literal_path_targets eligibility; the .py branch stays byte-identical
+# (cases 1-70 unmodified are the pin).
+
+
+# --- Case 71: scripts/X.sh -> test_X.py + test_*X*.py (mirror of case 1) ----------
+def test_sh_stem_map_exact_and_glob(tmp_path: Path):
+    """A touched .sh maps via the exact stem test AND the broad *stem* glob."""
+    repo = _make_tree(tmp_path, ["test_widget.py", "test_widget_cli.py", "test_other.py"])
+    tests, untested, reasons = sel.select_tests_with_reasons(["scripts/widget.sh"], repo)
+    assert "tests/test_widget.py" in tests  # exact
+    assert "tests/test_widget_cli.py" in tests  # broad *widget* glob
+    assert "tests/test_other.py" not in tests
+    assert untested == []
+    assert "stem-map:scripts/widget.sh" in reasons["tests/test_widget.py"]
+
+
+# --- Case 72: founding live-tree case — guard_repo_root_branch.sh (#1579) ---------
+def test_sh_stem_map_live_tree_founding_case():
+    """#1579 founding incident: a .sh-only diff selected zero stem-matched tests."""
+    repo_root = _HELPER_PATH.parents[1]
+    tests, untested, reasons = sel.select_tests_with_reasons(
+        ["scripts/guard_repo_root_branch.sh"], repo_root
+    )
+    assert "tests/test_guard_repo_root_branch.py" in tests
+    assert (
+        "stem-map:scripts/guard_repo_root_branch.sh"
+        in reasons["tests/test_guard_repo_root_branch.py"]
+    )
+    assert untested == []
+
+
+# --- Case 73: .claude/hooks/*.sh reaches the stem arm (live tree) -----------------
+def test_sh_hooks_stem_map_live_tree():
+    """Hook scripts match no WORKFLOW_SURFACE glob, so the stem arm maps them."""
+    repo_root = _HELPER_PATH.parents[1]
+    tests, untested, _reasons = sel.select_tests_with_reasons(
+        [".claude/hooks/guard_lessons_edit.sh"], repo_root
+    )
+    assert "tests/test_guard_lessons_edit.py" in tests
+    assert untested == []
+
+
+# --- Case 74: an unmatched .sh lands in untested_touched (no longer silent) -------
+def test_sh_untested_code_file_warns(tmp_path: Path):
+    """A .sh with no stem-matched test WARNs, symmetric with .py (#1579 gap 3)."""
+    repo = _make_tree(tmp_path, ["test_other.py"])
+    _tests, untested, _ = sel.select_tests_with_reasons(["scripts/lonely_helper.sh"], repo)
+    assert untested == ["scripts/lonely_helper.sh"]
+
+
+# --- Case 75: literal_path_targets .sh eligibility (unit) -------------------------
+def test_sh_literal_path_targets_eligibility():
+    """The .sh branch admits scripts/ + hooks/ + src/; the .py branch is unchanged."""
+    got = sel.literal_path_targets(
+        [
+            "scripts/a.sh",
+            ".claude/hooks/b.sh",
+            "src/explore_persona_space/c.sh",
+            "tests/d.sh",
+            "external/e.sh",
+            "docs/g.sh",
+            ".claude/agents/h.sh",
+            "scripts/f.py",  # the .py branch: byte-identical eligibility
+        ]
+    )
+    assert got == {
+        "scripts/a.sh",
+        ".claude/hooks/b.sh",
+        "src/explore_persona_space/c.sh",
+        "scripts/f.py",
+    }
+
+
+# --- Case 76: a pinning test hardcoding a .sh path selects via literal-path -------
+def test_sh_literal_path_pin_selected(tmp_path: Path):
+    """A raw-substring .sh path pin is discovered; the WARN is NOT suppressed."""
+    repo = _make_import_tree(tmp_path, {"test_pin_sh.py": 'P = "scripts/guardfoo.sh"\n'})
+    _tests, untested, reasons = sel.select_tests_with_reasons(["scripts/guardfoo.sh"], repo)
+    assert "literal-path:scripts/guardfoo.sh" in reasons["tests/test_pin_sh.py"]
+    assert untested == ["scripts/guardfoo.sh"]  # a literal hit never suppresses the WARN
+
+
+# --- Case 77: dependency_map_pairs carries the .sh stem pair (live tree) ----------
+def test_dependency_map_pairs_sh_live_tree():
+    """--map-files' dependency arms emit .sh stem pairs (exact AND broad glob)."""
+    repo_root = _HELPER_PATH.parents[1]
+    pairs = sel.dependency_map_pairs(["scripts/guard_repo_root_branch.sh"], repo_root)
+    assert (
+        "tests/test_guard_repo_root_branch.py",
+        "scripts/guard_repo_root_branch.sh",
+    ) in pairs
+    # Broad-glob map pair for .sh (the bootstrap_pod class — no exact
+    # tests/test_bootstrap_pod.py exists; reachable by NO other arm):
+    bp = sel.dependency_map_pairs(["scripts/bootstrap_pod.sh"], repo_root)
+    assert ("tests/test_bootstrap_pod_path.py", "scripts/bootstrap_pod.sh") in bp
+
+
+# --- Case 78: CLI --map-files on a .sh payload prints the stem pair ---------------
+def test_cli_map_files_sh_stem_pair(tmp_path: Path, capsys):
+    """A .sh payload with a stem-matched test prints a real pytest pair (was empty)."""
+    repo = _make_tree(tmp_path, ["test_guardfoo.py"])
+    payload = tmp_path / "payload.txt"
+    payload.write_text("scripts/guardfoo.sh\n")
+    rc = sel.main(["--map-files", str(payload), "--repo-root", str(repo)])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "tests/test_guardfoo.py\tscripts/guardfoo.sh" in out
+
+
+# --- Case 79: .py behavior byte-identical — the .sh arm only grows ----------------
+def test_sh_arm_only_grows_selection(tmp_path: Path):
+    """Adding a .sh to a diff never drops a .py-derived test or reason."""
+    repo = _make_tree(tmp_path, ["test_widget.py", "test_widget_cli.py"])
+    t_before, u_before, r_before = sel.select_tests_with_reasons(["scripts/widget.py"], repo)
+    t_after, u_after, r_after = sel.select_tests_with_reasons(
+        ["scripts/widget.py", "scripts/unrelated.sh"], repo
+    )
+    assert set(t_before) <= set(t_after)
+    assert u_before == []
+    for t, rs in r_before.items():
+        assert set(rs) <= set(r_after[t])  # every .py-derived reason preserved verbatim
+    assert u_after == ["scripts/unrelated.sh"]
+
+
+# --- Case 80: unmapped eligible .sh payload draws the #1573 WARN floor (CLI) ------
+def test_cli_map_files_sh_unmapped_warns(tmp_path: Path, capsys):
+    """An eligible .sh payload with zero pairs draws the fail-loud stderr WARN."""
+    repo = _make_tree(tmp_path, ["test_other.py"])
+    payload = tmp_path / "payload.txt"
+    payload.write_text("scripts/lonely_helper.sh\n")
+    rc = sel.main(["--map-files", str(payload), "--repo-root", str(repo)])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert captured.out.strip() == ""  # no pairs
+    assert "no mapped tests for code file" in captured.err  # the fail-loud floor
+    assert "scripts/lonely_helper.sh" in captured.err
+
+
+# --- Cases 81+ (#1589): the transitive-consumer pin map ---------------------------
+_SELECTOR_KEY = "scripts/select_step9c_tests.py"
+
+
+# --- Case 81: THE #1589 durability pin — both registered consumers on the LIVE tree
+def test_transitive_consumer_map_live_tree():
+    """THE #1589 durability pin: a selector-module payload maps to BOTH
+    registered transitive consumers on the live tree (neither is reachable by
+    any text-scan arm — dynamic loads by constructed path / path-join
+    literals)."""
+    repo_root = _HELPER_PATH.parents[1]
+    pairs = sel.transitive_consumer_pairs([_SELECTOR_KEY], repo_root)
+    assert ("tests/test_step9c_baseline.py", _SELECTOR_KEY) in pairs
+    assert ("tests/test_inline_lint_gate.py", _SELECTOR_KEY) in pairs
+
+
+# --- Case 82: drift pin — every map entry exists on disk and is NOT invariant -----
+def test_transitive_consumer_entries_exist_on_live_tree():
+    """Drift pin: every key + registered test exists; no entry is invariant
+    (an invariant member would be silently excluded from the map legs)."""
+    repo_root = _HELPER_PATH.parents[1]
+    for key, consumer_tests in sel.TRANSITIVE_CONSUMER_TESTS.items():
+        assert (repo_root / key).exists(), key
+        for t in consumer_tests:
+            assert (repo_root / t).exists(), t
+            assert t not in sel.WORKFLOW_INVARIANT, (
+                f"{t}: invariant members are excluded from --map-files by design; "
+                "registering one here is dead weight — remove one of the two."
+            )
+
+
+# --- Case 83: Step 9c diff path — the transitive-consumer reason; additive only ---
+def test_transitive_consumer_diff_path_reason(tmp_path: Path):
+    """Step 9c diff path: touching a map key selects the consumer with the
+    transitive-consumer reason; the arm is additive (never sets ``matched``,
+    so the untested WARN for the key still fires in this stem-less fixture)."""
+    repo = _make_tree(tmp_path, ["test_step9c_baseline.py"])
+    # _make_tree materializes every GLOB_SCAN_TESTS key, including the #1593
+    # manifest-scan key tests/test_select_step9c_tests.py — unlink it so the
+    # fixture is genuinely stem-less for the selector payload and the
+    # additive-only pin below is observable via untested_touched.
+    (repo / "tests" / "test_select_step9c_tests.py").unlink()
+    tests_, untested, reasons = sel.select_tests_with_reasons([_SELECTOR_KEY], repo)
+    assert "tests/test_step9c_baseline.py" in tests_
+    assert f"transitive-consumer:{_SELECTOR_KEY}" in reasons["tests/test_step9c_baseline.py"]
+    assert untested == [_SELECTOR_KEY]  # additive-only pinned: matched is never set
+
+
+# --- Case 84: monotonicity — the arm only ever GROWS the selection ----------------
+def test_transitive_consumer_only_grows_selection(tmp_path: Path):
+    """Parity with the other arms: adding a map-key file to a diff never drops
+    a previously selected test or reason."""
+    repo = _make_tree(tmp_path, ["test_widget.py", "test_step9c_baseline.py"])
+    t_before, u_before, r_before = sel.select_tests_with_reasons(["scripts/widget.py"], repo)
+    t_after, _u_after, r_after = sel.select_tests_with_reasons(
+        ["scripts/widget.py", _SELECTOR_KEY], repo
+    )
+    assert set(t_before) <= set(t_after)
+    assert u_before == []
+    for t, rs in r_before.items():
+        assert set(rs) <= set(r_after[t])  # every prior reason preserved verbatim
+    assert "tests/test_step9c_baseline.py" in t_after
+    assert f"transitive-consumer:{_SELECTOR_KEY}" in r_after["tests/test_step9c_baseline.py"]
+
+
+# --- Case 85: a registered consumer absent from the work root is dropped ----------
+def test_transitive_consumer_missing_on_disk_dropped(tmp_path: Path):
+    """A registered consumer absent from the work root is dropped from pairs
+    (fixture tree without tests/test_step9c_baseline.py -> no pair for it),
+    while the present sibling registration survives."""
+    repo = _make_tree(tmp_path, ["test_inline_lint_gate.py"])
+    pairs = sel.transitive_consumer_pairs([_SELECTOR_KEY], repo)
+    assert pairs == [("tests/test_inline_lint_gate.py", _SELECTOR_KEY)]
+
+
+# --- Case 86: CLI --map-files end-to-end on the LIVE tree — the 7 pairs verbatim --
+def test_cli_map_files_transitive_pairs_live_tree(tmp_path: Path, capsys):
+    """CLI end-to-end on the LIVE tree: the selector payload prints all 5
+    dependency-arm pairs PLUS the 2 transitive pairs (7 pairs, 7 tests) and
+    the sizing line clears the 600 s MAP_TIMEOUT_FLOOR_S at 660
+    ((120 + 7*30) * 2.0). Exact-set assert — a new arm/pin
+    joining later legitimately forces a deliberate 1-line update here (that
+    loudness is the point; cf. the case-60 drift-pin posture)."""
+    repo_root = _HELPER_PATH.parents[1]
+    payload = tmp_path / "payload.txt"
+    payload.write_text(f"{_SELECTOR_KEY}\n")
+    rc = sel.main(["--map-files", str(payload), "--repo-root", str(repo_root)])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert captured.out.splitlines() == [
+        f"tests/test_inline_lint_gate.py\t{_SELECTOR_KEY}",
+        f"tests/test_inline_payload_lint_gate_contract.py\t{_SELECTOR_KEY}",
+        f"tests/test_issue_skill_lint_family_sync.py\t{_SELECTOR_KEY}",
+        f"tests/test_ruff_policy.py\t{_SELECTOR_KEY}",
+        f"tests/test_select_step9c_tests.py\t{_SELECTOR_KEY}",
+        f"tests/test_shared_vm_thread_caps.py\t{_SELECTOR_KEY}",
+        f"tests/test_step9c_baseline.py\t{_SELECTOR_KEY}",
+    ]
+    assert "map-files — 7 pairs, 7 tests; recommended-timeout-s=660" in captured.err
+
+
+# --- Case 87: map-leg asymmetry — an invariant registration is excluded -----------
+def test_transitive_consumer_excludes_invariant(tmp_path: Path, monkeypatch):
+    """Map-leg asymmetry: a (monkeypatched) entry naming an invariant member
+    is excluded from transitive_consumer_pairs while the non-invariant sibling
+    survives — mirror of test_map_files_excludes_invariant_hits. The Step 9c
+    diff arm KEEPS the invariant member (harmless extra reason; the union
+    dedupes — the rules-pin asymmetry)."""
+    repo = _make_tree(tmp_path, ["test_free_consumer.py"])
+    inv_member = sel.WORKFLOW_INVARIANT[0]
+    monkeypatch.setattr(
+        sel,
+        "TRANSITIVE_CONSUMER_TESTS",
+        {_SELECTOR_KEY: (inv_member, "tests/test_free_consumer.py")},
+    )
+    pairs = sel.transitive_consumer_pairs([_SELECTOR_KEY], repo)
+    assert pairs == [("tests/test_free_consumer.py", _SELECTOR_KEY)]
+    # The 9c diff arm keeps the invariant member's transitive-consumer reason.
+    _, _, reasons = sel.select_tests_with_reasons([_SELECTOR_KEY], repo)
+    assert f"transitive-consumer:{_SELECTOR_KEY}" in reasons[inv_member]
+    assert "invariant" in reasons[inv_member]
+
+
+# --- Cases 88+ (#1688): dotted-ref / basename-ref / transitive-import arms --------
+# Fixture module names are non-generic (widgetmod / midmod / farmod / guardthing)
+# so no stem-glob or GLOB_SCAN_TESTS interference muddies the per-arm asserts.
+
+
+# --- Case 88: dotted-module string reference selected (the #1683 escape #1) -------
+def test_dotted_ref_string_selected(tmp_path: Path):
+    """A monkeypatch-string-target shape — the test's ONLY link to the touched
+    module is the dotted string ("scripts.widgetmod", ...) — is selected with
+    the dotted-ref reason; the arm never sets ``matched`` (string-shape
+    evidence, the literal-path precedent), so the WARN still fires."""
+    repo = _make_import_tree(
+        tmp_path, {"test_hooky.py": 'TARGET = ("scripts.widgetmod", "attr")\n'}
+    )
+    tests, untested, reasons = sel.select_tests_with_reasons(["scripts/widgetmod.py"], repo)
+    assert "tests/test_hooky.py" in tests
+    assert reasons["tests/test_hooky.py"] == ["dotted-ref:scripts/widgetmod.py"]
+    assert untested == ["scripts/widgetmod.py"]
+
+
+# --- Case 89: dotted boundary negatives — superstring + attribute-prefix ----------
+def test_dotted_ref_superstring_not_matched(tmp_path: Path):
+    """Right boundary: ``scripts.widgetmod`` must NOT fire on
+    ``scripts.widgetmod_extra``; left boundary: nor on ``a.scripts.widgetmod``."""
+    repo = _make_import_tree(
+        tmp_path,
+        {
+            "test_right_super.py": 'X = "scripts.widgetmod_extra"\n',
+            "test_left_prefixed.py": 'Y = "a.scripts.widgetmod"\n',
+        },
+    )
+    tests, _, reasons = sel.select_tests_with_reasons(["scripts/widgetmod.py"], repo)
+    assert "tests/test_right_super.py" not in tests
+    assert "tests/test_left_prefixed.py" not in tests
+    assert not any("dotted-ref:" in r for rs in reasons.values() for r in rs)
+
+
+# --- Case 90: bare-basename reference selected (the #1683 escape #2) ---------------
+def test_basename_ref_selected(tmp_path: Path):
+    """The dispatcher-log-assert shape — bare ``widgetmod.py`` with no full
+    path, no import — is selected with the basename-ref reason; never sets
+    ``matched``."""
+    repo = _make_import_tree(tmp_path, {"test_dispatchy.py": 'assert "widgetmod.py" in log_text\n'})
+    tests, untested, reasons = sel.select_tests_with_reasons(["scripts/widgetmod.py"], repo)
+    assert "tests/test_dispatchy.py" in tests
+    assert reasons["tests/test_dispatchy.py"] == ["basename-ref:scripts/widgetmod.py"]
+    assert untested == ["scripts/widgetmod.py"]
+
+
+# --- Case 91: basename boundary negatives — identifier prefix + suffix -------------
+def test_basename_ref_identifier_prefix_not_matched(tmp_path: Path):
+    """Left boundary: ``widgetmod.py`` must NOT fire on ``codex_widgetmod.py``
+    (63/1596 eligible basenames are substrings of another, measured); right
+    boundary: nor on ``widgetmod.pyx`` / ``widgetmod.python``."""
+    repo = _make_import_tree(
+        tmp_path,
+        {
+            "test_left_ident.py": 'LOG = "codex_widgetmod.py"\n',
+            "test_right_ident.py": 'EXT = "widgetmod.pyx and widgetmod.python"\n',
+        },
+    )
+    tests, _, reasons = sel.select_tests_with_reasons(["scripts/widgetmod.py"], repo)
+    assert "tests/test_left_ident.py" not in tests
+    assert "tests/test_right_ident.py" not in tests
+    assert not any("basename-ref:" in r for rs in reasons.values() for r in rs)
+
+
+# --- Case 92: .sh basename eligibility (the #1579 symmetry) -------------------------
+def test_basename_ref_sh_selected(tmp_path: Path):
+    """A ``.sh`` payload under the eligibility prefixes basename-selects a test
+    mentioning the bare script name (zero AST parses — .sh maps to no module)."""
+    repo = _make_import_tree(tmp_path, {"test_guardish.py": 'line = "guardthing.sh ran"\n'})
+    tests, untested, reasons = sel.select_tests_with_reasons(["scripts/guardthing.sh"], repo)
+    assert "tests/test_guardish.py" in tests
+    assert reasons["tests/test_guardish.py"] == ["basename-ref:scripts/guardthing.sh"]
+    assert untested == ["scripts/guardthing.sh"]
+
+
+# --- Case 93: one-hop transitive import selected (the #1683 escape #3) --------------
+def test_transitive_import_one_hop_selected(tmp_path: Path):
+    """scripts/midmod.py imports the touched module; a test importing midmod
+    EXECUTES the touched module at import time -> selected with the
+    transitive-import reason; never sets ``matched``."""
+    repo = _make_import_tree(tmp_path, {"test_uses_mid.py": "import midmod\n"})
+    (repo / "scripts").mkdir(exist_ok=True)
+    (repo / "scripts" / "midmod.py").write_text("import widgetmod\n")
+    tests, untested, reasons = sel.select_tests_with_reasons(["scripts/widgetmod.py"], repo)
+    assert "tests/test_uses_mid.py" in tests
+    assert reasons["tests/test_uses_mid.py"] == ["transitive-import:scripts/widgetmod.py"]
+    assert untested == ["scripts/widgetmod.py"]
+
+
+# --- Case 94: the one-hop bound — chains of >= 2 hops are NOT followed --------------
+def test_transitive_import_two_hops_not_followed(tmp_path: Path):
+    """farmod imports midmod imports the touched module; a test importing only
+    farmod is NOT selected (one hop by construction, never recursive)."""
+    repo = _make_import_tree(tmp_path, {"test_uses_far.py": "import farmod\n"})
+    (repo / "scripts").mkdir(exist_ok=True)
+    (repo / "scripts" / "midmod.py").write_text("import widgetmod\n")
+    (repo / "scripts" / "farmod.py").write_text("import midmod\n")
+    tests, _, reasons = sel.select_tests_with_reasons(["scripts/widgetmod.py"], repo)
+    assert "tests/test_uses_far.py" not in tests
+    assert not any(
+        r == "transitive-import:scripts/widgetmod.py"
+        for t, rs in reasons.items()
+        if t == "tests/test_uses_far.py"
+        for r in rs
+    )
+
+
+# --- Case 95: scripts-scoped on the TOUCHED end — src payloads never expand ---------
+def test_transitive_import_src_touched_not_expanded(tmp_path: Path):
+    """A touched src/ module with a scripts/ importer gets NO transitive
+    expansion (scripts-scoped on BOTH ends; the src-rooted variant measured
+    +70 test files and was rejected at plan time)."""
+    repo = _make_import_tree(tmp_path, {"test_uses_srcconsumer.py": "import srcconsumer\n"})
+    (repo / "scripts").mkdir(exist_ok=True)
+    (repo / "scripts" / "srcconsumer.py").write_text(
+        "from explore_persona_space.widgetsrc import f\n"
+    )
+    touched = ["src/explore_persona_space/widgetsrc.py"]
+    assert sel.transitive_import_map(touched, repo) == {}
+    tests, _, _ = sel.select_tests_with_reasons(touched, repo)
+    assert "tests/test_uses_srcconsumer.py" not in tests
+
+
+# --- Case 96: monotonicity — the #1688 arms only ever GROW the selection ------------
+def test_new_arms_only_grow_selection(tmp_path: Path):
+    """Same touched set, tree WITHOUT vs WITH all three arm triggers: the WITH
+    selection is a superset and every WITHOUT reason list is preserved
+    verbatim (the case-41 shape, per arm)."""
+    touched = ["scripts/widgetmod.py"]
+    repo_without = _make_tree(tmp_path / "without", ["test_widgetmod.py"])
+    t_without, _, r_without = sel.select_tests_with_reasons(touched, repo_without)
+    repo_with = _make_tree(tmp_path / "with", ["test_widgetmod.py"])
+    (repo_with / "tests" / "test_dotted_w.py").write_text('T = ("scripts.widgetmod", "x")\n')
+    (repo_with / "tests" / "test_base_w.py").write_text('assert "widgetmod.py" in out\n')
+    (repo_with / "tests" / "test_trans_w.py").write_text("import midmod\n")
+    (repo_with / "scripts").mkdir(exist_ok=True)
+    (repo_with / "scripts" / "midmod.py").write_text("import widgetmod\n")
+    t_with, _, r_with = sel.select_tests_with_reasons(touched, repo_with)
+    assert set(t_with) >= set(t_without)
+    for test, rs in r_without.items():
+        assert r_with[test] == rs  # pre-existing reason lists preserved verbatim
+    assert "tests/test_dotted_w.py" in t_with
+    assert "tests/test_base_w.py" in t_with
+    assert "tests/test_trans_w.py" in t_with
+
+
+# --- Case 97: none of the #1688 arms ever marks the touched file tested -------------
+def test_new_arms_never_mark_tested(tmp_path: Path):
+    """All three arms firing at once still leave the touched file in the
+    untested_touched WARN list (only the import arm sets ``matched`` —
+    over-WARN is the safe direction)."""
+    repo = _make_import_tree(
+        tmp_path,
+        {
+            "test_dotted_n.py": 'T = ("scripts.widgetmod", "x")\n',
+            "test_base_n.py": 'assert "widgetmod.py" in out\n',
+            "test_trans_n.py": "import midmod\n",
+        },
+    )
+    (repo / "scripts").mkdir(exist_ok=True)
+    (repo / "scripts" / "midmod.py").write_text("import widgetmod\n")
+    tests, untested, _ = sel.select_tests_with_reasons(["scripts/widgetmod.py"], repo)
+    assert {"tests/test_dotted_n.py", "tests/test_base_n.py", "tests/test_trans_n.py"} <= set(tests)
+    assert untested == ["scripts/widgetmod.py"]
+
+
+# --- Case 98: CLI --map-files emits the new-arm pairs -------------------------------
+def test_cli_map_files_new_arm_pairs(tmp_path: Path, capsys):
+    """--map-files carries one pair per new-arm hit (union-deduped with the
+    other dependency arms; output shape unchanged — pairs + sizing line)."""
+    repo = _make_import_tree(
+        tmp_path,
+        {
+            "test_dotted_c.py": 'T = ("scripts.widgetmod", "x")\n',
+            "test_base_c.py": 'assert "widgetmod.py" in out\n',
+            "test_trans_c.py": "import midmod\n",
+        },
+    )
+    (repo / "scripts").mkdir(exist_ok=True)
+    (repo / "scripts" / "midmod.py").write_text("import widgetmod\n")
+    listing = tmp_path / "payload.txt"
+    listing.write_text("scripts/widgetmod.py\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    lines = capsys.readouterr().out.splitlines()
+    assert "tests/test_dotted_c.py\tscripts/widgetmod.py" in lines
+    assert "tests/test_base_c.py\tscripts/widgetmod.py" in lines
+    assert "tests/test_trans_c.py\tscripts/widgetmod.py" in lines
+
+
+# --- Case 99: map-leg asymmetry — invariant members excluded from new-arm pairs -----
+def test_new_arm_map_pairs_exclude_invariant(tmp_path: Path):
+    """An invariant-named test carrying a dotted-ref hit is EXCLUDED from
+    dependency_map_pairs while the non-invariant sibling is included; the
+    Step 9c selection arm KEEPS the invariant member with the new reason
+    (the standing rules-pin asymmetry)."""
+    repo = _make_import_tree(tmp_path, {"test_free_d.py": 'T = ("scripts.widgetmod", "x")\n'})
+    inv_member = "tests/test_verify_plan.py"
+    assert inv_member in sel.WORKFLOW_INVARIANT  # fixture premise
+    (repo / inv_member).write_text('T = ("scripts.widgetmod", "x")\n')
+    pairs = sel.dependency_map_pairs(["scripts/widgetmod.py"], repo)
+    assert ("tests/test_free_d.py", "scripts/widgetmod.py") in pairs
+    assert not any(t == inv_member for t, _f in pairs)
+    _, _, reasons = sel.select_tests_with_reasons(["scripts/widgetmod.py"], repo)
+    assert "dotted-ref:scripts/widgetmod.py" in reasons[inv_member]
+    assert "invariant" in reasons[inv_member]
+
+
+# --- Case 100: THE #1688 durability pin — all 3 escapees on the LIVE tree -----------
+def test_issue1688_live_tree_escapee_shape():
+    """THE #1688 durability pin: the three #1683-review escapees are selected
+    for a scripts/issue667_extract.py payload on the real tree, each via its
+    closing arm, and the pre-existing selections are retained.
+
+    If a future cleanup removes scripts/issue667_extract.py or an escapee
+    test's referencing form, this pin fails loud — repoint it at another
+    committed reference of the same shape (one dotted string target, one
+    bare-basename log assert, one scripts->scripts one-hop import chain).
+    """
+    repo_root = _HELPER_PATH.parents[1]
+    probe = "scripts/issue667_extract.py"
+    tests, untested, reasons = sel.select_tests_with_reasons([probe], repo_root)
+    # Escapee #1 — dotted-module string refs (test file monkeypatches by name).
+    assert f"dotted-ref:{probe}" in reasons["tests/test_issue671_extraction_hooks.py"]
+    # Escapee #2 — bare-basename literals in dispatcher asserts.
+    assert f"basename-ref:{probe}" in reasons["tests/test_issue811_dispatch.py"]
+    # Escapee #3 — imports issue833_extract_onpolicy, which imports the probe.
+    assert f"transitive-import:{probe}" in reasons["tests/test_issue833_nonemit_filters.py"]
+    # Pre-existing selections retained (the count-robust hard gate).
+    assert "tests/test_issue667_dispatcher.py" in tests
+    assert "tests/test_issue811_maxp.py" in tests
+    assert probe not in untested  # stem/import arms already matched it pre-#1688
+
+
+# --- #1717 defect (a): --map-files + --json fails loud (argparse exit 2) ------
+@pytest.mark.parametrize(
+    "extra",
+    [
+        [],  # ordinary two-flag combo
+        # A third co-passed flag that IS in the parser (--no-fetch) does not
+        # change the parser.error verdict — the (--map-files, --json)
+        # combination itself is what fires, regardless of surrounding argv.
+        ["--no-fetch"],
+    ],
+)
+def test_cli_map_files_json_flag_rejected(tmp_path: Path, capsys, extra: list[str]):
+    """The (a) fix: `--map-files` combined with `--json` is a CLI usage error.
+    argparse's `parser.error()` exits 2 with a stderr `: error: ...` line and
+    empty stdout; no work-root resolution, no map-files load. Both flag
+    orderings are checked (argparse is order-agnostic post-parse). A third
+    valid flag (`--no-fetch`) co-passed does NOT change the verdict — the
+    combination itself is what fires, regardless of surrounding argv.
+    """
+    repo = _make_tree(tmp_path, [])
+    listing = tmp_path / "payload.txt"
+    listing.write_text("scripts/issue123_foo.py\n")
+    # Ordering A: --map-files first, --json after.
+    with pytest.raises(SystemExit) as excinfo:
+        sel.main(["--map-files", str(listing), "--json", "--repo-root", str(repo), *extra])
+    assert excinfo.value.code == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "--json is not supported with --map-files" in captured.err
+    # Ordering B: --json first, --map-files after.
+    with pytest.raises(SystemExit) as excinfo:
+        sel.main(["--json", "--map-files", str(listing), "--repo-root", str(repo), *extra])
+    assert excinfo.value.code == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "--json is not supported with --map-files" in captured.err
+
+
+# --- #1717 defect (c): --map-files comma-detected hint (opt-in on comma) ------
+def test_cli_map_files_comma_hint(tmp_path: Path, capsys):
+    """The (c) fix: a comma in the --map-files argument (the session
+    `c0a2df1b` shape — `--map-files a.md,b.md`) APPENDS an opt-in hint
+    after the standard Errno-2 line, telling the caller to pass a
+    newline-separated file path. A non-comma missing path preserves the
+    base OSError text WITHOUT the hint (hint is opt-in on comma
+    detection — a real comma-in-path failure still surfaces Errno + path
+    verbatim).
+    """
+    repo = _make_tree(tmp_path, [])
+    # Positive branch: a comma in the argument triggers the hint.
+    rc = sel.main(["--map-files", "a.md,b.md", "--repo-root", str(repo)])
+    assert rc == 1
+    err = capsys.readouterr().err
+    assert "cannot read --map-files input" in err
+    # Base Errno-2 text stays first, then the appended hint.
+    assert "Errno 2" in err or "No such file" in err
+    assert (
+        "--map-files takes a PATH to a newline-separated file list, not a comma-separated list"
+    ) in err
+    # Negative branch: a non-comma missing path — NO hint appended.
+    rc = sel.main(
+        ["--map-files", str(tmp_path / "definitely-not-there.txt"), "--repo-root", str(repo)]
+    )
+    assert rc == 1
+    err = capsys.readouterr().err
+    assert "cannot read --map-files input" in err
+    assert "comma-separated list" not in err
+
+
+# --- #1717 defect (d): empty-diff NOTE names uncommitted edits ---------------
+def test_empty_diff_note_names_uncommitted_edits(tmp_path: Path, monkeypatch, capsys):
+    """The (d) fix: the empty-diff NOTE at the main checkout carries the
+    widened phrasing calling out uncommitted edits as the first likely
+    cause. Reuses the `_make_git_repo_with_worktree` fixture; asserts the
+    case-insensitive `commit first` substring survives in stderr.
+    Distinct from `test_empty_diff_note_at_main_checkout_real_git` — that
+    test now ALSO asserts `commit first` alongside its existing prefix +
+    breadcrumb pins, and this test preserves the isolated pin so a future
+    NOTE rewording immediately surfaces which assertion caught it.
+    """
+    repo, _wt = _make_git_repo_with_worktree(tmp_path)
+    monkeypatch.chdir(repo)
+    rc = sel.main([])
+    assert rc == 0
+    captured = capsys.readouterr()
+    # The widened NOTE still starts with the byte-identical prefix (pinned
+    # by test_empty_diff_note_at_main_checkout_real_git):
+    assert "NOTE — empty diff" in captured.err
+    # The new cause line: uncommitted edits are named first.
+    assert "commit first" in captured.err.lower()
+
+
+# --- #1717 defect (b): --json help text warns against `2>&1` stderr redirect --
+def test_json_help_warns_against_stderr_redirect(capsys):
+    """The (b) fix: the `--json` flag's help string carries a safety
+    warning against redirecting stderr into stdout (`2>&1`), naming the
+    safe recipe (`2>/dev/null`). Broader-invariant assertion: the help
+    text mentions BOTH the concept (`stderr`) AND the recipe recommendation
+    (`2>/dev/null`) — a benign softening of the exact phrasing that keeps
+    both survives the pin; dropping either fails.
+    """
+    with pytest.raises(SystemExit) as excinfo:
+        sel.main(["--help"])
+    # argparse's --help handler exits 0.
+    assert excinfo.value.code == 0
+    help_text = capsys.readouterr().out
+    assert "stderr" in help_text.lower()
+    assert "2>/dev/null" in help_text
+
+
+# --- Skills-pin discovery arm (#1851) ----------------------------------------------
+# A touched .claude/skills/**/*.md selects every tests/**/test_*.py whose raw
+# text references that file's skill-dir-QUALIFIED path (reason
+# skills-pin:<skill path>) — the skills sibling of the rules-pin arm (#1496),
+# ADDITIVE to the WORKFLOW_SURFACE skip (which is unchanged); --map-files
+# unions the same pairs MINUS WORKFLOW_INVARIANT members. Unlike rules-pin
+# the token is NOT the bare basename (every skill shares SKILL.md): a hit is
+# the contiguous .claude/-relative path substring OR the path-join form.
+
+
+# --- Skills-pin: contiguous full-path-literal reference form -----------------------
+def test_skills_pin_contiguous_form_selected(tmp_path: Path):
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_issue_skill_pin.py").write_text(
+        'SKILL = ".claude/skills/issue/SKILL.md"\n'
+    )
+    touched = [".claude/skills/issue/SKILL.md"]
+    tests, untested, reasons = sel.select_tests_with_reasons(touched, repo)
+    assert "tests/test_issue_skill_pin.py" in tests
+    assert reasons["tests/test_issue_skill_pin.py"] == ["skills-pin:.claude/skills/issue/SKILL.md"]
+    assert untested == []  # skills files stay a correct SKIP, never "untested"
+
+
+# --- Skills-pin: path-join reference form, both quote styles -----------------------
+def test_skills_pin_join_form_selected(tmp_path: Path):
+    """The founding-test shape (all three founding tests use the join form):
+    double-quoted Path-join with ``/`` separators AND single-quoted
+    comma-separated components both match."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_join_dq.py").write_text(
+        'text = (ROOT / ".claude" / "skills" / "issue" / "SKILL.md").read_text()\n'
+    )
+    (repo / "tests" / "test_join_sq.py").write_text(
+        "p = Path('.claude', 'skills', 'issue', 'SKILL.md')\n"
+    )
+    tests, _, reasons = sel.select_tests_with_reasons([".claude/skills/issue/SKILL.md"], repo)
+    assert "tests/test_join_dq.py" in tests
+    assert "tests/test_join_sq.py" in tests
+    assert reasons["tests/test_join_dq.py"] == ["skills-pin:.claude/skills/issue/SKILL.md"]
+    assert reasons["tests/test_join_sq.py"] == ["skills-pin:.claude/skills/issue/SKILL.md"]
+
+
+# --- Skills-pin: cross-skill qualification (plan criterion 6) ----------------------
+def test_skills_pin_cross_skill_not_selected(tmp_path: Path):
+    """Touching issue/SKILL.md must NOT select a test referencing only
+    daily/SKILL.md — bare-basename matching is degenerate for SKILL.md (every
+    skill shares the basename), so tokens are skill-dir-qualified."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_daily_only.py").write_text(
+        'DAILY = ".claude/skills/daily/SKILL.md"\n'
+        'JOIN = (ROOT / ".claude" / "skills" / "daily" / "SKILL.md")\n'
+    )
+    tests, _, _ = sel.select_tests_with_reasons([".claude/skills/issue/SKILL.md"], repo)
+    assert "tests/test_daily_only.py" not in tests
+    hits = sel.skills_pin_hits([".claude/skills/issue/SKILL.md"], repo)
+    assert "tests/test_daily_only.py" not in hits
+
+
+# --- Skills-pin: non-SKILL.md skill support files are covered too ------------------
+def test_skills_pin_nested_support_file_selected(tmp_path: Path):
+    """The glob is .claude/skills/**/*.md, not SKILL.md-only: a skill support
+    file (markers.md) maps to its referencing test via the same qualified
+    tokens (the _matches_any /**/ zero-segment collapse covers both depths)."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_markers_pin.py").write_text('M = ".claude/skills/issue/markers.md"\n')
+    tests, _, reasons = sel.select_tests_with_reasons([".claude/skills/issue/markers.md"], repo)
+    assert "tests/test_markers_pin.py" in tests
+    assert reasons["tests/test_markers_pin.py"] == ["skills-pin:.claude/skills/issue/markers.md"]
+
+
+# --- Skills-pin: no skills file touched -> zero hits, ZERO file reads --------------
+def test_skills_pin_no_skills_touched_no_scan(tmp_path: Path, capsys):
+    """Proof of the zero-read early return (mirror of the rules-pin case 56):
+    an undecodable test file is planted; any scan pass reads raw text (the
+    unreadable-file WARN proves a read), so the absence of a skills-pin WARN
+    proves no file was read. A touched non-skills .md (docs/x.md) does not
+    trigger the scan."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_undecodable.py").write_bytes(b"\xff\xfe bad")
+    assert sel.skills_pin_hits(["scripts/widget.py", "docs/x.md"], repo) == {}
+    assert "skills-pin scan cannot read" not in capsys.readouterr().err
+
+
+# --- Skills-pin: monotonicity — the arm only ever GROWS the selection --------------
+def test_skills_pin_selection_only_grows(tmp_path: Path):
+    """Same touched set, tree WITH vs WITHOUT the pin test (mirror of the
+    rules-pin case 57): WITH-selection is a superset and every WITHOUT reason
+    list is preserved verbatim (plan acceptance criterion 4)."""
+    touched = ["scripts/widgetlib.py", ".claude/skills/issue/SKILL.md"]
+    repo_without = _make_tree(tmp_path / "without", ["test_widgetlib.py"])
+    t_without, u_without, r_without = sel.select_tests_with_reasons(touched, repo_without)
+    repo_with = _make_tree(tmp_path / "with", ["test_widgetlib.py"])
+    (repo_with / "tests" / "test_skill_pin.py").write_text('S = ".claude/skills/issue/SKILL.md"\n')
+    t_with, u_with, r_with = sel.select_tests_with_reasons(touched, repo_with)
+    assert set(t_with) >= set(t_without)
+    for test, rs in r_without.items():
+        assert r_with[test] == rs  # pre-existing reason lists preserved verbatim
+    assert "tests/test_skill_pin.py" in t_with
+    assert u_without == u_with == []
+
+
+# --- Skills-pin: unreadable test file WARNs + is skipped; never crashes ------------
+def test_skills_pin_unreadable_test_file_warns_not_crash(tmp_path: Path, capsys):
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_good_skill_pin.py").write_text('S = ".claude/skills/issue/SKILL.md"\n')
+    (repo / "tests" / "test_bad.py").write_bytes(b'S = ".claude/skills/issue/SKILL.md"\n\xff\xfe')
+    tests, untested, _ = sel.select_tests_with_reasons([".claude/skills/issue/SKILL.md"], repo)
+    assert "tests/test_good_skill_pin.py" in tests  # the valid hit still selected
+    assert "tests/test_bad.py" not in tests
+    assert untested == []
+    err = capsys.readouterr().err
+    assert err.count("skills-pin scan cannot read") == 1
+    assert "test_bad.py" in err
+    # 1 failure over the ~42-file fixture tree is < 5%: no aggregate WARN.
+    assert "systemic tests/ breakage" not in err
+
+
+# --- Skills-pin: LIVE-tree drift/regression pin (the #1851 founding pairs) ---------
+def test_skills_pin_live_tree_known_pairs():
+    """DRIFT/REGRESSION PIN: on the LIVE repo tree, a .claude/skills/issue/
+    SKILL.md diff selects the three founding tests of the #1851 gap (all
+    path-join-form references, none in WORKFLOW_INVARIANT) with a skills-pin
+    reason. SUPERSET assert: new pin tests joining later must not break this;
+    a rename of a pinned test legitimately forces a deliberate 1-line update
+    here (that loudness is the point)."""
+    root = Path(sel.__file__).resolve().parents[1]
+    touched = [".claude/skills/issue/SKILL.md"]
+    tests, untested, reasons = sel.select_tests_with_reasons(touched, root)
+    for founding in (
+        "tests/test_issue_skill_file_only_verdict_post.py",
+        "tests/test_ensemble_review_cap.py",
+        "tests/test_issue_skill_workload_cmd_script_pin.py",
+    ):
+        assert founding in tests
+        assert "skills-pin:.claude/skills/issue/SKILL.md" in reasons[founding]
+    assert untested == []  # the WORKFLOW_SURFACE skip is unchanged
+
+
+# --- Skills-pin: --map-files EXCLUDES invariant members; the 9c arm keeps them -----
+def test_cli_map_files_skills_pin_excludes_invariant(tmp_path: Path, capsys):
+    """The rules_pin_pairs asymmetry, skills edition (plan criterion 3):
+    tests/test_workflow_lint.py (a WORKFLOW_INVARIANT member and the only
+    SLOW_TESTS entry) is filtered from the --map-files pairs while a
+    non-invariant referencing test appears; select_tests_with_reasons still
+    carries the skills-pin reason on the invariant member (the union dedupes;
+    the extra reason is informative)."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_workflow_lint.py").write_text('S = ".claude/skills/issue/SKILL.md"\n')
+    (repo / "tests" / "test_issue_skill_pin.py").write_text('S = ".claude/skills/issue/SKILL.md"\n')
+    listing = tmp_path / "payload.txt"
+    listing.write_text(".claude/skills/issue/SKILL.md\n")
+    rc = sel.main(["--map-files", str(listing), "--repo-root", str(repo)])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert out.splitlines() == [
+        "tests/test_issue_skill_pin.py\t.claude/skills/issue/SKILL.md"
+    ]  # invariant member filtered; non-invariant pair printed
+    _, _, reasons = sel.select_tests_with_reasons([".claude/skills/issue/SKILL.md"], repo)
+    assert set(reasons["tests/test_workflow_lint.py"]) == {
+        "invariant",
+        "skills-pin:.claude/skills/issue/SKILL.md",
+    }
+
+
+# --- Skills-pin: LIVE-tree generative reachability pin (plan criterion 5) ----------
+def test_skills_pin_reachability_live_tree():
+    """GENERATIVE PIN: with an INDEPENDENT scan (own regex — deliberately NOT
+    the arm's functions, so a bug in _skills_pin_tokens cannot vacuously pass
+    this), for ALL .claude/skills/*/SKILL.md on the live tree, every
+    tests/**/test_*.py referencing that skill's SKILL.md (contiguous OR
+    path-join textual form) is in select_tests(['<that path>'], root)[0] —
+    the union of the invariant set and the skills-pin arm. A future pin test
+    added outside WORKFLOW_INVARIANT can no longer silently fall out of
+    selector coverage (the #1851 founding gap)."""
+    root = Path(sel.__file__).resolve().parents[1]
+    skill_mds = sorted((root / ".claude" / "skills").glob("*/SKILL.md"))
+    assert skill_mds, "live-tree precondition: no .claude/skills/*/SKILL.md found"
+    # One read pass over the live tests/ tree (cached; the per-skill loop
+    # below scans strings, not files).
+    texts: dict[str, str] = {}
+    for tp in sorted((root / "tests").rglob("test_*.py")):
+        try:
+            texts[tp.relative_to(root).as_posix()] = tp.read_text(encoding="utf-8")
+        except (OSError, ValueError):
+            continue
+    sep = r"[\"']\s*[,/]+\s*[\"']"
+    checked_any = False
+    for skill_md in skill_mds:
+        rel = skill_md.relative_to(root).as_posix()  # .claude/skills/<skill>/SKILL.md
+        skill = skill_md.parent.name
+        contiguous = f"skills/{skill}/SKILL.md"
+        join_re = re.compile("[\"']skills" + sep + re.escape(skill) + sep + r"SKILL\.md[\"']")
+        referencing = [t for t, text in texts.items() if contiguous in text or join_re.search(text)]
+        if not referencing:
+            continue  # nothing pins this skill; nothing to be reachable
+        checked_any = True
+        selected, _ = sel.select_tests([rel], root)
+        missing = [t for t in referencing if t not in selected]
+        assert not missing, f"{rel}: referencing tests not selector-reachable: {missing}"
+    # Live-tree sanity: at least one skill (issue) has referencing tests today,
+    # so this pin is never vacuously green.
+    assert checked_any

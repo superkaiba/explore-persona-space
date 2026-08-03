@@ -1,0 +1,18 @@
+{
+ "git_commit": "d122a947ed764fb9def8c37ec88b79a77fe65d64",
+ "numpy": "2.2.6",
+ "python": "3.11.15",
+ "timestamp_utc": "2026-07-29T06:21:44.113280+00:00",
+ "task": 1773,
+ "seed": 17732026,
+ "n_sample": 756,
+ "n_items": 6450,
+ "n_shuffled": 200,
+ "pinned_draws": {
+  "det_act": 6,
+  "det_nonact": 6,
+  "fuzz_correct": 6,
+  "fuzz_incorrect": 6,
+  "holdout_act_pool": 20
+ }
+}

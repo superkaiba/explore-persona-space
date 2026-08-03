@@ -299,7 +299,15 @@ def stage(root: Path) -> None:
             _own_path(root, cell),
             rev,
         )
+    # Stage tf stores only for cells the ACTIVE pairs actually read (an
+    # uninstalled cell — e.g. a1_lora_r1, which never entered the band — has
+    # no tf capture on the Hub, and the static TF_CELLS list would 404).
+    active_cells = {p["cell_a"] for p in PAIRS if p.get("shared_text")} | {
+        p["cell_b"] for p in PAIRS if p.get("shared_text")
+    }
     for cell in TF_CELLS:
+        if cell not in active_cells:
+            continue
         _fetch_one(
             f"{_cell_prefix(cell)}/analysis_tensors/capture_tf/{cell}/selected/pooled.pt",
             _tf_path(root, cell),
@@ -588,7 +596,15 @@ def make_figure(payload: dict, fig_path: Path) -> None:
         "H1x_ftneg_vs_loraneg": ("primary", "full-FT+neg vs LoRA+neg"),
         "H1x_pos_ftpos_vs_lorapos": ("baseline", "full-FT+pos vs LoRA+pos"),
         "H1x_lrm_ftneg_vs_lora_lr5e6": ("control", "full-FT+neg vs LoRA+neg (lr-matched 5e-6)"),
+        "rankem_a1_ftneg_vs_lora_r1": ("baseline", "full-FT+neg vs LoRA r=1 (non-rs)"),
+        "rankem_a2_ftneg_vs_lora_r4": ("primary", "full-FT+neg vs LoRA r=4 (non-rs)"),
+        "rankem_b_misalignment_ft_vs_lora": ("control", "misalignment full-FT vs LoRA r32"),
     }
+    # Render whatever pairs the payload actually carries (a --pairs run writes a
+    # subset; hardcoded-only labels rendered an EMPTY figure for rankem runs).
+    role = {k: v for k, v in role.items() if k in payload["pairs"]}
+    for k in payload["pairs"]:
+        role.setdefault(k, ("primary", k))
     panels = [
         ("response_own", "Response arm (own-text)"),
         ("context_own", "Context arm (own-text)"),
@@ -649,7 +665,19 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--draws", type=int, default=2000)
     p.add_argument("--seed", type=int, default=1112)
     p.add_argument("--skip-stage", action="store_true", help="reuse already-staged tensors")
+    p.add_argument(
+        "--pairs",
+        default=None,
+        help="comma-separated pair labels to run (default: all registered pairs)",
+    )
     args = p.parse_args(argv)
+    if args.pairs:
+        want = {s.strip() for s in args.pairs.split(",")}
+        known = {sp["label"] for sp in PAIRS}
+        unknown = want - known
+        if unknown:
+            raise SystemExit(f"--pairs unknown labels: {sorted(unknown)}; known: {sorted(known)}")
+        globals()["PAIRS"] = tuple(sp for sp in PAIRS if sp["label"] in want)
 
     t0 = time.time()
     if not args.skip_stage:

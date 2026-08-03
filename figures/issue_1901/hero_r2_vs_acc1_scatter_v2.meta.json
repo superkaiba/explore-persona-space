@@ -1,0 +1,151 @@
+{
+  "commit": "d36c7c5dc5",
+  "created": "2026-07-31T05:06:10Z",
+  "figsize": [
+    8.2,
+    6.2
+  ],
+  "points": [
+    {
+      "pooled held-out R-squared (symlog scale; 0 = constant-mean level)": -0.044533745181768225,
+      "retrieval acc@1 (euclidean; pool = 1000 context / 50 prefix)": 0.001,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "pooled held-out R-squared (symlog scale; 0 = constant-mean level)": -2.5386961213769705,
+      "retrieval acc@1 (euclidean; pool = 1000 context / 50 prefix)": 0.254,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "pooled held-out R-squared (symlog scale; 0 = constant-mean level)": -0.9195990073009372,
+      "retrieval acc@1 (euclidean; pool = 1000 context / 50 prefix)": 0.532,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "pooled held-out R-squared (symlog scale; 0 = constant-mean level)": 0.754170841830715,
+      "retrieval acc@1 (euclidean; pool = 1000 context / 50 prefix)": 0.805,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "pooled held-out R-squared (symlog scale; 0 = constant-mean level)": 0.8103576099860699,
+      "retrieval acc@1 (euclidean; pool = 1000 context / 50 prefix)": 0.841,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "pooled held-out R-squared (symlog scale; 0 = constant-mean level)": 0.813419461228615,
+      "retrieval acc@1 (euclidean; pool = 1000 context / 50 prefix)": 0.85,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "pooled held-out R-squared (symlog scale; 0 = constant-mean level)": 0.8066491443895623,
+      "retrieval acc@1 (euclidean; pool = 1000 context / 50 prefix)": 0.838,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "pooled held-out R-squared (symlog scale; 0 = constant-mean level)": -0.8646901412953396,
+      "retrieval acc@1 (euclidean; pool = 1000 context / 50 prefix)": 0.503,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "pooled held-out R-squared (symlog scale; 0 = constant-mean level)": 0.7054149303865582,
+      "retrieval acc@1 (euclidean; pool = 1000 context / 50 prefix)": 0.72,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "pooled held-out R-squared (symlog scale; 0 = constant-mean level)": -0.8900205280267146,
+      "retrieval acc@1 (euclidean; pool = 1000 context / 50 prefix)": 0.501,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "pooled held-out R-squared (symlog scale; 0 = constant-mean level)": 0.38444638872773484,
+      "retrieval acc@1 (euclidean; pool = 1000 context / 50 prefix)": 0.065,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "pooled held-out R-squared (symlog scale; 0 = constant-mean level)": 0.540577528509255,
+      "retrieval acc@1 (euclidean; pool = 1000 context / 50 prefix)": 0.04,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "pooled held-out R-squared (symlog scale; 0 = constant-mean level)": -6.52647522835488,
+      "retrieval acc@1 (euclidean; pool = 1000 context / 50 prefix)": 0.84,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "pooled held-out R-squared (symlog scale; 0 = constant-mean level)": -0.3271326505373442,
+      "retrieval acc@1 (euclidean; pool = 1000 context / 50 prefix)": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "pooled held-out R-squared (symlog scale; 0 = constant-mean level)": -7.839107250111118,
+      "retrieval acc@1 (euclidean; pool = 1000 context / 50 prefix)": 0.04,
+      "_kind": "scatter",
+      "_group": 14
+    }
+  ],
+  "n_series": 15,
+  "total_points": 15,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Variance explained vs retrieval discriminability, per estimator and regime",
+        "xlabel": "pooled held-out R-squared (symlog scale; 0 = constant-mean level)",
+        "ylabel": "retrieval acc@1 (euclidean; pool = 1000 context / 50 prefix)",
+        "legend_labels": [
+          "context, n=963k train",
+          "context, n=3600",
+          "context, n=50",
+          "prefix LOFO, n~43"
+        ],
+        "annotations": [
+          "constant train-mean",
+          "identity copy",
+          "identity + bias",
+          "linear map (ridge)",
+          "neural map (w=8192)",
+          "neural map (w=32768)",
+          "kernel map (Nystrom)",
+          "identity + bias (n=3.6k)",
+          "linear map (ridge) (n=3.6k)",
+          "identity + bias (n=50)",
+          "linear map (ridge) (n=50)",
+          "LOFO ridge (prefix)",
+          "identity + bias (prefix)",
+          "fold mean (prefix)",
+          "LOFO neural map (prefix)"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{-10^{1}}$",
+          "$\\mathdefault{-10^{0}}$",
+          "$\\mathdefault{0}$",
+          "$\\mathdefault{10^{0}}$"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

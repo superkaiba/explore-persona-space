@@ -123,6 +123,16 @@ derived from the 0.36.2 code paths + HF's documented legacy-LFS fallback
 rung-3 reroute is the proven recovery. On a known org-wide 429/CDN-incident
 day, consider going straight from one confirmed rung-1 wedge to rung 3.
 
+**The reader-back of the `issue<N>_partial/` crash-persist path is
+`autonomous_session_watch.partial_bundle_pass` (#1704, motivating incident
+#1345)** — an ESCALATE-ONLY hourly audit that reconciles bundle contents
+against the committed `eval_results/issue_<N>/` tree in git and flags any
+bundle carrying a completed result whose payload has no committed
+counterpart (sidecar `.claude/cache/partial-bundle-events.jsonl` + one
+deduped Telegram push per (issue, attempt_id, band); NEVER auto-commits,
+NEVER deletes, NEVER posts task markers). Full predicate: § "Autonomous-
+session watcher" in `.claude/rules/background-automation.md`.
+
 **Intermediate analysis tensors referenced by the plan MUST upload before pod
 termination.** Any artifact the plan's analysis / negative-control sections
 name as a downstream input — per-cell shift tensors (`shifts/*.pt`), cached
@@ -146,7 +156,9 @@ uploads unconditionally** (rollout text, judge outputs, metrics, configs are
 non-LFS in the data repo — the #541 quota gate fires ONLY on LFS, so this path
 stays open over quota; text <9.5 MB uploads as-is, bigger text line-splits into
 <9 MB shards, NEVER gzip — `*.gz` is LFS-matched, and the Hub force-routes any
->10 MB blob to LFS regardless of extension). **Large tensors upload when cheap;
+>10 MB blob to LFS regardless of extension; shard pieces — `.shardNN.jsonl` or
+`.part*` — are line-split FRAGMENTS of one file: concatenate before `json.load`,
+a lone `.part000` is not standalone JSON, 2026-08-02). **Large tensors upload when cheap;
 when too big for LFS at current headroom, persist the TEXT they were derived
 from** so the tensor is regenerable via one teacher-forced forward pass — this
 is the size-aware form of persist-by-default, and it composes with the #541
@@ -225,8 +237,9 @@ Producer duty, one of two forms:
 `a8060198a4`, 2026-07-01; every per-member check passed and the run crashed at
 a parity assert after a full GCE cycle.)
 
-**Resume-critical pipeline INPUTS must upload before any deliberate
-`pod.py stop` that expects a later resume.** The same logic extends
+**Resume-critical pipeline INPUTS — and the run's RESUME STATE — must
+upload before any deliberate `pod.py stop` that expects a later resume: a
+stopped volume is NOT durable.** The same logic extends
 upstream of analysis: generated training rows (`R_train` caches,
 corpus JSONs), phase-0/1 intermediate outputs, and diagnostic adapters
 that the plan's later phases consume. RunPod `resume` is HOST-PINNED —
@@ -238,6 +251,18 @@ the relevant bucket) BEFORE stopping; they are usually MB-scale.
 while `data/issue_488/R_train_new.json` + Phase 0/1 outputs + diagnostic
 adapters lived only on the stopped pod's volume — the implementer's
 pod-side smoke shipped as 'INFRA BLOCKED, local evidence only'.)
+Resume STATE means done-JSONs, phase/resume sentinels, partial eval JSONs,
+progress manifests — anything a resume reads to know where to restart.
+Host-pinning is not the only threat: RunPod destroyed a stopped pod
+outright — capacity reclaim or billing-side cleanup, the mechanism is not
+derivable — despite the `keep-running` tag and well inside the 7-day idle
+window (incident #1112, 2026-07-21: stopped 07:25Z with volume preserved;
+live API `{"data": {"pod": null}}` ~22h later — done-JSONs lost, full
+re-run forced). Apply whenever the park may outlast ~1 hour; on resume,
+prefer the off-pod copies. Decision-point recipes:
+`.claude/skills/issue/SKILL.md` § User pause affordance step 1 +
+§ Step 8-bis; canonical rule: `.claude/rules/pod-config.md` § "Stopped pod
+volume is NOT durable".
 
 **Verify uploads with the Python Hub API, never the `hf` CLI.** The installed `hf`
 CLI has NO `api` subcommand — `hf api list-repo-files ...` errors to stderr and
@@ -553,7 +578,36 @@ staging dir
 governs what gets committed) AND log a WandB Artifact (`type="model"`) copy.
 (4) Retry the canonical HF model-repo upload only after quota is freed.
 Freeing quota means deleting existing HF artifacts — that is USER-ONLY:
-surface the situation to the user, never auto-delete from HF.
+surface the situation to the user, never auto-delete from HF. Two corollaries
+of the LFS-only gate above (both bit on 2026-07-22, #1586): (a) an
+"unblocked?" probe MUST exercise an LFS-SCALE upload (>10 MB, LFS-matched
+extension) — a passing small-file/text upload is NOT evidence the block
+lifted (small files ride the always-open non-LFS path; a small-file probe
+minted a premature billing-resolved marker and cost an extra crash round);
+(b) a user-action escalation (enable auto-recharge, free quota) names the
+EXACT click path AND what the configured end-state looks like on the page —
+"fix billing at settings/billing" alone drew two user follow-ups on a page
+that was already correct.
+Corollary-(a) canonical probe (#1654): `hub.check_lfs_write_gate()` (or
+`preflight --no-gpu --planned-upload-gb <N>`) is the canonical zero-byte
+"is the LFS write path open?" / "unblocked?" probe at declared scale — one
+LFS batch-endpoint negotiation per repo declaring ~16 GB (env
+`EPM_HF_BILLING_PROBE_GB`; kill switch `EPM_HF_BILLING_PROBE=0`), exercising
+the batch-endpoint billing/quota check the small-file probe misses, with zero
+bytes transferred and zero commits; a REAL >10 MB LFS upload remains valid
+where end-to-end transfer confirmation is wanted. Three caveats: (i) a PASS
+(`ok`) is ADVISORY — the probe's 403 arm has never been observed live
+(billing was healthy when it landed; the arm is evidenced by the #1586
+incident record) — so on the NEXT 403-blocked incident, run
+`check_lfs_write_gate()` WHILE blocked and record the verdict against #1654
+assumption 3; (ii) coverage boundary: a ~16 GB-declared PASS ≠ credit
+clearance for a whole run's uploads (e.g. 215 GB) — mid-run credit exhaustion
+stays with the reactive 403 backstop, and do NOT size the probe to
+`--planned-upload-gb` (a declared object above per-file caps, e.g. >50 GB,
+fails for size reasons and degrades the verdict to `unknown`); (iii) the
+blocked-verdict `detail` excerpt governs the exact remediation path (a
+"storage patterns" manual-review 403 — hub issue #3366 — classifies
+`storage-blocked` and names its own contact address in the excerpt).
 Diagnosis probes: sum account usage via
 `/api/{models,datasets}/<id>?expand[]=usedStorage` over
 `list_models(author=...)` / `list_datasets(author=...)`; a tiny non-LFS `.txt`
@@ -660,6 +714,55 @@ still accepts pushes (enforcement is not uniform across repos; a future
 risk, not a current one), and direct-`HfApi` per-issue scripts,
 `upload_dir_sharded`, and `_upload_folder_filtered` are named residuals
 outside this fallback.
+
+**Per-DIRECTORY file-count cap (10k/dir) — PACK many-small-file trees before
+upload (#1190/#1739).** The Hub ALSO rejects any single COMMIT staging
+>10,000 files into one repo directory (a server-side 400 — DISTINCT from the
+repo-total 100k cap above). The #1190 guard pre-counts staged files per
+target dir in the hub helpers and raises `HubDirFileCountError` BEFORE any
+network I/O (`HUB_DIR_FILE_LIMIT` 10,000; kill switch
+`EPM_SKIP_HF_DIR_FILECOUNT_GUARD=1` degrades to WARN; advisory watermarks
+`HUB_DIR_FILECOUNT_WARN` 5,000/dir and `HUB_COMMIT_FILECOUNT_WARN` 2,000
+staged files/commit, #1571 — a commit of many SMALL files crawls in Hub-side
+pre-processing regardless of byte size: #1481 killed a 31,000-file / 135 MB
+single commit after >20 min). When the guard fires — and at PLAN time,
+whenever a workload will emit ≳2,000 per-unit small text/JSON files
+(per-rollout JSONs, per-sample transcripts, per-context captures) — do NOT
+point the per-file tree at `upload_folder`, and do NOT reach for the kill
+switch: PACK the tree into ≤9 MB `<group>.shardNN.jsonl` line-shards — one
+line per SOURCE FILE, `{"src": "<path relative to raw root>", "doc":
+<original JSON/text>}` — plus a census-keyed `pack_manifest.json` (per-group
+(relpath, size, mtime_ns) census ⇒ idempotent re-packs), then upload the
+small shard set in ONE bulk `upload_folder` commit with an exact-set verify.
+Consumers UNPACK back to the per-file layout (manifest/sha verify; never
+overwrite a differing file). This is the MANY-FILES sibling of the
+single-big-file >9.5 MB `<stem>.shardNN.jsonl` line-split in the quota-403
+recovery above (that recipe splits ONE oversized text file into line
+shards; this one packs thousands of small files into few shards) — a grep
+hit on `shardNN.jsonl` resolves to one or the other by that split. ≤9 MB
+keeps every shard on the always-open non-LFS path (the >10 MB LFS
+force-route above). Worked example: #1739 r4/r5 — a 115,941-file labeling
+tree packed to a small shard set (commits `a59b803712` pack / `4d9867611f`
+unpack + `--from-hf` scoped staging;
+`scripts/issue1739_pack.py`, on the issue-1739 branch until its merge). <!-- lint: historical-ref -->
+The `shard_NNNN/` ≤5,000-files-per-dir DIRECTORY-sharding recipe
+(`gotchas.md`, the #658 entry) stays the fallback ONLY when the consumer
+genuinely needs the per-file layout ON the Hub, and for binaries a jsonl
+line cannot carry (per-rollout `.pt` stores) — it clears the 10k/dir cap
+but keeps the file count, so commit throughput stays poor; packing is the
+default.
+
+**Large free-text DV / labeling JSONs route to the HF data repo, not git
+(#1739).** Git `eval_results/` keeps SMALL aggregated JSONs (summary stats,
+per-cell tables). A per-row free-text-bearing JSON at MB scale (#1739: a
+22 MB free-text DV file) is an HF-data-repo artifact (`issueN_<slug>/...`,
+non-LFS path): the gitleaks pre-commit scan does not scale on free text
+(5,938 false positives / 2m36s on that one file, blocking the commit), and
+fingerprinting per-row text into `.gitleaksignore` is unbounded churn.
+Heuristic: free-text-bearing AND ≳1 MB → HF data repo; commit only the
+derived aggregate to git. (This refines — not contradicts — the CLAUDE.md
+destination table's "Eval results (aggregated JSON) → git": the
+*aggregated* qualifier is load-bearing.)
 
 ## v2 tasks (`workflow: v2`) — upload-by-default, no ceiling
 

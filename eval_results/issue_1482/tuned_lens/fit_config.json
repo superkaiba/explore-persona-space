@@ -1,0 +1,39 @@
+{
+  "issue": 1482,
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "method": "tuned lens (Belrose et al. 2023, arXiv 2303.08112), hand-rolled affine fit",
+  "objective": "KL(P_final || P_lens) with frozen final RMSNorm + unembedding",
+  "layer_convention": "resid_post(l) == hidden_states[l+1] (verified at preflight)",
+  "n_positions_total": 100000,
+  "n_positions_train": 85402,
+  "n_positions_val": 14598,
+  "n_contexts": 3000,
+  "corpus": "lmsys/lmsys-chat-1m@main (English, chat-template rendered)",
+  "max_len": 1024,
+  "seed": 42,
+  "lr": 0.0003,
+  "epochs": 12,
+  "fit_batch": 256,
+  "git_commit": "dc52dc3bb6de7ffae5a4b7d5e0783e95af24a69c",
+  "vocab_size": 152064,
+  "rms_norm_eps": 1e-06,
+  "apply_note": "absolute residual STATE: W @ h + b; residual DIRECTION (a difference of states): W @ d only \u2014 the bias cancels in a difference.",
+  "argv": {
+    "n_contexts": 3000,
+    "max_len": 1024,
+    "max_positions": 100000,
+    "capture_batch": 8,
+    "fit_batch": 256,
+    "epochs": 12,
+    "probe_epochs": 2,
+    "lr_grid": [
+      3e-05,
+      0.0001,
+      0.0003,
+      0.001
+    ],
+    "seed": 42,
+    "out_dir": "/workspace/explore-persona-space/eval_results/issue_1482/tuned_lens",
+    "no_upload": false
+  }
+}

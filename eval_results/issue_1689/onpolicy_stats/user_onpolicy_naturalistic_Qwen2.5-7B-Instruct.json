@@ -1,0 +1,16 @@
+{
+  "n_input": 11400,
+  "n_after_prompt_filter": 11400,
+  "n_kept": 11400,
+  "yield_frac": 0.41736842105263156,
+  "dropped_content": 533,
+  "dropped_refusal": 6540,
+  "dropped_transport": 0,
+  "meets_yield_floor": false,
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "condition": "user_onpolicy_naturalistic",
+  "n_dropped_empty_prompt": 0,
+  "n_dropped_short_prompt": 0,
+  "high_risk": false,
+  "issue": "issue1689_speaker_lattice"
+}

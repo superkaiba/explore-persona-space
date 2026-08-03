@@ -42,8 +42,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
+ISSUE_TICK_SKILL = ROOT / ".claude" / "skills" / "issue-tick" / "SKILL.md"
 EXPERIMENT_IMPLEMENTER = ROOT / ".claude" / "agents" / "experiment-implementer.md"
 CODE_REVIEWER = ROOT / ".claude" / "agents" / "code-reviewer.md"
+IMPLEMENTER = ROOT / ".claude" / "agents" / "implementer.md"
+CRASH_FIX_ROUNDS = ROOT / ".claude" / "rules" / "crash-fix-rounds.md"
 
 
 def _line_anchored_h3_pattern(label: str) -> re.Pattern[str]:
@@ -233,3 +236,80 @@ def test_item3_data_gate_exercise_clause_present():
     assert "data gates exercised:" in text
     assert "production-only — <one-line" in text
     assert "COMPOSES with the item-5 resize-up duty" in text
+
+
+# --- #1611: Step 6d.0-bis arm-class clause names the class-defining axes ---
+#
+# Incident #1586 r3/r4/r6: every recorded smoke ran ONE content-class
+# full-FT cell (`syc-pers-ft-con-s137`) of a marker/content x con/po x
+# LoRA/full-FT grid; a read-side panel-disjointness check (r3) killed the
+# smoke leg itself at its first full-panel read, and two class-gated bug
+# classes the smoke cell could not reach then surfaced live post-smoke,
+# one per phase (a marker-po mix row-count assert, a reuse-seam loader).
+# The Step 6d.0-bis arm-class clause must keep naming the class-defining
+# axes so a multi-class dispatcher's smoke set is composed per realized
+# (class x regime) combination.
+
+
+def test_step6d0bis_smoke_covers_class_regime_axes():
+    """#1611: Step 6d.0-bis arm-class clause names the class-defining axes (#1586)."""
+    text = ISSUE_SKILL.read_text(encoding="utf-8")
+    heading = "##### Step 6d.0-bis"
+    assert text.count(heading) == 1, "Step 6d.0-bis H5 heading literal must stay unique"
+    i = text.index(heading)
+    # Whitespace-normalize so hard-wrapped SKILL.md prose cannot split a needle.
+    span = " ".join(text[i : i + 6000].split())
+    for needle in (
+        "PER ARM CLASS",
+        "behavior class",
+        "training regime",
+        "#1586",
+        "Smoke/production parity includes REGIME/CLASS COVERAGE",
+    ):
+        assert needle in span, needle
+
+
+# ── SHA-verbatim report rule (#1682) ─────────────────────────────────────────
+#
+# Incident #1586 r7 (2026-07-24): an implementer report's fix-engaged
+# element-4 "full" SHA was a hand-extended short SHA; the orchestrator had
+# to rev-parse-correct it before composing the relaunch brief. Downstream
+# consumers (relaunch briefs, ancestry probes, markers) re-cite report SHAs
+# verbatim, so the compose-site rule must survive in all three surfaces:
+# both implementer report contracts and the crash-fix element-4 field spec.
+
+
+def test_sha_verbatim_report_rule_pinned():
+    """#1682: the SHA-verbatim rule survives in all three compose-site surfaces.
+
+    Pins BOTH the ban token (``hand-extended``) and the positive
+    instruction (``rev-parse``) — dropping either half re-opens the
+    #1586 r7 fabricated-hex class, because downstream relaunch briefs
+    and markers re-cite the report's SHAs verbatim.
+    """
+    for path in (EXPERIMENT_IMPLEMENTER, IMPLEMENTER, CRASH_FIX_ROUNDS):
+        body = path.read_text(encoding="utf-8")
+        for needle in ("hand-extended", "rev-parse"):
+            assert needle in body, (
+                f"{path.name} must keep the SHA-verbatim report rule token "
+                f"{needle!r} (#1682; incident #1586 r7: a hand-extended 'full' "
+                "SHA reached the fix-engaged field and had to be "
+                "rev-parse-corrected before the relaunch brief — downstream "
+                "briefs/markers re-cite report SHAs verbatim)."
+            )
+
+
+def test_skill_md_documents_api_error_after_marker():
+    """#1695 durability pin: the issue-tick SKILL.md documents the new
+    ``api-error-after-marker`` STALE-REDRIVE reason (the token that
+    `tick_triage.api_error_after_marker_reason` embeds in the verdict
+    string). A future editor silently dropping the docs row would leave
+    the runtime behavior unexplained; this test greps the literal token
+    so the SKILL.md stays in sync with the runtime."""
+    body = ISSUE_TICK_SKILL.read_text(encoding="utf-8")
+    assert "api-error-after-marker" in body, (
+        "issue-tick SKILL.md must document the api-error-after-marker "
+        "STALE-REDRIVE reason (#1695). The token is what "
+        "tick_triage.api_error_after_marker_reason embeds in the verdict "
+        "string — the docs and the runtime must not drift."
+    )

@@ -1,0 +1,66 @@
+{
+  "commit": "c2cdbbca39",
+  "created": "2026-07-23T04:23:31Z",
+  "figsize": [
+    7.5,
+    5.0
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "held-out $R^2$, averaged targets": 0.8193260751733688,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "held-out $R^2$, averaged targets": 0.7633080486910762,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "held-out $R^2$, averaged targets": 0.6548155110883394,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "held-out $R^2$, averaged targets": 0.6021784188937229,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Two constructions of the averaged prefix map \u2014 layer 14, ambient",
+        "ylabel": "held-out $R^2$, averaged targets",
+        "legend_labels": [
+          "Induced (single-context map, predictions averaged)",
+          "Refit (fit directly on averaged vectors)"
+        ],
+        "xticklabels": [
+          "Instruct model",
+          "Base model"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Induced (single-context map, predictions averaged)",
+      "Refit (fit directly on averaged vectors)"
+    ]
+  }
+}

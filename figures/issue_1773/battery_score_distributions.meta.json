@@ -1,0 +1,96 @@
+{
+  "commit": "55450e9f6f",
+  "created": "2026-07-29T07:01:23Z",
+  "figsize": [
+    13.0,
+    4.0
+  ],
+  "text": {
+    "suptitle": "issue1773 per-feature validation score distributions (dashes: arm means)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "detection score per feature",
+        "ylabel": "density of features",
+        "legend_labels": [
+          "real (n=480)",
+          "shuffled label (n=135)",
+          "random init (n=129)"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      },
+      {
+        "xlabel": "fuzzing score per feature",
+        "legend_labels": [
+          "real (n=433)",
+          "shuffled label (n=95)"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      {
+        "xlabel": "discrimination score per feature",
+        "legend_labels": [
+          "real (n=650)"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,1064 @@
+{
+  "commit": "bb7ef19017",
+  "created": "2026-07-30T12:40:25Z",
+  "figsize": [
+    13.2,
+    4.0
+  ],
+  "points": [
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.02,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.06,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.1,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.14,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.18,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.22,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.26,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.3,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.34,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.38,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.42,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.46,
+      "contexts": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.5,
+      "contexts": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.54,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.58,
+      "contexts": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.62,
+      "contexts": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.66,
+      "contexts": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.7,
+      "contexts": 9.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.74,
+      "contexts": 8.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.78,
+      "contexts": 12.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.82,
+      "contexts": 8.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.86,
+      "contexts": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.9,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.94,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.98,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.02,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.06,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.1,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.14,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.18,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.22,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.26,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.3,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.34,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.38,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.42,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.46,
+      "contexts": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.5,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.54,
+      "contexts": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.58,
+      "contexts": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.62,
+      "contexts": 8.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.66,
+      "contexts": 5.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.7,
+      "contexts": 7.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.74,
+      "contexts": 16.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.78,
+      "contexts": 6.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.82,
+      "contexts": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.86,
+      "contexts": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.9,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.94,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "cos(per-context J, averaged J), last-token arm": 0.98,
+      "contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.008801115476537532,
+      "mean alignment with fitted-map directions": 0.03847326664254776,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.009247340430391134,
+      "mean alignment with fitted-map directions": 0.03310204118417153,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.044829585531029746,
+      "mean alignment with fitted-map directions": 0.038573452247972526,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.00734300820071278,
+      "mean alignment with fitted-map directions": 0.04417966522277042,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.03749685612127777,
+      "mean alignment with fitted-map directions": 0.029366196906045184,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.025311653843663934,
+      "mean alignment with fitted-map directions": 0.04046983589679382,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.09128000315910961,
+      "mean alignment with fitted-map directions": 0.05170978795938993,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.06629566741904695,
+      "mean alignment with fitted-map directions": 0.03597425372212498,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.049261466506489486,
+      "mean alignment with fitted-map directions": 0.04405032251924701,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.08857950297322369,
+      "mean alignment with fitted-map directions": 0.037630092974857816,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.043629212377614655,
+      "mean alignment with fitted-map directions": 0.04742008299835797,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.002892818554307052,
+      "mean alignment with fitted-map directions": 0.03622698642456308,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.16275215422471842,
+      "mean alignment with fitted-map directions": 0.03755435180844198,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.015315416475278202,
+      "mean alignment with fitted-map directions": 0.04324360768298831,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.08721376630771457,
+      "mean alignment with fitted-map directions": 0.037740645617994964,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.05125871482924162,
+      "mean alignment with fitted-map directions": 0.045585251836360294,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.0380981288000117,
+      "mean alignment with fitted-map directions": 0.0501750355516975,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.02214101094584082,
+      "mean alignment with fitted-map directions": 0.03869260654730362,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.028814137546189302,
+      "mean alignment with fitted-map directions": 0.03836625348101675,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.07297593586098744,
+      "mean alignment with fitted-map directions": 0.03910939291411254,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.0089974264060824,
+      "mean alignment with fitted-map directions": 0.03787800980624974,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.09565244293847802,
+      "mean alignment with fitted-map directions": 0.04101029468966226,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.04656362714406295,
+      "mean alignment with fitted-map directions": 0.045574697192162214,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.024605704906511382,
+      "mean alignment with fitted-map directions": 0.03217454698961447,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.06324291271562661,
+      "mean alignment with fitted-map directions": 0.039605215096312076,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.00658086084326122,
+      "mean alignment with fitted-map directions": 0.04187967830434991,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.052044947454766594,
+      "mean alignment with fitted-map directions": 0.03811107085200618,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.06452077633808936,
+      "mean alignment with fitted-map directions": 0.04004206026773924,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.03204080779671374,
+      "mean alignment with fitted-map directions": 0.04467958770488542,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.01541365864290346,
+      "mean alignment with fitted-map directions": 0.0536769171072153,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.07067327284771152,
+      "mean alignment with fitted-map directions": 0.05338671753793291,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.014642290241019916,
+      "mean alignment with fitted-map directions": 0.04474519540347043,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.011145750694013442,
+      "mean alignment with fitted-map directions": 0.04642543294441282,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.03785919092800654,
+      "mean alignment with fitted-map directions": 0.03714450758988137,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.015026138575443864,
+      "mean alignment with fitted-map directions": 0.03606120582498791,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0248760896327945,
+      "mean alignment with fitted-map directions": 0.045384950312935254,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.04576800265928376,
+      "mean alignment with fitted-map directions": 0.0380011038908924,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.009072954358493862,
+      "mean alignment with fitted-map directions": 0.04074978404783519,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.05487828290429307,
+      "mean alignment with fitted-map directions": 0.03924277931466949,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.10454018016545326,
+      "mean alignment with fitted-map directions": 0.050191476191915704,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.08813458724728843,
+      "mean alignment with fitted-map directions": 0.035987111184649166,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.10597466423173439,
+      "mean alignment with fitted-map directions": 0.03842242024284272,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.09421127966476132,
+      "mean alignment with fitted-map directions": 0.041065038528690576,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.054691798049029926,
+      "mean alignment with fitted-map directions": 0.045532723080023305,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.018511894123051247,
+      "mean alignment with fitted-map directions": 0.05538344029510804,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.021974597017549946,
+      "mean alignment with fitted-map directions": 0.04121828089607545,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.10206144784758711,
+      "mean alignment with fitted-map directions": 0.039647335939570476,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.13721808215149756,
+      "mean alignment with fitted-map directions": 0.03694059235619638,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1261144408906287,
+      "mean alignment with fitted-map directions": 0.0371431528157827,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0920572635314059,
+      "mean alignment with fitted-map directions": 0.03825544829295112,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0250166287461269,
+      "mean alignment with fitted-map directions": 0.03290197143370528,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.915417695740248,
+      "mean alignment with fitted-map directions": 0.03305400995349801,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9996882106815942,
+      "mean alignment with fitted-map directions": 0.032058184696481445,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0459532454553435,
+      "mean alignment with fitted-map directions": 0.0333866862324277,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9098146975375312,
+      "mean alignment with fitted-map directions": 0.042556751545152274,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0276585442127406,
+      "mean alignment with fitted-map directions": 0.031884400709449215,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.030090458637556,
+      "mean alignment with fitted-map directions": 0.04099755158377073,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0487229906774007,
+      "mean alignment with fitted-map directions": 0.04021455745104519,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9171117423269968,
+      "mean alignment with fitted-map directions": 0.03628420599371415,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9536808199572675,
+      "mean alignment with fitted-map directions": 0.029633218349003586,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9694495326999745,
+      "mean alignment with fitted-map directions": 0.03021534608666786,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9181138664558995,
+      "mean alignment with fitted-map directions": 0.037017021994046787,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1217557513991094,
+      "mean alignment with fitted-map directions": 0.042295647066866386,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9652862490090494,
+      "mean alignment with fitted-map directions": 0.03475943835153203,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.023027874062214,
+      "mean alignment with fitted-map directions": 0.029782606858086442,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9818999218168253,
+      "mean alignment with fitted-map directions": 0.03251331717119335,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1108431015161486,
+      "mean alignment with fitted-map directions": 0.03854744892285349,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0924252690957288,
+      "mean alignment with fitted-map directions": 0.03535409983142658,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.044334683597744,
+      "mean alignment with fitted-map directions": 0.03851379862722264,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8457543083547344,
+      "mean alignment with fitted-map directions": 0.04007957568953048,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0036420281981921,
+      "mean alignment with fitted-map directions": 0.04476025849417638,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0478580333543575,
+      "mean alignment with fitted-map directions": 0.043681777458722364,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0702773103089518,
+      "mean alignment with fitted-map directions": 0.0399619919384495,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9567465068704679,
+      "mean alignment with fitted-map directions": 0.033719191047565995,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1275407954329826,
+      "mean alignment with fitted-map directions": 0.033662798116519614,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9075698320990695,
+      "mean alignment with fitted-map directions": 0.02575396218005651,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9536930384729346,
+      "mean alignment with fitted-map directions": 0.0385221708062966,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0654534991679816,
+      "mean alignment with fitted-map directions": 0.036757822360410926,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0034338229677717,
+      "mean alignment with fitted-map directions": 0.033753206425952156,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1401674808551678,
+      "mean alignment with fitted-map directions": 0.03222470151603214,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0131963434758726,
+      "mean alignment with fitted-map directions": 0.03424571099839285,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9556764136865441,
+      "mean alignment with fitted-map directions": 0.03658742427451593,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9735705546337035,
+      "mean alignment with fitted-map directions": 0.03192581873820195,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9236197717666563,
+      "mean alignment with fitted-map directions": 0.04594990422537996,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9105623883529375,
+      "mean alignment with fitted-map directions": 0.036665304374748034,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0441288043537762,
+      "mean alignment with fitted-map directions": 0.04390003772098383,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0406816068688964,
+      "mean alignment with fitted-map directions": 0.052784696180727696,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0906191173608781,
+      "mean alignment with fitted-map directions": 0.038528066706546425,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9471775946118048,
+      "mean alignment with fitted-map directions": 0.04331435049658758,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1182375216710572,
+      "mean alignment with fitted-map directions": 0.05036454567831779,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9798828604533933,
+      "mean alignment with fitted-map directions": 0.04002657514837989,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.110208579519121,
+      "mean alignment with fitted-map directions": 0.03436366682953273,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9697049906972183,
+      "mean alignment with fitted-map directions": 0.05047208606684166,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9485161695360408,
+      "mean alignment with fitted-map directions": 0.03833356879280727,
+      "label": "per-context median: 0.039",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0174849760091067,
+      "mean alignment with fitted-map directions": 0.04393705444241545,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.072201715940863,
+      "mean alignment with fitted-map directions": 0.03680305368885665,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.18,
+      "neighbor answer-delta R\u00b2": 0.016845841874979395,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.82,
+      "neighbor answer-delta R\u00b2": 0.02522032440131916,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.82,
+      "neighbor answer-delta R\u00b2": 0.13763800441296903,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 2.82,
+      "neighbor answer-delta R\u00b2": 0.7304787952899057,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.18,
+      "neighbor answer-delta R\u00b2": 0.01862165735717236,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.18,
+      "neighbor answer-delta R\u00b2": 0.024897228358368717,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 2.18,
+      "neighbor answer-delta R\u00b2": 0.2182574726444121,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 3.18,
+      "neighbor answer-delta R\u00b2": 0.760881220428262,
+      "_kind": "bar",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 154,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-context Jacobians agree with the average",
+        "xlabel": "cos(per-context J, averaged J), last-token arm",
+        "ylabel": "contexts",
+        "legend_labels": [
+          "LMSYS (J-fit pool) (n=48)",
+          "WildChat (held out) (n=48)"
+        ],
+        "annotations": [
+          "median 0.73"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ]
+      },
+      {
+        "title_left": "Alignment with the fitted map: no better per context",
+        "ylabel": "mean alignment with fitted-map directions",
+        "annotations": [
+          "averaged Jacobian: 0.059",
+          "per-context median: 0.039"
+        ],
+        "xticklabels": [
+          "LMSYS (J-fit pool)",
+          "WildChat (held out)"
+        ],
+        "yticklabels": [
+          "0.020",
+          "0.025",
+          "0.030",
+          "0.035",
+          "0.040",
+          "0.045",
+          "0.050",
+          "0.055",
+          "0.060",
+          "0.065"
+        ]
+      },
+      {
+        "title_left": "Even a context's own Jacobian predicts ~nothing",
+        "ylabel": "neighbor answer-delta R\u00b2",
+        "legend_labels": [
+          "LMSYS",
+          "WildChat"
+        ],
+        "annotations": [
+          "0.02",
+          "0.03",
+          "0.14",
+          "0.73",
+          "0.02",
+          "0.02",
+          "0.22",
+          "0.76"
+        ],
+        "xticklabels": [
+          "own-context\nJacobian",
+          "averaged\nJacobian",
+          "identity",
+          "fitted map"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ]
+  }
+}

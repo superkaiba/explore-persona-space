@@ -2,9 +2,10 @@
 """verify_report.py — mechanical verifier for v2 report clean-result bodies.
 
 The v2 workflow retires agent interpretation of results: agents author a
-fixed-structure REPORT (Motivation / Methodology (metrics embedded) /
-Results-as-plots) and Thomas alone writes the claims — the ``# Result:``
-title, the TLDR, every per-result ``**Takeaways:**`` block, and Next steps.
+fixed-structure REPORT (Motivation / Methodology (shared) / Results-as-plots
+with a result-specific ``**Methodology**`` block per result) and Thomas alone
+writes the claims — the ``# Result:`` title, the TLDR, every per-result
+``**Takeaways**`` block, and Conclusion and next steps.
 This is the mechanical gate for that report form, the report-track analogue of
 ``verify_task_body.py`` (markdown v4) and ``verify_paper.py`` (paper track).
 Canonical skeleton: ``.claude/skills/issue-v2/report-template.md``.
@@ -17,13 +18,25 @@ Required structure (both modes):
     accepts the Thomas-retitled ``# Result: <claim>`` form.
   - Sentinel ``<!-- report-v1 -->`` as the first non-blank line after the H1.
   - Five H2 sections, in this exact relative order: ``## Motivation``,
-    ``## TLDR``, ``## Methodology``, ``## Results``, ``## Next steps``.
-    A trailing colon on any heading is accepted and ignored. There is NO
-    separate ``## Metrics`` section — metric definitions + rationale live
-    inside ``## Methodology:`` as its final ``**Metrics:**`` block.
+    ``## TLDR``, ``## Methodology (shared)``, ``## Results``,
+    ``## Conclusion and next steps``. A trailing colon on any heading is
+    accepted and ignored, and the grandfathered pre-2026-07-30 names
+    ``## Methodology`` / ``## Next steps`` normalize to the canonical ones.
+    There is NO separate ``## Metrics`` section — metric definitions +
+    rationale live inside ``## Methodology (shared)`` (its final
+    ``**Metrics:**`` block) or inside a result's ``**Methodology**`` block.
   - ``## Results`` contains >=1 ``### <name>`` subsection, each with a
     non-empty description paragraph, exactly one image reference
-    ``![...](...)``, AND exactly one ``**Takeaways:**`` block.
+    ``![...](...)``, exactly one ``**Takeaways**`` block (trailing colon
+    accepted), AND a ``**Methodology**`` block (REQUIRED in generation mode;
+    a grandfathered body missing it only WARNs in promote mode). The retired
+    ``**Plot:**`` label FAILs in generation mode (tolerated at promote for
+    grandfathered bodies).
+  - ``detailed-writeup-link``: the body links its detailed companion writeup
+    (``docs/reports/issue_<N>_detailed.md``) via a SHA-pinned GitHub blob /
+    raw URL on a ``**Detailed writeup:**`` line — REQUIRED at generation,
+    WARN-if-absent at promote (grandfathered); well-formedness + issue match
+    only, no repo/network read.
   - Every referenced local image path exists on disk (resolved vs
     ``--figures-root``; default: the git-repo root of ``--file``).
   - Every ``htmlpreview.github.io`` link embeds a full 40-hex SHA/revision
@@ -48,16 +61,16 @@ Required structure (both modes):
     are fine per-pin (the 7b re-entry / partial-re-splice shape).
 
 Mode-specific:
-  - ``generation``: TLDR AND Next steps content MUST be exactly the placeholder
-    ``*(Thomas fills in)*`` (Thomas has not written them yet), and every
-    Results subsection's ``**Takeaways:**`` block must be exactly the
-    placeholder too. Interpretive lexicon scan over Methodology + Results
-    (Motivation is exempt — hypothesis framing is allowed there).
+  - ``generation``: TLDR AND Conclusion-and-next-steps content MUST be exactly
+    the placeholder ``*(Thomas fills in)*`` (Thomas has not written them yet),
+    and every Results subsection's ``**Takeaways**`` block must be exactly the
+    placeholder too. Interpretive lexicon scan over Methodology (shared) +
+    Results (Motivation is exempt — hypothesis framing is allowed there).
   - ``promote``: TLDR content MUST be non-placeholder AND non-empty (Thomas has
-    filled it). Thomas's prose — TLDR, Next steps, and the Results takeaways /
-    claim headings he filled in — is NEVER lexicon-checked; only Methodology
-    (pure agent prose in both modes) stays lexicon-scanned; structural checks
-    still apply.
+    filled it). Thomas's prose — TLDR, Conclusion and next steps, and the
+    Results takeaways / claim headings he filled in — is NEVER lexicon-checked;
+    only Methodology (shared) (pure agent prose in both modes) stays
+    lexicon-scanned; structural checks still apply.
 
 ``--manifest`` (optional, both modes): validates the manifest against
 ``.claude/skills/issue-v2/planned_manifest.schema.json``, then checks every
@@ -93,7 +106,8 @@ REPORT_SENTINEL = "<!-- report-v1 -->"
 H1_TITLE_PREFIX = "Experiment: "
 H1_RESULT_PREFIX = "Result: "
 PLACEHOLDER = "*(Thomas fills in)*"
-TAKEAWAYS_LINE = "**Takeaways:**"
+TAKEAWAYS_LINE = "**Takeaways**"
+METHODOLOGY_LINE = "**Methodology**"
 
 # The five required H2 sections, in the exact order they must appear.
 # Stored in NORMALIZED form (no trailing colon) — a heading line is matched
@@ -101,25 +115,44 @@ TAKEAWAYS_LINE = "**Takeaways:**"
 REQUIRED_SECTIONS = [
     "## Motivation",
     "## TLDR",
-    "## Methodology",
+    "## Methodology (shared)",
     "## Results",
-    "## Next steps",
+    "## Conclusion and next steps",
 ]
+
+# Grandfathered pre-2026-07-30 heading names (the original report-v1 shape) —
+# normalized to the canonical names so old bodies keep verifying.
+SECTION_ALIASES = {
+    "## Methodology": "## Methodology (shared)",
+    "## Next steps": "## Conclusion and next steps",
+}
 
 # Sections whose (agent-authored) prose is scanned for interpretive lexicon,
 # per mode. Motivation is deliberately EXEMPT (hypothesis-to-be-tested framing
-# is allowed there); TLDR / Next steps are Thomas's prose and are NEVER
-# scanned. Results is scanned only at GENERATION time — at promote it carries
-# Thomas's filled Takeaways + claim-shaped headings, which are his voice.
+# is allowed there); TLDR / Conclusion and next steps are Thomas's prose and
+# are NEVER scanned. Results is scanned only at GENERATION time — at promote
+# it carries Thomas's filled Takeaways + claim-shaped headings, his voice.
 LEXICON_SECTIONS_BY_MODE = {
-    "generation": ("## Methodology", "## Results"),
-    "promote": ("## Methodology",),
+    "generation": ("## Methodology (shared)", "## Results"),
+    "promote": ("## Methodology (shared)",),
 }
 
 
 def _norm_header(line: str) -> str:
-    """Canonical form of a heading line: stripped, trailing ':' removed."""
-    return line.rstrip().rstrip(":").rstrip()
+    """Canonical form of a heading line: stripped, trailing ':' removed,
+    grandfathered section names mapped to their canonical replacements."""
+    h = line.rstrip().rstrip(":").rstrip()
+    return SECTION_ALIASES.get(h, h)
+
+
+def _is_bold_label(line: str, label: str) -> bool:
+    """Whether ``line`` is the bold ``**<label>**`` block opener.
+
+    The canonical form has no trailing colon (``**Takeaways**``); the
+    grandfathered pre-2026-07-30 ``**Takeaways:**`` form is accepted too.
+    """
+    s = line.strip()
+    return s in (f"**{label}**", f"**{label}:**")
 
 
 # Conservative list of asserted-conclusion lexemes banned from agent sections.
@@ -150,6 +183,13 @@ _RAW_PIN_RE = re.compile(
 )
 # The repo-relative figure path a Results pin must carry.
 _FIGURES_ISSUE_RE = re.compile(r"^figures/issue_(\d+)/")
+# The body's detailed-companion-writeup link line + its SHA-pinned URL forms
+# (GitHub blob or raw.githubusercontent), path docs/reports/issue_<N>_detailed.md.
+_DETAILED_LINE_RE = re.compile(r"^\s*\*\*Detailed writeup:\*\*\s*(\S+)")
+_DETAILED_URL_RE = re.compile(
+    r"^https://(?:github\.com/[^/]+/[^/]+/blob|raw\.githubusercontent\.com/[^/]+/[^/]+)/"
+    r"([0-9a-fA-F]{40})/docs/reports/issue_(\d+)_detailed\.md$"
+)
 
 
 def _git(repo: Path, *args: str) -> tuple[int, str]:
@@ -368,7 +408,7 @@ def check_required_sections(sections: list[Section]) -> list[CheckResult]:
 
 
 def check_duplicate_sections(lines: list[str]) -> CheckResult:
-    """FAIL if any of the six required ``## `` headings appears more than once.
+    """FAIL if any of the five required ``## `` headings appears more than once.
 
     Scanned on the fence/blockquote-blanked body, so a required heading string
     inside a verbatim example does not count. ``section_map`` silently keeps the
@@ -403,6 +443,7 @@ def check_results_subsections(sections: list[Section], mode: str) -> CheckResult
     if not sub_idxs:
         return CheckResult("results-subsections", False, "## Results has no ### <name> subsection")
     problems: list[str] = []
+    warns: list[str] = []
     for pos, i in enumerate(sub_idxs):
         end = sub_idxs[pos + 1] if pos + 1 < len(sub_idxs) else len(lines)
         name = lines[i].strip()[4:].strip()
@@ -412,20 +453,40 @@ def check_results_subsections(sections: list[Section], mode: str) -> CheckResult
         if len(imgs) != 1:
             problems.append(f"'{name}': expected exactly 1 image, found {len(imgs)}")
         # Description = a non-blank line that is not solely an image reference
-        # and not part of the Takeaways scaffolding (the Takeaways line, the
-        # placeholder, or the bold plot label).
+        # and not part of the block scaffolding (the Takeaways / Methodology
+        # labels, the placeholder, or the grandfathered bold plot label).
         has_desc = any(
             ln.strip()
             and not _IMAGE_RE.fullmatch(ln.strip())
-            and ln.strip() != TAKEAWAYS_LINE
+            and not _is_bold_label(ln, "Takeaways")
+            and not _is_bold_label(ln, "Methodology")
             and ln.strip() != PLACEHOLDER
             and not ln.strip().startswith("**Plot:")
             for ln in block
         )
         if not has_desc:
             problems.append(f"'{name}': missing a non-empty description paragraph")
-        # Exactly one **Takeaways:** block per result (Thomas's claim slot).
-        tk_idxs = [j for j, ln in enumerate(block) if ln.strip() == TAKEAWAYS_LINE]
+        # The retired **Plot:** label (pre-2026-07-30 shape) must not appear
+        # in a freshly assembled report; grandfathered bodies keep it at
+        # promote time.
+        if mode == "generation" and any(ln.strip().startswith("**Plot:") for ln in block):
+            problems.append(
+                f"'{name}': the '**Plot:**' label is retired (2026-07-30) — "
+                "the image follows the Methodology block directly"
+            )
+        # A **Methodology** block per result (the result-specific recipe +
+        # what-is-plotted). REQUIRED at generation (freshly assembled reports
+        # follow the current template); a grandfathered pre-2026-07-30 body
+        # missing it only WARNs at promote.
+        meth_count = sum(1 for ln in block if _is_bold_label(ln, "Methodology"))
+        if meth_count != 1:
+            msg = f"'{name}': expected exactly 1 '{METHODOLOGY_LINE}' block, found {meth_count}"
+            if mode == "generation" or meth_count > 1:
+                problems.append(msg)
+            else:
+                warns.append(msg + " (grandfathered pre-2026-07-30 shape)")
+        # Exactly one **Takeaways** block per result (Thomas's claim slot).
+        tk_idxs = [j for j, ln in enumerate(block) if _is_bold_label(ln, "Takeaways")]
         if len(tk_idxs) != 1:
             problems.append(
                 f"'{name}': expected exactly 1 '{TAKEAWAYS_LINE}' block, found {len(tk_idxs)}"
@@ -440,11 +501,16 @@ def check_results_subsections(sections: list[Section], mode: str) -> CheckResult
                     f"'{PLACEHOLDER}' at generation time"
                 )
     if problems:
-        return CheckResult("results-subsections", False, "; ".join(problems))
+        detail = "; ".join(problems)
+        if warns:
+            detail += "; warn: " + "; ".join(warns)
+        return CheckResult("results-subsections", False, detail)
+    if warns:
+        return CheckResult("results-subsections", True, "; ".join(warns), is_warn=True)
     return CheckResult(
         "results-subsections",
         True,
-        f"{len(sub_idxs)} subsection(s), each with 1 image + description + Takeaways",
+        f"{len(sub_idxs)} subsection(s), each with 1 image + description + Methodology + Takeaways",
     )
 
 
@@ -467,6 +533,65 @@ def check_image_files(body: str, figures_root: Path) -> CheckResult:
             f"missing on disk (root={figures_root}): " + ", ".join(missing),
         )
     return CheckResult("figure-files-exist", True, f"{checked} local image path(s) exist")
+
+
+def check_detailed_writeup_link(
+    blanked_lines: list[str], *, mode: str, expect_issue: int | None
+) -> CheckResult:
+    """``detailed-writeup-link`` (two-document output, 2026-07-30).
+
+    The body is the SUMMARIZED layer and must link its detailed companion
+    writeup (``docs/reports/issue_<N>_detailed.md``) via a SHA-pinned GitHub
+    blob / raw URL on a ``**Detailed writeup:**`` line. REQUIRED at generation
+    (freshly assembled reports follow the current template); a grandfathered
+    body without one only WARNs at promote. Well-formedness + issue-number
+    match only — existence at the pinned SHA is the report-verifier agent's
+    read (same no-network philosophy as ``htmlpreview-sha``).
+    """
+    name = "detailed-writeup-link"
+    matches = [m for ln in blanked_lines if (m := _DETAILED_LINE_RE.match(ln)) is not None]
+    if len(matches) > 1:
+        # A follow-up round's re-pin must REPLACE the old line, not stack a
+        # fresh one on top (first-match-wins would silently keep the stale
+        # link in the body).
+        return CheckResult(
+            name,
+            False,
+            f"{len(matches)} '**Detailed writeup:**' lines — exactly one is allowed "
+            "(a follow-up re-pin replaces the old line)",
+        )
+    match = matches[0] if matches else None
+    if match is None:
+        if mode == "generation":
+            return CheckResult(
+                name,
+                False,
+                "no '**Detailed writeup:**' link line — the summarized body must link "
+                "docs/reports/issue_<N>_detailed.md (SHA-pinned)",
+            )
+        return CheckResult(
+            name,
+            True,
+            "no '**Detailed writeup:**' link (grandfathered pre-2026-07-30 body)",
+            is_warn=True,
+        )
+    url = match.group(1).strip().strip("<>")
+    m = _DETAILED_URL_RE.match(url)
+    if m is None:
+        return CheckResult(
+            name,
+            False,
+            f"'{url}' is not a well-formed SHA-pinned "
+            "github.com/<owner>/<repo>/blob/<40-hex>/docs/reports/issue_<N>_detailed.md "
+            "(or raw.githubusercontent equivalent) link",
+        )
+    if expect_issue is not None and m.group(2) != str(expect_issue):
+        return CheckResult(
+            name,
+            False,
+            f"detailed-writeup link names issue {m.group(2)} != expected issue {expect_issue}",
+        )
+    return CheckResult(name, True, f"SHA-pinned detailed-writeup link (issue {m.group(2)})")
 
 
 def check_htmlpreview(body: str) -> CheckResult:
@@ -677,11 +802,12 @@ def _section_text(sections: list[Section], header: str) -> str | None:
 
 
 def check_placeholders(sections: list[Section]) -> list[CheckResult]:
-    """generation mode: TLDR and Next steps must be the untouched placeholder."""
+    """generation mode: TLDR + Conclusion and next steps must be the untouched
+    placeholder (Thomas has not written them yet)."""
     results: list[CheckResult] = []
     for header, name in (
         ("## TLDR", "tldr-placeholder"),
-        ("## Next steps", "nextsteps-placeholder"),
+        ("## Conclusion and next steps", "conclusion-placeholder"),
     ):
         text = _section_text(sections, header)
         if text is None:
@@ -828,6 +954,7 @@ def verify_report_text(
     results.append(check_duplicate_sections(blanked_lines))
     results.append(check_results_subsections(sections, mode))
     results.append(check_image_files(blanked_body, figures_root))
+    results.append(check_detailed_writeup_link(blanked_lines, mode=mode, expect_issue=expect_issue))
     results.append(check_htmlpreview(body))
     results.extend(
         check_image_pins(

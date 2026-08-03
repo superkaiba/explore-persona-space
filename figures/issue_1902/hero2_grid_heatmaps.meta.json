@@ -1,0 +1,155 @@
+{
+  "commit": "8f6456d855",
+  "created": "2026-08-02T00:04:18Z",
+  "figsize": [
+    12.5,
+    3.8
+  ],
+  "text": {
+    "suptitle": "4\u00d74 activation-checkpoint \u00d7 answer-source grid (OOF R\u00b2)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "ridge \u00b7 context arm \u00b7 single (L31)",
+        "xlabel": "answer source s",
+        "ylabel": "activation checkpoint m",
+        "annotations": [
+          "0.33",
+          "0.38",
+          "0.39",
+          "0.38",
+          "0.31",
+          "0.37",
+          "0.40",
+          "0.39",
+          "0.28",
+          "0.35",
+          "0.38",
+          "0.38",
+          "0.28",
+          "0.35",
+          "0.38",
+          "0.38"
+        ],
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ],
+        "yticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ]
+      },
+      {
+        "title_left": "ridge \u00b7 context arm \u00b7 multi (L31)",
+        "xlabel": "answer source s",
+        "ylabel": "activation checkpoint m",
+        "annotations": [
+          "0.36",
+          "0.37",
+          "0.39",
+          "0.39",
+          "0.32",
+          "0.32",
+          "0.35",
+          "0.34",
+          "0.27",
+          "0.29",
+          "0.32",
+          "0.31",
+          "0.27",
+          "0.29",
+          "0.32",
+          "0.31"
+        ],
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ],
+        "yticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ]
+      },
+      {
+        "title_left": "ridge \u00b7 prefix arm \u00b7 multi (L31)",
+        "xlabel": "answer source s",
+        "ylabel": "activation checkpoint m",
+        "annotations": [
+          "0.32",
+          "0.33",
+          "0.35",
+          "0.34",
+          "0.28",
+          "0.28",
+          "0.30",
+          "0.30",
+          "0.24",
+          "0.25",
+          "0.27",
+          "0.27",
+          "0.24",
+          "0.25",
+          "0.27",
+          "0.27"
+        ],
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ],
+        "yticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ]
+      },
+      {
+        "yticklabels": [
+          "0.26",
+          "0.28",
+          "0.30",
+          "0.32",
+          "0.34",
+          "0.36",
+          "0.38",
+          "0.40"
+        ]
+      },
+      {
+        "yticklabels": [
+          "0.26",
+          "0.28",
+          "0.30",
+          "0.32",
+          "0.34",
+          "0.36",
+          "0.38",
+          "0.40"
+        ]
+      },
+      {
+        "yticklabels": [
+          "0.22",
+          "0.24",
+          "0.26",
+          "0.28",
+          "0.30",
+          "0.32",
+          "0.34",
+          "0.36"
+        ]
+      }
+    ]
+  }
+}

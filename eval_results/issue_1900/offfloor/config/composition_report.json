@@ -1,0 +1,39 @@
+{
+ "meta": {
+  "ts": "2026-07-31T18:58:07Z",
+  "git_commit": "979b79f2b59f21ef8fa0b0d63f6871cad144af72",
+  "numpy": "2.2.6",
+  "issue": 1900,
+  "corpus_pin": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+  "parquet_pin": "3bb20deb",
+  "script": "scripts/issue1900_offfloor.py"
+ },
+ "rule": "score_mean > 0 on the SELECTION record",
+ "per_family": {
+  "cas": {
+   "n": 3923,
+   "n_scored_selection_rows": 3923,
+   "single_draw_nonzero": 75,
+   "mean_le5": 453,
+   "n_parent_rows": 3923,
+   "n_new_rows": 0
+  },
+  "imp": {
+   "n": 1484,
+   "n_scored_selection_rows": 1484,
+   "single_draw_nonzero": 806,
+   "mean_le5": 909,
+   "n_parent_rows": 377,
+   "n_new_rows": 1107
+  },
+  "syc": {
+   "n": 4000,
+   "n_scored_selection_rows": 4000,
+   "single_draw_nonzero": 1373,
+   "mean_le5": 1124,
+   "n_parent_rows": 1590,
+   "n_new_rows": 2410
+  }
+ },
+ "low_power_imp": false
+}

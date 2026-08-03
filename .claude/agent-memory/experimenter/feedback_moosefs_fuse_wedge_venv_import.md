@@ -23,3 +23,9 @@ the workload; on rc=124, post `epm:failure v1 failure_class: infra
 reason: moosefs-fuse-wedge-venv-import` and let the orchestrator swap the pod
 (container restart or fresh provision) — never loop relaunches on the wedged
 mount.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [MooseFS FUSE wedge on .venv imports](feedback_moosefs_fuse_wedge_venv_import.md) — silent launch hang (zero stderr, wchan=request_wait_answer, GPU 0 MiB) = wedged /workspace FUSE mount; timeout-bounded import probe discriminates; kill+relaunch never clears it — swap the pod (#779)

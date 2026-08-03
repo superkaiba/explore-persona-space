@@ -1,0 +1,38 @@
+{
+ "gate": "gate1",
+ "atol": 0.001,
+ "metadata": {
+  "git_commit": "unknown",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "timestamp_utc": "2026-07-30T03:07:07.580995+00:00"
+ },
+ "parity": {
+  "pair": "assistant_chat__assistant_naturalistic",
+  "arm": "context",
+  "target_json": "/workspace/superkaiba/eps/issue-1689/eval_results/issue_1689/ladder/pairs_Qwen_Qwen2.5-7B-Instruct_L19/assistant_chat__assistant_naturalistic.json",
+  "max_abs_rung_r2_diff": 0.0,
+  "per_rung_abs_diff": {
+   "rung_1_direct": 0.0,
+   "rung_2_ctx_offset": 0.0,
+   "rung_3_ans_offset": 0.0,
+   "rung_4_bias_refit": 0.0,
+   "rung_5_scalar_alpha": 0.0,
+   "rung_6_rotation": 0.0,
+   "rung_7_ctx_reparam": 0.0,
+   "rung_8_ans_reparam": 0.0,
+   "rung_9_full_AMB": 0.0
+  },
+  "rung_reached_match": true,
+  "n_common_match": true,
+  "n_common": 2317,
+  "ladder_unit_wall_s": 406.9,
+  "ok": true
+ },
+ "timing": {
+  "battery_unit_wall_s": 50.7,
+  "row_limit": null,
+  "dim_limit": null,
+  "unit_error": null
+ }
+}

@@ -1,0 +1,1011 @@
+{
+  "commit": "956457e561",
+  "created": "2026-07-30T08:21:28Z",
+  "figsize": [
+    13.2,
+    5.2
+  ],
+  "points": [
+    {
+      "target within-cell held-out R2 (ceiling)": 0.222294161610879,
+      "rung-9 (full reparameterization) recovery fraction": 0.5909711146833007,
+      "label": "asst_chat",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.2645052740849968,
+      "rung-9 (full reparameterization) recovery fraction": 0.6215045756762969,
+      "label": "asst_chat",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.07233796026391714,
+      "rung-9 (full reparameterization) recovery fraction": 0.8849084850936817,
+      "label": "asst_chat",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.08242249666199286,
+      "rung-9 (full reparameterization) recovery fraction": 0.8987402831355524,
+      "label": "asst_chat",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.06850638701600908,
+      "rung-9 (full reparameterization) recovery fraction": 0.5997048281677105,
+      "label": "asst_plain",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.06821963751038551,
+      "rung-9 (full reparameterization) recovery fraction": 0.587226714389137,
+      "label": "asst_plain",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.07206234917756282,
+      "rung-9 (full reparameterization) recovery fraction": 0.593404328106377,
+      "label": "asst_plain",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.06822432777456167,
+      "rung-9 (full reparameterization) recovery fraction": 0.6325904831279818,
+      "label": "asst_plain",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.011632005413613644,
+      "rung-9 (full reparameterization) recovery fraction": 0.6721962002220118,
+      "label": "asst_story",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.009243256119056076,
+      "rung-9 (full reparameterization) recovery fraction": 0.8266906612436191,
+      "label": "asst_story",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.018460728840460905,
+      "rung-9 (full reparameterization) recovery fraction": 0.40976081826236177,
+      "label": "asst_story",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.017995557469997037,
+      "rung-9 (full reparameterization) recovery fraction": 0.4292417613782356,
+      "label": "asst_story",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.6881357914474596,
+      "rung-9 (full reparameterization) recovery fraction": 0.7820187988972761,
+      "label": "u_haiku_chat",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.411470227791217,
+      "rung-9 (full reparameterization) recovery fraction": 1.0119361964501852,
+      "label": "u_onpolicy_story",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.6487903039880405,
+      "rung-9 (full reparameterization) recovery fraction": 0.9586224535474523,
+      "label": "u_haiku_story",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.6710165005422914,
+      "rung-9 (full reparameterization) recovery fraction": 0.963941011560706,
+      "label": "u_lmsys_story",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.7804362933754435,
+      "rung-9 (full reparameterization) recovery fraction": 0.8193125532518121,
+      "label": "u_lmsys_chat",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.43153677854810046,
+      "rung-9 (full reparameterization) recovery fraction": 1.0935054965370226,
+      "label": "u_lmsys_chat",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.634789436096121,
+      "rung-9 (full reparameterization) recovery fraction": 0.9762328893874986,
+      "label": "u_haiku_story",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.6702535285011518,
+      "rung-9 (full reparameterization) recovery fraction": 0.9578887116628656,
+      "label": "u_lmsys_story",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.41661237514314464,
+      "rung-9 (full reparameterization) recovery fraction": 1.0035869112331723,
+      "label": "u_onpolicy_story",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.4590217610898597,
+      "rung-9 (full reparameterization) recovery fraction": 0.9676899789596161,
+      "label": "u_onpolicy_story",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 0.0,
+      "rung-9 (full reparameterization) recovery fraction": 0.9,
+      "series": "0.90 reconciliation bar",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "target within-cell held-out R2 (ceiling)": 1.0,
+      "rung-9 (full reparameterization) recovery fraction": 0.9,
+      "series": "0.90 reconciliation bar",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.016687,
+      "condition-pair count": 3086.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.033213,
+      "condition-pair count": 199.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.049739,
+      "condition-pair count": 64.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.066266,
+      "condition-pair count": 34.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.082792,
+      "condition-pair count": 16.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.099319,
+      "condition-pair count": 12.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.115845,
+      "condition-pair count": 8.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.132371,
+      "condition-pair count": 12.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.148898,
+      "condition-pair count": 10.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.165424,
+      "condition-pair count": 4.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.181951,
+      "condition-pair count": 2.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.198477,
+      "condition-pair count": 1.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.215003,
+      "condition-pair count": 1.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.23153,
+      "condition-pair count": 2.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.248056,
+      "condition-pair count": 1.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.264582,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.281109,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.297635,
+      "condition-pair count": 3.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.314162,
+      "condition-pair count": 1.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.330688,
+      "condition-pair count": 3.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.347214,
+      "condition-pair count": 2.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.363741,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.380267,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.396794,
+      "condition-pair count": 1.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.41332,
+      "condition-pair count": 1.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.429846,
+      "condition-pair count": 1.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.446373,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.462899,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.479426,
+      "condition-pair count": 1.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.495952,
+      "condition-pair count": 1.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.512478,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.529005,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.545531,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.562057,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.578584,
+      "condition-pair count": 2.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.59511,
+      "condition-pair count": 2.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.611637,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.628163,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.644689,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.661216,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.677742,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.694269,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.710795,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.727321,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.743848,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.760374,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.776901,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.793427,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.809953,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.82648,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.843006,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.859533,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.876059,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.892585,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.909112,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.925638,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.942164,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.958691,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.975217,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.991744,
+      "condition-pair count": 16.0,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.019327,
+      "condition-pair count": 905.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.035809,
+      "condition-pair count": 591.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.052291,
+      "condition-pair count": 607.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.068773,
+      "condition-pair count": 441.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.085256,
+      "condition-pair count": 280.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.101738,
+      "condition-pair count": 165.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.11822,
+      "condition-pair count": 136.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.134702,
+      "condition-pair count": 81.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.151184,
+      "condition-pair count": 45.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.167667,
+      "condition-pair count": 32.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.184149,
+      "condition-pair count": 35.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.200631,
+      "condition-pair count": 31.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.217113,
+      "condition-pair count": 12.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.233595,
+      "condition-pair count": 14.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.250078,
+      "condition-pair count": 10.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.26656,
+      "condition-pair count": 5.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.283042,
+      "condition-pair count": 4.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.299524,
+      "condition-pair count": 7.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.316006,
+      "condition-pair count": 4.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.332489,
+      "condition-pair count": 6.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.348971,
+      "condition-pair count": 5.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.365453,
+      "condition-pair count": 34.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.381935,
+      "condition-pair count": 3.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.398417,
+      "condition-pair count": 1.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.414899,
+      "condition-pair count": 4.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.431382,
+      "condition-pair count": 1.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.447864,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.464346,
+      "condition-pair count": 1.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.480828,
+      "condition-pair count": 3.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.49731,
+      "condition-pair count": 1.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.513793,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.530275,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.546757,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.563239,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.579721,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.596204,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.612686,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.629168,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.64565,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.662132,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.678615,
+      "condition-pair count": 2.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.695097,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.711579,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.728061,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.744543,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.761025,
+      "condition-pair count": 2.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.777508,
+      "condition-pair count": 2.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.79399,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.810472,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.826954,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.843436,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.859919,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.876401,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.892883,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.909365,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.925847,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.94233,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.958812,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.975294,
+      "condition-pair count": 0.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.991776,
+      "condition-pair count": 16.0,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.009628202783535614,
+      "condition-pair count": 0.0,
+      "series": "random-subspace null p97.5 = 0.0096",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "top-32 subspace overlap between condition pairs (M - I correction)": 0.009628202783535614,
+      "condition-pair count": 1.0,
+      "series": "random-subspace null p97.5 = 0.0096",
+      "_kind": "line",
+      "_group": 25
+    }
+  ],
+  "n_series": 26,
+  "total_points": 146,
+  "text": {
+    "suptitle": "Base <-> instruct same-condition pairs: reconciliation and correction-subspace uniformity",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "22 informative cross-model units: all read rung 9\ncircle = prefix, square = context; filled = reconciles at rung 9",
+        "xlabel": "target within-cell held-out R2 (ceiling)",
+        "ylabel": "rung-9 (full reparameterization) recovery fraction",
+        "legend_labels": [
+          "0.90 reconciliation bar"
+        ],
+        "annotations": [
+          "asst_chat",
+          "asst_chat",
+          "asst_chat",
+          "asst_chat",
+          "asst_plain",
+          "asst_plain",
+          "asst_plain",
+          "asst_plain",
+          "asst_story",
+          "asst_story",
+          "asst_story",
+          "asst_story",
+          "u_haiku_chat",
+          "u_haiku_chat",
+          "u_haiku_story",
+          "u_haiku_story",
+          "u_lmsys_chat",
+          "u_lmsys_chat",
+          "u_lmsys_story",
+          "u_lmsys_story",
+          "u_onpolicy_story",
+          "u_onpolicy_story"
+        ],
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ],
+        "yticklabels": [
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "Uniformity read: correction subspaces overlap above the null,\nbut weakly in absolute terms",
+        "xlabel": "top-32 subspace overlap between condition pairs (M - I correction)",
+        "ylabel": "condition-pair count",
+        "legend_labels": [
+          "left (input) subspaces (median 0.015)",
+          "right (output) subspaces (median 0.051)",
+          "random-subspace null p97.5 = 0.0096"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "0",
+          "500",
+          "1000",
+          "1500",
+          "2000",
+          "2500",
+          "3000",
+          "3500"
+        ]
+      }
+    ],
+    "series": [
+      "0.90 reconciliation bar",
+      "random-subspace null p97.5 = 0.0096"
+    ]
+  }
+}

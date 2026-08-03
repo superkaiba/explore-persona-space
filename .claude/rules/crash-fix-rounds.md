@@ -1,5 +1,5 @@
 ---
-description: Retry/crash-fix round contract for implementer agents — failure-lesson block, fix-engaged signal, scope guard, kill-before-relaunch + timeout-bounded smokes; §§1-3 relocated verbatim from experiment-implementer.md (#829); kill-before-relaunch added (#848); relaunch-side fix-commit ancestry + stale-checkpoint hygiene (#1081); step-2 explicit-PID kill (#1198)
+description: Retry/crash-fix round contract for implementer agents — failure-lesson block, fix-engaged signal, scope guard, kill-before-relaunch + timeout-bounded smokes; §§1-3 relocated verbatim from experiment-implementer.md (#829); kill-before-relaunch added (#848); relaunch-side fix-commit ancestry + stale-checkpoint hygiene (#1081); step-2 explicit-PID kill (#1198); MooseFS content-read probe on same-pod relaunches (#1112/#1594); relaunch compute-character re-statement on engine/device/width/scope changes (#1749); live-launcher forward-phase enumeration before in-place phase duplication (#1856)
 paths:
   - "scripts/**/*.py"
   - "src/explore_persona_space/**"
@@ -88,7 +88,9 @@ with five elements:
    to the specific branch the fix added (so a reviewer can tell a generic
    startup log from a fix-specific one).
 4. **The fix commit(s)** — the FULL SHA(s) on `issue-<N>` containing your
-   fix (the commits this round pushed). Any subsequent relaunch asserts
+   fix (the commits this round pushed), each pasted verbatim from
+   `git rev-parse` / `git log --format=%H` output — never hand-extended
+   from a short SHA (#1586 r7). Any subsequent relaunch asserts
    this SHA is an ancestor of the launch checkout's HEAD (§ Crash-fix
    relaunch below). Declare it so the relauncher keys the probe to the
    SPECIFIC fix — never to "the branch tip": a checkout at the tip of a
@@ -144,7 +146,11 @@ rounds).
 
 Applies to EVERY re-run of a smoke / launch / dispatch command — crash-fix
 rounds, code-review revision rounds, and same-turn retries after a
-timed-out or abandoned Bash call — on the shared VM and on pods alike. A
+timed-out or abandoned Bash call — AND to any kill targeting a workload
+pattern for any other reason (e.g. cancelling a redundant background
+job of your own, the session `0e2c3b21` 2026-07-26 shape). Applies on
+the shared VM and on pods alike.
+ A
 timed-out / abandoned Bash TOOL call kills the SHELL but ORPHANS the
 python child, which keeps running and writing its output paths;
 relaunching without killing it duplicates load and corrupts shared
@@ -158,10 +164,19 @@ load-186 VM overload).
 1. **Probe** — `pgrep -af 'run_823[.]py --phase 4'`. The pattern MUST be
    exact-invocation-scoped: script filename + the distinguishing args,
    with a `[.]` bracket so the probe's own shell cmdline cannot
-   self-match. The same bracket idiom equally covers OWNERSHIP/liveness
-   probes, including SSH-remote ones — `ssh <host> "pgrep -af ..."`
-   re-materializes the pattern in the remote shell's argv (see the
-   `.claude/rules/gotchas.md` SSH-remote ownership-probe entry).
+   self-match. When the same command line ALSO passes the artifact PATH
+   as an argument, or uses MULTIPLE alternates, the bracket idiom alone
+   does NOT protect: the artifact path / any unbracketed alternate rides
+   the probe's own argv and self-matches — apply the self-exclusion filter
+   / per-pid iteration recipes in `.claude/rules/gotchas.md` (SSH-remote
+   ownership-probe entry) alongside the bracket. For the /issue gate
+   single-flight sites the mechanical fix is `scripts/step9c_baseline.py
+   probe` — self- + ancestor-pid excluding, exit 0 = clear (INVERTED vs
+   pgrep); kill-arms keep raw pgrep for the pid list (#1821). The same bracket idiom
+   equally covers OWNERSHIP/liveness probes, including SSH-remote ones —
+   `ssh <host> "pgrep -af ..."` re-materializes the pattern in the remote
+   shell's argv (see the `.claude/rules/gotchas.md` SSH-remote
+   ownership-probe entry).
    Run the probe (and any pkill) in its OWN Bash call — the
    harness wrapper embeds the full compound-command text in its own
    cmdline, so a probe sharing a call with text spelling the raw
@@ -202,6 +217,39 @@ load-186 VM overload).
    by explicit PID. Weaker than step 1 (a writer that opens-writes-closes
    is invisible between writes) — prefer the cmdline probe when possible.
 
+**Live-launcher forward-phase enumeration (REQUIRED before duplicating any
+phase in-place; #1482).** Steps 1-3 cover instances ALREADY RUNNING; a live
+launcher's UPCOMING phases are invisible to any pgrep probe. Before
+launching a detached duplicate / manual "recovery" instance of a workload
+PHASE (a fits pass, an upload walk, an eval leg) on a machine — pod, GCE
+instance, or the shared VM — where the workload's own launcher/dispatcher
+is STILL LIVE, enumerate the launcher's REMAINING phase sequence: read its
+cmdline (`ps -o args= -p <pid>` — e.g. a `--phase all` expansion) and/or
+its dispatcher leg list + current `[phase=...]` log position. REMAINING
+includes re-enterable phases — a resume/retry loop can RE-enter a phase it
+already ran. If the phase you are about to duplicate appears in that
+remaining sequence — OR the enumeration is unreadable / membership is
+ambiguous (no leg list, no log position, an opaque cmdline): treat that
+EXACTLY as membership; never launch the duplicate on unproven absence
+(same fail-safe family as step 1's "Ambiguous → do NOT kill") — take ONE
+of exactly two dispositions: (a) DEFER hands-off (DEFAULT — let the
+launcher run its own sequence), or (b) TERMINATE the launcher first via
+steps 1-3 and own the whole remaining sequence yourself. NEVER run the
+duplicate alongside the live launcher. A long ETA is NOT a third
+disposition: the recovery's own actions can collapse the launcher's ETA.
+And membership is a SUFFICIENT trigger, not a necessary one — the
+collision is resource-level, so a duplicate that contends for GPU/RAM
+with ANY remaining phase warrants the same disposition. (#1482,
+2026-07-29: the orchestrator's bulk store commit deduplicated the live
+launcher's remaining E2 upload walk — ~33 h projected → finished in ~1 h —
+and the launcher advanced to ITS OWN fits while the orchestrator's
+detached fits, launched on the "idle" GPU, held 55.9 GiB; the launcher's
+fits OOMed (torch.OutOfMemoryError, 4 GiB needed / 1.22 GiB free), wrote a
+failed sentinel, crash-persisted, and powered the instance off at
+10:03:33Z — killing the healthy detached fits too. Cost: one instance
+restart + ~15 min GPU smoke/pilot re-run + ~1 h no-op dedup re-walk, plus
+one fit unit lost to a resume-predicate miss.)
+
 **After the kill, the relaunch itself must rewrite the pid file** with
 the new live pid in the same command chain, then confirm it before
 posting the fresh marker (`.claude/rules/pod-side-reporting.md`
@@ -237,6 +285,11 @@ driver's own smoke-root rebinding). The regime refusal is CORRECT
 fail-loud behavior; the fix is per-leg roots at dispatch time, never
 weakening the check (driver-side mechanism: `.claude/rules/gotchas.md`
 "Smoke-root rebinding" entry).
+The per-leg roots this convention produces carry a sibling trap: the CHAIN
+leaves the earlier leg's out-root as unowned residue on a quota'd pod,
+starving the later leg's disk-headroom assert — the LATER leg reaps the
+derived sibling root at its first phase entry (`.claude/rules/gotchas.md`
+"Chained smoke-then-full" entry; #1586 fu r3, fix `afcf2cabac`).
 
 ### Crash-fix rounds: scope guard (REQUIRED)
 
@@ -331,6 +384,53 @@ the relaunch ran the pre-fix commit, checkpointed garbage — val R²
      (`git fetch origin issue-<N>` + the index-lock recovery) and
      re-probe; still absent → `epm:failure v1` (`failure_class: infra`,
      `reason: fix-commit-absent-on-pod`, naming the SHA).
+   - **MooseFS content read (SAME-POD relaunch on a MooseFS-backed
+     checkout — the RunPod `/workspace` lane) (#1112).** Git-level
+     verification proves nothing about the BYTES a subprocess will
+     read: MooseFS FUSE can serve the pre-pull copy of a just-updated
+     file while HEAD + ancestry read correct (#1112 attempt 2,
+     2026-07-21: pod verified at the fix commit's HEAD, the training
+     subprocess crashed on the PRE-fix assert in
+     `scripts/train_behavior_fullft.py`, the on-pod re-probe then read
+     fresh bytes — ~15 min + one crash cycle on a billing 4×H100 pod;
+     trap entry: `.claude/rules/gotchas.md` § MooseFS stale-served
+     bytes). After the ancestry probe, verify the served bytes of
+     every path the declared fix commit(s) touched, pod-side in the
+     same SSH session and in the SAME checkout / working tree the
+     relaunch command dispatches from (a probe against a different
+     clone proves nothing about the tree the run reads):
+     `for f in $(git diff-tree --no-commit-id --name-only -r <fix-sha>); do
+        test "$(git hash-object -- $f)" = "$(git rev-parse HEAD:$f)" ||
+          { echo STALE-BYTES $f; exit 1; }; done && echo BYTES-OK`
+     (multiple declared SHAs: union of their diff-trees; cost: one SSH
+     round-trip, ~seconds for typical few-file fix commits — FUSE-slow
+     git ops can stretch large file sets).
+     `git hash-object` always reads the full working-tree content —
+     never the index stat cache that lets `git status` report clean
+     without reading — and must equal the blob OID at HEAD (HEAD, not
+     `<fix-sha>:<path>`: a later commit may touch the file again); a
+     fix-touched path ABSENT at HEAD (deleted/renamed since) is
+     verified absent instead (`test ! -e <f>` — stale serving can
+     resurrect a deletion; the fenced loop itself fail-louds
+     `STALE-BYTES` on such a path — `git rev-parse HEAD:<f>` errors —
+     so apply this branch for deletion-bearing fix commits rather
+     than reading that halt as a mount fault). On STALE-BYTES:
+     re-materialize the file (`rm -f <f> && git checkout HEAD -- <f>`
+     — the `rm` forces a real fresh write through the mount; a
+     stat-clean bare checkout can no-op) and re-probe ONCE; a
+     persistent mismatch means do NOT dispatch — post
+     `epm:failure v1` (`failure_class: infra`,
+     `reason: moosefs-stale-read`, naming the path) and let the
+     orchestrator swap the pod (stop/resume, else terminate + fresh
+     provision). Fresh bytes but the relaunch still hits pre-fix
+     behavior → clear the fix-touched modules' `__pycache__` before
+     condemning the mount (stale bytecode of IMPORTED modules is the
+     neighboring cause with the same symptom; a main script never
+     executes from `__pycache__`, so for a script-file fix the byte
+     probe alone is decisive). FRESH-PROVISION relaunches (GCE clone,
+     fresh-RunPod bootstrap clone, SLURM rsync) are EXEMPT: the
+     clone/rsync WRITES the files fresh, so no pre-update cached copy
+     exists to serve.
    - FRESH-PROVISION relaunch (GCP GCE / fresh RunPod — the lane clones
      `origin/issue-<N>` at boot, no pre-boot SSH): probe VM-SIDE before
      dispatch: `git fetch origin issue-<N> --quiet && git merge-base
@@ -346,6 +446,16 @@ the relaunch ran the pre-fix commit, checkpointed garbage — val R²
      ancestors). A rebase that rewrote the fix SHA
      fails the probe LOUD: re-resolve the SHA on the rewritten branch
      (or have the implementer re-declare), never skip the probe.
+   - **Mid-run branch-push race (#1880):** pushing fix commits to
+     `origin/issue-<N>` while SIBLING lanes of the same issue are mid-run
+     advances origin past their clones — their terminal results-git
+     pushes then take the fetch+rebase path
+     (`.claude/rules/pod-side-reporting.md` § Result-push verification
+     contract, #1880), and a lane running a pre-#1880 driver
+     deterministically false-crashes at its terminal push with its
+     results intact in crash-persist. The PULL/SYNC direction — the
+     push touches files a live worker holds locally modified — is
+     governed by § Mid-run pushes to a live-synced branch below.
 2. **Stale-checkpoint disposition (element 5), executed in the SAME
    command chain as the launch** (the pid-file-contract shape,
    `.claude/rules/pod-side-reporting.md` § Pid-file launch contract),
@@ -366,6 +476,49 @@ the relaunch ran the pre-fix commit, checkpointed garbage — val R²
    `issueN_partial/`, a data-repo checkpoint prefix) still needs the
    declared disposition — prefer a fresh resume prefix / `--no-resume`
    threaded into the workload cmd over mutating remote copies.
+3. **Compute-character re-statement (fires when the fix — or the relaunch
+   configuration — changes the workload's compute shape; #1749).** When the
+   relaunch differs from the approved plan §9 / the prior recorded launch in
+   ENGINE (e.g. torch↔numpy, vLLM↔HF `generate`, batched↔serial inner
+   loop), DEVICE ROUTING (GPU→CPU or CPU→GPU), PARALLEL WIDTH (fleet width,
+   per-pod GPU width, worker count), or PER-UNIT SCOPE (cells / draws /
+   rungs per unit), the relauncher re-states the compute character BEFORE
+   dispatch — the canonical five-element statement (SKILL.md Step 9a-ter
+   § Compute-character pre-launch statement) scoped to the delta:
+   (i) the new ops arithmetic (units × per-unit cost → projected wall) with
+   a MEASURED per-unit basis at the NEW shape — a 1-unit pilot through the
+   production entrypoint, or the run's own live-measured figure; an
+   asserted / guessed per-unit cost is never a sizing basis
+   (`.claude/rules/plan-compute-sizing.md` § Per-cell fit phases);
+   (ii) the engine + device routing named (the batched helper implementing
+   the inner loop, or why the work is genuinely not batchable);
+   (iii) GPU-width vs pod width — a CPU-bound or width-1 relaunch on a
+   multi-GPU pod triggers the width re-evaluation below AND the CLAUDE.md
+   "CPU-only phases don't hold GPU pods" release/downsize duty (stop or
+   downsize the pod while the CPU work runs — never bill a multi-GPU pod
+   at ~0% through a serial CPU fit).
+   When the delta MOVES work onto the shared VM or adds ≥ ~5 GB of
+   staging, the canonical statement's elements (4) (projected peak RSS /
+   off-VM routing) and (5) (staging path + the filesystem it resolves to,
+   off-`/` routing) apply too — SKILL.md Step 9a-ter carries both.
+   The statement rides the relaunch record: the fresh `epm:run-launched`
+   note (or the `epm:compute-deviation` re-post when one is being posted
+   anyway) — the same note-token convention as `fix_sha=`, no
+   marker-schema change. Pod-side hotfix relaunches are NOT exempt: any
+   relaunch must re-post `epm:run-launched` (SKILL.md Step 6d.2 "Any
+   relaunch must re-post epm:run-launched"), and the compute-character
+   statement rides that same marker. A same-shape relaunch (identical
+   engine/device/width/scope — the common crash-fix case) states nothing
+   new; this duty fires only on the delta. (Incident #1689 r15b,
+   2026-07-27/28: an unrecorded pod-side hotfix relaunch swapped the
+   Phase-D fit to serial numpy on CPU at width 1; the 4×H100 pod billed
+   ~0% GPU for ~14 h before a mid-run measurement — ratio 32×, v4
+   corrected to 11× — surfaced it; the R16 port measured numpy 648.5 s vs
+   torch/cuda 66 s per pair. Compliance residual: r15b's relauncher ALSO
+   skipped the pre-existing Step 6d.2 `epm:run-launched` re-post duty, so
+   this duty inherits the same compliance dependency — the watcher's
+   gpu-idle escalation and the `epm:compute-deviation` mid-run measurement
+   remain the detection backstop.)
 
 **Width re-evaluation rides every relaunch of an embarrassingly-parallel
 unit grid** (`code` and `infra` rows alike): before re-dispatching at the
@@ -399,3 +552,125 @@ mid-run rebase of `issue-<N>` re-opens the gap there (out of scope
 here, noted for the record). The implementer's
 own same-pod smoke-slice confirmation (element 2) is UNCHANGED and is
 not a "relaunch" under this section.
+
+### Mid-run pushes to a live-synced branch (enumerate live workers FIRST)
+
+Never push a commit to `issue-<N>` — or any ref live workers pull/sync
+mid-run — that touches a file ANY live worker holds locally modified.
+The worker's sync step refuses on DIRTY TOUCHED PATHS regardless of
+byte-identical content (the refusal keys on locally modified paths, not
+content — a byte-identity argument is a wrong theory of git), and the
+lane dies at its sync point — typically the upload leg — HOURS after
+the push (#1739: 3 lanes x 216 cells each, fits rc=0, killed at their
+upload legs; science recovered from EXIT-trap crash bundles, ~5-6 GPU-h
+re-compose, and a mid-run SSH patch attempt also failed on inter-box
+firewall/IAP). BEFORE any mid-run push to a live-synced ref, enumerate
+the live workers and what each holds locally modified; then either:
+
+(a) pin lanes to a detached launch SHA at dispatch, so mid-run branch
+    pushes are invisible to running workers (preferred, plan-time). A
+    detached-HEAD lane's terminal results push composes with the #1880
+    recipe as `git push origin HEAD:refs/heads/<branch>` after the
+    fetch+rebase;
+(b) defer the patch commit until every running worker has passed its
+    sync step; or
+(c) land the fix worker-locally only and push after the wave drains —
+    SAME-POD relaunches only: a fresh-provision (GCE/SLURM) relaunch
+    ancestry-probes `origin/issue-<N>` (§ fix-commit ancestry above),
+    so a worker-local-only fix halts it — safely but wastefully — on
+    fix-commit-absent.
+
+A sibling lane's crash-fix relaunch legitimately REQUIRES the fix on
+the remote ref (§ fix-commit ancestry above) — sequence it via (b)/(c),
+never skip the relaunch's ancestry probe. Sibling direction:
+`.claude/rules/pod-side-reporting.md` § Result-push verification
+contract (#1880) covers the PUSH race (a live lane's terminal push
+needs fetch+rebase); this subsection covers the PULL/SYNC refusal —
+one mid-run-push doctrine, two failure directions.
+
+### Changed-argv relaunch: argv dry-run (REQUIRED unless byte-identical AND the CLI surface is untouched)
+
+A crash-fix relaunch whose command line differs from the crashed
+launch's (a new flag wired by the fix round, a corrected input-source
+flag, a hand-recomposed plan-§10 transcription) — OR whose fix round
+touched the driver's CLI/validation surface (argparse flags, post-parse
+required-input checks) even with a byte-identical argv — runs the argv
+dry-run probe (`.claude/skills/issue/SKILL.md` Step 6b § Hand-composed
+phase argv dry-run, the canonical recipe) on the VM BEFORE
+re-dispatching: the fix-engaged discipline in this file verifies the
+FIX is present; the dry-run verifies the new ARGV survives parse +
+early post-parse validation. First launches of a new phase argv are
+governed by the same SKILL.md clause (incident #1738 Phase-3 attempt 1:
+a required input-source flag omitted from a hand-composed first launch;
+post-parse `SystemExit` rc=1 ~7 s after a full GCE flexstart boot +
+venv install).
+
+**Relaunch-flag fidelity + machine caps (#1964).** A relaunch's flag set
+is copied VERBATIM from the persisted handle sidecar
+(`.claude/cache/issue-<N>-handle.json`) — never re-derived from plan
+prose or memory; deliberate changes are named DIFFS against the sidecar
+set in the relaunch note (#1902: attempt 6 dispatched twice, missing
+`--intent` then `--time-budget-hours`, while the full set sat in the
+sidecar). Machine-sized caps (`--rss-cap-gb`, thread caps, width) are
+RE-DERIVED for the TARGET machine on any cross-machine move — a sidecar
+cap is sized to the machine that wrote it (#1946: a 128 GB box was
+dispatched with the 16 GB VM-default cap copied forward). The
+dispatch-side probes (a)-(c) — staged-input existence, env-pin
+completeness, per-LEG carry-over — are canonical at the SKILL.md Step 6b
+dispatch-preflight block (`.claude/skills/issue/SKILL.md`
+§ Dispatch-input/env/flag preflight) and bind on relaunches too.
+
+### Crash-fix rounds: symbol-rename whole-tree grep duty (REQUIRED — every retry round; #1728)
+
+Any crash-fix round (or ordinary round) whose diff RENAMES a
+MODULE-EXPORTED SYMBOL — a class / top-level function / top-level
+dataclass / top-level module-level constant / package-exported name in an
+`__init__.py` — MUST, in the SAME round, before its
+`epm:experiment-implementation` marker, run
+
+```bash
+grep -rn '<old_name>' scripts/ src/
+```
+
+for each renamed symbol and EITHER fix every hit to the new name OR
+explicitly disposition each hit (e.g. "hit is a comment referencing the
+old API history — leave"; "hit is under `external/` — out of scope"; "hit
+is a test that pins the pre-rename shape as a regression fixture —
+leave"). The grep command AND its per-hit disposition are recorded in the
+implementer's `epm:experiment-implementation` marker under a top-level
+`### Symbol-rename grep` section. A round that renames >1 symbol records
+one grep + disposition block per symbol; a round with NO
+module-exported symbol rename records NO block (auditable-N/A convention,
+same as Step 0.68's `N/A — no fit-loop`).
+
+**Scope-limit — module-exported symbols only.** This duty fires on renames of
+names any OTHER file in `scripts/` or `src/` can `import`, `from ... import`,
+or textually reference by identifier: a class, a top-level `def`, a top-level
+dataclass, a top-level module-level constant (SCREAMING_SNAKE / literal
+assignment at module scope), or an `__init__.py` re-export. It does NOT fire
+on renames of LOCAL variables inside a function body (`data → payload` inside
+a function), private helpers whose name starts with `_` AND that no other
+file imports (verify by the grep itself returning ≤ ~1 hit — self-file only),
+loop counters, or parameter names in an internal signature no external caller
+threads. When in doubt, run the grep: an over-fire produces one extra grep
+command in the marker (cost: seconds); an under-fire is the incident this
+duty exists to prevent.
+
+**Cross-round rename discipline.** A rename in ROUND R that missed a sibling
+hit at time R and was caught in ROUND R' by an import-time crash does NOT
+retroactively excuse round R — round R''s marker MUST record the grep + fix
+for the missed hit, tagged `(carrying #<R>'s rename)`. This closes the gap
+that "the rename shipped in an earlier round, so it's not my rename" would
+otherwise open.
+
+(Incident #1728 × session `5c5a89e8` 2026-07-26T06:35:50Z: round R5 renamed
+`DispatchCall → DispatchItem` in `scripts/issue1689_haiku_u2_gen.py` but
+left `scripts/issue1689_gen_onpolicy.py:297` importing the old name. Phase
+B relaunched, reached the sibling script's import, and the vLLM engine
+core died: `ImportError: cannot import name 'DispatchCall' from
+'explore_persona_space.llm.api_dispatch'`. The implementer's own
+`epm:failure-lesson` (`generalizes: yes`) named the exact rule this section
+now durablizes: *"grep the whole scripts/ tree for the old name in the
+same round and fix every hit — sibling scripts drift until the next phase
+invokes them."* Cost: full crash-fix round R9, ~20 min, plus a wasted pod
+launch cycle.)

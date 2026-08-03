@@ -1,0 +1,571 @@
+{
+  "commit": "8f6456d855",
+  "created": "2026-08-02T00:04:14Z",
+  "figsize": [
+    12.6,
+    3.6
+  ],
+  "points": [
+    {
+      "post-training stage": -0.15,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.35403177798965657,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "post-training stage": -0.09,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.3086117082893487,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "post-training stage": -0.03,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.328422639936626,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "post-training stage": 0.03,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.3454974766438832,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "post-training stage": 0.09,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.3344490791283333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "post-training stage": 0.15,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.29903027574266106,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "post-training stage": 0.85,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.3800289914512004,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "post-training stage": 0.91,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.34288788747088583,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "post-training stage": 0.97,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.35384186095132797,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "post-training stage": 1.03,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.3777499461411593,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "post-training stage": 1.09,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.3784759090072344,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "post-training stage": 1.15,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.3693861595198704,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "post-training stage": 1.85,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.3855588938689669,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "post-training stage": 1.91,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.336236292016742,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "post-training stage": 1.97,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.368512127126287,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "post-training stage": 2.03,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.3896811538717423,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "post-training stage": 2.09,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.4016882092663099,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "post-training stage": 2.15,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.40858996226214905,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "post-training stage": 2.85,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.3760390645562858,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "post-training stage": 2.91,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.329132487416541,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "post-training stage": 2.97,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.3720538888931859,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "post-training stage": 3.03,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.39446544652624005,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "post-training stage": 3.09,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.397508432935632,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "post-training stage": 3.15,
+      "per-fold held-out OOF R\u00b2 at layer*": 0.3941642482920755,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "post-training stage": -0.15,
+      "y": 0.3247876724661525,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "post-training stage": -0.09,
+      "y": 0.3255816285383809,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "post-training stage": -0.03,
+      "y": 0.37002025790361304,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "post-training stage": 0.03,
+      "y": 0.42924355623192867,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "post-training stage": 0.09,
+      "y": 0.33822974337540235,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "post-training stage": 0.15,
+      "y": 0.35543213808694785,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "post-training stage": 0.85,
+      "y": 0.2944888636618582,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "post-training stage": 0.91,
+      "y": 0.2887832292700503,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "post-training stage": 0.97,
+      "y": 0.3285405512242955,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "post-training stage": 1.03,
+      "y": 0.3995117153190939,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "post-training stage": 1.09,
+      "y": 0.29196552203973125,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "post-training stage": 1.15,
+      "y": 0.31981350721223,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "post-training stage": 1.85,
+      "y": 0.29806410114514326,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "post-training stage": 1.91,
+      "y": 0.2871513073095925,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "post-training stage": 1.97,
+      "y": 0.3234529931242659,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "post-training stage": 2.03,
+      "y": 0.3771994652034656,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "post-training stage": 2.09,
+      "y": 0.2965771924642835,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "post-training stage": 2.15,
+      "y": 0.3149963092304451,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "post-training stage": 2.85,
+      "y": 0.2941711572584339,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "post-training stage": 2.91,
+      "y": 0.2808572963562044,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "post-training stage": 2.97,
+      "y": 0.3163504936856426,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "post-training stage": 3.03,
+      "y": 0.3750601263904657,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "post-training stage": 3.09,
+      "y": 0.29298351940695,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "post-training stage": 3.15,
+      "y": 0.30758693222806266,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "post-training stage": -0.15,
+      "y": 0.2923140985958682,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "post-training stage": -0.09,
+      "y": 0.2963626650120059,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "post-training stage": -0.03,
+      "y": 0.34504992147633107,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "post-training stage": 0.03,
+      "y": 0.3895407783598762,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "post-training stage": 0.09,
+      "y": 0.30965013390063434,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "post-training stage": 0.15,
+      "y": 0.30108993995586486,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "post-training stage": 0.85,
+      "y": 0.2566859480776964,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "post-training stage": 0.91,
+      "y": 0.25751333660726927,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "post-training stage": 0.97,
+      "y": 0.2973164200412963,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "post-training stage": 1.03,
+      "y": 0.34959360746617985,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "post-training stage": 1.09,
+      "y": 0.2569388372531196,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "post-training stage": 1.15,
+      "y": 0.25256294191867923,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "post-training stage": 1.85,
+      "y": 0.2578541972367715,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "post-training stage": 1.91,
+      "y": 0.255137184245839,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "post-training stage": 1.97,
+      "y": 0.29227064347846876,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "post-training stage": 2.03,
+      "y": 0.3272681880075783,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "post-training stage": 2.09,
+      "y": 0.2609684184200398,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "post-training stage": 2.15,
+      "y": 0.24485510375715613,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "post-training stage": 2.85,
+      "y": 0.25492251506500563,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "post-training stage": 2.91,
+      "y": 0.24859510167692445,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "post-training stage": 2.97,
+      "y": 0.28520716113013633,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "post-training stage": 3.03,
+      "y": 0.32540393116198163,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "post-training stage": 3.09,
+      "y": 0.25722739523258664,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "post-training stage": 3.15,
+      "y": 0.23806572109455337,
+      "_kind": "scatter",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 72,
+  "text": {
+    "suptitle": "Per-fold diagonal map quality (6 cluster-grouped folds per cell)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "single-turn corpus \u2014 context arm",
+        "xlabel": "post-training stage",
+        "ylabel": "per-fold held-out OOF R\u00b2 at layer*",
+        "annotations": [
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5"
+        ],
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ],
+        "yticklabels": [
+          "0.225",
+          "0.250",
+          "0.275",
+          "0.300",
+          "0.325",
+          "0.350",
+          "0.375",
+          "0.400",
+          "0.425",
+          "0.450"
+        ]
+      },
+      {
+        "title_left": "multi-turn corpus \u2014 context arm",
+        "xlabel": "post-training stage",
+        "annotations": [
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5"
+        ],
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ]
+      },
+      {
+        "title_left": "multi-turn corpus \u2014 prefix arm",
+        "xlabel": "post-training stage",
+        "annotations": [
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5"
+        ],
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ]
+      }
+    ]
+  }
+}

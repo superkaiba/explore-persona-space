@@ -386,7 +386,7 @@ def test_zombie_direct_call_output_default_inf(caplog: pytest.LogCaptureFixture)
     ``inf`` default keeps every pre-#1033 caller/test byte-unchanged — the
     tick-2 fire path is reached exactly as before (mirror of
     ``test_zombie_direct_call_rate_none_default``)."""
-    status, reason, cpu_override, streak = pp._apply_zombie_override(
+    status, reason, cpu_override, streak, wedge_streak = pp._apply_zombie_override(
         status="running",
         zombie_gpu_pids=["1262130"],
         stall_sec=900,
@@ -397,11 +397,12 @@ def test_zombie_direct_call_output_default_inf(caplog: pytest.LogCaptureFixture)
         pod="pod-9813",
         cpu_override_active=True,
     )
-    assert (status, reason, cpu_override, streak) == (
+    assert (status, reason, cpu_override, streak, wedge_streak) == (
         "stalled",
         "vllm_worker_dead_zombie_gpu",
         False,
         2,
+        0,
     )
 
 

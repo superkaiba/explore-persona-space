@@ -1,0 +1,25 @@
+{
+ "design": {
+  "question": "Are the best-predicted SAE features explained by their target variance (the SAE analogue of the PC-basis variance-mechanical story)?",
+  "recipe": "per-feature holdout target variance streamed from the surviving bridge-staging memmap (work/Ycat.f32.mm, order = holdout++fit++val per designs_meta.json, which.npy codes reconciled against split counts 20000/120000/2000), aligned to the banked sae_ctx mean-ridge per-feature R2 by feat_ids (f_out order asserted equal)",
+  "corpus": "#1482 single-turn, 20,000-row holdout, restricted 16,384 f_out set"
+ },
+ "results": {
+  "spearman_r2_vs_log_variance": 0.02,
+  "spearman_r2_vs_activity": 0.293,
+  "spearman_variance_vs_activity": 0.005,
+  "spearman_r2_vs_consistency": 0.6,
+  "partial_r2_consistency_given_log_variance": 0.6,
+  "partial_r2_log_variance_given_consistency": 0.012,
+  "feature_space_floor_fit": {
+   "asymptote_1_minus_b": 0.188,
+   "a": 0.000378,
+   "gof": 0.001
+  },
+  "pc_basis_reference": {
+   "floor_fit_gof": 0.871,
+   "source": "eval_results/issue_779/spectrum_floor_fit/"
+  }
+ },
+ "takeaway": "Variance does NOT organize per-feature predictability (rho 0.02, floor fit gof 0.001) \u2014 the variance-mechanical story is a property of the PCA basis, not the map. Consistency (0.600) is fully independent of variance."
+}

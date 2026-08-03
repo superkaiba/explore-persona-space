@@ -88,11 +88,13 @@ from explore_persona_space.backends.base import (
 from explore_persona_space.backends.router import (
     ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD,
     ROUTE_REASON_CPU_FALLBACK_INFEASIBLE,
+    ROUTE_REASON_GCP_DISABLED,
     ROUTE_REASON_RECONNECT,
     BackendPrepareError,
     CpuExhaustedNoRunpodLaneError,
     CpuFallbackInfeasibleError,
     GcpAttemptCapExceededError,
+    GcpDisabledError,
     LeaseStore,
     ManualAttentionRequiredError,
     NoComputeAvailableError,
@@ -286,11 +288,11 @@ def normalize_backend_value(raw: Any) -> BackendKind:
         return _LEGACY_TO_ROUTER_BACKEND[val]
     # ``route()`` validates the value at call time; we forward verbatim.
     # The narrow router-side set is the source of truth.
-    if val in {"runpod", "nibi", "fir", "gcp", "mila", "auto"}:
+    if val in {"runpod", "nibi", "fir", "gcp", "mila", "fellows", "auto"}:
         return val  # type: ignore[return-value]
     raise ValueError(
         f"unknown backend frontmatter value: {raw!r}. Expected one of: "
-        "runpod, cluster, nibi, fir, gcp, mila, auto, or empty (auto)."
+        "runpod, cluster, nibi, fir, gcp, mila, fellows, auto, or empty (auto)."
     )
 
 
@@ -301,8 +303,11 @@ def normalize_backend_value(raw: Any) -> BackendKind:
 
 #: SLURM lane names (per-cluster backend values that all share one renderer /
 #: one export contract). The legacy ``cluster`` alias normalizes to ``nibi``
-#: (see :data:`_LEGACY_TO_ROUTER_BACKEND`), i.e. into this set.
-_SLURM_LANES: tuple[str, ...] = ("nibi", "fir", "mila")
+#: (see :data:`_LEGACY_TO_ROUTER_BACKEND`), i.e. into this set. ``fellows``
+#: (#1609) shares the same renderer, hence the same export contract (its
+#: extra_exports — HF_HOME / NCCL_NVLS_ENABLE / UV_PYTHON* / SCRATCH — are
+#: outside the lint universe by the same noise-var rule as HF_XET_*).
+_SLURM_LANES: tuple[str, ...] = ("nibi", "fir", "mila", "fellows")
 
 #: Env vars each lane EXPORTS into the shell that executes a user-supplied
 #: ``--workload-cmd`` string, verified against the renderers (line anchors as
@@ -500,6 +505,172 @@ def lint_workload_cmd_lane_env(
     return WorkloadCmdEnvLint(flagged=flagged, certain=certain, reachable_lanes=reachable)
 
 
+#: Sanctioned trailing sentinel append (experimenter.md § item 11):
+#: ``<workload-cmd> && [uv run ]python -c "...write_completion_sentinel..."``.
+#: Leftmost ``&& [uv run ]python -c`` whose remainder mentions
+#: ``write_completion_sentinel``; anchored to end-of-string via DOTALL ``.+$``
+#: so only a TRAILING append (plus anything after the first such join) is
+#: stripped before the inline-interpreter scan.
+_SENTINEL_APPEND_RE = re.compile(r"&&\s*(?:uv\s+run\s+)?python3?\s+-c\s+(?P<rest>.+)$", re.DOTALL)
+#: Inline interpreter as the PRIMARY command: optional ``VAR=val`` env
+#: prefixes, then ``[uv run ]python[3] -c``.
+_INLINE_C_BODY_RE = re.compile(
+    r"^\s*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*(?:uv\s+run\s+)?python3?\s+-c(?=\s)"
+)
+#: Stdin-heredoc python anywhere: ``python - <<EOF``, ``python - <<'EOF'``,
+#: ``python <<EOF``, with/without ``uv run``, optional ``<<-``.
+_STDIN_HEREDOC_RE = re.compile(r"(?:uv\s+run\s+)?python3?\s+-?\s*<<-?\s*['\"]?\w+")
+
+
+@dataclass(frozen=True)
+class WorkloadCmdInlineLint:
+    """Result of :func:`lint_workload_cmd_inline_interpreter` (#1576).
+
+    ``shape`` names the detected anti-pattern (``"inline_c"`` |
+    ``"stdin_heredoc"``) or ``None`` when unflagged.
+    ``sentinel_append_stripped`` records whether the sanctioned trailing
+    ``write_completion_sentinel`` append was removed before the scan.
+    """
+
+    flagged: bool
+    shape: str | None
+    sentinel_append_stripped: bool
+
+
+def strip_sentinel_append(workload_cmd: str) -> tuple[str, bool]:
+    """Strip the experimenter.md-sanctioned trailing sentinel append.
+
+    Returns ``(body, stripped)``: the command with the leftmost
+    ``&& [uv run ]python -c`` join removed when its remainder mentions
+    ``write_completion_sentinel`` (the ONE sanctioned inline ``-c`` suffix),
+    else the command unchanged.
+    """
+    m = _SENTINEL_APPEND_RE.search(workload_cmd)
+    if m is not None and "write_completion_sentinel" in m.group("rest"):
+        return workload_cmd[: m.start()], True
+    return workload_cmd, False
+
+
+def lint_workload_cmd_inline_interpreter(workload_cmd: str) -> WorkloadCmdInlineLint:
+    """WARN-class #1576 detection: inline interpreter one-liner as the workload BODY.
+
+    Mechanizes the SKILL.md § Backend dispatch prose rule "Ad-hoc probe
+    workloads are committed scripts invoked by path" (incident #1482: a
+    placeholder-broken inline staging one-liner would have SyntaxError'd
+    post-b0 and spuriously failed over to RunPod). Scans the RAW command —
+    never the ``_SINGLE_QUOTED_SEGMENT_RE``-stripped text the lane-env lint
+    uses — because an inline ``-c`` body is usually single-quoted, so the
+    quote strip would erase exactly the evidence this arm needs. The
+    sanctioned trailing ``write_completion_sentinel`` append is removed via
+    :func:`strip_sentinel_append` BEFORE the scan (strip-then-scan: an inline
+    body that ALSO ends with the sentinel append still flags).
+
+    Scope: router-lane dispatches only — this lint runs inside
+    ``dispatch_issue.py launch``; direct-SSH pod launches bypass it.
+
+    Deliberate v1 FALSE NEGATIVES (named, mirroring the
+    ``_bare_reference_re`` docstring discipline — widen if one bites):
+
+    * a mid-chain non-sentinel ``&& python -c`` segment after a
+      committed-script body;
+    * ``bash -c '...'`` / ``sh -c '...'`` wrapping;
+    * ``python -m module`` bodies and non-python interpreters;
+    * the no-space ``python -c'x'`` shape (the ``-c`` lookahead requires
+      whitespace);
+    * sentinel-token smuggling: ``true && uv run python -c "<staging>;
+      ...write_completion_sentinel(...)"`` post-strips to ``true`` and does
+      not flag (the strip keys on the token alone).
+    """
+    body = (workload_cmd or "").strip()
+    if not body:
+        return WorkloadCmdInlineLint(flagged=False, shape=None, sentinel_append_stripped=False)
+    body, stripped = strip_sentinel_append(body)
+    if _INLINE_C_BODY_RE.search(body):
+        return WorkloadCmdInlineLint(True, "inline_c", stripped)
+    if _STDIN_HEREDOC_RE.search(body):
+        return WorkloadCmdInlineLint(True, "stdin_heredoc", stripped)
+    return WorkloadCmdInlineLint(False, None, stripped)
+
+
+#: Case-insensitive persist-evidence substrings (#1800). A workload chain
+#: (command + resolved driver-script text) carrying NONE of these has no
+#: visible upload/persist WIRING for its outputs — the #1739 class. The
+#: composition is a v1 heuristic pinned by tests
+#: (``tests/test_workload_cmd_persist_lint.py``); incident-replay
+#: calibration (plan #1800 §2): the pre-fix #1739 dispatcher
+#: (``origin/issue-1739`` @ ``3bcc140bbd``) reads 0 hits → flags, the
+#: post-fix tip reads 17 hits → clean.
+PERSIST_EVIDENCE_TOKENS: tuple[str, ...] = (
+    "upload",
+    "push_to_hub",
+    "hf_hub",
+    "hfapi",
+    "git push",
+    "persist",
+)
+
+
+@dataclass(frozen=True)
+class WorkloadCmdPersistLint:
+    """Result of :func:`lint_workload_cmd_persist_evidence` (#1800).
+
+    ``flagged`` — the resolved chain carries ZERO persist-evidence tokens.
+    ``skipped`` — the lint could not run (empty command, or the driver
+    script text was unavailable); never flagged when skipped.
+    ``matched_tokens`` — the sorted evidence tokens found (empty when
+    flagged or skipped).
+    """
+
+    flagged: bool
+    skipped: bool
+    matched_tokens: tuple[str, ...]
+
+
+def lint_workload_cmd_persist_evidence(
+    workload_cmd: str, script_text: str | None
+) -> WorkloadCmdPersistLint:
+    """WARN-class #1800 detection: no persist step anywhere in the workload chain.
+
+    Mechanizes the dispatch-time backstop for incident #1739 (2026-07-28): a
+    GCP ``--workload-cmd`` run completed every phase and approached
+    grace-poweroff with ZERO artifacts on HF (all 7 expected prefixes MISS);
+    #1779 fixed the PLAN-time layer, this lint is the dispatch-time sibling
+    of the #1329/#1576 workload-cmd lint family. Scans the COMMAND plus the
+    resolved driver-script text (``script_text``) case-insensitively for
+    :data:`PERSIST_EVIDENCE_TOKENS`; zero hits on a resolved script →
+    ``flagged=True``. ``script_text is None`` (unresolvable driver) →
+    ``skipped=True``, never flagged — fail-soft by design, the caller logs
+    ONE note.
+
+    Deliberate v1 FALSE NEGATIVES (named, mirroring the
+    :func:`lint_workload_cmd_inline_interpreter` docstring discipline —
+    widen if one bites):
+
+    * present-but-never-executed persist: a chain whose persist phase
+      EXISTS in the script text but is skipped at runtime (a ``--dry-run``
+      upload mode, a ``--phases`` subset invocation that omits the upload
+      phase) reads as evidence — this lint checks persist WIRING, never a
+      persist guarantee; Step 8 upload-verification stays the hard gate;
+    * ambiguous tokens: a download-only ``hf_hub_download`` staging call
+      (or a bare ``HfApi()`` listing) matches the ``hf_hub`` / ``hfapi``
+      tokens and reads as evidence;
+    * comments: a commented-out ``# upload later`` line counts as evidence
+      (substring scan, no shell/python parsing).
+
+    Known FALSE-POSITIVE residual (WARN-only by design, #1800 plan §5): a
+    multi-script chain whose persist step lives in a SECOND sourced/invoked
+    file the caller did not resolve flags spuriously — the escape is the
+    descope path (scan the command string only) if this proves noisy.
+    """
+    if not (workload_cmd or "").strip():
+        return WorkloadCmdPersistLint(flagged=False, skipped=True, matched_tokens=())
+    if script_text is None:
+        return WorkloadCmdPersistLint(flagged=False, skipped=True, matched_tokens=())
+    haystack = f"{workload_cmd}\n{script_text}".lower()
+    matched = tuple(sorted(tok for tok in PERSIST_EVIDENCE_TOKENS if tok in haystack))
+    return WorkloadCmdPersistLint(flagged=not matched, skipped=False, matched_tokens=matched)
+
+
 def build_run_spec(
     *,
     issue: int,
@@ -622,6 +793,16 @@ RECONNECT_CARRY_FORWARD_EXTRA_KEYS: tuple[str, ...] = (
     "gpu_count",
     "boot_disk_gb",
     "min_ram_gb",
+    # #1669: launch env pins (WANDB_PROJECT et al.) — carried VERBATIM,
+    # with no sanitize step here BY CHOICE: the pins were strict-validated
+    # at the original launch (dispatch_issue._parse_env_pins), every
+    # renderer re-validates fail-loud at consumption (covers a hand-edited
+    # sidecar on this live-operator reconnect path), and the failover
+    # reconstructors keep their own per-key sanitize-and-warn
+    # (backends.base.sanitize_env_pins). The `v not in (None, "", [])`
+    # filter keeps a non-empty dict and skips an absent key (legacy
+    # sidecars carry no env_pins).
+    "env_pins",
 )
 
 
@@ -750,9 +931,10 @@ class TerminalTranslation:
 def classify_terminal_exception(exc: BaseException) -> TerminalTranslation:
     """Map a router terminal exception to its ``epm:failure`` shape.
 
-    The five router terminals are exhaustively handled (each is a
-    distinct ``RouteError`` subclass). Anything else propagates as a
-    plain ``RouteError`` whose handling is the caller's concern.
+    The typed router terminals are exhaustively handled (each is a
+    distinct ``RouteError`` subclass — incl. the #2028
+    :class:`GcpDisabledError` policy refusal). Anything else propagates as
+    a plain ``RouteError`` whose handling is the caller's concern.
     """
     if isinstance(exc, BackendPrepareError):
         return TerminalTranslation(
@@ -764,6 +946,26 @@ def classify_terminal_exception(exc: BaseException) -> TerminalTranslation:
                 f"kind: {exc.kind}\n"
                 f"cluster: {exc.cluster}\n"
                 f"detail: {exc.reason}"
+            ),
+        )
+    if isinstance(exc, GcpDisabledError):
+        # #2028: an explicit ``backend: gcp`` pin while GCP provisioning is
+        # disabled by policy. A POLICY refusal, not a capacity outcome — the
+        # reason token is NOT in the watcher's TRANSIENT_CAPACITY_REASONS
+        # (nothing will "free up"; auto-retry would loop a policy-refused
+        # launch). The fix is a human changing the pin, or a deliberate
+        # rollback flip of router.GCP_PROVISIONING_DISABLED.
+        return TerminalTranslation(
+            failure_class="infra",
+            status="blocked",
+            note=(
+                "failure_class: infra\n"
+                f"reason: {ROUTE_REASON_GCP_DISABLED}\n"
+                "recovery: re-dispatch WITHOUT the gcp pin (omit --backend / clear "
+                "the backend: frontmatter so the auto chain routes fellows -> free "
+                "SLURM lanes), or flip router.GCP_PROVISIONING_DISABLED = False for "
+                "a deliberate rollback (#2028)\n"
+                f"detail: {exc}"
             ),
         )
     if isinstance(exc, CpuFallbackInfeasibleError):
@@ -1122,18 +1324,24 @@ _mila_socket_alive_stub = _default_mila_socket_alive
 
 __all__ = [
     "LANE_WORKLOAD_ENV_EXPORTS",
+    "PERSIST_EVIDENCE_TOKENS",
     "DispatchOutcome",
     "TerminalTranslation",
     "WorkloadCmdEnvLint",
+    "WorkloadCmdInlineLint",
+    "WorkloadCmdPersistLint",
     "build_run_spec",
     "classify_terminal_exception",
     "default_handle_sidecar_path",
     "deserialize_handle",
     "dispatch_for_issue",
+    "lint_workload_cmd_inline_interpreter",
     "lint_workload_cmd_lane_env",
+    "lint_workload_cmd_persist_evidence",
     "normalize_backend_value",
     "read_handle_sidecar",
     "resolve_handle_sidecar_path",
     "serialize_handle",
+    "strip_sentinel_append",
     "write_handle_sidecar",
 ]

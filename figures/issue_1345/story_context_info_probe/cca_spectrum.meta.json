@@ -1,0 +1,1848 @@
+{
+  "commit": "5d03b1904d",
+  "created": "2026-07-30T17:35:48Z",
+  "figsize": [
+    6.6,
+    4.4
+  ],
+  "points": [
+    {
+      "canonical component (ordered)": 1.0,
+      "held-out correlation between projected pairs": 0.9493411779403687,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 2.0,
+      "held-out correlation between projected pairs": 0.9405633211135864,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 3.0,
+      "held-out correlation between projected pairs": 0.9137703776359558,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 4.0,
+      "held-out correlation between projected pairs": 0.9345139265060425,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 5.0,
+      "held-out correlation between projected pairs": 0.9213380813598633,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 6.0,
+      "held-out correlation between projected pairs": 0.8951722383499146,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 7.0,
+      "held-out correlation between projected pairs": 0.8876442909240723,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 8.0,
+      "held-out correlation between projected pairs": 0.9035139083862305,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 9.0,
+      "held-out correlation between projected pairs": 0.8515689969062805,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 10.0,
+      "held-out correlation between projected pairs": 0.8432976007461548,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 11.0,
+      "held-out correlation between projected pairs": 0.8327153325080872,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 12.0,
+      "held-out correlation between projected pairs": 0.7970620393753052,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 13.0,
+      "held-out correlation between projected pairs": 0.7985984086990356,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 14.0,
+      "held-out correlation between projected pairs": 0.792055606842041,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 15.0,
+      "held-out correlation between projected pairs": 0.7597810626029968,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 16.0,
+      "held-out correlation between projected pairs": 0.7165428996086121,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 17.0,
+      "held-out correlation between projected pairs": 0.7487674951553345,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 18.0,
+      "held-out correlation between projected pairs": 0.7152734994888306,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 19.0,
+      "held-out correlation between projected pairs": 0.6745206117630005,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 20.0,
+      "held-out correlation between projected pairs": 0.6867021322250366,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 21.0,
+      "held-out correlation between projected pairs": 0.6754913926124573,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 22.0,
+      "held-out correlation between projected pairs": 0.6673492789268494,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 23.0,
+      "held-out correlation between projected pairs": 0.6330886483192444,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 24.0,
+      "held-out correlation between projected pairs": 0.6452657580375671,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 25.0,
+      "held-out correlation between projected pairs": 0.6078609228134155,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 26.0,
+      "held-out correlation between projected pairs": 0.5746160745620728,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 27.0,
+      "held-out correlation between projected pairs": 0.579984188079834,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 28.0,
+      "held-out correlation between projected pairs": 0.5953512787818909,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 29.0,
+      "held-out correlation between projected pairs": 0.572398841381073,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 30.0,
+      "held-out correlation between projected pairs": 0.538538932800293,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 31.0,
+      "held-out correlation between projected pairs": 0.5326040387153625,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 32.0,
+      "held-out correlation between projected pairs": 0.5190735459327698,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 33.0,
+      "held-out correlation between projected pairs": 0.5390959978103638,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 34.0,
+      "held-out correlation between projected pairs": 0.5191109776496887,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 35.0,
+      "held-out correlation between projected pairs": 0.4924805760383606,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 36.0,
+      "held-out correlation between projected pairs": 0.5356003046035767,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 37.0,
+      "held-out correlation between projected pairs": 0.4739239811897278,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 38.0,
+      "held-out correlation between projected pairs": 0.5401376485824585,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 39.0,
+      "held-out correlation between projected pairs": 0.45628052949905396,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 40.0,
+      "held-out correlation between projected pairs": 0.4479919970035553,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 41.0,
+      "held-out correlation between projected pairs": 0.4652424454689026,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 42.0,
+      "held-out correlation between projected pairs": 0.4206632077693939,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 43.0,
+      "held-out correlation between projected pairs": 0.4640693664550781,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 44.0,
+      "held-out correlation between projected pairs": 0.43590784072875977,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 45.0,
+      "held-out correlation between projected pairs": 0.42597731947898865,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 46.0,
+      "held-out correlation between projected pairs": 0.4200206696987152,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 47.0,
+      "held-out correlation between projected pairs": 0.41992902755737305,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 48.0,
+      "held-out correlation between projected pairs": 0.4271777272224426,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 49.0,
+      "held-out correlation between projected pairs": 0.3955990970134735,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 50.0,
+      "held-out correlation between projected pairs": 0.40417203307151794,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 51.0,
+      "held-out correlation between projected pairs": 0.4246392250061035,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 52.0,
+      "held-out correlation between projected pairs": 0.39244362711906433,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 53.0,
+      "held-out correlation between projected pairs": 0.40955668687820435,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 54.0,
+      "held-out correlation between projected pairs": 0.37341219186782837,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 55.0,
+      "held-out correlation between projected pairs": 0.31938594579696655,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 56.0,
+      "held-out correlation between projected pairs": 0.34163862466812134,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 57.0,
+      "held-out correlation between projected pairs": 0.36324068903923035,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 58.0,
+      "held-out correlation between projected pairs": 0.33207544684410095,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 59.0,
+      "held-out correlation between projected pairs": 0.31864964962005615,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 60.0,
+      "held-out correlation between projected pairs": 0.31780681014060974,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 61.0,
+      "held-out correlation between projected pairs": 0.29918473958969116,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 62.0,
+      "held-out correlation between projected pairs": 0.2793484330177307,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 63.0,
+      "held-out correlation between projected pairs": 0.3367936611175537,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 64.0,
+      "held-out correlation between projected pairs": 0.2723453640937805,
+      "series": "measured, teacher-forced story",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "canonical component (ordered)": 1.0,
+      "held-out correlation between projected pairs": -0.038769859820604324,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 2.0,
+      "held-out correlation between projected pairs": -0.02928726002573967,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 3.0,
+      "held-out correlation between projected pairs": 0.01642262004315853,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 4.0,
+      "held-out correlation between projected pairs": 0.008865687996149063,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 5.0,
+      "held-out correlation between projected pairs": -0.02758174017071724,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 6.0,
+      "held-out correlation between projected pairs": -0.0030487568583339453,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 7.0,
+      "held-out correlation between projected pairs": -0.019269395619630814,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 8.0,
+      "held-out correlation between projected pairs": 0.023551486432552338,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 9.0,
+      "held-out correlation between projected pairs": -0.023087020963430405,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 10.0,
+      "held-out correlation between projected pairs": 0.006773394998162985,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 11.0,
+      "held-out correlation between projected pairs": -0.014723321422934532,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 12.0,
+      "held-out correlation between projected pairs": 0.022947385907173157,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 13.0,
+      "held-out correlation between projected pairs": 0.003012788249179721,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 14.0,
+      "held-out correlation between projected pairs": -0.016016248613595963,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 15.0,
+      "held-out correlation between projected pairs": 0.01018223725259304,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 16.0,
+      "held-out correlation between projected pairs": 0.02537151612341404,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 17.0,
+      "held-out correlation between projected pairs": 0.005585058126598597,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 18.0,
+      "held-out correlation between projected pairs": -0.03540779650211334,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 19.0,
+      "held-out correlation between projected pairs": 0.024061718955636024,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 20.0,
+      "held-out correlation between projected pairs": 0.02035023644566536,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 21.0,
+      "held-out correlation between projected pairs": -0.006407248787581921,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 22.0,
+      "held-out correlation between projected pairs": 0.016638334840536118,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 23.0,
+      "held-out correlation between projected pairs": -0.024895217269659042,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 24.0,
+      "held-out correlation between projected pairs": -0.03892102092504501,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 25.0,
+      "held-out correlation between projected pairs": -0.010658510960638523,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 26.0,
+      "held-out correlation between projected pairs": -0.008527034893631935,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 27.0,
+      "held-out correlation between projected pairs": 0.02110867016017437,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 28.0,
+      "held-out correlation between projected pairs": 0.0026331625413149595,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 29.0,
+      "held-out correlation between projected pairs": -0.007403639145195484,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 30.0,
+      "held-out correlation between projected pairs": -0.008784853853285313,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 31.0,
+      "held-out correlation between projected pairs": 0.02827329933643341,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 32.0,
+      "held-out correlation between projected pairs": 0.0035062648821622133,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 33.0,
+      "held-out correlation between projected pairs": -0.026535198092460632,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 34.0,
+      "held-out correlation between projected pairs": -0.011681611649692059,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 35.0,
+      "held-out correlation between projected pairs": 0.022867945954203606,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 36.0,
+      "held-out correlation between projected pairs": -0.016903666779398918,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 37.0,
+      "held-out correlation between projected pairs": -0.001142325229011476,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 38.0,
+      "held-out correlation between projected pairs": 0.006594757549464703,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 39.0,
+      "held-out correlation between projected pairs": 0.010957908816635609,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 40.0,
+      "held-out correlation between projected pairs": -0.011963417753577232,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 41.0,
+      "held-out correlation between projected pairs": -0.07617159932851791,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 42.0,
+      "held-out correlation between projected pairs": -0.000715771340765059,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 43.0,
+      "held-out correlation between projected pairs": -0.026418203487992287,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 44.0,
+      "held-out correlation between projected pairs": -0.0022642246913164854,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 45.0,
+      "held-out correlation between projected pairs": 0.006073250435292721,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 46.0,
+      "held-out correlation between projected pairs": -0.0011997316032648087,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 47.0,
+      "held-out correlation between projected pairs": -0.05272861570119858,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 48.0,
+      "held-out correlation between projected pairs": -0.01699993386864662,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 49.0,
+      "held-out correlation between projected pairs": 0.018375644460320473,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 50.0,
+      "held-out correlation between projected pairs": -0.01890627108514309,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 51.0,
+      "held-out correlation between projected pairs": 0.005397216882556677,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 52.0,
+      "held-out correlation between projected pairs": 0.016568919643759727,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 53.0,
+      "held-out correlation between projected pairs": 0.011685041710734367,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 54.0,
+      "held-out correlation between projected pairs": 0.06037604808807373,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 55.0,
+      "held-out correlation between projected pairs": -0.011261875741183758,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 56.0,
+      "held-out correlation between projected pairs": 0.042018212378025055,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 57.0,
+      "held-out correlation between projected pairs": 0.0030755146872252226,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 58.0,
+      "held-out correlation between projected pairs": 0.01289561577141285,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 59.0,
+      "held-out correlation between projected pairs": -0.024542655795812607,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 60.0,
+      "held-out correlation between projected pairs": -0.006909692194312811,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 61.0,
+      "held-out correlation between projected pairs": 0.00983381737023592,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 62.0,
+      "held-out correlation between projected pairs": -0.0028949794359505177,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 63.0,
+      "held-out correlation between projected pairs": 0.0016203459817916155,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 64.0,
+      "held-out correlation between projected pairs": -0.020775893703103065,
+      "series": "shuffled pairing, teacher-forced story",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "canonical component (ordered)": 1.0,
+      "held-out correlation between projected pairs": 0.913472056388855,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 2.0,
+      "held-out correlation between projected pairs": 0.9010910987854004,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 3.0,
+      "held-out correlation between projected pairs": 0.8681753277778625,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 4.0,
+      "held-out correlation between projected pairs": 0.8824151754379272,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 5.0,
+      "held-out correlation between projected pairs": 0.8630813360214233,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 6.0,
+      "held-out correlation between projected pairs": 0.8478692770004272,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 7.0,
+      "held-out correlation between projected pairs": 0.8437275886535645,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 8.0,
+      "held-out correlation between projected pairs": 0.7834244966506958,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 9.0,
+      "held-out correlation between projected pairs": 0.772211492061615,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 10.0,
+      "held-out correlation between projected pairs": 0.7594205737113953,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 11.0,
+      "held-out correlation between projected pairs": 0.7480383515357971,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 12.0,
+      "held-out correlation between projected pairs": 0.7676889896392822,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 13.0,
+      "held-out correlation between projected pairs": 0.7116948366165161,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 14.0,
+      "held-out correlation between projected pairs": 0.7607428431510925,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 15.0,
+      "held-out correlation between projected pairs": 0.7062252759933472,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 16.0,
+      "held-out correlation between projected pairs": 0.7019346952438354,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 17.0,
+      "held-out correlation between projected pairs": 0.7134761810302734,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 18.0,
+      "held-out correlation between projected pairs": 0.6617982983589172,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 19.0,
+      "held-out correlation between projected pairs": 0.658039927482605,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 20.0,
+      "held-out correlation between projected pairs": 0.6491854190826416,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 21.0,
+      "held-out correlation between projected pairs": 0.6425604224205017,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 22.0,
+      "held-out correlation between projected pairs": 0.6244618892669678,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 23.0,
+      "held-out correlation between projected pairs": 0.6242986917495728,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 24.0,
+      "held-out correlation between projected pairs": 0.5908443927764893,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 25.0,
+      "held-out correlation between projected pairs": 0.5852205157279968,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 26.0,
+      "held-out correlation between projected pairs": 0.5673342347145081,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 27.0,
+      "held-out correlation between projected pairs": 0.5451145172119141,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 28.0,
+      "held-out correlation between projected pairs": 0.5443432331085205,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 29.0,
+      "held-out correlation between projected pairs": 0.5570474863052368,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 30.0,
+      "held-out correlation between projected pairs": 0.5205221176147461,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 31.0,
+      "held-out correlation between projected pairs": 0.47950607538223267,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 32.0,
+      "held-out correlation between projected pairs": 0.4853668808937073,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 33.0,
+      "held-out correlation between projected pairs": 0.5227041244506836,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 34.0,
+      "held-out correlation between projected pairs": 0.5054259896278381,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 35.0,
+      "held-out correlation between projected pairs": 0.5165589451789856,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 36.0,
+      "held-out correlation between projected pairs": 0.47479572892189026,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 37.0,
+      "held-out correlation between projected pairs": 0.48002561926841736,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 38.0,
+      "held-out correlation between projected pairs": 0.490936279296875,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 39.0,
+      "held-out correlation between projected pairs": 0.47109299898147583,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 40.0,
+      "held-out correlation between projected pairs": 0.47697344422340393,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 41.0,
+      "held-out correlation between projected pairs": 0.42507490515708923,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 42.0,
+      "held-out correlation between projected pairs": 0.40146106481552124,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 43.0,
+      "held-out correlation between projected pairs": 0.40124863386154175,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 44.0,
+      "held-out correlation between projected pairs": 0.3719654977321625,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 45.0,
+      "held-out correlation between projected pairs": 0.37187644839286804,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 46.0,
+      "held-out correlation between projected pairs": 0.3876557946205139,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 47.0,
+      "held-out correlation between projected pairs": 0.4199812412261963,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 48.0,
+      "held-out correlation between projected pairs": 0.3347831964492798,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 49.0,
+      "held-out correlation between projected pairs": 0.36245885491371155,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 50.0,
+      "held-out correlation between projected pairs": 0.37857359647750854,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 51.0,
+      "held-out correlation between projected pairs": 0.36793237924575806,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 52.0,
+      "held-out correlation between projected pairs": 0.33797454833984375,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 53.0,
+      "held-out correlation between projected pairs": 0.3524569869041443,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 54.0,
+      "held-out correlation between projected pairs": 0.3201848566532135,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 55.0,
+      "held-out correlation between projected pairs": 0.3027268946170807,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 56.0,
+      "held-out correlation between projected pairs": 0.35556790232658386,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 57.0,
+      "held-out correlation between projected pairs": 0.3328912556171417,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 58.0,
+      "held-out correlation between projected pairs": 0.3238967955112457,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 59.0,
+      "held-out correlation between projected pairs": 0.2973330616950989,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 60.0,
+      "held-out correlation between projected pairs": 0.28457626700401306,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 61.0,
+      "held-out correlation between projected pairs": 0.2849252223968506,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 62.0,
+      "held-out correlation between projected pairs": 0.2486090362071991,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 63.0,
+      "held-out correlation between projected pairs": 0.2725580334663391,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 64.0,
+      "held-out correlation between projected pairs": 0.23146231472492218,
+      "series": "measured, on-policy story",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "canonical component (ordered)": 1.0,
+      "held-out correlation between projected pairs": 0.04857326298952103,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 2.0,
+      "held-out correlation between projected pairs": -0.016151968389749527,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 3.0,
+      "held-out correlation between projected pairs": 0.035053711384534836,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 4.0,
+      "held-out correlation between projected pairs": -0.01468602567911148,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 5.0,
+      "held-out correlation between projected pairs": -0.01597544178366661,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 6.0,
+      "held-out correlation between projected pairs": -0.012796586379408836,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 7.0,
+      "held-out correlation between projected pairs": 0.021336611360311508,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 8.0,
+      "held-out correlation between projected pairs": -0.0034418508876115084,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 9.0,
+      "held-out correlation between projected pairs": -0.0016037247842177749,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 10.0,
+      "held-out correlation between projected pairs": 0.010935294441878796,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 11.0,
+      "held-out correlation between projected pairs": -0.02444533444941044,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 12.0,
+      "held-out correlation between projected pairs": -0.05959964916110039,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 13.0,
+      "held-out correlation between projected pairs": 0.008920714259147644,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 14.0,
+      "held-out correlation between projected pairs": -0.016814757138490677,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 15.0,
+      "held-out correlation between projected pairs": 0.003725982503965497,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 16.0,
+      "held-out correlation between projected pairs": -0.012508752755820751,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 17.0,
+      "held-out correlation between projected pairs": 0.0056845201179385185,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 18.0,
+      "held-out correlation between projected pairs": 0.004112814553081989,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 19.0,
+      "held-out correlation between projected pairs": -0.032679446041584015,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 20.0,
+      "held-out correlation between projected pairs": -0.015913020819425583,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 21.0,
+      "held-out correlation between projected pairs": 0.007273673079907894,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 22.0,
+      "held-out correlation between projected pairs": 0.007517854683101177,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 23.0,
+      "held-out correlation between projected pairs": 0.012694066390395164,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 24.0,
+      "held-out correlation between projected pairs": 0.0051806895062327385,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 25.0,
+      "held-out correlation between projected pairs": 0.0040995413437485695,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 26.0,
+      "held-out correlation between projected pairs": -0.03044554591178894,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 27.0,
+      "held-out correlation between projected pairs": -0.026434659957885742,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 28.0,
+      "held-out correlation between projected pairs": 0.006664433982223272,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 29.0,
+      "held-out correlation between projected pairs": -0.005012998823076487,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 30.0,
+      "held-out correlation between projected pairs": 0.0022149099968373775,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 31.0,
+      "held-out correlation between projected pairs": 0.010278166271746159,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 32.0,
+      "held-out correlation between projected pairs": 0.026149291545152664,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 33.0,
+      "held-out correlation between projected pairs": 0.004881906323134899,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 34.0,
+      "held-out correlation between projected pairs": 0.0010462455684319139,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 35.0,
+      "held-out correlation between projected pairs": 0.02654745616018772,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 36.0,
+      "held-out correlation between projected pairs": 0.009643781930208206,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 37.0,
+      "held-out correlation between projected pairs": -0.004136539064347744,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 38.0,
+      "held-out correlation between projected pairs": 0.0026208243798464537,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 39.0,
+      "held-out correlation between projected pairs": -0.010327081196010113,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 40.0,
+      "held-out correlation between projected pairs": 0.011379965580999851,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 41.0,
+      "held-out correlation between projected pairs": 0.06745488941669464,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 42.0,
+      "held-out correlation between projected pairs": 0.006815778557211161,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 43.0,
+      "held-out correlation between projected pairs": 0.008326242677867413,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 44.0,
+      "held-out correlation between projected pairs": -0.0350828692317009,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 45.0,
+      "held-out correlation between projected pairs": -0.006422223057597876,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 46.0,
+      "held-out correlation between projected pairs": -0.0260145366191864,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 47.0,
+      "held-out correlation between projected pairs": -0.0005384537507779896,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 48.0,
+      "held-out correlation between projected pairs": 0.05503002554178238,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 49.0,
+      "held-out correlation between projected pairs": -0.03414437919855118,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 50.0,
+      "held-out correlation between projected pairs": 0.010866093449294567,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 51.0,
+      "held-out correlation between projected pairs": 0.03042083978652954,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 52.0,
+      "held-out correlation between projected pairs": 0.04098602756857872,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 53.0,
+      "held-out correlation between projected pairs": -0.013784545473754406,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 54.0,
+      "held-out correlation between projected pairs": -0.007271741516888142,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 55.0,
+      "held-out correlation between projected pairs": -0.022363794967532158,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 56.0,
+      "held-out correlation between projected pairs": 0.007380188908427954,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 57.0,
+      "held-out correlation between projected pairs": 0.036674655973911285,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 58.0,
+      "held-out correlation between projected pairs": 0.025777285918593407,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 59.0,
+      "held-out correlation between projected pairs": 0.00872766226530075,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 60.0,
+      "held-out correlation between projected pairs": -0.005110261030495167,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 61.0,
+      "held-out correlation between projected pairs": 0.0212385430932045,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 62.0,
+      "held-out correlation between projected pairs": -0.003346215235069394,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 63.0,
+      "held-out correlation between projected pairs": 0.0028124377131462097,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "canonical component (ordered)": 64.0,
+      "held-out correlation between projected pairs": 0.0222979336977005,
+      "series": "shuffled pairing, on-policy story",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 256,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Shared linear structure, story context vs chat context",
+        "xlabel": "canonical component (ordered)",
+        "ylabel": "held-out correlation between projected pairs",
+        "legend_labels": [
+          "measured, teacher-forced story",
+          "shuffled pairing, teacher-forced story",
+          "measured, on-policy story",
+          "shuffled pairing, on-policy story"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "measured, teacher-forced story",
+      "shuffled pairing, teacher-forced story",
+      "measured, on-policy story",
+      "shuffled pairing, on-policy story"
+    ]
+  }
+}

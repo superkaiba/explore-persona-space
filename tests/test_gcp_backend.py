@@ -52,9 +52,11 @@ from explore_persona_space.backends import (
     render_create_argv,
 )
 from explore_persona_space.backends.gcp import (
+    _BOOT_DISK_REUSE_SLACK_SEC,
     _JANITOR_FENCE_GRACE_SECONDS,
     _ZOMBIE_GUEST_PHASES,
     A100_40_USABLE_GIB,
+    BOOT_DISK_MARKER_EXTRA_KEYS,
     DEFAULT_GCLOUD_CONFIG,
     DEFAULT_IMAGE_FAMILY,
     DEFAULT_IMAGE_PROJECT,
@@ -72,6 +74,7 @@ from explore_persona_space.backends.gcp import (
     _classify_janitor_instance,
     _gcp_status_to_poll_result,
     _instance_max_run_seconds,
+    _probe_boot_disk,
     _stale_named_instance_or_none,
     attempt_id_for,
     classify_create_failure,
@@ -189,25 +192,38 @@ class _Runner:
         create_results: list[GcloudRunResult] | None = None,
         list_results: list[GcloudRunResult] | None = None,
         describe_results: list[GcloudRunResult] | None = None,
+        disks_describe_results: list[GcloudRunResult] | None = None,
         delete_results: list[GcloudRunResult] | None = None,
         serial_results: list[GcloudRunResult] | None = None,
         guest_attr_results: list[GcloudRunResult] | None = None,
         ssh_results: list[GcloudRunResult] | None = None,
         scp_results: list[GcloudRunResult] | None = None,
         region_describe_results: list[GcloudRunResult] | None = None,
+        operations_results: list[GcloudRunResult] | None = None,
         create_raises: BaseException | None = None,
         list_raises: BaseException | None = None,
+        delete_raises: BaseException | None = None,
+        describe_raises: BaseException | None = None,
     ) -> None:
         self.calls: list[list[str]] = []
         self.create_results = list(create_results or [])
         self.list_results = list(list_results or [])
         self.describe_results = list(describe_results or [])
+        # #1617: every launch-success test now issues one post-create
+        # ``disks describe`` probe; the ``"{}"`` default routes unscripted
+        # legacy tests through the fail-soft boot_disk_probe_error path
+        # (additive keys — key-specific asserts hold).
+        self.disks_describe_results = list(disks_describe_results or [])
         self.delete_results = list(delete_results or [])
         self.serial_results = list(serial_results or [])
         self.guest_attr_results = list(guest_attr_results or [])
         self.ssh_results = list(ssh_results or [])
         self.scp_results = list(scp_results or [])
         self.region_describe_results = list(region_describe_results or [])
+        # #1628: `gcloud compute operations list` issuance-probe route. The
+        # unscripted default (rc=0, stdout "[]") is inert for every pre-#1628
+        # test — they never reach the probe.
+        self.operations_results = list(operations_results or [])
         # When set, RAISE the given exception off the matching gcloud
         # subcommand. ``create_raises`` fires the FIRST time a create argv is
         # seen. ``list_raises`` fires the first list argv seen AFTER the
@@ -217,12 +233,16 @@ class _Runner:
         # ``[]``. Lets the #736 create-timeout tests drive
         # ``subprocess.TimeoutExpired`` off the create call (and, for the
         # probe-timeout test, off the post-timeout list) — the base
-        # ``_Runner`` only returns, never raises.
+        # ``_Runner`` only returns, never raises. ``delete_raises`` /
+        # ``describe_raises`` (#1628) fire ONCE on the FIRST matching argv,
+        # then route subsequent calls to the scripted result lists.
         self._create_raises = create_raises
         self._list_raises = list_raises
+        self._delete_raises = delete_raises
+        self._describe_raises = describe_raises
         self._create_raised = False
 
-    def __call__(self, argv):
+    def __call__(self, argv):  # noqa: C901 — the argv dispatch table IS the fake's routing
         argv = list(argv)
         self.calls.append(argv)
         # gcloud compute instances <subcommand> ...
@@ -237,7 +257,12 @@ class _Runner:
                 exc, self._list_raises = self._list_raises, None
                 raise exc
             return self._pop(self.list_results, default_ok=True, default_stdout="[]")
+        if "describe" in argv and "disks" in argv:
+            return self._pop(self.disks_describe_results, default_ok=True, default_stdout="{}")
         if "describe" in argv and "instances" in argv:
+            if self._describe_raises is not None:
+                exc, self._describe_raises = self._describe_raises, None
+                raise exc
             return self._pop(self.describe_results, default_ok=True, default_stdout="{}")
         if "describe" in argv and "regions" in argv:
             return self._pop(self.region_describe_results, default_ok=True, default_stdout="{}")
@@ -249,7 +274,16 @@ class _Runner:
                 return self._pop(self.guest_attr_results, default_ok=False)
             return GcloudRunResult(1, "", "guest attribute eps/phase not found")
         if "delete" in argv and "instances" in argv:
+            if self._delete_raises is not None:
+                exc, self._delete_raises = self._delete_raises, None
+                raise exc
             return self._pop(self.delete_results, default_ok=True)
+        # #1628: zone-scoped `gcloud compute operations list` issuance probe.
+        # Checked as bare argv ELEMENTS ("operations"/"list"), so the
+        # `--filter=...instances...` flag string can never cross-match the
+        # instances routes above.
+        if "operations" in argv and "list" in argv:
+            return self._pop(self.operations_results, default_ok=True, default_stdout="[]")
         if "get-serial-port-output" in argv:
             return self._pop(self.serial_results, default_ok=True)
         # gcloud compute ssh / scp (fetch_results sentinel pull + best-
@@ -1560,6 +1594,47 @@ def test_reconnect_bare_spec_keeps_legacy_extra_shape() -> None:
     assert handle.extra["instance_name"] == "eps-issue-137"
 
 
+def test_reconnect_handle_carries_provisioning_model_and_launch_ts() -> None:
+    """#1815: the reconnect handle's extra carries provisioning_model
+    (scheduling.provisioningModel) + gcp_launched_ts (creationTimestamp →
+    epoch seconds) read off the SAME --format=json list response — the arm-N
+    inputs the poller's never-ran-young-flex vanish arm needs on the
+    reconnect path (the #1738 incident handle shape). Fields absent from the
+    instance JSON → keys absent (arm N fail-safes)."""
+    from datetime import datetime, timedelta, timezone
+
+    created = datetime(2026, 7, 30, 1, 5, 0, 588000, tzinfo=timezone(timedelta(hours=-7)))
+    payload = json.dumps(
+        [
+            {
+                "name": "eps-issue-137",
+                "id": "5705168949671854266",
+                # PENDING = the queued FLEX_START incident shape: live (not in
+                # _NONLIVE_INSTANCE_STATUSES), no guest-phase probe (RUNNING-only).
+                "status": "PENDING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+                "creationTimestamp": created.isoformat(),  # RFC3339 with offset
+                "scheduling": {"provisioningModel": "FLEX_START"},
+            }
+        ]
+    )
+    runner = _Runner(list_results=[GcloudRunResult(0, payload, "")])
+    handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+    assert handle is not None
+    assert handle.extra["provisioning_model"] == "FLEX_START"
+    assert abs(handle.extra["gcp_launched_ts"] - created.timestamp()) < 1.0
+
+    # Fields ABSENT from the list JSON -> keys absent (fail-safe direction).
+    bare = _Runner(list_results=[GcloudRunResult(0, _running_instance_payload(), "")])
+    bare_handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=bare)
+    assert bare_handle is not None
+    assert "provisioning_model" not in bare_handle.extra
+    assert "gcp_launched_ts" not in bare_handle.extra
+
+
 def test_reconnect_skips_terminated_instance() -> None:
     payload = json.dumps(
         [
@@ -2056,6 +2131,197 @@ def test_launch_marks_no_stale_delete_when_name_free(no_marker_posts) -> None:
     assert all("delete" not in c for c in runner.calls), runner.calls
     body = json.loads(posted[0]["note"])
     assert body["pre_launch_deleted_stale_instance"] is False
+
+
+# ---------------------------------------------------------------------------
+# Post-create boot-disk observability probe (#1617; incident #779)
+# ---------------------------------------------------------------------------
+
+
+def _disk_json(size_gb: int, age_days: float) -> str:
+    """``disks describe`` stdout for a disk of ``size_gb`` created ``age_days`` ago.
+
+    Mirrors the live field shapes (verified 2026-07-23): ``sizeGb`` is a
+    numeric STRING; ``creationTimestamp`` is RFC3339 with an offset.
+    """
+    created = datetime.now(UTC) - timedelta(days=age_days)
+    return json.dumps({"sizeGb": str(size_gb), "creationTimestamp": created.isoformat()})
+
+
+def _launch_with_disk_probe(
+    *,
+    spec_extra: dict[str, Any] | None = None,
+    disks_describe_results: list[GcloudRunResult] | None = None,
+) -> tuple[Any, _Runner, list[dict]]:
+    """Happy-path launch with a scripted ``disks describe`` probe result."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "998877"}])
+    runner = _Runner(
+        list_results=[
+            GcloudRunResult(0, "[]", ""),  # reconnect: no live instance
+            GcloudRunResult(0, "[]", ""),  # stale-name probe: name free
+        ],
+        create_results=[GcloudRunResult(0, created_payload, "")],
+        disks_describe_results=disks_describe_results,
+    )
+    posted: list[dict] = []
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **kwargs: posted.append(kwargs),
+    )
+    handle = backend.launch(_spec(extra=spec_extra or {}))
+    return handle, runner, posted
+
+
+def test_launch_boot_disk_reuse_records_extras_and_marker(no_marker_posts, caplog) -> None:
+    """#1617 pin (the #779 incident shape): a fresh create that ATTACHED a
+    20-day-old 300 GB disk against a requested 200 GB records reuse +
+    mismatch on handle.extra AND the epm:cluster-launched marker body, and
+    WARNs loudly for both."""
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.backends.gcp"):
+        handle, runner, posted = _launch_with_disk_probe(
+            spec_extra={"boot_disk_gb": 200},
+            disks_describe_results=[GcloudRunResult(0, _disk_json(300, 20.0), "")],
+        )
+    assert handle.extra["boot_disk_reused"] is True
+    assert handle.extra["boot_disk_size_gb"] == 300
+    assert handle.extra["boot_disk_requested_gb"] == 200
+    assert 19.5 < handle.extra["boot_disk_age_days"] < 20.5
+    assert handle.extra["boot_disk_size_mismatch"] is True
+    body = json.loads(posted[0]["note"])
+    for key in (
+        "boot_disk_reused",
+        "boot_disk_size_gb",
+        "boot_disk_requested_gb",
+        "boot_disk_age_days",
+        "boot_disk_size_mismatch",
+    ):
+        assert body[key] == handle.extra[key], key
+    assert "ATTACHED the pre-existing boot disk" in caplog.text
+    assert "SIZE MISMATCH" in caplog.text
+    # Exactly one zone-scoped disks-describe probe fired, on the instance name.
+    disk_calls = [c for c in runner.calls if "disks" in c and "describe" in c]
+    assert len(disk_calls) == 1, runner.calls
+    assert "eps-issue-137" in disk_calls[0]
+    assert "--zone=us-central1-a" in disk_calls[0]
+
+
+def test_launch_boot_disk_fresh_disk_no_reuse_no_mismatch(no_marker_posts, caplog) -> None:
+    """A fresh seconds-old disk at the requested size: reused False, no
+    mismatch / probe-error keys, no boot-disk WARNINGs."""
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.backends.gcp"):
+        handle, _runner, posted = _launch_with_disk_probe(
+            # No spec override -> config default 300; realized 300 matches.
+            disks_describe_results=[GcloudRunResult(0, _disk_json(300, 0.0), "")],
+        )
+    assert handle.extra["boot_disk_reused"] is False
+    assert handle.extra["boot_disk_size_gb"] == 300
+    assert handle.extra["boot_disk_requested_gb"] == 300
+    assert "boot_disk_size_mismatch" not in handle.extra
+    assert "boot_disk_probe_error" not in handle.extra
+    body = json.loads(posted[0]["note"])
+    assert body["boot_disk_reused"] is False
+    assert "boot_disk_size_mismatch" not in body
+    assert "ATTACHED the pre-existing boot disk" not in caplog.text
+    assert "SIZE MISMATCH" not in caplog.text
+
+
+def test_launch_boot_disk_probe_failure_fail_soft(no_marker_posts) -> None:
+    """#1617 pin: a probe failure (describe rc=1, e.g. a flex-queued fresh
+    create whose disk 404s while PENDING) NEVER fails the launch — healthy
+    handle, and of the six keys only boot_disk_probe_error is present in
+    handle.extra AND the marker body."""
+    handle, _runner, posted = _launch_with_disk_probe(
+        disks_describe_results=[GcloudRunResult(1, "", "was not found")],
+    )
+    assert handle.pod_name == "eps-issue-137"
+    assert handle.job_id == "998877"
+    present = [k for k in BOOT_DISK_MARKER_EXTRA_KEYS if k in handle.extra]
+    assert present == ["boot_disk_probe_error"], handle.extra
+    assert "was not found" in handle.extra["boot_disk_probe_error"]
+    body = json.loads(posted[0]["note"])
+    present_body = [k for k in BOOT_DISK_MARKER_EXTRA_KEYS if k in body]
+    assert present_body == ["boot_disk_probe_error"], body
+
+
+def test_probe_boot_disk_never_raises_on_runner_exception() -> None:
+    """The probe's fail-soft contract is non-negotiable: a runner exception
+    (incl. subprocess.TimeoutExpired) returns boot_disk_probe_error, never
+    raises."""
+
+    def raising_runner(argv):
+        raise subprocess.TimeoutExpired("gcloud", 300)
+
+    fields = _probe_boot_disk(
+        config=_test_config(),
+        name="eps-issue-137",
+        zone="us-central1-a",
+        requested_gb=200,
+        runner=raising_runner,
+    )
+    assert set(fields) == {"boot_disk_probe_error"}
+    assert "TimeoutExpired" in fields["boot_disk_probe_error"]
+
+
+def test_boot_disk_mismatch_compares_against_clamped_request(no_marker_posts) -> None:
+    """The mismatch compares against the CLAMPED effective request (#1336):
+    a 50 GB ask clamps UP to 100, so a realized 100 GB disk is NOT a
+    mismatch and boot_disk_requested_gb records the clamped value."""
+    handle, _runner, _posted = _launch_with_disk_probe(
+        spec_extra={"boot_disk_gb": 50},
+        disks_describe_results=[GcloudRunResult(0, _disk_json(100, 0.0), "")],
+    )
+    assert "boot_disk_size_mismatch" not in handle.extra
+    assert handle.extra["boot_disk_requested_gb"] == 100
+    assert handle.extra["boot_disk_size_gb"] == 100
+
+
+def test_boot_disk_marker_extra_keys_cover_probe_emissions() -> None:
+    """#1617: BOOT_DISK_MARKER_EXTRA_KEYS == the union of keys
+    _probe_boot_disk can emit, so a tuple typo can never silently drop a
+    field from the router's marker lift. Reuse-threshold cases key on
+    _BOOT_DISK_REUSE_SLACK_SEC (never a literal), so the §9-permitted
+    300-900s retune cannot break this test."""
+    now = datetime.now(UTC).timestamp()
+
+    def _runner_for(payload: str):
+        return lambda argv: GcloudRunResult(0, payload, "")
+
+    old_created = datetime.now(UTC) - timedelta(seconds=2 * _BOOT_DISK_REUSE_SLACK_SEC)
+    young_created = datetime.now(UTC) - timedelta(seconds=_BOOT_DISK_REUSE_SLACK_SEC / 2)
+    old_fields = _probe_boot_disk(
+        config=_test_config(),
+        name="n",
+        zone="z",
+        requested_gb=200,
+        runner=_runner_for(
+            json.dumps({"sizeGb": "300", "creationTimestamp": old_created.isoformat()})
+        ),
+        now_fn=lambda: now,
+    )
+    young_fields = _probe_boot_disk(
+        config=_test_config(),
+        name="n",
+        zone="z",
+        requested_gb=300,
+        runner=_runner_for(
+            json.dumps({"sizeGb": "300", "creationTimestamp": young_created.isoformat()})
+        ),
+        now_fn=lambda: now,
+    )
+    error_fields = _probe_boot_disk(
+        config=_test_config(),
+        name="n",
+        zone="z",
+        requested_gb=300,
+        runner=_runner_for("not json"),
+        now_fn=lambda: now,
+    )
+    assert old_fields["boot_disk_reused"] is True  # age 2x slack -> reused
+    assert young_fields["boot_disk_reused"] is False  # age slack/2 -> fresh
+    assert set(error_fields) == {"boot_disk_probe_error"}
+    emitted = set(old_fields) | set(young_fields) | set(error_fields)
+    assert emitted == set(BOOT_DISK_MARKER_EXTRA_KEYS)
 
 
 def test_launch_raises_when_stale_delete_fails_and_skips_create(no_marker_posts) -> None:
@@ -3003,7 +3269,16 @@ def _kind(argv: list[str]) -> str:
         return "delete"
     if "describe" in argv and "instances" in argv:
         return "describe"
+    if "operations" in argv and "list" in argv:
+        return "operations"
     return "other"
+
+
+#: The pre-delete PENDING-probe answer for a NON-queued instance (#1628): the
+#: teardown's leading describe reads a non-PENDING status and takes the
+#: synchronous path, byte-preserving the pre-#1628 semantics.
+def _pre_delete_running() -> GcloudRunResult:
+    return GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")
 
 
 def test_teardown_confirms_deleted_and_does_not_redelete_when_gone() -> None:
@@ -3011,21 +3286,25 @@ def test_teardown_confirms_deleted_and_does_not_redelete_when_gone() -> None:
     runner = _Runner(
         delete_results=[GcloudRunResult(0, "", "")],
         describe_results=[
-            GcloudRunResult(1, "", "ERROR: (gcloud.compute.instances.describe) was not found")
+            _pre_delete_running(),
+            GcloudRunResult(1, "", "ERROR: (gcloud.compute.instances.describe) was not found"),
         ],
     )
     backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
     backend.teardown(_teardown_handle())
     seq = [_kind(c) for c in runner.calls]
     # The confirm probe ran after the delete; no re-delete on a confirmed-gone VM.
-    assert seq == ["delete", "describe"], runner.calls
+    assert seq == ["describe", "delete", "describe"], runner.calls
 
 
 def test_teardown_redeletes_running_zombie_once() -> None:
     """rc==0 delete but describe shows status=RUNNING (the #683 zombie) → re-delete ONCE."""
     runner = _Runner(
         delete_results=[GcloudRunResult(0, "", ""), GcloudRunResult(0, "", "")],
-        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        describe_results=[
+            _pre_delete_running(),
+            GcloudRunResult(0, json.dumps({"status": "RUNNING"}), ""),
+        ],
     )
     backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
     backend.teardown(_teardown_handle())
@@ -3033,7 +3312,7 @@ def test_teardown_redeletes_running_zombie_once() -> None:
     # Positional: probe-then-re-delete, in order. A back-to-back double-delete
     # with no probe between (a hypothetical buggy refactor) would FAIL here,
     # where a bare ``len(delete_calls) == 2`` would pass it.
-    assert seq == ["delete", "describe", "delete"], runner.calls
+    assert seq == ["describe", "delete", "describe", "delete"], runner.calls
 
 
 def test_teardown_does_not_redelete_on_non_running_describe() -> None:
@@ -3041,24 +3320,32 @@ def test_teardown_does_not_redelete_on_non_running_describe() -> None:
     for status in ("STOPPING", "TERMINATED", ""):
         runner = _Runner(
             delete_results=[GcloudRunResult(0, "", "")],
-            describe_results=[GcloudRunResult(0, json.dumps({"status": status}), "")],
+            describe_results=[
+                _pre_delete_running(),
+                GcloudRunResult(0, json.dumps({"status": status}), ""),
+            ],
         )
         backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
         backend.teardown(_teardown_handle())
         seq = [_kind(c) for c in runner.calls]
-        assert seq == ["delete", "describe"], (status, runner.calls)  # no spurious re-delete
+        # no spurious re-delete
+        assert seq == ["describe", "delete", "describe"], (status, runner.calls)
 
 
 def test_teardown_does_not_redelete_on_describe_probe_failure() -> None:
     """A non-404 describe failure does NOT re-delete (the rc==0 delete already landed)."""
     runner = _Runner(
         delete_results=[GcloudRunResult(0, "", "")],
-        describe_results=[GcloudRunResult(1, "", "Reauthentication failed")],
+        describe_results=[
+            _pre_delete_running(),
+            GcloudRunResult(1, "", "Reauthentication failed"),
+        ],
     )
     backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
     backend.teardown(_teardown_handle())
     seq = [_kind(c) for c in runner.calls]
-    assert seq == ["delete", "describe"], runner.calls  # probe failure ≠ evidence the VM survived
+    # probe failure ≠ evidence the VM survived
+    assert seq == ["describe", "delete", "describe"], runner.calls
 
 
 def test_teardown_redelete_404_is_silent_success() -> None:
@@ -3068,20 +3355,26 @@ def test_teardown_redelete_404_is_silent_success() -> None:
             GcloudRunResult(0, "", ""),
             GcloudRunResult(1, "", "ERROR: (gcloud.compute.instances.delete) was not found"),
         ],
-        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        describe_results=[
+            _pre_delete_running(),
+            GcloudRunResult(0, json.dumps({"status": "RUNNING"}), ""),
+        ],
     )
     backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
     # No raise: the redelete-404 idempotency branch swallows the "was not found".
     backend.teardown(_teardown_handle())
     seq = [_kind(c) for c in runner.calls]
-    assert seq == ["delete", "describe", "delete"], runner.calls
+    assert seq == ["describe", "delete", "describe", "delete"], runner.calls
 
 
 def test_teardown_does_not_redelete_on_empty_describe_stdout() -> None:
     """rc==0 describe with EMPTY stdout → ``... else {}`` → status None → no re-delete (#683 v2)."""
     runner = _Runner(
         delete_results=[GcloudRunResult(0, "", "")],
-        describe_results=[GcloudRunResult(0, "", "")],
+        describe_results=[
+            _pre_delete_running(),
+            GcloudRunResult(0, "", ""),
+        ],
     )
     backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
     backend.teardown(_teardown_handle())
@@ -3089,7 +3382,310 @@ def test_teardown_does_not_redelete_on_empty_describe_stdout() -> None:
     # The ``if probe.stdout.strip() else {}`` guard: empty STDOUT STRING (rc==0)
     # parses to {} → status None → not RUNNING → no re-delete. Distinct from the
     # empty *status field* ({"status": ""}) case in the non-running test above.
-    assert seq == ["delete", "describe"], runner.calls
+    assert seq == ["describe", "delete", "describe"], runner.calls
+
+
+# ---------------------------------------------------------------------------
+# teardown — DWS-PENDING-aware fast path + slow-delete escalation (#1628)
+# ---------------------------------------------------------------------------
+
+
+class _SpawnRecorder:
+    """Fake ``delete_spawner`` seam (#1628): records argvs; optionally raises once."""
+
+    def __init__(self, raises: BaseException | None = None) -> None:
+        self.spawned: list[list[str]] = []
+        self._raises = raises
+
+    def __call__(self, argv) -> None:
+        self.spawned.append(list(argv))
+        if self._raises is not None:
+            exc, self._raises = self._raises, None
+            raise exc
+
+
+def _fresh_delete_op(target_id: str | None = None, age_sec: float = 0.0) -> dict:
+    """An operations-list row shaped like the live 2026-07-23 probe (#1628 plan §2)."""
+    insert = datetime.now(UTC) - timedelta(seconds=age_sec)
+    op = {
+        "name": f"operation-test-{age_sec:.0f}",
+        "operationType": "delete",
+        "status": "RUNNING",
+        "targetLink": "https://.../zones/us-central1-a/instances/eps-issue-683",
+        "insertTime": insert.isoformat(),
+    }
+    if target_id is not None:
+        op["targetId"] = target_id
+    return op
+
+
+def _ops_result(*ops: dict) -> GcloudRunResult:
+    return GcloudRunResult(0, json.dumps(list(ops)), "")
+
+
+def _pending(instance_id: str | None = None) -> GcloudRunResult:
+    payload: dict = {"status": "PENDING"}
+    if instance_id is not None:
+        payload["id"] = instance_id
+    return GcloudRunResult(0, json.dumps(payload), "")
+
+
+def _describe_not_found() -> GcloudRunResult:
+    return GcloudRunResult(1, "", "ERROR: (gcloud.compute.instances.describe) was not found")
+
+
+@pytest.fixture
+def _zero_delete_budgets(monkeypatch):
+    """The #1628 plan §5 poll-loop convention: budgets 0 (one probe, then the
+    deadline check fires) + polls 0 (no-op sleeps) — the env readers honor 0."""
+    monkeypatch.setenv("EPS_GCP_DELETE_VERIFY_BUDGET_SEC", "0")
+    monkeypatch.setenv("EPS_GCP_DELETE_VERIFY_POLL_SEC", "0")
+    monkeypatch.setenv("EPS_GCP_DELETE_ISSUANCE_BUDGET_SEC", "0")
+    monkeypatch.setenv("EPS_GCP_DELETE_ISSUANCE_POLL_SEC", "0")
+
+
+def _pending_backend(runner: _Runner, spawner: _SpawnRecorder) -> GcpBackend:
+    return GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+        delete_spawner=spawner,
+    )
+
+
+def test_teardown_pending_detached_delete_fast_returns_on_issuance(_zero_delete_budgets) -> None:
+    """PENDING → detached spawn + issuance observed → PENDING verify → fast return.
+
+    The synchronous delete is NEVER run (no "delete" in the runner seq — the
+    spawner carries the delete argv), and the spawned argv is byte-identical
+    to ``render_delete_argv``'s output.
+    """
+    runner = _Runner(
+        describe_results=[_pending(), _pending()],
+        operations_results=[_ops_result(_fresh_delete_op())],
+    )
+    spawner = _SpawnRecorder()
+    backend = _pending_backend(runner, spawner)
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "operations", "describe"], runner.calls
+    assert spawner.spawned == [
+        render_delete_argv(config=_test_config(), name="eps-issue-683", zone="us-central1-a")
+    ]
+
+
+def test_teardown_pending_issuance_confirmed_then_404(_zero_delete_budgets) -> None:
+    """PENDING → issuance confirmed → the verify's describe reads 404 → success."""
+    runner = _Runner(
+        describe_results=[_pending(), _describe_not_found()],
+        operations_results=[_ops_result(_fresh_delete_op())],
+    )
+    spawner = _SpawnRecorder()
+    backend = _pending_backend(runner, spawner)
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "operations", "describe"], runner.calls
+
+
+def test_teardown_pending_no_issuance_falls_back_to_sync_delete(_zero_delete_budgets) -> None:
+    """PENDING but the op-list stays empty → the synchronous delete still runs (never skip)."""
+    runner = _Runner(
+        describe_results=[_pending(), _describe_not_found()],
+        # operations unscripted → default rc=0 "[]" → no op observed
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    spawner = _SpawnRecorder()
+    backend = _pending_backend(runner, spawner)
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "operations", "delete", "describe"], runner.calls
+    assert len(spawner.spawned) == 1  # the detached spawn still fired
+
+
+def test_teardown_pending_stale_delete_op_is_not_issuance(_zero_delete_budgets) -> None:
+    """A delete op older than the recency window (a prior incarnation, #1029 name
+    reuse) must NOT count as issuance → sync fallback."""
+    from explore_persona_space.backends.gcp import GCLOUD_DELETE_OP_RECENCY_SEC
+
+    runner = _Runner(
+        describe_results=[_pending(), _describe_not_found()],
+        operations_results=[
+            _ops_result(_fresh_delete_op(age_sec=GCLOUD_DELETE_OP_RECENCY_SEC + 3600))
+        ],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    backend = _pending_backend(runner, _SpawnRecorder())
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "operations", "delete", "describe"], runner.calls
+
+
+def test_teardown_pending_op_with_unparseable_insert_time_is_skipped(
+    _zero_delete_budgets,
+) -> None:
+    """Op rows with an unparseable or MISSING insertTime are ignored (conservative)."""
+    bad_ts = dict(_fresh_delete_op(), insertTime="not-a-timestamp")
+    no_ts = {k: v for k, v in _fresh_delete_op().items() if k != "insertTime"}
+    runner = _Runner(
+        describe_results=[_pending(), _describe_not_found()],
+        operations_results=[_ops_result(bad_ts, no_ts)],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    backend = _pending_backend(runner, _SpawnRecorder())
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "operations", "delete", "describe"], runner.calls
+
+
+def test_teardown_pending_issuance_prefers_target_id_match(_zero_delete_budgets) -> None:
+    """With the instance id known, a fresh op matching ``targetId`` confirms issuance."""
+    runner = _Runner(
+        describe_results=[_pending(instance_id="1234567890"), _pending()],
+        operations_results=[_ops_result(_fresh_delete_op(target_id="1234567890"))],
+    )
+    spawner = _SpawnRecorder()
+    backend = _pending_backend(runner, spawner)
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "operations", "describe"], runner.calls
+
+
+def test_teardown_pending_target_id_mismatch_is_not_issuance(_zero_delete_budgets) -> None:
+    """With the instance id known, a RECENT same-name op targeting a DIFFERENT
+    incarnation (targetId mismatch) must NOT confirm issuance → sync fallback."""
+    runner = _Runner(
+        describe_results=[_pending(instance_id="1234567890"), _describe_not_found()],
+        operations_results=[_ops_result(_fresh_delete_op(target_id="9999999999"))],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    backend = _pending_backend(runner, _SpawnRecorder())
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "operations", "delete", "describe"], runner.calls
+
+
+def test_teardown_pending_spawner_oserror_falls_back_to_sync_delete(
+    _zero_delete_budgets,
+) -> None:
+    """An OSError from the detached spawner falls through to the sync delete."""
+    runner = _Runner(
+        describe_results=[_pending(), _describe_not_found()],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    spawner = _SpawnRecorder(raises=OSError("spawn failed"))
+    backend = _pending_backend(runner, spawner)
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    # No "operations" probe: the spawn failed, so the fast path aborted early.
+    assert seq == ["describe", "delete", "describe"], runner.calls
+    assert len(spawner.spawned) == 1
+
+
+def test_teardown_pre_delete_describe_raises_falls_back_to_sync_path(
+    _zero_delete_budgets,
+) -> None:
+    """A pre-delete describe that RAISES (e.g. TimeoutExpired) → (None, None) → sync path."""
+    runner = _Runner(
+        describe_raises=subprocess.TimeoutExpired(cmd=["gcloud"], timeout=300),
+        describe_results=[_describe_not_found()],  # the #683 confirm probe
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    spawner = _SpawnRecorder()
+    backend = _pending_backend(runner, spawner)
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "delete", "describe"], runner.calls
+    assert spawner.spawned == []  # never took the PENDING fast path
+
+
+def test_teardown_sync_delete_timeout_escalates_to_issuance_verify(
+    _zero_delete_budgets,
+) -> None:
+    """A TimeoutExpired sync delete no longer escapes teardown: it escalates to
+    the issuance probe + bounded verify, and a 404 confirms success (no raise)."""
+    runner = _Runner(
+        describe_results=[_pre_delete_running(), _describe_not_found()],
+        operations_results=[_ops_result(_fresh_delete_op())],
+        delete_raises=subprocess.TimeoutExpired(cmd=["gcloud"], timeout=300),
+    )
+    backend = _pending_backend(runner, _SpawnRecorder())
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "delete", "operations", "describe"], runner.calls
+
+
+def test_teardown_sync_delete_timeout_verify_exhausted_raises(_zero_delete_budgets) -> None:
+    """Verify exhaustion raises loudly, naming the budget + last status + issuance flag."""
+    from explore_persona_space.backends.gcp import GcpBackendError
+
+    runner = _Runner(
+        describe_results=[
+            _pre_delete_running(),
+            GcloudRunResult(0, json.dumps({"status": "RUNNING"}), ""),
+        ],
+        operations_results=[_ops_result(_fresh_delete_op())],
+        delete_raises=subprocess.TimeoutExpired(cmd=["gcloud"], timeout=300),
+    )
+    backend = _pending_backend(runner, _SpawnRecorder())
+    with pytest.raises(GcpBackendError, match="did not confirm within") as excinfo:
+        backend.teardown(_teardown_handle())
+    msg = str(excinfo.value)
+    assert "last_status='RUNNING'" in msg
+    assert "issuance_confirmed=True" in msg
+
+
+def test_teardown_pending_unconfirmed_issuance_never_fast_returns(
+    _zero_delete_budgets,
+) -> None:
+    """PENDING with NO positive issuance evidence polls to the deadline and
+    raises — the fast return requires BOTH PENDING and confirmed issuance."""
+    from explore_persona_space.backends.gcp import GcpBackendError
+
+    runner = _Runner(
+        describe_results=[_pending(), _pending()],
+        # operations unscripted → default "[]" on BOTH probes (PENDING path +
+        # escalation) → issuance never confirmed
+        delete_raises=subprocess.TimeoutExpired(cmd=["gcloud"], timeout=300),
+    )
+    spawner = _SpawnRecorder()
+    backend = _pending_backend(runner, spawner)
+    with pytest.raises(GcpBackendError, match="did not confirm within") as excinfo:
+        backend.teardown(_teardown_handle())
+    assert "issuance_confirmed=False" in str(excinfo.value)
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "operations", "delete", "operations", "describe"], runner.calls
+
+
+def test_teardown_in_flight_stderr_class_verifies_instead_of_raising(
+    _zero_delete_budgets,
+) -> None:
+    """A sync-delete failure whose stderr marks an in-flight delete/operation
+    (the GCE "not ready" class) probes issuance + verifies instead of raising."""
+    runner = _Runner(
+        describe_results=[_pre_delete_running(), _describe_not_found()],
+        delete_results=[GcloudRunResult(1, "", "ERROR: the resource eps-issue-683 is not ready")],
+        operations_results=[_ops_result(_fresh_delete_op())],
+    )
+    backend = _pending_backend(runner, _SpawnRecorder())
+    backend.teardown(_teardown_handle())  # no raise
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["describe", "delete", "operations", "describe"], runner.calls
+
+
+def test_render_delete_operations_list_argv_shape() -> None:
+    """The issuance-probe argv: base flags + zone scope + anchored filter + projection."""
+    from explore_persona_space.backends.gcp import render_delete_operations_list_argv
+
+    argv = render_delete_operations_list_argv(
+        config=_test_config(), name="eps-issue-683", zone="us-central1-a"
+    )
+    assert argv[:4] == ["gcloud", "compute", "operations", "list"]
+    assert any(a.startswith("--configuration=") for a in argv)
+    assert any(a.startswith("--project=") for a in argv)
+    assert "--zones=us-central1-a" in argv
+    assert "--filter=operationType=delete AND targetLink~/instances/eps-issue-683$" in argv
+    assert "--format=json(name,operationType,status,targetLink,insertTime,targetId)" in argv
+    assert "--limit=10" in argv
 
 
 # ---------------------------------------------------------------------------
@@ -4486,6 +5082,149 @@ def test_render_startup_script_diagnostics_present_on_both_branches() -> None:
         assert script.count("instance/guest-attributes/eps/persist") == 2
 
 
+def test_render_startup_script_repo_reuse_else_branch_branch_switch_safe() -> None:
+    """#1602 (incident #779 att-20260722-155004): the repo-reuse else-branch
+    must not require a local/remote-tracking ref to pre-exist — a reused
+    workspace disk can hold a single-branch clone of a DIFFERENT branch,
+    where the old by-name `checkout <branch>` died on `error: pathspec`.
+    Pin the FETCH_HEAD-anchored form + the forced destination refspec the
+    push-verify leg's `rev-list origin/<branch>..HEAD` depends on."""
+    branch = "issue-779-n1m-readout"
+    for spec in (
+        _spec(),
+        _spec(hydra_args=(), workload_cmd="bash scripts/issue658_dispatch.sh"),
+    ):
+        script = render_startup_script(
+            spec=spec, config=_test_config(), attempt_id="att-fixed-001", repo_branch=branch
+        )
+        setbr = f'git -C "$WORKLOAD_ROOT" remote set-branches origin {branch}'
+        fetch = (
+            f'git -C "$WORKLOAD_ROOT" fetch --depth 1 origin '
+            f"+refs/heads/{branch}:refs/remotes/origin/{branch}"
+        )
+        reset = 'git -C "$WORKLOAD_ROOT" reset --hard FETCH_HEAD'
+        checkout = f'git -C "$WORKLOAD_ROOT" checkout -B {branch} FETCH_HEAD'
+        assert setbr in script
+        assert fetch in script
+        assert reset in script
+        assert checkout in script
+        # ordering: set-branches (config converge) -> fetch -> reset (tree
+        # forced clean) -> checkout -B
+        assert (
+            script.index(setbr) < script.index(fetch) < script.index(reset) < script.index(checkout)
+        )
+        # the by-name branch switch + origin/<branch> reset are GONE
+        # (`checkout {branch}` cannot false-match `checkout -B {branch}`)
+        assert f"checkout {branch}" not in script
+        assert f"reset --hard origin/{branch}" not in script
+        # fresh-clone if-branch unchanged
+        assert f"git clone --depth 1 --branch {branch} " in script
+
+
+def test_repo_reuse_else_branch_switches_branch_on_single_branch_clone(tmp_path) -> None:
+    """Replay the RENDERED else-branch git lines against a real
+    `--depth 1 --branch A` clone (the #779 reused-disk shape) targeting
+    branch B, with a dirty tracked file. Asserts: rc 0 per line, local
+    branch == B, HEAD == origin's B tip, clean tree, and
+    refs/remotes/origin/B resolvable (the push-verify leg's read). A second
+    same-branch replay (B -> B) pins the no-regression reuse path, and a
+    post-replay commit + `git push origin HEAD:B` leaves the unpushed count
+    at 0 — the push-verify pass condition (#1602 round-1 critique)."""
+    branch = "feature-b"
+    script = render_startup_script(
+        spec=_spec(), config=_test_config(), attempt_id="att-fixed-001", repo_branch=branch
+    )
+    lines = script.split("\n")
+    start = lines.index("# === Repo clone / pull (idempotent) ===")
+    else_i = lines.index("else", start)
+    fi_i = lines.index("fi", else_i)
+    git_cmds = [ln.strip() for ln in lines[else_i + 1 : fi_i] if ln.strip().startswith("git ")]
+    assert len(git_cmds) == 4, git_cmds
+
+    ident = ["-c", "user.email=eps@test", "-c", "user.name=eps"]
+    origin = tmp_path / "origin"
+    subprocess.run(["git", "init", "-q", "-b", "main", str(origin)], check=True)
+    (origin / "f.txt").write_text("v1\n")
+    subprocess.run(["git", "-C", str(origin), "add", "f.txt"], check=True)
+    subprocess.run(["git", "-C", str(origin), *ident, "commit", "-qm", "c1"], check=True)
+    subprocess.run(["git", "-C", str(origin), "checkout", "-qb", branch], check=True)
+    (origin / "f.txt").write_text("v2\n")
+    (origin / "g.txt").write_text("extra\n")
+    subprocess.run(["git", "-C", str(origin), "add", "f.txt", "g.txt"], check=True)
+    subprocess.run(["git", "-C", str(origin), *ident, "commit", "-qm", "c2"], check=True)
+    subprocess.run(["git", "-C", str(origin), "checkout", "-q", "main"], check=True)
+    tip = subprocess.run(
+        ["git", "-C", str(origin), "rev-parse", branch],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+    work = tmp_path / "work"
+    subprocess.run(
+        ["git", "clone", "-q", "--depth", "1", "--branch", "main", f"file://{origin}", str(work)],
+        check=True,
+    )
+    (work / "f.txt").write_text("v1\ndirty-crashed-run-leftover\n")  # dirty tracked file
+
+    env = {**os.environ, "WORKLOAD_ROOT": str(work)}
+    for _phase in ("cross-branch", "same-branch-reuse"):
+        for cmd in git_cmds:
+            proc = subprocess.run(["bash", "-c", cmd], env=env, capture_output=True, text=True)
+            assert proc.returncode == 0, f"{_phase}: {cmd}\n{proc.stderr}"
+
+    head_branch = subprocess.run(
+        ["git", "-C", str(work), "rev-parse", "--abbrev-ref", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    assert head_branch == branch
+    head = subprocess.run(
+        ["git", "-C", str(work), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    assert head == tip
+    porcelain = subprocess.run(
+        ["git", "-C", str(work), "status", "--porcelain"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    assert porcelain == ""
+    tracking = subprocess.run(
+        ["git", "-C", str(work), "rev-parse", f"refs/remotes/origin/{branch}"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    assert tracking == tip
+    unpushed = subprocess.run(
+        ["git", "-C", str(work), "rev-list", "--count", f"origin/{branch}..HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    assert unpushed == "0"  # the push-verify leg's rev-list read works
+    # Post-push leg (#1602 round-1 critique Must-Fix): a successful
+    # in-workload push must ADVANCE origin/<b> (git maps push -> tracking-ref
+    # updates through remote.origin.fetch, converged by set-branches), so the
+    # push-verify count returns to 0 instead of sticking at 1 (exit 86).
+    (work / "h.txt").write_text("workload-output\n")
+    subprocess.run(["git", "-C", str(work), "add", "h.txt"], check=True)
+    subprocess.run(["git", "-C", str(work), *ident, "commit", "-qm", "c3"], check=True)
+    subprocess.run(["git", "-C", str(work), "push", "-q", "origin", f"HEAD:{branch}"], check=True)
+    unpushed_after_push = subprocess.run(
+        ["git", "-C", str(work), "rev-list", "--count", f"origin/{branch}..HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    assert unpushed_after_push == "0"
+
+
 def test_render_startup_script_is_valid_bash() -> None:
     """Both rendered branches must parse — the #658 helper embeds a Python
     heredoc inside a function inside a subshell; a quoting slip would only
@@ -4552,8 +5291,14 @@ def test_render_startup_script_persist_streams_eagerly() -> None:
     stream)."""
     script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
     assert "| cut -c1-2000 | tail -n 20 >&3" not in script
-    # Read-to-EOF reader with trailing-unterminated-line hardening.
-    assert 'while IFS= read -r _l || [ -n "$_l" ]' in script
+    # Read-to-EOF reader with trailing-unterminated-line hardening — the exact
+    # streamer opener, INCLUDING the #1799 in-subshell PIPE re-arm (a pipeline
+    # subshell resets the top-level #607 handler; without the re-arm a dead
+    # fd 3 SIGPIPE-kills the streamer and closes the persist python's stdout).
+    assert (
+        ") 2>&1 | { trap ':' PIPE; _n=0;"
+        ' while IFS= read -r _l || [ -n "$_l" ]; do _n=$((_n + 1));'
+    ) in script
     # Progress bars would spam the now-eager stream.
     assert "HF_HUB_DISABLE_PROGRESS_BARS=1" in script
     # Standing dep A: structural flush=True pin over the extracted heredoc.
@@ -4723,6 +5468,18 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
         # worker-logs sweep target; small -> plain-copied, not tailed).
         (root / "logs" / "issue_137").mkdir(parents=True)
         (root / "logs" / "issue_137" / "corpus_gpu0_all.log").write_text("worker traceback\n")
+        # #1890: analysis-tensors staging trees at BOTH sweep roots — the
+        # workload-root issue-scoped convention (the #1739 shape) with a
+        # nested hf_dl cache (prune assert), plus a flat file at the
+        # isolated ws root (the issue_823/952 /workspace flat shape; env
+        # default below points EPS_PERSIST_WS_TENSORS_ROOT at ws-tensors/).
+        (root / "analysis_tensors" / "issue_137" / "maps").mkdir(parents=True)
+        (root / "analysis_tensors" / "issue_137" / "maps" / "m.npz").write_text("npz")
+        (root / "analysis_tensors" / "issue_137" / "hf_dl").mkdir()
+        (root / "analysis_tensors" / "issue_137" / "hf_dl" / "c.bin").write_text("x" * 64)
+        ws_tensors = tmp_path / "ws-tensors" / "analysis_tensors"
+        ws_tensors.mkdir(parents=True)
+        (ws_tensors / "cx.pt").write_text("pt")
     else:
         # exist_ok: #885 behavioral tests pre-create root/logs/** fixtures
         # before invoking the harness with make_dirs=False.
@@ -4746,6 +5503,17 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
             # (production defaults are shared /tmp literals).
             "EPS_PERSIST_FIRST_STAGE_DIR": str(tmp_path / "staged-first"),
             "EPS_PERSIST_FINAL_STAGE_DIR": str(tmp_path / "staged-final"),
+            # #1605: isolate the dispatcher-logs sweep root per test — the
+            # production default is the real /workspace/logs, which a pod-side
+            # pytest run would leak into every persist test (absent by
+            # default -> the sweep SKIPs, following the #935 EPS_DONE_LOGS_DIR
+            # isolation precedent).
+            "EPS_PERSIST_WORKSPACE_LOGS_DIR": str(tmp_path / "workspace-logs"),
+            # #1890: isolate the scratch-root analysis-tensors sweep per test —
+            # the production default is the real /workspace, which EXISTS on
+            # this shared VM (pod-style HF cache), so an un-threaded run would
+            # nondeterministically glob real /workspace/analysis_tensors* dirs.
+            "EPS_PERSIST_WS_TENSORS_ROOT": str(tmp_path / "ws-tensors"),
         }
     )
     env.update(env_overrides or {})
@@ -4768,6 +5536,8 @@ def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
     run exactly as production runs it, uploads the first bundle
     (crash_report + workload.log, ONE staged commit — #1151) → worker_logs
     (one staged-tree commit, #885) → eval_results dir → data dirs → the
+    analysis-tensors trees at BOTH roots (workload-root unsuffixed +
+    scratch-root ``_ws``-suffixed, LAST among the dirs — #1890) → the
     final bundle (timestamped log copy + transcript, ONE staged commit —
     #1151), passes the cache excludes to upload_folder, prunes nested
     caches from the dir stats, and exits 0 with ZERO per-file upload_file
@@ -4781,12 +5551,16 @@ def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
     assert seq[2] == ("folder", "issue137_partial/att-x/eval_results_issue_137")
     assert seq[3] == ("folder", "issue137_partial/att-x/data_issue_137")
     assert seq[4] == ("folder", "issue137_partial/att-x/data_issue137")
-    assert seq[5] == ("folder", "issue137_partial/att-x")
-    final_staged = sorted(calls[5]["staged"])
+    # #1890: analysis-tensors trees AFTER the named data dirs (largest class
+    # last — the #854 traceback-first ordering), BEFORE the final bundle.
+    assert seq[5] == ("folder", "issue137_partial/att-x/analysis_tensors")
+    assert seq[6] == ("folder", "issue137_partial/att-x/analysis_tensors_ws")
+    assert seq[7] == ("folder", "issue137_partial/att-x")
+    final_staged = sorted(calls[7]["staged"])
     assert len(final_staged) == 2, final_staged
     assert final_staged[0] == "crash_persist_transcript.log"
     assert re.fullmatch(r"workload_\d{8}T\d{6}Z\.log", final_staged[1]), final_staged
-    assert len(seq) == 6, seq
+    assert len(seq) == 8, seq
     # #1151: ZERO per-file upload_file calls anywhere (the #664 stall class).
     assert not any(c["kind"] == "file" for c in calls)
     # The worker-logs commit staged the fixture worker log verbatim (#885).
@@ -4799,6 +5573,16 @@ def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
     # _dir_entries pruned BOTH the top-level and the nested hf_dl caches: only
     # track.jsonl is counted for data_issue_137.
     assert "[crash-persist] uploading dir data_issue_137 (1 files" in proc.stdout
+    # #1890: the analysis-tensors uploads mirror the cache + store excludes
+    # (store/ is the mirrored-on-HF durable class — never re-uploaded), the
+    # workload-root tree staged only the .npz (nested hf_dl pruned from the
+    # stats), and the ws-root tree staged its flat file under the _ws name.
+    at_call = calls[5]
+    assert "**/hf_dl/**" in at_call["ignore_patterns"]
+    assert "store/**" in at_call["ignore_patterns"]
+    assert "**/store/**" in at_call["ignore_patterns"]
+    assert "[crash-persist] uploading dir analysis_tensors (1 files" in proc.stdout
+    assert calls[6]["staged"] == {"cx.pt": "pt"}
     # Eagerly-streamed audit lines, start to DONE.
     assert "[crash-persist] BEGIN repo=org/repo dest=issue137_partial/att-x" in proc.stdout
     assert "[crash-persist] DONE" in proc.stdout
@@ -4809,7 +5593,7 @@ def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
     assert "[crash-persist] DONE" in transcript_text
     # The staged transcript copy the fake hub recorded ALSO carries the full
     # audit through DONE (transcript-last semantics preserved, #854).
-    uploaded_transcript = calls[5]["staged"]["crash_persist_transcript.log"]
+    uploaded_transcript = calls[7]["staged"]["crash_persist_transcript.log"]
     assert "[crash-persist] DONE" in uploaded_transcript
     # #1339 AC-1 (second half): small dirs (default bound 1000 >> the fixture
     # sizes) provably take the UNCHANGED single-commit path — no batch line
@@ -4835,6 +5619,10 @@ def test_persist_heredoc_prints_skips_and_honors_env_cap(tmp_path) -> None:
     assert "[crash-persist] SKIP eval_results_issue_137: no such dir" in proc.stdout
     assert "[crash-persist] SKIP data_issue_137: no such dir" in proc.stdout
     assert "[crash-persist] SKIP data_issue137: no such dir" in proc.stdout
+    # #1890: zero analysis_tensors* matches at BOTH roots -> ONE loud
+    # aggregate SKIP (glob-no-match, not a per-dir miss) and NO new upload —
+    # the pre-change call sequence is preserved (the full-list equality below).
+    assert "[crash-persist] SKIP analysis_tensors*: none at" in proc.stdout
     assert "[crash-persist] DONE" in proc.stdout
     # The ONLY upload is the final bundle carrying the transcript audit
     # (#1151: it rides an upload_folder commit now, never upload_file).
@@ -5050,6 +5838,220 @@ def test_persist_heredoc_worker_logs_git_binary_missing_fails_open(tmp_path) -> 
 
 
 # ---------------------------------------------------------------------------
+# #1605 — crash-persist dispatcher-logs sweep (/workspace/logs)
+# ---------------------------------------------------------------------------
+
+
+def test_render_startup_script_sweeps_workspace_logs_dispatch_dir() -> None:
+    """#1605 render pin (BOTH branches): the crash persist ALSO sweeps the
+    GCE lane's dispatcher log dir /workspace/logs (env-overridable
+    EPS_PERSIST_WORKSPACE_LOGS_DIR), staging under workspace_logs/<rel>,
+    with a fail-soft SKIP when the dir is absent (acceptance criterion 1)."""
+    for spec in (
+        _spec(),
+        _spec(hydra_args=(), workload_cmd="bash scripts/issue658_dispatch.sh"),
+    ):
+        script = render_startup_script(spec=spec, config=_test_config(), attempt_id="att-fixed-001")
+        assert "EPS_PERSIST_WORKSPACE_LOGS_DIR" in script
+        assert "/workspace/logs" in script
+        assert "workspace_logs/" in script
+        assert "SKIP workspace_logs: no such dir" in script
+
+
+def test_persist_heredoc_workspace_logs_rescues_dispatch_log(tmp_path) -> None:
+    """#1605 behavioral — the #1415 regression shape, FAILS pre-fix: with
+    $WORKLOAD_ROOT/logs ABSENT and a dispatcher per-phase log in the
+    dispatch dir (oversized, traceback at the END), the {dest}/worker_logs
+    commit lands carrying workspace_logs/issue-137-phase3.log tail-capped
+    (the traceback survives) and the TAILED line uses the
+    worker_logs/workspace_logs/... rel (acceptance criterion 2)."""
+    ws = tmp_path / "workspace-logs"
+    ws.mkdir(parents=True)
+    (ws / "issue-137-phase3.log").write_bytes(b"h" * 64 + b"P3-TRACEBACK-TAIL")  # 81 bytes
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,  # no $WORKLOAD_ROOT/logs at all — the #1415 shape
+        env_overrides={"EPS_PERSIST_LOG_FILE_CAP_BYTES": "17"},
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] SKIP worker_logs: no such dir" in proc.stdout
+    folder_calls = [
+        c for c in calls if c["kind"] == "folder" and c["path_in_repo"].endswith("/worker_logs")
+    ]
+    assert [c["path_in_repo"] for c in folder_calls] == ["issue137_partial/att-x/worker_logs"]
+    assert folder_calls[0]["staged"] == {"workspace_logs/issue-137-phase3.log": "P3-TRACEBACK-TAIL"}
+    assert (
+        "[crash-persist] TAILED worker_logs/workspace_logs/issue-137-phase3.log:"
+        " kept last 17 of 81 bytes"
+    ) in proc.stdout
+    # One root missing + the other staged: never the empty-after-excludes SKIP.
+    assert "empty after cache/git-tracked excludes" not in proc.stdout
+
+
+def test_persist_heredoc_workspace_logs_excludes_pid_processed_canonical(tmp_path) -> None:
+    """#1605 walk-time excludes (acceptance criterion 3): *.pid (detach pid
+    files), *.processed (poller drained-sentinel renames), and the canonical
+    workload.log (EPS_LOG_PATH pointed INTO the dispatch dir) are NOT
+    staged — ONE aggregate EXCLUDED line prints — while an undrained
+    issue-137-*.json sentinel IS swept (small JSON; the #935 done-persist
+    stages exactly those)."""
+    ws = tmp_path / "workspace-logs"
+    ws.mkdir(parents=True)
+    (ws / "issue-137-phase3.log").write_text("phase3 traceback\n")
+    (ws / "issue-137.pid").write_text("12345\n")
+    (ws / "issue-137-gate.json.processed").write_text("{}\n")
+    canonical = ws / "issue-137.log"
+    canonical.write_text("canonical workload log\n")
+    (ws / "issue-137-results.json").write_text('{"status":"crashed"}\n')
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides={"EPS_LOG_PATH": str(canonical)},
+    )
+    assert proc.returncode == 0, proc.stderr
+    folder_calls = [
+        c for c in calls if c["kind"] == "folder" and c["path_in_repo"].endswith("/worker_logs")
+    ]
+    assert folder_calls[0]["staged"] == {
+        "workspace_logs/issue-137-phase3.log": "phase3 traceback\n",
+        "workspace_logs/issue-137-results.json": '{"status":"crashed"}\n',
+    }
+    assert (
+        "[crash-persist] EXCLUDED 3 pid/drained-sentinel/canonical file(s)"
+        " from workspace_logs sweep"
+    ) in proc.stdout
+    # Aggregate, never per-file: exactly ONE workspace_logs EXCLUDED line.
+    assert proc.stdout.count("from workspace_logs sweep") == 1
+
+
+def test_persist_heredoc_workspace_logs_missing_dir_skips_soft(tmp_path) -> None:
+    """#1605 fail-soft (acceptance criteria 4-6): dispatch dir absent ->
+    rc 0, a loud SKIP (the #610 missing-dir class), and the pre-existing
+    sweep is unchanged — the workload-root worker log still lands at its
+    byte-identical unprefixed repo path and the total upload_folder call
+    count stays 8 (one per surface — incl. the two #1890 analysis-tensors
+    fixture trees; the ABSENT dispatch dir adds zero new commits)."""
+    proc, calls, _ = _run_persist_heredoc(tmp_path)  # default fixture; dispatch dir absent
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] SKIP workspace_logs: no such dir" in proc.stdout
+    seq = [(c["kind"], c["path_in_repo"]) for c in calls]
+    assert len(seq) == 8, seq
+    assert calls[1]["path_in_repo"] == "issue137_partial/att-x/worker_logs"
+    assert calls[1]["staged"] == {"issue_137/corpus_gpu0_all.log": "worker traceback\n"}
+
+
+def test_persist_heredoc_workspace_logs_shares_budget_and_single_commit(tmp_path) -> None:
+    """#1605 shared budget + both-roots single commit (plan test 5; critic
+    concerns 1-2): two workload-root logs + two dispatch logs under
+    LOG_MAX_FILES=3 stage the newest THREE across BOTH roots in ONE
+    {dest}/worker_logs commit — workload-root files UNPREFIXED beside
+    workspace_logs/<rel> keys — the oldest of the four drops with the
+    existing dropped-count line, and the persist makes exactly 3
+    upload_folder commits total (first bundle + worker_logs + final
+    bundle; zero new commits when dispatch files stage)."""
+    root = tmp_path / "workload"
+    logs = root / "logs" / "issue_137"
+    logs.mkdir(parents=True)
+    ws = tmp_path / "workspace-logs"
+    ws.mkdir(parents=True)
+    w_old = logs / "w_oldest.log"  # oldest of the four -> dropped
+    w_new = logs / "w_new.log"
+    d_mid = ws / "issue-137-phase2.log"
+    d_new = ws / "issue-137-phase3.log"
+    for f, text in (
+        (w_old, "w-oldest\n"),
+        (w_new, "w-new\n"),
+        (d_mid, "d-mid\n"),
+        (d_new, "d-new\n"),
+    ):
+        f.write_text(text)
+    base = os.stat(d_new).st_mtime
+    os.utime(w_old, (base - 4000, base - 4000))
+    os.utime(d_mid, (base - 2000, base - 2000))
+    os.utime(w_new, (base - 1000, base - 1000))
+    os.utime(d_new, (base, base))
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides={"EPS_PERSIST_LOG_MAX_FILES": "3"},
+    )
+    assert proc.returncode == 0, proc.stderr
+    folder_calls = [c for c in calls if c["kind"] == "folder"]
+    # Critic concern 1: the total upload_folder COUNT with dispatch files
+    # staged — first bundle + ONE worker_logs commit + final bundle.
+    assert len(folder_calls) == 3, [c["path_in_repo"] for c in folder_calls]
+    wl = [c for c in folder_calls if c["path_in_repo"].endswith("/worker_logs")]
+    assert [c["path_in_repo"] for c in wl] == ["issue137_partial/att-x/worker_logs"]
+    # Critic concern 2: unprefixed workload-root rels beside workspace_logs/
+    # rels in the SAME commit; the oldest of the four dropped.
+    assert wl[0]["staged"] == {
+        "issue_137/w_new.log": "w-new\n",
+        "workspace_logs/issue-137-phase2.log": "d-mid\n",
+        "workspace_logs/issue-137-phase3.log": "d-new\n",
+    }
+    assert (
+        "[crash-persist] SKIP 1 older worker log(s) beyond EPS_PERSIST_LOG_MAX_FILES=3"
+    ) in proc.stdout
+
+
+def test_persist_heredoc_workspace_logs_same_dir_skips(tmp_path) -> None:
+    """#1605 degenerate-root guard (critic concern 3): the dispatch root
+    pointed at $WORKLOAD_ROOT/logs itself SKIPs the second walk loudly
+    (never a double-count) and the workload-root sweep stages its file
+    once, unprefixed."""
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        env_overrides={"EPS_PERSIST_WORKSPACE_LOGS_DIR": str(tmp_path / "workload" / "logs")},
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "SKIP workspace_logs: same dir as worker logs root" in proc.stdout
+    wl = [c for c in calls if c["kind"] == "folder" and c["path_in_repo"].endswith("/worker_logs")]
+    assert wl[0]["staged"] == {"issue_137/corpus_gpu0_all.log": "worker traceback\n"}
+
+
+# ---------------------------------------------------------------------------
+# #1890 — crash-persist analysis-tensors staging-tree sweep (both roots)
+# ---------------------------------------------------------------------------
+
+
+def test_persist_heredoc_analysis_tensors_sibling_glob_dirs_only(tmp_path) -> None:
+    """#1890: the analysis-tensors sweep matches SIBLING dir names via the
+    analysis_tensors* glob (the run_1072_lowdim shape), uploads each under
+    its OWN local name, and a glob-matching regular FILE is filtered out
+    (dirs only) — with no aggregate no-match SKIP once >=1 tree matched."""
+    root = tmp_path / "workload"
+    (root / "analysis_tensors_lowdim" / "issue_137").mkdir(parents=True)
+    (root / "analysis_tensors_lowdim" / "issue_137" / "v.npz").write_text("npz")
+    (root / "analysis_tensors.tar").write_text("not a dir")
+    proc, calls, _ = _run_persist_heredoc(tmp_path, make_dirs=False)
+    assert proc.returncode == 0, proc.stderr
+    at = [c for c in calls if c["kind"] == "folder" and "analysis_tensors" in c["path_in_repo"]]
+    assert [c["path_in_repo"] for c in at] == ["issue137_partial/att-x/analysis_tensors_lowdim"]
+    assert at[0]["staged"] == {"issue_137/v.npz": "npz"}
+    assert "SKIP analysis_tensors*: none at" not in proc.stdout
+
+
+def test_persist_heredoc_analysis_tensors_ws_root_same_as_workload_skips(tmp_path) -> None:
+    """#1890 degenerate-root guard (the #1605 same-dir sibling): the scratch
+    root pointed at $WORKLOAD_ROOT itself SKIPs the _ws pass loudly — the
+    tree uploads exactly ONCE, under its unsuffixed workload-root name
+    (never a double upload burning the 300s budget)."""
+    root = tmp_path / "workload"
+    (root / "analysis_tensors").mkdir(parents=True)
+    (root / "analysis_tensors" / "cx.pt").write_text("pt")
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides={"EPS_PERSIST_WS_TENSORS_ROOT": str(root)},
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] SKIP analysis_tensors ws pass: root == ws_root" in proc.stdout
+    at = [c for c in calls if c["kind"] == "folder" and "analysis_tensors" in c["path_in_repo"]]
+    assert [c["path_in_repo"] for c in at] == ["issue137_partial/att-x/analysis_tensors"]
+    assert at[0]["staged"] == {"cx.pt": "pt"}
+
+
+# ---------------------------------------------------------------------------
 # #1517 — canonical workload.log tail cap at crash-persist STAGE time
 # ---------------------------------------------------------------------------
 
@@ -5222,9 +6224,12 @@ def test_render_startup_script_persist_skip_writes_skipped_no_token() -> None:
 def test_render_startup_script_persist_verify_gate_renders() -> None:
     """#1343: the eps/persist=ok honesty gate renders — the rc-3 case arm
     sits between the (0) ok and (124) timeout arms, the heredoc carries the
-    transcript existence probe + sys.exit(3), and the eps/persist
+    transcript existence probe + the guarded rc-3 exit, and the eps/persist
     guest-attribute URL site count stays at 2 (the new value rides the
-    EXISTING final-status write — no new curl; the <=3-writes budget pin)."""
+    EXISTING final-status write — no new curl; the <=3-writes budget pin).
+    #1799: both deliberate exits go through _exit_now (guarded std-stream
+    flushes + os._exit) — a plain sys.exit under a dead stdout pipe would
+    let Py_FinalizeEx rewrite a completed persist's rc to 120."""
     script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
     fn = _extract_persist_function(script)
     assert '(3)   _eps_persist_status "failed_uploads" ;;' in fn
@@ -5237,7 +6242,11 @@ def test_render_startup_script_persist_verify_gate_renders() -> None:
     heredoc = _extract_persist_heredoc(script)
     assert "file_exists(" in heredoc
     assert "crash_persist_transcript.log" in heredoc
-    assert "sys.exit(3)" in heredoc
+    # #1799: the deliberate exits are finalize-proof (guarded flush + os._exit).
+    assert "sys.exit(3)" not in heredoc
+    assert "_exit_now(3)" in heredoc
+    assert "_exit_now(0)" in heredoc
+    assert "os._exit(rc)" in heredoc
     assert script.count("instance/guest-attributes/eps/persist") == 2
 
 
@@ -5752,6 +6761,118 @@ def test_persist_heredoc_probe_raise_semantics(tmp_path) -> None:
     assert proc.returncode == 3, (proc.returncode, proc.stderr)
     assert "VERIFY probe FAILED" in proc.stdout
     assert not any(c["kind"] == "folder" for c in calls)
+
+
+# ---------------------------------------------------------------------------
+# issue #1799 — crash-persist survives a dead stdout/fd-3 pipe (incident #1739:
+# both kernel-OOM crashes exited rc=120 and delivered ZERO diagnostics)
+# ---------------------------------------------------------------------------
+
+
+def test_persist_python_survives_dead_stdout_pipe(tmp_path) -> None:
+    """#1799 (incident #1739): the persist python must survive a DEAD
+    stdout/fd-3 pipe — the kernel-OOM condition where the startup-script
+    runner is gone and the streamer subshell died of SIGPIPE — and still
+    run its full staging path.
+
+    Runs the REAL extracted EPS_PERSIST_PY heredoc with stdout AND stderr
+    wired to a closed-reader pipe (the production shape: ``( ... ) 2>&1 |
+    streamer`` with the streamer dead), against the REAL huggingface_hub
+    pointed at a hermetic non-routable endpoint (instant
+    connection-refused on 127.0.0.1:1 — zero network). Every upload fails
+    -> the #1343 verify gate exits 3 (failed_uploads). PRE-#1799 the
+    first unguarded ``_say`` print raised BrokenPipeError before any
+    staging and the interpreter exited 120 (the canonical Py_FinalizeEx
+    std-stream flush failure; observed rc==120 on the pre-fix render —
+    fails-pre-fix evidence recorded in task #1799's implementation
+    marker). The discriminator is 120 -> 3: "died before any work" ->
+    "ran to completion with uploads refused". The transcript file
+    (per-call append, never the dead pipe) is the observable that the
+    persist body actually executed."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    heredoc = _extract_persist_heredoc(script)
+
+    root = tmp_path / "workload"
+    (root / "eval_results" / "issue_137").mkdir(parents=True)
+    (root / "eval_results" / "issue_137" / "a.json").write_text("{}")
+    crash = tmp_path / "eps-crash-report.json"
+    crash.write_text('{"issue":137,"exit_code":1}\n')
+    log = tmp_path / "workload.log"
+    log.write_text("Traceback (most recent call last): boom\n")
+    transcript = tmp_path / "transcript.log"
+
+    env = dict(os.environ)
+    env.update(
+        {
+            "EPS_HF_DATA_REPO": "fake/fake",
+            "HF_TOKEN": "x",
+            # Hermetic: every hub call gets an instant connection-refused.
+            "HF_ENDPOINT": "http://127.0.0.1:1",
+            "EPS_ISSUE": "137",
+            "EPS_LOG_PATH": str(log),
+            "WORKLOAD_ROOT": str(root),
+            "EPS_PERSIST_TRANSCRIPT": str(transcript),
+            # No 10-20s retry sleeps in-test (the heredoc's own ONE-retry
+            # backoff knob; #1151/#935 sibling).
+            "EPS_PERSIST_RETRY_BACKOFF_S": "0",
+            # Per-test staging isolation (the #885/#1151/#1605 precedent —
+            # production defaults are shared /tmp literals).
+            "EPS_PERSIST_LOG_STAGE_DIR": str(tmp_path / "staged-worker-logs"),
+            "EPS_PERSIST_FIRST_STAGE_DIR": str(tmp_path / "staged-first"),
+            "EPS_PERSIST_FINAL_STAGE_DIR": str(tmp_path / "staged-final"),
+            "EPS_PERSIST_WORKSPACE_LOGS_DIR": str(tmp_path / "workspace-logs"),
+            # #1890 hermeticity: the ws-tensors sweep would otherwise glob the
+            # REAL /workspace/analysis_tensors* on this VM (host-state-dependent
+            # walk + staging copies; reviewer-prescribed isolation).
+            "EPS_PERSIST_WS_TENSORS_ROOT": str(tmp_path / "ws-tensors"),
+        }
+    )
+    # Dead-reader pipe, constructed deterministically: close the read end
+    # BEFORE exec, so the child's very first stdout write hits EPIPE
+    # (CPython ignores SIGPIPE and raises BrokenPipeError instead).
+    r_fd, w_fd = os.pipe()
+    os.close(r_fd)
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-", "issue137_partial/att-x", str(crash)],
+            input=heredoc,
+            stdout=w_fd,
+            stderr=w_fd,
+            text=True,
+            env=env,
+            timeout=120,
+        )
+    finally:
+        os.close(w_fd)
+    assert proc.returncode == 3, proc.returncode
+    text = transcript.read_text()
+    assert "[crash-persist] BEGIN" in text
+    assert "staged crash_report.json" in text
+    assert "staged workload.log" in text
+
+
+def test_render_startup_script_streamer_installs_pipe_trap() -> None:
+    """#1799 fix A: the streamer pipeline group re-installs ``trap ':' PIPE``
+    — a pipeline subshell RESETS the top-level #607 PIPE handler to default,
+    so without the re-arm an EPIPE'd ``printf >&3`` SIGPIPE-kills the whole
+    streamer (closing the persist python's stdout pipe) instead of degrading
+    to a guarded write error."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "| { trap ':' PIPE; _n=0;" in script
+
+
+def test_render_startup_script_maps_rc120() -> None:
+    """#1799 fix C: the rc-file case table maps 120 (std-stream flush
+    failure at interpreter exit — dead stdout/fd-3 pipe) to the dedicated
+    ``failed_stream_flush`` eps/persist value, before the ``failed_rc<N>``
+    catch-all."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert '(120) _eps_persist_status "failed_stream_flush" ;;' in script
+    catch_all = '(*)   _eps_persist_status "failed_rc${_prc}" ;;'
+    assert catch_all in script
+    assert script.index('(120) _eps_persist_status "failed_stream_flush" ;;') < script.index(
+        catch_all
+    )
 
 
 def _guest_attr_kv(key: str, value: str) -> str:
@@ -6352,6 +7473,107 @@ def test_render_startup_script_hydra_only_byte_identical_to_pre_change_snapshot(
         repo_branch="main",
     )
     assert rendered == fixture["rendered_text"]
+
+
+# ---------------------------------------------------------------------------
+# issue #1794 — persist uv on the default PATH for non-login/sudo/setsid shells
+# ---------------------------------------------------------------------------
+
+
+def test_startup_script_persists_uv_path() -> None:
+    """#1794 (founding incident #1739 exit-127): after the uv-install block the
+    startup script symlinks uv (+ uvx when present) into ``/usr/local/bin`` —
+    which is on the default PATH of non-login shells AND in sudo's
+    ``secure_path`` — and writes an ``/etc/profile.d/eps-uv-path.sh`` drop-in
+    for login shells. The block lives in the SHARED render body, so both the
+    hydra and workload_cmd branches carry it.
+
+    Round-2 regression pins (BLOCKER ``gcp-uv-selfsymlink-on-rerun``): the
+    resolution must come from FIXED candidate paths first — never bare
+    ``command -v uv`` as the primary source, which on a startup-script RE-RUN
+    (GCE re-runs on every boot; same-name creates re-attach surviving boot
+    disks, the #779 class) finds the PRIOR run's /usr/local/bin/uv symlink and
+    self-symlinks it into an ELOOP — with the ``command -v`` fallback
+    canonicalized (``readlink -f``) and both legs guarded against a
+    /usr/local/bin self-target."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    install_marker = "# === Install uv if missing + sync env ==="
+    assert install_marker in script
+    tail = script[script.index(install_marker) :]
+    # /usr/local/bin symlink leg (the non-login/sudo/setsid-covering leg).
+    assert 'ln -sf "$UV_BIN" /usr/local/bin/uv' in tail
+    assert "/usr/local/bin/uvx" in tail
+    # profile.d drop-in leg (login shells): single-quoted printf format so
+    # $HOME/$PATH land UNEXPANDED in the drop-in file.
+    assert (
+        "printf 'export PATH=\"$HOME/.local/bin:$PATH\"\\n' > /etc/profile.d/eps-uv-path.sh"
+    ) in tail
+    # Ordering: the persistence block follows the install block (uv exists by then).
+    assert tail.index('ln -sf "$UV_BIN" /usr/local/bin/uv') > tail.index(
+        "curl -LsSf https://astral.sh/uv/install.sh"
+    )
+    # --- #1794 round-2 self-symlink regression pins ---
+    # Primary resolution = FIXED candidate paths (the immune b3d2dfbf1d shape).
+    assert 'for cand in "${HOME:-/root}/.local/bin/uv" /root/.local/bin/uv; do' in tail
+    assert 'if [ -x "$cand" ]; then UV_BIN="$cand"; break; fi' in tail
+    # The old self-symlinkable PRIMARY (bare command -v assignment) must be gone.
+    assert 'UV_BIN="$(command -v uv 2>/dev/null || true)"\n' not in tail
+    # The fallback is canonicalized so a symlink chain resolves to the real file.
+    assert (
+        'UV_BIN="$(readlink -f "$(command -v uv 2>/dev/null || true)" 2>/dev/null || true)"'
+    ) in tail
+    # Fixed candidates are tried BEFORE the command -v fallback.
+    assert tail.index("for cand in") < tail.index("readlink -f")
+    # Self-target guards: neither leg may ever symlink /usr/local/bin onto itself.
+    assert '[ "$UV_BIN" != /usr/local/bin/uv ]' in tail
+    assert '[ "$UVX_BIN" != /usr/local/bin/uvx ]' in tail
+
+
+def test_startup_script_uv_resolution_converges_on_rerun(tmp_path: Path) -> None:
+    """#1794 round 2 (BLOCKER ``gcp-uv-selfsymlink-on-rerun``) behavioral
+    micro-check: execute the rendered uv-resolution stanza in a scratch root
+    with a PRIOR run's /usr/local/bin/uv symlink already present (the
+    startup-script re-run / reused-boot-disk state the reviewer reproduced as
+    ELOOP rc=126). The stanza must exit 0 and leave the symlink pointing at
+    the REAL binary — never at itself."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    start = script.index('UV_BIN=""')
+    end = script.index("printf 'export PATH=", start)
+    stanza = script[start:end]
+    # Rebase the absolute path literals into the scratch root (the logic under
+    # test — candidate order, readlink canonicalization, self-target guards —
+    # is path-shape-independent).
+    fake_home = tmp_path / "home"
+    (fake_home / ".local" / "bin").mkdir(parents=True)
+    usr_local = tmp_path / "usr_local_bin"
+    usr_local.mkdir()
+    root_local = tmp_path / "root_local_bin"
+    root_local.mkdir()
+    real_uv = fake_home / ".local" / "bin" / "uv"
+    real_uv.write_text("#!/bin/sh\necho uv-ok\n")
+    real_uv.chmod(0o755)
+    stanza = stanza.replace("/usr/local/bin", str(usr_local))
+    stanza = stanza.replace("/root/.local/bin", str(root_local))
+    # Simulate the PRIOR run's symlink already resolvable via PATH (re-run state).
+    prior = usr_local / "uv"
+    prior.symlink_to(real_uv)
+    proc = subprocess.run(
+        ["bash", "-euo", "pipefail", "-c", stanza],
+        env={
+            **os.environ,
+            "HOME": str(fake_home),
+            "PATH": f"{usr_local}:{os.environ.get('PATH', '')}",
+        },
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, f"stanza rc={proc.returncode}\nstderr:\n{proc.stderr}"
+    resolved = usr_local / "uv"
+    # Must resolve to the real binary — a self-referential loop raises here.
+    assert resolved.resolve() == real_uv.resolve()
+    out = subprocess.run([str(resolved)], capture_output=True, text=True)
+    assert out.returncode == 0
+    assert "uv-ok" in out.stdout
 
 
 # ---------------------------------------------------------------------------
@@ -8635,6 +9857,48 @@ def test_gcp_poll_running_transport_drain_failure_sets_reachability_alarm() -> N
     assert pr.reachability_alarm is True  # transport class -> reachability alarm
 
 
+def test_drain_rc_nonzero_control_plane_stderr_classifies_control_plane() -> None:
+    """R4 (#1837 producer side): an rc!=0 drain whose stderr carries the gcloud
+    CONTROL-PLANE signature ('Could not fetch resource' — case-insensitive) is
+    classified ``alarm_class == "control_plane"``, and via ``poll()`` leaves
+    ``PollResult.reachability_alarm`` False (the mapping keys on
+    ``== "transport"``): the API failed BEFORE any SSH probe ran, so it
+    carries zero wedge signal (incident #1739)."""
+    stderr = "ERROR: (gcloud.compute.ssh) Could not fetch resource: Internal error"
+    # Direct classifier read: the drain tuple's alarm_class.
+    runner = _Runner(ssh_results=[GcloudRunResult(1, "", stderr)])
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    processed, gate, alarm, _tail, _mtime, alarm_class = backend._drain_sentinels(
+        _drain_handle(), "us-central1-a"
+    )
+    assert alarm_class == "control_plane"
+    assert processed == 0 and gate is None
+    assert "control-plane" in alarm  # loud one-line diagnosis, never silent
+
+    # And end-to-end through poll(): reachability_alarm stays False.
+    runner2 = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+        ssh_results=[GcloudRunResult(1, "", stderr)],
+    )
+    backend2 = GcpBackend(config=_test_config(), runner=runner2, marker_poster=lambda **_: None)
+    pr = backend2.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.reachability_alarm is False  # control_plane class never feeds the wedge
+
+
+def test_drain_rc_nonzero_ssh_connect_failure_stays_transport() -> None:
+    """R4 negative (#1837): an rc=255 guest SSH connect failure (no
+    control-plane signature in stderr) keeps ``alarm_class == "transport"`` —
+    the pre-#1837 unreachable-VM signature is unchanged (fail toward existing
+    behavior on unmatched stderr)."""
+    stderr = "ssh: connect to host 1.2.3.4 port 22: Connection timed out"
+    runner = _Runner(ssh_results=[GcloudRunResult(255, "", stderr)])
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    *_, alarm_class = backend._drain_sentinels(_drain_handle(), "us-central1-a")
+    assert alarm_class == "transport"
+
+
 def test_gcp_poll_running_healthy_drain_leaves_reachability_alarm_false() -> None:
     """M2.5 negative: a RUNNING GCP poll whose drain SSH SUCCEEDS (rc == 0,
     clean drain) leaves ``reachability_alarm = False`` — the VM answered, so it
@@ -9835,6 +11099,15 @@ def test_render_startup_script_workload_cmd_carries_push_verify_leg() -> None:
         repo_branch="issue-1205",
     )
     assert "_EPS_PUSH_BRANCH=issue-1205" in script_wt
+    # #1880: the retry path fetches + rebases (inline committer identity,
+    # so a missing repo-level identity can never kill the rebase) before
+    # the retry push; on rebase failure the abort fires and the existing
+    # bundle + exit 86 flow takes over.
+    assert 'fetch origin "${_EPS_PUSH_BRANCH}"' in script
+    assert "-c user.email=eps-workload@localhost" in script
+    assert "-c user.name=eps-workload" in script
+    assert 'rebase "origin/${_EPS_PUSH_BRANCH}"' in script
+    assert "rebase --abort" in script
 
 
 def test_render_startup_script_workload_cmd_git_credential_gated_on_token() -> None:
@@ -10011,3 +11284,192 @@ def test_push_verify_leg_executes_in_tmp_repo_case_c_noop(tmp_path: Path) -> Non
     assert proc.returncode == 0, (proc.stdout, proc.stderr)
     assert "[push-verify] OK: no unpushed commits" in proc.stdout
     assert not (workload / "data" / "issue_137").exists()
+
+
+def _advance_origin_main(
+    tmp_path: Path, origin: Path, env: dict[str, str], fname: str, content: str
+) -> str:
+    """Advance the bare origin's ``main`` past the workload clone.
+
+    Simulates a MID-RUN orchestrator branch push (#1880: a sibling lane's
+    crash-fix relaunch advancing ``origin/issue-<N>`` while this lane's
+    clone is in flight) via a fresh full clone + commit + push. Returns
+    the new origin tip SHA.
+    """
+    orch = tmp_path / "orchestrator"
+    _git(tmp_path, "clone", f"file://{origin}", str(orch), env=env)
+    _git(orch, "config", "user.email", "o@example.com", env=env)
+    _git(orch, "config", "user.name", "o", env=env)
+    (orch / fname).write_text(content)
+    _git(orch, "add", fname, env=env)
+    _git(orch, "commit", "-m", "orchestrator mid-run branch push", env=env)
+    _git(orch, "push", "origin", "main:main", env=env)
+    return _git(orch, "rev-parse", "HEAD", env=env).stdout.strip()
+
+
+def test_push_verify_leg_executes_in_tmp_repo_case_d_behind_origin_rebase_lands(
+    tmp_path: Path,
+) -> None:
+    """Case D (#1880): a local result commit on a clone BEHIND origin (a
+    mid-run orchestrator push advanced the branch -- the #1739 hallu-lane
+    shape). Pre-#1880 the leg lost DETERMINISTICALLY: both pushes rejected
+    non-fast-forward, so a HEALTHY completed run exited 86 into
+    crash-persist. The fetch+rebase retry replays the result commit onto
+    the advanced tip and lands it: rc 0 AND
+    ``rev-list --count origin/<branch>..HEAD`` == 0."""
+    origin, workload, env, runner = _push_leg_rig(tmp_path)
+    _advance_origin_main(tmp_path, origin, env, "orchestrator.txt", "mid-run fix\n")
+    (workload / "result.json").write_text("{}\n")
+    _git(workload, "add", "result.json", env=env)
+    _git(workload, "commit", "-m", "eval results", env=env)
+    proc = _run_leg(runner, env)
+    assert proc.returncode == 0, (proc.returncode, proc.stdout, proc.stderr)
+    assert "fetch + rebase onto" in proc.stdout  # the #1880 branch engaged
+    assert "[push-verify] retry landed" in proc.stdout
+    count = _git(workload, "rev-list", "--count", "origin/main..HEAD", env=env).stdout.strip()
+    assert count == "0"
+    # BOTH commits are on origin: the orchestrator's and the rebased result.
+    files = _git(
+        tmp_path, "-C", str(origin), "ls-tree", "--name-only", "main", env=env
+    ).stdout.split()
+    assert "result.json" in files and "orchestrator.txt" in files
+
+
+def test_push_verify_leg_executes_in_tmp_repo_case_e_rebase_conflict_exit86_bundle(
+    tmp_path: Path,
+) -> None:
+    """Case E (#1880 fail-loud pin): behind-origin with a GENUINE content
+    conflict (both sides add ``result.json`` with different bytes) -- the
+    rebase conflicts, the abort fires, the retry push fails
+    non-fast-forward, and the leg keeps the EXISTING fail-loud path:
+    exit 86 + the data/issue_<N>/ bundle (no silent swallow)."""
+    origin, workload, env, runner = _push_leg_rig(tmp_path)
+    _advance_origin_main(tmp_path, origin, env, "result.json", '{"who": "orchestrator"}\n')
+    (workload / "result.json").write_text('{"who": "workload"}\n')
+    _git(workload, "add", "result.json", env=env)
+    _git(workload, "commit", "-m", "eval results", env=env)
+    proc = _run_leg(runner, env)
+    assert proc.returncode == 86, (proc.returncode, proc.stdout, proc.stderr)
+    assert "[push-verify] FAIL" in proc.stdout
+    bundles = sorted((workload / "data" / "issue_137").glob("unpushed-*.bundle"))
+    assert len(bundles) == 1, bundles
+    # The abort fired: no rebase left in progress in the workload clone.
+    assert not (workload / ".git" / "rebase-merge").exists()
+    assert not (workload / ".git" / "rebase-apply").exists()
+
+
+# ---------------------------------------------------------------------------
+# #1669 — launch env pins: GCP handle persist + reconnect carry + render
+# ---------------------------------------------------------------------------
+
+_PINS_1669 = {"WANDB_PROJECT": "issue1586_methodgen"}
+
+
+def test_gcp_launch_handle_extra_carries_env_pins(no_marker_posts) -> None:
+    """#1669 (consistency-checker gap): the GCP LAUNCH path persists
+    ``env_pins`` into handle extra — without it the GCP→RunPod
+    second-failover inheritance leg rests on an untested persist. A
+    pin-less launch OMITS the key (legacy-shape parity)."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "112233"}])
+
+    def _launch(extra: dict | None):
+        runner = _Runner(
+            list_results=[GcloudRunResult(0, "[]", "")],
+            create_results=[GcloudRunResult(0, created_payload, "")],
+        )
+        backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **kw: None)
+        return backend.launch(
+            _workload_spec("bash scripts/issue1669_dispatch.sh")
+            if extra is None
+            else _spec(
+                hydra_args=(),
+                workload_cmd="bash scripts/issue1669_dispatch.sh",
+                extra=extra,
+            )
+        )
+
+    handle = _launch({"env_pins": dict(_PINS_1669)})
+    assert handle.extra["env_pins"] == _PINS_1669
+    handle2 = _launch(None)
+    assert "env_pins" not in handle2.extra
+
+
+def test_render_startup_script_workload_cmd_exports_env_pins() -> None:
+    """#1669: the WORKLOAD-CMD branch renders shlex-quoted pin exports
+    immediately BEFORE the WandB project default; the HYDRA branch renders
+    NO pin line even when extra carries pins (workload-branch-only by
+    design — no hydra consumer, keeps the hydra snapshot untouched)."""
+    tricky_value = "fu lora's group"
+    spec = _spec(
+        hydra_args=(),
+        workload_cmd="bash scripts/issue1669_dispatch.sh",
+        extra={"env_pins": {"WANDB_PROJECT": "px", "WANDB_RUN_GROUP": tricky_value}},
+    )
+    script = render_startup_script(spec=spec, config=_test_config(), attempt_id="att-fixed-001")
+    lines = script.splitlines()
+    group_line = f"export WANDB_RUN_GROUP={shlex.quote(tricky_value)}"
+    proj_idx = lines.index("export WANDB_PROJECT=px")
+    group_idx = lines.index(group_line)
+    default_idx = next(i for i, ln in enumerate(lines) if 'WANDB_PROJECT="${WANDB_PROJECT:-' in ln)
+    assert proj_idx < group_idx < default_idx  # sorted, both before the :-default
+
+    # Hydra branch: pins structurally unreachable (CLI-gated), and even a
+    # hand-built hydra spec carrying pins renders none.
+    hydra_script = render_startup_script(
+        spec=_spec(extra={"env_pins": dict(_PINS_1669)}),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    assert "export WANDB_PROJECT=issue1586_methodgen" not in hydra_script
+
+
+def test_render_startup_script_no_pins_byte_identical_workload_branch() -> None:
+    """#1669 (implementer note 2 — no circular fixture): a pin-less
+    workload-cmd render carries NO pin export for any allowlisted key —
+    the only WANDB_PROJECT export is the ``:-`` default — and an
+    absent-key spec renders identically to an explicit empty-dict pin
+    spec."""
+    from explore_persona_space.backends.base import ENV_PIN_ALLOWED_KEYS
+
+    script = render_startup_script(
+        spec=_workload_spec("bash scripts/issue1669_dispatch.sh"),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    script_empty = render_startup_script(
+        spec=_spec(
+            hydra_args=(),
+            workload_cmd="bash scripts/issue1669_dispatch.sh",
+            extra={"env_pins": {}},
+        ),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    assert script == script_empty
+    lines = script.splitlines()
+    wandb_project_exports = [ln for ln in lines if ln.startswith("export WANDB_PROJECT")]
+    assert wandb_project_exports == ['export WANDB_PROJECT="${WANDB_PROJECT:-issue137}"']
+    for key in sorted(ENV_PIN_ALLOWED_KEYS - {"WANDB_PROJECT"}):
+        assert not any(ln.startswith(f"export {key}=") for ln in lines), key
+
+
+def test_reconnect_handle_carries_env_pins() -> None:
+    """#1669 (mirror of test_reconnect_handle_carries_workload_extras): a
+    pinned workload spec's reconnect handle carries ``env_pins`` so an
+    exit-75 rerun's sidecar overwrite stays failover-capable WITH the
+    pins; a pin-less spec omits the key."""
+    spec = _spec(
+        workload_cmd="bash scripts/issue1669_dispatch.sh",
+        hydra_args=(),
+        extra={"env_pins": dict(_PINS_1669)},
+    )
+    runner = _Runner(list_results=[GcloudRunResult(0, _running_instance_payload(), "")])
+    handle = reconnect_or_none(spec=spec, config=_test_config(), runner=runner)
+    assert handle is not None
+    assert handle.extra["env_pins"] == _PINS_1669
+
+    spec2 = _spec(workload_cmd="bash scripts/issue1669_dispatch.sh", hydra_args=())
+    runner2 = _Runner(list_results=[GcloudRunResult(0, _running_instance_payload(), "")])
+    handle2 = reconnect_or_none(spec=spec2, config=_test_config(), runner=runner2)
+    assert handle2 is not None
+    assert "env_pins" not in handle2.extra
