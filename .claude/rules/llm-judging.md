@@ -342,6 +342,26 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     rubrics and waves < ~5,000 calls (the post-hoc per-arm drop report,
     rules 9/18/23, still binds there).
 
+27. **Round-trip the parse contract before trusting a composed judge
+    instrument.** A dry run proves ROUTING, not the request/response
+    CONTRACT. Any newly composed judge rubric/leg ships with a committed
+    test that (a) pushes a REALISTIC reply (reasoning + score, plus a
+    fenced/markdown variant) through the harness's OWN parse+reduce path
+    (`parse_judge_json`, `src/explore_persona_space/eval/utils.py` →
+    `_score_from_parsed`, `eval/graded_judge.py` — or the consumer's
+    actual equivalent), and (b) presence-checks the user-template
+    substitution placeholders (`{question}`/`{answer}` — the
+    `graded_judge.py` `format_user_msg` `.replace` substitution) and
+    asserts harness-identical substitution leaves no slot unfilled. The
+    REQUEST side still needs a live probe (`.claude/rules/gotchas.md`
+    mock-seam rules — a mock-judge smoke never validates the Batch API
+    request shape); the RESPONSE side is validatable OFFLINE at zero API
+    cost. (Incident #1345 rounds 3→4: two rubrics with clean dry runs
+    carried 100%-draw-drop defects — no substitution placeholders, and a
+    trailing `SCORE: <int>` shape against the harness's forced JSON
+    contract, `parse_judge_json('...SCORE: 73') → None`; both fixed +
+    test-pinned in `a41fcad04f`, 72 round-trip tests.)
+
 ## D. Judge model
 
 11. **ONE cross-family judge: `claude-sonnet-4-5-20250929` judging Qwen.**
@@ -557,6 +577,12 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
   whose per-arm drop report does not split content-drops from
   transport-losses — is a Statistics & Measurement REVISE. Plan-enforced in
   v1 — no mechanical lint (same enforcement class as rule 23).
+- Rule 27 (parse-contract round-trip) is plan-enforced in v1 — no mechanical
+  lint (same class as rules 23/24/26): a composed judge instrument's
+  implementer smoke evidence includes the committed round-trip test
+  (smoke-contract mirror: `experiment-implementer.md` § "End-to-end smoke
+  run PER PHASE"); dry-run-only evidence for a composed judge leg is the
+  named insufficient shape.
 - The `--check-judge-model-pins` `test_live_trees_pass()` invariant locks the
   grandfather allowlist to today's tree; a future LEGITIMATE non-Sonnet judge
   pin (a new calibration anchor or translation-judge exemption) must be added
@@ -581,6 +607,8 @@ threading + truncation-vs-content drop split + the `judge_pilot_gate`
 helper);
 task body #1482 (the category-axis confusable-neighbor incident behind
 rule 25);
+task #1345 (the composed-instrument parse-contract defects behind rule 27;
+fix `a41fcad04f`, 72 round-trip tests) + task #1943 (the rule);
 `.claude/rules/persona-vectors-recipe.md` (the graded-judge precedent +
 judge-filter drop rule); `.claude/rules/marker-leakage-measurement.md` (the
 non-judged marker DV); the enforcing agent files (`planner.md`, `critic.md`,
