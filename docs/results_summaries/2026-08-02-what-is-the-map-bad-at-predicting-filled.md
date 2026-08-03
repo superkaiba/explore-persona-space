@@ -220,9 +220,61 @@ J₁₉ = E[∂h_final/∂h₁₉] linearizes what layers 20–27 transmit to th
 
 (`eval_results/issue_1482/jspace_r2/jspace_r2.json`)
 
+## New since the draft: the FULL-DICTIONARY battery — and why the panel ordering was an artifact (run 2026-08-03)
+
+Everything above is measured on the 16,384-feature answer-side panel. Re-running the whole battery on the **full dictionary** — 114,980 features (128,482 judged × 131,072 $R^2$, intersected with finite context-arm $R^2$ and answer-active-at-least-once) — reverses the headline.
+
+**The panel is the top-activity slice of the dictionary, not a sample of it.** 100% of non-panel features fall below the panel's *minimum* activity (0.0810); the panel's 1st activity percentile (0.0819) sits above the non-panel 99th (0.0761). The panel therefore compresses activity into a ~9× range where the full dictionary spans ~4 orders of magnitude (3e-5 to 0.77). That range restriction is what produced the panel's ordering:
+
+| | ρ($R^2$, activity) | ρ($R^2$, consistency) |
+|---|---|---|
+| panel features (16,382) | +0.365 | **+0.472** |
+| non-panel features (98,598) | **+0.652** | +0.192 |
+| full dictionary (114,980) | **+0.742** | +0.257 |
+
+Both rows are scored against the SAME multi-turn $R^2$, so this is a range-restriction effect, not a corpus effect.
+
+![Full-dictionary raw vs all-others-partial Spearman for every predictor](https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/issue_1482/predictor_battery/summary_forest.png)
+
+**Takeaways:**
+- **Joint rank-OLS $R^2$ = 0.594** [0.591, 0.598] over 24 predictors; the same model classifying top-decile-vs-rest $R^2$ membership scores **AUROC 0.903** [0.901, 0.906]
+- **Activity is the whole story at full width**: raw ρ **+0.742**, all-others-partial **+0.671**, LOPO Δ$R^2$ **0.333** (top-vs-bottom-decile median-$R^2$ gap +0.127). Every other predictor's Δ$R^2$ is below 0.01
+- **Within-answer consistency — the panel's dominant predictor — collapses to nothing**: raw +0.257, partial **+0.014**, Δ$R^2$ **0.00007**. It reaches $R^2$ 0.066 alone, and *removing it changes the joint $R^2$ by 0.0001*. The panel's ρ = 0.60 was activity wearing a different hat
+- Runners-up are all small: `content_type: topic` partial −0.152, dense variance +0.134, write norm −0.100, `interpretable: yes` +0.083. Encoder norm (raw −0.261) and footprint kurtosis (raw +0.235) both go to ~zero partialled (−0.010, −0.044) — the panel's "suppressed correlate" reading of kurtosis does not survive
+- Distance correlation (8,000-feature subsample) exceeds |ρ| by >0.05 for **no** predictor, so nothing here is a hidden non-monotone relationship
+- Panel↔full-width rank agreement on the 16,382 shared features is ρ = **0.772** — but across DIFFERENT corpora (panel $R^2$ single-turn, full-width $R^2$ multi-turn), so it is an agreement check, not a replication
+
+For the judged labels, the activity-stratified null is the whole point: several labels look informative raw and are entirely activity, and one looks null and is not.
+
+![AUROC at depth for every judged binary label](https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/issue_1482/predictor_battery/summary_auroc_depth_overlay.png)
+
+| label | prevalence | AUROC [95% CI] | stratified null mean | direction | perm p |
+|---|---|---|---|---|---|
+| speaker_identity | 0.012 | 0.646 [0.629, 0.663] | 0.492 | above | 0.0005 |
+| content_syntax | 0.650 | 0.576 [0.573, 0.580] | 0.520 | above | 0.0005 |
+| abstraction_high | 0.356 | 0.569 [0.565, 0.572] | 0.562 | above | 0.0005 |
+| content_topic | 0.187 | 0.416 [0.412, 0.420] | 0.508 | below | 0.0005 |
+| speaker_language | 0.058 | 0.576 [0.569, 0.584] | 0.587 | **below** | 0.0005 |
+| interpretable | 0.850 | 0.489 [0.484, 0.493] | 0.424 | **above** | 0.0005 |
+| content_task_format | 0.016 | 0.467 [0.453, 0.483] | 0.422 | above | 0.0005 |
+| content_entity | 0.051 | 0.400 [0.393, 0.407] | 0.394 | above | 0.033 |
+| content_operation | 0.097 | 0.507 [0.502, 0.513] | 0.507 | above | 0.650 |
+
+**Takeaways:**
+- **The stratified null is nowhere near chance**, so a raw AUROC is uninterpretable on its own. `interpretable` reads 0.489 — apparently sub-chance — but its activity-stratified null sits at 0.424, so interpretable features are in fact **enriched** among the best-predicted *beyond* activity. `speaker_language` reads 0.576 — apparently the strongest language effect — but its null is 0.587, so the language enrichment is **entirely activity, and slightly less than activity alone predicts**
+- **speaker_identity is the one large genuine effect** (0.646 vs a 0.492 null) despite being the rarest label (1.2%) — the panel called it "too rare for a stable tail read", and at 7× the n it is the cleanest signal on the board
+- **content_operation is the only true null** (0.507 vs 0.507, p = 0.65) and, with content_entity, the only label whose separation does not survive the scan-corrected band at any depth
+- Every other label separates to the deepest tested depth ($k$ = 51,200 ≈ half the dictionary) — at n = 115k the tails-only-vs-panel-wide distinction the panel sweep drew mostly dissolves
+
+Per-predictor plots (one scatter per continuous predictor, one prevalence-vs-rank profile per label) are in `figures/issue_1482/predictor_battery/per_predictor/`.
+
+**Caveats.** (1) The full-width $R^2$ is the **#1738 multi-turn** read while consistency, activity and projected variance come from the **#1482 single-turn** corpus — every full-width correlate is cross-corpus (the same caveat the panel's projected-variance read already carried). (2) `side_ratio` and `rb_align` exist only in the #1773 panel table and are absent from the full-width model. (3) The retired `functional_role` axis (κ 0.318) is carried and flagged; its partials are not interpretable. (4) Consistency and activity were re-derived full-width from the local pooled store and **reproduce the committed panel covariates exactly** (max |Δ| = 0.000e+00 for both, n_fit = 120,000).
+
+(`eval_results/issue_1482/predictor_battery/fullwidth_joint_model.json`, `fullwidth_label_reads.json`, `fullwidth_matrix.npz`)
+
 ## Suggested additional analyses
 
-1. **Full-width label joins** — the 3.21M-call full-dictionary judged labels (128,512 features × 5 axes, banked on HF + `/mnt/eps-data`) × the full-width per-feature $R^2$ (131,072, banked): rerun the tail-depth sweep and panel correlations at ~7× the n, incl. deriving a full-width activity covariate for the stratified nulls. Zero new API calls.
+1. ~~**Full-width label joins** — the 3.21M-call full-dictionary judged labels (128,512 features × 5 axes, banked on HF + `/mnt/eps-data`) × the full-width per-feature $R^2$ (131,072, banked): rerun the tail-depth sweep and panel correlations at ~7× the n, incl. deriving a full-width activity covariate for the stratified nulls. Zero new API calls.~~ — **DONE 2026-08-03, predictor_battery full-width round** (see the full-dictionary section above; the full-width activity AND consistency covariates were derived from the local pooled store and identity-gated against the committed panel values).
 2. ~~**Interpretable-vs-$R^2$ and content_type reads** — both labels banked, correlation never run.~~ — **DONE 2026-08-03, predictor_battery round** (panel reads + tail sweep + AUROC extension).
 3. ~~**Joint predictor model** — the draft's requested all-others-partialled ρ plot: one multivariate (rank) regression of per-feature $R^2$ on consistency + activity + write norm + tier + labels, with dominance analysis; also settles how much consistency subsumes the rest.~~ — **DONE 2026-08-03, predictor_battery round** (26 predictors, joint $R^2$ 0.520; Matryoshka tier excluded as a different dictionary/panel that does not join).
 4. ~~**Encoder-norm + encoder-vs-decoder asymmetry** correlates (encoder weights banked, never used for this).~~ — **DONE 2026-08-03, predictor_battery round**; the asymmetry half is moot (decoder columns are unit-norm by construction).
