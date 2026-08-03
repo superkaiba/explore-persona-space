@@ -47,7 +47,7 @@
    "prevalence": 0.00685882568359375,
    "n_panel": 899,
    "prevalence_panel": 0.05487060546875,
-   "quoted_prevalence_correction": "a prevalence of ~11% was quoted for this flag; the FULL-WIDTH prevalence is 0.69% (899 features). The panel figure is 5.49% \u2014 the panel is the top-activity stratum, so it is enriched for dense latents by construction. This is the same width confound as the firing-frequency headline: a panel-grain prevalence is not a full-width prevalence.",
+   "prevalence_note": "FULL-WIDTH prevalence 0.69% (899 features); on the legacy panel 5.49% (899 of 16384). Every dense latent is inside the panel by construction \u2014 activity 0.5 sits far above the panel floor 0.0810 \u2014 so the panel figure is an enrichment of the top-activity stratum, not a second estimate of the same quantity. Quote the grain with the number.",
    "note": "the early-layer round found a real effect at LAYER 3 (median R^2 0.245 dense vs 0.095 overall); this is the first time the flag exists at layer 19 full width. Whether it carries an effect here is an R^2-dependent read, DEFERRED."
   },
   "judge_unanimity": {
@@ -57,21 +57,27 @@
      "prevalence_unanimous": 0.5789071575024752,
      "expected_prevalence": 0.578,
      "abs_delta": 0.0009071575024752754,
-     "status": "PASS"
+     "status": "PASS",
+     "loose_prevalence": 0.5915444644541634,
+     "loose_only_low_evidence_rows": 268
     },
     "speaker_property": {
      "n_judged": 128249,
      "prevalence_unanimous": 0.7502748559442959,
      "expected_prevalence": 0.749,
      "abs_delta": 0.001274855944295883,
-     "status": "PASS"
+     "status": "PASS",
+     "loose_prevalence": 0.7587271635646282,
+     "loose_only_low_evidence_rows": 206
     },
     "content_type": {
      "n_judged": 128332,
      "prevalence_unanimous": 0.6865006389676775,
      "expected_prevalence": 0.686,
      "abs_delta": 0.0005006389676774914,
-     "status": "PASS"
+     "status": "PASS",
+     "loose_prevalence": 0.6961319078639778,
+     "loose_only_low_evidence_rows": 222
     },
     "functional_role": {
      "n_judged": 128123,
@@ -79,6 +85,8 @@
      "expected_prevalence": 0.621,
      "abs_delta": 0.0020341156544883,
      "status": "PASS",
+     "loose_prevalence": 0.6732358749014619,
+     "loose_only_low_evidence_rows": 989,
      "retired": "RETIRED \u2014 kappa 0.310, below the 0.6 usability bar"
     },
     "interpretable": {
@@ -86,10 +94,12 @@
      "prevalence_unanimous": 0.7775482362112649,
      "expected_prevalence": 0.776,
      "abs_delta": 0.001548236211264875,
-     "status": "PASS"
+     "status": "PASS",
+     "loose_prevalence": 0.7993373611381797,
+     "loose_only_low_evidence_rows": 495
     }
    },
-   "definition": "STRICT: every LAUNCHED judge draw survived AND all returned the same label. The looser 'surviving draws agreed' variant is also stored (unanimous_loose_*) and reads systematically higher because it counts a feature unanimous when draws were lost; strict is what reproduces the independently measured prevalences.",
+   "definition": "STRICT: every LAUNCHED judge draw survived AND all returned the same label. The looser 'surviving draws agreed' variant is also stored (unanimous_loose_*) and reads systematically higher because it counts a feature unanimous when draws were LOST. That is not a harmless inflation: per axis, hundreds of rows are unanimous on <= 2 surviving draws (measured per axis in loose_only_low_evidence_rows), so the loose flag promotes the LOWEST-evidence features into the highest-confidence bucket \u2014 precisely inverting what the predictor is meant to measure. Strict reproduces the independently measured prevalences to within 0.002.",
    "usage": "a PREDICTOR (describability proxy), never a filter \u2014 it selects on cleanliness"
   },
   "cross_dictionary_match_flag": {
@@ -227,12 +237,13 @@
    "per-axis omnibus statistic (Kruskal-Wallis / eta^2) alongside the one-vs-rest AUROCs",
    "linear vs nonlinear: both arms in every figure, plus the pooled-vs-per-feature divergence at full width against the pre-registered expectation that it WIDENS"
   ],
-  "pre_registered_expectation_linear_vs_nonlinear": "at panel grain the divergence was ridge pooled 0.7216 / per-feature median +0.1767 / 99.3% positive vs MLP pooled 0.7387 / median -0.0285 / 46.1% positive. Full width adds ~7x more rare features, and the capacity-allocation account predicts the MLP abandons them harder, so the divergence should WIDEN. To be reported as held or not.",
-  "if_the_pod_fails": "the honest outcome is 'target-independent covariate substrate delivered at full width; the R^2-dependent reads could not be produced on the specified map' \u2014 NOT a substitution of the SAE->SAE target and NOT a fallback to panel width."
+  "pre_registered_expectation_linear_vs_nonlinear": "at panel grain the divergence was ridge pooled 0.7216 / per-feature median +0.1767 / 99.3% positive vs MLP pooled 0.7387 / median -0.0285 / 46.1% positive. Full width adds ~7x more rare features, and the capacity-allocation account predicts the MLP abandons them harder, so the divergence should WIDEN. To be reported as held or not. GRID: 7 cells \u2014 ridge x {mean, max, frac} vs MLP(w=8192) x {mean, max, frac}, plus mlpgate__mean as the panel-width MLP reproduction gate. The w=32,768 arm (mlpw32k__mean) was REMOVED by user directive, so there is NO capacity ladder and the 'does abandonment ease with more hidden units' question cannot be answered this round.",
+  "pod_status_at_write_time": "pod-1482 is RUNNING (8xH100, pod_id kdxtgasnn1npbw), verified against the live RunPod API at write time \u2014 NOT inferred from the task tracker. An earlier draft of this file asserted no pod existed; that was read off a stale tracker row (#10 in_progress) and was WRONG. The deferral below stands on the arrays not existing YET, not on any expectation that they will not.",
+  "outcome_if_arrays_never_land": "GATED \u2014 do not quote this without a fresh live re-check of pod-1482 and of eval_results/issue_1482/densesae_fullwidth/. IF, after that re-check, the arrays are confirmed unavailable, the honest wording is 'target-independent covariate substrate delivered at full width; the R^2-dependent reads could not be produced on the specified map' \u2014 never a substitution of the SAE->SAE target and never a fallback to panel width. This is a contingency template, NOT a statement about the current run."
  },
  "metadata": {
-  "git_commit": "15c13e9a44f0e630f772ef59aaa2daa0ff4d8bb7",
-  "timestamp_utc": "2026-08-03T17:32:39.292508+00:00",
+  "git_commit": "6cb343ce3dbd1fe8d9f55fbc7a101514cf94f888",
+  "timestamp_utc": "2026-08-03T17:43:05.052546+00:00",
   "python_version": "3.11.15",
   "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
   "numpy_version": "2.2.6"

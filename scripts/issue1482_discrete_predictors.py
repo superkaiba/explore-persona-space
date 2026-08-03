@@ -153,12 +153,12 @@ def dense_latent_flag(cov: dict) -> tuple[np.ndarray, dict]:
         "prevalence": float(n / DICT_SIZE),
         "n_panel": n_panel,
         "prevalence_panel": float(n_panel / len(pid)),
-        "quoted_prevalence_correction": (
-            f"a prevalence of ~11% was quoted for this flag; the FULL-WIDTH prevalence is "
-            f"{100 * n / DICT_SIZE:.2f}% ({n} features). The panel figure is "
-            f"{100 * n_panel / len(pid):.2f}% — the panel is the top-activity stratum, so it is "
-            "enriched for dense latents by construction. This is the same width confound as the "
-            "firing-frequency headline: a panel-grain prevalence is not a full-width prevalence."
+        "prevalence_note": (
+            f"FULL-WIDTH prevalence {100 * n / DICT_SIZE:.2f}% ({n} features); on the legacy "
+            f"panel {100 * n_panel / len(pid):.2f}% ({n_panel} of {len(pid)}). Every dense latent "
+            "is inside the panel by construction — activity 0.5 sits far above the panel floor "
+            "0.0810 — so the panel figure is an enrichment of the top-activity stratum, not a "
+            "second estimate of the same quantity. Quote the grain with the number."
         ),
         "note": (
             "the early-layer round found a real effect at LAYER 3 (median R^2 0.245 dense vs "
@@ -177,6 +177,7 @@ def judge_unanimity() -> tuple[dict[str, np.ndarray], dict]:
     axes = ("abstraction", "speaker_property", "content_type", "functional_role", "interpretable")
     unanimous = {a: np.full(DICT_SIZE, np.nan) for a in axes}
     loose = {a: np.full(DICT_SIZE, np.nan) for a in axes}
+    low_evidence: Counter = Counter()
     seen = Counter()
     shards = sorted(FULLDICT_LABELS.glob("axis_labels.shard*.jsonl"))
     if not shards:
@@ -204,6 +205,8 @@ def judge_unanimity() -> tuple[dict[str, np.ndarray], dict]:
                 unanimous[ax][fid] = float(agreed and complete)
                 loose[ax][fid] = float(agreed)
                 seen[ax] += 1
+                if agreed and len(surviving) <= 2:
+                    low_evidence[ax] += 1
     out = {}
     for a in axes:
         v = unanimous[a]
@@ -217,6 +220,8 @@ def judge_unanimity() -> tuple[dict[str, np.ndarray], dict]:
             "expected_prevalence": exp,
             "abs_delta": delta,
             "status": "PASS" if delta < 0.01 else "MISMATCH",
+            "loose_prevalence": float(loose[a][np.isfinite(loose[a])].mean()),
+            "loose_only_low_evidence_rows": int(low_evidence[a]),
         }
         if a in RETIRED_AXES:
             out[a]["retired"] = RETIRED_AXES[a]
@@ -227,7 +232,11 @@ def judge_unanimity() -> tuple[dict[str, np.ndarray], dict]:
             "STRICT: every LAUNCHED judge draw survived AND all returned the same label. The "
             "looser 'surviving draws agreed' variant is also stored (unanimous_loose_*) and "
             "reads systematically higher because it counts a feature unanimous when draws were "
-            "lost; strict is what reproduces the independently measured prevalences."
+            "LOST. That is not a harmless inflation: per axis, hundreds of rows are unanimous on "
+            "<= 2 surviving draws (measured per axis in loose_only_low_evidence_rows), so the loose "
+            "flag promotes the LOWEST-evidence features into "
+            "the highest-confidence bucket — precisely inverting what the predictor is meant to "
+            "measure. Strict reproduces the independently measured prevalences to within 0.002."
         ),
         "usage": "a PREDICTOR (describability proxy), never a filter — it selects on cleanliness",
     }
@@ -376,12 +385,26 @@ DEFERRED_READS = {
         "at panel grain the divergence was ridge pooled 0.7216 / per-feature median +0.1767 / "
         "99.3% positive vs MLP pooled 0.7387 / median -0.0285 / 46.1% positive. Full width adds "
         "~7x more rare features, and the capacity-allocation account predicts the MLP abandons "
-        "them harder, so the divergence should WIDEN. To be reported as held or not."
+        "them harder, so the divergence should WIDEN. To be reported as held or not. GRID: 7 "
+        "cells — ridge x {mean, max, frac} vs MLP(w=8192) x {mean, max, frac}, plus "
+        "mlpgate__mean as the panel-width MLP reproduction gate. The w=32,768 arm "
+        "(mlpw32k__mean) was REMOVED by user directive, so there is NO capacity ladder and the "
+        "'does abandonment ease with more hidden units' question cannot be answered this round."
     ),
-    "if_the_pod_fails": (
-        "the honest outcome is 'target-independent covariate substrate delivered at full width; "
-        "the R^2-dependent reads could not be produced on the specified map' — NOT a substitution "
-        "of the SAE->SAE target and NOT a fallback to panel width."
+    "pod_status_at_write_time": (
+        "pod-1482 is RUNNING (8xH100, pod_id kdxtgasnn1npbw), verified against the live RunPod "
+        "API at write time — NOT inferred from the task tracker. An earlier draft of this file "
+        "asserted no pod existed; that was read off a stale tracker row (#10 in_progress) and "
+        "was WRONG. The deferral below stands on the arrays not existing YET, not on any "
+        "expectation that they will not."
+    ),
+    "outcome_if_arrays_never_land": (
+        "GATED — do not quote this without a fresh live re-check of pod-1482 and of "
+        "eval_results/issue_1482/densesae_fullwidth/. IF, after that re-check, the arrays are "
+        "confirmed unavailable, the honest wording is 'target-independent covariate substrate "
+        "delivered at full width; the R^2-dependent reads could not be produced on the specified "
+        "map' — never a substitution of the SAE->SAE target and never a fallback to panel width. "
+        "This is a contingency template, NOT a statement about the current run."
     ),
 }
 
