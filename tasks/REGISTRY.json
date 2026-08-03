@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2050,
+  "highest_id": 2051,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8138,6 +8138,13 @@
       "path": "tasks/proposed/2050",
       "status": "proposed",
       "title": "workflow-fix: pgrep without -f under-matches argv, reads live process as dead"
+    },
+    "2051": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2051",
+      "status": "proposed",
+      "title": "workflow-fix: pod bootstrap full-clones 10.5GB, burns ~$15 idle GPU per provision"
     },
     "207": {
       "has_clean_result": true,
