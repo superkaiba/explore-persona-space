@@ -7589,8 +7589,8 @@
     "1980": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1980",
-      "status": "approved",
+      "path": "tasks/reviewing/1980",
+      "status": "reviewing",
       "title": "workflow-fix: gotchas #952 streaming SIGABRT recipe misses break-suspended iterator (it.close())"
     },
     "1981": {
