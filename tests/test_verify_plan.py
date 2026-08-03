@@ -3881,7 +3881,7 @@ def test_c20_paired_before_primary_binds_primary_axis():
     # atom's span end the declaration is a clean 3x3 partition → PASS
     # (the fixture is chosen so the wrong binding flips the verdict).
     seg = "paired-diff CI excludes 0 AND Δ_pool CI straddles 0"
-    atoms, _ = verify_plan._c20_collect_atoms(seg)
+    atoms, _, _ = verify_plan._c20_collect_atoms(seg)
     assert [a[0] for a in atoms] == ["paired", "primary"]
     decl = (
         "- The labels are DISJOINT and exhaustive: "
@@ -3894,6 +3894,142 @@ def test_c20_paired_before_primary_binds_primary_axis():
     assert r.status == "PASS"
     assert ok is True
     assert "tier 1" in r.detail
+
+
+# ─── Check 20 — negated-existence atoms (#1960; incident #1946) ────────────
+
+# Verbatim #1946 tier-1 declaration (plans/plan.md line 27) — the shape that
+# drew the `unparsed` WARN ("predicate token(s) outside every recognized
+# atom: 'no'") before #1960's family-negation axis.
+C20_1946_DECL = (
+    "- DISJOINT and exhaustive: Collapse-preserved ⇔ A ≤ 0 AND no refusal-family "
+    "contrast is BH-significant with positive adjusted delta; Collapse-retracted ⇔ "
+    "bare answer_is_refusal exact-adjusted is BH-significant AND A > 0; Mixed ⇔ otherwise."
+)
+
+
+def test_c20_negated_existence_1946_shape_passes():
+    # The family-negation conjunct parses as a boolean famneg axis and the
+    # partition verifies clean: (neg, zero) → preserved; (pos, *) →
+    # retracted; (neg, nonzero) → Mixed via otherwise.
+    ok, by_id = _run(_c20_plan(C20_1946_DECL))
+    r = by_id[C20]
+    assert r.status == "PASS"
+    assert ok is True
+    assert "tier 1" in r.detail
+    # Direct-helper pin (mirrors the L3884 style): point + famneg both
+    # collect; the family key is normalized (casefold, singular unit noun).
+    atoms, _, fams = verify_plan._c20_collect_atoms(
+        "A ≤ 0 AND no refusal-family contrast is BH-significant with positive adjusted delta"
+    )
+    assert [a[0] for a in atoms] == ["point", "famneg"]
+    assert fams == {"refusal-family contrast"}
+
+
+def test_c20_negated_existence_count_form_passes():
+    # The canonical machine form `count(<family-ref>) == 0` binds the same
+    # boolean axis; comparators/connectives INSIDE the count(...) span are
+    # atom text (suppressed from point/CI collection and from residue).
+    decl = (
+        "- DISJOINT and exhaustive: Collapse-preserved ⇔ A ≤ 0 AND "
+        "count(refusal-family contrasts with bh_significant AND delta_adj > 0) == 0; "
+        "Collapse-retracted ⇔ bare answer_is_refusal exact-adjusted is BH-significant "
+        "AND A > 0; Mixed ⇔ otherwise."
+    )
+    ok, by_id = _run(_c20_plan(decl))
+    r = by_id[C20]
+    assert r.status == "PASS"
+    assert ok is True
+    assert "tier 1" in r.detail
+    # `delta_adj` never enters the point-quantity set (its `> 0` sits
+    # inside the count(...) span).
+    atoms, qtys, _ = verify_plan._c20_collect_atoms(
+        "count(refusal-family contrasts with bh_significant AND delta_adj > 0) == 0"
+    )
+    assert [a[0] for a in atoms] == ["famneg"]
+    assert qtys == set()
+
+
+def test_c20_negator_residue_preserved_for_unmatched_shapes():
+    # The family-ref is bounded by the closed unit-noun set: "no Δ_pool CI
+    # includes 0" carries no unit noun, so the negator stays residue and
+    # the lattice degrades to WARN byte-for-byte as before #1960.
+    decl = (
+        "- DISJOINT and exhaustive: H-null ⇔ no Δ_pool CI includes 0; H-mid ⇔ Δ_pool CI includes 0."
+    )
+    ok, by_id = _run(_c20_plan(decl))
+    r = by_id[C20]
+    assert r.status == "WARN"
+    assert ok is True
+    assert "did not fully parse" in r.detail
+    assert "'no'" in r.detail
+
+
+def test_c20_negated_existence_cofire_fails():
+    # The famneg axis keeps the lattice FAIL-capable: H-a and H-b co-fire
+    # on the {point < 0, no family member fires} cell (exhaustiveness is
+    # covered by the otherwise clause + the existing gap tests).
+    decl = (
+        "- DISJOINT and exhaustive: H-a ⇔ A ≤ 0 AND no refusal-family contrast "
+        "is BH-significant with positive adjusted delta; H-b ⇔ A ≤ 0; Mixed ⇔ otherwise."
+    )
+    ok, by_id = _run(_c20_plan(decl))
+    r = by_id[C20]
+    assert r.status == "FAIL"
+    assert ok is False
+    assert "CO-FIRE" in r.detail
+    assert "no family member fires" in r.detail
+
+
+def test_c20_two_distinct_negexist_families_warn():
+    # >1 distinct normalized family key in one lattice fails closed to the
+    # `unparsed` WARN (the v1 cell algebra carries ONE family-negation
+    # axis) — mirrors test_c20_mixed_point_quantities_warn.
+    decl = (
+        "- DISJOINT and exhaustive: H-a ⇔ no refusal-family contrast is "
+        "BH-significant with positive adjusted delta; H-b ⇔ no sycophancy-family "
+        "contrast is BH-significant with positive adjusted delta; Mixed ⇔ otherwise."
+    )
+    ok, by_id = _run(_c20_plan(decl))
+    r = by_id[C20]
+    assert r.status == "WARN"
+    assert ok is True
+    assert "distinct negated-existence families" in r.detail
+
+
+def test_c20_noexist_zero_inside_ci_idiom_fails_closed_to_warn():
+    # Hostile mixed text: the NOEXIST prose match anchors on the CI
+    # idiom's own `zero` token ("includes zero AND no ... contrast is …")
+    # and swallows the idiom tail — the CI atom is suppressed, its
+    # `CI`/`includes` tokens land as residue, and the lattice degrades to
+    # `unparsed` WARN (same verdict as pre-#1960; fail-closed, never a
+    # silent wrong parse).
+    decl = (
+        "- DISJOINT and exhaustive: H-a ⇔ the Δ_pool CI includes zero AND no "
+        "refusal-family contrast is BH-significant with positive delta; "
+        "H-b ⇔ the Δ_pool CI excludes zero; Mixed ⇔ otherwise."
+    )
+    ok, by_id = _run(_c20_plan(decl))
+    r = by_id[C20]
+    assert r.status == "WARN"
+    assert ok is True
+    assert "did not fully parse" in r.detail
+
+
+def test_c20_noexist_non_copula_stays_warn():
+    # Deliberate narrowness: the prose form requires an `is|are` copula —
+    # "no refusal-family contrast reaches BH-significance" does not match,
+    # so the negator stays residue and the lattice degrades to WARN
+    # (the pre-#1960 verdict; restate with the copula or the count form).
+    decl = (
+        "- DISJOINT and exhaustive: H-a ⇔ A ≤ 0 AND no refusal-family contrast "
+        "reaches BH-significance; H-b ⇔ A > 0; Mixed ⇔ otherwise."
+    )
+    ok, by_id = _run(_c20_plan(decl))
+    r = by_id[C20]
+    assert r.status == "WARN"
+    assert ok is True
+    assert "'no'" in r.detail
 
 
 # ─── Check 21 — grep-arity acceptance gate ─────────────────────────────────

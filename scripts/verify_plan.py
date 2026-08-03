@@ -3026,6 +3026,29 @@ _C20_CI_IDIOMS: list[tuple[re.Pattern[str], frozenset[str]]] = [
     ),
 ]
 
+# Negated-existence atoms (#1960; incident #1946): the prose form
+#   ``no <family-ref> <unit-noun> is|are <inner predicate>``
+# and the canonical machine form ``count(<family-ref>) == 0``. The span
+# consumes the leading NEGATOR (``no``/``zero``) so it never lands in
+# _C20_RESIDUE_RE residue; the prose inner predicate is a bounded run that
+# stops at ;,. comparators and newline, and BEFORE a top-level AND/OR
+# joiner — so a following sign/CI atom joins via the normal connective
+# gap, never swallowed (a ``with`` INSIDE the span is atom text, not a
+# joiner). The family-ref is BOUNDED by a closed unit-noun set so bare
+# "no <anything>" prose ("no binary verdict" — an _C20_OTHERWISE_RE token;
+# "no Δ_pool CI includes 0" — `CI` is not a unit noun) never matches and
+# stays residue (fail-closed). Semantics: ONE boolean cell-algebra axis
+# per lattice — values {zero, nonzero}; the atom binds {zero}; the
+# nonzero side is reachable only via ``⇔ otherwise``.
+_C20_NOEXIST_UNITS = r"(?:contrasts?|comparisons?|tests?|cells?|pairs?|arms?)"
+_C20_NOEXIST_PROSE_RE = re.compile(
+    r"(?i)\b(?:no|zero)\s+(?P<family>(?:[\w`*./_-]+\s+){0,5}?" + _C20_NOEXIST_UNITS + r")\s+"
+    r"(?:is|are)\s+(?P<pred>(?:(?!\b(?:and|or)\b)[^;,.<>≤≥\n])+)"
+)
+_C20_NOEXIST_COUNT_RE = re.compile(
+    r"(?i)\bcount\(\s*(?P<family>[^()\n]{1,120}?)\s*\)\s*==?\s*0(?!\.?\d)"
+)
+
 # OTHERWISE atom (complement label — fires iff no non-otherwise label fires).
 _C20_OTHERWISE_RE = re.compile(
     r"(?i)\botherwise\b|\ball other\b|\bneither\b[^.;\n]{0,40}\bfires?\b|\bno binary verdict\b"
@@ -3133,6 +3156,17 @@ def _c20_label_name(bold: str) -> str:
     return bold.split(" (")[0].rstrip(": ").strip()
 
 
+def _c20_norm_family(fam: str) -> str:
+    """Normalized axis key for a negated-existence family-ref: casefold,
+    backticks/asterisks stripped, whitespace collapsed, trailing unit noun
+    singularized. Axis sharing requires IDENTICAL normalized keys; >1
+    distinct key per lattice fails closed to ``unparsed`` in
+    ``_c20_evaluate_lattice`` — light normalization errs toward WARN,
+    never a false FAIL."""
+    s = re.sub(r"\s+", " ", fam.replace("`", "").replace("*", "").casefold()).strip()
+    return re.sub(r"(contrast|comparison|test|cell|pair|arm)s$", r"\1", s)
+
+
 def _c20_any_ci_idiom(text: str) -> bool:
     """True when ``text`` carries at least one CI-predicate idiom (the
     harvest condition — presence-only; atom adjacency is parse-time)."""
@@ -3197,18 +3231,37 @@ def _c20_segment(label_text: str) -> tuple[str | None, str | None]:
     return bearing[0], None
 
 
-def _c20_collect_atoms(segment: str) -> tuple[list[tuple[str, frozenset[str], int, int]], set]:
-    """All sign/CI atoms in ``segment`` as ``(axis, values, start, end)``
-    (sorted by position) plus the set of normalized POINT quantities. The
-    axis-binding lookback is clamped at the previous atom's span end so a
-    preceding atom's `paired` token never mis-binds a later primary atom."""
+def _c20_collect_atoms(
+    segment: str,
+) -> tuple[list[tuple[str, frozenset[str], int, int]], set, set]:
+    """All sign/CI/negated-existence atoms in ``segment`` as
+    ``(axis, values, start, end)`` (sorted by position) plus the set of
+    normalized POINT quantities and the set of normalized negated-existence
+    family keys. Negated-existence atoms are collected FIRST so their span
+    consumes the leading negator (no residue) and suppresses point/CI
+    matches falling inside it (#1960). The CI axis-binding lookback is
+    clamped at the previous atom's span end so a preceding atom's `paired`
+    token never mis-binds a later primary atom."""
     atoms: list[tuple[str, frozenset[str], int, int]] = []
     qtys: set[str] = set()
+    fams: set[str] = set()
+    neg_spans: list[tuple[int, int]] = []
+    for pat in (_C20_NOEXIST_PROSE_RE, _C20_NOEXIST_COUNT_RE):
+        for m in pat.finditer(segment):
+            if any(s < m.end() and m.start() < e for s, e in neg_spans):
+                continue  # already covered by an earlier negated-existence span
+            fams.add(_c20_norm_family(m.group("family")))
+            atoms.append(("famneg", frozenset({"zero"}), m.start(), m.end()))
+            neg_spans.append((m.start(), m.end()))
     for m in _C20_POINT_RE.finditer(segment):
+        if any(s < m.end() and m.start() < e for s, e in neg_spans):
+            continue  # inside a negated-existence span (e.g. count(... > 0) == 0)
         sign = "pos" if m.group("cmp") in _C20_POINT_POS else "neg"
         qtys.add(m.group("qty").strip("`*").casefold())
         atoms.append(("point", frozenset({sign}), m.start(), m.end()))
     for m in _C20_CI_TOKEN_RE.finditer(segment):
+        if any(s < m.end() and m.start() < e for s, e in neg_spans):
+            continue  # CI token inside a negated-existence span
         gm = _C20_CI_GAP_RE.match(segment, m.end())
         hit: tuple[re.Match[str], frozenset[str]] | None = None
         for pat, states in _C20_CI_IDIOMS:
@@ -3218,6 +3271,12 @@ def _c20_collect_atoms(segment: str) -> tuple[list[tuple[str, frozenset[str], in
                 break
         if hit is None:
             continue  # the stray CI token becomes completeness residue
+        if any(s < hit[0].end() and m.start() < e for s, e in neg_spans):
+            # The idiom tail crosses into a negated-existence span (a prose
+            # match anchored on the idiom's own `zero` token): suppress the
+            # CI atom — its CI/idiom tokens then land as residue, degrading
+            # the label to `unparsed` (fail-closed, never a wrong parse).
+            continue
         # Clamp the lookback at the previous atom's span end: a paired atom
         # < 40 chars BEFORE a primary atom would otherwise leak its `paired`
         # token into THIS atom's window, binding both atoms to the paired
@@ -3228,7 +3287,7 @@ def _c20_collect_atoms(segment: str) -> tuple[list[tuple[str, frozenset[str], in
         axis = "paired" if "paired" in lookback else "primary"
         atoms.append((axis, hit[1], m.start(), hit[0].end()))
     atoms.sort(key=lambda a: a[2])
-    return atoms, qtys
+    return atoms, qtys, fams
 
 
 def _c20_build_dnf(
@@ -3261,8 +3320,14 @@ def _c20_parse_predicate(segment: str) -> dict:
     token / comparator / idiom keyword / NEGATOR), any non-AND/OR/with
     joiner between atoms, or an otherwise-token mixed with predicate atoms
     marks the segment ``unparsed`` (reason in the returned dict)."""
-    out: dict = {"otherwise": False, "dnf": [], "unparsed": None, "point_qtys": set()}
-    atoms, out["point_qtys"] = _c20_collect_atoms(segment)
+    out: dict = {
+        "otherwise": False,
+        "dnf": [],
+        "unparsed": None,
+        "point_qtys": set(),
+        "famneg_keys": set(),
+    }
+    atoms, out["point_qtys"], out["famneg_keys"] = _c20_collect_atoms(segment)
     otherwise_spans = [(m.start(), m.end()) for m in _C20_OTHERWISE_RE.finditer(segment)]
     if otherwise_spans and atoms:
         out["unparsed"] = "an 'otherwise' token mixed with predicate atoms in one segment"
@@ -3303,6 +3368,9 @@ def _c20_enumerate(labels: list[dict]) -> tuple[list, list]:
     axes = {axis for lab in preds for conj in lab["parse"]["dnf"] for axis, _ in conj}
     primary_vals: tuple = _C20_CI_STATES if "primary" in axes else (None,)
     paired_vals: tuple = _C20_CI_STATES if "paired" in axes else (None,)
+    # Family-negation axis (#1960): boolean {zero, nonzero}; the atom binds
+    # {zero}, the nonzero side is reachable only via an otherwise-label.
+    famneg_vals: tuple = ("zero", "nonzero") if "famneg" in axes else (None,)
     cofires: list[tuple[dict, list[str]]] = []
     gaps: list[dict] = []
     for primary in primary_vals:
@@ -3314,21 +3382,27 @@ def _c20_enumerate(labels: list[dict]) -> tuple[list, list]:
             point_vals = {"below": ("neg",), "straddle": ("neg", "pos"), "above": ("pos",)}[primary]
         for point in point_vals:
             for paired in paired_vals:
-                cell = {"point": point, "primary": primary, "paired": paired}
-                fired = [
-                    lab
-                    for lab in preds
-                    if any(
-                        all(cell[axis] in values for axis, values in conj)
-                        for conj in lab["parse"]["dnf"]
-                    )
-                ]
-                if not fired and others:
-                    fired = others
-                if len(fired) >= 2:
-                    cofires.append((cell, [lab["name"] for lab in fired]))
-                elif not fired:
-                    gaps.append(cell)
+                for famneg in famneg_vals:
+                    cell = {
+                        "point": point,
+                        "primary": primary,
+                        "paired": paired,
+                        "famneg": famneg,
+                    }
+                    fired = [
+                        lab
+                        for lab in preds
+                        if any(
+                            all(cell[axis] in values for axis, values in conj)
+                            for conj in lab["parse"]["dnf"]
+                        )
+                    ]
+                    if not fired and others:
+                        fired = others
+                    if len(fired) >= 2:
+                        cofires.append((cell, [lab["name"] for lab in fired]))
+                    elif not fired:
+                        gaps.append(cell)
     return cofires, gaps
 
 
@@ -3342,6 +3416,10 @@ def _c20_cell_str(cell: dict) -> str:
         if v is not None:
             word = {"below": "wholly below 0", "straddle": "straddles 0", "above": "wholly above 0"}
             parts.append(f"{axis} CI {word[v]}")
+    if cell.get("famneg") is not None:
+        parts.append(
+            "no family member fires" if cell["famneg"] == "zero" else "≥1 family member fires"
+        )
     return "{" + ", ".join(parts) + "}"
 
 
@@ -3411,6 +3489,17 @@ def _c20_evaluate_lattice(labels: list[dict], *, tier: int, section_text: str) -
             f"({', '.join(sorted(qtys)[:4])}) — a single-point-axis cell algebra cannot "
             "represent them (never silently collapsed onto one axis); restate the lattice "
             "over one point quantity or use the explicit ⇔ partition form",
+        )
+    fams = set()
+    for lab in labels:
+        fams |= lab["parse"].get("famneg_keys", set())
+    if len(fams) > 1:
+        return (
+            "unparsed",
+            f"the lattice's labels reference {len(fams)} distinct negated-existence "
+            f"families ({', '.join(sorted(fams)[:4])}) — the v1 cell algebra carries a "
+            "single family-negation axis (never silently unified); restate over one "
+            "family with identical wording (prose or count(...) == 0 form, not mixed)",
         )
     cofires, gaps = _c20_enumerate(labels)
     if cofires or gaps:
@@ -3522,6 +3611,7 @@ def _c20_tier2_result(cid: str, name: str, kind: str, lattices: list) -> CheckRe
                     "dnf": [],
                     "unparsed": reason,
                     "point_qtys": set(),
+                    "famneg_keys": set(),
                 }
             else:
                 lab["parse"] = _c20_parse_predicate(seg)
@@ -3555,7 +3645,13 @@ def check_verdict_lattice_coherence(plan: str, kind: str) -> CheckResult:
     co-fire with a COMPLETE parse — gaps degrade to WARN (gap precision
     depends on harvest recall), any unparsed label degrades the whole
     lattice to WARN, and quantified (k-of-n) predicates SKIP as out of the
-    v1 cell algebra. FAIL (experiment) / WARN (analysis) / SKIP otherwise;
+    v1 cell algebra. A negated-existence conjunct (``no <family-ref>
+    <unit-noun> is <predicate>``, or the canonical ``count(<family-ref>)
+    == 0`` machine form) parses as a single boolean family-negation axis
+    {zero, nonzero} whose nonzero side is reachable only via ``⇔
+    otherwise`` (#1960; incident #1946); >1 distinct normalized family per
+    lattice fails closed to WARN. FAIL (experiment) / WARN (analysis) /
+    SKIP otherwise;
     escape via a standalone ``N/A — no registered verdict lattice`` line —
     honored (SKIP path) only when no lattice is detected; when the escape
     co-occurs with a detected lattice (either tier) the check WARNs instead
