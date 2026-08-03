@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2033,
+  "highest_id": 2034,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8012,6 +8012,13 @@
       "path": "tasks/proposed/2033",
       "status": "proposed",
       "title": "daily-fix: RAM floor required on wide fan-out dispatches"
+    },
+    "2034": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2034",
+      "status": "proposed",
+      "title": "daily-fix: stand-down confirmation + ownership release"
     },
     "205": {
       "has_clean_result": false,
