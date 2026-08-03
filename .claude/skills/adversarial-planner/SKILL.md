@@ -268,7 +268,10 @@ Run the structural verifier against the plan version just persisted:
   plans — #1689/#1700),
   `N/A — no dry-run smoke` (check 11 — kind: infra|batch plans where a `--dry-run`
   mention is incidental, not the plan's own acceptance smoke), `N/A — no draw battery`
-  (check 12; also check 32's battery branch), `N/A — no empirical-null gate` (check 13),
+  (check 12, battery-class windows ONLY; also check 32's battery branch),
+  `N/A — no pool screen` (check 12, screen-class windows ONLY — the class-scoped
+  sibling for pool-quadratic candidate screens, the #1901 near-duplicate class),
+  `N/A — no empirical-null gate` (check 13),
   `N/A — no fail-loud acceptance claim` / `N/A — fail-loud claim not test-backable`
   (check 15 — kind: infra|batch plans where the vocabulary hit is bug narration, or
   the target is a doc/prose file no pytest can exercise),
