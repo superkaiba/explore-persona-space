@@ -7412,8 +7412,8 @@
     "1957": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1957",
-      "status": "reviewing",
+      "path": "tasks/completed/1957",
+      "status": "completed",
       "title": "workflow-fix: audit inline-CI rule misses bracket-less verbal form (CI <num> to <num>)"
     },
     "1958": {
