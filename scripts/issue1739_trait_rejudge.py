@@ -101,12 +101,26 @@ def _git_commit() -> str:
         return "unknown"
 
 
+# CLI rung name → local rollout `rung` field. The parent's rollout schema strips the
+# behavior prefix (`evil_`) from the stored `rung` field, and calls hh-rlhf "hhrt"
+# rather than "hh_rlhf". Discovered live 2026-08-03 via `evil-{train-cross,eval-hhrt,
+# eval-toxicchat}-*_seed0.json` inspection (`d["rung"] ∈ {"train","hhrt","toxicchat"}`).
+_LOCAL_RUNG_ALIAS: dict[str, str] = {
+    "evil_train": "train",
+    "evil_hh_rlhf": "hhrt",
+    "evil_toxicchat": "toxicchat",
+}
+
+
 def _load_rollouts_local(local_root: Path, rung: str, *, limit: int | None) -> list[dict]:
     """Read rollout JSONs for one rung from the on-VM parent slice.
 
-    Layout (parent labeling stage): ``<local_root>/<rung>/*.json``. When the
-    caller passes the top-level ``raw_completions/issue_1739/labeling/evil/``
-    dir directly (all rungs mixed), we filter by the ``rung`` field.
+    Layout A (per-rung subdir): ``<local_root>/<rung>/*.json`` — CLI rung name
+    matches the dir. Layout B (mixed dir, parent's actual on-VM layout): all
+    rungs' JSONs sit under one dir, distinguished by the ``rung`` field. The
+    parent's rollout schema strips the behavior prefix, so map the CLI name
+    via ``_LOCAL_RUNG_ALIAS`` before comparing (identity fallback for future
+    rungs that already match).
     """
     # First try the per-rung sub-directory shape.
     rung_dir = local_root / rung
@@ -115,10 +129,12 @@ def _load_rollouts_local(local_root: Path, rung: str, *, limit: int | None) -> l
     else:
         # Fall back to mixed dir with a ``rung`` field filter.
         paths = sorted(p for p in local_root.glob("*.json") if not p.name.startswith("_"))
+    # Normalize CLI name → on-disk rung field before comparing (identity fallback).
+    on_disk_rung = _LOCAL_RUNG_ALIAS.get(rung, rung)
     payloads: list[dict] = []
     for p in paths:
         row = json.loads(p.read_text())
-        if row.get("rung") == rung or rung_dir.exists():
+        if row.get("rung") == on_disk_rung or rung_dir.exists():
             payloads.append(row)
             if limit is not None and len(payloads) >= limit:
                 break
