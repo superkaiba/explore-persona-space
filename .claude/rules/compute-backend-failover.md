@@ -489,24 +489,29 @@ code` → `status:blocked`.
 
 ### Ladder order (length-aware, #680)
 
-NOTE (#1609): under the standing auto default the free `fellows` (charmander
-H200) SLURM lane sits BEFORE this GCP ladder — `DEFAULT_AUTO_LANE_ORDER =
-("fellows", "gcp", "nibi", "fir", "mila")` — so a fellows capacity miss /
+NOTE (#1609/#2028): under the standing auto default the free `fellows`
+(charmander H200) SLURM lane leads and the auto order carries NO gcp rung —
+`DEFAULT_AUTO_LANE_ORDER = ("fellows", "nibi", "fir", "mila")` (#2028; the
+5-lane fellows-then-GCP order `("fellows", "gcp", "nibi", "fir", "mila")` is
+the flag-off rollback build) — so a fellows capacity miss /
 dead endpoint / PENDING-at-cap park (after the granted-QoS ladder
 high-eur → normal-eur → low-eur park-fails on the AUTO path, #1899:
 scancel + re-submit per `ClusterConfig.qos_ladder` rung, fallback rungs
 parked `EPS_FELLOWS_LADDER_RUNG_WAIT_SECONDS` — default 300 s — each;
-explicit `backend: fellows` pins never walk the ladder) advances INTO the
-ladder below; RunPod stays the terminal rung. Rollback: flip the fellows `CLUSTER_CONFIGS` row to
-`available=False` or set `EPM_AUTO_LANE_ORDER=gcp,nibi,fir,mila` (both
-instant, no code revert). Sentinel drain: fellows is a DRAINED lane as of
+explicit `backend: fellows` pins never walk the ladder) advances to the
+free DRAC/Mila lanes (this GCP ladder is entered only under the flag-off
+rollback); RunPod stays the terminal rung. Fellows rollback: flip the
+fellows `CLUSTER_CONFIGS` row to `available=False` or set
+`EPM_AUTO_LANE_ORDER=nibi,fir,mila` (both instant, no code revert; a `gcp`
+entry in the env order raises while `GCP_PROVISIONING_DISABLED` is on).
+Sentinel drain: fellows is a DRAINED lane as of
 #1898 — the VM-side poller drains `/workspace/logs/issue-<N>-*.json` over
 `ssh charmander` each poll tick (`slurm_monitor.drain_cluster_sentinels`,
 same contract as RunPod/GCP); the residual hazard is DRAC/Mila only (no
 `/workspace` — the dispatcher dies fail-loud at `mkdir`, #608, burning the
 submission), so a sentinel-dependent workload pins a drained lane
-(gcp/runpod/fellows) at plan time or accepts the auto-lane fall-through
-risk (verify_plan c43 WARNs).
+(runpod/fellows; gcp is no longer provisionable, #2028) at plan time or
+accepts the auto-lane fall-through risk (verify_plan c43 WARNs).
 
 The GCP ladder (`backends/router._gcp_ladder_specs`) is keyed on job LENGTH
 (`_is_short_job`: known GPU-hours ≤ `EPS_GCP_SPOT_MAX_GPU_HOURS`, default 2,
