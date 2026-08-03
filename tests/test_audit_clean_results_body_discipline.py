@@ -2689,3 +2689,90 @@ def test_pm_inline_exempt_why_this_test_line():
     )
     findings = audit.audit_body(body)
     assert "pm_inline" not in findings, findings
+
+
+# ─── #1946: `interval_inline` — bracket-less verbal `CI <low> to <high>` ───
+#
+# The fourth surface variant of the #382 inline-CI class (#382 brackets →
+# #649 U+2212 signs → #952/#1015 named endpoints → #1946 bracket-less
+# verbal): `CI MINUS 0.072 to +0.002` sat in reader-facing prose with no
+# bracket, so none of the four prior alternatives matched. The 5th
+# alternative requires a number BETWEEN `CI` (+ optional `:` / `=` / `of` /
+# `from` connector) and `to`, and rides the same scan-source chain, so the
+# exemption surface is identical.
+
+
+def test_interval_inline_bracketless_verbal_ci_form_flagged():
+    """The frozen #1946 incident form — `CI MINUS 0.072 to +0.002` with
+    Unicode-minus (codepoint U+2212) signs in finding read prose — trips
+    `interval_inline`."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The pooled delta is negative (CI −0.072 to +0.002) across seeds.",  # noqa: RUF001
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+    assert any("−0.072" in s for s in findings["interval_inline"]), findings  # noqa: RUF001
+
+
+def test_interval_inline_bracketless_verbal_ci_ascii_form_flagged():
+    """The ASCII-sign verbal form `CI -0.1 to 0.3` in a `## Takeaways`
+    bullet trips `interval_inline`."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline finding: the lift is positive, CI -0.1 to 0.3 over baseline.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+    assert any("-0.1 to 0.3" in s for s in findings["interval_inline"]), findings
+
+
+def test_interval_inline_bracketless_verbal_ci_connector_forms_flagged():
+    """The colon / equals / `of` / `from` connector variants are all caught.
+    The verbal `of` / `from` connectors are corpus-measured genuine CIs
+    (`CI of 0.030 to 0.125` #540; `CI from ... to ...` #460/#478)."""
+    for form in (
+        "The read gives CI: 0.49 to 0.87 across seeds.",
+        "The read gives CI = 0.1 to 0.3 across seeds.",
+        "The paired improvement carries a 95% CI of 0.030 to 0.125 here.",
+        "The rho gap has mean +0.27 with CI from -0.09 to +0.55 overall.",
+    ):
+        leaky = V3_BODY_WITH_DATA_CODES.replace(
+            "The lift holds at every seed in the held-out evaluation.", form
+        )
+        findings = audit.audit_body(leaky)
+        assert "interval_inline" in findings, (form, findings)
+
+
+def test_interval_inline_ci_to_without_leading_number_not_flagged():
+    """Prose with no number between `CI` and `to` — `widened the CI to
+    0.05` — must NOT trip the verbal alternative."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "We widened the CI to 0.05 for the re-run across seeds.",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_interval_inline_lowercase_ci_not_flagged():
+    """Lowercase `ci` does not match — this category scans case-sensitively
+    (flags=0), so only uppercase `CI` anchors the verbal alternative."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The per-cell ci 0.1 to 0.3 note stays lowercase across seeds.",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_interval_inline_bracketless_verbal_ci_in_figure_caption_is_exempt():
+    """The verbal form inside a figure-caption blockquote rides the existing
+    exempt-strip chain (`_strip_interval_inline_exempt_lines`) and must NOT
+    trip the scan."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "> **Figure.** *The treatment lifts alignment over baseline at every seed.*",
+        "> **Figure.** *The lift is positive, CI −0.072 to +0.002.*",  # noqa: RUF001
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
