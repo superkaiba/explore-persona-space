@@ -10092,6 +10092,129 @@ def test_idle_unmapped_sentinels_registered_and_filtered():
         assert asw._latest_progress_ts(events) is None
 
 
+# ── #1971 TTY-attached unmapped REPORT lane (escalate-only) ───────────────────
+#
+# The observability complement of the reaper for the class it deliberately
+# exempts (2026-07-31: ~17 TTY-attached unmapped wrappers 72-95h old,
+# invisible to every reaper AND every report). The lane REPORTS only —
+# decide_idle_unmapped's pinned has_tty -> ("clear", 0) contract (asserted
+# above in test_idle_unmapped_decide_mapped_or_tty_clears) is untouched.
+
+
+def test_tty_unmapped_report_decide_threshold():
+    # (a) below / at / above the report window, plus None idle (signal
+    # unavailable -> "none": fail toward silence, never a fabricated report).
+    import autonomous_session_watch as asw
+
+    win = asw.TTY_UNMAPPED_REPORT_IDLE_S
+    assert asw.decide_tty_unmapped_report(None, win) == "none"
+    assert asw.decide_tty_unmapped_report(win - 1, win) == "none"
+    assert asw.decide_tty_unmapped_report(win, win) == "report"
+    assert asw.decide_tty_unmapped_report(win + 3600, win) == "report"
+    # decide_idle_unmapped stays byte-unchanged: has_tty clears even at an
+    # idle age far past the report window (assert-only, no edit to the pins).
+    assert asw.decide_idle_unmapped(False, True, win + 3600, 5, True) == ("clear", 0)
+
+
+def test_tty_report_push_decide_matrix():
+    # (b) first-episode push / same-set suppress / grown-set re-push / TTL
+    # re-push / empty-set clear.
+    import autonomous_session_watch as asw
+
+    realert = asw.TTY_UNMAPPED_REPORT_REALERT_S
+    t0 = 1_000_000.0
+    assert asw.decide_tty_report_push(set(), {"a"}, None, t0, realert) == "push"
+    assert asw.decide_tty_report_push({"a"}, {"a"}, t0, t0 + 600, realert) == "suppress"
+    assert asw.decide_tty_report_push({"a"}, {"a", "b"}, t0, t0 + 600, realert) == "push"
+    assert asw.decide_tty_report_push({"a"}, {"a"}, t0, t0 + realert, realert) == "push"
+    assert asw.decide_tty_report_push({"a"}, set(), t0, t0 + 600, realert) == "clear"
+    assert asw.decide_tty_report_push(set(), set(), None, t0, realert) == "clear"
+
+
+def test_tty_report_push_no_overwrite_on_suppress_semantics():
+    # (b) state-semantics pin: the caller writes the sid set ONLY on push
+    # (as prev | cur), never on suppress — a one-tick resolver flap (b
+    # transiently missing, then back) must NOT read as growth.
+    import autonomous_session_watch as asw
+
+    realert = asw.TTY_UNMAPPED_REPORT_REALERT_S
+    t0 = 1_000_000.0
+    state_sids = {"a", "b"}  # the KEPT recorded set (written at the push)
+    # Tick 1: b transiently missing -> suppress (state NOT overwritten).
+    assert asw.decide_tty_report_push(state_sids, {"a"}, t0, t0 + 600, realert) == "suppress"
+    # Tick 2: b reappears; against the KEPT {a, b} state this is NOT growth.
+    assert asw.decide_tty_report_push(state_sids, {"a", "b"}, t0, t0 + 1200, realert) == "suppress"
+    # Had the caller overwritten the state with {a} on the suppress tick, the
+    # reappearance would fire a spurious re-push — the banned semantics:
+    assert asw.decide_tty_report_push({"a"}, {"a", "b"}, t0, t0 + 1200, realert) == "push"
+
+
+def test_tty_unmapped_report_env_helpers(monkeypatch):
+    # EPM_TTY_UNMAPPED_REPORT_HOURS / _REALERT_HOURS: positive hours win;
+    # garbled / non-positive falls back. Kill switch: only explicit truthy
+    # disables.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_TTY_UNMAPPED_REPORT_HOURS", raising=False)
+    assert asw._tty_unmapped_report_idle_s() == asw.TTY_UNMAPPED_REPORT_IDLE_S
+    monkeypatch.setenv("EPM_TTY_UNMAPPED_REPORT_HOURS", "24")
+    assert asw._tty_unmapped_report_idle_s() == 24 * 3600
+    monkeypatch.setenv("EPM_TTY_UNMAPPED_REPORT_HOURS", "garbled")
+    assert asw._tty_unmapped_report_idle_s() == asw.TTY_UNMAPPED_REPORT_IDLE_S
+    monkeypatch.setenv("EPM_TTY_UNMAPPED_REPORT_HOURS", "-3")
+    assert asw._tty_unmapped_report_idle_s() == asw.TTY_UNMAPPED_REPORT_IDLE_S
+
+    monkeypatch.delenv("EPM_TTY_UNMAPPED_REPORT_REALERT_HOURS", raising=False)
+    assert asw._tty_unmapped_report_realert_s() == asw.TTY_UNMAPPED_REPORT_REALERT_S
+    monkeypatch.setenv("EPM_TTY_UNMAPPED_REPORT_REALERT_HOURS", "24")
+    assert asw._tty_unmapped_report_realert_s() == 24 * 3600
+
+    monkeypatch.delenv("EPM_DISABLE_TTY_UNMAPPED_REPORT", raising=False)
+    assert asw._tty_unmapped_report_enabled() is True
+    for truthy in ("1", "true", " YES "):
+        monkeypatch.setenv("EPM_DISABLE_TTY_UNMAPPED_REPORT", truthy)
+        assert asw._tty_unmapped_report_enabled() is False, truthy
+    monkeypatch.setenv("EPM_DISABLE_TTY_UNMAPPED_REPORT", "0")
+    assert asw._tty_unmapped_report_enabled() is True
+
+
+def test_tty_unmapped_report_sentinel_registered_and_filtered():
+    # The report sentinel joins the watcher-note exclusion set: a
+    # hypothetical task-carried note must never reset a staleness clock.
+    import autonomous_session_watch as asw
+
+    s = asw._TTY_UNMAPPED_REPORT_NOTE_SENTINEL
+    assert s in asw._WATCHER_NOTE_SENTINELS
+    events = [{"kind": "epm:progress", "ts": "2026-08-03T10:00:00Z", "note": s + " x"}]
+    assert asw._latest_progress_ts(events) is None
+
+
+def test_wrapper_age_s_real_proc():
+    # Real-body coverage for _wrapper_age_s (stubbed in the process-level
+    # test below): the live /proc read on our own pid, and the unreadable
+    # (nonexistent-pid) None path.
+    import os
+    import time
+
+    import autonomous_session_watch as asw
+
+    age = asw._wrapper_age_s(os.getpid(), time.time())
+    assert age is not None and age >= 0.0
+    assert asw._wrapper_age_s(2**31 - 99, time.time()) is None
+
+
+def test_tty_report_verdict_real_probe_uncertain_never_safe():
+    # Real-body coverage for _tty_report_safe_to_kill_verdict + the real
+    # _has_running_work_descendant walk: a nonexistent pid's cmdline is
+    # unreadable -> the probe's tri-state reads work-present -> the verdict
+    # is NEVER "likely safe" on an uncertain probe.
+    import autonomous_session_watch as asw
+
+    verdict = asw._tty_report_safe_to_kill_verdict("sid-x", 2**31 - 99, {})
+    assert "do NOT kill blindly" in verdict
+    assert "likely safe" not in verdict
+
+
 # ── idle-unmapped pass-level (I/O wrapper) tests ──────────────────────────────
 
 
@@ -10260,6 +10383,164 @@ def test_idle_unmapped_pass_tty_session_never_touched(isolated_registry, monkeyp
     asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=1_000_000.0)
     assert not state_path.exists()
     assert stops == [] and records == []
+
+
+def test_tty_unmapped_report_process_accumulates_never_stops(isolated_registry, monkeypatch):
+    # (d) _process_idle_unmapped-level: a TTY-attached unmapped session idle
+    # over the REPORT window accumulates ONE candidate and does NOT stop or
+    # write idle-unmapped episode state (has_tty still clears); below the
+    # window / under the kill switch nothing accumulates.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_DISABLE_TTY_UNMAPPED_REPORT", raising=False)
+    monkeypatch.delenv("EPM_TTY_UNMAPPED_REPORT_HOURS", raising=False)
+    over = asw.TTY_UNMAPPED_REPORT_IDLE_S + 3600
+    children = [{"happySessionId": "sid-tty", "pid": 777}]
+    meta = {"sid-tty": {"path": _Z_ROOT}}
+    stops, records = _patch_idle_io(
+        monkeypatch, children=children, meta=meta, idle_age=over, has_tty=True
+    )
+    # Signature-conformant fake at the /proc boundary (the real-body walk is
+    # covered by test_tty_report_verdict_real_probe_uncertain_never_safe).
+    monkeypatch.setattr(asw, "_has_running_work_descendant", lambda pid, children_map=None: False)
+    monkeypatch.setattr(asw, "_wrapper_age_s", lambda pid, now: 90 * 3600.0)
+    t0 = 1_000_000.0
+    acc: list[dict] = []
+    asw._process_idle_unmapped(
+        "sid-tty",
+        777,
+        None,
+        t0,
+        False,
+        2,
+        reap_enabled=True,
+        detached_tmux_ttys=set(),
+        tmux_activity={},
+        tty_report_acc=acc,
+        children_map={},
+        cwd=_Z_ROOT,
+    )
+    assert stops == [] and records == []  # ESCALATE-ONLY: never stopped
+    # has_tty -> ("clear", 0): no idle-unmapped episode state is written.
+    assert not (isolated_registry / "idle-unmapped-sid-tty.json").exists()
+    assert len(acc) == 1
+    cand = acc[0]
+    assert cand["sid"] == "sid-tty" and cand["pid"] == 777 and cand["cwd"] == _Z_ROOT
+    assert cand["idle_age_s"] == over and cand["wrapper_age_s"] == 90 * 3600.0
+    assert "likely safe" in cand["verdict"] and "sid-tty" in cand["verdict"]
+
+    # Below the report window -> no candidate.
+    monkeypatch.setattr(
+        asw,
+        "_transcript_idle_age_s",
+        lambda pid, now: (asw.TTY_UNMAPPED_REPORT_IDLE_S - 3600.0, None),
+    )
+    acc_below: list[dict] = []
+    asw._process_idle_unmapped(
+        "sid-tty",
+        777,
+        None,
+        t0,
+        False,
+        2,
+        reap_enabled=True,
+        detached_tmux_ttys=set(),
+        tmux_activity={},
+        tty_report_acc=acc_below,
+        children_map={},
+        cwd=_Z_ROOT,
+    )
+    assert acc_below == []
+
+    # Kill switch -> no accumulation even with an accumulator supplied.
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (over, None))
+    monkeypatch.setenv("EPM_DISABLE_TTY_UNMAPPED_REPORT", "1")
+    acc_off: list[dict] = []
+    asw._process_idle_unmapped(
+        "sid-tty",
+        777,
+        None,
+        t0,
+        False,
+        2,
+        reap_enabled=True,
+        detached_tmux_ttys=set(),
+        tmux_activity={},
+        tty_report_acc=acc_off,
+        children_map={},
+        cwd=_Z_ROOT,
+    )
+    assert acc_off == []
+    assert stops == []
+
+
+def test_tty_unmapped_report_pass_dedup_dry_run_and_clear(isolated_registry, monkeypatch):
+    # (e) the pass-level thread end to end: dry-run writes NO state singleton,
+    # appends NO sidecar row, fires NO push; a real tick pushes ONCE per
+    # episode (state written as the sid-set union); a same-set tick inside
+    # the TTL suppresses WITHOUT overwriting state; an empty candidate set
+    # clears the singleton (episode over). The session is never stopped.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    monkeypatch.delenv("EPM_DISABLE_TTY_UNMAPPED_REPORT", raising=False)
+    monkeypatch.delenv("EPM_TTY_UNMAPPED_REPORT_HOURS", raising=False)
+    monkeypatch.delenv("EPM_TTY_UNMAPPED_REPORT_REALERT_HOURS", raising=False)
+    over = asw.TTY_UNMAPPED_REPORT_IDLE_S + 3600
+    children = [{"happySessionId": "sid-t1", "pid": 91}]
+    meta = {"sid-t1": {"path": _Z_ROOT}}
+    stops, _records = _patch_idle_io(
+        monkeypatch, children=children, meta=meta, idle_age=over, has_tty=True
+    )
+    # Dry-run-aware recorders (mirror the real helpers' dry-run no-op), same
+    # shape as the zombie-pass dry-run test's fallback recorder.
+    sidecar: list[str] = []
+    pushes: list[str] = []
+    monkeypatch.setattr(
+        asw,
+        "_append_idle_unmapped_event",
+        lambda note, dry_run: (not dry_run) and (sidecar.append(note) or True),
+    )
+    monkeypatch.setattr(
+        asw,
+        "_telegram_push",
+        lambda msg, dry_run: (not dry_run) and (pushes.append(msg) or True),
+    )
+    monkeypatch.setattr(asw, "_proc_children_map", lambda: {})
+    monkeypatch.setattr(asw, "_has_running_work_descendant", lambda pid, children_map=None: False)
+    state_path = isolated_registry / "tty-unmapped-report-state.json"
+    t0 = 1_000_000.0
+
+    # Dry run: decides + prints only.
+    asw.idle_unmapped_pass(True, 2, daemon_reachable=True, now=t0)
+    assert not state_path.exists() and sidecar == [] and pushes == [] and stops == []
+
+    # Real tick 1: first episode -> ONE push + one sidecar row + state.
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 600)
+    assert stops == []  # ESCALATE-ONLY invariant
+    assert len(pushes) == 1 and "sid-t1" in pushes[0]
+    assert len(sidecar) == 1
+    assert asw._TTY_UNMAPPED_REPORT_NOTE_SENTINEL in sidecar[0]
+    assert "action: tty-report" in sidecar[0] and "never auto-stopped" in sidecar[0]
+    state = json.loads(state_path.read_text())
+    assert state["sids"] == ["sid-t1"] and state["last_push_ts"] == t0 + 600
+    # The has_tty clear also means no per-sid episode state ever appears.
+    assert not (isolated_registry / "idle-unmapped-sid-t1.json").exists()
+
+    # Real tick 2 (same set, inside the TTL): suppressed — no new push/row,
+    # state NOT overwritten (last_push_ts unchanged).
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 1200)
+    assert len(pushes) == 1 and len(sidecar) == 1
+    assert json.loads(state_path.read_text())["last_push_ts"] == t0 + 600
+
+    # The session drops below the window -> empty candidate set -> episode
+    # over, singleton cleared (still no push/row, still never stopped).
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (100.0, None))
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 1800)
+    assert not state_path.exists()
+    assert len(pushes) == 1 and len(sidecar) == 1 and stops == []
 
 
 def test_is_live_user_tty_detached_tmux_pane_is_not_live(monkeypatch):
