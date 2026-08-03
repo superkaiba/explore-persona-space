@@ -2212,7 +2212,24 @@ build died at the subagent context ceiling after 139 tool calls /
 ~63 min (~20 tool calls per code deliverable puts the risk zone at
 ~5-6; ≥5 buys margin below the observed death at 7); a lower-count
 build with a comparably large projected build volume (very large
-per-file scope, heavy smoke phases) MAY pre-split by judgment. Unit
+per-file scope, OR other heavy-work compositions not covered by the
+mandatory trigger above) MAY pre-split by judgment. Composition
+trigger (mandatory, #1902 shape): a planned UNIT that combines a fit /
+battery deliverable WITH figure-generation AND a smoke phase — OR any
+TWO of those three where the smoke phase covers at least 2 pipeline
+phases (data-gen + training, training + eval, etc.; operationally the
+smoke's `## Smoke run` H2 has ≥ 2 `### <phase>` subsections) — is split
+further REGARDLESS of the deliverable-count trigger's verdict: the fit
+deliverable and the figure deliverable land in SEPARATE units, and the
+smoke-bearing unit carries AT MOST ONE other deliverable. Rationale:
+the ~20-tool-calls-per-deliverable basis (grounding, above) prices a
+fit+figures+smoke unit at ≥2 deliverable-equivalents, so a 3-deliverable
+unit of this composition sits at ~5-6 tool-call-equivalents — inside
+the #1775 death zone (139 calls / 7 deliverables → ~20/deliverable →
+5-6 as the risk boundary). #1902 measured this directly: a 3-unit
+pre-split ran, unit C carried fits + figures + smoke, and died at 114
+tool calls / 58 min on its final report turn (~5.7× the per-deliverable
+basis), despite passing the deliverable-count trigger. Unit
 shape: units of ≤3 deliverables each, run sequentially with a fresh
 context per unit, each unit's brief scoped to its own self-contained
 deliverable subset (the #1090 rounds-A/B shape). Marker contract:
