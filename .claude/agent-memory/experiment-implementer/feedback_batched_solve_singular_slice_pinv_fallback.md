@@ -33,3 +33,10 @@ gesv raises reproducibly. Sibling entries: cuSOLVER eigh CPU fallback
 The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
 
 - [Batched solve dies on ONE singular slice](feedback_batched_solve_singular_slice_pinv_fallback.md) — np.linalg.solve raises ONCE for a whole (B,k,k) stack; jitter scale-absorbed in fl64; batched-first + per-slice pinv + degenerate_ols flag (#1739 r10)
+
+## Merged sibling index rows (#2032 curation, 2026-08-03)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the agent-memory index size cap (task #2032). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [cuSOLVER eigh non-convergence CPU fallback](feedback_cusolver_eigh_nonconvergence_cpu_fallback.md) — cuda eigh raises LinAlgError on (#1335)
+- [numpy SVD non-convergence on bootstrap resamples](feedback_numpy_svd_nonconvergence_bootstrap.md) — np.linalg.svd (gesdd) raises LinAlgError on (#722)

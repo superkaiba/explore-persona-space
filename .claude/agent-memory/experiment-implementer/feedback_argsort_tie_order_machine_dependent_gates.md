@@ -24,3 +24,9 @@ count > boundary (= min banked count) is in the banked set, and
 n_strictly_above < cap. Log the boundary structure (boundary count / n above /
 n tied / tie slots). `kind="stable"` argsort only fixes within-machine determinism,
 not cross-artifact identity — set-validity is the portable gate.
+
+## Merged sibling index rows (#2032 curation, 2026-08-03)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the agent-memory index size cap (task #2032). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- feedback_numpy_argsort_tie_order_cross_machine.md — numpy argsort tie order is CPU-SIMD-dependent: gate banked top-k selections by set-validity invariants, never cross-machine recompute-equality (#1946)
