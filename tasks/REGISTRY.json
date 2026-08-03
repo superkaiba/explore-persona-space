@@ -7363,8 +7363,8 @@
     "1950": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1950",
-      "status": "reviewing",
+      "path": "tasks/completed/1950",
+      "status": "completed",
       "title": "workflow-fix: inline lint gate purges stale pycache before its pytest sweep"
     },
     "1951": {
