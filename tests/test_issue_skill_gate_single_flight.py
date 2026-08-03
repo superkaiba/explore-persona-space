@@ -97,13 +97,15 @@ def test_step9ater_inline_gate_single_flight_hook_present_and_precedes_launch():
     """#1647: the Step 9a-ter inline payload lint gate carries its own
     per-site single-flight hook (the #1606 pattern at the inline site),
     issue-scoped via the -inline-payload suffix, placed BEFORE the fenced
-    gate launch; #1821 swaps it to the self-excluding helper form."""
+    gate launch; #1821 swaps it to the self-excluding helper form; #1948
+    widens the pattern to match round-unique payload names (the `issue-<N>-`
+    prefix + `inline-payload\\.txt` tail keep it exact-issue-scoped)."""
     sec = _gate_section()
     assert LABEL in sec
-    # Self-/ancestor-excluding helper probe (#1821):
+    # Self-/ancestor-excluding helper probe (#1821; #1948 round-unique widening):
     assert (
         'uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe '
-        r"--pattern 'issue-<N>-inline-payload\.txt'" in sec
+        r"--pattern 'issue-<N>-[^ ]*inline-payload\.txt'" in sec
     )
     # The raw pgrep form is no longer the prescribed inline probe (#1821):
     assert "pgrep -af 'issue-<N>-inline-payload[.]txt'" not in sec

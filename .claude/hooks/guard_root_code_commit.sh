@@ -1548,9 +1548,12 @@ cat >&2 <<BLOCK_MSG
 BLOCKED: repo-root commit carries UNCERTIFIED code payload:${uncertified}
 ${diag_lines}${foreign_para}${cd_para}Direct-to-main code (scripts/src/tests) must pass the inline payload lint gate
 first (SKILL.md Step 9a-ter § Inline payload lint gate, #1388/#1460/#1500):
-  printf '%s\n' <paths> > /tmp/issue-<N>-inline-payload.txt
+  printf '%s\n' <paths> > /tmp/issue-<N>-<round-slug>-inline-payload.txt
   uv run python scripts/inline_lint_gate.py --issue <N> \\
-    --payload-file /tmp/issue-<N>-inline-payload.txt     # ONE background Bash (~3-8 min)
+    --payload-file /tmp/issue-<N>-<round-slug>-inline-payload.txt   # ONE background Bash (~3-8 min)
+The <round-slug> makes the path ROUND-unique (e.g. r2-fu1); the bare
+issue-keyed name issue-<N>-inline-payload.txt is REFUSED by the gate (#1948:
+concurrent same-issue rounds clobber the shared path).
 On PASS it certifies each path's exact content; re-run after any further edit.
 If your blocked command COMPOUNDED "git add ... && git commit ...", the add
 never ran either — re-stage before retrying the commit (2026-07-28: a retry
