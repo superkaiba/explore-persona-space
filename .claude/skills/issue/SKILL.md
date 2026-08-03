@@ -6970,7 +6970,20 @@ at the death timestamp naming the phase pid, with the memory SPIKER a NEIGHBOR
 (phase RSS well under the pressure; attribute via the kill-source checklist,
 `failure_patterns.md` § exit-137/143, + the watcher's `earlyoom-kill` sidecar
 rows) = a collateral kill: `failure_class: infra`, NOT a code bug — do not
-dispatch a crash-fix round against the phase. Recovery ladder: relaunch ONCE
+dispatch a crash-fix round against the phase. Recovery ladder — first-kill
+carve-out for long API-BOUND drivers: a judge / batch-poll-class driver
+(multi-hour, checkpointed, no GPU need) whose PROTECTED (`choom=ok`) collateral
+kill is ATTRIBUTED to a fleet-wide memory storm (the watcher #849
+memory-pressure row and/or the earlyoom journal at the death timestamp shows
+fleet-wide pressure, not a phase-local spike) routes to the cheap CPU pod lane
+(`cpu-mid` / `cpu-small` by footprint, CLAUDE.md § CPU-only phases) on the
+FIRST kill, resuming from its checkpoint — never a from-scratch rerun.
+Rationale: relaunching an API-bound waiter into a live storm has negative
+expected value, and dispatch-time policy (#747) already prefers the CPU pod
+lane for this class, so the recovery CORRECTS the placement rather than
+retrying it. Any kill NOT matching that carve-out (unprotected kill, no
+fleet-wide storm attribution, or a non-API-bound phase class) keeps the
+existing ladder: relaunch ONCE
 with protection verified (`choom=ok`); if a PROTECTED phase is earlyoom-killed
 AGAIN, the VM is structurally memory-contended for this phase (or the phase
 itself is now the top consumer) — route it to the cheap CPU pod lane
