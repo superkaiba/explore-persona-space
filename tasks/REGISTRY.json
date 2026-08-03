@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2038,
+  "highest_id": 2039,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8047,6 +8047,13 @@
       "path": "tasks/proposed/2038",
       "status": "proposed",
       "title": "daily-fix: terminate pod on failed RunPod fallback launch"
+    },
+    "2039": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2039",
+      "status": "proposed",
+      "title": "daily-fix: inline lint gate defers under high VM load"
     },
     "205": {
       "has_clean_result": false,
