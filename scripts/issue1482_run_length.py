@@ -790,7 +790,7 @@ def phase_capture(args) -> None:
         )
     del rows
     prepared.sort(key=lambda r: len(r[2]))  # length-sorted -> tight right-padding
-    _log(f"tokenized {len(prepared)}/{len(rows_n)} rows (empty-response rows dropped)")
+    _log(f"tokenized {len(prepared)}/{rows_n} rows (empty-response rows dropped)")
 
     # Resume: the capture loop is >1h and >50 units at production n, so it
     # persists accumulator state per chunk of rows and skips completed ones
