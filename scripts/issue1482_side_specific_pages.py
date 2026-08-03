@@ -77,6 +77,12 @@ R2_NPZ = Path("/mnt/eps-data/thomasjiralerspong/issue1482_sidespec/ridge__mean_p
 R2_HF_PATH = "issue1482_densesae_fullwidth/perfeature/ridge__mean_perfeature.npz"
 FULLDICT = Path("/mnt/eps-data/thomasjiralerspong/issue1773_fulldict/labels_upload")
 RECOVERY = PROJECT_ROOT / "eval_results/issue_1773/recovery_1934/descriptions_recovered.jsonl"
+CTX_LABELS = (
+    PROJECT_ROOT / "eval_results/issue_1482/context_side_labels/descriptions_context_side.jsonl"
+)
+CTX_LABELS_META = (
+    PROJECT_ROOT / "eval_results/issue_1482/context_side_labels/descriptions_context_side.meta.json"
+)
 COMPANION_FIG = "figures/issue_1482/side_specificity/side_ratio_token.png"
 OUT_DIR = PROJECT_ROOT / "eval_results/issue_1482/side_specific"
 ARTIFACT_DIR = PROJECT_ROOT / "tasks/awaiting_promotion/1482/artifacts"
@@ -100,6 +106,7 @@ PAGES = {
             "identically 0 for every context-only feature (that is what makes them "
             "context-only), so it cannot order this page."
         ),
+        "evidence_side": "context",
     },
     "answer_only": {
         "code": 2,
@@ -111,6 +118,30 @@ PAGES = {
         "act_note": (
             "the <code>activity</code> column of the full-width covariates — rows in "
             "which the feature fires anywhere in the ANSWER span, divided by 120,000."
+        ),
+        "evidence_side": "answer",
+    },
+}
+
+# Two DIFFERENT description instruments now exist, and the #1482 context-side meta binds
+# every consumer: same describer prompt + judge as #1773, but the activating windows come
+# from opposite spans. They are NOT interchangeable and must never be pooled, so evidence
+# side is carried as a structural field on every row and shown as a badge on every page.
+EVIDENCE = {
+    "answer": {
+        "label": "answer-side evidence",
+        "source": "#1773 full-dictionary release UNION the #1934 recovery",
+        "note": (
+            "described from the feature's own ANSWER-side activating windows "
+            "(<code>ans_max</code> quantile bins)"
+        ),
+    },
+    "context": {
+        "label": "context-side evidence",
+        "source": "#1482 context-side labelling run (descriptions_context_side.jsonl)",
+        "note": (
+            "described from the feature's own CONTEXT-side activating windows — the same "
+            "#1773 describer prompt and judge, run over the opposite span"
         ),
     },
 }
@@ -147,8 +178,35 @@ def _write_json(path: Path, obj: dict) -> None:
 # ── inputs ──────────────────────────────────────────────────────────────────────────
 
 
+def load_context_side_descriptions() -> tuple[dict[int, dict], dict]:
+    """#1482 CONTEXT-side descriptions — kept in a SEPARATE map from the answer-side set.
+
+    Deliberately not merged into `load_descriptions()`: the #1482 meta's binding caveat
+    is that the two sets are not same-instrument (identical describer prompt and judge,
+    opposite evidence span), so pooling them into one description dict is exactly the
+    error it forbids. Each page reads only the map matching its own side."""
+    if not CTX_LABELS.exists():
+        _log("context-side descriptions ABSENT — context-only page will ship undescribed")
+        return {}, {}
+    out: dict[int, dict] = {}
+    with CTX_LABELS.open(encoding="utf-8") as fh:
+        for line in fh:
+            if not line.strip():
+                continue
+            r = json.loads(line)
+            f = int(r.get("feat_id", -1))
+            if 0 <= f < DICT_SIZE:
+                assert r.get("evidence_side") == "context", (f, r.get("evidence_side"))
+                out[f] = r
+    meta = json.loads(CTX_LABELS_META.read_text()) if CTX_LABELS_META.exists() else {}
+    _log(f"context-side descriptions: {len(out):,} rows (all evidence_side=context)")
+    return out, meta
+
+
 def load_descriptions() -> dict[int, dict]:
-    """Full-dictionary #1773 release UNION the #1934 recovery, recovery winning."""
+    """Full-dictionary #1773 release UNION the #1934 recovery, recovery winning.
+
+    ANSWER-side evidence only. Never merged with the context-side set (see above)."""
     out: dict[int, dict] = {}
     n_full = 0
     for p in sorted(FULLDICT.glob("descriptions.shard*.jsonl")):
@@ -213,6 +271,11 @@ def load_inputs() -> dict:
     rz = np.load(R2_NPZ)
     r2, scored = rz["r2"].astype(np.float64), rz["scored"].astype(bool)
     assert int(scored.sum()) == SCORED_EXPECTED, int(scored.sum())
+    ctx_desc, ctx_meta = load_context_side_descriptions()
+    # a context-side row for a feature that is not context-only would mean the two
+    # instruments had been crossed somewhere upstream
+    stray = [f for f in ctx_desc if side[f] != 0]
+    assert not stray, f"context-side labels for non-context-only features: {stray[:5]}"
     _log(f"census verified {got}; R^2 scored {int(scored.sum()):,}/{scored.size:,}")
     return {
         "side": side,
@@ -222,19 +285,25 @@ def load_inputs() -> dict:
         "ctx_activity": ctx_activity,
         "r2": r2,
         "scored": scored,
-        "desc": load_descriptions(),
+        "desc_answer": load_descriptions(),
+        "desc_context": ctx_desc,
+        "ctx_meta": ctx_meta,
     }
 
 
 def build_rows(inp: dict, key: str) -> list[dict]:
     """Every feature of one side class, sorted by ITS OWN side's firing frequency."""
     spec = PAGES[key]
+    ev = spec["evidence_side"]
     act = inp["ctx_activity"] if key == "context_only" else inp["activity"]
+    # each page reads ONLY the description map whose evidence side matches its own span
+    desc_map = inp["desc_context"] if ev == "context" else inp["desc_answer"]
     ids = np.nonzero(inp["side"] == spec["code"])[0]
     ids = ids[np.argsort(-act[ids], kind="stable")]
     rows = []
     for fid in ids.tolist():
-        d = inp["desc"].get(fid) or {}
+        d = desc_map.get(fid) or {}
+        text = d.get("description") or None
         rows.append(
             {
                 "feat_id": fid,
@@ -244,8 +313,13 @@ def build_rows(inp: dict, key: str) -> list[dict]:
                 ),
                 "r2": float(inp["r2"][fid]) if inp["scored"][fid] else None,
                 "scored": bool(inp["scored"][fid]),
-                "description": d.get("description") or None,
+                "description": text,
+                "description_evidence_side": ev if text else None,
                 "confidence": d.get("confidence"),
+                # only the context-side run reports window counts; n_ex_neg == 0 marks a
+                # feature with no non-activating examples (it fires in every context row)
+                "n_ex_pos": d.get("n_ex_pos"),
+                "n_ex_neg": d.get("n_ex_neg"),
             }
         )
     n_desc = sum(1 for r in rows if r["description"])
@@ -289,6 +363,12 @@ td.d { color:#2c313b; }
 td a { color:#1b4fd8; text-decoration:none; } td a:hover { text-decoration:underline; }
 .unscored { color:var(--mut); font-style:italic; }
 .nodesc { color:#a2470f; font-style:italic; }
+.ev { font-size:10.5px; padding:1px 6px; border-radius:9px; border:1px solid var(--line);
+  margin-right:6px; white-space:nowrap; text-transform:uppercase; letter-spacing:.03em; }
+.ev.ctx { background:#eef4ff; border-color:#c9d9fb; color:#1b3f9b; }
+.ev.ans { background:#fff1e8; border-color:#f6d0b4; color:#8a4212; }
+.flag { font-size:10.5px; padding:1px 6px; border-radius:9px; background:#fdf6ec;
+  border:1px solid #f0dcbe; color:#8a5a12; margin-right:6px; white-space:nowrap; }
 """
 
 JS = """
@@ -327,27 +407,50 @@ def render(key: str, rows: list[dict], sha_note: str) -> str:
     other = "answer_only" if key == "context_only" else "context_only"
     n_desc = sum(1 for r in rows if r["description"])
     n_scored = sum(r["scored"] for r in rows)
+    ev = EVIDENCE[spec["evidence_side"]]
+    n_undesc = len(rows) - n_desc
     gap = ""
     if n_desc == 0:
         gap = """<div class="warn gap">
 <p><b>There are no descriptions on this page, and that is the finding.</b> #1773
 describes a feature from its own <i>answer-side</i> activating windows and excluded
 features with zero such windows before dispatch. A context-only feature has zero
-<i>by the very property that makes it context-only</i>, so not one of these 1,654
-features was ever described or axis-labelled. Its exclusion set is exactly
-{context-only} &cup; {dead}.</p>
+<i>by the very property that makes it context-only</i>, so not one of these features
+was ever described. Its exclusion set is exactly {context-only} &cup; {dead}.</p>
 <p>Everything measured is still here &mdash; firing frequency, rows active, R&sup2;.
 Only the interpretive text is missing, and no re-run of the existing pipeline will
-produce it: that needs a labelling pass over CONTEXT-side activating windows, which
-does not exist yet.</p></div>"""
+produce it: that needs a labelling pass over CONTEXT-side activating windows.</p></div>"""
+    elif spec["evidence_side"] == "context":
+        gap = f"""<div class="warn gap">
+<p><b>These descriptions are CONTEXT-side and are not interchangeable with the
+answer-side ones.</b> They come from the #1482 context-side labelling run
+({n_desc:,} of {len(rows):,} features), which reuses the #1773 describer prompt and the
+same judge verbatim but draws its activating windows from the CONTEXT span. Every
+pre-existing #1773 description &mdash; including every description on the
+<a href="{PAGES[other]["slug"]}.html">answer-only page</a> &mdash; is ANSWER-side
+evidence. <b>The two sets must never be pooled into one description set, nor compared
+as if drawn from one instrument.</b> Every row here is badged
+<span class="ev ctx">context-side</span> for that reason.</p>
+<p>The 0.322 neighbour-discrimination figure below was measured on the ANSWER-side
+set. No separate discrimination validation exists for this context-side run, so treat
+it as no better evidenced than that &mdash; not as validated, and not as unvalidated in
+a way that makes it safer.</p></div>"""
     body_rows = []
     for i, r in enumerate(rows, 1):
         r2 = f'<span class="unscored">unscored</span>' if not r["scored"] else f"{r['r2']:.3f}"
-        desc = (
-            _esc(r["description"])
-            if r["description"]
-            else '<span class="nodesc">no #1773 description &mdash; see header</span>'
-        )
+        if r["description"]:
+            side_cls = "ctx" if r["description_evidence_side"] == "context" else "ans"
+            badge = f'<span class="ev {side_cls}">{r["description_evidence_side"]}-side</span>'
+            extra = ""
+            if r["n_ex_neg"] == 0:
+                extra = (
+                    ' <span class="flag" title="no non-activating examples: this feature '
+                    'fires in every context row">no negative examples</span>'
+                )
+            desc = f"{badge}{extra} {_esc(r['description'])}"
+        else:
+            desc = '<span class="nodesc">no description &mdash; see header</span>'
+        conf = "" if r["confidence"] is None else f"{r['confidence']}"
         body_rows.append(
             f'<tr><td class="n">{i}</td>'
             f'<td class="n"><a href="https://www.neuronpedia.org/qwen2.5-7b-instruct/19-'
@@ -356,6 +459,8 @@ does not exist yet.</p></div>"""
             f'<td class="n" data-v="{r["rows_active_own_side"]}">'
             f"{r['rows_active_own_side']:,}</td>"
             f'<td class="n" data-v="{r["r2"] if r["scored"] else ""}">{r2}</td>'
+            f'<td class="n" data-v="{r["confidence"] if r["confidence"] is not None else ""}">'
+            f"{conf or '&mdash;'}</td>"
             f'<td class="d">{desc}</td></tr>'
         )
     return f"""<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'>
@@ -364,12 +469,13 @@ does not exist yet.</p></div>"""
 <style>{CSS}</style></head><body><div class='wrap'>
 <h1>{spec["title"]} (issue #1482)</h1>
 <div class="warn">
-<p><b>Descriptions are a reading aid, never evidence.</b> They come from #1773, whose
-standing caveat is that they are search-index-only &mdash; neighbour discrimination
-0.322 against a 0.50 bar. This page is <i>entirely</i> descriptions, so that caveat
-carries more weight here than anywhere else, not less: any impression that these
-features form a recognisable kind comes from text that cannot reliably tell a feature
-from its neighbour.</p>
+<p><b>Descriptions are a reading aid, never evidence.</b> This page carries
+<b>{ev["label"]}</b>: {ev["note"]}, from {ev["source"]}. The #1773 standing caveat is
+that such descriptions are search-index-only &mdash; neighbour discrimination 0.322
+against a 0.50 bar. This page is <i>entirely</i> descriptions, so that caveat carries
+more weight here than anywhere else, not less: any impression that these features form
+a recognisable kind comes from text that cannot reliably tell a feature from its
+neighbour.</p>
 <p><b>"Never fires on the other side" is a strong criterion.</b> It means zero across
 all <b>120,000 fit rows</b> at ROW-OCCUPANCY grain &mdash; a feature counts as active
 if it fires <i>anywhere</i> in the span. A feature firing at a single token of a single
@@ -380,8 +486,9 @@ rows give a feature fewer chances to fire on the other side).</p>
 {gap}
 <div class="head">
 <p><b>What is shown.</b> All <b>{len(rows):,}</b> features that {spec["blurb"]}, ranked
-by {spec["act_label"]} descending. {n_desc:,} of {len(rows):,} carry a #1773
-description; {n_scored:,} of {len(rows):,} have a scored R&sup2;.</p>
+by {spec["act_label"]} descending. {n_desc:,} of {len(rows):,} carry a
+{ev["label"]} description{f" ({n_undesc} without one)" if n_undesc else ""};
+{n_scored:,} of {len(rows):,} have a scored R&sup2;.</p>
 <p><b>Sort key.</b> {spec["act_note"]}</p>
 <p><b>R&sup2;</b> is the full-width dense-context &rarr; SAE-answer ridge read
 ({SCORED_EXPECTED:,} of {DICT_SIZE:,} dictionary columns are scored; the rest have zero
@@ -389,8 +496,13 @@ holdout answer variance). Unscored is shown as <span class="unscored">unscored</
 never as R&sup2; = 0.</p>
 <p><b>Companion artifacts.</b> The per-token answer-side ratio panel
 <code>{COMPANION_FIG}</code> uses this same census membership (1,654 / 2,164 as its two
-point masses), and the sibling page is
-<a href="{PAGES[other]["slug"]}.html">{PAGES[other]["title"].lower()}</a>.</p>
+point masses). The sibling page is
+<a href="{PAGES[other]["slug"]}.html">{PAGES[other]["title"].lower()}</a> &mdash; note it
+carries <b>{EVIDENCE[PAGES[other]["evidence_side"]]["label"]}</b> descriptions, a
+DIFFERENT instrument from this page's {ev["label"]} ones. The two description sets share
+a describer prompt and judge but draw their windows from opposite spans, so they must not
+be pooled or compared as one set; each row on each page is badged with its evidence
+side.</p>
 <p>{sha_note}</p>
 </div>
 <div class="ctl">search <input id="q" type="text" placeholder="description text"
@@ -403,7 +515,8 @@ oninput="filt()" style="width:280px"> &nbsp; showing
 <th class="n" onclick="sortT(2,1)">{spec["act_label"]}</th>
 <th class="n" onclick="sortT(3,1)">rows active</th>
 <th class="n" onclick="sortT(4,1)">R&sup2;</th>
-<th onclick="sortT(5,0)">#1773 description</th></tr></thead>
+<th class="n" onclick="sortT(5,1)">conf</th>
+<th onclick="sortT(6,0)">description ({ev["label"]})</th></tr></thead>
 <tbody>{"".join(body_rows)}</tbody></table>
 <script>{JS}</script>
 </div></body></html>"""
@@ -426,34 +539,52 @@ def main() -> int:
     prov = _provenance()
     sha_note = (
         f"Generated {prov['timestamp_utc']} at commit <code>{prov['git_commit'][:12]}</code> "
-        f"from the 120,000-row census; descriptions are the #1773 full-dictionary release "
-        f"merged with the #1934 recovery."
+        f"from the 120,000-row census."
     )
     summary = {}
     for key in PAGES:
         rows = build_rows(inp, key)
-        _write_json(
-            OUT_DIR / f"{key}_features_by_activation.json",
-            {
-                "page": PAGES[key]["slug"],
-                "membership": "120,000-row census (side_class); NOT the 2,000-row capture",
-                "sort_key": PAGES[key]["act_label"],
-                "sort_key_note": html.unescape(
-                    PAGES[key]["act_note"].replace("<code>", "").replace("</code>", "")
-                ),
-                "description_source": "#1773 full-dictionary release UNION #1934 recovery "
-                "(recovery wins on collision)",
-                "description_caveat": "search-index-only, neighbour discrimination 0.322 "
-                "against a 0.50 bar — a reading aid, never evidence",
-                "side_criterion": "zero firings on the other side across all 120,000 fit "
-                "rows at ROW-OCCUPANCY grain (active anywhere in the span)",
-                "n_features": len(rows),
-                "n_described": sum(1 for r in rows if r["description"]),
-                "n_scored": sum(r["scored"] for r in rows),
-                "features": rows,
-                "provenance": prov,
-            },
-        )
+        ev_side = PAGES[key]["evidence_side"]
+        doc = {
+            "page": PAGES[key]["slug"],
+            "membership": "120,000-row census (side_class); NOT the 2,000-row capture",
+            "sort_key": PAGES[key]["act_label"],
+            "sort_key_note": html.unescape(
+                PAGES[key]["act_note"].replace("<code>", "").replace("</code>", "")
+            ),
+            "description_evidence_side": ev_side,
+            "description_source": EVIDENCE[ev_side]["source"],
+            "description_instrument_caveat": (
+                "The #1482 CONTEXT-side descriptions and the #1773 ANSWER-side descriptions "
+                "share a describer prompt and judge but draw their activating windows from "
+                "OPPOSITE spans. They are NOT same-instrument: never pool them into one "
+                "description set or compare them as if drawn from one instrument. Every row "
+                "here carries description_evidence_side."
+            ),
+            "description_caveat": (
+                "search-index-only, neighbour discrimination 0.322 against a 0.50 bar — a "
+                "reading aid, never evidence. That figure was measured on the ANSWER-side "
+                "set; no separate discrimination validation exists for the context-side run."
+            ),
+            "side_criterion": "zero firings on the other side across all 120,000 fit "
+            "rows at ROW-OCCUPANCY grain (active anywhere in the span)",
+            "n_features": len(rows),
+            "n_described": sum(1 for r in rows if r["description"]),
+            "n_scored": sum(r["scored"] for r in rows),
+            "features": rows,
+            "provenance": prov,
+        }
+        if ev_side == "context" and inp["ctx_meta"]:
+            m = inp["ctx_meta"]
+            doc["context_side_run"] = {
+                "instrument": m.get("instrument"),
+                "population": m.get("population"),
+                "hf_prefix": m.get("hf_prefix"),
+                "source_commit": m.get("git_commit"),
+                "undescribed_feat_ids": (m.get("population") or {}).get("undescribed_feat_ids"),
+                "no_negative_examples_feat_ids": [r["feat_id"] for r in rows if r["n_ex_neg"] == 0],
+            }
+        _write_json(OUT_DIR / f"{key}_features_by_activation.json", doc)
         body = render(key, rows, sha_note)
         for p in (ARTIFACT_DIR / PAGES[key]["artifact"], PUBLIC_DIR / f"{PAGES[key]['slug']}.html"):
             p.parent.mkdir(parents=True, exist_ok=True)
