@@ -830,6 +830,10 @@ def _run_smoke(args: argparse.Namespace) -> int:
     ]
     groups = [f"g{i % 8}" for i in range(n)]
     dv = rng.uniform(0.0, 100.0, size=n)
+    # Force BOTH detection classes inside the holdout cluster (first 12
+    # positions): a few floor-side rows so AUROC/AP never degenerate to an
+    # all-positive label vector in the smoke.
+    dv[:4] = rng.uniform(0.0, floor_edge * 0.8, size=4)
 
     stats = _cluster_stats(tactic_by_pos, dv, floor_edge=floor_edge)
     chosen, reason = _select_holdout(
@@ -924,6 +928,15 @@ def _run_smoke(args: argparse.Namespace) -> int:
             f"smoke output empty on disk: {written['n_metric_rows']} metric rows, "
             f"{n_pred_lines} preds lines"
         )
+    import math
+
+    degenerate = [
+        r["arm"]
+        for r in written["metric_rows"]
+        if not all(math.isfinite(r[k]) for k in ("rho", "auroc", "ap"))
+    ]
+    if degenerate:
+        raise RuntimeError(f"smoke metric rows degenerate (non-finite rho/auroc/ap): {degenerate}")
     _log(
         f"SMOKE OK: {written['n_metric_rows']} metric rows, {n_pred_lines} preds rows -> {out_dir}"
     )
