@@ -15,8 +15,11 @@ artifact-reuse.md (h)(iv) staged-layout contract: the consumer
 (``issue1345_extract_turnstore.py --stories-dir``) opens the flat layout, and
 the stage FAILS LOUD when the expected kept/yield files are missing.
 
-Resume: when both expected files already exist under the dest the stage is
-skipped (idempotent; delete the dir to re-stage). This script deliberately
+Resume: stories mode skips when both expected files already exist under the
+dest; turnstore mode skips on a ``.staged_complete`` sentinel written AFTER
+the move loop (completeness-based, not presence-based — a crash inside the
+rename loop must not read as "already staged"; r1 review Minor 1). Delete
+the dir to re-stage. This script deliberately
 does NOT import ``issue1345_common`` — that module compiles the
 character-name regex from ``EPM_STORY_CHARACTER_NAME`` at import time, and a
 stager must be safe to call for all 16 variants from one process.
@@ -25,9 +28,11 @@ stager must be safe to call for all 16 variants from one process.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shutil
 import sys
+import time
 from pathlib import Path
 
 _SCRIPT_DIR = Path(__file__).resolve().parent
@@ -83,13 +88,22 @@ def stage_variant_turnstore(
     staged-layout contract; #928/#1481). ``revision=None`` resolves one
     commit at call time (the capture job creates these stems, so no code-time
     pin exists; the shard sidecars carry the capture commit). Idempotent:
-    >=1 ``*_shard*.pt`` present -> skip.
+    a ``.staged_complete`` sentinel (written only after the whole move loop
+    + the pt-shard assert succeeded) -> skip; shard PRESENCE alone is not a
+    skip key — a crash inside the rename loop leaves a partial dir a
+    presence glob would wrongly skip (r1 review Minor 1).
     """
     assert variant in CHAR_VARIANTS, f"unknown character variant {variant!r}"
     dest = dest_root / f"{variant}_turnstore"
-    if dest.is_dir() and any(dest.glob("*_shard*.pt")):
+    sentinel = dest / ".staged_complete"
+    if sentinel.is_file() and any(dest.glob("*_shard*.pt")):
         print(f"[stage] {variant} turnstore: already staged at {dest} — skipped", flush=True)
         return dest
+    if dest.is_dir() and any(dest.iterdir()):
+        # Partial stage (files but no completion sentinel): re-stage from
+        # scratch so the consumer can never open a silently-shrunk shard set.
+        print(f"[stage] {variant} turnstore: partial dir (no sentinel) — re-staging", flush=True)
+        shutil.rmtree(dest)
     prefix = f"issue1345_framing/{variant}/analysis_tensors/turnstore"
     dest.mkdir(parents=True, exist_ok=True)
     scratch = dest.parent / f".hfstage_ts_{variant}"
@@ -114,6 +128,21 @@ def stage_variant_turnstore(
         f"staged turnstore for {variant} has no *_shard*.pt (moved {n_moved} files from "
         f"{repo_id}@{revision or 'resolved-head'}:{prefix}) — consumer layout violated"
     )
+    # Completion sentinel LAST (atomic tmp+replace): the resume predicate keys
+    # on it, so a crash anywhere above re-stages instead of silently skipping.
+    tmp_sentinel = dest / ".staged_complete.tmp"
+    tmp_sentinel.write_text(
+        json.dumps(
+            {
+                "variant": variant,
+                "n_files": n_moved,
+                "n_pt_shards": len(pts),
+                "revision": revision or "resolved-head",
+                "staged_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            }
+        )
+    )
+    os.replace(tmp_sentinel, sentinel)
     print(
         f"[stage] {variant} turnstore: {n_moved} files ({len(staged)} listed, "
         f"{len(pts)} pt shards) -> {dest}",

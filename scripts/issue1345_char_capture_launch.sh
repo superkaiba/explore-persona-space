@@ -11,15 +11,18 @@
 # Legs, in order:
 #   1. SMOKE: one cell per (regime x model) class, --smoke (8 stories, causal
 #      check ON), scratch out-dir + issue1345_smoke/ HF prefix — same chain.
-#   2. GATE-1 PILOT (plan §7 gate 1): the FIRST production cell runs alone;
-#      extrapolated total = wall x n_cells / n_gpu must be <= EPS_I1345_GATE1_MAX_S
-#      (default 8640 s = 2.4 h = 2x the §9 projection). Over -> halt (rc=42) +
-#      sentinel gate report — a DESIGNED artifact-routed halt, never a bare crash.
+#   2. GATE-1 PILOT (plan §7 gate 1): the FIRST PENDING production cell runs
+#      alone; extrapolated total = wall x n_pending / n_gpu must be
+#      <= EPS_I1345_GATE1_MAX_S (default 8640 s = 2.4 h = 2x the §9
+#      projection). Over -> halt (rc=42) + sentinel gate report — a DESIGNED
+#      artifact-routed halt, never a bare crash. An unparsed/zero pilot wall
+#      is a gate ERROR (rc=43), never a trivially-passing 0.
 #   3. WAVES: remaining cells n_gpu-wide (8-wide on the plan's allocation).
 #
 # Restart/resume: cells whose HF completion marker exists are skipped (the
 # marker is uploaded ONLY after the cell's verified turnstore upload, so a
-# partially-uploaded cell is never skipped). Sentinel:
+# partially-uploaded cell is never skipped); smoke cells are likewise skipped
+# on their issue1345_smoke/ prefix marker. Sentinel:
 # $SENTINEL_DIR/issue-1345-char-capture-results.json, written ATOMICALLY
 # (tmp + mv) at the end (and on the gate-1 halt) — poll_pipeline schema v1.
 #
@@ -98,10 +101,10 @@ hf_marker_path() { # variant smoke -> path_in_repo of the completion marker
   echo "${prefix}/${variant}/analysis_tensors/turnstore/_capture_complete.json"
 }
 
-cell_complete_on_hf() { # variant -> exit 0 iff the PRODUCTION marker exists
-  local variant="$1"
+cell_complete_on_hf() { # variant [smoke] -> exit 0 iff the completion marker exists
+  local variant="$1" smoke="${2:-0}"
   local marker
-  marker="$(hf_marker_path "$variant" 0)"
+  marker="$(hf_marker_path "$variant" "$smoke")"
   uv run python - "$marker" <<'PY'
 import sys
 
@@ -228,7 +231,7 @@ if [ "$PLAN_ONLY" = "1" ]; then
     echo "  smoke  ${v} (regime=${r} model=${m}) -> --smoke, scratch out-dir, issue1345_smoke/ prefix"
   done
   IFS='|' read -r pilot_v _l pilot_m pilot_r <<< "${CELLS[0]}"
-  echo "[plan] gate-1 pilot: ${pilot_v} (regime=${pilot_r} model=${pilot_m}) runs ALONE; halt if wall*${#CELLS[@]}/${n_gpu} > ${GATE1_MAX_S}s"
+  echo "[plan] gate-1 pilot: ${pilot_v} (regime=${pilot_r} model=${pilot_m}) runs ALONE; halt if wall*n_pending/${n_gpu} > ${GATE1_MAX_S}s (n_pending <= ${#CELLS[@]}; unparsed wall -> rc=43 halt)"
   echo "[plan] production waves (${n_gpu}-wide) over remaining $(( ${#CELLS[@]} - 1 )) cells:"
   idx=1
   wave=1
@@ -326,13 +329,27 @@ run_wave() { # smoke_flag spec... (chunks internally: never >1 cell per device)
 }
 
 # --- leg 1: smoke cells (same chain, --smoke + smoke prefix) ----------------
+# Resume: smoke cells whose SMOKE-prefix completion marker exists are skipped,
+# so a resume does not re-run ~4 model loads + captures per restart (r1 review
+# Minor 3; --skip-smoke stays the explicit override).
 if [ "$SKIP_SMOKE" = "0" ]; then
-  echo "[char-capture] smoke leg: ${#SMOKE_CELLS[@]} cells"
-  run_wave 1 "${SMOKE_CELLS[@]}"
-  if [ "$rc" -ne 0 ]; then
-    echo "[char-capture] smoke leg FAILED rc=${rc} — no production cell launched" >&2
-    write_sentinel "smoke-failed" "rc=${rc}"
-    exit "$rc"
+  SMOKE_PENDING=()
+  for spec in "${SMOKE_CELLS[@]}"; do
+    v="${spec%%|*}"
+    if cell_complete_on_hf "$v" 1 > /dev/null 2>&1; then
+      echo "[char-capture] ${v}: smoke-prefix marker present — smoke skipped (resume)"
+    else
+      SMOKE_PENDING+=("$spec")
+    fi
+  done
+  echo "[char-capture] smoke leg: ${#SMOKE_PENDING[@]}/${#SMOKE_CELLS[@]} cells pending"
+  if [ "${#SMOKE_PENDING[@]}" -gt 0 ]; then
+    run_wave 1 "${SMOKE_PENDING[@]}"
+    if [ "$rc" -ne 0 ]; then
+      echo "[char-capture] smoke leg FAILED rc=${rc} — no production cell launched" >&2
+      write_sentinel "smoke-failed" "rc=${rc}"
+      exit "$rc"
+    fi
   fi
 fi
 
@@ -365,11 +382,20 @@ if [ "$rc" -ne 0 ]; then
   exit "$rc"
 fi
 pilot_wall="${CELL_WALL[$pilot_v]:-0}"
-proj_total=$((pilot_wall * ${#CELLS[@]} / n_gpu))
-echo "[char-capture] gate-1: pilot wall=${pilot_wall}s -> projected total ${proj_total}s (max ${GATE1_MAX_S}s)"
+# Fail-CLOSED on an unparsed/zero pilot wall: CELL_WALL defaults to 0 when the
+# WALL log line is missing, which would trivially pass the gate (r1 Minor 5).
+if ! [[ "$pilot_wall" =~ ^[0-9]+$ ]] || [ "$pilot_wall" -le 0 ]; then
+  echo "[char-capture] GATE-1 ERROR: pilot ${pilot_v} wall unparsed (got '${pilot_wall}') — cannot project; halting" >&2
+  write_sentinel "gate1-wall-parse-error" "pilot=${pilot_v} wall=${pilot_wall}"
+  exit 43
+fi
+# Project over the REMAINING (pending) cells, not the full table — on a resume
+# with most cells HF-complete the old denominator over-halted (r1 Minor 2).
+proj_total=$((pilot_wall * ${#PENDING[@]} / n_gpu))
+echo "[char-capture] gate-1: pilot wall=${pilot_wall}s -> projected total ${proj_total}s over ${#PENDING[@]} pending of ${#CELLS[@]} cells (max ${GATE1_MAX_S}s)"
 if [ "$proj_total" -gt "$GATE1_MAX_S" ]; then
   echo "[char-capture] GATE-1 HALT: projected ${proj_total}s > ${GATE1_MAX_S}s — pausing the wave (plan §7 gate 1)" >&2
-  write_sentinel "gate1-halt" "pilot=${pilot_v} pilot_wall_s=${pilot_wall} projected_total_s=${proj_total} max_s=${GATE1_MAX_S}"
+  write_sentinel "gate1-halt" "pilot=${pilot_v} pilot_wall_s=${pilot_wall} projected_total_s=${proj_total} n_pending=${#PENDING[@]} n_cells=${#CELLS[@]} max_s=${GATE1_MAX_S}"
   exit 42
 fi
 
