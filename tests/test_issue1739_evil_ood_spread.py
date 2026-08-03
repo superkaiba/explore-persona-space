@@ -348,3 +348,69 @@ def test_transport_error_increments_transport_lost_not_content_dropped(tmp_path:
     # The n_dropped_draws counter is populated (at least the content-drop
     # arm exercises, so the split is not entirely vacuous).
     assert drop["n_dropped_draws"] > 0, "expected at least one content drop over 200 items"
+
+
+# ---------------------------------------------------------------------------
+# paired-CI helper tests (task #1739 unit 5a)
+# ---------------------------------------------------------------------------
+def _paired_ci_helper():
+    """Import the shared paired-CI helper (kept lazy so this file stays import-cheap)."""
+    from explore_persona_space.analysis import paired_ci
+
+    return paired_ci
+
+
+def test_paired_rho_delta_identical_predictors_ci_straddles_zero():
+    """When arm A == arm B (identical predictors), the paired-rho delta CI must include 0.
+
+    Paired construction cancels correlated DV noise, so the two rhos are
+    numerically identical every draw and the delta is exactly 0 per draw =>
+    the empirical quantile CI is [0, 0] (an interval that clearly contains 0).
+    Directly tests the paired construction — SHARED resample indices per draw.
+    """
+    pc = _paired_ci_helper()
+
+    rng = np.random.default_rng(1739)
+    n = 60
+    dv = rng.normal(loc=50, scale=25, size=n)
+    preds = 0.5 * dv + rng.normal(scale=10, size=n)  # noisy but correlated
+    preds_arm_a = preds.copy()
+    preds_arm_b = preds.copy()
+
+    rho_a, rho_b, ci_lo, ci_hi = pc.paired_bootstrap_rho_delta(
+        preds_arm_a, preds_arm_b, dv, n_boot=200, seed=42
+    )
+    assert rho_a == pytest.approx(rho_b, abs=1e-12)
+    assert ci_lo <= 0.0 <= ci_hi, (
+        f"identical arms must give delta CI containing 0, got [{ci_lo}, {ci_hi}]"
+    )
+    # And with identical inputs the CI is a POINT interval (both bounds zero).
+    assert ci_lo == pytest.approx(0.0, abs=1e-12)
+    assert ci_hi == pytest.approx(0.0, abs=1e-12)
+
+
+def test_paired_rho_delta_dominant_vs_shuffled_ci_excludes_zero_positive():
+    """A dominant predictor vs its shuffled version excludes zero in the paired delta CI.
+
+    Arm A = dv + small noise (strong signal); arm B = shuffled version of arm A
+    (destroys pairing with dv). The paired delta rho_A - rho_B is positive and
+    the CI must exclude zero.
+    """
+    pc = _paired_ci_helper()
+
+    rng = np.random.default_rng(4242)
+    n = 100
+    dv = rng.normal(loc=50, scale=25, size=n)
+    # Arm A: strong (rho_A ~ 0.9); Arm B: shuffled -> rho_B ~ 0
+    preds_a = dv + rng.normal(scale=5, size=n)
+    preds_b = preds_a.copy()
+    rng.shuffle(preds_b)
+
+    rho_a, rho_b, ci_lo, ci_hi = pc.paired_bootstrap_rho_delta(
+        preds_a, preds_b, dv, n_boot=200, seed=42
+    )
+    assert rho_a > rho_b, f"expected arm A rho > arm B rho, got {rho_a} vs {rho_b}"
+    assert ci_lo > 0.0, (
+        f"expected delta CI to exclude 0 on the positive side, got [{ci_lo}, {ci_hi}] "
+        f"(rho_a={rho_a}, rho_b={rho_b})"
+    )
