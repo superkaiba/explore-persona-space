@@ -4,6 +4,7 @@ title: The context→answer map's predictable subspace and the SAE's representab
 kind: experiment
 tags:
 - followup-auto
+- keep-running
 created_at: '2026-07-30T20:04:08Z'
 has_clean_result: true
 parent_id: 1482

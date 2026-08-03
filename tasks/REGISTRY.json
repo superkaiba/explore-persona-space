@@ -7518,22 +7518,22 @@
     "1970": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1970",
-      "status": "reviewing",
+      "path": "tasks/completed/1970",
+      "status": "completed",
       "title": "daily-fix: inline-round pod upload-verify satisfier"
     },
     "1971": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1971",
-      "status": "running",
+      "path": "tasks/completed/1971",
+      "status": "completed",
       "title": "daily-fix: report TTY-attached unmapped idle sessions"
     },
     "1972": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1972",
-      "status": "running",
+      "path": "tasks/reviewing/1972",
+      "status": "reviewing",
       "title": "daily-fix: widen pre-gate spec-freshness sync set"
     },
     "1973": {
@@ -7546,15 +7546,15 @@
     "1974": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1974",
-      "status": "proposed",
+      "path": "tasks/running/1974",
+      "status": "running",
       "title": "daily-fix: pooling-convention row in mapping disclosure"
     },
     "1975": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1975",
-      "status": "proposed",
+      "path": "tasks/planning/1975",
+      "status": "planning",
       "title": "daily-fix: map fit-space parity assert (issue1739 natpv)"
     },
     "1976": {

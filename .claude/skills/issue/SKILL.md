@@ -7893,6 +7893,18 @@ round reuses this pod — record it in the completion `epm:progress` note
 and keep the tag; a pending user question about a possible next round is
 NOT a named round. Never terminate before uploads verify, and never
 substitute `pod.py stop` (a STOPPED volume is NOT durable, #1112).
+The sanctioned verify-then-terminate recipe for this step: verify THIS
+round's artifacts → post `epm:upload-verification` with a note LEADING
+`Verdict: PASS — inline-round verification; prefixes: <every verified
+prefix>` via `task.py post-marker` → run the terminate; a bare
+`--skip-upload-verify` without a recorded verify is the anti-pattern,
+reserved for never-ran pods (the terminate guard,
+`pod_lifecycle._guard_upload_verification_before_terminate`, accepts
+the marker — the front door already exists, #465/#1773). And the
+round's per-issue upload-verify script MUST enumerate ALL HF prefixes
+the run wrote (reconcile against the run's staging/upload call sites),
+never only the current phase's prefix (#1773: `raw_windows`, 8h50m of
+GPU output, verified only by an ad-hoc hand set-diff).
 
 **Auto-run procedure.** For the single highest-priority unran entry
 (the first one in the analyzer's surfaced order; tie-break to the one

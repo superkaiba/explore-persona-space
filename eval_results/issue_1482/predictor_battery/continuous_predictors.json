@@ -1,0 +1,768 @@
+{
+ "design": {
+  "scope": "FULL DICTIONARY (continuous predictors only)",
+  "n_features": 114980,
+  "target": "per-feature held-out R^2, context arm, #1738 MULTI-TURN ridge fits (rank-transformed)",
+  "r2_source": "eval_results/issue_1738/sae_twoway/perfeature/sae_context_r2.npy",
+  "covariate_source": "/mnt/eps-data/thomasjiralerspong/issue1482_shuffnull/issue1482_error_analysis/analysis_tensors/sae_pooled",
+  "matrix_source": "eval_results/issue_1482/predictor_battery/fullwidth_matrix.npz",
+  "derived_here": [
+   "mean_act_uncond",
+   "mean_act_cond",
+   "act_var_across_answers",
+   "enc_dec_cos",
+   "n_active_holdout",
+   "dec_norm"
+  ],
+  "partial_on": "activity",
+  "n_boot": 2000,
+  "n_fit_rows": 120000,
+  "n_holdout_rows": 20000,
+  "sae": {
+   "layer": 19,
+   "k": 64
+  },
+  "seed": 1482
+ },
+ "identity_gates": {
+  "activity_max_abs_delta": 0.0,
+  "consistency_max_abs_delta": 0.0,
+  "enc_norm_max_abs_delta": 3.865551365223041e-06
+ },
+ "act_var_bank_check": {
+  "banked_value_from_json": 0.020272182358016706,
+  "bank_reproduced_spearman_panel_r2_vs_banked_holdout_var": 0.020272182358016706,
+  "holdout_recompute_spearman_vs_banked": 0.016253397206650255,
+  "holdout_recompute_max_abs_delta_vs_banked": 35.916370106247534,
+  "fit_variant_spearman_panel_r2": 0.5146359271247536,
+  "fit_vs_holdout_variant_spearman": 0.9860376030890712,
+  "n_panel": 16384,
+  "quantiles_probed": [
+   0.01,
+   0.25,
+   0.5,
+   0.75,
+   0.99,
+   1.0
+  ],
+  "banked_quantiles": [
+   0.020398065775373734,
+   0.03202700932537729,
+   0.04550686898804973,
+   0.09186650203464006,
+   3.294162544368834,
+   35.91809491647548
+  ],
+  "holdout_recompute_quantiles": [
+   3.87331862464316e-05,
+   0.0002520573682769408,
+   0.0006787066241367609,
+   0.0020320183787762448,
+   0.10344035474074005,
+   28.6770638687072
+  ],
+  "verdict": "MISMATCH \u2014 the banked array is a different quantity, not this covariate",
+  "note": "The read of the banked array REPRODUCES 0.020272 exactly, so the bank's own number is confirmed \u2014 but it does NOT validate this covariate. The recomputed holdout-row variance of the per-answer pooled activation correlates only rho=+0.016 with the banked array, while the fit and holdout variants of this covariate agree with EACH OTHER at rho=+0.986 \u2014 so the disagreement is not a row-set effect. No definition formable from the pooled store tracks the banked array (variance including inactive contexts +0.016, variance conditional on active +0.018, conditional mean +0.012, active-context count +0.005), and the distributions differ ~67x at the median (0.0455 banked vs 0.00068 recomputed) with a non-constant ratio, ruling out a rescaling or a reordering. The banked array was streamed from a transient bridge-staging memmap (work/Ycat.f32.mm, per sae_perfeature/variance_vs_r2.json) that is no longer on disk, so what it actually measures cannot be adjudicated from committed artifacts. CONSEQUENCE: the 0.0203 figure is NOT a valid identity check for act_var_across_answers, and the variance_vs_r2.json takeaway ('variance does NOT organize per-feature predictability') is contradicted by this covariate's realized reads (+0.515 against the panel single-turn R^2, +0.564 against the full-width multi-turn R^2). That takeaway is NOT promoted into the #1482 body; flagged, not acted on."
+ },
+ "dec_norm": {
+  "mean": 0.9999998410248736,
+  "std": 3.870911342974455e-07,
+  "degenerate": true,
+  "excluded_from_figures": true,
+  "note": "decoder columns are unit-norm by construction; a constant covariate has no rank variation, so it is kept in this JSON and dropped from both figures"
+ },
+ "spearman_activity_vs_r2": 0.7420723109803815,
+ "predictors": [
+  {
+   "key": "activity",
+   "label": "firing frequency (fraction of fit answers active)",
+   "spearman_raw": 0.7420723109803815,
+   "spearman_raw_ci95": [
+    0.7396289334470596,
+    0.7445164758943464
+   ],
+   "partial_on_activity": null,
+   "partial_on_activity_ci95": null,
+   "log_x_axis": true,
+   "decile_median_r2": [
+    -0.008001578971743584,
+    -0.011197897605597973,
+    -0.0036154608242213726,
+    0.0006879104766994715,
+    0.005823374260216951,
+    0.012456892058253288,
+    0.023217566311359406,
+    0.04063176363706589,
+    0.06409817934036255,
+    0.119389109313488
+   ],
+   "decile_center": [
+    0.00015000000000000001,
+    0.0006000000000000001,
+    0.0015500000000000002,
+    0.0034041666666666665,
+    0.006725,
+    0.012595833333333334,
+    0.022975,
+    0.04225416666666667,
+    0.08443833333333338,
+    0.55698
+   ],
+   "decile_n": [
+    11333,
+    11642,
+    11509,
+    11507,
+    11484,
+    11510,
+    11498,
+    11500,
+    11499,
+    11498
+   ],
+   "top_minus_bottom_decile_gap": 0.1273906882852316,
+   "partial_note": "undefined \u2014 this IS the partialled covariate (firing frequency)"
+  },
+  {
+   "key": "mean_act_cond",
+   "label": "mean activation when active",
+   "spearman_raw": 0.2203771134351253,
+   "spearman_raw_ci95": [
+    0.21480606774593752,
+    0.22579224424938663
+   ],
+   "partial_on_activity": 0.03395839646223384,
+   "partial_on_activity_ci95": [
+    0.027654556652670453,
+    0.03993324138619651
+   ],
+   "log_x_axis": true,
+   "decile_median_r2": [
+    -0.0037132182624191046,
+    0.003050294821150601,
+    0.011027122382074594,
+    0.01538069685921073,
+    0.015252047684043646,
+    0.014543183613568544,
+    0.014294809196144342,
+    0.013565339613705873,
+    0.014870918821543455,
+    0.025011626072227955
+   ],
+   "decile_center": [
+    0.006414736204364957,
+    0.013021992400600656,
+    0.01751080083453012,
+    0.021748629767799278,
+    0.026521151610460893,
+    0.03246879547277101,
+    0.04046473384642692,
+    0.052682600005018676,
+    0.07625418972880811,
+    8.953367699523266
+   ],
+   "decile_n": [
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498
+   ],
+   "top_minus_bottom_decile_gap": 0.02872484433464706
+  },
+  {
+   "key": "mean_act_uncond",
+   "label": "mean activation over all answers",
+   "spearman_raw": 0.7206468889397647,
+   "spearman_raw_ci95": [
+    0.7177468868407767,
+    0.7233566718996625
+   ],
+   "partial_on_activity": 0.08160299499759294,
+   "partial_on_activity_ci95": [
+    0.07438477002717594,
+    0.08823685956061025
+   ],
+   "log_x_axis": true,
+   "decile_median_r2": [
+    -0.007558801444247365,
+    -0.009299748577177525,
+    -0.0020426675910130143,
+    0.001086881326045841,
+    0.0060911832842975855,
+    0.012345464900135994,
+    0.021559462882578373,
+    0.03816198743879795,
+    0.06612945720553398,
+    0.1482454463839531
+   ],
+   "decile_center": [
+    2.3483284314473485e-06,
+    1.3350431919097904e-05,
+    4.438687483469646e-05,
+    0.00011185281753540045,
+    0.00023949315309524543,
+    0.00046044555584589663,
+    0.0008498048496246341,
+    0.0016083258469899498,
+    0.0034601803207397466,
+    8.909641179804803
+   ],
+   "decile_n": [
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498
+   ],
+   "top_minus_bottom_decile_gap": 0.15580424782820046
+  },
+  {
+   "key": "act_var_across_answers",
+   "label": "activation variance across answers",
+   "spearman_raw": 0.5640446922393171,
+   "spearman_raw_ci95": [
+    0.559875827969404,
+    0.5680858753623151
+   ],
+   "partial_on_activity": -0.05152225336477567,
+   "partial_on_activity_ci95": [
+    -0.058411584358710175,
+    -0.04523900584196031
+   ],
+   "log_x_axis": true,
+   "decile_median_r2": [
+    -0.007053941488265991,
+    -0.005258707562461495,
+    0.00026811001589521766,
+    0.00469153793528676,
+    0.01041350420564413,
+    0.01716445479542017,
+    0.025591662153601646,
+    0.03692460432648659,
+    0.050136420875787735,
+    0.09149169921875
+   ],
+   "decile_center": [
+    8.132774955058337e-08,
+    9.604129463118198e-07,
+    4.767228771662329e-06,
+    1.5400035868823846e-05,
+    3.860356795075117e-05,
+    8.43675465194733e-05,
+    0.0001754757434693487,
+    0.0003874615523549494,
+    0.0010425358136082346,
+    14.33358115467192
+   ],
+   "decile_n": [
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498
+   ],
+   "top_minus_bottom_decile_gap": 0.09854564070701599
+  },
+  {
+   "key": "proj_var",
+   "label": "dense variance along decoder direction",
+   "spearman_raw": 0.22737201798619472,
+   "spearman_raw_ci95": [
+    0.2218132135768076,
+    0.23308186160570332
+   ],
+   "partial_on_activity": 0.09606549024866183,
+   "partial_on_activity_ci95": [
+    0.0902708017536598,
+    0.10217214394822824
+   ],
+   "log_x_axis": true,
+   "decile_median_r2": [
+    0.0032031870214268565,
+    0.001079547277186066,
+    0.002216954715549946,
+    0.004513039719313383,
+    0.007668146165087819,
+    0.010613239370286465,
+    0.014235994312912226,
+    0.01837727427482605,
+    0.023603687062859535,
+    0.04455150477588177
+   ],
+   "decile_center": [
+    0.3113101521265858,
+    0.5771573552974715,
+    0.7217650760750768,
+    0.8748859368987572,
+    1.0549923627225057,
+    1.2830572762776253,
+    1.5898885644831648,
+    2.041662982134432,
+    2.8563743179785765,
+    41.75805141196802
+   ],
+   "decile_n": [
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498
+   ],
+   "top_minus_bottom_decile_gap": 0.04134831775445491
+  },
+  {
+   "key": "consistency",
+   "label": "within-answer consistency",
+   "spearman_raw": 0.257191171351525,
+   "spearman_raw_ci95": [
+    0.2514922527553217,
+    0.26240915968309086
+   ],
+   "partial_on_activity": 0.024475305182691278,
+   "partial_on_activity_ci95": [
+    0.018016508567036706,
+    0.03043182038239811
+   ],
+   "log_x_axis": true,
+   "decile_median_r2": [
+    -0.002319372957572341,
+    0.0015844856388866901,
+    0.006191625259816647,
+    0.00964943366125226,
+    0.014568131417036057,
+    0.01744407694786787,
+    0.019084937870502472,
+    0.019944731146097183,
+    0.0194284375756979,
+    0.02715199626982212
+   ],
+   "decile_center": [
+    0.0018292747079752959,
+    0.003068631919564831,
+    0.0037742884872807737,
+    0.00444359882377056,
+    0.005228327217848991,
+    0.006285733655987407,
+    0.007817779905372715,
+    0.010241738382709267,
+    0.014980110195087923,
+    0.5057077714736499
+   ],
+   "decile_n": [
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498
+   ],
+   "top_minus_bottom_decile_gap": 0.02947136922739446
+  },
+  {
+   "key": "write_norm",
+   "label": "write norm (gamma-scaled)",
+   "spearman_raw": -0.009752457283889262,
+   "spearman_raw_ci95": [
+    -0.015206110392552364,
+    -0.004280743349495716
+   ],
+   "partial_on_activity": -0.15143982520970528,
+   "partial_on_activity_ci95": [
+    -0.15694383260385564,
+    -0.14603982926361547
+   ],
+   "log_x_axis": false,
+   "decile_median_r2": [
+    0.02174178510904312,
+    0.006689778296276927,
+    0.0062624753918498755,
+    0.006857603555545211,
+    0.009338594041764736,
+    0.0103016821667552,
+    0.011338011361658573,
+    0.010142240207642317,
+    0.009419220965355635,
+    0.008114697877317667
+   ],
+   "decile_center": [
+    3.094583010673523,
+    4.031661152839661,
+    4.076244688034057,
+    4.114377164840699,
+    4.152587842941284,
+    4.195426177978516,
+    4.24850561618805,
+    4.325319123268128,
+    4.467244744300842,
+    6.512159705162048
+   ],
+   "decile_n": [
+    11498,
+    11498,
+    11498,
+    11498,
+    11497,
+    11499,
+    11498,
+    11498,
+    11498,
+    11498
+   ],
+   "top_minus_bottom_decile_gap": -0.013627087231725454
+  },
+  {
+   "key": "enc_norm",
+   "label": "encoder-vector norm",
+   "spearman_raw": -0.2606729546584495,
+   "spearman_raw_ci95": [
+    -0.26649398734022367,
+    -0.2551141121960962
+   ],
+   "partial_on_activity": -0.06108249274082278,
+   "partial_on_activity_ci95": [
+    -0.06673116149261486,
+    -0.05533449998785203
+   ],
+   "log_x_axis": false,
+   "decile_median_r2": [
+    0.04990249313414097,
+    0.04196345806121826,
+    0.02417275309562683,
+    0.013110010419040918,
+    0.006093840813264251,
+    0.003535485011525452,
+    0.0017928695306181908,
+    0.0011486626463010907,
+    0.0014663685578852892,
+    0.005474487319588661
+   ],
+   "decile_center": [
+    1.0691123151074455,
+    1.2848563678759493,
+    1.3717684499391982,
+    1.4329282764261513,
+    1.4825724997894771,
+    1.5273167494495774,
+    1.5728095134158022,
+    1.6258642831468442,
+    1.7028803035450246,
+    2.4973192371603288
+   ],
+   "decile_n": [
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498
+   ],
+   "top_minus_bottom_decile_gap": -0.04442800581455231
+  },
+  {
+   "key": "enc_dec_cos",
+   "label": "encoder-decoder cosine",
+   "spearman_raw": 0.30153691349031714,
+   "spearman_raw_ci95": [
+    0.2962795660360798,
+    0.30697888755960145
+   ],
+   "partial_on_activity": -0.1139459444537068,
+   "partial_on_activity_ci95": [
+    -0.11931595066066623,
+    -0.10858029702157214
+   ],
+   "log_x_axis": false,
+   "decile_median_r2": [
+    -0.0005022880213800818,
+    0.0007331858796533197,
+    0.0030311293667182326,
+    0.005744596011936665,
+    0.00812440738081932,
+    0.009396817535161972,
+    0.011510662268847227,
+    0.016701435670256615,
+    0.027637959457933903,
+    0.05654418095946312
+   ],
+   "decile_center": [
+    0.40040028806405936,
+    0.5080376129548381,
+    0.5276329266630588,
+    0.543175387185421,
+    0.55762190711329,
+    0.5723762641245957,
+    0.5885264148084292,
+    0.6085534369862621,
+    0.6406728735832858,
+    0.8175892419320114
+   ],
+   "decile_n": [
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498
+   ],
+   "top_minus_bottom_decile_gap": 0.0570464689808432
+  },
+  {
+   "key": "footprint_kurt",
+   "label": "footprint kurtosis",
+   "spearman_raw": 0.23471508820035655,
+   "spearman_raw_ci95": [
+    0.22939096206848264,
+    0.23995452299876496
+   ],
+   "partial_on_activity": -0.13486889769247334,
+   "partial_on_activity_ci95": [
+    -0.14041212298482378,
+    -0.12921050186355296
+   ],
+   "log_x_axis": false,
+   "decile_median_r2": [
+    -2.3719841010461096e-05,
+    0.0014432527241297066,
+    0.0032173532526940107,
+    0.004415919305756688,
+    0.00796049740165472,
+    0.010366602800786495,
+    0.015162476804107428,
+    0.019621160812675953,
+    0.023048936389386654,
+    0.02840775065124035
+   ],
+   "decile_center": [
+    0.14065790644934104,
+    0.38977494063371315,
+    0.41236447964711337,
+    0.43229702912662504,
+    0.45286688455362045,
+    0.4764031612736711,
+    0.5062870555990712,
+    0.5509509957749854,
+    0.6392567526452357,
+    38.7533264340076
+   ],
+   "decile_n": [
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498
+   ],
+   "top_minus_bottom_decile_gap": 0.02843147049225081
+  },
+  {
+   "key": "footprint_skew",
+   "label": "footprint skew",
+   "spearman_raw": 0.06475917028688308,
+   "spearman_raw_ci95": [
+    0.05924099705287315,
+    0.07038786012435272
+   ],
+   "partial_on_activity": -0.0008442820561235855,
+   "partial_on_activity_ci95": [
+    -0.006955120751809926,
+    0.005220736739132943
+   ],
+   "log_x_axis": false,
+   "decile_median_r2": [
+    0.007147949188947678,
+    0.006379538448527455,
+    0.006109657697379589,
+    0.008128847926855087,
+    0.00833582365885377,
+    0.009846476837992668,
+    0.010650808922946453,
+    0.01168385287746787,
+    0.013650602661073208,
+    0.016719019040465355
+   ],
+   "decile_center": [
+    -0.5997538746854255,
+    -0.08893175707509067,
+    -0.046304269561987486,
+    -0.016804651813999556,
+    0.008019066893142803,
+    0.031226546737524008,
+    0.05506960168891606,
+    0.08249643090523819,
+    0.12047103010787186,
+    1.4686607558485059
+   ],
+   "decile_n": [
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498
+   ],
+   "top_minus_bottom_decile_gap": 0.009571069851517677
+  },
+  {
+   "key": "footprint_var",
+   "label": "footprint variance",
+   "spearman_raw": -0.053884585808077326,
+   "spearman_raw_ci95": [
+    -0.059708965491161635,
+    -0.04834420275638859
+   ],
+   "partial_on_activity": -0.08855305328937554,
+   "partial_on_activity_ci95": [
+    -0.09437027056187951,
+    -0.08312692311712268
+   ],
+   "log_x_axis": false,
+   "decile_median_r2": [
+    0.02212053630501032,
+    0.010877082590013742,
+    0.009801986161619425,
+    0.009527166839689016,
+    0.008225034456700087,
+    0.00835576606914401,
+    0.008508590515702963,
+    0.008265627548098564,
+    0.007329708663746715,
+    0.0077797838021069765
+   ],
+   "decile_center": [
+    0.0011578814581844183,
+    0.0018247110202700549,
+    0.0018543014477691,
+    0.0018825439459783308,
+    0.0019133337376104718,
+    0.0019502166010597654,
+    0.0019974785181684834,
+    0.002066264840789288,
+    0.002190728839967569,
+    0.008519225560449595
+   ],
+   "decile_n": [
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498,
+    11498
+   ],
+   "top_minus_bottom_decile_gap": -0.014340752502903342
+  },
+  {
+   "key": "n_active_holdout",
+   "label": "holdout answers active (count)",
+   "spearman_raw": 0.7425834248078778,
+   "spearman_raw_ci95": [
+    0.7401146597400535,
+    0.745026252637999
+   ],
+   "partial_on_activity": 0.04600991168598471,
+   "partial_on_activity_ci95": [
+    0.040401321012369595,
+    0.05172085445202889
+   ],
+   "log_x_axis": false,
+   "decile_median_r2": [
+    -0.008071601390838623,
+    -0.0106711913831532,
+    -0.004025556612759829,
+    0.0007188802119344473,
+    0.005774392746388912,
+    0.012497667223215103,
+    0.023043467663228512,
+    0.040778543800115585,
+    0.06424663960933685,
+    0.1193341314792633
+   ],
+   "decile_center": [
+    3.0,
+    12.0,
+    31.0,
+    68.5,
+    135.0,
+    252.0,
+    459.5,
+    844.5,
+    1687.5,
+    11139.0
+   ],
+   "decile_n": [
+    11065,
+    11542,
+    11767,
+    11595,
+    11451,
+    11563,
+    11490,
+    11498,
+    11508,
+    11501
+   ],
+   "top_minus_bottom_decile_gap": 0.12740573287010193
+  }
+ ],
+ "caveats": {
+  "ridge_only": "every R^2 here is a RIDGE fit. No per-feature nonlinear (MLP) R^2 array exists at any width: sae_ctx__mean__mlp.npz is the diverged fit (all-negative), sae_sae_mlp_recovery emitted pooled scalars only, and eval_results/issue_1738/sae_twoway/perfeature/ is ridge-only. A nonlinear panel requires a refit and is NOT produced here.",
+  "cross_corpus": "per-feature R^2 is the #1738 MULTI-TURN corpus context-arm read; activity, consistency, the activation moments and the holdout counts are #1482 SINGLE-TURN. Every correlate below is therefore cross-corpus.",
+  "activity_is_firing_frequency": "`activity` is the FRACTION OF FIT ANSWERS in which the feature is answer-active (cnt / n_fit) \u2014 NOT a mean activation value. Mean activation is reported separately as mean_act_uncond (zeros included) and mean_act_cond (active only).",
+  "r2_display_clip": "figures clip R^2 at -1 for display only; every rho, partial rho and decile median is computed on the UNCLIPPED values.",
+  "x_axis_view_clip": "scatter-panel LINEAR-axis predictors view-clip x to the [0.5, 99.5] percentile so a handful of extreme features do not compress the mass into a vertical line (footprint kurtosis, footprint variance, footprint skew). Display only \u2014 no statistic is affected. Log-axis panels are unclipped; the per-predictor axis choice is the `log_x_axis` field (strictly positive AND p99/p50 >= 5).",
+  "bootstrap_convention": "ranks are computed once on the full sample and the bootstrap draws reweight those fixed ranks (they are not re-ranked per draw), matching the committed battery so the CIs are comparable with fullwidth_joint_model.json.",
+  "partial_definition": "partial rho is the rank-partial correlation controlling FIRING FREQUENCY ONLY \u2014 not the all-others-partialled read reported in fullwidth_joint_model.json.",
+  "dec_norm": "decoder columns are unit-norm by construction; a constant covariate has no rank variation, so it is kept in this JSON and dropped from both figures"
+ },
+ "metadata": {
+  "git_commit": "89024bd749b0fb24a638806513719f8bd8993a09",
+  "timestamp_utc": "2026-08-03T15:13:06.787880+00:00",
+  "python_version": "3.11.15",
+  "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+  "numpy_version": "2.2.6"
+ }
+}
