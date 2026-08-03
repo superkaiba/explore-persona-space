@@ -1,0 +1,823 @@
+{
+ "goal": "activity-stratified judged-label enrichment of context-only and answer-only SAE features against the two-sided baseline (issue #1482)",
+ "caveats": [
+  "An enrichment here is an ASSOCIATION between a judged label and a side class, measured on observational data. It is not a causal or mechanistic claim about what a feature does.",
+  "Descriptions and axis labels come from #1773, whose standing caveat is that they are SEARCH-INDEX-ONLY (neighbour discrimination 0.322 against a 0.50 bar). Any reading of these features as recognisable KINDS rests entirely on those labels and is the least evidenced thing in this round. The enrichment numbers are measured; the kind-names a reader forms from the card text are not.",
+  "'Never fires on side X' means zero across all 120,000 fit rows at ROW-OCCUPANCY grain (the feature counts as active if it fires ANYWHERE in the span). This is a strong criterion: a feature firing at a single token of a single answer is NOT answer-only.",
+  "Side-specific features are far rarer than two-sided ones (median total occupancy 2 of 120,000 rows vs 1,283), so CRUDE enrichment largely re-reports activity composition. The activity-standardized column is the one to read; both are shown so any dissolution into activity is visible.",
+  "Occupancy 1 carries NO two-sided baseline by construction (a two-sided feature needs at least one row on each side, so occupancy >= 2). Those features are excluded from the standardized estimate and counted separately \u2014 never pooled.",
+  "Per-feature R^2 is the dense-context -> SAE-answer full-width ridge read. A feature is UNSCORED where its holdout answer variance is zero; unscored is shown as unscored, never as R^2 = 0.",
+  "Token-level counts (ctx/ans tokens active) come from the run-length capture, which is a 2,000-ROW SUBSAMPLE \u2014 a different and much smaller denominator than the 120,000-row census that defines the side classes. They describe depth on the live side; they are NOT the evidence for one-sidedness."
+ ],
+ "census": {
+  "context_only": 1654,
+  "two_sided": 126348,
+  "answer_only": 2164,
+  "dead": 906
+ },
+ "n_fit_rows": 120000,
+ "r2_source": "superkaiba1/explore-persona-space-data/issue1482_densesae_fullwidth/perfeature/ridge__mean_perfeature.npz",
+ "r2_scored": 121111,
+ "runlen_subsample_rows": 2000,
+ "label_coverage": {
+  "abstraction": 128482,
+  "content_type": 128482,
+  "speaker_property": 128482,
+  "functional_role": 128482,
+  "interpretable": 128482
+ },
+ "label_coverage_by_side": {
+  "context_only": {
+   "n": 1654,
+   "n_axis_labelled": 0,
+   "n_described": 0,
+   "axis_labelled_fraction": 0.0
+  },
+  "two_sided": {
+   "n": 126348,
+   "n_axis_labelled": 126318,
+   "n_described": 123783,
+   "axis_labelled_fraction": 0.9997625605470605
+  },
+  "answer_only": {
+   "n": 2164,
+   "n_axis_labelled": 2164,
+   "n_described": 2132,
+   "axis_labelled_fraction": 1.0
+  },
+  "dead": {
+   "n": 906,
+   "n_axis_labelled": 0,
+   "n_described": 0,
+   "axis_labelled_fraction": 0.0
+  },
+  "no_evidence_exclusion": {
+   "n_excluded": 2560,
+   "equals_context_only_union_dead": true,
+   "mechanism": "#1773 built its activating-example windows from ANSWER-side activation (ans_max quantile bins) and excluded features with zero activating windows before dispatch. Context-only features have zero by construction, so the labelling corpus has NO coverage of them \u2014 the one population that would most directly test whether context-specific KINDS exist is exactly the population the interpretability labels cannot speak to."
+  }
+ },
+ "method": "Direct standardization to the GROUP's occupancy distribution over fixed integer occupancy strata; exact conditional (hypergeometric) null; 20,000 draws; BH-FDR across all 31 tests.",
+ "stratifier": "total row occupancy = fit rows active in the CONTEXT span + fit rows active in the ANSWER span, out of 120,000. This is the only activity measure defined for BOTH classes: the substrate's `activity` column is answer-side only and is identically 0 for every context-only feature.",
+ "min_baseline_per_stratum": 20,
+ "support_table": [
+  {
+   "occupancy": "1-1",
+   "context_only": 587,
+   "answer_only": 725,
+   "two_sided": 0
+  },
+  {
+   "occupancy": "2-2",
+   "context_only": 308,
+   "answer_only": 441,
+   "two_sided": 584
+  },
+  {
+   "occupancy": "3-3",
+   "context_only": 204,
+   "answer_only": 295,
+   "two_sided": 782
+  },
+  {
+   "occupancy": "4-5",
+   "context_only": 174,
+   "answer_only": 290,
+   "two_sided": 1596
+  },
+  {
+   "occupancy": "6-9",
+   "context_only": 128,
+   "answer_only": 246,
+   "two_sided": 2793
+  },
+  {
+   "occupancy": "10-19",
+   "context_only": 90,
+   "answer_only": 115,
+   "two_sided": 4936
+  },
+  {
+   "occupancy": "20-49",
+   "context_only": 46,
+   "answer_only": 44,
+   "two_sided": 7807
+  },
+  {
+   "occupancy": "50-99",
+   "context_only": 25,
+   "answer_only": 6,
+   "two_sided": 6866
+  },
+  {
+   "occupancy": "100-299",
+   "context_only": 49,
+   "answer_only": 2,
+   "two_sided": 13906
+  },
+  {
+   "occupancy": "300-999",
+   "context_only": 31,
+   "answer_only": 0,
+   "two_sided": 19450
+  },
+  {
+   "occupancy": "1000-2999",
+   "context_only": 6,
+   "answer_only": 0,
+   "two_sided": 20432
+  },
+  {
+   "occupancy": "3000-9999",
+   "context_only": 4,
+   "answer_only": 0,
+   "two_sided": 24248
+  },
+  {
+   "occupancy": "10000+",
+   "context_only": 2,
+   "answer_only": 0,
+   "two_sided": 22948
+  }
+ ],
+ "matched_coverage": {
+  "context_only": {
+   "n_total": 1654,
+   "n_matched": 1067,
+   "n_unmatchable_occupancy_1": 587,
+   "matched_fraction": 0.6451027811366384
+  },
+  "answer_only": {
+   "n_total": 2164,
+   "n_matched": 1439,
+   "n_unmatchable_occupancy_1": 725,
+   "matched_fraction": 0.6649722735674677
+  }
+ },
+ "not_computable": [
+  {
+   "group": "context_only",
+   "axis": "abstraction",
+   "n_group": 1654,
+   "n_group_labelled": 0,
+   "reason": "#1773 assigned no label to ANY feature in this group: its activating-example windows are answer-side (ans_max), and a context-only feature has zero answer-side windows by construction, so it was excluded before dispatch."
+  },
+  {
+   "group": "context_only",
+   "axis": "content_type",
+   "n_group": 1654,
+   "n_group_labelled": 0,
+   "reason": "#1773 assigned no label to ANY feature in this group: its activating-example windows are answer-side (ans_max), and a context-only feature has zero answer-side windows by construction, so it was excluded before dispatch."
+  },
+  {
+   "group": "context_only",
+   "axis": "speaker_property",
+   "n_group": 1654,
+   "n_group_labelled": 0,
+   "reason": "#1773 assigned no label to ANY feature in this group: its activating-example windows are answer-side (ans_max), and a context-only feature has zero answer-side windows by construction, so it was excluded before dispatch."
+  },
+  {
+   "group": "context_only",
+   "axis": "functional_role",
+   "n_group": 1654,
+   "n_group_labelled": 0,
+   "reason": "#1773 assigned no label to ANY feature in this group: its activating-example windows are answer-side (ans_max), and a context-only feature has zero answer-side windows by construction, so it was excluded before dispatch."
+  },
+  {
+   "group": "context_only",
+   "axis": "interpretable",
+   "n_group": 1654,
+   "n_group_labelled": 0,
+   "reason": "#1773 assigned no label to ANY feature in this group: its activating-example windows are answer-side (ans_max), and a context-only feature has zero answer-side windows by construction, so it was excluded before dispatch."
+  }
+ ],
+ "tests": [
+  {
+   "group": "context_only",
+   "axis": "gurnee_class",
+   "level": "other",
+   "n_group_labelled": 1654,
+   "n_group_matched": 1067,
+   "crude_rate_group": 0.9504232164449818,
+   "crude_rate_two_sided": 0.8289407034539525,
+   "crude_enrichment": 1.1465515114468952,
+   "std_rate_group": 0.9484536082474226,
+   "std_rate_two_sided_matched": 0.9531770491442545,
+   "std_enrichment": 0.9950445293441837,
+   "null_rate_ci95": [
+    0.938144329896907,
+    0.9615745079662605
+   ],
+   "p_perm": 0.5127243637818109,
+   "q_bh": 0.6910632729233103,
+   "dissolves_into_activity": false
+  },
+  {
+   "group": "context_only",
+   "axis": "gurnee_class",
+   "level": "promoting",
+   "n_group_labelled": 1654,
+   "n_group_matched": 1067,
+   "crude_rate_group": 0.0018137847642079807,
+   "crude_rate_two_sided": 0.06377623705954981,
+   "crude_enrichment": 0.028439820971475547,
+   "std_rate_group": 0.0028116213683223993,
+   "std_rate_two_sided_matched": 0.003056959189692312,
+   "std_enrichment": 0.9197444891651935,
+   "null_rate_ci95": [
+    0.000937207122774133,
+    0.007497656982193065
+   ],
+   "p_perm": 0.864606769661517,
+   "q_bh": 0.8934269953169008,
+   "dissolves_into_activity": true
+  },
+  {
+   "group": "context_only",
+   "axis": "gurnee_class",
+   "level": "suppressing",
+   "n_group_labelled": 1654,
+   "n_group_matched": 1067,
+   "crude_rate_group": 0.003022974607013301,
+   "crude_rate_two_sided": 0.03988191344540475,
+   "crude_enrichment": 0.07579813368662762,
+   "std_rate_group": 0.002811621368322399,
+   "std_rate_two_sided_matched": 0.0025819741023705143,
+   "std_enrichment": 1.0889425133044692,
+   "null_rate_ci95": [
+    0.0,
+    0.006560449859418931
+   ],
+   "p_perm": 0.7727613619319034,
+   "q_bh": 0.8934269953169008,
+   "dissolves_into_activity": true
+  },
+  {
+   "group": "context_only",
+   "axis": "gurnee_class",
+   "level": "partition",
+   "n_group_labelled": 1654,
+   "n_group_matched": 1067,
+   "crude_rate_group": 0.044740024183796856,
+   "crude_rate_two_sided": 0.06740114604109286,
+   "crude_enrichment": 0.663787291636257,
+   "std_rate_group": 0.04592314901593252,
+   "std_rate_two_sided_matched": 0.04118401756368287,
+   "std_enrichment": 1.1150721015724494,
+   "null_rate_ci95": [
+    0.03277881911902532,
+    0.05529522024367385
+   ],
+   "p_perm": 0.4912754362281886,
+   "q_bh": 0.6910632729233103,
+   "dissolves_into_activity": true
+  },
+  {
+   "group": "answer_only",
+   "axis": "abstraction",
+   "level": "abstract_contextual",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.2255083179297597,
+   "crude_rate_two_sided": 0.3399594673759876,
+   "crude_enrichment": 0.663338837627818,
+   "std_rate_group": 0.30437804030576787,
+   "std_rate_two_sided_matched": 0.16324400880585033,
+   "std_enrichment": 1.864558721219419,
+   "null_rate_ci95": [
+    0.1862404447533009,
+    0.22376650451702568
+   ],
+   "p_perm": 4.999750012499375e-05,
+   "q_bh": 0.0002583204173124677,
+   "dissolves_into_activity": false
+  },
+  {
+   "group": "answer_only",
+   "axis": "abstraction",
+   "level": "lexical_semantic",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.2573937153419593,
+   "crude_rate_two_sided": 0.25921088047625834,
+   "crude_enrichment": 0.9929896263190794,
+   "std_rate_group": 0.2001389854065323,
+   "std_rate_two_sided_matched": 0.28461962855176437,
+   "std_enrichment": 0.7031805445917536,
+   "null_rate_ci95": [
+    0.2376650451702571,
+    0.276580958999305
+   ],
+   "p_perm": 4.999750012499375e-05,
+   "q_bh": 0.0002583204173124677,
+   "dissolves_into_activity": false
+  },
+  {
+   "group": "answer_only",
+   "axis": "abstraction",
+   "level": "token_surface",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.49722735674676527,
+   "crude_rate_two_sided": 0.37636758023401257,
+   "crude_enrichment": 1.3211216450620062,
+   "std_rate_group": 0.47533009034051427,
+   "std_rate_two_sided_matched": 0.5299578728684876,
+   "std_enrichment": 0.8969205189229643,
+   "null_rate_ci95": [
+    0.4954829742876998,
+    0.5406532314107019
+   ],
+   "p_perm": 0.00034998250087495624,
+   "q_bh": 0.0013561821908904554,
+   "dissolves_into_activity": false
+  },
+  {
+   "group": "answer_only",
+   "axis": "abstraction",
+   "level": "unresolved",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.019870609981515713,
+   "crude_rate_two_sided": 0.024462071913741508,
+   "crude_enrichment": 0.812302819302622,
+   "std_rate_group": 0.020152883947185545,
+   "std_rate_two_sided_matched": 0.02217848977389766,
+   "std_enrichment": 0.9086680000594046,
+   "null_rate_ci95": [
+    0.01459346768589298,
+    0.027797081306462818
+   ],
+   "p_perm": 0.6474676266186691,
+   "q_bh": 0.8028598570071496,
+   "dissolves_into_activity": false
+  },
+  {
+   "group": "answer_only",
+   "axis": "content_type",
+   "level": "entity",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.062384473197781884,
+   "crude_rate_two_sided": 0.04915372314317833,
+   "crude_enrichment": 1.2691708625217284,
+   "std_rate_group": 0.05698401667824878,
+   "std_rate_two_sided_matched": 0.056871670253786345,
+   "std_enrichment": 1.0019754374007497,
+   "null_rate_ci95": [
+    0.046560111188325225,
+    0.06810284920083391
+   ],
+   "p_perm": 0.9878506074696265,
+   "q_bh": 0.9878506074696266,
+   "dissolves_into_activity": false
+  },
+  {
+   "group": "answer_only",
+   "axis": "content_type",
+   "level": "operation",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.06284658040665435,
+   "crude_rate_two_sided": 0.0931696195316582,
+   "crude_enrichment": 0.6745394123381565,
+   "std_rate_group": 0.06254343293954134,
+   "std_rate_two_sided_matched": 0.061052292099927456,
+   "std_enrichment": 1.0244239943878481,
+   "null_rate_ci95": [
+    0.051424600416956213,
+    0.07296733842946491
+   ],
+   "p_perm": 0.8407579621018949,
+   "q_bh": 0.8934269953169008,
+   "dissolves_into_activity": false
+  },
+  {
+   "group": "answer_only",
+   "axis": "content_type",
+   "level": "syntax",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.6719038817005545,
+   "crude_rate_two_sided": 0.6370588514700992,
+   "crude_enrichment": 1.0546967209545015,
+   "std_rate_group": 0.7060458651841557,
+   "std_rate_two_sided_matched": 0.6818095198512697,
+   "std_enrichment": 1.0355470914195697,
+   "null_rate_ci95": [
+    0.6678248783877693,
+    0.708825573314802
+   ],
+   "p_perm": 0.08924553772311385,
+   "q_bh": 0.21281628226280994,
+   "dissolves_into_activity": false
+  },
+  {
+   "group": "answer_only",
+   "axis": "content_type",
+   "level": "task_format",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.02634011090573013,
+   "crude_rate_two_sided": 0.01647429503317025,
+   "crude_enrichment": 1.5988611866362417,
+   "std_rate_group": 0.02779708130646282,
+   "std_rate_two_sided_matched": 0.022680584075662837,
+   "std_enrichment": 1.2255893064187084,
+   "null_rate_ci95": [
+    0.017373175816539264,
+    0.03127171646977067
+   ],
+   "p_perm": 0.30618469076546173,
+   "q_bh": 0.5073956828474365,
+   "dissolves_into_activity": true
+  },
+  {
+   "group": "answer_only",
+   "axis": "content_type",
+   "level": "topic",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.15064695009242143,
+   "crude_rate_two_sided": 0.17466236007536534,
+   "crude_enrichment": 0.8625038046400985,
+   "std_rate_group": 0.1202223766504517,
+   "std_rate_two_sided_matched": 0.14533510663506694,
+   "std_enrichment": 0.8272080946851148,
+   "null_rate_ci95": [
+    0.12230715774843641,
+    0.15288394718554552
+   ],
+   "p_perm": 0.01749912504374781,
+   "q_bh": 0.04520607302968185,
+   "dissolves_into_activity": false
+  },
+  {
+   "group": "answer_only",
+   "axis": "content_type",
+   "level": "unresolved",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.025878003696857672,
+   "crude_rate_two_sided": 0.029481150746528604,
+   "crude_enrichment": 0.8777813294789655,
+   "std_rate_group": 0.02640722724113968,
+   "std_rate_two_sided_matched": 0.03225082708428659,
+   "std_enrichment": 0.8188077524996543,
+   "null_rate_ci95": [
+    0.023627519110493395,
+    0.038915913829047945
+   ],
+   "p_perm": 0.24193790310484475,
+   "q_bh": 0.441180882132364,
+   "dissolves_into_activity": false
+  },
+  {
+   "group": "answer_only",
+   "axis": "speaker_property",
+   "level": "identity_disposition",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.0027726432532347504,
+   "crude_rate_two_sided": 0.01243686568818379,
+   "crude_enrichment": 0.22293746051057112,
+   "std_rate_group": 0.0006949270326615705,
+   "std_rate_two_sided_matched": 0.00505328130562958,
+   "std_enrichment": 0.13751995795036998,
+   "null_rate_ci95": [
+    0.001389854065323141,
+    0.006254343293954135
+   ],
+   "p_perm": 0.003399830008499575,
+   "q_bh": 0.010539473026348684,
+   "dissolves_into_activity": false
+  },
+  {
+   "group": "answer_only",
+   "axis": "speaker_property",
+   "level": "language",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.1266173752310536,
+   "crude_rate_two_sided": 0.06141642521255878,
+   "crude_enrichment": 2.061620727563319,
+   "std_rate_group": 0.09242529534398887,
+   "std_rate_two_sided_matched": 0.14352881757370167,
+   "std_enrichment": 0.6439493957130158,
+   "null_rate_ci95": [
+    0.11535788742182071,
+    0.14523974982626825
+   ],
+   "p_perm": 4.999750012499375e-05,
+   "q_bh": 0.0002583204173124677,
+   "dissolves_into_activity": false
+  },
+  {
+   "group": "answer_only",
+   "axis": "speaker_property",
+   "level": "none",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.7158040665434381,
+   "crude_rate_two_sided": 0.8276096834972054,
+   "crude_enrichment": 0.8649053784855275,
+   "std_rate_group": 0.7512161223071576,
+   "std_rate_two_sided_matched": 0.680470805186792,
+   "std_enrichment": 1.1039652496199976,
+   "null_rate_ci95": [
+    0.6782487838776929,
+    0.719944405837387
+   ],
+   "p_perm": 4.999750012499375e-05,
+   "q_bh": 0.0002583204173124677,
+   "dissolves_into_activity": false
+  },
+  {
+   "group": "answer_only",
+   "axis": "speaker_property",
+   "level": "register_style",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.14510166358595195,
+   "crude_rate_two_sided": 0.08662265077027818,
+   "crude_enrichment": 1.67510070744382,
+   "std_rate_group": 0.14662960389159135,
+   "std_rate_two_sided_matched": 0.1632279820539411,
+   "std_enrichment": 0.8983116867985015,
+   "null_rate_ci95": [
+    0.14246004169562196,
+    0.1751216122307158
+   ],
+   "p_perm": 0.13339333033348333,
+   "q_bh": 0.2756795493558656,
+   "dissolves_into_activity": true
+  },
+  {
+   "group": "answer_only",
+   "axis": "speaker_property",
+   "level": "unclear",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.0,
+   "crude_rate_two_sided": 0.00019791320318561092,
+   "crude_enrichment": 0.0,
+   "std_rate_group": 0.0,
+   "std_rate_two_sided_matched": 0.00014719287600718352,
+   "std_enrichment": 0.0,
+   "null_rate_ci95": [
+    0.0,
+    0.0006949270326615705
+   ],
+   "p_perm": 0.8195090245487726,
+   "q_bh": 0.8934269953169008,
+   "dissolves_into_activity": true
+  },
+  {
+   "group": "answer_only",
+   "axis": "speaker_property",
+   "level": "unresolved",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.009704251386321626,
+   "crude_rate_two_sided": 0.011716461628588167,
+   "crude_enrichment": 0.8282578558225507,
+   "std_rate_group": 0.009034051424600417,
+   "std_rate_two_sided_matched": 0.00757192100392841,
+   "std_enrichment": 1.193099006172071,
+   "null_rate_ci95": [
+    0.004169562195969423,
+    0.012508686587908269
+   ],
+   "p_perm": 0.600069996500175,
+   "q_bh": 0.7750904121460594,
+   "dissolves_into_activity": false
+  },
+  {
+   "group": "answer_only",
+   "axis": "functional_role",
+   "level": "input_side",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.9121996303142329,
+   "crude_rate_two_sided": 0.8603682768884878,
+   "crude_enrichment": 1.060243217722058,
+   "std_rate_group": 0.888116747741487,
+   "std_rate_two_sided_matched": 0.925332615815954,
+   "std_enrichment": 0.9597810912115636,
+   "null_rate_ci95": [
+    0.8992355802640724,
+    0.9256428075052119
+   ],
+   "p_perm": 9.99950002499875e-05,
+   "q_bh": 0.0004428350011070875,
+   "dissolves_into_activity": false
+  },
+  {
+   "group": "answer_only",
+   "axis": "functional_role",
+   "level": "mixed",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.036044362292051754,
+   "crude_rate_two_sided": 0.04553586978894536,
+   "crude_enrichment": 0.7915597628663757,
+   "std_rate_group": 0.045170257123002086,
+   "std_rate_two_sided_matched": 0.023492170587320872,
+   "std_enrichment": 1.9227792065915463,
+   "null_rate_ci95": [
+    0.024322446143154968,
+    0.04030576789437108
+   ],
+   "p_perm": 0.000599970001499925,
+   "q_bh": 0.0020665633384997417,
+   "dissolves_into_activity": false
+  },
+  {
+   "group": "answer_only",
+   "axis": "functional_role",
+   "level": "output_promoting",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.006469500924214418,
+   "crude_rate_two_sided": 0.02902990864326541,
+   "crude_enrichment": 0.22285639971227622,
+   "std_rate_group": 0.006949270326615705,
+   "std_rate_two_sided_matched": 0.009482126597159007,
+   "std_enrichment": 0.7328809898718095,
+   "null_rate_ci95": [
+    0.004864489228630994,
+    0.01389854065323141
+   ],
+   "p_perm": 0.3109844507774611,
+   "q_bh": 0.5073956828474365,
+   "dissolves_into_activity": true
+  },
+  {
+   "group": "answer_only",
+   "axis": "functional_role",
+   "level": "unresolved",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.04528650646950092,
+   "crude_rate_two_sided": 0.06506594467930145,
+   "crude_enrichment": 0.6960093593155392,
+   "std_rate_group": 0.059763724808895066,
+   "std_rate_two_sided_matched": 0.04169308699956605,
+   "std_enrichment": 1.4334204807026425,
+   "null_rate_ci95": [
+    0.03683113273106323,
+    0.05628908964558721
+   ],
+   "p_perm": 0.01134943252837358,
+   "q_bh": 0.03198476439814373,
+   "dissolves_into_activity": false
+  },
+  {
+   "group": "answer_only",
+   "axis": "interpretable",
+   "level": "no",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.09796672828096119,
+   "crude_rate_two_sided": 0.14385914913155687,
+   "crude_enrichment": 0.6809905999886889,
+   "std_rate_group": 0.12647671994440582,
+   "std_rate_two_sided_matched": 0.07925461911856496,
+   "std_enrichment": 1.5958277429255772,
+   "null_rate_ci95": [
+    0.08130646282140376,
+    0.108408617095205
+   ],
+   "p_perm": 4.999750012499375e-05,
+   "q_bh": 0.0002583204173124677,
+   "dissolves_into_activity": false
+  },
+  {
+   "group": "answer_only",
+   "axis": "interpretable",
+   "level": "unresolved",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.003234750462107209,
+   "crude_rate_two_sided": 0.0075365347773080635,
+   "crude_enrichment": 0.4292092530172883,
+   "std_rate_group": 0.004864489228630993,
+   "std_rate_two_sided_matched": 0.003093609298707443,
+   "std_enrichment": 1.5724316676522307,
+   "null_rate_ci95": [
+    0.001389854065323141,
+    0.0069492703266157045
+   ],
+   "p_perm": 0.36003199840008,
+   "q_bh": 0.558049597520124,
+   "dissolves_into_activity": true
+  },
+  {
+   "group": "answer_only",
+   "axis": "interpretable",
+   "level": "yes",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.8987985212569316,
+   "crude_rate_two_sided": 0.8486043160911351,
+   "crude_enrichment": 1.05914912782556,
+   "std_rate_group": 0.8686587908269632,
+   "std_rate_two_sided_matched": 0.9176517715827275,
+   "std_enrichment": 0.9466104874714476,
+   "null_rate_ci95": [
+    0.8874218207088256,
+    0.9145239749826268
+   ],
+   "p_perm": 4.999750012499375e-05,
+   "q_bh": 0.0002583204173124677,
+   "dissolves_into_activity": false
+  },
+  {
+   "group": "answer_only",
+   "axis": "gurnee_class",
+   "level": "other",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.9551756007393716,
+   "crude_rate_two_sided": 0.8289407034539525,
+   "crude_enrichment": 1.1522845925642633,
+   "std_rate_group": 0.9520500347463516,
+   "std_rate_two_sided_matched": 0.9607507407726164,
+   "std_enrichment": 0.9909438466638415,
+   "null_rate_ci95": [
+    0.9471855455177207,
+    0.965948575399583
+   ],
+   "p_perm": 0.16129193540322984,
+   "q_bh": 0.3125031248437578,
+   "dissolves_into_activity": false
+  },
+  {
+   "group": "answer_only",
+   "axis": "gurnee_class",
+   "level": "promoting",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.0004621072088724584,
+   "crude_rate_two_sided": 0.06377623705954981,
+   "crude_enrichment": 0.007245758454531816,
+   "std_rate_group": 0.0006949270326615705,
+   "std_rate_two_sided_matched": 0.0008682547681801154,
+   "std_enrichment": 0.8003722618398695,
+   "null_rate_ci95": [
+    0.0,
+    0.0027797081306462816
+   ],
+   "p_perm": 0.8497575121243938,
+   "q_bh": 0.8934269953169008,
+   "dissolves_into_activity": true
+  },
+  {
+   "group": "answer_only",
+   "axis": "gurnee_class",
+   "level": "suppressing",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.0,
+   "crude_rate_two_sided": 0.03988191344540475,
+   "crude_enrichment": 0.0,
+   "std_rate_group": 0.0,
+   "std_rate_two_sided_matched": 0.0007042471602518275,
+   "std_enrichment": 0.0,
+   "null_rate_ci95": [
+    0.0,
+    0.0020847810979847115
+   ],
+   "p_perm": 0.3783310834458277,
+   "q_bh": 0.5584887422295552,
+   "dissolves_into_activity": true
+  },
+  {
+   "group": "answer_only",
+   "axis": "gurnee_class",
+   "level": "partition",
+   "n_group_labelled": 2164,
+   "n_group_matched": 1439,
+   "crude_rate_group": 0.04436229205175601,
+   "crude_rate_two_sided": 0.06740114604109286,
+   "crude_enrichment": 0.6581830526250901,
+   "std_rate_group": 0.04725503822098679,
+   "std_rate_two_sided_matched": 0.0376767572989517,
+   "std_enrichment": 1.2542225395363733,
+   "null_rate_ci95": [
+    0.03266157053509381,
+    0.05072967338429465
+   ],
+   "p_perm": 0.12509374531273437,
+   "q_bh": 0.2756795493558656,
+   "dissolves_into_activity": true
+  }
+ ],
+ "provenance": {
+  "git_commit": "06222afaad8f5d86c3f6318965d551d5a16725bf",
+  "timestamp_utc": "2026-08-03T19:53:15Z",
+  "python_version": "3.11.15",
+  "numpy_version": "2.2.6",
+  "scipy_version": "1.17.1"
+ }
+}
