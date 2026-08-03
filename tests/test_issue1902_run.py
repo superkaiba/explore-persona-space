@@ -27,6 +27,8 @@ sys.path.insert(0, str(REPO / "scripts"))
 import issue1902_common as C  # noqa: E402
 import issue1902_run as R  # noqa: E402
 
+from explore_persona_space.eval.vllm_util import vllm_util_for_free  # noqa: E402
+
 TOKENIZER_ID = C.MODEL_IDS["R"]
 
 
@@ -533,25 +535,8 @@ def test_realized_gpu_ids_non_slurm_keeps_detected():
     assert C.realized_gpu_ids({}, detected=0) == ("detected", ["0"])
 
 
-def test_vllm_util_for_free_shared_h200_crash_shape():
-    # Crash 1 numbers: free 81.2 GiB of 139.8 GiB total. The fixed 0.6 default
-    # demanded 83.9 GiB > free; the computed util's demand must fit free.
-    free_b, total_b = int(81.2 * GIB), int(139.8 * GIB)
-    util = C.vllm_util_for_free(free_b, total_b)
-    assert util < C.VLLM_UTIL_CAP
-    assert util * total_b < free_b
-    assert util >= C.VLLM_UTIL_FLOOR
-
-
-def test_vllm_util_for_free_exclusive_host_resolves_to_cap():
-    # Exclusive H100: ~79 GiB free of ~79.6 GiB total -> cap binds.
-    assert C.vllm_util_for_free(int(79 * GIB), int(79.6 * GIB)) == C.VLLM_UTIL_CAP
-
-
-def test_vllm_util_for_free_fail_loud_floor():
-    # A co-tenant holding most of the device: weights + min KV cannot fit.
-    with pytest.raises(RuntimeError, match="GPU too full"):
-        C.vllm_util_for_free(int(30 * GIB), int(139.8 * GIB))
+# The pure-math vllm_util_for_free tests moved to tests/test_vllm_util.py
+# (#1942: the resolver was hoisted to explore_persona_space.eval.vllm_util).
 
 
 def test_gen_gpu_mem_util_env_override_and_live_path(monkeypatch):
@@ -561,7 +546,7 @@ def test_gen_gpu_mem_util_env_override_and_live_path(monkeypatch):
     torch = pytest.importorskip("torch")
     monkeypatch.setattr(torch.cuda, "mem_get_info", lambda *_a: (int(81.2 * GIB), int(139.8 * GIB)))
     util = R._gen_gpu_mem_util()
-    assert abs(util - C.vllm_util_for_free(int(81.2 * GIB), int(139.8 * GIB))) < 1e-12
+    assert abs(util - vllm_util_for_free(int(81.2 * GIB), int(139.8 * GIB))) < 1e-12
 
 
 def test_load_hf_model_capture_floor_fail_loud(monkeypatch):

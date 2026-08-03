@@ -1,0 +1,984 @@
+{
+  "commit": "856db5ec58",
+  "created": "2026-08-02T23:10:45Z",
+  "figsize": [
+    11.0,
+    4.6
+  ],
+  "points": [
+    {
+      "read position in the rendered conversation": 0.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.015676271208613146,
+      "error": 0.005090466777866703,
+      "series": "chat template, own answer (n=2,936)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.1373088432692735,
+      "error": 0.009149357245444939,
+      "series": "chat template, own answer (n=2,936)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.17927325452051013,
+      "error": 0.008368408627228957,
+      "series": "chat template, own answer (n=2,936)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.17927325452051013,
+      "error": 0.00908816877689339,
+      "series": "chat template, own answer (n=2,936)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.20679605887397878,
+      "error": 0.008789267402121076,
+      "series": "chat template, own answer (n=2,936)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.024888680558663,
+      "error": 0.005090466777866703,
+      "series": "bare text, own answer (n=2,759)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.1519550594840443,
+      "error": 0.009149357245444939,
+      "series": "bare text, own answer (n=2,759)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.20454409849872868,
+      "error": 0.008368408627228957,
+      "series": "bare text, own answer (n=2,759)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.20454409849872868,
+      "error": 0.00908816877689339,
+      "series": "bare text, own answer (n=2,759)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.23284868267462544,
+      "error": 0.008789267402121076,
+      "series": "bare text, own answer (n=2,759)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.08426808980131795,
+      "error": 0.005090466777866703,
+      "series": "story, own answer (n=2,086)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.22568930452703106,
+      "error": 0.009149357245444939,
+      "series": "story, own answer (n=2,086)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.28192713863807584,
+      "error": 0.008368408627228957,
+      "series": "story, own answer (n=2,086)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.3330797995490563,
+      "error": 0.00908816877689339,
+      "series": "story, own answer (n=2,086)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.3467785154279175,
+      "error": 0.008789267402121076,
+      "series": "story, own answer (n=2,086)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.015676271208613146,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.1373088432692735,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.17927325452051013,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.17927325452051013,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.20679605887397878,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.0131000257853492,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.12966674299146513,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.1705864003574246,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.1705864003574246,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.19799659780089574,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.020216742055189692,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.14624975202841253,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.18976215293905574,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.18976215293905574,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.21690814914007037,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.024888680558663,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.1519550594840443,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.20454409849872868,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.20454409849872868,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.23284868267462544,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.02190693086522369,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.14500115762126572,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.1968328606672319,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.1968328606672319,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.22463949450997237,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.029967759647912293,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.1611688895048693,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.21374845589828648,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.21374845589828648,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.24247634638294543,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.08426808980131795,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.22568930452703106,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.28192713863807584,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.3330797995490563,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.3467785154279175,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.08014156693332387,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.2175724138126986,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.27436179657374915,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.32467042069272095,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.3388051580340386,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.09032250048905728,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.23587112830358847,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.29109861382820706,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.34284675824650773,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)": 0.35638369283828075,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "y": 0.07617628455437087,
+      "error": 0.0036570850424712167,
+      "series": "chat template, embedded reference answer (n=3,002)",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "y": 0.5369640126335183,
+      "error": 0.009474777940649798,
+      "series": "chat template, embedded reference answer (n=3,002)",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "y": 0.6531359375122278,
+      "error": 0.010758589705773258,
+      "series": "chat template, embedded reference answer (n=3,002)",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "y": 0.6531359375122278,
+      "error": 0.010758589705773258,
+      "series": "chat template, embedded reference answer (n=3,002)",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "y": 0.6220455462011155,
+      "error": 0.010411331232105248,
+      "series": "chat template, embedded reference answer (n=3,002)",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "y": 0.0895383664550391,
+      "error": 0.0036570850424712167,
+      "series": "bare text, embedded reference answer (n=3,002)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "y": 0.502512230192497,
+      "error": 0.009474777940649798,
+      "series": "bare text, embedded reference answer (n=3,002)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "y": 0.6275218689075427,
+      "error": 0.010758589705773258,
+      "series": "bare text, embedded reference answer (n=3,002)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "y": 0.6275218689075427,
+      "error": 0.010758589705773258,
+      "series": "bare text, embedded reference answer (n=3,002)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "y": 0.609394781196419,
+      "error": 0.010411331232105248,
+      "series": "bare text, embedded reference answer (n=3,002)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "y": 0.14124974256867795,
+      "error": 0.0036570850424712167,
+      "series": "story, embedded reference answer (n=2,163)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "y": 0.41421584509334575,
+      "error": 0.009474777940649798,
+      "series": "story, embedded reference answer (n=2,163)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "y": 0.4351140774882827,
+      "error": 0.010758589705773258,
+      "series": "story, embedded reference answer (n=2,163)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "y": 0.5077978967208023,
+      "error": 0.010758589705773258,
+      "series": "story, embedded reference answer (n=2,163)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "y": 0.5142709635867772,
+      "error": 0.010411331232105248,
+      "series": "story, embedded reference answer (n=2,163)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "y": 0.011535296451839483,
+      "error": 0.0036570850424712167,
+      "series": "bare text, own answer (n=3,030)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "y": 0.2854462822052445,
+      "error": 0.009474777940649798,
+      "series": "bare text, own answer (n=3,030)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "y": 0.3840603767283933,
+      "error": 0.010758589705773258,
+      "series": "bare text, own answer (n=3,030)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "y": 0.3840603767283933,
+      "error": 0.010758589705773258,
+      "series": "bare text, own answer (n=3,030)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "y": 0.35068305704151326,
+      "error": 0.010411331232105248,
+      "series": "bare text, own answer (n=3,030)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "y": 0.07617628455437087,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "y": 0.5369640126335183,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "y": 0.6531359375122278,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "y": 0.6531359375122278,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "y": 0.6220455462011155,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "y": 0.06731669050631615,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "y": 0.5279061975274714,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "y": 0.645576584993306,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "y": 0.645576584993306,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "y": 0.6142494391861559,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "y": 0.08654384172090696,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "y": 0.5473632853725836,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "y": 0.6610891632829548,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "y": 0.6610891632829548,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "y": 0.6305164954993233,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "y": 0.0895383664550391,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "y": 0.502512230192497,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "y": 0.6275218689075427,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "y": 0.6275218689075427,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "y": 0.609394781196419,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "y": 0.07944387059977988,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "y": 0.4923246512423049,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "y": 0.61981016871008,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "y": 0.61981016871008,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "y": 0.6014251732901621,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "y": 0.10042651747093818,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "y": 0.5136322919325855,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "y": 0.6357706049259512,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "y": 0.6357706049259512,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "y": 0.6179116541156616,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "y": 0.14124974256867795,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "y": 0.41421584509334575,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "y": 0.4351140774882827,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "y": 0.5077978967208023,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "y": 0.5142709635867772,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "y": 0.13516407403598216,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "y": 0.40438221540521235,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "y": 0.42621387680927664,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "y": 0.49885453061967483,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "y": 0.5059934697889533,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "y": 0.15015319077317593,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "y": 0.4247295600834106,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "y": 0.44533973881887806,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "y": 0.5182475488642344,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "y": 0.5245819760208776,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "y": 0.011535296451839483,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "y": 0.2854462822052445,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "y": 0.3840603767283933,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "y": 0.3840603767283933,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "y": 0.35068305704151326,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "y": 0.0086386728407193,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "y": 0.2771635986150745,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "y": 0.37387392778559686,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "y": 0.37387392778559686,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "y": 0.3409905023030417,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read position in the rendered conversation": 0.0,
+      "y": 0.015952842925661733,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read position in the rendered conversation": 1.0,
+      "y": 0.2961131544963741,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read position in the rendered conversation": 2.0,
+      "y": 0.3953911071971434,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read position in the rendered conversation": 3.0,
+      "y": 0.3953911071971434,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read position in the rendered conversation": 4.0,
+      "y": 0.36181316476725217,
+      "_kind": "line",
+      "_group": 27
+    }
+  ],
+  "n_series": 28,
+  "total_points": 140,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Qwen2.5-7B (base) \u2014 model's own answers",
+        "xlabel": "read position in the rendered conversation",
+        "ylabel": "held-out R\u00b2 (read position \u2192 answer-mean, layer 19)",
+        "legend_labels": [
+          "shuffle-null 97.5th pct",
+          "chat template, own answer (n=2,936)",
+          "bare text, own answer (n=2,759)",
+          "story, own answer (n=2,086)"
+        ],
+        "xticklabels": [
+          "prefix",
+          "question\nend",
+          "boundary\nmarker",
+          "pre-\nanswer",
+          "first answer\ntoken"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "title_left": "Qwen2.5-7B-Instruct",
+        "xlabel": "read position in the rendered conversation",
+        "legend_labels": [
+          "chat template, embedded reference answer (n=3,002)",
+          "bare text, embedded reference answer (n=3,002)",
+          "story, embedded reference answer (n=2,163)",
+          "bare text, own answer (n=3,030)"
+        ],
+        "xticklabels": [
+          "prefix",
+          "question\nend",
+          "boundary\nmarker",
+          "pre-\nanswer",
+          "first answer\ntoken"
+        ]
+      }
+    ],
+    "series": [
+      "shuffle-null 97.5th pct",
+      "chat template, own answer (n=2,936)",
+      "bare text, own answer (n=2,759)",
+      "story, own answer (n=2,086)",
+      "chat template, embedded reference answer (n=3,002)",
+      "bare text, embedded reference answer (n=3,002)",
+      "story, embedded reference answer (n=2,163)",
+      "bare text, own answer (n=3,030)"
+    ]
+  }
+}

@@ -31,6 +31,8 @@ import issue1902_common as C  # noqa: E402
 import issue1902_fits as F  # noqa: E402
 import issue1902_run as R  # noqa: E402
 
+from explore_persona_space.eval.vllm_util import GPU_FREE_MARGIN_GIB  # noqa: E402
+
 pytestmark = pytest.mark.filterwarnings("ignore::UserWarning")
 
 CKPTS = ["B", "R"]
@@ -559,7 +561,7 @@ def test_layer_chunk_cap_shared_node_downscales():
     cap = F.layer_chunk_cap_for_free(12 * GIB, n_tr=8_300)
     assert 1 <= cap < F.LAYER_CHUNK
     per_layer = 8_300 * 8_300 * 8 * F.EIGH_WORKSPACE_FACTOR
-    assert cap * per_layer <= 12 * GIB - int(C.GPU_FREE_MARGIN_GIB * GIB)
+    assert cap * per_layer <= 12 * GIB - int(GPU_FREE_MARGIN_GIB * GIB)
 
 
 def test_layer_chunk_cap_fail_loud_when_one_layer_cannot_fit():

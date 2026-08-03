@@ -48,8 +48,6 @@ for _p in (str(SCRIPTS), str(REPO_ROOT / "src")):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-GIB = 2**30
-
 # nvidia-smi stub: 8 physical devices; per-index free memory from $FAKE_FREE.
 _STUB = """#!/usr/bin/env bash
 args="$*"
@@ -273,33 +271,9 @@ def _op_module(monkeypatch):
     return op
 
 
-def test_vllm_util_empty_device_resolves_to_cap(monkeypatch):
-    op = _op_module(monkeypatch)
-    got = op.vllm_util_for_free(int(139.8 * GIB), int(139.8 * GIB))
-    assert got == pytest.approx(op.VLLM_UTIL_CAP)
-
-
-def test_vllm_util_shared_node_clamps_below_free(monkeypatch):
-    """The #1902 crash shape: 81.2 GiB free of 139.8 GiB on a shared H200."""
-    op = _op_module(monkeypatch)
-    util = op.vllm_util_for_free(int(81.2 * GIB), int(139.8 * GIB))
-    assert util < op.VLLM_UTIL_CAP
-    # The demanded share must fit inside free minus the safety margin.
-    assert util * 139.8 <= 81.2 - op.GPU_FREE_MARGIN_GIB + 1e-6
-    # And the bare cap WOULD have over-demanded — this is the crash it prevents.
-    assert op.VLLM_UTIL_CAP * 139.8 > 81.2
-
-
-def test_vllm_util_below_floor_fails_loud(monkeypatch):
-    op = _op_module(monkeypatch)
-    with pytest.raises(RuntimeError, match="GPU too full"):
-        op.vllm_util_for_free(int(20.0 * GIB), int(139.8 * GIB))
-
-
-def test_vllm_util_rejects_nonsense_total(monkeypatch):
-    op = _op_module(monkeypatch)
-    with pytest.raises(RuntimeError):
-        op.vllm_util_for_free(1, 0)
+# The pure-math vllm_util_for_free / resolve_vllm_util tests moved to
+# tests/test_vllm_util.py (#1942: the local copy was hoisted to the shared
+# explore_persona_space.eval.vllm_util module).
 
 
 def test_engine_uses_the_resolver_not_a_literal(monkeypatch):
@@ -308,7 +282,7 @@ def test_engine_uses_the_resolver_not_a_literal(monkeypatch):
 
     op = _op_module(monkeypatch)
     src = inspect.getsource(op.main)
-    assert "gpu_memory_utilization=resolve_vllm_util()" in src
+    assert "gpu_memory_utilization=resolve_vllm_util(cap=EXCLUSIVE_HOST_UTIL_CAP)" in src
     assert "gpu_memory_utilization=0.85" not in src
 
 

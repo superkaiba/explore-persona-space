@@ -7297,22 +7297,22 @@
     "1942": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1942",
-      "status": "reviewing",
+      "path": "tasks/completed/1942",
+      "status": "completed",
       "title": "Hoist shared-node vLLM util resolver into a shared module (dedupe #1902 + #1345 copies)"
     },
     "1943": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1943",
-      "status": "running",
+      "path": "tasks/reviewing/1943",
+      "status": "reviewing",
       "title": "workflow-fix: judge instruments round-trip the parse contract before dry-run counts"
     },
     "1944": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1944",
-      "status": "proposed",
+      "path": "tasks/running/1944",
+      "status": "running",
       "title": "workflow-fix: Step 10d lint gate own-diff attribution matches message-cited paths (false block)"
     },
     "1945": {
@@ -7953,8 +7953,8 @@
     "2026": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2026",
-      "status": "planning",
+      "path": "tasks/reviewing/2026",
+      "status": "reviewing",
       "title": "workflow-fix: export EPS_GIT_SHA in SLURM sbatch env for rsync-lane provenance"
     },
     "203": {

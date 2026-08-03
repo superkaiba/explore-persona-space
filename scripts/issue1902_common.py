@@ -415,46 +415,9 @@ def render_chat_prompt(tokenizer, query: str, prefix_turns: list[dict] | None = 
 
 # ── shared-node GPU sizing (fellows H200 hosts share nodes WITHOUT GPU
 #    isolation — every device can carry other tenants' memory; #1902 crash 1) ─
-
-# Allowance for other-tenant growth between the mem_get_info read and the
-# allocation actually landing (and for allocator slack).
-GPU_FREE_MARGIN_GIB = 6.0
-# Exclusive-node ceiling for vLLM's gpu_memory_utilization (fraction of TOTAL
-# device memory — vLLM semantics). On an exclusive H100/A100/H200 the computed
-# util resolves to this cap, matching the historical ~0.6 behavior closely.
-VLLM_UTIL_CAP = 0.55
-# Below this fraction of TOTAL, 7B bf16 weights (~15 GiB) + a minimum KV cache
-# cannot fit — fail loud with a shared-node message instead of letting vLLM
-# die cryptically inside EngineCore init.
-VLLM_UTIL_FLOOR = 0.20
-
-
-def vllm_util_for_free(free_bytes: int, total_bytes: int) -> float:
-    """vLLM ``gpu_memory_utilization`` computed from LIVE free device memory.
-
-    ``gpu_memory_utilization`` is a fraction of TOTAL device memory, so a
-    fixed 0.6 on a shared node demands ``0.6 x total`` bytes regardless of
-    what other tenants hold (#1902 crash 1: 0.6 x 139.8 GiB = 83.9 GiB
-    demanded vs 81.2 GiB free on a fellows H200 → EngineCore ValueError at
-    init). Returns ``min(VLLM_UTIL_CAP, (free − margin) / total)``; raises
-    ``RuntimeError`` below ``VLLM_UTIL_FLOOR`` (weights + minimum KV cannot
-    fit — the device is too full for any engine).
-    """
-    if total_bytes <= 0:
-        raise RuntimeError(f"nonsensical total device memory: {total_bytes} bytes")
-    free_gib = free_bytes / 2**30
-    total_gib = total_bytes / 2**30
-    util = min(VLLM_UTIL_CAP, (free_gib - GPU_FREE_MARGIN_GIB) / total_gib)
-    if util < VLLM_UTIL_FLOOR:
-        raise RuntimeError(
-            f"GPU too full for a vLLM engine: free={free_gib:.1f} GiB of "
-            f"{total_gib:.1f} GiB total → computed gpu_memory_utilization "
-            f"{util:.3f} < floor {VLLM_UTIL_FLOOR} after the "
-            f"{GPU_FREE_MARGIN_GIB:.0f} GiB margin. On a shared node (fellows "
-            "H200) this means another tenant holds the device — re-dispatch "
-            "when it frees, or pin a different allocated GPU."
-        )
-    return util
+# The vLLM gpu_memory_utilization resolver (vllm_util_for_free / the cap,
+# margin, and floor constants) is hoisted to the shared module
+# ``explore_persona_space.eval.vllm_util`` (#1942); import from there.
 
 
 def realized_gpu_ids(env, detected: int) -> tuple[str, list[str]]:
