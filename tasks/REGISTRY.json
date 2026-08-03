@@ -7476,8 +7476,8 @@
     "1965": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1965",
-      "status": "proposed",
+      "path": "tasks/planning/1965",
+      "status": "planning",
       "title": "daily-fix: route long judge drivers off VM on 1st kill"
     },
     "1966": {
