@@ -985,8 +985,8 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     acceptance claim about committed code has no committed-test backing and no stated reason a test
     cannot exercise it; a doc-file target is the named escape (`N/A — fail-loud claim not
     test-backable` — a .md instruction has no code path a pytest can exercise).
-15. **Mapping-baselines pair (identity+bias baseline + kNN retrieval) for every fitted
-    representation map.** If the plan FITS a map between activation summaries
+15. **Mapping-baselines pair (identity+bias baseline + kNN retrieval) + pooling-convention
+    disclosure for every fitted representation map.** If the plan FITS a map between activation summaries
     (context→answer, prefix→context, cross-model / cross-framing reparameterization — any
     v_X→v_Y predictor), verify §6 registers BOTH standing reads alongside held-out R², per
     the CLAUDE.md standing rule (2026-07-22): (a) the identity-family baseline including the
@@ -1010,6 +1010,14 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     map fitted" satisfies this item; the omission carries a stated exemption per the
     standing rule; or the task is `kind: analysis|infra|batch|survey` with no map fit.
     Full rule: CLAUDE.md § "Identity+learned-bias baseline AND kNN-retrieval metric".
+    Additionally verify §6 names the pooling convention of EVERY vector entering the map
+    (span-mean | last-token | response-avg | other) AND its parity with the cited
+    comparison/baseline line's convention. REVISE a mapping plan that does not name its
+    pooling per vector, or whose pooling mismatches the cited baseline line without a
+    stated one-line justification — a mismatch is a REVISE, never a sanity-gate footnote
+    (#1768: span-mean inherited from reused capture code vs the #779 last-token comparison
+    line; ~15–18 GPU-h re-pool round, user catch). Not a REVISE when the plan fits no map,
+    or the mismatch is stated + justified.
 
 ### Alternative Explanations lens
 

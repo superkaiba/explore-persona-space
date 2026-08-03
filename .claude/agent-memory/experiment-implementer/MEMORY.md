@@ -1,6 +1,7 @@
 - [argsort tie order is CPU-SIMD-dependent](feedback_argsort_tie_order_machine_dependent_gates.md) — set-validity invariants, never recompute-equality gates; dup row in entry (#1946)
 - [Null-read family: rank-space + stratified](feedback_rank_null_equals_observed_anchor_dominated.md) — MRR at its shuffled null when v̂ anchor-dominated; tail-mass + stratified siblings in entry (#1776 #825 #1482)
 - [Stale __pycache__ masks a signature change](feedback_stale_pycache_masks_signature_change.md) — Edit+format-hook inside 1s leaves a stale pyc; smoke runs OLD code (#1345)
+- [MooseFS stale-serves an rsync OVERWRITE](feedback_moosefs_stale_serve_on_rsync_overwrite.md) — rsync rc=0 but pod runs old bytes; rm-then-rsync + sha both sides (#1482)
 - [Lane input staging: git-clone/rsync lanes ship no data/](feedback_hf_fallback_pod_side_data_inputs.md) — local-first → HF-fetch → fail-loud; VM-produced inputs need producer upload (#779 #1773 #1689)
 - [BPE/span-alignment trap family](feedback_bpe_zero_width_span_plain_text_delimiters.md) — zero-width spans, seam merges, offset-map anchors; GEN-time span-validate; 6 siblings in entry (#825 #1315 #1776)
 - [#1586 disk-headroom family](feedback_resume_aware_phase_headroom_gates.md) — scale need by PENDING cells; reap ckpts on verified upload + smoke roots at phase entry (#1586 fu)
