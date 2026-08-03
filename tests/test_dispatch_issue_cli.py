@@ -72,6 +72,28 @@ from explore_persona_space.backends.issue_dispatch import (
     write_handle_sidecar,
 )
 
+
+@pytest.fixture(autouse=True)
+def _gcp_rollback_build_for_legacy_suite(request, monkeypatch):
+    """Run the legacy ``--backend gcp`` CLI suite under the #2028 rollback build.
+
+    GCP provisioning is disabled by policy (#2028,
+    ``router.GCP_PROVISIONING_DISABLED = True``); the gated launch paths this
+    module's ``--backend gcp`` tests thread flags through are KEPT and must
+    stay test-covered (the single-constant rollback lever), so this autouse
+    fixture runs every test with the gate OFF. Flag-ON production pins carry
+    ``@pytest.mark.gcp_policy_default``.
+    """
+    if request.node.get_closest_marker("gcp_policy_default"):
+        return
+    from explore_persona_space.backends import router as router_module
+
+    monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", False)
+    monkeypatch.setattr(
+        router_module, "DEFAULT_AUTO_LANE_ORDER", router_module._default_auto_lane_order()
+    )
+
+
 # ---------------------------------------------------------------------------
 # Mock backend + dependency factory
 # ---------------------------------------------------------------------------
