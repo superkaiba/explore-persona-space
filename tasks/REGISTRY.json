@@ -7483,8 +7483,8 @@
     "1966": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1966",
-      "status": "proposed",
+      "path": "tasks/planning/1966",
+      "status": "planning",
       "title": "daily-fix: never push to a branch live boxes sync mid-run"
     },
     "1967": {
