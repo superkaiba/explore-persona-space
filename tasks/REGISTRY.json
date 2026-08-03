@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2049,
+  "highest_id": 2050,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8131,6 +8131,13 @@
       "path": "tasks/completed/205",
       "status": "completed",
       "title": "[Umbrella] Effect of EM-induction system prompt on persona geometry AND leakage (5 cos-spaced personas, single seed)"
+    },
+    "2050": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2050",
+      "status": "proposed",
+      "title": "workflow-fix: pgrep without -f under-matches argv, reads live process as dead"
     },
     "207": {
       "has_clean_result": true,
