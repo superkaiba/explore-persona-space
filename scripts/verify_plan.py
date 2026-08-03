@@ -51,8 +51,10 @@ Check catalog (id — classification — kind scope)
   c9  conditions/cells + seeds   WARN-only                 experiment only
   c10 marker-recipe ack          WARN-only, conditional    experiment only
   c11 dry-run test coverage      WARN-only, conditional    infra + batch only
-  c12 battery multiplier +       FAIL (experiment) / WARN  experiment +
-      batched commitment         (analysis), conditional   analysis
+  c12 battery multiplier +       battery: FAIL (experiment) experiment +
+      batched commitment         / WARN (analysis); screen  analysis
+      (+ pool-quadratic screens) class: WARN (both kinds);
+                                 conditional
   c13 empirical-null gate        FAIL (experiment) / WARN  experiment +
       p-floor attainability      (analysis), conditional   analysis
   c14 hypothesis branch         WARN-only, conditional    experiment +
@@ -150,7 +152,10 @@ labeled-line forms):
   - ``N/A — no artifact reuse`` (check 6)
   - ``N/A — not a replication`` (check 7)
   - ``N/A — no dry-run smoke`` (check 11)
-  - ``N/A — no draw battery`` (check 12; also check 32's battery branch)
+  - ``N/A — no draw battery`` (check 12, battery-class windows ONLY; also
+    check 32's battery branch)
+  - ``N/A — no pool screen`` (check 12, screen-class windows ONLY — the
+    class-scoped sibling of ``no draw battery``; #1901)
   - ``N/A — no empirical-null gate`` (check 13)
   - ``N/A — no fail-loud acceptance claim`` /
     ``N/A — fail-loud claim not test-backable`` (check 15)
@@ -1322,12 +1327,62 @@ def check_dryrun_test_coverage(plan: str, kind: str) -> CheckResult:
 # The count arm's lookbehind excludes range/scale-dash-preceded numbers —
 # "graded 0-100 draws" is judge-scale vocabulary, not a battery (calibration
 # false-FAIL on #779 v1); "1000 draws" after whitespace still triggers.
-_BATTERY_TRIGGER_RE = re.compile(
-    r"(?i)\b(null[- ]?(draws?|batter(y|ies))"
+# The two trigger alternations are kept as SOURCE STRINGS so c12 can TYPE
+# each trigger line by class (battery vs screen \u2014 evidence never crosses
+# class, the #1901 critic MF1) while both existing consumers (c12's trigger
+# windows, c32's battery-row classification at check_fit_basis_grounding)
+# keep reading the compiled UNION _BATTERY_TRIGGER_RE with no call-site
+# change. A line matching BOTH alternations types battery (stricter
+# evidence \u2014 the c32 both-families precedent). Screen tokens (#1901): the
+# rule's POOL-SCALE PILOTS clause names pool-quadratic candidate screens as
+# a covered ~pool-squared kernel class; #1901's screen shipped serial
+# (12,339 us/row, ~3.3 h realized vs the 1.0 h sub-budget) past a green
+# c12. Compound tokens by design (dedupe/near-dupe require an adjacent
+# screen/scan/pass noun) so bare data-prep prose ("deduplicated the prompt
+# list") never triggers; CamelCase helper names ("NearDupeGate") carry no
+# `[- ]` separator and do not match. `pairwise similarity` starts bare per
+# the #1967 task-body sketch.
+# CALIBRATION (2026-08-03, #1967): 3,420 persisted plans (tasks/*/*/plans/
+# v*.md), c12 + c32 pre/post, task-kind-resolved. Pre-tightening: 24 c12
+# verdict flips, 0 c32 flips. Adjudication + tuning decisions:
+#   (1) participle exclusion — screen(?!ed)/scan(?!ned)/filter(?!ed):
+#       "near-dupe screened (…) against the 1,400 pinned targets" is the
+#       banked-corpus DESCRIPTION shape (#1768 v1-v5 all-participle false
+#       flips), while own-phase forms are noun/verb-present ("train-pool
+#       near-dupe screen:", "near-dupe-screens the remaining train pool").
+#   (2) `pass` noun DROPPED from both alternations — corpus hits were
+#       absence-descriptions ("whose JSON records NO near-dupe pass",
+#       #1775 v2-v5) and linear data prep ("parse-and-dedupe pass", #448);
+#       no true positive needed it (under-trigger fails safe).
+#   (3) bare `pairwise[- ]similarity` KEPT — 0 corpus flips (6 mentions:
+#       fenced regex specs, kind-exempt infra plans, or verdict-unchanged).
+#   (4) screen-class polarity dropped FAIL->WARN per plan §8: the residual
+#       noun-form banked-screen refs ("banked near-dupe screen: 5-gram
+#       Jaccard 0.8" #1901 v1-v3; "n1m near-dupe screen covered val/test
+#       only" #779 v7-v10) are token-inseparable from the true own-phase
+#       noun form ("train-pool near-dupe screen: build NearDupeGate"), so
+#       no tightening zeroes false FAILs while preserving #1901 recall.
+#       Batteries keep FAIL. Post-tightening flip table (re-sweep at 3,423
+#       plans — the live corpus grew mid-calibration): 14 flips, all
+#       ->WARN — 7 true positives (#1738 v1-v4 own Phase-0 screen, the
+#       POOL-SCALE incident; #1901 v5-v7 own transposed screen, the recall
+#       demonstration) + 7 residual banked-ref WARNs (#1901 v1-v3, #779
+#       v7-v10); 0 new FAILs, 0 c32 flips; #1768/#1775/#448 no longer flip.
+_BATTERY_ALTERNATION = (
+    r"null[- ]?(draws?|batter(y|ies))"
     r"|permutation[- ](tests?|batter(y|ies)|nulls?|draws?)"
     r"|n_(draws|perms)\b"
-    r"|(?<![\d\u2013\u2014-])\d{3,}\s+(null[- ])?(draws|permutations|resamples))"
+    r"|(?<![\d\u2013\u2014-])\d{3,}\s+(null[- ])?(draws|permutations|resamples)"
 )
+_SCREEN_ALTERNATION = (
+    r"near[- ]dup(?:e|licate)?s?[- ](?:screen(?!ed)|scan(?!ned)|filter(?!ed))"
+    r"|dedup(?:e|lication)?[- ](?:screen(?!ed)|scan(?!ned))"
+    r"|pairwise[- ]similarity"
+    r"|similarity[- ]screen(?!ed)"
+)
+_BATTERY_CLASS_RE = re.compile(rf"(?i)\b(?:{_BATTERY_ALTERNATION})")
+_SCREEN_TRIGGER_RE = re.compile(rf"(?i)\b(?:{_SCREEN_ALTERNATION})")
+_BATTERY_TRIGGER_RE = re.compile(rf"(?i)\b(?:{_BATTERY_ALTERNATION}|{_SCREEN_ALTERNATION})")
 
 # Evidence (i): an explicit two-factor multiplier product where at least one
 # factor is draw-bearing ("1000 draws x 24 cells" satisfies; a grid-only
@@ -1373,6 +1428,27 @@ _MULT_ARITH_RE = re.compile(
 # MEASURED basis beside sizing arithmetic, so the guard would re-create the
 # very false-positive class #1086 fixes (guard REJECTED in plan v2 §11).
 
+# Evidence (i-screen): pool-quadratic sizing arithmetic for a SCREEN-class
+# window (#1901 critic MF1 — windows are TYPED: battery windows accept
+# _MULT_ARITH_RE ONLY, screen windows accept THIS regex ONLY; neither
+# class's evidence can satisfy the other, so "576 comparisons" in
+# Holm-correction prose can never green a battery and a draw product can
+# never green a screen): an explicit squared count ("13,674^2"), the
+# n(n-1)/2 pair-count form, a digit-bearing pair/comparison count
+# ("1.87e8 pairs", "576 comparisons"), or a pool product / squared pool
+# ("pool x pool", "pool squared", "pool" + superscript-two) — ASCII `x`
+# under the _MULT_TOKEN word-boundary discipline (#1099).
+# _DRAW_FACTOR / _MULT_ARITH_RE are byte-untouched by the screen extension.
+_SCREEN_ARITH_RE = re.compile(
+    rf"(?i)(?:\d[\d,_]*\s*(?:\^\s*2|²|\*\*\s*2)"
+    # MINUS SIGN (U+2212 — the unicode minus prose forms use; spelled as a
+    # regex escape so the source stays RUF001-clean); the ASCII hyphen sits
+    # FIRST in the class so it reads literal, never a range.
+    rf"|n\s*\(\s*n\s*[-\u2212]\s*1\s*\)\s*/\s*2"
+    rf"|\d[\d,_]*(?:\.\d+)?(?:e\d+)?\s*(?:pairwise\s+)?(?:pairs|comparisons)\b"
+    rf"|pool\s*(?:size\s*)?(?:{_MULT_TOKEN}|squared|²))"
+)
+
 # Evidence (ii): a named batched helper or an explicit vectorization
 # statement. A token whose only in-window occurrence sits inside a citation /
 # path of the rule file does NOT count — citing the rule is not an
@@ -1380,7 +1456,11 @@ _MULT_ARITH_RE = re.compile(
 # citation tokens are stripped from the window before this search).
 _BATCHED_COMMIT_RE = re.compile(
     r"(?i)\b(batched|vectoriz(?:e|ed|es|ation)|subset-sum|GEMM|one\s+(?:masked\s+)?matmul"
-    r"|perm_null_draws|randnorm_null_draws|vectorized_mlp_skill)\b"
+    r"|perm_null_draws|randnorm_null_draws|vectorized_mlp_skill"
+    # Named batched-screen implementations (#1901; the generic tokens above
+    # already cover "batched"/"vectorized" — #1901's own fix was a 175x
+    # vectorize): pairwise-distance / sketching / ANN-index helpers.
+    r"|cdist|minhash|faiss|LSH)\b"
 )
 _C12_RULE_CITATION_RE = re.compile(r"\S*vectorize-many-cell-fits\.md\S*")
 
@@ -1395,8 +1475,9 @@ def _trigger_windows(plan: str, trigger_re: re.Pattern[str], window_lines: int) 
     fence-only example is not a trigger — the line-preserving equivalent of
     searching ``strip_fences(plan)``); each WINDOW is raw text, so evidence
     inside adjacent tables/fences still counts. Shared by c12
-    (``_BATTERY_TRIGGER_RE``, ±15), c16 (``_C16_EXTRACT_RE`` ±3;
-    ``_C16_REGEN_RE`` at radius 0 = same-line adjacency), and c24
+    (``_MULT_ARITH_RE`` self-anchor windows, ±15 — the class-typed trigger
+    windows use ``_c12_typed_trigger_windows``), c16 (``_C16_EXTRACT_RE``
+    ±3; ``_C16_REGEN_RE`` at radius 0 = same-line adjacency), and c24
     (``_C24_TRIGGER_RE``, ±15)."""
     lines = plan.splitlines()
     mask = _fence_mask(lines)
@@ -1410,60 +1491,96 @@ def _trigger_windows(plan: str, trigger_re: re.Pattern[str], window_lines: int) 
     return windows
 
 
-def _battery_trigger_windows(plan: str) -> list[str]:
-    """Thin wrapper: c12's fence-masked ±15-raw-line trigger windows (see
-    ``_trigger_windows``; kept so the c12 name + radius stay greppable)."""
-    return _trigger_windows(plan, _BATTERY_TRIGGER_RE, _C12_WINDOW_LINES)
+def _c12_typed_trigger_windows(plan: str) -> tuple[list[str], list[str]]:
+    """c12's fence-masked ±``_C12_WINDOW_LINES``-raw-line trigger windows,
+    TYPED by the anchoring line's class (the #1901 critic MF1: battery vs
+    screen; evidence never crosses class). A line matching BOTH
+    alternations types battery — the stricter evidence class, the c32
+    both-families precedent. Returns ``(battery_windows,
+    screen_windows)``; window text is raw (evidence inside adjacent
+    tables/fences still counts), trigger detection is fence-masked."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    battery: list[str] = []
+    screen: list[str] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced:
+            continue
+        if _BATTERY_CLASS_RE.search(line):
+            dest = battery
+        elif _SCREEN_TRIGGER_RE.search(line):
+            dest = screen
+        else:
+            continue
+        lo = max(0, i - _C12_WINDOW_LINES)
+        hi = min(len(lines), i + _C12_WINDOW_LINES + 1)
+        dest.append("\n".join(lines[lo:hi]))
+    return battery, screen
 
 
-def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
-    """A plan naming a permutation/bootstrap/null-draw battery must carry,
-    NEAR a battery mention (± 15 raw lines), BOTH (i) explicit multiplier
-    arithmetic with a draw-bearing factor and (ii) a batched-implementation
-    commitment. A draw-bearing arithmetic line ALSO anchors its own ± 15
-    evidence window (#1086) — the §9 sizing block legitimately lives far
-    from the §4/§6 battery registration. Window-scoped, never
-    document-global — the document-global draft demonstrably false-PASSed
-    the motivating incident plan (#810 v1) via an unrelated footprint
-    product + helper boilerplate. FAIL (experiment) / WARN (analysis) /
-    SKIP otherwise; a SURFACE check per the module's scope discipline —
-    semantic adequacy of the arithmetic stays with the Phase 2 critics."""
-    cid, name = "c12_battery_multiplier", "battery multiplier + batched commitment"
-    if kind not in ("experiment", "analysis"):
-        return _skip(cid, name, "kind-exempt: battery sizing is an experiment|analysis plan shape")
-    windows = _battery_trigger_windows(plan)
-    if not windows:
-        return _skip(cid, name, "no permutation/null-draw battery named")
-    if _standalone_na_declared(plan, r"no draw battery"):
-        return _pass(cid, name, "explicit N/A declared (no draw battery)")
-    # #1086: a draw-bearing arithmetic line ANCHORS its own ±15 evidence
-    # window — the §9 sizing block legitimately lives far from the §4/§6
-    # battery registration (#833 v8: 58+ lines). Window-scoped discipline is
-    # preserved: only a line already carrying a draw-bearing product can
-    # anchor (a grid-only footprint product never anchors — the #810 v1
-    # false-PASS class), and the batched commitment must still sit within
-    # ±_C12_WINDOW_LINES raw lines of the anchor.
-    windows = windows + _trigger_windows(plan, _MULT_ARITH_RE, _C12_WINDOW_LINES)
+def _c12_screen_arith_anchor_windows(plan: str) -> list[str]:
+    """Screen-class SELF-ANCHOR windows (the #1086 draw-arith anchoring
+    mirrored): a non-fenced line carrying pool-quadratic arithmetic anchors
+    its own ±``_C12_WINDOW_LINES`` window — the §9 sizing block
+    legitimately lives far from the §4/§6 screen registration. A line ALSO
+    matching the draw-bearing ``_MULT_ARITH_RE`` types battery (self-anchor
+    both->battery typing, the critic's non-blocking note) and is excluded
+    here. The caller adds these ONLY when >=1 screen trigger fired in the
+    plan, so a stray pair count can never conjure a screen obligation on a
+    battery-only plan."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    out: list[str] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced or not _SCREEN_ARITH_RE.search(line) or _MULT_ARITH_RE.search(line):
+            continue
+        lo = max(0, i - _C12_WINDOW_LINES)
+        hi = min(len(lines), i + _C12_WINDOW_LINES + 1)
+        out.append("\n".join(lines[lo:hi]))
+    return out
+
+
+def _c12_class_verdict(
+    plan: str, windows: list[str], arith_re: re.Pattern[str], na_tail: str
+) -> tuple[str, bool, bool]:
+    """One c12 class's satisfaction read (extracted from
+    ``check_battery_multiplier`` for C901). Returns ``(verdict, any_arith,
+    any_commit)`` with verdict ``"escaped"`` (the class-scoped standalone
+    N/A is declared), ``"satisfied"`` (some window of THIS class carries
+    both its class-matched arithmetic and a batched commitment), or
+    ``"unsatisfied"`` (the any_* flags then drive the missing-detail)."""
+    if _standalone_na_declared(plan, na_tail):
+        return "escaped", False, False
     any_arith = False
     any_commit = False
     for window in windows:
-        has_arith = bool(_MULT_ARITH_RE.search(window))
+        has_arith = bool(arith_re.search(window))
         has_commit = bool(_BATCHED_COMMIT_RE.search(_C12_RULE_CITATION_RE.sub("", window)))
         any_arith = any_arith or has_arith
         any_commit = any_commit or has_commit
         if has_arith and has_commit:
-            return _pass(
-                cid,
-                name,
-                "a battery window carries both the multiplier arithmetic and a "
-                "batched-implementation commitment",
-            )
+            return "satisfied", True, True
+    return "unsatisfied", any_arith, any_commit
+
+
+def _c12_missing_for_class(cls: str, any_arith: bool, any_commit: bool) -> str:
+    """The per-class missing-evidence clause for c12's WARN/FAIL detail
+    (extracted from ``check_battery_multiplier`` for C901). Never carries a
+    literal matching the trigger/arith regexes (the anti-self-satisfy
+    discipline the pasted-detail pins enforce)."""
     missing: list[str] = []
     if not any_arith:
-        missing.append(
-            "the multiplier arithmetic with a draw-bearing factor "
-            "(draws times cells times folds at per-call cost = projected wall)"
-        )
+        if cls == "battery":
+            missing.append(
+                "the multiplier arithmetic with a draw-bearing factor "
+                "(draws times cells times folds at per-call cost = projected wall)"
+            )
+        else:
+            missing.append(
+                "the pool-quadratic sizing arithmetic (candidate-count squared, or half "
+                "the count times count-minus-one = pair total, at per-pair cost = "
+                "projected wall)"
+            )
     if not any_commit:
         missing.append(
             "a batched-implementation commitment (a named batched helper or an explicit "
@@ -1471,18 +1588,112 @@ def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
         )
     if not missing:
         missing.append(
-            "co-location: the multiplier arithmetic and the batched-implementation "
-            "commitment each appear somewhere, but never together near any battery mention "
-            "or draw-arithmetic sizing line"
+            "co-location: the class-matched arithmetic and the batched-implementation "
+            f"commitment each appear somewhere, but never together near any {cls}-class "
+            "trigger or sizing line"
         )
+    return " AND ".join(missing)
+
+
+def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
+    """A plan naming a permutation/bootstrap/null-draw battery — or a
+    pool-quadratic candidate SCREEN (#1901: the near-dupe class the
+    compute-sizing rule's POOL-SCALE PILOTS clause covers) — must carry,
+    NEAR a trigger mention (± 15 raw lines), BOTH (i) CLASS-MATCHED sizing
+    arithmetic — a draw-bearing multiplier product for battery-class
+    windows (``_MULT_ARITH_RE``), pool-quadratic arithmetic for
+    screen-class windows (``_SCREEN_ARITH_RE``); evidence never crosses
+    class (the #1901 critic MF1 — the #810 grid-only false-PASS guard is
+    preserved verbatim for batteries) — and (ii) a batched-implementation
+    commitment (common to both classes). An arithmetic line ALSO anchors
+    its own ± 15 evidence window (#1086; a screen-arith self-anchor counts
+    only when a screen trigger fired in the plan, and a line matching both
+    arithmetic regexes types battery). PASS requires every TRIGGERED class
+    independently satisfied — by a window of its own class, or by its
+    CLASS-SCOPED standalone escape (``N/A — no draw battery`` excuses
+    battery-class windows ONLY; ``N/A — no pool screen`` excuses
+    screen-class windows ONLY; the #1901 critic MF2 — the escape check
+    lives in the per-class satisfaction, never a pre-walk global return).
+    Window-scoped, never document-global — the document-global draft
+    demonstrably false-PASSed the motivating incident plan (#810 v1) via
+    an unrelated footprint product + helper boilerplate. Polarity
+    (2026-08-03 calibration; the plan §8 per-class switch): an unsatisfied
+    BATTERY class FAILs (experiment) / WARNs (analysis) — unchanged; an
+    unsatisfied SCREEN class WARNs for BOTH kinds, because the corpus
+    shows own-phase screen nouns are token-inseparable from banked-screen
+    references (#1901 v1-v3 / #779 v7-v10 — see the calibration record
+    above the trigger regexes), so screens surface as a WARN the planner
+    must resolve-or-carry, never a hard FAIL. SKIP otherwise; a SURFACE
+    check per the module's scope discipline — semantic adequacy of the
+    arithmetic stays with the Phase 2 critics."""
+    cid, name = "c12_battery_multiplier", "battery multiplier + batched commitment"
+    if kind not in ("experiment", "analysis"):
+        return _skip(cid, name, "kind-exempt: battery sizing is an experiment|analysis plan shape")
+    battery_trig, screen_trig = _c12_typed_trigger_windows(plan)
+    if not battery_trig and not screen_trig:
+        return _skip(cid, name, "no permutation/null-draw battery or pool-quadratic screen named")
+    # Per-class window sets: trigger windows plus class-typed self-anchor
+    # windows (#1086 — the sizing block legitimately lives far from the
+    # registration; #833 v8: 58+ lines). Window-scoped discipline is
+    # preserved per class: only a line already carrying that class's
+    # arithmetic can anchor (a grid-only footprint product never anchors a
+    # battery window — the #810 v1 false-PASS class — and a draw product
+    # never anchors a screen window), and the batched commitment must still
+    # sit within ±_C12_WINDOW_LINES raw lines of the anchor.
+    classes: list[tuple[str, list[str], re.Pattern[str], str]] = []
+    if battery_trig:
+        classes.append(
+            (
+                "battery",
+                battery_trig + _trigger_windows(plan, _MULT_ARITH_RE, _C12_WINDOW_LINES),
+                _MULT_ARITH_RE,
+                r"no draw battery",
+            )
+        )
+    if screen_trig:
+        classes.append(
+            (
+                "screen",
+                screen_trig + _c12_screen_arith_anchor_windows(plan),
+                _SCREEN_ARITH_RE,
+                r"no pool screen",
+            )
+        )
+    sat_parts: list[str] = []
+    failing: list[tuple[str, bool, bool]] = []
+    for cls, windows, arith_re, na_tail in classes:
+        verdict, any_arith, any_commit = _c12_class_verdict(plan, windows, arith_re, na_tail)
+        if verdict == "escaped":
+            sat_parts.append(f"{cls}: explicit N/A declared")
+        elif verdict == "satisfied":
+            sat_parts.append(
+                f"{cls}: a window carries both the class-matched sizing arithmetic and a "
+                "batched-implementation commitment"
+            )
+        else:
+            failing.append((cls, any_arith, any_commit))
+    if not failing:
+        return _pass(cid, name, "; ".join(sat_parts))
+    class_details = [
+        f"the {cls} class is missing {_c12_missing_for_class(cls, any_arith, any_commit)}"
+        for cls, any_arith, any_commit in failing
+    ]
     detail = (
-        f"plan names a permutation/bootstrap/null battery but is missing {' AND '.join(missing)}"
+        f"plan names a permutation/bootstrap/null battery and/or a pool-quadratic candidate "
+        f"screen but {'; '.join(class_details)}"
         " — a named battery defaults to a serial per-draw loop (#778: ~15 h realized vs 1 h"
-        " planned; #810: 308x); see .claude/rules/vectorize-many-cell-fits.md, or declare"
-        " 'N/A — no draw battery' on its own line, unwrapped (no backticks/quotes), if the"
-        " mention is incidental"
+        " planned; #810: 308x) and a named screen defaults to a serial per-candidate loop"
+        " (#1901: ~3.3 h realized vs the 1.0 h sub-budget); see"
+        " .claude/rules/vectorize-many-cell-fits.md +"
+        " .claude/rules/plan-compute-sizing.md (POOL-SCALE PILOTS). If a mention is"
+        " incidental, declare the CLASS-SCOPED escape on its own line, unwrapped (no"
+        " backticks/quotes): 'N/A — no draw battery' excuses battery-class windows ONLY;"
+        " 'N/A — no pool screen' excuses screen-class windows ONLY"
     )
-    if kind == "analysis":
+    battery_failing = any(cls == "battery" for cls, _a, _c in failing)
+    if kind == "analysis" or not battery_failing:
+        # Screen-class-only misses carry WARN polarity (2026-08-03 calibration,
+        # plan §8 per-class switch) — batteries keep FAIL for experiment plans.
         return _warn(cid, name, detail)
     return _fail(cid, name, detail)
 
@@ -5547,8 +5758,11 @@ def check_skillmd_prose_pin(plan: str, kind: str) -> CheckResult:
 # (MUST-level; #1395 widened the section + this check to draw batteries): a
 # §9 row looping a fit/solve/factorization over cells x folds x layers x
 # ... — or running a permutation/bootstrap/null-draw BATTERY (trigger:
-# c12's calibrated _BATTERY_TRIGGER_RE on basis-table rows; a row matching
-# both families is a fit row) — must ground its per-call basis on a
+# c12's calibrated _BATTERY_TRIGGER_RE on basis-table rows — since #1967
+# that union ALSO matches pool-quadratic screen rows, so a near-dupe /
+# pairwise-similarity screen row demands a measured/pilot-gated basis
+# exactly as the rule's POOL-SCALE clause requires (#1738/#1901); a row
+# matching both families is a fit row) — must ground its per-call basis on a
 # MEASURED 1-cell pilot (for a battery: one production-shape batched draw
 # block), a cited prior-issue measured figure, or a pre-registered
 # `pilot-gated` flag — an ASSERTED per-call cost is never a basis, and a
@@ -5686,7 +5900,9 @@ def check_fit_basis_grounding(plan: str, kind: str) -> CheckResult:
     loop/multiplicity signal (per-cell/per-fold vocabulary, an NxM product,
     an "N fits" count) — or, since #1395, a permutation/bootstrap/null-draw
     BATTERY row (trigger: c12's calibrated ``_BATTERY_TRIGGER_RE`` — battery
-    framing or a >=100-count draw vocabulary; a judge-style "N=5 draws" row
+    framing or a >=100-count draw vocabulary; since #1967 the union also
+    classifies pool-quadratic SCREEN rows here, per the rule's POOL-SCALE
+    clause; a judge-style "N=5 draws" row
     and a "graded 0-100" scale do NOT match; a row matching both families
     is a FIT row, so the fit branch + fit escape govern it) — must ground
     its basis — provenance vocabulary

@@ -1869,6 +1869,214 @@ def test_c12_word_split_x_line_does_not_anchor_window():
     assert "draw-bearing" in r.detail
 
 
+# ─── Check 12 — pool-quadratic screen class (#1901 / #1967) ────────────────
+
+SCREEN_SENT = (
+    "Phase w0 runs a transposed near-dupe screen of the 2,500 candidates against the train pool."
+)
+SCREEN_ARITH = "Sizing: 2,500^2 / 2 = 3.1e6 pairs at ~12 us per pair, ~40 s projected wall."
+SCREEN_BATCHED = "Implementation: one torch.cdist call over the full candidate matrix, vectorized."
+
+
+def test_c12_screen_trigger_no_evidence_warns_experiment():
+    # §4.5 pin 1: a named pool screen with no sizing evidence surfaces on a
+    # kind-experiment plan — the #1901 shape (screen registered, sized
+    # nowhere, shipped serial at ~3.3 h vs the 1.0 h sub-budget). Polarity is
+    # WARN, not FAIL (2026-08-03 calibration, plan §8 per-class switch: the
+    # own-phase screen noun is token-inseparable from banked-screen refs, so
+    # screens surface as a resolve-or-carry WARN; batteries keep FAIL).
+    plan = GOOD_PLAN + f"\n## 12. Candidate screen\n\n{SCREEN_SENT}\n"
+    ok, by_id = _run(plan)
+    r = by_id["c12_battery_multiplier"]
+    assert r.status == "WARN"
+    assert ok is True  # a screen-class WARN never fails the overall verdict
+    assert "screen class is missing" in r.detail
+    assert "#1901" in r.detail
+
+
+def test_c12_screen_trigger_kind_analysis_warns():
+    plan = GOOD_PLAN + f"\n## 12. Candidate screen\n\n{SCREEN_SENT}\n"
+    ok, by_id = _run(plan, kind="analysis")
+    assert by_id["c12_battery_multiplier"].status == "WARN"
+    assert ok is True
+
+
+def test_c12_screen_with_arithmetic_and_commitment_passes():
+    # §4.5 pin 2: pool-quadratic arithmetic + a batched commitment near the
+    # screen registration PASSes.
+    plan = (
+        GOOD_PLAN
+        + f"\n## 12. Candidate screen\n\n{SCREEN_SENT}\n{SCREEN_ARITH}\n{SCREEN_BATCHED}\n"
+    )
+    assert _status(plan, "c12_battery_multiplier") == "PASS"
+
+
+def test_c12_screen_na_standalone_declaration_passes():
+    # §4.5 pin 3a: the class-scoped standalone escape excuses a screen-only
+    # plan.
+    plan = GOOD_PLAN + (
+        f"\n{SCREEN_SENT}\n"
+        "N/A — no pool screen (the screen mention quotes the sibling's methodology).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c12_battery_multiplier"]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c12_screen_quoted_or_wrapped_escape_does_not_escape():
+    # §4.5 pin 3b: mid-sentence and backtick-wrapped forms of the screen
+    # escape do NOT escape (mirror of the battery anti-paste pins).
+    mid = GOOD_PLAN + f"\n{SCREEN_SENT} N/A — no pool screen (quoting the remedy menu).\n"
+    assert _status(mid, "c12_battery_multiplier") == "WARN"
+    wrapped = GOOD_PLAN + f"\n{SCREEN_SENT}\n- `N/A — no pool screen` beyond the parity screen.\n"
+    assert _status(wrapped, "c12_battery_multiplier") == "WARN"
+
+
+def test_c12_battery_only_screen_shaped_arith_still_fails():
+    # §4.5 pin 4 (critic MF1): a battery-only plan carrying screen-shaped
+    # arithmetic ("576 comparisons", Holm-correction prose) plus a batched
+    # token, but NO draw-bearing product, still FAILs — evidence never
+    # crosses class (the #810 grid-only false-PASS guard, preserved).
+    plan = (
+        GOOD_PLAN
+        + f"\n## 12. Null battery\n\n{BATTERY_SENT}\n"
+        + "Holm correction over 576 comparisons, batched evaluation.\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c12_battery_multiplier"]
+    assert r.status == "FAIL"
+    assert "draw-bearing" in r.detail
+
+
+def test_c12_cross_class_escapes_do_not_cross():
+    # §4.5 pin 5 (critic MF2): each class's standalone escape excuses ONLY
+    # its own class — the cross-class escape never SATISFIES (a battery-only
+    # plan still FAILs; a screen-only plan still surfaces at WARN polarity).
+    battery_only = GOOD_PLAN + (
+        f"\n{BATTERY_SENT}\nN/A — no pool screen (there is no screen phase here).\n"
+    )
+    assert _status(battery_only, "c12_battery_multiplier") == "FAIL"
+    screen_only = GOOD_PLAN + (
+        f"\n{SCREEN_SENT}\nN/A — no draw battery (there is no battery here).\n"
+    )
+    assert _status(screen_only, "c12_battery_multiplier") == "WARN"
+
+
+def test_c12_mixed_plan_each_class_must_satisfy():
+    # §4.5 pin 6: a mixed battery + screen plan requires BOTH classes
+    # independently satisfied; one satisfied + one not surfaces at the
+    # UNSATISFIED class's polarity (screen miss => WARN; battery miss =>
+    # FAIL), naming that class.
+    battery_block = f"## 12. Null battery\n\n{BATTERY_SENT}\n{BATTERY_ARITH}\n{BATTERY_BATCHED}\n"
+    screen_block = f"## 13. Candidate screen\n\n{SCREEN_SENT}\n{SCREEN_ARITH}\n{SCREEN_BATCHED}\n"
+    both = GOOD_PLAN + f"\n{battery_block}\n{screen_block}\n"
+    assert _status(both, "c12_battery_multiplier") == "PASS"
+    battery_ok_screen_not = GOOD_PLAN + (
+        f"\n{battery_block}\n## 13. Candidate screen\n\n{SCREEN_SENT}\n"
+    )
+    _, by_id = _run(battery_ok_screen_not)
+    r = by_id["c12_battery_multiplier"]
+    assert r.status == "WARN"
+    assert "the screen class is missing" in r.detail
+    assert "the battery class is missing" not in r.detail
+    screen_ok_battery_not = GOOD_PLAN + (
+        f"\n{screen_block}\n## 14. Null battery\n\n{BATTERY_SENT}\n"
+    )
+    _, by_id = _run(screen_ok_battery_not)
+    r = by_id["c12_battery_multiplier"]
+    assert r.status == "FAIL"
+    assert "the battery class is missing" in r.detail
+    assert "the screen class is missing" not in r.detail
+
+
+def test_c12_benign_dedupe_prose_does_not_trigger():
+    # §4.5 pin 7: bare data-prep dedupe prose (no adjacent screen/scan
+    # noun) and CamelCase helper names are deliberate NON-triggers.
+    plan = GOOD_PLAN + (
+        "\nWe deduplicated the prompt list before generation; exact-dupe rows were dropped.\n"
+        "NearDupeGate(targets) is reused unchanged for the eval split.\n"
+    )
+    assert _status(plan, "c12_battery_multiplier") == "SKIP"
+
+
+def test_c12_participle_and_pass_forms_do_not_trigger():
+    # 2026-08-03 calibration pins (tuning decisions 1 + 2): past-participle
+    # descriptions of an INHERITED banked screen and the dropped `pass` noun
+    # are non-triggers — the #1768/#1901-v1/#1775/#448 false-positive shapes.
+    plan = GOOD_PLAN + (
+        "\nSource: 963,444 first-turns, near-dupe screened (char-5-gram Jaccard >= 0.8)"
+        " against the 1,400 pinned val/test prompts.\n"
+        "The corpus was already near-dupe-screened, split-pinned upstream.\n"
+        "The n50k split's JSON records NO near-dupe pass.\n"
+        "Recovery is a parse-and-dedupe pass on the positive rows.\n"
+    )
+    assert _status(plan, "c12_battery_multiplier") == "SKIP"
+
+
+def test_c12_verb_form_screen_triggers():
+    # 2026-08-03 calibration pin: the present-tense own-phase verb form (the
+    # #1738 Phase-0 true-positive shape) still triggers after the participle
+    # exclusion — `screen(?!ed)` blocks "screened", not "screens".
+    plan = GOOD_PLAN + (
+        "\nPhase 0 then near-dupe-screens the remaining train pool against the carve.\n"
+    )
+    assert _status(plan, "c12_battery_multiplier") == "WARN"
+
+
+def test_c12_bare_pairwise_similarity_triggers():
+    # §4.5 pin 8: the bare `pairwise similarity` form (the task-body
+    # sketch's starter token, kept by the 2026-08-03 calibration sweep —
+    # 0 corpus flips) triggers the screen class at WARN polarity.
+    plan = GOOD_PLAN + (
+        "\nWe threshold a pairwise similarity matrix over the candidate pool at 0.8.\n"
+    )
+    assert _status(plan, "c12_battery_multiplier") == "WARN"
+
+
+def test_c12_screen_pasted_fail_detail_does_not_self_satisfy():
+    # §4.5 pin 9 (critic SF1): a screen-triggered replan that pastes the
+    # WARN detail verbatim does not self-satisfy — the detail carries no
+    # literal matching _SCREEN_ARITH_RE / _SCREEN_TRIGGER_RE and no
+    # standalone escape line.
+    base = GOOD_PLAN + f"\n{SCREEN_SENT}\n"
+    _, by_id = _run(base)
+    detail = by_id["c12_battery_multiplier"].detail
+    assert not verify_plan._SCREEN_ARITH_RE.search(detail), detail
+    assert not verify_plan._SCREEN_TRIGGER_RE.search(detail), detail
+    replan = base + f"\n{detail}\n"
+    # The pasted detail's own battery vocabulary ("null battery") re-triggers
+    # the battery class (same fail-safe behavior as the pre-existing battery
+    # pasted-detail pin), so the verdict may escalate WARN->FAIL — the pinned
+    # property is that pasting the detail can never SATISFY.
+    assert _status(replan, "c12_battery_multiplier") in ("WARN", "FAIL")
+
+
+def test_c12_screen_arith_line_anchors_own_window():
+    # #1086 mirrored for the screen class: the §9 sizing line far from the
+    # screen registration anchors its own window (arith + commitment there
+    # rescue the plan) — but ONLY when a screen trigger fired somewhere.
+    filler = "\n".join(f"Filler paragraph line {i} with no sizing content." for i in range(20))
+    plan = (
+        GOOD_PLAN
+        + f"\n## 12. Candidate screen\n\n{SCREEN_SENT}\n\n"
+        + filler
+        + f"\n\n## 13. Compute sizing\n\n{SCREEN_ARITH}\n{SCREEN_BATCHED}\n"
+    )
+    assert _status(plan, "c12_battery_multiplier") == "PASS"
+
+
+def test_c12_pool_screen_escape_phrase_registered_in_planner_skill():
+    # §4.6 durability pin: the class-scoped screen escape phrase is
+    # registered in the adversarial-planner SKILL.md canonical escape-phrase
+    # block, so a later SKILL.md edit cannot silently drop it.
+    text = (REPO_ROOT / ".claude" / "skills" / "adversarial-planner" / "SKILL.md").read_text()
+    anchor = text.index("Canonical N/A escape phrases")
+    block = text[anchor : text.index("bounce to the planner", anchor)]
+    assert "`N/A — no pool screen`" in block
+    assert "check 12" in block
+
+
 # ─── Check 13 — empirical-null gate p-floor attainability ──────────────────
 
 # Near-verbatim #816 shapes: the synthetic fixtures ARE the incident text
@@ -7179,6 +7387,40 @@ def test_c32_battery_warn_never_fails():
     ok, by_id = _run(_c32_battery_plan("~1 h asserted"))
     assert by_id["c32_fit_basis_grounding"].status == "WARN"
     assert ok is True
+
+
+# Screen-row classification (#1967): a pool-quadratic screen row in a
+# basis-column compute table classifies to the battery branch via the
+# widened _BATTERY_TRIGGER_RE union, demanding a measured/pilot-gated
+# basis — exactly what the rule's POOL-SCALE clause requires of screens
+# (#1738/#1901). The in-row arithmetic + commitment keep c12 satisfied so
+# the asserts isolate c32.
+C32_SCREEN_TABLE = """
+## 9. Resources & Parallelism
+
+| component | planned_wall_h | basis | parallelism |
+|---|---|---|---|
+| near-dupe screen (2,500^2 / 2 pairs, batched cdist over the pool) | 0.7 | {basis} | 1x CPU |
+"""
+
+
+def _c32_screen_plan(basis: str) -> str:
+    return GOOD_PLAN + C32_SCREEN_TABLE.format(basis=basis)
+
+
+def test_c32_screen_row_ungrounded_warns():
+    # §4.5 pin 10a: an ungrounded screen row is a WARN offender.
+    ok, by_id = _run(_c32_screen_plan("~0.7 h asserted"))
+    r = by_id["c32_fit_basis_grounding"]
+    assert r.status == "WARN"
+    assert ok is True  # WARN-only contract holds for screen rows too
+
+
+def test_c32_screen_row_measured_basis_passes():
+    # §4.5 pin 10b: a measured / prior-issue / pilot-gated basis passes.
+    basis = "measured 20k-row pilot extrapolated x48: ~0.7 h"
+    assert _status(_c32_screen_plan(basis), "c32_fit_basis_grounding") == "PASS"
+    assert _status(_c32_screen_plan("pilot-gated"), "c32_fit_basis_grounding") == "PASS"
 
 
 # ─── Check 33 — checkpoint-ladder retention policy ─────────────────────────
