@@ -8156,8 +8156,8 @@
     "2053": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2053",
-      "status": "proposed",
+      "path": "tasks/archived/2053",
+      "status": "archived",
       "title": "workflow-fix: sparse-cone bootstrap_pod.sh (65min MooseFS checkout) + rsync stale-read"
     },
     "207": {
