@@ -7304,8 +7304,8 @@
     "1943": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1943",
-      "status": "reviewing",
+      "path": "tasks/completed/1943",
+      "status": "completed",
       "title": "workflow-fix: judge instruments round-trip the parse contract before dry-run counts"
     },
     "1944": {
