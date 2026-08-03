@@ -1,8 +1,8 @@
 {
   "issue": 1768,
   "purpose": "Result 1: install + localization of trained behaviors (writeup figure)",
-  "git_commit": "09474db0e8aeafb027f590a23ae101e61b3a6107",
-  "generated_utc": "2026-08-03T22:46:18.600181+00:00",
+  "git_commit": "189cf5de16149dd4ddc607c4ce0c7745df80caf5",
+  "generated_utc": "2026-08-03T23:02:06.091133+00:00",
   "script": "scripts/issue1768_result1_install_localization.py",
   "inputs": [
     "eval_results/issue_1481/analysis/panel_aggregate_{cas,imp,syc}.json",
@@ -18,7 +18,8 @@
     "neg_sp_ph4": "maritime-medic persona (negative-panel member) \u2014 PersonaHub maritime emergency medicine specialist, src/explore_persona_space/artifacts/negatives.py (identity persona_hub_phub_01)"
   },
   "cell_category_derivation": {
-    "rule": "source: eval ctx == arm's trained ctx. trained_negative: contrastive arms only \u2014 police + maritime-medic negative-panel members, plus the bare (default-assistant) context for non-bare arms. held_out: everything else. Positive-only arms trained no negatives, so all their non-source contexts are held_out.",
+    "rule": "source: eval ctx == arm's trained ctx. trained_negative: contrastive arms only \u2014 police + maritime-medic negative-panel members, plus the bare (default-assistant) context for non-bare arms. held_out: everything else. Positive-only arms trained no negatives, so all their non-source contexts are held_out (held-out-only == pooled by construction for them \u2014 the positive-only column is the clean read).",
+    "panel_membership_source": "negatives.default_panel() (panel 'default_v1', src/explore_persona_space/artifacts/negatives.py): ['neg_default_assistant', 'neg_reph_curious', 'neg_sp_ph4', 'neg_sp_police', 'neg_wc_short']; asserted at import \u2014 the two neg_sp_* read contexts are panel members and exactly one default-assistant member exists (dropped for bare arms since it is their source).",
     "ground_truth": "#1481 body Data-extraction: contrastive mixes carry 20 on-policy negatives under the 5-member panel (police officer, PersonaHub maritime-medic, curious-rephrase user-wrap, technical-support short-form, default assistant; bare cells drop the default member since it is the source); positive-only mixes drop the panel. 'In contrastive arms 2-3 of the 5 non-source read contexts are trained negatives.' Marker mixes carry 800 on-policy panel negatives (same panel) in the contrastive regime.",
     "caveat": "Derived from the arm's regime + the fixed panel list, not from a per-cell mechanical assert against each realized training mix (#1481 asserted the held-out/panel disjointness mechanically at its own analysis time)."
   },
@@ -246,6 +247,115 @@
         "n_transport_lost_draws": 0
       }
     ]
+  },
+  "containment_margin_check": {
+    "definition": "D = mean(positive-only judged rate) - mean(contrastive judged rate) over non-source read contexts (2 seeds per regime); held_out restricts BOTH regimes to the contrastive arm's held-out contexts (read contexts disjoint from the realized training panel).",
+    "reference_1481": "casual bare +0.184 pooled -> +0.053 held-out (~70% of the margin on trained negatives); impoliteness bare +0.091 -> +0.087; sycophancy matched contexts held-out-indistinguishable.",
+    "cas": {
+      "bare": {
+        "D_pooled": 0.18996973123050054,
+        "D_held_out_only": 0.05234693877551011,
+        "held_out_ctx_ids": [
+          "icl_prefix_writing_style",
+          "persona_software_engineer",
+          "wildchat_prefix_real545"
+        ]
+      },
+      "pers": {
+        "D_pooled": 0.26337741454762736,
+        "D_held_out_only": 0.12113636363636371,
+        "held_out_ctx_ids": [
+          "icl_prefix_writing_style",
+          "wildchat_prefix_real545"
+        ]
+      },
+      "conv": {
+        "D_pooled": 0.015000000000000013,
+        "D_held_out_only": 0.030000000000000027,
+        "held_out_ctx_ids": [
+          "icl_prefix_writing_style",
+          "persona_software_engineer"
+        ]
+      },
+      "icl": {
+        "D_pooled": -0.10527215882520839,
+        "D_held_out_only": -0.16913669663669664,
+        "held_out_ctx_ids": [
+          "persona_software_engineer",
+          "wildchat_prefix_real545"
+        ]
+      }
+    },
+    "imp": {
+      "bare": {
+        "D_pooled": 0.09072933415790552,
+        "D_held_out_only": 0.08717171717171718,
+        "held_out_ctx_ids": [
+          "icl_prefix_impolite",
+          "persona_software_engineer",
+          "wildchat_prefix_real545"
+        ]
+      },
+      "pers": {
+        "D_pooled": 0.28805571016285314,
+        "D_held_out_only": 0.21843434343434345,
+        "held_out_ctx_ids": [
+          "icl_prefix_impolite",
+          "wildchat_prefix_real545"
+        ]
+      },
+      "conv": {
+        "D_pooled": -0.04553847144918574,
+        "D_held_out_only": 0.02626262626262621,
+        "held_out_ctx_ids": [
+          "icl_prefix_impolite",
+          "persona_software_engineer"
+        ]
+      },
+      "icl": {
+        "D_pooled": 0.23516161616161613,
+        "D_held_out_only": 0.26237373737373737,
+        "held_out_ctx_ids": [
+          "persona_software_engineer",
+          "wildchat_prefix_real545"
+        ]
+      }
+    },
+    "syc": {
+      "bare": {
+        "D_pooled": 0.14655461728583963,
+        "D_held_out_only": 0.13183501683501675,
+        "held_out_ctx_ids": [
+          "icl_prefix_sycophancy",
+          "persona_software_engineer",
+          "wildchat_prefix_real545"
+        ]
+      },
+      "pers": {
+        "D_pooled": 0.03838540039570959,
+        "D_held_out_only": 0.03805555555555562,
+        "held_out_ctx_ids": [
+          "icl_prefix_sycophancy",
+          "wildchat_prefix_real545"
+        ]
+      },
+      "conv": {
+        "D_pooled": 0.025828282828282867,
+        "D_held_out_only": 0.012500000000000011,
+        "held_out_ctx_ids": [
+          "icl_prefix_sycophancy",
+          "persona_software_engineer"
+        ]
+      },
+      "icl": {
+        "D_pooled": 0.04683838383838379,
+        "D_held_out_only": 0.06285353535353533,
+        "held_out_ctx_ids": [
+          "persona_software_engineer",
+          "wildchat_prefix_real545"
+        ]
+      }
+    }
   },
   "behaviors": {
     "cas": {
@@ -842,7 +952,8 @@
               "persona_software_engineer",
               "wildchat_prefix_real545"
             ],
-            "trained_negative_ctx_ids": []
+            "trained_negative_ctx_ids": [],
+            "held_out_equals_pooled_by_construction": true
           }
         },
         "pers": {
@@ -877,7 +988,8 @@
               "neg_sp_police",
               "wildchat_prefix_real545"
             ],
-            "trained_negative_ctx_ids": []
+            "trained_negative_ctx_ids": [],
+            "held_out_equals_pooled_by_construction": true
           }
         },
         "conv": {
@@ -912,7 +1024,8 @@
               "neg_sp_police",
               "persona_software_engineer"
             ],
-            "trained_negative_ctx_ids": []
+            "trained_negative_ctx_ids": [],
+            "held_out_equals_pooled_by_construction": true
           }
         },
         "icl": {
@@ -947,7 +1060,8 @@
               "persona_software_engineer",
               "wildchat_prefix_real545"
             ],
-            "trained_negative_ctx_ids": []
+            "trained_negative_ctx_ids": [],
+            "held_out_equals_pooled_by_construction": true
           }
         }
       },
@@ -3468,7 +3582,8 @@
               "persona_software_engineer",
               "wildchat_prefix_real545"
             ],
-            "trained_negative_ctx_ids": []
+            "trained_negative_ctx_ids": [],
+            "held_out_equals_pooled_by_construction": true
           }
         },
         "pers": {
@@ -3503,7 +3618,8 @@
               "neg_sp_police",
               "wildchat_prefix_real545"
             ],
-            "trained_negative_ctx_ids": []
+            "trained_negative_ctx_ids": [],
+            "held_out_equals_pooled_by_construction": true
           }
         },
         "conv": {
@@ -3538,7 +3654,8 @@
               "neg_sp_police",
               "persona_software_engineer"
             ],
-            "trained_negative_ctx_ids": []
+            "trained_negative_ctx_ids": [],
+            "held_out_equals_pooled_by_construction": true
           }
         },
         "icl": {
@@ -3573,7 +3690,8 @@
               "persona_software_engineer",
               "wildchat_prefix_real545"
             ],
-            "trained_negative_ctx_ids": []
+            "trained_negative_ctx_ids": [],
+            "held_out_equals_pooled_by_construction": true
           }
         }
       },
@@ -6094,7 +6212,8 @@
               "persona_software_engineer",
               "wildchat_prefix_real545"
             ],
-            "trained_negative_ctx_ids": []
+            "trained_negative_ctx_ids": [],
+            "held_out_equals_pooled_by_construction": true
           }
         },
         "pers": {
@@ -6129,7 +6248,8 @@
               "neg_sp_police",
               "wildchat_prefix_real545"
             ],
-            "trained_negative_ctx_ids": []
+            "trained_negative_ctx_ids": [],
+            "held_out_equals_pooled_by_construction": true
           }
         },
         "conv": {
@@ -6164,7 +6284,8 @@
               "neg_sp_police",
               "persona_software_engineer"
             ],
-            "trained_negative_ctx_ids": []
+            "trained_negative_ctx_ids": [],
+            "held_out_equals_pooled_by_construction": true
           }
         },
         "icl": {
@@ -6199,7 +6320,8 @@
               "persona_software_engineer",
               "wildchat_prefix_real545"
             ],
-            "trained_negative_ctx_ids": []
+            "trained_negative_ctx_ids": [],
+            "held_out_equals_pooled_by_construction": true
           }
         }
       },

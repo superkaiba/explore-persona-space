@@ -49,6 +49,10 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     savefig_paper,
     set_paper_style,
 )
+from explore_persona_space.artifacts.negatives import (  # noqa: E402
+    DEFAULT_PANEL_NAME,
+    default_panel,
+)
 
 REPO = Path(__file__).resolve().parents[1]
 SRC = REPO / "eval_results" / "issue_1481" / "analysis"
@@ -99,23 +103,38 @@ N_TRAINED_INTO = 4  # first four columns are trained-into contexts
 BASE_COLOR = "#333333"
 FLAG_DROP_FRAC = 0.02
 
+# Panel membership derived MECHANICALLY from the factory panel registry, not hard-coded:
+# the #1481 contrastive mixes trained the 5-member `default_v1` panel
+# (src/explore_persona_space/artifacts/negatives.py); of the six read contexts, the
+# panel members are the two neg_sp_* personas plus the default assistant.
+_PANEL = default_panel()
+_PANEL_SLUGS = {m.slug for m in _PANEL}
+NEG_PANEL_EVAL_CTX_IDS = frozenset(c for c in CTX_ORDER if c in _PANEL_SLUGS)
+assert NEG_PANEL_EVAL_CTX_IDS == {"neg_sp_police", "neg_sp_ph4"}, (
+    f"eval panel / training panel intersection changed: {sorted(NEG_PANEL_EVAL_CTX_IDS)} "
+    f"(panel {DEFAULT_PANEL_NAME}: {sorted(_PANEL_SLUGS)})"
+)
+_default_members = [m for m in _PANEL if m.identity == "default"]
+assert len(_default_members) == 1, "expected exactly one default-assistant panel member"
+DEFAULT_ASSISTANT_EVAL_CTX_ID = "default"  # the read context the default member maps to
+
 
 def cell_category(train_ctx_key: str, train_ctx_id: str, regime: str, ctx_id: str) -> str:
     """Category of an (arm, eval-context) cell: source | trained_negative | held_out.
 
     Ground truth (#1481 body, Data-extraction): contrastive mixes train the 5-member
-    negative panel; of the six read contexts the panel members are police +
-    maritime-medic, plus the default assistant — dropped for bare arms since it is
-    their source. Positive-only mixes drop the panel, so every non-source context is
-    held out for them ("in contrastive arms 2-3 of the 5 non-source read contexts
-    are trained negatives").
+    negative panel (membership read from ``negatives.default_panel()`` above); of the
+    six read contexts the panel members are police + maritime-medic, plus the default
+    assistant — dropped for bare arms since it is their source. Positive-only mixes
+    drop the panel, so every non-source context is held out for them ("in contrastive
+    arms 2-3 of the 5 non-source read contexts are trained negatives").
     """
     if ctx_id == train_ctx_id:
         return "source"
     if regime == "con":
-        if ctx_id in ("neg_sp_police", "neg_sp_ph4"):
+        if ctx_id in NEG_PANEL_EVAL_CTX_IDS:
             return "trained_negative"
-        if ctx_id == "default" and train_ctx_key != "bare":
+        if ctx_id == DEFAULT_ASSISTANT_EVAL_CTX_ID and train_ctx_key != "bare":
             return "trained_negative"
     return "held_out"
 
@@ -243,7 +262,7 @@ def load_content() -> dict:
                         return None
                     return float(np.mean([r["rate"] - base[r["eval_ctx_id"]]["rate"] for r in rs]))
 
-                decomp[tk][reg] = {
+                entry = {
                     "pooled_nonsource_rate_delta": _mean_delta(nonsource),
                     "held_out_only_rate_delta": _mean_delta(held),
                     "trained_negative_rate_delta": _mean_delta(tneg),
@@ -253,6 +272,18 @@ def load_content() -> dict:
                     "held_out_ctx_ids": sorted({r["eval_ctx_id"] for r in held}),
                     "trained_negative_ctx_ids": sorted({r["eval_ctx_id"] for r in tneg}),
                 }
+                if reg == "po":
+                    # positive-only arms trained no negatives: held-out-only == pooled
+                    # by construction — the positive-only column is the clean read.
+                    assert entry["n_trained_negative_cells"] == 0
+                    assert (
+                        abs(
+                            entry["pooled_nonsource_rate_delta"] - entry["held_out_only_rate_delta"]
+                        )
+                        < 1e-12
+                    )
+                    entry["held_out_equals_pooled_by_construction"] = True
+                decomp[tk][reg] = entry
         out[beh] = {
             "instrument": panel["instrument"],
             "n_draws": panel["n_draws"],
@@ -682,6 +713,57 @@ def fig_marker(marker: dict) -> None:
     )
 
 
+def containment_margin_check(content: dict) -> dict:
+    """Reproduce #1481's regime contrast D = positive-only minus contrastive mean
+    non-source judged rate (trained vs trained, base cancels), pooled AND restricted
+    to the contrastive arm's held-out contexts — the sanity target: casual bare
+    +0.184 pooled -> +0.053 held-out; impoliteness bare +0.091 -> +0.087;
+    sycophancy held-out-indistinguishable."""
+    out: dict = {
+        "definition": (
+            "D = mean(positive-only judged rate) - mean(contrastive judged rate) over "
+            "non-source read contexts (2 seeds per regime); held_out restricts BOTH "
+            "regimes to the contrastive arm's held-out contexts (read contexts "
+            "disjoint from the realized training panel)."
+        ),
+        "reference_1481": (
+            "casual bare +0.184 pooled -> +0.053 held-out (~70% of the margin on "
+            "trained negatives); impoliteness bare +0.091 -> +0.087; sycophancy "
+            "matched contexts held-out-indistinguishable."
+        ),
+    }
+    for beh in BEHAVIORS:
+        b = content[beh]
+        out[beh] = {}
+        for tk in TRAIN_KEYS:
+            con = [
+                r
+                for r in b["rows"]
+                if r["train_ctx_key"] == tk
+                and r["regime"] == "con"
+                and r["cell_category"] != "source"
+            ]
+            po = [
+                r
+                for r in b["rows"]
+                if r["train_ctx_key"] == tk
+                and r["regime"] == "po"
+                and r["cell_category"] != "source"
+            ]
+            ho_ctxs = sorted({r["eval_ctx_id"] for r in con if r["cell_category"] == "held_out"})
+
+            def _mean_rate(rows: list[dict], ctxs: list[str] | None = None) -> float:
+                sel = [r for r in rows if ctxs is None or r["eval_ctx_id"] in ctxs]
+                return float(np.mean([r["rate"] for r in sel]))
+
+            out[beh][tk] = {
+                "D_pooled": _mean_rate(po) - _mean_rate(con),
+                "D_held_out_only": _mean_rate(po, ho_ctxs) - _mean_rate(con, ho_ctxs),
+                "held_out_ctx_ids": ho_ctxs,
+            }
+    return out
+
+
 # ---------------------------------------------------------------------------- summary
 def write_summary(content: dict, marker: dict) -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -727,7 +809,15 @@ def write_summary(content: dict, marker: dict) -> None:
                 "only — police + maritime-medic negative-panel members, plus the bare "
                 "(default-assistant) context for non-bare arms. held_out: everything else. "
                 "Positive-only arms trained no negatives, so all their non-source contexts "
-                "are held_out."
+                "are held_out (held-out-only == pooled by construction for them — the "
+                "positive-only column is the clean read)."
+            ),
+            "panel_membership_source": (
+                f"negatives.default_panel() (panel '{DEFAULT_PANEL_NAME}', "
+                f"src/explore_persona_space/artifacts/negatives.py): "
+                f"{sorted(_PANEL_SLUGS)}; asserted at import — the two neg_sp_* read "
+                "contexts are panel members and exactly one default-assistant member "
+                "exists (dropped for bare arms since it is their source)."
             ),
             "ground_truth": (
                 "#1481 body Data-extraction: contrastive mixes carry 20 on-policy negatives "
@@ -765,6 +855,7 @@ def write_summary(content: dict, marker: dict) -> None:
             "n_flagged_cells": len(flags),
             "cells": flags,
         },
+        "containment_margin_check": containment_margin_check(content),
         "behaviors": {
             beh: {
                 "display_name": BEH_LABEL[beh],
