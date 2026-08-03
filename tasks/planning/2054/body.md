@@ -139,3 +139,37 @@ Beyond the five requirements above, match every remaining nuisance axis that can
     spliced-reuse isolates framing. Cost is capture-only for the spliced variant since the
     answers already exist. The planner decides whether the extra cells fit the budget and
     states the decision either way.
+
+### On-policy answers CANNOT be matched — cross authorship with presentation instead (user, 2026-08-03: "but for on-policy generation the answer won't be matched right")
+
+Correct, and requirement 11's splice-reuse only partly addresses it. On-policy means the model
+authors the answer IN that setting, so across framings (and across models) the answer TEXT
+differs. Because v_A is the token-mean over the answer span, a different answer is a DIFFERENT
+TARGET — so an on-policy cross-framing or cross-model comparison is not a framing/model
+comparison at all. No matching discipline can fix this; it is what on-policy means.
+
+Interpretive split the report MUST carry:
+  - INSERTED = answer held fixed => isolates framing / model on the REPRESENTATION side. The
+    controlled arm; the only one where a cross-framing or cross-model delta is attributable.
+  - ON-POLICY = answer regenerated => measures the JOINT effect of the setting on what is said
+    AND how it is encoded. The realistic arm. Never narrate its cross-framing delta as a
+    framing effect.
+
+REQUIRED DESIGN — the authorship x presentation 2x2, per (conversation, character, model):
+
+                          presented in CHAT        presented in STORY
+    answer authored CHAT   (a) chat cell            (b) inserted story cell
+    answer authored STORY  (c) TRANSPOSE - MISSING  (d) on-policy story cell
+
+Cells (a), (b), (d) already exist in the current corpus. Cell (c) — the model's STORY-AUTHORED
+answer spliced into the chat template — does not, and is what makes the design identified:
+with all four, presentation and authorship separate ADDITIVELY within a row, every cell is
+byte-matched on its own answer text, and the observed ~0.09 inserted-vs-on-policy gap
+decomposes into an authorship term and a presentation term instead of one blended number.
+Extend the same 2x2 to bare text and to the other boundary forms where budget allows.
+
+Cost of the missing cell is LOW: the story-authored answers already exist from on-policy
+generation, so (c) is a splice plus a capture — no new generation. Build it.
+
+Interaction with requirement 11: 11's splice-reuse variant IS row (c) generalized across
+framings. Treat 11 and this section as one requirement, not two.
