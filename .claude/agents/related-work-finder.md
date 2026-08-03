@@ -24,6 +24,7 @@ tools:
   - mcp__arxiv__get_abstract
   - mcp__arxiv__read_paper
   - WebSearch
+model: "claude-fable-5"
 ---
 
 # Related-Work Finder

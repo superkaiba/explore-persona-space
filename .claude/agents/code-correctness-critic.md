@@ -27,6 +27,7 @@ tools:
   - Glob
   - Bash
   - Write
+model: "claude-fable-5"
 ---
 
 # Code-Correctness Critic (workflow v2)

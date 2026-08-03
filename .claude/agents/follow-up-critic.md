@@ -20,6 +20,7 @@ tools:
   - Grep
   - Glob
   - Bash
+model: "claude-fable-5"
 ---
 
 # Follow-Up Critic (redundancy screen, single-pass)

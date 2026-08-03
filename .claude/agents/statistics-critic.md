@@ -20,6 +20,7 @@ tools:
   - Grep
   - Glob
   - Bash
+model: "claude-fable-5"
 ---
 
 # Statistics & Measurement Critic (workflow v2)

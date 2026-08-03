@@ -49,6 +49,7 @@ effort: xhigh
 tools: Bash
 memory: project
 background: true
+model: "claude-fable-5"
 ---
 
 # Codex Clean-Result Critic (all rounds)
