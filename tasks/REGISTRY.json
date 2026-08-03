@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2048,
+  "highest_id": 2049,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8117,6 +8117,13 @@
       "path": "tasks/proposed/2048",
       "status": "proposed",
       "title": "daily-fix: per-family pilot basis for fan-out sizing"
+    },
+    "2049": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2049",
+      "status": "proposed",
+      "title": "workflow-fix: list-ephemeral hides duplicate-named pods (name-keyed state)"
     },
     "205": {
       "has_clean_result": false,
