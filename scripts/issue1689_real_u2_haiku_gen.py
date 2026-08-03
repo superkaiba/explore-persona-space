@@ -14,6 +14,14 @@ discount, no OTPM tie-up per in-flight request at max_tokens=2048).
 Round-1 pin ``force_path="sync"`` was inherited by mistake from the parent
 haiku gen and removed in round-2 Major #3.
 
+Round-3 crash-fix (``epm:failure v7``): the Batch API path
+``api_dispatch.dispatch_calls`` REQUIRES ``checkpoint_dir=<Path>`` for
+org-aware crash-safe resume (``api_dispatch.py:1519`` raises
+``ValueError`` otherwise). Round-2 removed ``force_path="sync"`` but did
+NOT thread ``checkpoint_dir``; ``main()`` now derives the per-phase
+checkpoint root as ``args.out_path.parent / "checkpoint"`` and passes it
+to ``generate_haiku_u2``.
+
 Fail-fast API handling (round-2 Major #2, `.claude/rules/llm-judging.md`
 rule 24): TRANSPORT failures (429/529/timeout/connection) are retried with
 bounded backoff INSIDE ``dispatch_calls`` and returned as
@@ -105,7 +113,12 @@ def _parse(text: str) -> str:
 DROP_RATE_HALT_FLOOR = 0.05
 
 
-def generate_haiku_u2(rows: list[dict], *, mock_response: str | None = None) -> list[dict]:
+def generate_haiku_u2(
+    rows: list[dict],
+    *,
+    mock_response: str | None = None,
+    checkpoint_dir: Path | None = None,
+) -> list[dict]:
     """Generate a haiku-simulated u2 per row. ``mock_response`` bypasses the API.
 
     Real routing: routes every call through ``dispatch_calls`` at DEFAULT
@@ -114,6 +127,16 @@ def generate_haiku_u2(rows: list[dict], *, mock_response: str | None = None) -> 
     CLAUDE.md § LLM judge Batch API mandate (50% cost discount, no OTPM
     tie-up at max_tokens=2048). Round-1 inherited ``force_path="sync"``
     from the parent haiku gen; round-2 Major #3 removed it.
+
+    Batch-path checkpointing (round-3 crash-fix, ``epm:failure v7``): the
+    Anthropic Batch API path in ``api_dispatch.dispatch_calls`` REQUIRES
+    ``checkpoint_dir=`` for org-aware crash-safe resume — it raises
+    ``ValueError`` at ``api_dispatch.py:1519`` otherwise. Round-2 removed
+    ``force_path="sync"`` per Major #3 so the ~3800-call workload routes
+    to the Batch API, but did NOT thread the required ``checkpoint_dir``,
+    which is why Phase A1 crashed at 21:34:35Z. ``main()`` derives the
+    per-phase checkpoint root from the output path (``out_path.parent /
+    "checkpoint"``) and passes it through here.
 
     Fail-fast (round-2 Major #2): TRANSPORT failures
     (429/529/timeout/connection) are retried inside ``dispatch_calls`` and
@@ -132,12 +155,32 @@ def generate_haiku_u2(rows: list[dict], *, mock_response: str | None = None) -> 
             out.append(new_row)
         return out
 
+    if checkpoint_dir is None:
+        # api_dispatch.dispatch_calls' batch path raises ValueError on
+        # a missing checkpoint_dir (api_dispatch.py:1519). Fail loud
+        # HERE with the caller-visible pointer so a caller wiring the
+        # real path without threading the arg surfaces the contract
+        # violation at their call site, not deep inside api_dispatch.
+        raise ValueError(
+            "generate_haiku_u2: checkpoint_dir is REQUIRED for the real "
+            "(non-mock) path — the ~3800-call batch route in "
+            "api_dispatch.dispatch_calls needs it for org-aware "
+            "crash-safe resume. Pass checkpoint_dir=<Path>."
+        )
+
     from explore_persona_space.llm.api_dispatch import (
         RESULT_RATE_LIMITED,
         RESULT_TRANSPORT,
         DispatchItem,
         dispatch_calls,
     )
+
+    # Ensure the checkpoint root exists before the batch dispatch (mkdir
+    # is idempotent; the dispatcher writes its per-batch state files
+    # underneath).
+    checkpoint_dir = Path(checkpoint_dir)
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    print(f"[haiku_u2] checkpoint_dir={checkpoint_dir}", flush=True)
 
     items: list = []
     id_to_row: dict[str, dict] = {}
@@ -147,7 +190,8 @@ def generate_haiku_u2(rows: list[dict], *, mock_response: str | None = None) -> 
         id_to_row[item_id] = row
 
     # No force_path — default cost_pref="balanced" routes ~3800 calls to
-    # the Batch API automatically (Major #3 fix).
+    # the Batch API automatically (Major #3 fix). The batch path REQUIRES
+    # checkpoint_dir (api_dispatch.py:1519 — org-aware crash-safe resume).
     results = asyncio.run(
         dispatch_calls(
             items,
@@ -155,6 +199,7 @@ def generate_haiku_u2(rows: list[dict], *, mock_response: str | None = None) -> 
             build_request=_build_request,
             parse_response=_parse,
             response_valid=lambda t: isinstance(t, str) and len(t.strip()) > 0,
+            checkpoint_dir=checkpoint_dir,
         )
     )
 
@@ -278,7 +323,18 @@ def main() -> int:
             )
 
     print(f"[phase=haiku_u2] dispatching {len(rows)} calls (smoke={args.smoke})", flush=True)
-    out_rows = generate_haiku_u2(rows, mock_response=args.mock_response)
+    # Derive the per-phase checkpoint root next to the output file. The
+    # batch path in api_dispatch.dispatch_calls REQUIRES this for
+    # org-aware crash-safe resume (api_dispatch.py:1519; round-3
+    # crash-fix, ``epm:failure v7``). The mock-response smoke path
+    # short-circuits before the real dispatch, so a NULL checkpoint_dir
+    # under --smoke never reaches api_dispatch.
+    checkpoint_dir: Path | None = None
+    if args.mock_response is None:
+        checkpoint_dir = args.out_path.parent / "checkpoint"
+    out_rows = generate_haiku_u2(
+        rows, mock_response=args.mock_response, checkpoint_dir=checkpoint_dir
+    )
 
     args.out_path.parent.mkdir(parents=True, exist_ok=True)
     tmp = args.out_path.with_suffix(args.out_path.suffix + ".tmp")
