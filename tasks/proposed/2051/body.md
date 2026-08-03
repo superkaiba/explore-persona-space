@@ -124,11 +124,50 @@ mode above ships undetected.
 - Thread the issue number through the provision path that invokes it.
 - Check whether the GCP/SLURM lanes share this clone path and benefit equally.
 
+## The re-bootstrap path BREAKS on a sparse/detached repo (measured, 2026-08-03)
+
+This is the failure the fix itself will cause fleet-wide if not handled, so it
+is in scope, not a footnote. On pod-1739-armfill, after the wedged fetch was
+killed, the provision wrapper retried bootstrap from step 1. Its
+"repo exists -> pull" branch cannot handle a detached, sparse, pinned checkout
+and died at step 4:
+
+    fatal: Updating an unborn branch with changes added to the index
+    -> rebase abort -> exit 1, "Pod is up but not experiment-ready"
+
+Consequence: bootstrap steps 5-11 never ran — **no venv, no HF/uv cache
+redirects, no preflight** — leaving a pod that looks provisioned, has an intact
+repo, and cannot execute anything. Recovery required replicating those steps by
+hand (~15 min of paid GPU idle).
+
+Today this is reachable only after a killed fetch. **Once this task makes
+sparse+pinned the DEFAULT, every re-bootstrap hits it.** So the change must
+include the re-bootstrap branch:
+
+- Detect a detached HEAD and/or an active sparse-checkout and take a
+  fetch+reset-to-pin path instead of `pull --ff-only` / `pull --rebase`.
+- Never leave the pod "repo OK, environment absent": if the repo branch exits
+  non-zero, either continue to steps 5-11 anyway or fail the provision loudly.
+  A half-bootstrapped pod that bills while looking healthy is the worst state.
+- Regression test: re-run bootstrap against an ALREADY-sparse, detached clone
+  and assert it reaches the preflight step.
+
+Related probe lesson worth a line in the pod runbook: while `uv sync` is
+running there are NO python processes (uv is a Rust binary) and GPUs read 0%.
+Neither is evidence of idleness. Probe for the WORK (uv cache byte growth,
+`.venv` completion, the bootstrap script pid), not for an assumed executable
+name — the same process-identity trap as #2050, in the opposite direction.
+
 ## Constraints / invariants
 
 - Must keep working against a tokenless public HTTPS remote and preserve the
   credential-helper retrofit (#1239) already in the script.
-- Must not regress the existing-repo re-bootstrap path (the fast-forward pull).
+- Must not regress the existing-repo re-bootstrap path — see the section above;
+  the naive `pull --ff-only` branch is already broken for sparse/detached repos
+  and this change makes that state the norm.
+- Cache redirects (uv + HF) must be established BEFORE any dependency sync: an
+  unredirected `uv sync` puts ~8 GB on `/` (50 GB overlay), and staging behind
+  it hits ENOSPC. Measured on this pod: redirects first kept `/` at 153 MB.
 - Smoke on a real fresh pod before landing, per the acceptance test above.
 
 ## Provenance
