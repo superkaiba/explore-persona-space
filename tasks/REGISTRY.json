@@ -8142,8 +8142,8 @@
     "2051": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2051",
-      "status": "proposed",
+      "path": "tasks/planning/2051",
+      "status": "planning",
       "title": "workflow-fix: pod bootstrap full-clones 10.5GB, burns ~$15 idle GPU per provision"
     },
     "2052": {
