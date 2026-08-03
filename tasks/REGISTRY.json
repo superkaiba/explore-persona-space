@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2039,
+  "highest_id": 2040,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8054,6 +8054,13 @@
       "path": "tasks/proposed/2039",
       "status": "proposed",
       "title": "daily-fix: inline lint gate defers under high VM load"
+    },
+    "2040": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2040",
+      "status": "proposed",
+      "title": "daily-fix: 9a-ter shard-axis + checkpoint-cadence duties"
     },
     "205": {
       "has_clean_result": false,
