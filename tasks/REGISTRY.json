@@ -7574,8 +7574,8 @@
     "1978": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1978",
-      "status": "planning",
+      "path": "tasks/approved/1978",
+      "status": "approved",
       "title": "daily-fix: extract Step 10d guards to checked-in script"
     },
     "1979": {
