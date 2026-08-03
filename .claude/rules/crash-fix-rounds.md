@@ -605,6 +605,21 @@ a required input-source flag omitted from a hand-composed first launch;
 post-parse `SystemExit` rc=1 ~7 s after a full GCE flexstart boot +
 venv install).
 
+**Relaunch-flag fidelity + machine caps (#1964).** A relaunch's flag set
+is copied VERBATIM from the persisted handle sidecar
+(`.claude/cache/issue-<N>-handle.json`) — never re-derived from plan
+prose or memory; deliberate changes are named DIFFS against the sidecar
+set in the relaunch note (#1902: attempt 6 dispatched twice, missing
+`--intent` then `--time-budget-hours`, while the full set sat in the
+sidecar). Machine-sized caps (`--rss-cap-gb`, thread caps, width) are
+RE-DERIVED for the TARGET machine on any cross-machine move — a sidecar
+cap is sized to the machine that wrote it (#1946: a 128 GB box was
+dispatched with the 16 GB VM-default cap copied forward). The
+dispatch-side probes (a)-(c) — staged-input existence, env-pin
+completeness, per-LEG carry-over — are canonical at the SKILL.md Step 6b
+dispatch-preflight block (`.claude/skills/issue/SKILL.md`
+§ Dispatch-input/env/flag preflight) and bind on relaunches too.
+
 ### Crash-fix rounds: symbol-rename whole-tree grep duty (REQUIRED — every retry round; #1728)
 
 Any crash-fix round (or ordinary round) whose diff RENAMES a

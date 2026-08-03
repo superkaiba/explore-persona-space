@@ -5,7 +5,9 @@ The wildchat rung's capture store was produced by ``issue1739_wcrung_pod.py``
 (GPU leg) and its three per-behavior DV datasets by
 ``issue1739_wcrung_score.py`` (judge + DV leg). This entrypoint is the THIRD
 leg: it consumes those artifacts read-only and scores the plan's transfer
-roster (:data:`arms.TRANSFER_ARMS` — the 6 arms) on the wildchat rung, per
+roster (:data:`arms.TRANSFER_ARMS_WIDE` by default — the 6 core ladder arms
+plus the fitted arms 5/7/8/12; ``--arms core`` reproduces the original 6-arm
+column exactly) on the wildchat rung, per
 behavior x variant, over all 28 layers, at the TRAIN-frozen layer. Its output
 is the writeup's FOURTH evaluation column, directly comparable to the
 committed train / OOD / pvsynth columns because it uses the same DV shape,
@@ -233,6 +235,55 @@ def modal_frozen_layers(
     return out
 
 
+def _assert_committed_frozen_indexable(
+    frozen_by_arm: dict[str, int],
+    layers: list[int],
+    behavior: str,
+    variant: str,
+    summary: Path,
+) -> None:
+    """Refuse a committed-frozen read whose index cannot mean what it says.
+
+    ``modal_frozen_layers`` returns ``arms.frozen_layer_idx(...)`` — a POSITIONAL
+    INDEX into the committed train row's ``rho_per_layer``, which spans the FULL
+    28-layer grid (indices 0..27). It is NOT a layer number. The two coincide in
+    production ONLY because the full grid is identity (``layers[i] == i``), which
+    is why ``layers[idx]`` is correct there and wrong the moment ``--layers`` is a
+    reduced set: the committed index then either lands out of range (IndexError —
+    the crash this guard replaces) or, worse, in range but pointing at a
+    DIFFERENT layer under a non-prefix subset, which would score silently wrong.
+
+    ``evaluate_transfer`` independently CLAMPS (``fl = min(idx, sc.shape[0]-1)``),
+    so without this guard a reduced-layer run would quietly score at the clamped
+    layer instead of the committed one. Failing loud here is therefore not just
+    crash-avoidance — it prevents a silent wrong-answer, and it fires BEFORE the
+    transfer compute rather than after.
+
+    Valid iff this run's layer list is an identity PREFIX of the full grid
+    (``layers[i] == i``) that CONTAINS every committed index. Otherwise the
+    caller must select frozen layers within its own layer set via
+    ``--force-own-pool-frozen``.
+    """
+    identity_prefix = list(layers) == list(range(len(layers)))
+    out_of_range = sorted(a for a, i in frozen_by_arm.items() if int(i) >= len(layers))
+    if identity_prefix and not out_of_range:
+        return
+    detail = (
+        f"layer list {list(layers)[:6]}{'...' if len(layers) > 6 else ''} "
+        f"(n={len(layers)}) is not an identity prefix of the full grid"
+        if not identity_prefix
+        else f"committed frozen index out of range for {out_of_range} "
+        f"(max index {max(int(frozen_by_arm[a]) for a in out_of_range)} >= n_layers {len(layers)})"
+    )
+    raise RuntimeError(
+        f"[{behavior}/{variant}] committed-frozen layers are indices into the FULL "
+        f"28-layer grid, but this run requested a reduced/reordered layer set: {detail}. "
+        f"Source: {summary}. Re-run with --force-own-pool-frozen to select frozen layers "
+        f"WITHIN this run's own layer set (the correct choice for a reduced-layer probe), "
+        f"or run the full grid so the committed indices are meaningful."
+    )
+
+
 def own_pool_frozen_layers(
     data, cell, *, roster: list[str], device: str
 ) -> tuple[dict[str, int], dict[str, list[float]], dict[str, str]]:
@@ -411,7 +462,7 @@ def score_behavior(args, behavior: str) -> dict:  # noqa: C901 — one linear pe
     u_fit_rows = np.flatnonzero(store_io.fit_pool_mask(u_meta))
 
     budget_l = args.budget or len(tbl.ctx_order)
-    roster = list(args.arms) if args.arms else list(arms.TRANSFER_ARMS)
+    roster = arms.resolve_transfer_roster(args.arms)
     n_boot = int(args.n_boot) if args.n_boot else arms.N_BOOT
     ckpt = args.out_root / behavior / "percell" / "wcrung_transfer.jsonl"
     ckpt.parent.mkdir(parents=True, exist_ok=True)
@@ -540,6 +591,8 @@ def score_behavior(args, behavior: str) -> dict:  # noqa: C901 — one linear pe
                 f"[{behavior}/{variant}] no frozen layer for {missing_frozen} "
                 f"(source: {src}) — cannot score at a TRAIN-frozen layer"
             )
+        if src.startswith("modal-committed-train-cells:"):
+            _assert_committed_frozen_indexable(frozen_by_arm, layers, behavior, variant, summary)
 
         t_tf = time.time()
         scores_ev, arm_skips = arms.run_transfer_cell(
@@ -567,6 +620,22 @@ def score_behavior(args, behavior: str) -> dict:  # noqa: C901 — one linear pe
             {"arm": slug, "reason": reason, "variant": variant}
             for slug, reason in sorted(arm_skips.items())
         ]
+        skips_u += arms.roster_accounting_skips(roster, scores_ev, arm_skips, variant=variant)
+        # Per-context frozen-layer predictions: the durable subset-re-analysis
+        # input (any later per-context / per-quantile read becomes a pure
+        # re-analysis instead of another re-score). Same schema as the
+        # bare-query scorer's preds JSONL.
+        arms.write_preds_jsonl(
+            args.out_root / behavior / "preds" / f"wcrung_preds.{variant}.jsonl",
+            arms.transfer_preds_rows(
+                scores_ev,
+                np.asarray(tbl_ev.dv, dtype=np.float64),
+                tbl_ev.ctx_order,
+                frozen_by_arm,
+                provenance={**prov, "n_eval_pooled": len(tbl_ev.ctx_order)},
+                layers=tuple(layers),
+            ),
+        )
         # Per-layer rho over ALL layers (the frozen-layer row above is the
         # selection-clean headline; this is the full-profile companion).
         dv_ev = np.asarray(tbl_ev.dv, dtype=np.float64)
@@ -705,7 +774,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     ap.add_argument("--regime", default="e1", choices=("e1", "e2", "e2p"))
     ap.add_argument(
-        "--arms", nargs="+", default=None, help="roster subset (default: TRANSFER_ARMS)"
+        "--arms",
+        nargs="+",
+        default=None,
+        metavar="ROSTER|SLUG",
+        help="transfer roster: 'wide' (default — the 6 core ladder arms plus the fitted "
+        "arms 5/7/8/12), 'core' (the original 6, reproduces the committed column exactly), "
+        "or an explicit arm-slug list",
     )
     ap.add_argument("--layers", type=int, nargs="+", default=None, help="default: all --n-layers")
     ap.add_argument("--n-layers", type=int, default=28)
@@ -860,6 +935,11 @@ def main(argv: list[str] | None = None) -> int:
     load_dotenv()  # HF token for the U-pool staging leg
 
     out_paths = [args.out_root / b / "all_arms_spearman.json" for b in args.behaviors]
+    out_paths += [
+        args.out_root / b / "preds" / f"wcrung_preds.{v}.jsonl"
+        for b in args.behaviors
+        for v in args.variants
+    ]
     _assert_outputs_safe(out_paths, out_root=args.out_root, allow=args.allow_overwrite_committed)
 
     commit = _git_commit()
@@ -892,7 +972,7 @@ def main(argv: list[str] | None = None) -> int:
                 "config": "config_a",
                 "regimes": [args.regime],
                 "variants": list(args.variants),
-                "arms": sorted(args.arms) if args.arms else sorted(arms.TRANSFER_ARMS),
+                "arms": sorted(arms.resolve_transfer_roster(args.arms)),
                 "layers": [int(x) for x in (args.layers or list(range(args.n_layers)))],
                 "n_contexts": res["n_eval_contexts"],
                 "n_train_contexts": res["n_train_contexts"],

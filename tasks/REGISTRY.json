@@ -5746,8 +5746,8 @@
       "goal": "Determine whether applying the learned context->answer map before projecting the persona vector predicts on-policy behavior expression (evil, trait sycophancy, hallucination) better than context-side projection and direct regression at matched (unlabeled, labeled) data budgets, and whether that advantage grows across a real-data distribution-shift ladder.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/1739",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/1739",
+      "status": "followups_running",
       "title": "Map-then-project persona-vector prediction trails matched-budget context-side baselines across three behaviors (HIGH confidence)"
     },
     "174": {
@@ -7469,29 +7469,29 @@
     "1964": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1964",
-      "status": "running",
+      "path": "tasks/completed/1964",
+      "status": "completed",
       "title": "daily-fix: dispatch preflight staging+flag probes"
     },
     "1965": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1965",
-      "status": "running",
+      "path": "tasks/reviewing/1965",
+      "status": "reviewing",
       "title": "daily-fix: route long judge drivers off VM on 1st kill"
     },
     "1966": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1966",
-      "status": "approved",
+      "path": "tasks/reviewing/1966",
+      "status": "reviewing",
       "title": "daily-fix: never push to a branch live boxes sync mid-run"
     },
     "1967": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1967",
-      "status": "proposed",
+      "path": "tasks/planning/1967",
+      "status": "planning",
       "title": "daily-fix: per-tier pilot walls + c12 screen vocabulary"
     },
     "1968": {
