@@ -453,7 +453,9 @@ the relaunch ran the pre-fix commit, checkpointed garbage — val R²
      (`.claude/rules/pod-side-reporting.md` § Result-push verification
      contract, #1880), and a lane running a pre-#1880 driver
      deterministically false-crashes at its terminal push with its
-     results intact in crash-persist.
+     results intact in crash-persist. The PULL/SYNC direction — the
+     push touches files a live worker holds locally modified — is
+     governed by § Mid-run pushes to a live-synced branch below.
 2. **Stale-checkpoint disposition (element 5), executed in the SAME
    command chain as the launch** (the pid-file-contract shape,
    `.claude/rules/pod-side-reporting.md` § Pid-file launch contract),
@@ -550,6 +552,41 @@ mid-run rebase of `issue-<N>` re-opens the gap there (out of scope
 here, noted for the record). The implementer's
 own same-pod smoke-slice confirmation (element 2) is UNCHANGED and is
 not a "relaunch" under this section.
+
+### Mid-run pushes to a live-synced branch (enumerate live workers FIRST)
+
+Never push a commit to `issue-<N>` — or any ref live workers pull/sync
+mid-run — that touches a file ANY live worker holds locally modified.
+The worker's sync step refuses on DIRTY TOUCHED PATHS regardless of
+byte-identical content (the refusal keys on locally modified paths, not
+content — a byte-identity argument is a wrong theory of git), and the
+lane dies at its sync point — typically the upload leg — HOURS after
+the push (#1739: 3 lanes x 216 cells each, fits rc=0, killed at their
+upload legs; science recovered from EXIT-trap crash bundles, ~5-6 GPU-h
+re-compose, and a mid-run SSH patch attempt also failed on inter-box
+firewall/IAP). BEFORE any mid-run push to a live-synced ref, enumerate
+the live workers and what each holds locally modified; then either:
+
+(a) pin lanes to a detached launch SHA at dispatch, so mid-run branch
+    pushes are invisible to running workers (preferred, plan-time). A
+    detached-HEAD lane's terminal results push composes with the #1880
+    recipe as `git push origin HEAD:refs/heads/<branch>` after the
+    fetch+rebase;
+(b) defer the patch commit until every running worker has passed its
+    sync step; or
+(c) land the fix worker-locally only and push after the wave drains —
+    SAME-POD relaunches only: a fresh-provision (GCE/SLURM) relaunch
+    ancestry-probes `origin/issue-<N>` (§ fix-commit ancestry above),
+    so a worker-local-only fix halts it — safely but wastefully — on
+    fix-commit-absent.
+
+A sibling lane's crash-fix relaunch legitimately REQUIRES the fix on
+the remote ref (§ fix-commit ancestry above) — sequence it via (b)/(c),
+never skip the relaunch's ancestry probe. Sibling direction:
+`.claude/rules/pod-side-reporting.md` § Result-push verification
+contract (#1880) covers the PUSH race (a live lane's terminal push
+needs fetch+rebase); this subsection covers the PULL/SYNC refusal —
+one mid-run-push doctrine, two failure directions.
 
 ### Changed-argv relaunch: argv dry-run (REQUIRED unless byte-identical AND the CLI surface is untouched)
 
