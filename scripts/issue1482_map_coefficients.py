@@ -88,6 +88,12 @@ PARENT_NPZ = PROJECT_ROOT / "eval_results/issue_1482/sae_perfeature/sae_ctx__mea
 OUT_DIR = PROJECT_ROOT / "eval_results/issue_1482/map_coefficients"
 FIG_DIR = PROJECT_ROOT / "figures/issue_1482/map_coefficients"
 DASH_PATH = PROJECT_ROOT / "tasks/awaiting_promotion/1482/artifacts/map_pairs_dashboard.html"
+# The task-artifact path above is the durable record but is NOT SERVED: the EPS
+# dashboard renders only a task's body.md and has no artifacts route, so a
+# /tasks/1482/artifacts/... link 404s. dashboard/public/ IS served (live siblings:
+# sae-features-1482.html, pc-lens-1482.html), so write BOTH — a hand-copy would go
+# stale the next time this script regenerates the pairs.
+PUBLIC_DASH_PATH = PROJECT_ROOT / "dashboard/public/map-pairs-1482.html"
 
 SPLITHALF_SEED = 1482  # SPLIT_SEED_1482 (parent `_splithalf_perm` convention)
 NULL_SEED_BASE = SN.SEED_BASE  # 1_482_000 (parent shuffle-null seed convention)
@@ -1115,9 +1121,14 @@ coefficient fit on observational data: it says context feature <i>i</i> PREDICTS
 answer feature <i>j</i> in a linear map, never that <i>i</i> causes <i>j</i>. A causal
 claim would require an intervention (steering or ablation), which this round does not
 perform.</p>
-<p><b>Descriptions are a reading aid, not evidence.</b> Autointerp descriptions and
-axis labels come from #1773, whose standing caveat is that they are search-index-only
-(neighbour discrimination 0.322 against a 0.50 bar).</p></div>
+<p><b>Descriptions are a reading aid, not evidence &mdash; and any FAMILY reading rests
+entirely on them.</b> Autointerp descriptions and axis labels come from #1773, whose
+standing caveat is that they are search-index-only (neighbour discrimination 0.322
+against a 0.50 bar). The coefficients, the split-half replication and the null are
+measured; the thematic groupings a reader will naturally form from the text below
+(language &rarr; grammatical machinery, discourse-position &rarr; formatting,
+topic &rarr; topic, register &rarr; register) are the LEAST evidenced thing on this
+page. Treat them as hypotheses to test, never as findings.</p></div>
 <div class="head">
 <p><b>What is shown.</b> The {len(pairs)} strongest surviving (context feature &rarr;
 answer feature) coefficient pairs of the issue-1482 <code>sae_ctx / mean / ridge</code>
@@ -1152,9 +1163,10 @@ pairs are tagged <span class="badge pers">persistence</span>.</p>
 <h2>Surviving pairs (ranked by null z)</h2>
 {"".join(rows)}
 </div></body></html>"""
-    DASH_PATH.parent.mkdir(parents=True, exist_ok=True)
-    DASH_PATH.write_text(body, encoding="utf-8")
-    _log(f"wrote {DASH_PATH} ({DASH_PATH.stat().st_size / 1024:.0f} KiB)")
+    for p in (DASH_PATH, PUBLIC_DASH_PATH):
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(body, encoding="utf-8")
+        _log(f"wrote {p} ({p.stat().st_size / 1024:.0f} KiB)")
     return DASH_PATH
 
 
@@ -1178,6 +1190,12 @@ def main() -> int:
         help="re-render figures from the cached analyze.npz + committed structure JSON "
         "(skips the design load and the analysis recompute)",
     )
+    ap.add_argument(
+        "--dashboard-only",
+        action="store_true",
+        help="re-render BOTH dashboard copies from the committed structure + pairs JSONs "
+        "(skips the design load and the analysis recompute)",
+    )
     args = ap.parse_args()
     if args.import_check:
         print("import-check OK")
@@ -1189,6 +1207,24 @@ def main() -> int:
     if args.figures_only:
         doc = json.loads((OUT_DIR / "coef_structure.json").read_text())
         _log(f"figures-only: {[str(p) for p in phase_figures(args, doc)]}")
+        _log(f"DONE in {time.time() - t0:.0f}s")
+        sys.stdout.flush()
+        sys.stderr.flush()
+        sys.exit(0)
+
+    if args.dashboard_only:
+        doc = json.loads((OUT_DIR / "coef_structure.json").read_text())
+        tp = json.loads((OUT_DIR / "top_pairs.json").read_text())
+        pairs = tp["pairs"]
+        labels = {
+            int(p[f"{side}_feat_id"]): {
+                "description": p.get(f"{side}_description"),
+                "axes": p.get(f"{side}_axes") or {},
+            }
+            for p in pairs
+            for side in ("ctx", "ans")
+        }
+        phase_dashboard(pairs, labels, doc)
         _log(f"DONE in {time.time() - t0:.0f}s")
         sys.stdout.flush()
         sys.stderr.flush()
