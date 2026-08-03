@@ -1,0 +1,14 @@
+{
+ "A_raw": {
+  "blinded_file": "eval_results/issue_1482/result2_assembly_fullwidth/blinded_A_raw.md",
+  "n_per_group": 100
+ },
+ "B_gated": {
+  "blinded_file": "eval_results/issue_1482/result2_assembly_fullwidth/blinded_B_gated.md",
+  "n_per_group": 100
+ },
+ "C_matched": {
+  "blinded_file": "eval_results/issue_1482/result2_assembly_fullwidth/blinded_C_matched.md",
+  "n_per_group": 100
+ }
+}

@@ -1,0 +1,8 @@
+{
+ "selection": "A_raw",
+ "group_to_side": {
+  "A": "top",
+  "B": "bottom"
+ },
+ "seed": 14822026
+}
