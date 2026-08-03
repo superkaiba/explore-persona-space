@@ -1,0 +1,666 @@
+{
+ "caption": "Spread of judged behavior expression across every evaluation setting realized in #1739 (14 behavior x setting cells). LEFT: binned distribution (25 bins of width 4) of the per-context mean judged score; the tick marks the setting mean; n is the number of contexts carrying a DV. RIGHT: between-context SD of that score, with each cell's own noise floor sqrt(mean_i(s2_i/m_i)) overlaid as a line and the attenuation ceiling sqrt(r_yy) annotated. Generation recipe as recorded in each artifact: 5 sampled rollouts per context, each scored by claude-sonnet-4-5-20250929 over 3 judge draws at temperature 1.0 (max_tokens 400, re-judged at 800 on content drops); the graded rubric is a 0-100 trait score. Hallucination's own rungs (held-out TriviaQA, NQ-Open, SimpleQA) instead carry the three-way correct/abstained/fabricated rubric and their DV is the fabricated FRACTION rescaled x100 - a DIFFERENT construct from the graded trait score in every other cell, not comparable to it. Per-cell artifact provenance: evil + sycophancy + hallucination own rungs from eval_results/issue_1739/dv_dataset/<behavior>/labeling.json; persona-vectors synthetic suite from eval_results/issue_1739/pvsynth/dv_dataset/<behavior>/labeling.json; random WildChat from the issue-1739 worktree's wildchat_rung/dv_dataset/<behavior>/labeling.json (per-context rows not committed at repo root; recomputed n, mean and SD reconcile exactly against the committed wildchat_rung/spread/<behavior>.json aggregate, 6/6 cells including pvsynth).",
+ "criterion": {
+  "floor_ceiling_mass_max": 0.9,
+  "r_yy_min": 0.5,
+  "min_detectable_rho_max_frac_of_ceiling": 0.5
+ },
+ "prereg_gate2": {
+  "sd_floor": 10.0,
+  "bottom_bin_edge": 10.0,
+  "bottom_frac_max": 0.8,
+  "note": "recomputed per setting for comparison; not a re-run of the shipped verdict"
+ },
+ "cells": [
+  {
+   "behavior": "evil",
+   "setting": "train",
+   "setting_label": "held-out train (DAN x forbidden-q)",
+   "setting_class": "held_out_train",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "n_contexts": 6468,
+   "mean": 17.527009465402323,
+   "sd_between_context": 26.333414932525272,
+   "noise_floor": 8.50731351486776,
+   "r_yy": 0.8956312430092204,
+   "ceiling_sqrt_r_yy": 0.946377959913068,
+   "floor_ceiling_mass": 0.5629251700680272,
+   "tie_mass": 0.4911873840445269,
+   "tie_value": 0.0,
+   "min_detectable_rho": 0.02437652567260101,
+   "rollouts_per_context_median": 5.0,
+   "n_contexts_single_rollout": 536,
+   "bottom_bin_frac": 0.6130179344465059,
+   "criterion": {
+    "floor_ceiling_mass_ok": true,
+    "reliability_ok": true,
+    "detectability_ok": true
+   },
+   "criterion_verdict": "PASS",
+   "criterion_failing_clauses": [],
+   "prereg_gate2": "PASS",
+   "prereg_gate2_failing_clauses": []
+  },
+  {
+   "behavior": "evil",
+   "setting": "hhrt",
+   "setting_label": "hh-rlhf red-team (OOD)",
+   "setting_class": "behavior_ood",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "n_contexts": 1868,
+   "mean": 0.08321139662146086,
+   "sd_between_context": 0.8948027741744258,
+   "noise_floor": 0.6446725696936221,
+   "r_yy": 0.4809326169877248,
+   "ceiling_sqrt_r_yy": 0.6934930547508928,
+   "floor_ceiling_mass": 0.9941113490364025,
+   "tie_mass": 0.9839400428265525,
+   "tie_value": 0.0,
+   "min_detectable_rho": 0.045385450775453945,
+   "rollouts_per_context_median": 5.0,
+   "n_contexts_single_rollout": 77,
+   "bottom_bin_frac": 0.9967880085653105,
+   "criterion": {
+    "floor_ceiling_mass_ok": false,
+    "reliability_ok": false,
+    "detectability_ok": true
+   },
+   "criterion_verdict": "FAIL",
+   "criterion_failing_clauses": [
+    "floor_ceiling_mass_ok",
+    "reliability_ok"
+   ],
+   "prereg_gate2": "FAIL",
+   "prereg_gate2_failing_clauses": [
+    "sd_floor",
+    "bottom_bin"
+   ]
+  },
+  {
+   "behavior": "evil",
+   "setting": "toxicchat",
+   "setting_label": "ToxicChat (OOD)",
+   "setting_class": "behavior_ood",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "n_contexts": 519,
+   "mean": 2.7555020338257328,
+   "sd_between_context": 12.066356844563622,
+   "noise_floor": 2.3516566945372888,
+   "r_yy": 0.9620164533375405,
+   "ceiling_sqrt_r_yy": 0.9808243743594164,
+   "floor_ceiling_mass": 0.9190751445086706,
+   "tie_mass": 0.8901734104046243,
+   "tie_value": 0.0,
+   "min_detectable_rho": 0.08628418881991114,
+   "rollouts_per_context_median": 5.0,
+   "n_contexts_single_rollout": 60,
+   "bottom_bin_frac": 0.9344894026974951,
+   "criterion": {
+    "floor_ceiling_mass_ok": false,
+    "reliability_ok": true,
+    "detectability_ok": true
+   },
+   "criterion_verdict": "FAIL",
+   "criterion_failing_clauses": [
+    "floor_ceiling_mass_ok"
+   ],
+   "prereg_gate2": "FAIL",
+   "prereg_gate2_failing_clauses": [
+    "bottom_bin"
+   ]
+  },
+  {
+   "behavior": "evil",
+   "setting": "wildchat_rung",
+   "setting_label": "random WildChat (ordinary traffic)",
+   "setting_class": "wildchat",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "n_contexts": 1987,
+   "mean": 0.42408432589610245,
+   "sd_between_context": 4.428858042265125,
+   "noise_floor": 1.3070565689791862,
+   "r_yy": 0.9129025885290415,
+   "ceiling_sqrt_r_yy": 0.9554593599567914,
+   "floor_ceiling_mass": 0.9874182184197282,
+   "tie_mass": 0.9823855057876195,
+   "tie_value": 0.0,
+   "min_detectable_rho": 0.04400329899655985,
+   "rollouts_per_context_median": 5.0,
+   "n_contexts_single_rollout": 12,
+   "bottom_bin_frac": 0.9894313034725717,
+   "criterion": {
+    "floor_ceiling_mass_ok": false,
+    "reliability_ok": true,
+    "detectability_ok": true
+   },
+   "criterion_verdict": "FAIL",
+   "criterion_failing_clauses": [
+    "floor_ceiling_mass_ok"
+   ],
+   "prereg_gate2": "FAIL",
+   "prereg_gate2_failing_clauses": [
+    "sd_floor",
+    "bottom_bin"
+   ]
+  },
+  {
+   "behavior": "evil",
+   "setting": "pvsynth",
+   "setting_label": "persona-vectors synthetic suite",
+   "setting_class": "pvsynth",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "n_contexts": 200,
+   "mean": 22.32675,
+   "sd_between_context": 34.87632295870316,
+   "noise_floor": 7.889866302908926,
+   "r_yy": 0.9488226367271374,
+   "ceiling_sqrt_r_yy": 0.9740752726186706,
+   "floor_ceiling_mass": 0.7,
+   "tie_mass": 0.64,
+   "tie_value": 0.0,
+   "min_detectable_rho": 0.13964421797630291,
+   "rollouts_per_context_median": 5.0,
+   "n_contexts_single_rollout": 0,
+   "bottom_bin_frac": 0.655,
+   "criterion": {
+    "floor_ceiling_mass_ok": true,
+    "reliability_ok": true,
+    "detectability_ok": true
+   },
+   "criterion_verdict": "PASS",
+   "criterion_failing_clauses": [],
+   "prereg_gate2": "PASS",
+   "prereg_gate2_failing_clauses": []
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "train",
+   "setting_label": "held-out train",
+   "setting_class": "held_out_train",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "n_contexts": 16000,
+   "mean": 20.71789045138889,
+   "sd_between_context": 13.23844445014182,
+   "noise_floor": 3.7832805991189815,
+   "r_yy": 0.91832988035945,
+   "ceiling_sqrt_r_yy": 0.9582952991429364,
+   "floor_ceiling_mass": 0.042875,
+   "tie_mass": 0.0774375,
+   "tie_value": 15.0,
+   "min_detectable_rho": 0.015496613410439024,
+   "rollouts_per_context_median": 5.0,
+   "n_contexts_single_rollout": 1,
+   "bottom_bin_frac": 0.0970625,
+   "criterion": {
+    "floor_ceiling_mass_ok": true,
+    "reliability_ok": true,
+    "detectability_ok": true
+   },
+   "criterion_verdict": "PASS",
+   "criterion_failing_clauses": [],
+   "prereg_gate2": "PASS",
+   "prereg_gate2_failing_clauses": []
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "aita",
+   "setting_label": "AITA (OOD)",
+   "setting_class": "behavior_ood",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "n_contexts": 1304,
+   "mean": 18.109771216768912,
+   "sd_between_context": 13.119479457951428,
+   "noise_floor": 3.378965494895634,
+   "r_yy": 0.9336662872066624,
+   "ceiling_sqrt_r_yy": 0.9662640877144625,
+   "floor_ceiling_mass": 0.09969325153374232,
+   "tie_mass": 0.07285276073619631,
+   "tie_value": 15.0,
+   "min_detectable_rho": 0.05433972335413991,
+   "rollouts_per_context_median": 5.0,
+   "n_contexts_single_rollout": 0,
+   "bottom_bin_frac": 0.18711656441717792,
+   "criterion": {
+    "floor_ceiling_mass_ok": true,
+    "reliability_ok": true,
+    "detectability_ok": true
+   },
+   "criterion_verdict": "PASS",
+   "criterion_failing_clauses": [],
+   "prereg_gate2": "PASS",
+   "prereg_gate2_failing_clauses": []
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "wildchat_rung",
+   "setting_label": "random WildChat (ordinary traffic)",
+   "setting_class": "wildchat",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "n_contexts": 1982,
+   "mean": 17.835790167059088,
+   "sd_between_context": 23.307578108964975,
+   "noise_floor": 5.685541574642534,
+   "r_yy": 0.9404955586055689,
+   "ceiling_sqrt_r_yy": 0.9697915026466095,
+   "floor_ceiling_mass": 0.4117053481331988,
+   "tie_mass": 0.22906155398587286,
+   "tie_value": 0.0,
+   "min_detectable_rho": 0.044058851725405794,
+   "rollouts_per_context_median": 5.0,
+   "n_contexts_single_rollout": 10,
+   "bottom_bin_frac": 0.5297679112008072,
+   "criterion": {
+    "floor_ceiling_mass_ok": true,
+    "reliability_ok": true,
+    "detectability_ok": true
+   },
+   "criterion_verdict": "PASS",
+   "criterion_failing_clauses": [],
+   "prereg_gate2": "PASS",
+   "prereg_gate2_failing_clauses": []
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "pvsynth",
+   "setting_label": "persona-vectors synthetic suite",
+   "setting_class": "pvsynth",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "n_contexts": 200,
+   "mean": 17.9525,
+   "sd_between_context": 20.394313764370647,
+   "noise_floor": 4.112244250744085,
+   "r_yy": 0.9593425992029989,
+   "ceiling_sqrt_r_yy": 0.9794603612209117,
+   "floor_ceiling_mass": 0.35,
+   "tie_mass": 0.13,
+   "tie_value": 0.0,
+   "min_detectable_rho": 0.13964421797630291,
+   "rollouts_per_context_median": 5.0,
+   "n_contexts_single_rollout": 0,
+   "bottom_bin_frac": 0.505,
+   "criterion": {
+    "floor_ceiling_mass_ok": true,
+    "reliability_ok": true,
+    "detectability_ok": true
+   },
+   "criterion_verdict": "PASS",
+   "criterion_failing_clauses": [],
+   "prereg_gate2": "PASS",
+   "prereg_gate2_failing_clauses": []
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "train",
+   "setting_label": "held-out TriviaQA",
+   "setting_class": "held_out_train",
+   "dv_construct": "fabricated_fraction_rescaled_x100",
+   "n_contexts": 16000,
+   "mean": 31.741875,
+   "sd_between_context": 40.501693121164465,
+   "noise_floor": 11.471795122531319,
+   "r_yy": 0.9197737657967925,
+   "ceiling_sqrt_r_yy": 0.9590483646807352,
+   "floor_ceiling_mass": 0.72875,
+   "tie_mass": 0.547,
+   "tie_value": 0.0,
+   "min_detectable_rho": 0.015496613410439024,
+   "rollouts_per_context_median": 5.0,
+   "n_contexts_single_rollout": 0,
+   "bottom_bin_frac": 0.547,
+   "criterion": {
+    "floor_ceiling_mass_ok": true,
+    "reliability_ok": true,
+    "detectability_ok": true
+   },
+   "criterion_verdict": "PASS",
+   "criterion_failing_clauses": [],
+   "prereg_gate2": "PASS",
+   "prereg_gate2_failing_clauses": []
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "nqopen",
+   "setting_label": "NQ-Open (OOD)",
+   "setting_class": "behavior_ood",
+   "dv_construct": "fabricated_fraction_rescaled_x100",
+   "n_contexts": 3167,
+   "mean": 55.87622355541522,
+   "sd_between_context": 42.08159012324281,
+   "noise_floor": 13.18302819524368,
+   "r_yy": 0.9018599945284738,
+   "ceiling_sqrt_r_yy": 0.9496630952756213,
+   "floor_ceiling_mass": 0.6409851594568993,
+   "tie_mass": 0.369119040101042,
+   "tie_value": 100.0,
+   "min_detectable_rho": 0.03484478859220412,
+   "rollouts_per_context_median": 5.0,
+   "n_contexts_single_rollout": 0,
+   "bottom_bin_frac": 0.2718661193558573,
+   "criterion": {
+    "floor_ceiling_mass_ok": true,
+    "reliability_ok": true,
+    "detectability_ok": true
+   },
+   "criterion_verdict": "PASS",
+   "criterion_failing_clauses": [],
+   "prereg_gate2": "PASS",
+   "prereg_gate2_failing_clauses": []
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "simpleqa",
+   "setting_label": "SimpleQA (OOD)",
+   "setting_class": "behavior_ood",
+   "dv_construct": "fabricated_fraction_rescaled_x100",
+   "n_contexts": 4021,
+   "mean": 77.90972394926635,
+   "sd_between_context": 32.92238643679731,
+   "noise_floor": 12.636198778816842,
+   "r_yy": 0.8526838766798179,
+   "ceiling_sqrt_r_yy": 0.923408835067013,
+   "floor_ceiling_mass": 0.6667495647848793,
+   "tie_mass": 0.5834369559810992,
+   "tie_value": 100.0,
+   "min_detectable_rho": 0.03092082730095703,
+   "rollouts_per_context_median": 5.0,
+   "n_contexts_single_rollout": 0,
+   "bottom_bin_frac": 0.08331260880378015,
+   "criterion": {
+    "floor_ceiling_mass_ok": true,
+    "reliability_ok": true,
+    "detectability_ok": true
+   },
+   "criterion_verdict": "PASS",
+   "criterion_failing_clauses": [],
+   "prereg_gate2": "PASS",
+   "prereg_gate2_failing_clauses": []
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "wildchat_rung",
+   "setting_label": "random WildChat (ordinary traffic)",
+   "setting_class": "wildchat",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "n_contexts": 1967,
+   "mean": 39.63059933344632,
+   "sd_between_context": 32.24710444774933,
+   "noise_floor": 8.845194090939371,
+   "r_yy": 0.9247626854816947,
+   "ceiling_sqrt_r_yy": 0.9616458212261387,
+   "floor_ceiling_mass": 0.20335536349771224,
+   "tie_mass": 0.10167768174885612,
+   "tie_value": 0.0,
+   "min_detectable_rho": 0.044226780875839374,
+   "rollouts_per_context_median": 5.0,
+   "n_contexts_single_rollout": 23,
+   "bottom_bin_frac": 0.26232841891204883,
+   "criterion": {
+    "floor_ceiling_mass_ok": true,
+    "reliability_ok": true,
+    "detectability_ok": true
+   },
+   "criterion_verdict": "PASS",
+   "criterion_failing_clauses": [],
+   "prereg_gate2": "PASS",
+   "prereg_gate2_failing_clauses": []
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "pvsynth",
+   "setting_label": "persona-vectors synthetic suite",
+   "setting_class": "pvsynth",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "n_contexts": 200,
+   "mean": 54.684305555555554,
+   "sd_between_context": 36.438608461468384,
+   "noise_floor": 10.929904055880876,
+   "r_yy": 0.9100276358582794,
+   "ceiling_sqrt_r_yy": 0.9539536864325644,
+   "floor_ceiling_mass": 0.39,
+   "tie_mass": 0.165,
+   "tie_value": 0.0,
+   "min_detectable_rho": 0.13964421797630291,
+   "rollouts_per_context_median": 5.0,
+   "n_contexts_single_rollout": 1,
+   "bottom_bin_frac": 0.21,
+   "criterion": {
+    "floor_ceiling_mass_ok": true,
+    "reliability_ok": true,
+    "detectability_ok": true
+   },
+   "criterion_verdict": "PASS",
+   "criterion_failing_clauses": [],
+   "prereg_gate2": "PASS",
+   "prereg_gate2_failing_clauses": []
+  }
+ ],
+ "provenance": {
+  "evil|own_rungs": {
+   "artifact": "eval_results/issue_1739/dv_dataset/evil/labeling.json",
+   "committed_at_repo_root": true,
+   "judge_model": "claude-sonnet-4-5-20250929",
+   "judge_temperature": 1.0,
+   "n_judge_draws": 3,
+   "judge_max_tokens": 400,
+   "rejudge_max_tokens": null,
+   "rubric": "trait_eval_prompt",
+   "git_commit": "3a00a43ea4ea322c228ad028fc766d0c1c5be5e0",
+   "ts": "2026-07-28T23:37:41Z",
+   "dv_construct": null,
+   "rollouts_per_context_planned": 5,
+   "note": "graded trait rubric, mean over judge draws per rollout"
+  },
+  "evil|wildchat_rung": {
+   "artifact": ".claude/worktrees/issue-1739/eval_results/issue_1739/wildchat_rung/dv_dataset/evil/labeling.json",
+   "committed_at_repo_root": false,
+   "judge_model": "claude-sonnet-4-5-20250929",
+   "judge_temperature": 1.0,
+   "n_judge_draws": 3,
+   "judge_max_tokens": 400,
+   "rejudge_max_tokens": 800,
+   "rubric": null,
+   "git_commit": "5b78ff42d6bb95761cb453cf873948296dc50a16",
+   "ts": "2026-07-31T04:02:34Z",
+   "dv_construct": "trait_rubric_graded_0_100"
+  },
+  "evil|pvsynth": {
+   "artifact": "eval_results/issue_1739/pvsynth/dv_dataset/evil/labeling.json",
+   "committed_at_repo_root": true,
+   "judge_model": "claude-sonnet-4-5-20250929",
+   "judge_temperature": 1.0,
+   "n_judge_draws": 3,
+   "judge_max_tokens": 400,
+   "rejudge_max_tokens": 800,
+   "rubric": null,
+   "git_commit": "13d7d66b0b308e51fb2f87b3c907c0a6d5b5b0f5",
+   "ts": "2026-07-30T17:00:48Z",
+   "dv_construct": "pv_trait_rubric_graded_0_100"
+  },
+  "sycophancy|own_rungs": {
+   "artifact": "eval_results/issue_1739/dv_dataset/sycophancy/labeling.json",
+   "committed_at_repo_root": true,
+   "judge_model": "claude-sonnet-4-5-20250929",
+   "judge_temperature": 1.0,
+   "n_judge_draws": 3,
+   "judge_max_tokens": 400,
+   "rejudge_max_tokens": null,
+   "rubric": "trait_eval_prompt",
+   "git_commit": "3a00a43ea4ea322c228ad028fc766d0c1c5be5e0",
+   "ts": "2026-07-28T23:36:43Z",
+   "dv_construct": null,
+   "rollouts_per_context_planned": 5,
+   "note": "graded trait rubric, mean over judge draws per rollout"
+  },
+  "sycophancy|wildchat_rung": {
+   "artifact": ".claude/worktrees/issue-1739/eval_results/issue_1739/wildchat_rung/dv_dataset/sycophancy/labeling.json",
+   "committed_at_repo_root": false,
+   "judge_model": "claude-sonnet-4-5-20250929",
+   "judge_temperature": 1.0,
+   "n_judge_draws": 3,
+   "judge_max_tokens": 400,
+   "rejudge_max_tokens": 800,
+   "rubric": null,
+   "git_commit": "5b78ff42d6bb95761cb453cf873948296dc50a16",
+   "ts": "2026-07-31T04:18:15Z",
+   "dv_construct": "trait_rubric_graded_0_100"
+  },
+  "sycophancy|pvsynth": {
+   "artifact": "eval_results/issue_1739/pvsynth/dv_dataset/sycophancy/labeling.json",
+   "committed_at_repo_root": true,
+   "judge_model": "claude-sonnet-4-5-20250929",
+   "judge_temperature": 1.0,
+   "n_judge_draws": 3,
+   "judge_max_tokens": 400,
+   "rejudge_max_tokens": 800,
+   "rubric": null,
+   "git_commit": "13d7d66b0b308e51fb2f87b3c907c0a6d5b5b0f5",
+   "ts": "2026-07-30T17:05:05Z",
+   "dv_construct": "pv_trait_rubric_graded_0_100"
+  },
+  "hallucination|own_rungs": {
+   "artifact": "eval_results/issue_1739/dv_dataset/hallucination/labeling.json",
+   "committed_at_repo_root": true,
+   "judge_model": "claude-sonnet-4-5-20250929",
+   "judge_temperature": 1.0,
+   "n_judge_draws": 3,
+   "judge_max_tokens": 400,
+   "rejudge_max_tokens": null,
+   "rubric": "hallucination_three_way",
+   "git_commit": "cdc5d236e2a72f25af5f8a520e669a87d5ffa6bd",
+   "ts": "2026-07-28T23:14:14Z",
+   "dv_construct": null,
+   "rollouts_per_context_planned": 5,
+   "note": "fabricated fraction over three-way judged rollouts, rescaled x100"
+  },
+  "hallucination|wildchat_rung": {
+   "artifact": ".claude/worktrees/issue-1739/eval_results/issue_1739/wildchat_rung/dv_dataset/hallucination/labeling.json",
+   "committed_at_repo_root": false,
+   "judge_model": "claude-sonnet-4-5-20250929",
+   "judge_temperature": 1.0,
+   "n_judge_draws": 3,
+   "judge_max_tokens": 400,
+   "rejudge_max_tokens": 800,
+   "rubric": null,
+   "git_commit": "5b78ff42d6bb95761cb453cf873948296dc50a16",
+   "ts": "2026-07-31T04:37:30Z",
+   "dv_construct": "trait_rubric_graded_0_100"
+  },
+  "hallucination|pvsynth": {
+   "artifact": "eval_results/issue_1739/pvsynth/dv_dataset/hallucination/labeling.json",
+   "committed_at_repo_root": true,
+   "judge_model": "claude-sonnet-4-5-20250929",
+   "judge_temperature": 1.0,
+   "n_judge_draws": 3,
+   "judge_max_tokens": 400,
+   "rejudge_max_tokens": 800,
+   "rubric": null,
+   "git_commit": "13d7d66b0b308e51fb2f87b3c907c0a6d5b5b0f5",
+   "ts": "2026-07-30T17:08:01Z",
+   "dv_construct": "pv_trait_rubric_graded_0_100"
+  }
+ },
+ "parity_checks": [
+  {
+   "cell": "evil/wildchat_rung",
+   "committed_aggregate": "eval_results/issue_1739/wildchat_rung/spread/evil.json",
+   "n": [
+    1987,
+    1987
+   ],
+   "mean": [
+    0.42408432589610234,
+    0.42408432589610245
+   ],
+   "sd": [
+    4.428858042265232,
+    4.428858042265125
+   ],
+   "ok": true
+  },
+  {
+   "cell": "evil/pvsynth",
+   "committed_aggregate": "eval_results/issue_1739/pvsynth/spread/evil.json",
+   "n": [
+    200,
+    200
+   ],
+   "mean": [
+    22.326750000000008,
+    22.32675
+   ],
+   "sd": [
+    34.87632295870317,
+    34.87632295870316
+   ],
+   "ok": true
+  },
+  {
+   "cell": "sycophancy/wildchat_rung",
+   "committed_aggregate": "eval_results/issue_1739/wildchat_rung/spread/sycophancy.json",
+   "n": [
+    1982,
+    1982
+   ],
+   "mean": [
+    17.83579016705906,
+    17.835790167059088
+   ],
+   "sd": [
+    23.307578108964897,
+    23.307578108964975
+   ],
+   "ok": true
+  },
+  {
+   "cell": "sycophancy/pvsynth",
+   "committed_aggregate": "eval_results/issue_1739/pvsynth/spread/sycophancy.json",
+   "n": [
+    200,
+    200
+   ],
+   "mean": [
+    17.9525,
+    17.9525
+   ],
+   "sd": [
+    20.394313764370647,
+    20.394313764370647
+   ],
+   "ok": true
+  },
+  {
+   "cell": "hallucination/wildchat_rung",
+   "committed_aggregate": "eval_results/issue_1739/wildchat_rung/spread/hallucination.json",
+   "n": [
+    1967,
+    1967
+   ],
+   "mean": [
+    39.630599333446334,
+    39.63059933344632
+   ],
+   "sd": [
+    32.2471044477493,
+    32.24710444774933
+   ],
+   "ok": true
+  },
+  {
+   "cell": "hallucination/pvsynth",
+   "committed_aggregate": "eval_results/issue_1739/pvsynth/spread/hallucination.json",
+   "n": [
+    200,
+    200
+   ],
+   "mean": [
+    54.684305555555575,
+    54.684305555555554
+   ],
+   "sd": [
+    36.43860846146838,
+    36.438608461468384
+   ],
+   "ok": true
+  }
+ ]
+}
