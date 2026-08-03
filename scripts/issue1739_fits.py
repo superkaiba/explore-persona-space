@@ -753,7 +753,14 @@ def _map_path(tensors_root: Path | str, variant: str, u_label: str, kind: str) -
 
 
 def _save_map(
-    tensors_root: Path, variant: str, u_label: str, mapfit, layers, *, map_seed: int | None = None
+    tensors_root: Path,
+    variant: str,
+    u_label: str,
+    mapfit,
+    layers,
+    *,
+    map_seed: int | None = None,
+    space_meta: dict | None = None,
 ) -> Path:
     """Persist a frozen plain-rung map (plan §10 ``maps/`` class — round-3 C-1).
 
@@ -767,6 +774,14 @@ def _save_map(
     are behavior+anchor-specific (~0.7 GB each x ~30 combos) and
     deterministically regenerable from the pinned store + seeded code (the
     §10 discard economy; noted in the results payload plan_deviations).
+
+    ``space_meta`` (#1975): the ``fits.map_space_meta(...)`` dict recording the
+    FIT SPACE + whitening provenance + train-input norm stats, merged into the
+    payload meta for BOTH the linear ``.npz`` and nonlinear ``.pt`` forms —
+    the apply/load-time input-space parity check
+    (``fits.assert_map_input_space`` / ``fits.check_whitening_parity``) reads
+    it. ``None`` (an unthreaded caller) omits the fields entirely, keeping the
+    payload byte-compatible with pre-#1975 writers.
     """
     import os
     import time as _time
@@ -798,6 +813,10 @@ def _save_map(
         "git_commit": _git_commit(),
         "ts": _time.strftime("%Y-%m-%dT%H:%M:%SZ", _time.gmtime()),
     }
+    if space_meta is not None:
+        # #1975: fit_space + whitening_provenance + train_input_norm_{mean,std}
+        # (both persisted forms get them — the meta dict is shared below).
+        meta.update(space_meta)
     if kind != "linear":
         # A nonlinear map is a per-layer torch payload (the #779 N1M apply_map
         # format), not a (w, mu, sd) npz — persist it with torch.save under a
@@ -1057,6 +1076,28 @@ def _load_nl_map(
         path.name,
         int(n_u),
     )
+    # #1975: carry the input-space parity metadata on the returned object so
+    # downstream consumers can check it. Absent fit_space = a LEGACY payload —
+    # loud warning (never silent, never a crash: the in-pipeline apply here is
+    # whitened-by-construction, the same CLI computes x_w).
+    space_meta = {
+        k: meta[k]
+        for k in (
+            "fit_space",
+            "whitening_provenance",
+            "train_input_norm_mean",
+            "train_input_norm_std",
+        )
+        if meta.get(k) is not None
+    }
+    if not space_meta.get("fit_space"):
+        logger.warning(
+            "[fits] persisted %s map %s carries NO fit_space metadata (LEGACY payload, "
+            "pre-#1975) — input-space parity cannot be checked at apply time (the #1739 "
+            "whitened-fit/raw-apply incident); re-persist via _save_map to gain the check",
+            kind,
+            path.name,
+        )
     return MapFit(
         w=None,
         x_mu=None,
@@ -1068,6 +1109,7 @@ def _load_nl_map(
         # apply runs NOW, so honor this process's device rather than whichever
         # device the original fit happened to use.
         apply_device=str(device or "cpu"),
+        space_meta=space_meta or None,
     )
 
 
@@ -1407,6 +1449,7 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
         # whitened copy the map fit consumes (identical values to the old
         # fresh apply_whitening(u_x)[:, :K] slice).
         probe_x = None
+        space_meta = None
         if mapfit is None:
             # ONE whitened fp64 copy per pool side; the fp16 stacked pools are
             # freed the moment their whitened twin exists (crash-fix r3 —
@@ -1418,6 +1461,22 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
             u_y = None
             if spec0.f_u is None and map_kind != "linear":
                 probe_x = np.array(x_w[:, : min(MAP_ROUNDTRIP_PROBE_ROWS, n_u)], copy=True)
+            if spec0.f_u is None:
+                # #1975: record the fit space + whitening provenance in the
+                # persisted payload (RECIPE form — the whitening is fit
+                # in-process here, no persisted artifact exists at fit time).
+                # Computed BEFORE x_w is freed; a small dict, not the array.
+                space_meta = fits.map_space_meta(
+                    x_w,
+                    fit_space="whitened",
+                    whitening_prov=fits.whitening_provenance(
+                        variant=spec0.variant,
+                        u_label=u_label,
+                        whiten_seed=map_seed,
+                        n_u_rows=n_u,
+                        gammas=wh.gamma,
+                    ),
+                )
             mapfit = _fit_map(args, x_w, y_w)
             del x_w, y_w
         else:
@@ -1431,7 +1490,15 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
             # C-1: persist the frozen plain-rung map weights (HF-bound via
             # the tensors upload stage; behavior-independent, idempotent).
             fresh = not _map_path(args.tensors_root, spec0.variant, u_label, map_kind).exists()
-            _save_map(args.tensors_root, spec0.variant, u_label, mapfit, layers, map_seed=map_seed)
+            _save_map(
+                args.tensors_root,
+                spec0.variant,
+                u_label,
+                mapfit,
+                layers,
+                map_seed=map_seed,
+                space_meta=space_meta,
+            )
             if fresh and probe_x is not None:
                 # Gate ONLY a payload THIS process wrote: an already-present file
                 # is a sibling's fit, and comparing two independent fits would
