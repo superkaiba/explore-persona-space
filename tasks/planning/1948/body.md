@@ -4,6 +4,7 @@ kind: infra
 tags:
 - wf-fix
 - wf-fix-fp:f915ade0ceb6
+- trigger-dense
 created_at: '2026-07-31T22:38:45Z'
 has_clean_result: false
 origin_prompt: 'Surfaced prose follow-up from inline subagent model-text-2x2-1768
