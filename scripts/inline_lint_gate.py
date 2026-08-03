@@ -69,7 +69,16 @@ Run as ONE background Bash (the lint leg is ~2.5-6 min; never a <=600 s
 foreground bound — #991/#996)::
 
     uv run python scripts/inline_lint_gate.py --issue <N> \\
-        --payload-file /tmp/issue-<N>-inline-payload.txt
+        --payload-file /tmp/issue-<N>-<round-slug>-inline-payload.txt
+
+The payload path must be ROUND-unique (#1948): the bare issue-keyed legacy
+name (basename ``issue-<N>-inline-payload.txt``) is REFUSED (exit 3) — it is
+a shared mutable path that concurrent same-issue rounds clobber, producing
+cross-certification (two concurrent #1768 rounds, 2026-07-31). The gate also
+reads the caller's payload file exactly ONCE and hands the map leg a private
+``mkstemp`` copy, and prints a payload-binding audit line
+(``inline_lint_gate: payload-source <path|inline-paths> n=<k>
+list-sha256=<12 hex>``) before the verdict line.
 
 Test-only env overrides (hermetic unit tests substitute the leg commands;
 same pattern as ``EPM_LESSONS_EDIT_SENTINEL``): ``EPM_INLINE_GATE_LINT_CMD``,
@@ -82,6 +91,7 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import hashlib
 import os
 import re
 import subprocess
@@ -92,6 +102,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 DEFAULT_CERT_PATH = "/tmp/eps-inline-lint-cert-v1.txt"
+# Bare issue-keyed legacy payload BASENAME — a shared mutable path concurrent
+# same-issue rounds clobber (cross-certification, #1948/#1768). Refused at
+# main() entry (exit 3, Inconclusive) BEFORE any leg runs. The gate's own
+# private mkstemp copy (``issue-<N>-inline-payload.<rand>``) is dot-suffixed
+# and deliberately does NOT match this ``\.txt$``-anchored regex.
+LEGACY_PAYLOAD_BASENAME_RE = re.compile(r"^issue-\d+-inline-payload\.txt$")
 CERT_TRIM_LINES = 500
 # Env var threaded onto the mapped-pytest leg's CHILD env carrying the payload
 # path list (os.pathsep-separated, repo-relative) so tracked-file-enumerating
@@ -627,20 +643,45 @@ def main(argv: list[str] | None = None) -> int:
         repo = Path(args.repo_root).resolve() if args.repo_root else _git_toplevel()
         if args.payload_file:
             payload_file = Path(args.payload_file)
+            if LEGACY_PAYLOAD_BASENAME_RE.match(payload_file.name):
+                # Refuse BEFORE any leg runs (#1948): no 2.5-6 min burn on a
+                # doomed invocation, and the shared legacy path never gates.
+                raise Inconclusive(
+                    "legacy shared payload path refused (#1948) — the bare "
+                    "issue-keyed name is clobbered by concurrent same-issue "
+                    "rounds (cross-certification); use a round-unique name, "
+                    "e.g. /tmp/issue-<N>-<slug>-inline-payload.txt"
+                )
             if not payload_file.is_file():
                 raise Inconclusive(f"payload file missing: {payload_file}")
             raw_paths = payload_file.read_text(encoding="utf-8").splitlines()
+            payload_source = str(payload_file)
         else:
             raw_paths = list(args.paths)
+            payload_source = "inline-paths"
         snapshots = read_payload(raw_paths, repo)
         payload = sorted(snapshots)
-        if args.payload_file is None:
-            # Materialize a payload file for the map leg's --map-files contract.
-            fd, tmp_payload = tempfile.mkstemp(prefix=f"issue-{args.issue}-inline-payload.")
-            with os.fdopen(fd, "w", encoding="utf-8") as fh:
-                fh.write("\n".join(payload) + "\n")
-            payload_file = Path(tmp_payload)
-        legs = run_legs(payload_file, args.issue, repo, Path(args.out_dir), payload=payload)
+        # Payload-binding audit line (#1948): printed BEFORE any report /
+        # verdict line, binding this gate run to the exact resolved payload
+        # list (source + count + content hash of the sorted list). The
+        # terminal verdict lines (PASS / BLOCK (...) / INCONCLUSIVE (...))
+        # stay byte-stable — no consumer grep breaks.
+        list_sha = hashlib.sha256(("\n".join(payload) + "\n").encode("utf-8")).hexdigest()[:12]
+        print(
+            f"inline_lint_gate: payload-source {payload_source} "
+            f"n={len(payload)} list-sha256={list_sha}"
+        )
+        # ALWAYS materialize a PRIVATE mkstemp copy of the resolved payload
+        # list for the map leg's --map-files contract (#1948 — hoisted out of
+        # the former --paths-only branch): the caller's file was read exactly
+        # once above, so a mid-run overwrite of the caller's path can no
+        # longer redirect the mapped-test set (defense-in-depth beyond the
+        # round-unique path contract).
+        fd, tmp_payload = tempfile.mkstemp(prefix=f"issue-{args.issue}-inline-payload.")
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write("\n".join(payload) + "\n")
+        private_payload_file = Path(tmp_payload)
+        legs = run_legs(private_payload_file, args.issue, repo, Path(args.out_dir), payload=payload)
         verdict = evaluate(payload, legs, repo)
     except Inconclusive as exc:
         print(f"inline_lint_gate: INCONCLUSIVE ({exc})")

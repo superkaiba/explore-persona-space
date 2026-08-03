@@ -7790,20 +7790,27 @@ explicit eval-data path):
 
    **Single-flight probe (#1606)** first, per the Step 9c 1b
    single-flight statement: probe
-   `uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --pattern 'issue-<N>-inline-payload\.txt'`
+   `uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --pattern 'issue-<N>-[^ ]*inline-payload\.txt'`
    (self-/ancestor-excluding — exit 0 = clear, 3 = live foreign match; a
    separate FOREGROUND call stays preferred as defense-in-depth, but the
    mechanical pid exclusion — not placement — is what prevents the
    launch-call self-match, #1742. The payload-file path rides the
-   argv of the helper AND its enclosing background shell, and the
-   `-inline-payload` suffix anchors the issue number, so the probe is
-   exact-ISSUE-scoped — a sibling issue's gate never matches). Exit 3
+   argv of the GATE PARENT — the helper invocation AND its enclosing
+   background shell, the probe's detection surface (the map-leg
+   subprocess consumes a private mkstemp copy instead, #1948) — and the
+   pattern bounds the issue number on both sides (`issue-<N>-` prefix,
+   `inline-payload\.txt` tail), so the probe is exact-ISSUE-scoped
+   across round-unique AND transitional legacy names — a sibling
+   issue's gate never matches: `issue-194-[^ ]*` cannot match
+   `issue-1948-...` because the char after `194` is `8`, not `-`).
+   Exit 3
    (a live foreign match) = an inline gate for THIS issue is STILL RUNNING:
-   do NOT launch — the `printf` below would rewrite the live run's
-   payload file, and the helper's audit files
+   do NOT launch — round-unique payload paths (#1948) mean the `printf`
+   below no longer rewrites the live run's payload file, but the
+   helper's audit files
    (`/tmp/issue-<N>-inline-lint.txt` / `-inline-map.txt`) are
-   unconditional overwrites, so a relaunch clobbers the live run's
-   audit legs and double-burns the ~2.5-6 min legs. WAIT for exit, or
+   unconditional ISSUE-keyed overwrites, so a relaunch clobbers the live
+   run's audit legs and double-burns the ~2.5-6 min legs. WAIT for exit, or
    reap a wedged run, per the Step 9c 1b statement (crash-fix-rounds
    § Kill-before-relaunch); key any improvised wait on **process
    exit** (the probe exiting 0 — CLEAR), never on cert/audit-file
@@ -7823,11 +7830,19 @@ explicit eval-data path):
    ```bash
    # Inline payload lint gate (#1460/#1500) — ONE background Bash (run_in_background=true)
    printf '%s\n' <round's to-be-committed non-artifact paths, repo-relative> \
-     > /tmp/issue-<N>-inline-payload.txt   # one path per line (the helper
-                                           # strips blank lines defensively)
+     > /tmp/issue-<N>-<round-slug>-inline-payload.txt   # one path per line
+                                           # (the helper strips blank lines)
    uv run python scripts/inline_lint_gate.py --issue <N> \
-     --payload-file /tmp/issue-<N>-inline-payload.txt
+     --payload-file /tmp/issue-<N>-<round-slug>-inline-payload.txt
    ```
+
+   The `<round-slug>` makes the payload path ROUND-unique (e.g.
+   `r<round>-<label>`, the same convention as the /tmp-hygiene note
+   below). Round-unique payload paths are REQUIRED as of #1948: the gate
+   REFUSES the bare legacy basename `issue-<N>-inline-payload.txt`
+   (exit 3, INCONCLUSIVE) — the issue-keyed shared path is clobbered by
+   concurrent same-issue rounds (two concurrent #1768 rounds
+   cross-certified each other's payloads, 2026-07-31).
 
    (/tmp hygiene: on a long-lived follow-up issue, ROUND-SCOPE tmp
    artifact names — `/tmp/issue-<N>-r<round>-<label>` — a bare

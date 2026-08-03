@@ -17,6 +17,7 @@ TOCTOU + trim behavior of ``write_cert``.
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import os
 import subprocess
@@ -68,8 +69,9 @@ def _run_gate(
     map_out: str = "",
     pytest_out: str = "",
     lint_cmd_extra: str = "",
+    payload_name: str = "payload.txt",
 ) -> subprocess.CompletedProcess[str]:
-    payload_file = tmp_path / "payload.txt"
+    payload_file = tmp_path / payload_name
     payload_file.write_text("\n".join(payload) + "\n", encoding="utf-8")
     out_dir = tmp_path / "out"
     out_dir.mkdir(exist_ok=True)
@@ -861,3 +863,147 @@ def test_untracked_payload_note_printed(tmp_path: Path) -> None:
     assert r.returncode == 0, (r.returncode, r.stdout, r.stderr)
     assert "inline_lint_gate: note: payload scripts/new.py is untracked" in r.stderr, r.stderr
     assert "payload scripts/mod.py is untracked" not in r.stderr, r.stderr
+
+
+# ---------------------------------------------------------------------------
+# Round-unique payload path contract (#1948): the bare issue-keyed legacy
+# basename is refused BEFORE any leg runs; round-unique + arbitrary names are
+# accepted; the map leg consumes a PRIVATE mkstemp copy (never the caller's
+# file); a payload-binding audit line prints before the verdict line.
+# ---------------------------------------------------------------------------
+def test_legacy_payload_basename_refused_before_any_leg(tmp_path: Path) -> None:
+    """#1948 criterion 1: the bare issue-keyed payload name is refused
+    (exit 3, Inconclusive) BEFORE any leg subprocess runs — concurrent
+    same-issue rounds clobber the shared path (cross-certification, #1768).
+    The leg-override seams write a sentinel; its absence proves no leg ran."""
+    repo = _make_repo(tmp_path)
+    payload_file = tmp_path / "issue-9999-inline-payload.txt"
+    payload_file.write_text("scripts/mod.py\n", encoding="utf-8")
+    sentinel = tmp_path / "leg-ran"
+    env = os.environ.copy()
+    for name in (
+        "EPM_INLINE_GATE_LINT_CMD",
+        "EPM_INLINE_GATE_MAP_CMD",
+        "EPM_INLINE_GATE_PYTEST_CMD",
+    ):
+        env[name] = f"touch {sentinel}"
+    env["EPM_INLINE_CERT_PATH"] = str(tmp_path / "cert.txt")
+    r = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--issue",
+            "9999",
+            "--payload-file",
+            str(payload_file),
+            "--repo-root",
+            str(repo),
+            "--out-dir",
+            str(tmp_path),
+        ],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert r.returncode == 3, (r.returncode, r.stdout, r.stderr)
+    assert "legacy shared payload path refused (#1948)" in r.stdout, r.stdout
+    assert "round-unique" in r.stdout, r.stdout
+    assert not sentinel.exists(), "a leg subprocess ran despite the legacy-path refusal"
+    assert _cert_lines(tmp_path) == []
+
+
+def test_round_unique_payload_name_accepted(tmp_path: Path) -> None:
+    """#1948 criterion 2: a round-unique payload name gates normally (the
+    arbitrary-name case is covered by every other test's ``payload.txt``)."""
+    repo = _make_repo(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        payload_name="issue-9999-r2-fu1-inline-payload.txt",
+    )
+    assert r.returncode == 0, (r.returncode, r.stdout, r.stderr)
+    assert "inline_lint_gate: PASS" in r.stdout, r.stdout
+    assert len(_cert_lines(tmp_path)) == 1
+
+
+def test_map_leg_receives_private_copy_not_caller_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#1948 criterion 3 (regression: fails pre-fix): main() hands run_legs a
+    PRIVATE mkstemp copy of the resolved payload list — never the caller's
+    file — so a mid-run overwrite of the caller's path cannot redirect the
+    mapped-test set. run_legs is faked signature-conformantly at the
+    subprocess boundary; the real run_legs body is exercised end-to-end by
+    the subprocess tests above via the documented leg-override seams."""
+    repo = _make_repo(tmp_path)
+    caller = tmp_path / "issue-9999-r1-inline-payload.txt"
+    caller.write_text("scripts/mod.py\n", encoding="utf-8")
+    seen: dict[str, object] = {}
+
+    def fake_run_legs(payload_file, issue, repo, out_dir, payload=None):
+        seen["payload_file"] = Path(payload_file)
+        seen["payload"] = list(payload or [])
+        return ilg.LegResults(lint_output="workflow_lint: PASS\n", map_pairs=[])
+
+    monkeypatch.setattr(ilg, "run_legs", fake_run_legs)
+    monkeypatch.setenv("EPM_INLINE_CERT_PATH", str(tmp_path / "cert.txt"))
+    rc = ilg.main(
+        [
+            "--issue",
+            "9999",
+            "--payload-file",
+            str(caller),
+            "--repo-root",
+            str(repo),
+            "--out-dir",
+            str(tmp_path),
+        ]
+    )
+    assert rc == 0
+    private = seen["payload_file"]
+    assert isinstance(private, Path)
+    assert private.resolve() != caller.resolve(), "map leg still consumes the caller's file"
+    assert private.read_text(encoding="utf-8") == "scripts/mod.py\n"
+    assert seen["payload"] == ["scripts/mod.py"]
+    # The private mkstemp name (dot-suffixed) never matches the legacy regex.
+    assert not ilg.LEGACY_PAYLOAD_BASENAME_RE.match(private.name)
+    private.unlink(missing_ok=True)
+
+
+def test_payload_binding_audit_line_before_verdict(tmp_path: Path) -> None:
+    """#1948 criterion 4: ONE payload-binding audit line — source path, n,
+    and the 12-hex sha256 of the sorted payload list — prints BEFORE the
+    (byte-stable) terminal verdict line."""
+    repo = _make_repo(tmp_path)
+    (repo / "scripts" / "b.py").write_text("x\n", encoding="utf-8")
+    _git(repo, "add", "--", "scripts/b.py")
+    _git(repo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "b")
+    _git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+    r = _run_gate(repo, ["scripts/mod.py", "scripts/b.py"], tmp_path, lint_out=LINT_OK)
+    assert r.returncode == 0, (r.returncode, r.stdout, r.stderr)
+    payload_sorted = sorted(["scripts/mod.py", "scripts/b.py"])
+    sha = hashlib.sha256(("\n".join(payload_sorted) + "\n").encode("utf-8")).hexdigest()[:12]
+    audit = f"inline_lint_gate: payload-source {tmp_path / 'payload.txt'} n=2 list-sha256={sha}"
+    assert audit in r.stdout, r.stdout
+    assert r.stdout.index(audit) < r.stdout.index("inline_lint_gate: PASS"), r.stdout
+
+
+def test_inline_paths_audit_line_source_token(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """#1948 criterion 4 (--paths branch): the audit line's source field reads
+    ``inline-paths`` when no payload file was given."""
+    repo = _make_repo(tmp_path)
+
+    def fake_run_legs(payload_file, issue, repo, out_dir, payload=None):
+        return ilg.LegResults(lint_output="workflow_lint: PASS\n", map_pairs=[])
+
+    monkeypatch.setattr(ilg, "run_legs", fake_run_legs)
+    monkeypatch.setenv("EPM_INLINE_CERT_PATH", str(tmp_path / "cert.txt"))
+    rc = ilg.main(["--issue", "9999", "--paths", "scripts/mod.py", "--repo-root", str(repo)])
+    assert rc == 0
+    out = capsys.readouterr().out
+    sha = hashlib.sha256(b"scripts/mod.py\n").hexdigest()[:12]
+    assert f"inline_lint_gate: payload-source inline-paths n=1 list-sha256={sha}" in out, out
