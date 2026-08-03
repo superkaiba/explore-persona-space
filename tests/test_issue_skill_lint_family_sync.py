@@ -49,6 +49,25 @@ SPECS literal and test (9)'s family-membership asserts gain the new
 member; tests (10) + (14) mechanically enforce the Step 10d copy +
 SPECS_10D parity with no edit.
 
+#1972 (2026-08-03) widens the sync set on three arms (incident basis
+2026-07-31: #1776 gate rounds 1-3, #1768 r3/r4/r5 ~40 min extra, #1846
+Guard-4 LOST-UPDATE REFUSAL, #1887 lint red from 4 branch-stale
+agent-memory files): (arm 1) `.claude/agent-memory` joins SPECS +
+SPECS_10D as a singleton, protected by a NEW uncommitted-dirt arm in
+pass 1 of BOTH copies — tracked-modified porcelain marks the family
+dirty; an untracked (??) path only when it exists at origin/main (the
+only case `git checkout origin/main -- <pathspec>` could clobber it);
+(arm 2) the Step 9c selector triple — scripts/select_step9c_tests.py,
+tests/test_select_step9c_tests.py,
+tests/step9c_workflow_invariant_manifest.txt — joins the "lint" family
+(the pin test importlib-loads the selector BY PATH and its case 6b pins
+WORKFLOW_INVARIANT set-equal to the manifest, so any strict subset is a
+half-sync); (arm 3) a per-FILE sibling-issue freshness arm in Step 5a
+ONLY (deliberately NOT in the Step 10d post-gate copy — the 10d TG legs
+run before it) syncs never-branch-edited scripts/issue<M>_*.py +
+tests/test_issue<M>_*.py pairs together. Tests (15) + (16) pin the two
+new arms; tests (10) + (14) enforce the copy parity mechanically.
+
 These tests fail the suite if a later SKILL.md editor drops the family
 entries, the boundary-paragraph family exception, the post-gate re-sync
 bullet (or reorders it before the gate's stale-verdict rm), the 9a-ter
@@ -56,7 +75,9 @@ staleness note, reintroduces the full-message commit filter the Step 5a
 sync and the gate section deliberately avoid, drops the family-atomic
 declaration in Step 5a, lets the Step 10d inline family-atomic block
 drift from Step 5a's family definition, weakens the #1807 re-bind
-stanza's fail-closed arms, or drops the 9c pre-gate re-sync reference.
+stanza's fail-closed arms, drops the 9c pre-gate re-sync reference,
+drops the #1972 uncommitted-dirt arm from either copy, or drops (or
+mirrors into the 10d copy) the #1972 sibling-issue per-file arm.
 
 NOTE for future SKILL.md editors: these assertions pin literal snippet text.
 A legitimate rewording of the pinned lines in SKILL.md must update the
@@ -106,11 +127,14 @@ def _gate_region(text: str) -> str:
 
 def test_step5a_specs_include_lint_family():
     assert (
-        'SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml '
-        "CLAUDE.md scripts/workflow_lint.py .claude/hooks "
+        'SPECS=".claude/agents .claude/agent-memory .claude/skills .claude/rules '
+        ".claude/workflow.yaml "
+        "CLAUDE.md scripts/workflow_lint.py scripts/select_step9c_tests.py .claude/hooks "
         ":(glob)scripts/guard_*.sh "
         "tests/test_guard_lessons_edit.py "
         "tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py "
+        "tests/test_select_step9c_tests.py "
+        "tests/step9c_workflow_invariant_manifest.txt "
         ":(glob)tests/test_workflow_lint*.py "
         ":(glob)tests/test_guard_*.py "
         ':(glob)tests/test_issue_skill_*.py"'
@@ -129,7 +153,12 @@ def test_step5a_specs_include_lint_family():
         "guard-script implementation set :(glob)scripts/guard_*.sh (the "
         "test_guard_* pins execute the worktree copies; syncing tests "
         "without scripts half-syncs the tree — the #1860/#1862 false-red "
-        "guard nodes)"
+        "guard nodes) — plus the #1972 members: .claude/agent-memory "
+        "(singleton; dirt-arm-protected) and the Step 9c selector triple "
+        "scripts/select_step9c_tests.py + tests/test_select_step9c_tests.py "
+        "+ tests/step9c_workflow_invariant_manifest.txt (lint family; the "
+        "pin test importlib-loads the selector by path and pins "
+        "WORKFLOW_INVARIANT set-equal to the manifest)"
     )
 
 
@@ -313,6 +342,21 @@ def test_step5a_family_atomicity_declared_in_bash():
     assert 'FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"' in span, (
         "the lint family must include tests/test_autonomous_session_watch.py "
         "(imports check_asw_docstring_pass_count from workflow_lint)"
+    )
+    assert 'FAMILY_OF["scripts/select_step9c_tests.py"]="lint"' in span, (
+        "the lint family must include scripts/select_step9c_tests.py — the "
+        "Step 9c selector; its pin test importlib-loads the WORKTREE copy "
+        "by path, so syncing the test without the selector half-syncs the "
+        "tree (#1972)"
+    )
+    assert 'FAMILY_OF["tests/test_select_step9c_tests.py"]="lint"' in span, (
+        "the lint family must include tests/test_select_step9c_tests.py — "
+        "the selector's by-path importlib pin test (#1972)"
+    )
+    assert 'FAMILY_OF["tests/step9c_workflow_invariant_manifest.txt"]="lint"' in span, (
+        "the lint family must include tests/step9c_workflow_invariant_manifest.txt "
+        "— the pin test's case 6b holds WORKFLOW_INVARIANT set-equal to it; "
+        "the dominant selector edit updates all three together (#1972)"
     )
     assert 'FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"' in span, (
         "the guard family must include the explicit tests/test_guard_lessons_edit.py "
@@ -510,4 +554,124 @@ def test_specs_and_specs_10d_token_sets_match():
         "must carry identical pathspec token sets (#1883; the two lists "
         "are the same sync surface — a member added to one but not the "
         "other silently diverges the post-gate re-sync)"
+    )
+
+
+# --- (15) uncommitted-dirt arm in BOTH sync copies (#1972 pin) ---------------
+
+
+def _dirt_arm_block(span: str) -> str:
+    """Extract the #1972 uncommitted-dirt arm from a sync span: from its
+    comment lead through the end of the UNCOMMITTED-changes echo line."""
+    start = span.index("# Uncommitted-dirt arm (#1972)")
+    echo_idx = span.index("carries UNCOMMITTED changes the sync could clobber", start)
+    end = span.index("\n", echo_idx)
+    return span[start:end]
+
+
+def test_uncommitted_dirt_arm_in_both_sync_copies():
+    """#1972 arm 1: pass 1 of BOTH sync copies (Step 5a + the Step 10d
+    auto-merge inline block) must carry the uncommitted-dirt arm.
+    Tracked-modified porcelain output (any non-?? line — renames included,
+    no path parsing needed) marks the file's family dirty unconditionally;
+    an untracked (??) path marks it dirty ONLY when the same path exists at
+    fetched origin/main — `git checkout <ref> -- <pathspec>` DOES overwrite
+    an untracked file whose path exists at the ref and cannot touch one
+    absent from it, so fresh mid-round agent-memory files with no main-side
+    name collision never block the sync. Fail-safe direction: dirty ->
+    status-quo staleness, never a clobber."""
+    text = _text()
+    for span_name, span, dirty_marking in (
+        ("Step 5a", _step5a_span(text), "DIRTY_FAMILIES[$fam]=1"),
+        ("auto-merge", _automerge_span(text), "DIRTY_FAMILIES_10D[$fam]=1"),
+    ):
+        block = _dirt_arm_block(span)
+        assert 'if [ "${line:0:2}" = "??" ]; then' in block, (
+            f"the {span_name} dirt arm must branch on the ?? porcelain status prefix"
+        )
+        assert 'git -C "$WT" cat-file -e "origin/main:$p" 2>/dev/null && DIRT=yes' in block, (
+            f"the {span_name} dirt arm's ?? branch must mark dirt ONLY on an "
+            "origin/main path collision (cat-file -e existence probe)"
+        )
+        assert "p=${line:3}; p=${p%/}" in block, (
+            f"the {span_name} dirt arm must strip the porcelain prefix + any "
+            "trailing slash (a collapsed untracked dir cat-files the tree path)"
+        )
+        assert block.count("DIRT=yes") == 2, (
+            f"the {span_name} dirt arm must be able to mark dirt from BOTH "
+            "branches: the ?? collision branch AND the unconditional "
+            "tracked-modified else-branch"
+        )
+        assert dirty_marking in block, (
+            f"the {span_name} dirt arm must mark the file's family dirty "
+            f"({dirty_marking} — the family-atomic skip)"
+        )
+        assert "carries UNCOMMITTED changes" in block, (
+            f"the {span_name} dirt arm must announce the skip with the "
+            "UNCOMMITTED-changes echo lead"
+        )
+
+
+# --- (16) sibling-issue per-FILE arm: Step 5a ONLY (#1972 pin) ---------------
+
+
+def _sibling_arm_block(span: str) -> str:
+    """Extract the #1972 sibling-issue file arm from the Step 5a span: from
+    its comment lead through the closing [step5a] echo."""
+    start = span.index("# Sibling-issue file freshness (#1972)")
+    end = span.index("[step5a] sibling-file sync:", start)
+    return span[start:end]
+
+
+def test_sibling_issue_file_arm_step5a_only():
+    """#1972 arm 3: the Step 5a block carries the per-FILE sibling-issue
+    freshness arm — never-branch-edited sibling scripts/issue<M>_*.py AND
+    their covering tests/test_issue<M>_*.py sync together as a PAIR (the
+    arm's own sync commit puts the script into the selector's three-dot
+    diff, newly mapping its covering test; syncing the script alone runs a
+    fork-era test against a fresh script, the #1824/#1860 half-sync class).
+    The Step 10d auto-merge inline copy deliberately does NOT carry the arm
+    (the 10d TG legs run before the post-gate re-sync — syncing sibling
+    files there moves the tip after certification for zero gate benefit);
+    the negative assert anchors on the EXECUTABLE array-init fragment, so
+    the 10d copy's prose asymmetry comment cannot trip it."""
+    text = _text()
+    arm = _sibling_arm_block(_step5a_span(text))
+    assert "':(glob)scripts/issue[0-9]*_*.py'" in arm, (
+        "the sibling arm must enumerate sibling-issue scripts via the "
+        "numeric-anchored :(glob)scripts/issue[0-9]*_*.py pathspec"
+    )
+    assert "':(glob)tests/test_issue[0-9]*_*.py'" in arm, (
+        "the sibling arm must enumerate the covering tests via the paired "
+        ":(glob)tests/test_issue[0-9]*_*.py pathspec (script+test move together)"
+    )
+    assert "awk 'index($0, \"sync workflow-surface specs from\") == 0'" in arm, (
+        "the sibling arm's branch-side-edit exclusion must reuse the "
+        "subject-anchored awk index() form verbatim (the pass-1 / Guard-3 "
+        "convention, #1789)"
+    )
+    assert "scripts/issue<N>_*|tests/test_issue<N>_*" in arm, (
+        "the sibling arm must carve out the session's OWN issue scripts and "
+        "tests (defense-in-depth beside the bs-commits exclusion)"
+    )
+    assert 'git -C "$WT" cat-file -e "origin/main:$f" 2>/dev/null' in arm, (
+        "the sibling arm must guard the checkout on origin/main existence"
+    )
+    assert "never deleted" in arm, (
+        "the sibling arm must skip files absent on origin/main (never delete)"
+    )
+    assert 'git -C "$WT" status --porcelain -- "$f" | grep -q .' in arm, (
+        "the sibling arm must skip a file with ANY uncommitted dirt "
+        "(per-file grain makes the wide skip free)"
+    )
+    subject = "sync workflow-surface specs from origin/main (spec-freshness; sibling-issue files)"
+    assert subject in arm, (
+        "the sibling arm's commit subject must carry the sync-subject anchor "
+        "phrase (Guard 3 + the arm's own bs-check key on it) with the "
+        "sibling-issue qualifier"
+    )
+    assert "SIBLING_SYNCED=()" not in _automerge_span(text), (
+        "the Step 10d auto-merge inline copy must NOT carry the sibling-issue "
+        "arm (deliberate asymmetry, #1972 — the 10d TG legs run before the "
+        "post-gate re-sync; document it in prose, never mirror the executable arm)"
     )
