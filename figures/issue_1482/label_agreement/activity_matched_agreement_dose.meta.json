@@ -1,6 +1,6 @@
 {
- "commit": "fb21ebc87f",
- "created": "2026-08-03T18:37:31Z",
+ "commit": "3ebe496a9c",
+ "created": "2026-08-03T20:28:51Z",
  "figsize": [
   17.0,
   7.4
@@ -8,210 +8,210 @@
  "points": [
   {
    "judge agreement": 0.0,
-   "excess over\nstratified null": 0.010680189187147717,
+   "excess over\nstratified null": 0.00372220783734992,
    "series": "unmatched",
    "_kind": "line",
    "_group": 0
   },
   {
    "judge agreement": 1.0,
-   "excess over\nstratified null": 0.023826365054238668,
+   "excess over\nstratified null": 0.016018493534496324,
    "series": "unmatched",
    "_kind": "line",
    "_group": 0
   },
   {
    "judge agreement": 2.0,
-   "excess over\nstratified null": 0.08180330998832912,
+   "excess over\nstratified null": 0.052141747631950564,
    "series": "unmatched",
    "_kind": "line",
    "_group": 0
   },
   {
    "judge agreement": 0.0,
-   "excess over\nstratified null": 0.010611703168465048,
+   "excess over\nstratified null": 0.0036371464492471134,
    "series": "activity-matched",
    "_kind": "line",
    "_group": 1
   },
   {
    "judge agreement": 1.0,
-   "excess over\nstratified null": 0.024399043689393832,
+   "excess over\nstratified null": 0.015711390933999828,
    "series": "activity-matched",
    "_kind": "line",
    "_group": 1
   },
   {
    "judge agreement": 2.0,
-   "excess over\nstratified null": 0.08171924730877889,
+   "excess over\nstratified null": 0.060165478656919624,
    "series": "activity-matched",
    "_kind": "line",
    "_group": 1
   },
   {
    "judge agreement": 0.0,
-   "y": 0.017414443974522107,
+   "y": 0.01372160396643576,
    "series": "unmatched",
    "_kind": "line",
    "_group": 2
   },
   {
    "judge agreement": 1.0,
-   "y": 0.026613074124954613,
+   "y": 0.0242105498057838,
    "series": "unmatched",
    "_kind": "line",
    "_group": 2
   },
   {
    "judge agreement": 2.0,
-   "y": 0.03131282216081825,
+   "y": 0.03195650797143906,
    "series": "unmatched",
    "_kind": "line",
    "_group": 2
   },
   {
    "judge agreement": 0.0,
-   "y": 0.01743383394355607,
+   "y": 0.0138704631590981,
    "series": "activity-matched",
    "_kind": "line",
    "_group": 3
   },
   {
    "judge agreement": 1.0,
-   "y": 0.024868731284142076,
+   "y": 0.024841893356902886,
    "series": "activity-matched",
    "_kind": "line",
    "_group": 3
   },
   {
    "judge agreement": 2.0,
-   "y": 0.03084866758488055,
+   "y": 0.03087371045515947,
    "series": "activity-matched",
    "_kind": "line",
    "_group": 3
   },
   {
    "judge agreement": 0.0,
-   "y": 0.02396603635087044,
+   "y": 0.01949344475329671,
    "series": "unmatched",
    "_kind": "line",
    "_group": 4
   },
   {
    "judge agreement": 1.0,
-   "y": 0.03727610861807298,
+   "y": 0.02227782487232403,
    "series": "unmatched",
    "_kind": "line",
    "_group": 4
   },
   {
    "judge agreement": 2.0,
-   "y": 0.07036539254292648,
+   "y": 0.04098307168475536,
    "series": "unmatched",
    "_kind": "line",
    "_group": 4
   },
   {
    "judge agreement": 0.0,
-   "y": 0.023903238885708267,
+   "y": 0.01960367143571544,
    "series": "activity-matched",
    "_kind": "line",
    "_group": 5
   },
   {
    "judge agreement": 1.0,
-   "y": 0.03670074209613352,
+   "y": 0.02437075672804258,
    "series": "activity-matched",
    "_kind": "line",
    "_group": 5
   },
   {
    "judge agreement": 2.0,
-   "y": 0.07277508744119211,
+   "y": 0.04141766434877366,
    "series": "activity-matched",
    "_kind": "line",
    "_group": 5
   },
   {
    "judge agreement": 0.0,
-   "y": 0.024834756176403495,
+   "y": 0.026465725932704548,
    "series": "unmatched",
    "_kind": "line",
    "_group": 6
   },
   {
    "judge agreement": 1.0,
-   "y": 0.02956863580379553,
+   "y": 0.036149244626394905,
    "series": "unmatched",
    "_kind": "line",
    "_group": 6
   },
   {
    "judge agreement": 2.0,
-   "y": 0.02797477074202674,
+   "y": 0.033753515090987264,
    "series": "unmatched",
    "_kind": "line",
    "_group": 6
   },
   {
    "judge agreement": 0.0,
-   "y": 0.024765847510934004,
+   "y": 0.026397885871473924,
    "series": "activity-matched",
    "_kind": "line",
    "_group": 7
   },
   {
    "judge agreement": 1.0,
-   "y": 0.028187607893300746,
+   "y": 0.03908858597233175,
    "series": "activity-matched",
    "_kind": "line",
    "_group": 7
   },
   {
    "judge agreement": 2.0,
-   "y": 0.03601424298446641,
+   "y": 0.04172133956212561,
    "series": "activity-matched",
    "_kind": "line",
    "_group": 7
   },
   {
    "judge agreement": 0.0,
-   "y": 0.022087772472179388,
+   "y": 0.0169948015183666,
    "series": "unmatched",
    "_kind": "line",
    "_group": 8
   },
   {
    "judge agreement": 1.0,
-   "y": 0.02431200210199109,
+   "y": 0.016743604754398362,
    "series": "unmatched",
    "_kind": "line",
    "_group": 8
   },
   {
    "judge agreement": 2.0,
-   "y": 0.04433688264053942,
+   "y": 0.030203990500216677,
    "series": "unmatched",
    "_kind": "line",
    "_group": 8
   },
   {
    "judge agreement": 0.0,
-   "y": 0.02160169439067734,
+   "y": 0.01714176451048639,
    "series": "activity-matched",
    "_kind": "line",
    "_group": 9
   },
   {
    "judge agreement": 1.0,
-   "y": 0.027469700415060104,
+   "y": 0.018301739609002617,
    "series": "activity-matched",
    "_kind": "line",
    "_group": 9
   },
   {
    "judge agreement": 2.0,
-   "y": 0.0932052830082586,
+   "y": 0.03708574399577688,
    "series": "activity-matched",
    "_kind": "line",
    "_group": 9
@@ -222,11 +222,11 @@
  "text": {
   "suptitle": null,
   "fig_texts": [
-   "R^2 target: #1738 SAE->SAE multi-turn context R^2 (provisional target)  |  cross-corpus: R^2 is the #1738 MULTI-TURN read; activity / judged labels come from the #1482 SINGLE-TURN corpus"
+   "R^2 target: #1482 dense-context -> SAE ridge, mean pooling (full width)  |  single corpus: R^2 and the activity / judged-label covariates are both the #1482 SINGLE-TURN read (verified against the banked #1482 panel)"
   ],
   "axes": [
    {
-    "title_left": "interpretable\nmatched n/level = 9,502",
+    "title_left": "interpretable\nmatched n/level = 9,980",
     "xlabel": "judge agreement",
     "ylabel": "excess over\nstratified null",
     "legend_labels": [
@@ -239,18 +239,21 @@
      "5-0"
     ],
     "yticklabels": [
-     "\u22120.02",
+     "\u22120.01",
      "0.00",
+     "0.01",
      "0.02",
+     "0.03",
      "0.04",
+     "0.05",
      "0.06",
+     "0.07",
      "0.08",
-     "0.10",
-     "0.12"
+     "0.09"
     ]
    },
    {
-    "title_left": "abstraction\nmatched n/level = 20,417",
+    "title_left": "abstraction\nmatched n/level = 21,375",
     "xlabel": "judge agreement",
     "xticklabels": [
      "3-2",
@@ -271,25 +274,7 @@
     ]
    },
    {
-    "title_left": "content type\nmatched n/level = 14,114",
-    "xlabel": "judge agreement",
-    "xticklabels": [
-     "3-2",
-     "4-1",
-     "5-0"
-    ],
-    "yticklabels": [
-     "\u22120.02",
-     "0.00",
-     "0.02",
-     "0.04",
-     "0.06",
-     "0.08",
-     "0.10"
-    ]
-   },
-   {
-    "title_left": "speaker property\nmatched n/level = 11,160",
+    "title_left": "content type\nmatched n/level = 14,937",
     "xlabel": "judge agreement",
     "xticklabels": [
      "3-2",
@@ -308,7 +293,7 @@
     ]
    },
    {
-    "title_left": "functional role\nmatched n/level = 14,301",
+    "title_left": "speaker property\nmatched n/level = 11,777",
     "xlabel": "judge agreement",
     "xticklabels": [
      "3-2",
@@ -316,16 +301,37 @@
      "5-0"
     ],
     "yticklabels": [
-     "\u22120.02",
+     "\u22120.01",
      "0.00",
+     "0.01",
      "0.02",
+     "0.03",
      "0.04",
+     "0.05",
      "0.06",
+     "0.07"
+    ]
+   },
+   {
+    "title_left": "functional role\nmatched n/level = 14,712",
+    "xlabel": "judge agreement",
+    "xticklabels": [
+     "3-2",
+     "4-1",
+     "5-0"
+    ],
+    "yticklabels": [
+     "\u22120.01",
+     "0.00",
+     "0.01",
+     "0.02",
+     "0.03",
+     "0.04",
+     "0.05",
+     "0.06",
+     "0.07",
      "0.08",
-     "0.10",
-     "0.12",
-     "0.14",
-     "0.16"
+     "0.09"
     ]
    },
    {
@@ -339,9 +345,7 @@
      "0.03",
      "0.04",
      "0.05",
-     "0.06",
-     "0.07",
-     "0.08"
+     "0.06"
     ],
     "yticklabels": [
      "interpretable",
@@ -368,7 +372,8 @@
      "0.2",
      "0.3",
      "0.4",
-     "0.5"
+     "0.5",
+     "0.6"
     ],
     "yticklabels": [
      "interpretable",
@@ -393,7 +398,7 @@
    "H1 vs H2": "matched shift survives => unanimity denoises the label (H1); matched shift collapses => the dose-response was population composition (H2)"
   },
   "caveats": [
-   "cross-corpus: R^2 is the #1738 MULTI-TURN read; activity / judged labels come from the #1482 SINGLE-TURN corpus",
+   "single corpus: R^2 and the activity / judged-label covariates are both the #1482 SINGLE-TURN read (verified against the banked #1482 panel)",
    "matching shrinks every level to the per-bin across-level minimum, so the matched 5-0 read has far fewer features than the unmatched one and correspondingly wider CIs \u2014 the like-for-like comparison is matched-5-0 vs matched-3-2, not matched vs unmatched at fixed precision",
    "an axis whose levels barely overlap in activity is reported INFEASIBLE rather than given a forced estimate",
    "the activity-stratified null already absorbs WITHIN-level activity structure; matching is the complementary control on the BETWEEN-level distribution"
@@ -404,205 +409,205 @@
     "matching": {
      "n_bins_requested": 50,
      "n_bins_nonempty_all_levels": 50,
-     "n_matched_per_level": 9502
+     "n_matched_per_level": 9980
     },
     "balance": {
      "3-2": {
-      "n_before": 9502,
-      "n_after": 9502,
+      "n_before": 9980,
+      "n_after": 9980,
       "retention": 1.0,
-      "median_activity_before": 0.0134875,
-      "median_activity_after": 0.0134875,
-      "smd_log_activity_vs_5_0_before": 0.20579596085886182,
-      "smd_log_activity_vs_5_0_after": 0.0005786304178478041
+      "median_activity_before": 0.0117875,
+      "median_activity_after": 0.0117875,
+      "smd_log_activity_vs_5_0_before": 0.18078329711233118,
+      "smd_log_activity_vs_5_0_after": 0.0003790255747655465
      },
      "4-1": {
-      "n_before": 13119,
-      "n_after": 9502,
-      "retention": 0.7242930101379679,
-      "median_activity_before": 0.012383333333333333,
-      "median_activity_after": 0.013537500000000001,
-      "smd_log_activity_vs_5_0_before": 0.1749117208390126,
-      "smd_log_activity_vs_5_0_after": 0.0008208951084951648
+      "n_before": 13731,
+      "n_after": 9980,
+      "retention": 0.7268225183890467,
+      "median_activity_before": 0.01095,
+      "median_activity_after": 0.011720833333333333,
+      "smd_log_activity_vs_5_0_before": 0.1587950663546585,
+      "smd_log_activity_vs_5_0_after": 4.5178858450126644e-05
      },
      "5-0": {
-      "n_before": 89024,
-      "n_after": 9502,
-      "retention": 0.10673526240115025,
-      "median_activity_before": 0.008,
-      "median_activity_after": 0.013491666666666667,
+      "n_before": 93537,
+      "n_after": 9980,
+      "retention": 0.10669574606840074,
+      "median_activity_before": 0.006783333333333333,
+      "median_activity_after": 0.011758333333333332,
       "smd_log_activity_vs_5_0_before": 0.0,
       "smd_log_activity_vs_5_0_after": 0.0
      }
     },
-    "matched_shift": 0.07110754414031384,
-    "unmatched_shift": 0.0711231208011814,
-    "shift_difference_matched_minus_unmatched": -1.557666086755838e-05,
-    "shift_survival_fraction": 0.9997809901942984
+    "matched_shift": 0.05652833220767251,
+    "unmatched_shift": 0.04841953979460065,
+    "shift_difference_matched_minus_unmatched": 0.008108792413071865,
+    "shift_survival_fraction": 1.1674694234490863
    },
    "abstraction": {
     "status": "ok",
     "matching": {
      "n_bins_requested": 50,
      "n_bins_nonempty_all_levels": 50,
-     "n_matched_per_level": 20417
+     "n_matched_per_level": 21375
     },
     "balance": {
      "3-2": {
-      "n_before": 20424,
-      "n_after": 20417,
-      "retention": 0.9996572659616138,
-      "median_activity_before": 0.0084375,
-      "median_activity_after": 0.008433333333333333,
-      "smd_log_activity_vs_5_0_before": 0.008016763592553777,
-      "smd_log_activity_vs_5_0_after": 0.0005813256060756468
+      "n_before": 21387,
+      "n_after": 21375,
+      "retention": 0.9994389114882872,
+      "median_activity_before": 0.007241666666666667,
+      "median_activity_after": 0.007266666666666667,
+      "smd_log_activity_vs_5_0_before": 0.014949250248131029,
+      "smd_log_activity_vs_5_0_after": -2.3168795506212036e-05
      },
      "4-1": {
-      "n_before": 24142,
-      "n_after": 20417,
-      "retention": 0.8457045812277358,
-      "median_activity_before": 0.008575,
-      "median_activity_after": 0.00845,
-      "smd_log_activity_vs_5_0_before": -0.001958246892536537,
-      "smd_log_activity_vs_5_0_after": 0.0006131481274343557
+      "n_before": 25282,
+      "n_after": 21375,
+      "retention": 0.8454631753816945,
+      "median_activity_before": 0.007408333333333334,
+      "median_activity_after": 0.0072833333333333335,
+      "smd_log_activity_vs_5_0_before": 0.007244835851443008,
+      "smd_log_activity_vs_5_0_after": 0.00013527074259166473
      },
      "5-0": {
-      "n_before": 66009,
-      "n_after": 20417,
-      "retention": 0.3093063067157509,
-      "median_activity_before": 0.009325,
-      "median_activity_after": 0.00845,
+      "n_before": 69438,
+      "n_after": 21375,
+      "retention": 0.30782856649097035,
+      "median_activity_before": 0.00795,
+      "median_activity_after": 0.007308333333333333,
       "smd_log_activity_vs_5_0_before": 0.0,
       "smd_log_activity_vs_5_0_after": 0.0
      }
     },
-    "matched_shift": 0.01341483364132448,
-    "unmatched_shift": 0.013898378186296145,
-    "shift_difference_matched_minus_unmatched": -0.00048354454497166396,
-    "shift_survival_fraction": 0.9652085632949289
+    "matched_shift": 0.01700324729606137,
+    "unmatched_shift": 0.018234904005003303,
+    "shift_difference_matched_minus_unmatched": -0.001231656708941934,
+    "shift_survival_fraction": 0.9324560903307201
    },
    "content_type": {
     "status": "ok",
     "matching": {
      "n_bins_requested": 50,
      "n_bins_nonempty_all_levels": 50,
-     "n_matched_per_level": 14114
+     "n_matched_per_level": 14937
     },
     "balance": {
      "3-2": {
-      "n_before": 14157,
-      "n_after": 14114,
-      "retention": 0.9969626333262697,
-      "median_activity_before": 0.007666666666666666,
-      "median_activity_after": 0.007629166666666666,
-      "smd_log_activity_vs_5_0_before": -0.08622736287668002,
-      "smd_log_activity_vs_5_0_after": -0.0006935870341011304
+      "n_before": 14961,
+      "n_after": 14937,
+      "retention": 0.998395829155805,
+      "median_activity_before": 0.006391666666666667,
+      "median_activity_after": 0.006391666666666667,
+      "smd_log_activity_vs_5_0_before": -0.09458400952958818,
+      "smd_log_activity_vs_5_0_after": 3.245603096379133e-06
      },
      "4-1": {
-      "n_before": 17144,
-      "n_after": 14114,
-      "retention": 0.8232617825478301,
-      "median_activity_before": 0.007466666666666667,
-      "median_activity_after": 0.007658333333333333,
-      "smd_log_activity_vs_5_0_before": -0.09320141352147442,
-      "smd_log_activity_vs_5_0_after": -0.0005977147336946443
+      "n_before": 18130,
+      "n_after": 14937,
+      "retention": 0.8238830667402096,
+      "median_activity_before": 0.006220833333333333,
+      "median_activity_after": 0.0064,
+      "smd_log_activity_vs_5_0_before": -0.10210494152278136,
+      "smd_log_activity_vs_5_0_after": -8.739089188536778e-05
      },
      "5-0": {
-      "n_before": 79279,
-      "n_after": 14114,
-      "retention": 0.17802949078570618,
-      "median_activity_before": 0.009541666666666667,
-      "median_activity_after": 0.007675,
+      "n_before": 82956,
+      "n_after": 14937,
+      "retention": 0.18005930854911037,
+      "median_activity_before": 0.008258333333333333,
+      "median_activity_after": 0.0064,
       "smd_log_activity_vs_5_0_before": 0.0,
       "smd_log_activity_vs_5_0_after": 0.0
      }
     },
-    "matched_shift": 0.04887184855548385,
-    "unmatched_shift": 0.04639935619205604,
-    "shift_difference_matched_minus_unmatched": 0.0024724923634278084,
-    "shift_survival_fraction": 1.0532872127189368
+    "matched_shift": 0.021813992913058224,
+    "unmatched_shift": 0.02148962693145865,
+    "shift_difference_matched_minus_unmatched": 0.00032436598159957253,
+    "shift_survival_fraction": 1.0150940722532849
    },
    "speaker_property": {
     "status": "ok",
     "matching": {
      "n_bins_requested": 50,
      "n_bins_nonempty_all_levels": 50,
-     "n_matched_per_level": 11160
+     "n_matched_per_level": 11777
     },
     "balance": {
      "3-2": {
-      "n_before": 11160,
-      "n_after": 11160,
+      "n_before": 11777,
+      "n_after": 11777,
       "retention": 1.0,
-      "median_activity_before": 0.020275,
-      "median_activity_after": 0.020275,
-      "smd_log_activity_vs_5_0_before": 0.3608026412452381,
-      "smd_log_activity_vs_5_0_after": 0.0007942699145219668
+      "median_activity_before": 0.017525,
+      "median_activity_after": 0.017525,
+      "smd_log_activity_vs_5_0_before": 0.304351489072789,
+      "smd_log_activity_vs_5_0_after": 0.0013113798225862106
      },
      "4-1": {
-      "n_before": 15400,
-      "n_after": 11160,
-      "retention": 0.7246753246753247,
-      "median_activity_before": 0.017441666666666668,
-      "median_activity_after": 0.02018333333333333,
-      "smd_log_activity_vs_5_0_before": 0.29993895927408604,
-      "smd_log_activity_vs_5_0_after": 0.0009904070561675233
+      "n_before": 16214,
+      "n_after": 11777,
+      "retention": 0.7263476008387812,
+      "median_activity_before": 0.014875,
+      "median_activity_after": 0.017416666666666667,
+      "smd_log_activity_vs_5_0_before": 0.25771143025014964,
+      "smd_log_activity_vs_5_0_after": 0.0008576421605657348
      },
      "5-0": {
-      "n_before": 86115,
-      "n_after": 11160,
-      "retention": 0.12959414736108693,
-      "median_activity_before": 0.007125,
-      "median_activity_after": 0.02020833333333333,
+      "n_before": 90296,
+      "n_after": 11777,
+      "retention": 0.13042659696996545,
+      "median_activity_before": 0.006116666666666667,
+      "median_activity_after": 0.017475,
       "smd_log_activity_vs_5_0_before": 0.0,
       "smd_log_activity_vs_5_0_after": 0.0
      }
     },
-    "matched_shift": 0.011248395473532409,
-    "unmatched_shift": 0.003140014565623246,
-    "shift_difference_matched_minus_unmatched": 0.008108380907909163,
-    "shift_survival_fraction": 3.5822749348615743
+    "matched_shift": 0.01532345369065169,
+    "unmatched_shift": 0.007287789158282716,
+    "shift_difference_matched_minus_unmatched": 0.008035664532368973,
+    "shift_survival_fraction": 2.102620336269784
    },
    "functional_role": {
     "status": "ok",
     "matching": {
      "n_bins_requested": 50,
      "n_bins_nonempty_all_levels": 50,
-     "n_matched_per_level": 14301
+     "n_matched_per_level": 14712
     },
     "balance": {
      "3-2": {
-      "n_before": 14784,
-      "n_after": 14301,
-      "retention": 0.9673295454545454,
-      "median_activity_before": 0.022475000000000002,
-      "median_activity_after": 0.02055,
-      "smd_log_activity_vs_5_0_before": 0.47158851156536696,
-      "smd_log_activity_vs_5_0_after": -0.00022122568786306677
+      "n_before": 15211,
+      "n_after": 14712,
+      "retention": 0.967194793241733,
+      "median_activity_before": 0.020566666666666667,
+      "median_activity_after": 0.018979166666666665,
+      "smd_log_activity_vs_5_0_before": 0.4768604518073395,
+      "smd_log_activity_vs_5_0_after": 0.00014948444294840267
      },
      "4-1": {
-      "n_before": 16412,
-      "n_after": 14301,
-      "retention": 0.8713746039483304,
-      "median_activity_before": 0.014604166666666666,
-      "median_activity_after": 0.020566666666666667,
-      "smd_log_activity_vs_5_0_before": 0.30347884708771383,
-      "smd_log_activity_vs_5_0_after": 0.00016390684197457522
+      "n_before": 17045,
+      "n_after": 14712,
+      "retention": 0.8631270167204459,
+      "median_activity_before": 0.012891666666666666,
+      "median_activity_after": 0.019054166666666667,
+      "smd_log_activity_vs_5_0_before": 0.30511643887225165,
+      "smd_log_activity_vs_5_0_after": -2.0965295142871707e-05
      },
      "5-0": {
-      "n_before": 70027,
-      "n_after": 14301,
-      "retention": 0.2042212289545461,
-      "median_activity_before": 0.006208333333333333,
-      "median_activity_after": 0.020591666666666668,
+      "n_before": 74153,
+      "n_after": 14712,
+      "retention": 0.1984006041562715,
+      "median_activity_before": 0.0052,
+      "median_activity_after": 0.019079166666666668,
       "smd_log_activity_vs_5_0_before": 0.0,
       "smd_log_activity_vs_5_0_after": 0.0
      }
     },
-    "matched_shift": 0.07160358861758126,
-    "unmatched_shift": 0.022249110168360033,
-    "shift_difference_matched_minus_unmatched": 0.04935447844922122,
-    "shift_survival_fraction": 3.2182675206223363
+    "matched_shift": 0.019943979485290492,
+    "unmatched_shift": 0.013209188981850077,
+    "shift_difference_matched_minus_unmatched": 0.006734790503440415,
+    "shift_survival_fraction": 1.5098564728458552
    }
   },
   "bin_sensitivity_settings": [
@@ -611,7 +616,7 @@
    100
   ],
   "source_paths": {
-   "r2": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1738/sae_twoway/perfeature/sae_context_r2.npy",
+   "r2": "/home/thomasjiralerspong/explore-persona-space/data/issue_1482/densesae_dl/ridge__mean_perfeature.npz",
    "labels": "/mnt/eps-data/thomasjiralerspong/issue1773_fulldict/labels_upload"
   }
  }

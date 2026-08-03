@@ -1,6 +1,6 @@
 {
- "commit": "bb60cd9548",
- "created": "2026-08-03T18:46:04Z",
+ "commit": "d91cf0dc3f",
+ "created": "2026-08-03T20:36:21Z",
  "figsize": [
   13.2,
   3.9
@@ -8,29 +8,28 @@
  "text": {
   "suptitle": null,
   "fig_texts": [
-   "R^2 target: #1738 SAE->SAE multi-turn context R^2 (provisional target)  |  cross-corpus: R^2 is the #1738 MULTI-TURN read; activity / judged labels come from the #1482 SINGLE-TURN corpus"
+   "R^2 target: #1482 dense-context -> SAE ridge, mean pooling (full width)  |  single corpus: R^2 and the activity / judged-label covariates are both the #1482 SINGLE-TURN read (verified against the banked #1482 panel)"
   ],
   "axes": [
    {
     "title_left": "(a) Median R-squared: labelled (open circle) vs judge-unresolved (filled square)",
     "xlabel": "median R-squared",
     "annotations": [
-     "x0.59  (n unresolved = 904)",
-     "x0.58  (n unresolved = 2,838)",
-     "x0.68  (n unresolved = 3,358)",
-     "x1.08  (n unresolved = 1,366)",
-     "x2.28  (n unresolved = 7,705)"
+     "D -0.0042  (x0.83)   n unresolved = 934",
+     "D -0.0065  (x0.73)   n unresolved = 2,968",
+     "D -0.0080  (x0.67)   n unresolved = 3,544",
+     "D +0.0099  (x1.41)   n unresolved = 1,436",
+     "D +0.0264  (x2.16)   n unresolved = 7,953"
     ],
     "xticklabels": [
-     "0.000",
-     "0.005",
-     "0.010",
-     "0.015",
-     "0.020",
-     "0.025",
-     "0.030",
-     "0.035",
-     "0.040"
+     "0.01",
+     "0.02",
+     "0.03",
+     "0.04",
+     "0.05",
+     "0.06",
+     "0.07",
+     "0.08"
     ],
     "yticklabels": [
      "interpretable",
@@ -44,11 +43,11 @@
     "title_left": "(b) Same contrast vs its activity-stratified null (tick = null mean, grey = null 95%)",
     "xlabel": "AUROC that an unresolved feature outranks a labelled one",
     "annotations": [
-     "excess -0.013",
-     "excess +0.003",
-     "excess -0.007",
-     "excess -0.015",
-     "excess +0.008"
+     "excess -0.006",
+     "excess +0.007",
+     "excess +0.000",
+     "excess +0.005",
+     "excess +0.009"
     ],
     "xticklabels": [
      "0.44",
@@ -70,149 +69,149 @@
    "excess": "AUROC minus the mean of the activity-stratified permutation null; excess near 0 means the raw median gap is ACTIVITY COMPOSITION, not a labelability effect"
   },
   "caveats": [
-   "cross-corpus: R^2 is the #1738 MULTI-TURN read; activity / judged labels come from the #1482 SINGLE-TURN corpus",
+   "single corpus: R^2 and the activity / judged-label covariates are both the #1482 SINGLE-TURN read (verified against the banked #1482 panel)",
    "unresolved features are also MORE ACTIVE on every axis, and activity predicts R-squared, so panel (a) alone cannot separate labelability from activity \u2014 panel (b) is the control that does",
    "the labelled group excludes each axis's drop labels (unresolved everywhere, plus 'unclear' on speaker property), so it is exactly the set every labelled read uses"
   ],
   "per_axis": {
    "interpretable": {
     "status": "ok",
-    "n_unresolved": 904,
-    "n_resolved": 114076,
+    "n_unresolved": 934,
+    "n_resolved": 119763,
     "n_resolved_but_dropped_label": 0,
-    "median_r2_unresolved": 0.005694936029613018,
-    "median_r2_resolved": 0.00964066619053483,
-    "median_r2_difference": -0.003945730160921812,
+    "median_r2_unresolved": 0.020025276578962803,
+    "median_r2_resolved": 0.024256093427538872,
+    "median_r2_difference": -0.004230816848576069,
     "median_r2_difference_ci95": [
-     -0.006143253145273775,
-     -0.0014319595647975802
+     -0.008987692533992231,
+     0.001451189629733562
     ],
-    "median_r2_ratio": 0.590720176081222,
-    "median_activity_unresolved": 0.006579166666666667,
-    "median_activity_resolved": 0.008858333333333333,
-    "auroc_unresolved_gt_resolved": 0.4687288847878778,
+    "median_r2_ratio": 0.82557715399576,
+    "median_activity_unresolved": 0.00565,
+    "median_activity_resolved": 0.007566666666666667,
+    "auroc_unresolved_gt_resolved": 0.4841557346995148,
     "auroc_ci95": [
-     0.45011200177602445,
-     0.4875408549051447
+     0.466572070265255,
+     0.5023218512254064
     ],
-    "auroc_perm_null_mean": 0.4812717464090855,
+    "auroc_perm_null_mean": 0.4900171210955699,
     "auroc_perm_band": [
-     0.46886415014582733,
-     0.4935009041335042
+     0.47665627345985484,
+     0.5030367122863874
     ],
-    "excess_over_stratified_null": -0.012542861621207713
+    "excess_over_stratified_null": -0.005861386396055102
    },
    "abstraction": {
     "status": "ok",
-    "n_unresolved": 2838,
-    "n_resolved": 112142,
+    "n_unresolved": 2968,
+    "n_resolved": 117729,
     "n_resolved_but_dropped_label": 0,
-    "median_r2_unresolved": 0.00559775298461318,
-    "median_r2_resolved": 0.009701503906399012,
-    "median_r2_difference": -0.0041037509217858315,
+    "median_r2_unresolved": 0.017943800427019596,
+    "median_r2_resolved": 0.0244144294410944,
+    "median_r2_difference": -0.006470629014074802,
     "median_r2_difference_ci95": [
-     -0.005243189091561362,
-     -0.002488322573481128
+     -0.009571720135863871,
+     -0.0030433560488745573
     ],
-    "median_r2_ratio": 0.5769984776196359,
-    "median_activity_unresolved": 0.005408333333333334,
-    "median_activity_resolved": 0.008958333333333334,
-    "auroc_unresolved_gt_resolved": 0.4680834850619588,
+    "median_r2_ratio": 0.7349670190046125,
+    "median_activity_unresolved": 0.004658333333333333,
+    "median_activity_resolved": 0.007658333333333333,
+    "auroc_unresolved_gt_resolved": 0.4781443787744154,
     "auroc_ci95": [
-     0.457653736675522,
-     0.4788586714450642
+     0.4682179525370283,
+     0.4882752676343306
     ],
-    "auroc_perm_null_mean": 0.4646599239625264,
+    "auroc_perm_null_mean": 0.4707103418657837,
     "auroc_perm_band": [
-     0.4574724387759333,
-     0.4717758445153267
+     0.46352611180403147,
+     0.4782298572188002
     ],
-    "excess_over_stratified_null": 0.0034235610994323706
+    "excess_over_stratified_null": 0.007434036908631703
    },
    "content_type": {
     "status": "ok",
-    "n_unresolved": 3358,
-    "n_resolved": 111622,
+    "n_unresolved": 3544,
+    "n_resolved": 117153,
     "n_resolved_but_dropped_label": 0,
-    "median_r2_unresolved": 0.0066111336927860975,
-    "median_r2_resolved": 0.009688184596598148,
-    "median_r2_difference": -0.003077050903812051,
+    "median_r2_unresolved": 0.016522375866770744,
+    "median_r2_resolved": 0.024506403133273125,
+    "median_r2_difference": -0.00798402726650238,
     "median_r2_difference_ci95": [
-     -0.004317903454648331,
-     -0.0017374362680129712
+     -0.010480080137494952,
+     -0.004938196600414812
     ],
-    "median_r2_ratio": 0.6823913837384449,
-    "median_activity_unresolved": 0.006479166666666666,
-    "median_activity_resolved": 0.008916666666666666,
-    "auroc_unresolved_gt_resolved": 0.46859517810840123,
+    "median_r2_ratio": 0.6742064829717009,
+    "median_activity_unresolved": 0.005395833333333334,
+    "median_activity_resolved": 0.007625,
+    "auroc_unresolved_gt_resolved": 0.47699001622947623,
     "auroc_ci95": [
-     0.4591293550302167,
-     0.4782354584536027
+     0.46748796585368607,
+     0.48648106995927587
     ],
-    "auroc_perm_null_mean": 0.4755717425598865,
+    "auroc_perm_null_mean": 0.4767418328178539,
     "auroc_perm_band": [
-     0.4688312567233075,
-     0.48224767552296627
+     0.46995836136987923,
+     0.4835843329763115
     ],
-    "excess_over_stratified_null": -0.0069765644514852565
+    "excess_over_stratified_null": 0.00024818341162230473
    },
    "speaker_property": {
     "status": "ok",
-    "n_unresolved": 1366,
-    "n_resolved": 113592,
-    "n_resolved_but_dropped_label": 22,
-    "median_r2_unresolved": 0.010360677260905504,
-    "median_r2_resolved": 0.009582407772541046,
-    "median_r2_difference": 0.0007782694883644581,
+    "n_unresolved": 1436,
+    "n_resolved": 119238,
+    "n_resolved_but_dropped_label": 23,
+    "median_r2_unresolved": 0.03401288762688637,
+    "median_r2_resolved": 0.0241281408816576,
+    "median_r2_difference": 0.009884746745228767,
     "median_r2_difference_ci95": [
-     -0.0011431693215854465,
-     0.004563110717572272
+     0.0014119316823780538,
+     0.014855154673568904
     ],
-    "median_r2_ratio": 1.0812185733312911,
-    "median_activity_unresolved": 0.010991666666666667,
-    "median_activity_resolved": 0.0088,
-    "auroc_unresolved_gt_resolved": 0.50725166033077,
+    "median_r2_ratio": 1.409677098360414,
+    "median_activity_unresolved": 0.009525,
+    "median_activity_resolved": 0.007525,
+    "auroc_unresolved_gt_resolved": 0.5257374754482047,
     "auroc_ci95": [
-     0.4907170145242272,
-     0.5230956962523499
+     0.5101626108635705,
+     0.5410750874833279
     ],
-    "auroc_perm_null_mean": 0.5220157462405973,
+    "auroc_perm_null_mean": 0.5208094450874358,
     "auroc_perm_band": [
-     0.5114150110469599,
-     0.532268829368848
+     0.5104210228305123,
+     0.5318601915980309
     ],
-    "excess_over_stratified_null": -0.014764085909827362
+    "excess_over_stratified_null": 0.004928030360768942
    },
    "functional_role": {
     "status": "ok",
-    "n_unresolved": 7705,
-    "n_resolved": 107275,
+    "n_unresolved": 7953,
+    "n_resolved": 112744,
     "n_resolved_but_dropped_label": 0,
-    "median_r2_unresolved": 0.020640922710299492,
-    "median_r2_resolved": 0.009033613838255405,
-    "median_r2_difference": 0.011607308872044086,
+    "median_r2_unresolved": 0.04924231022596359,
+    "median_r2_resolved": 0.02281240187585354,
+    "median_r2_difference": 0.026429908350110054,
     "median_r2_difference_ci95": [
-     0.010243237693794071,
-     0.013088301452808081
+     0.02322589997202158,
+     0.029397778841666878
     ],
-    "median_r2_ratio": 2.284902042512559,
-    "median_activity_unresolved": 0.017133333333333334,
-    "median_activity_resolved": 0.008433333333333333,
-    "auroc_unresolved_gt_resolved": 0.5636249663701595,
+    "median_r2_ratio": 2.1585763083581995,
+    "median_activity_unresolved": 0.015441666666666666,
+    "median_activity_resolved": 0.007175,
+    "auroc_unresolved_gt_resolved": 0.5642847845742855,
     "auroc_ci95": [
-     0.556976205755493,
-     0.5696171134035274
+     0.5579233075353053,
+     0.5712031134078628
     ],
-    "auroc_perm_null_mean": 0.5552681119270658,
+    "auroc_perm_null_mean": 0.5547915543116124,
     "auroc_perm_band": [
-     0.5506472953744243,
-     0.5595842774162785
+     0.5502276674953573,
+     0.5594081086679468
     ],
-    "excess_over_stratified_null": 0.008356854443093642
+    "excess_over_stratified_null": 0.009493230262673125
    }
   },
   "source_paths": {
-   "r2": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1738/sae_twoway/perfeature/sae_context_r2.npy",
+   "r2": "/home/thomasjiralerspong/explore-persona-space/data/issue_1482/densesae_dl/ridge__mean_perfeature.npz",
    "labels": "/mnt/eps-data/thomasjiralerspong/issue1773_fulldict/labels_upload"
   }
  }

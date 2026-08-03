@@ -1,6 +1,6 @@
 {
- "commit": "6cb343ce3d",
- "created": "2026-08-03T17:41:34Z",
+ "commit": "d146bd7c51",
+ "created": "2026-08-03T19:57:41Z",
  "figsize": [
   11.6,
   4.5
@@ -8,366 +8,366 @@
  "points": [
   {
    "judge agreement among the 5 draws (all 5 surviving)": 0.0,
-   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.010680189187147717,
+   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.00372220783734992,
    "series": "interpretable",
    "_kind": "line",
    "_group": 0
   },
   {
    "judge agreement among the 5 draws (all 5 surviving)": 1.0,
-   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.023826365054238668,
+   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.016018493534496324,
    "series": "interpretable",
    "_kind": "line",
    "_group": 0
   },
   {
    "judge agreement among the 5 draws (all 5 surviving)": 2.0,
-   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.08180330998832912,
+   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.052141747631950564,
    "series": "interpretable",
    "_kind": "line",
    "_group": 0
   },
   {
    "judge agreement among the 5 draws (all 5 surviving)": 0.0,
-   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.017414443974522107,
+   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.01372160396643576,
    "series": "abstraction",
    "_kind": "line",
    "_group": 1
   },
   {
    "judge agreement among the 5 draws (all 5 surviving)": 1.0,
-   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.026613074124954613,
+   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.0242105498057838,
    "series": "abstraction",
    "_kind": "line",
    "_group": 1
   },
   {
    "judge agreement among the 5 draws (all 5 surviving)": 2.0,
-   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.03131282216081825,
+   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.03195650797143906,
    "series": "abstraction",
    "_kind": "line",
    "_group": 1
   },
   {
    "judge agreement among the 5 draws (all 5 surviving)": 0.0,
-   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.02396603635087044,
+   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.01949344475329671,
    "series": "content type",
    "_kind": "line",
    "_group": 2
   },
   {
    "judge agreement among the 5 draws (all 5 surviving)": 1.0,
-   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.03727610861807298,
+   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.02227782487232403,
    "series": "content type",
    "_kind": "line",
    "_group": 2
   },
   {
    "judge agreement among the 5 draws (all 5 surviving)": 2.0,
-   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.07036539254292648,
+   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.04098307168475536,
    "series": "content type",
    "_kind": "line",
    "_group": 2
   },
   {
    "judge agreement among the 5 draws (all 5 surviving)": 0.0,
-   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.024834756176403495,
+   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.026465725932704548,
    "series": "speaker property",
    "_kind": "line",
    "_group": 3
   },
   {
    "judge agreement among the 5 draws (all 5 surviving)": 1.0,
-   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.02956863580379553,
+   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.036149244626394905,
    "series": "speaker property",
    "_kind": "line",
    "_group": 3
   },
   {
    "judge agreement among the 5 draws (all 5 surviving)": 2.0,
-   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.02797477074202674,
+   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.033753515090987264,
    "series": "speaker property",
    "_kind": "line",
    "_group": 3
   },
   {
    "judge agreement among the 5 draws (all 5 surviving)": 0.0,
-   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.022087772472179388,
+   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.0169948015183666,
    "series": "functional role",
    "_kind": "line",
    "_group": 4
   },
   {
    "judge agreement among the 5 draws (all 5 surviving)": 1.0,
-   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.02431200210199109,
+   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.016743604754398362,
    "series": "functional role",
    "_kind": "line",
    "_group": 4
   },
   {
    "judge agreement among the 5 draws (all 5 surviving)": 2.0,
-   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.04433688264053942,
+   "excess over activity-stratified null\n(prevalence-weighted mean |AUROC excess|)": 0.030203990500216677,
    "series": "functional role",
    "_kind": "line",
    "_group": 4
   },
   {
    "judge agreement (unresolved = no >=3-vote majority, any n surviving)": 0.0,
-   "median activity (firing frequency, log)   \u2014 solid": 0.006579166666666667,
+   "median activity (firing frequency, log)   \u2014 solid": 0.00565,
    "series": "interpretable",
    "_kind": "line",
    "_group": 5
   },
   {
    "judge agreement (unresolved = no >=3-vote majority, any n surviving)": 1.0,
-   "median activity (firing frequency, log)   \u2014 solid": 0.0134875,
+   "median activity (firing frequency, log)   \u2014 solid": 0.0117875,
    "series": "interpretable",
    "_kind": "line",
    "_group": 5
   },
   {
    "judge agreement (unresolved = no >=3-vote majority, any n surviving)": 2.0,
-   "median activity (firing frequency, log)   \u2014 solid": 0.012383333333333333,
+   "median activity (firing frequency, log)   \u2014 solid": 0.01095,
    "series": "interpretable",
    "_kind": "line",
    "_group": 5
   },
   {
    "judge agreement (unresolved = no >=3-vote majority, any n surviving)": 3.0,
-   "median activity (firing frequency, log)   \u2014 solid": 0.008,
+   "median activity (firing frequency, log)   \u2014 solid": 0.006783333333333333,
    "series": "interpretable",
    "_kind": "line",
    "_group": 5
   },
   {
    "judge agreement (unresolved = no >=3-vote majority, any n surviving)": 0.0,
-   "median activity (firing frequency, log)   \u2014 solid": 0.005408333333333334,
+   "median activity (firing frequency, log)   \u2014 solid": 0.004658333333333333,
    "series": "abstraction",
    "_kind": "line",
    "_group": 6
   },
   {
    "judge agreement (unresolved = no >=3-vote majority, any n surviving)": 1.0,
-   "median activity (firing frequency, log)   \u2014 solid": 0.0084375,
+   "median activity (firing frequency, log)   \u2014 solid": 0.007241666666666667,
    "series": "abstraction",
    "_kind": "line",
    "_group": 6
   },
   {
    "judge agreement (unresolved = no >=3-vote majority, any n surviving)": 2.0,
-   "median activity (firing frequency, log)   \u2014 solid": 0.008575,
+   "median activity (firing frequency, log)   \u2014 solid": 0.007408333333333334,
    "series": "abstraction",
    "_kind": "line",
    "_group": 6
   },
   {
    "judge agreement (unresolved = no >=3-vote majority, any n surviving)": 3.0,
-   "median activity (firing frequency, log)   \u2014 solid": 0.009325,
+   "median activity (firing frequency, log)   \u2014 solid": 0.00795,
    "series": "abstraction",
    "_kind": "line",
    "_group": 6
   },
   {
    "judge agreement (unresolved = no >=3-vote majority, any n surviving)": 0.0,
-   "median activity (firing frequency, log)   \u2014 solid": 0.006479166666666666,
+   "median activity (firing frequency, log)   \u2014 solid": 0.005395833333333334,
    "series": "content type",
    "_kind": "line",
    "_group": 7
   },
   {
    "judge agreement (unresolved = no >=3-vote majority, any n surviving)": 1.0,
-   "median activity (firing frequency, log)   \u2014 solid": 0.007666666666666666,
+   "median activity (firing frequency, log)   \u2014 solid": 0.006391666666666667,
    "series": "content type",
    "_kind": "line",
    "_group": 7
   },
   {
    "judge agreement (unresolved = no >=3-vote majority, any n surviving)": 2.0,
-   "median activity (firing frequency, log)   \u2014 solid": 0.007466666666666667,
+   "median activity (firing frequency, log)   \u2014 solid": 0.006220833333333333,
    "series": "content type",
    "_kind": "line",
    "_group": 7
   },
   {
    "judge agreement (unresolved = no >=3-vote majority, any n surviving)": 3.0,
-   "median activity (firing frequency, log)   \u2014 solid": 0.009541666666666667,
+   "median activity (firing frequency, log)   \u2014 solid": 0.008258333333333333,
    "series": "content type",
    "_kind": "line",
    "_group": 7
   },
   {
    "judge agreement (unresolved = no >=3-vote majority, any n surviving)": 0.0,
-   "median activity (firing frequency, log)   \u2014 solid": 0.010991666666666667,
+   "median activity (firing frequency, log)   \u2014 solid": 0.009525,
    "series": "speaker property",
    "_kind": "line",
    "_group": 8
   },
   {
    "judge agreement (unresolved = no >=3-vote majority, any n surviving)": 1.0,
-   "median activity (firing frequency, log)   \u2014 solid": 0.020316666666666667,
+   "median activity (firing frequency, log)   \u2014 solid": 0.017541666666666667,
    "series": "speaker property",
    "_kind": "line",
    "_group": 8
   },
   {
    "judge agreement (unresolved = no >=3-vote majority, any n surviving)": 2.0,
-   "median activity (firing frequency, log)   \u2014 solid": 0.017458333333333333,
+   "median activity (firing frequency, log)   \u2014 solid": 0.014883333333333333,
    "series": "speaker property",
    "_kind": "line",
    "_group": 8
   },
   {
    "judge agreement (unresolved = no >=3-vote majority, any n surviving)": 3.0,
-   "median activity (firing frequency, log)   \u2014 solid": 0.007125,
+   "median activity (firing frequency, log)   \u2014 solid": 0.006116666666666667,
    "series": "speaker property",
    "_kind": "line",
    "_group": 8
   },
   {
    "judge agreement (unresolved = no >=3-vote majority, any n surviving)": 0.0,
-   "median activity (firing frequency, log)   \u2014 solid": 0.017133333333333334,
+   "median activity (firing frequency, log)   \u2014 solid": 0.015441666666666666,
    "series": "functional role",
    "_kind": "line",
    "_group": 9
   },
   {
    "judge agreement (unresolved = no >=3-vote majority, any n surviving)": 1.0,
-   "median activity (firing frequency, log)   \u2014 solid": 0.022475000000000002,
+   "median activity (firing frequency, log)   \u2014 solid": 0.020566666666666667,
    "series": "functional role",
    "_kind": "line",
    "_group": 9
   },
   {
    "judge agreement (unresolved = no >=3-vote majority, any n surviving)": 2.0,
-   "median activity (firing frequency, log)   \u2014 solid": 0.014604166666666666,
+   "median activity (firing frequency, log)   \u2014 solid": 0.012891666666666666,
    "series": "functional role",
    "_kind": "line",
    "_group": 9
   },
   {
    "judge agreement (unresolved = no >=3-vote majority, any n surviving)": 3.0,
-   "median activity (firing frequency, log)   \u2014 solid": 0.006208333333333333,
+   "median activity (firing frequency, log)   \u2014 solid": 0.0052,
    "series": "functional role",
    "_kind": "line",
    "_group": 9
   },
   {
    "x": 0.0,
-   "median R-squared   -- dashed": 0.005694936029613018,
+   "median R-squared   -- dashed": 0.020025276578962803,
    "_kind": "line",
    "_group": 10
   },
   {
    "x": 1.0,
-   "median R-squared   -- dashed": 0.01035323180258274,
+   "median R-squared   -- dashed": 0.02872897870838642,
    "_kind": "line",
    "_group": 10
   },
   {
    "x": 2.0,
-   "median R-squared   -- dashed": 0.009518030099570751,
+   "median R-squared   -- dashed": 0.026988934725522995,
    "_kind": "line",
    "_group": 10
   },
   {
    "x": 3.0,
-   "median R-squared   -- dashed": 0.009533227887004614,
+   "median R-squared   -- dashed": 0.023286942392587662,
    "_kind": "line",
    "_group": 10
   },
   {
    "x": 0.0,
-   "median R-squared   -- dashed": 0.00559775298461318,
+   "median R-squared   -- dashed": 0.017943800427019596,
    "_kind": "line",
    "_group": 11
   },
   {
    "x": 1.0,
-   "median R-squared   -- dashed": 0.009694613050669432,
+   "median R-squared   -- dashed": 0.025977741926908493,
    "_kind": "line",
    "_group": 11
   },
   {
    "x": 2.0,
-   "median R-squared   -- dashed": 0.010223342571407557,
+   "median R-squared   -- dashed": 0.025901373475790024,
    "_kind": "line",
    "_group": 11
   },
   {
    "x": 3.0,
-   "median R-squared   -- dashed": 0.009568100795149803,
+   "median R-squared   -- dashed": 0.02332879975438118,
    "_kind": "line",
    "_group": 11
   },
   {
    "x": 0.0,
-   "median R-squared   -- dashed": 0.0066111336927860975,
+   "median R-squared   -- dashed": 0.016522375866770744,
    "_kind": "line",
    "_group": 12
   },
   {
    "x": 1.0,
-   "median R-squared   -- dashed": 0.007867159321904182,
+   "median R-squared   -- dashed": 0.020053265616297722,
    "_kind": "line",
    "_group": 12
   },
   {
    "x": 2.0,
-   "median R-squared   -- dashed": 0.007400921545922756,
+   "median R-squared   -- dashed": 0.0196350933983922,
    "_kind": "line",
    "_group": 12
   },
   {
    "x": 3.0,
-   "median R-squared   -- dashed": 0.010636484250426292,
+   "median R-squared   -- dashed": 0.026523237116634846,
    "_kind": "line",
    "_group": 12
   },
   {
    "x": 0.0,
-   "median R-squared   -- dashed": 0.010360677260905504,
+   "median R-squared   -- dashed": 0.03401288762688637,
    "_kind": "line",
    "_group": 13
   },
   {
    "x": 1.0,
-   "median R-squared   -- dashed": 0.01873232237994671,
+   "median R-squared   -- dashed": 0.04099094495177269,
    "_kind": "line",
    "_group": 13
   },
   {
    "x": 2.0,
-   "median R-squared   -- dashed": 0.015720169991254807,
+   "median R-squared   -- dashed": 0.035275377333164215,
    "_kind": "line",
    "_group": 13
   },
   {
    "x": 3.0,
-   "median R-squared   -- dashed": 0.007972235791385174,
+   "median R-squared   -- dashed": 0.02103161159902811,
    "_kind": "line",
    "_group": 13
   },
   {
    "x": 0.0,
-   "median R-squared   -- dashed": 0.020640922710299492,
+   "median R-squared   -- dashed": 0.04924231022596359,
    "_kind": "line",
    "_group": 14
   },
   {
    "x": 1.0,
-   "median R-squared   -- dashed": 0.023121129721403122,
+   "median R-squared   -- dashed": 0.0524081327021122,
    "_kind": "line",
    "_group": 14
   },
   {
    "x": 2.0,
-   "median R-squared   -- dashed": 0.01630561612546444,
+   "median R-squared   -- dashed": 0.03763681277632713,
    "_kind": "line",
    "_group": 14
   },
   {
    "x": 3.0,
-   "median R-squared   -- dashed": 0.005892501212656498,
+   "median R-squared   -- dashed": 0.01551012322306633,
    "_kind": "line",
    "_group": 14
   }
@@ -377,7 +377,7 @@
  "text": {
   "suptitle": null,
   "fig_texts": [
-   "R^2 target: #1738 SAE->SAE multi-turn context R^2 (provisional target)  |  cross-corpus: R^2 is the #1738 MULTI-TURN read; activity / judged labels come from the #1482 SINGLE-TURN corpus"
+   "R^2 target: #1482 dense-context -> SAE ridge, mean pooling (full width)  |  single corpus: R^2 and the activity / judged-label covariates are both the #1482 SINGLE-TURN read (verified against the banked #1482 panel)"
   ],
   "axes": [
    {
@@ -397,13 +397,15 @@
      "5-0"
     ],
     "yticklabels": [
-     "\u22120.02",
+     "\u22120.01",
      "0.00",
+     "0.01",
      "0.02",
+     "0.03",
      "0.04",
+     "0.05",
      "0.06",
-     "0.08",
-     "0.10"
+     "0.07"
     ]
    },
    {
@@ -433,16 +435,16 @@
      "5-0"
     ],
     "yticklabels": [
-     "0.0025",
-     "0.0050",
-     "0.0075",
-     "0.0100",
-     "0.0125",
-     "0.0150",
-     "0.0175",
-     "0.0200",
-     "0.0225",
-     "0.0250"
+     "0.010",
+     "0.015",
+     "0.020",
+     "0.025",
+     "0.030",
+     "0.035",
+     "0.040",
+     "0.045",
+     "0.050",
+     "0.055"
     ]
    }
   ],
@@ -462,35 +464,35 @@
    "unresolved": "no unique modal label with >= 3 votes (any n_surviving)"
   },
   "caveats": [
-   "cross-corpus: R^2 is the #1738 MULTI-TURN read; activity / judged labels come from the #1482 SINGLE-TURN corpus",
+   "single corpus: R^2 and the activity / judged-label covariates are both the #1482 SINGLE-TURN read (verified against the banked #1482 panel)",
    "panel (a) is label-conditional; panel (b) median R-squared is label-free, which is why 'unresolved' features appear there and nowhere else",
    "the activity-stratified null is NOT centred at 0.5 (stratifying preserves the activity-label association), so excess is measured against the null's own centre"
   ],
   "n_per_axis_level": {
    "interpretable": {
-    "3-2": 9502,
-    "4-1": 13119,
-    "5-0": 89024
+    "3-2": 9980,
+    "4-1": 13731,
+    "5-0": 93537
    },
    "abstraction": {
-    "3-2": 20424,
-    "4-1": 24142,
-    "5-0": 66009
+    "3-2": 21387,
+    "4-1": 25282,
+    "5-0": 69438
    },
    "content_type": {
-    "3-2": 14157,
-    "4-1": 17144,
-    "5-0": 79279
+    "3-2": 14961,
+    "4-1": 18130,
+    "5-0": 82956
    },
    "speaker_property": {
-    "3-2": 11160,
-    "4-1": 15400,
-    "5-0": 86115
+    "3-2": 11777,
+    "4-1": 16214,
+    "5-0": 90296
    },
    "functional_role": {
-    "3-2": 14784,
-    "4-1": 16412,
-    "5-0": 70027
+    "3-2": 15211,
+    "4-1": 17045,
+    "5-0": 74153
    }
   },
   "agreement_gate": {
@@ -546,7 +548,7 @@
    }
   },
   "source_paths": {
-   "r2": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1738/sae_twoway/perfeature/sae_context_r2.npy",
+   "r2": "/home/thomasjiralerspong/explore-persona-space/data/issue_1482/densesae_dl/ridge__mean_perfeature.npz",
    "labels": "/mnt/eps-data/thomasjiralerspong/issue1773_fulldict/labels_upload"
   }
  }
