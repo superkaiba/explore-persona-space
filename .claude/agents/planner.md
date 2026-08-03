@@ -344,7 +344,11 @@ map (any v_X→v_Y predictor): report BOTH the identity+learned-bias baseline
 stated as inapplicable) AND the kNN-retrieval read
 (`analysis/mapping_baselines.knn_retrieval`; chance = k/n_pool stated)
 alongside held-out R² — omit only with a stated exemption (CLAUDE.md
-§ Identity+learned-bias baseline bullet) · **Figures to produce** (hero
+§ Identity+learned-bias baseline bullet) — and a **pooling-convention
+row**: name the pooling of every vector entering the map (span-mean |
+last-token | response-avg | other) + its match to the cited comparison
+line's convention; a deliberate mismatch carries a one-line justification
+(#1768) · **Figures to produce** (hero
 figure + over-produced exploratory dump).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`

@@ -158,7 +158,7 @@ CLAUDE.md § "LLM judge" (Batch API for large sets).
 **Owner:** `efficiency-critic` (plan estimate vs the decision table;
 impl verifies the dispatcher route).
 
-## 11. Identity+learned-bias baseline AND kNN retrieval for every representation mapping
+## 11. Identity+learned-bias baseline, kNN retrieval, AND pooling-convention row for every representation mapping
 
 Any experiment that FITS a map between activation summaries (context→answer,
 prefix→context, cross-model / cross-framing reparameterization — any v_X→v_Y
@@ -171,6 +171,13 @@ k nearest neighbors of the prediction) among the held-out pool
 (`analysis/mapping_baselines.knn_retrieval`; euclidean + cosine, chance =
 k/n_pool stated). The two reads dissociate in both directions — R² alone both
 overstates and understates maps (#722 / #779 first measurements, 2026-07-22).
+The same registration carries a pooling-convention row: name the pooling of
+EVERY vector entering the map (span-mean | last-token | response-avg | other)
+AND its parity with the cited comparison/baseline line's convention; a
+deliberate mismatch carries a one-line justification. A silent pooling
+mismatch is a REVISE — #1768 inherited span-mean from reused capture code
+while its headline comparison target #779 used last-token; the mismatch
+survived the full critic ensemble and cost a ~15–18 GPU-h re-pool round.
 Omitting either read without a stated exemption is a REVISE; no map fit → the
 plan states "N/A — no representation map fitted".
 Full rule: CLAUDE.md § "Identity+learned-bias baseline AND kNN-retrieval metric".

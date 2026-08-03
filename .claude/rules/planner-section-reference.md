@@ -370,6 +370,20 @@ that fit no map write "N/A — no representation map fitted" and move on.
 Full rule: CLAUDE.md § "Identity+learned-bias baseline AND kNN-retrieval
 metric".
 
+**Pooling-convention row (same trigger).** The same §6 registration names
+the POOLING of EVERY vector entering the map (context / prefix / answer /
+cross-model summary: span-mean | last-token (prompt-final-token /
+newline-before-assistant) | response-avg | other), AND states whether each
+convention MATCHES the pooling of the cited comparison/baseline line (e.g.
+the #779 last-token line); a deliberate mismatch carries a one-line
+justification. Pooling is a load-bearing measurement choice that silently
+rides in from reused capture code: #1768 inherited span-mean while its
+headline comparison target #779 used last-token — the mismatch survived
+the full critic ensemble and cost a ~15–18 GPU-h re-pool round. A missing
+pooling-convention row or a silent mismatch is a plan-time REVISE
+(Statistics lens item 15), never a sanity-gate footnote. Plans that fit no
+map are covered by the same "N/A — no representation map fitted" line.
+
 **Figures to produce (over-produce; ask only when the hero is ambiguous).** The plan names the specific hero figure(s) the headline needs AND a short exploratory dump the analyzer over-produces at the end (per-cell bars, per-seed scatter, per-step trajectory lines, raw-alongside-residualized). Default to over-producing exploratory views; the analyzer picks the hero from them rather than producing one figure and hoping it lands. When the view that best supports the headline is genuinely non-obvious, surface ONE plan-time question to the user about which view to feature.
 
 ## 6.5 Primary deliverable (the upstream completeness-vs-plan gate)
