@@ -13,6 +13,8 @@ goal: Build the framing x speaker x completion-condition context-to-answer map l
   corpus, so every cell is well-posed in the ambient basis (n_train 4,800 > d 3,584)
   and row-paired across framings; report per-cell within-cell ceilings and the 9-rung
   transfer ladder, both mapping arms, with identity+bias and kNN-retrieval reads.
+relates_to:
+- spec-context-as-vector
 ---
 ## Goal
 
