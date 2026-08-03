@@ -857,7 +857,17 @@ def phase_upload(args) -> None:
     for nm in names:
         p = args.out_eval / nm
         assert p.exists() and p.stat().st_size > 0, f"missing artifact: {p}"
-        hub._upload(p, HF_DATA_REPO, "dataset", f"{HF_PREFIX}/{nm}", raise_on_error=True)
+    # ONE bulk folder commit, not a per-file loop (the #664/#1481 storm
+    # anti-pattern). `run_length_pilot.json` is a local wall-time measurement
+    # record, not an artifact, so it is filtered out rather than shipped.
+    hub._upload(
+        args.out_eval,
+        HF_DATA_REPO,
+        "dataset",
+        HF_PREFIX,
+        ignore_patterns=["run_length_pilot.json"],
+        raise_on_error=True,
+    )
     missing = hub.verify_repo_paths_uploaded(
         HfApi(),
         HF_DATA_REPO,
