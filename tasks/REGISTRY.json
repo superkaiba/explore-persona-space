@@ -7967,8 +7967,8 @@
     "2028": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2028",
-      "status": "approved",
+      "path": "tasks/running/2028",
+      "status": "running",
       "title": "Remove GCP compute backend entirely (GPU + CPU): auto chain, explicit pins, cpu-bigmem RunPod re-map, tests, docs (user directive)"
     },
     "203": {
