@@ -19,9 +19,9 @@ the #1739 armfill round (emitting agent: orchestrator, PA chat session, 2026-08-
 
 ## Goal
 
-Give `bootstrap_pod.sh` a partial/sparse clone (`--filter=blob:none` or a cone
-sparse-checkout limited to code dirs, artifacts added on demand) mirroring the
-`new_worktree.sh` precedent.
+Give `bootstrap_pod.sh` a partial clone (`--filter=blob:none` preferred) so a
+fresh pod stops transferring the project's entire committed artifact tree before
+it can run anything.
 
 ## Workflow gap
 
@@ -34,12 +34,12 @@ sparse-checkout limited to code dirs, artifacts added on demand) mirroring the
   2.18 GB -> 2.70 GB in 4 min (~2.1 MB/s), compressed pack projected ~3-5 GB and
   ~35 min total. That is ~$13-15 of idle GPU per provision on a slow link, and
   ~$25-30 on an 8xH200. The legs execute code out of `scripts/` (0.05 GB);
-  virtually the whole transfer is committed artifacts the pod reads from HF, not
-  from git. The VM side already solved exactly this: fresh worktrees are sparse
-  by default and EXCLUDE `eval_results/` and `figures/`. Pods never got the same
-  treatment. Secondary effect: the long opaque transfer is indistinguishable at a
-  glance from the commit-less-repo wedge, which has now twice prompted an agent
-  to consider killing a HEALTHY clone mid-flight.
+  virtually the whole transfer is committed artifacts. The VM side already
+  solved exactly this: fresh worktrees are sparse by default and EXCLUDE
+  `eval_results/` and `figures/`. Pods never got the same treatment. Secondary
+  effect: the long opaque transfer is indistinguishable at a glance from the
+  commit-less-repo wedge, which twice in one session prompted an agent to
+  consider killing a HEALTHY clone mid-flight.
 - **Confidence (emitter):** high
 - verified-at-filing: `git ls-tree -r -l origin/main` -> 10.51 GB across 175,766
   files; per-dir eval_results 8.94 GB, figures 1.08 GB, tasks 0.31 GB, scripts
@@ -50,30 +50,60 @@ sparse-checkout limited to code dirs, artifacts added on demand) mirroring the
   chosen mitigation is depth-only. Precedent exists at `scripts/new_worktree.sh`
   :297-302 (cone sparse-checkout with on-demand adds). (2026-08-03)
 
+## CORRECTION (2026-08-03, before any implementation started)
+
+An earlier revision of this body proposed a cone sparse-checkout limited to code
+dirs (`scripts/ src/ experiments/ configs/ tests/`) as an equal-footing
+alternative. **That alternative is unsafe as stated and must not be implemented
+in that form.** The #1739 armfill subagent refuted it against its own legs:
+
+- Both #1739 scorers resolve `train_summary` to
+  `eval_results/issue_<N>/<behavior>/arm_results/all_arms_spearman.json`
+  (~67 MB committed, x3 behaviors) for committed-frozen layer selection.
+- The pvsynth DV at
+  `eval_results/issue_<N>/pvsynth/dv_dataset/<behavior>/labeling.json` (~0.75 MB)
+  is never staged by the driver, so it can ONLY come from the repo.
+
+Under a code-dirs-only cone the run either fail-louds at `_missing_inputs` or —
+materially worse — silently falls back to own-pool frozen layers, destroying
+comparability with the committed wide-roster column. Reading committed
+`eval_results/` as a downstream input is common in this project (reused train
+summaries, committed DVs, prior-round eval JSONs), so this is a CLASS of silent
+fallback, not a #1739 quirk.
+
+Implications for implementation:
+
+1. **Prefer `--filter=blob:none`.** It has no cone to get wrong: any path a
+   workload opens — including committed inputs nobody enumerated — resolves
+   lazily against the promisor remote. It cannot produce the silent-fallback
+   class above.
+2. **If a sparse cone is chosen anyway**, the minimum safe set is the code dirs
+   PLUS the task's own `eval_results/issue_<N>/`, and the task number must be
+   threaded into bootstrap. Even then, an issue reading a SIBLING issue's
+   committed artifacts would still break, so a cone needs the same registry
+   discipline `tests/sparse_cones.txt` already applies on the VM side.
+3. Whichever route is taken, the acceptance test must include a leg that reads a
+   committed `eval_results/` input and assert it resolves — not merely that the
+   clone completes.
+
 ## Proposed change (candidate diff sketch — refine in planning)
 
 In the fresh-init branch of `bootstrap_pod.sh`, before the shallow fetch:
 
 ```
 + # Pods execute code, not committed artifacts (eval_results 8.94 GB /
-+ # figures 1.08 GB at HEAD). Fetch blobs lazily; an on-demand checkout of an
-+ # artifact path still resolves against the promisor remote.
++ # figures 1.08 GB at HEAD). Fetch blobs lazily; an on-demand read of a
++ # committed artifact still resolves against the promisor remote.
 + git config remote.origin.promisor true
 + git config remote.origin.partialclonefilter blob:none
   git fetch -q --depth=1 --filter=blob:none origin "$BRANCH"
 ```
 
-Alternative (mirrors `new_worktree.sh` more literally): a cone sparse-checkout
-seeded with the code dirs, artifacts added on demand. The planner picks one;
-`blob:none` is likely simpler for pods because any path a workload later opens
-still resolves transparently, whereas sparse-checkout needs an explicit cone
-list and a registry like `tests/sparse_cones.txt`.
-
 ## Scope / surfaces
 
 - Primary target: `scripts/bootstrap_pod.sh`
-- Verify no pod-side consumer depends on a full working tree (grep pod-side
-  dispatchers for direct `eval_results/` / `figures/` reads) before landing.
+- Verify no pod-side consumer depends on a fully-materialized working tree, and
+  confirm the lazy-blob path works for a committed `eval_results/` read.
 - Check whether the GCP/SLURM lanes share this clone path and benefit equally.
 
 ## Constraints / invariants
@@ -81,8 +111,8 @@ list and a registry like `tests/sparse_cones.txt`.
 - Must keep working against a tokenless public HTTPS remote and preserve the
   credential-helper retrofit (#1239) already in the script.
 - Must not regress the existing-repo re-bootstrap path (the fast-forward pull).
-- Smoke on a real fresh pod before landing: the clone completes, and both
-  `issue1739_wcrung_arms_run.py` and a repo-resident artifact path still open.
+- Smoke on a real fresh pod before landing: the clone completes, both
+  `issue1739_wcrung_arms_run.py` and a committed `eval_results/` input open.
 
 ## Provenance
 
