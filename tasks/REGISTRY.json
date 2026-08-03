@@ -7518,8 +7518,8 @@
     "1970": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1970",
-      "status": "reviewing",
+      "path": "tasks/completed/1970",
+      "status": "completed",
       "title": "daily-fix: inline-round pod upload-verify satisfier"
     },
     "1971": {
