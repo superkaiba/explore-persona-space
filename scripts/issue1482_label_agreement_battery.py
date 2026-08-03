@@ -24,6 +24,19 @@ at the dense->SAE full-width refit the moment that grid lands:
       the fullwidth battery bins by PREDICTOR decile, which is a different
       read.)
 
+  (4) ACTIVITY-MATCHED agreement dose-response
+      Round 1 found median activity is NOT flat across agreement levels and moves
+      in axis-dependent directions, so (1) alone cannot separate "unanimity
+      denoises the label" (H1) from "unanimity selects a lower-activity, worse-
+      predicted population, suppressing the gain" (H2). Coarsened exact matching
+      on activity bins equalizes the populations; what survives is H1.
+
+  (5) unresolved vs resolved R^2
+      functional_role's judge-unresolved features carry 3.5x the median R^2 of its
+      unanimous ones, and every labelled read drops them. Checked on all five
+      axes, raw AND against the activity-stratified null (unresolved features are
+      also more active, so the raw gap can be pure composition).
+
   (3) all-class label reads
       `fullwidth_label_reads.json` banks 10 codings; the abstraction axis is
       missing 2 of its 3 classes and functional_role all 3. This runs the
@@ -172,7 +185,11 @@ N_DECILES = FW.N_DECILES
 CHUNK_ELEMS = 5_000_000
 
 # Per-deliverable RNG offsets (see main()).
-RNG_OFFSETS = {"dose": 0, "decile": 1, "reads": 2}
+RNG_OFFSETS = {"dose": 0, "decile": 1, "reads": 2, "matched": 3, "unresolved": 4}
+
+# Activity-matching resolution: equal-count bins over the analysis universe.
+MATCH_BINS = 50
+MATCH_BINS_SENSITIVITY = (25, 100)
 
 
 def _log(msg: str) -> None:
@@ -725,6 +742,278 @@ def all_class_label_reads(bundle: dict, n_perm: int, n_boot: int, rng) -> dict:
     return {"reads": reads, "order_by_excess": order}
 
 
+# ── deliverable 4: ACTIVITY-MATCHED agreement dose-response ──────────────────
+
+
+def _match_bin_edges(activity: np.ndarray, n_bins: int) -> np.ndarray:
+    """Equal-count activity bin edges over the ANALYSIS UNIVERSE.
+
+    Global (not per-axis) so the matching resolution is identical across axes.
+    Duplicate edges produced by the heavy tie mass at low activity are collapsed,
+    so the realized bin count can fall below `n_bins`; it is reported.
+    """
+    q = np.linspace(0.0, 1.0, n_bins + 1)[1:-1]
+    return np.unique(np.quantile(activity, q))
+
+
+def _smd(x: np.ndarray, y: np.ndarray) -> float:
+    """Standardized mean difference, pooled-sd convention. |SMD| < 0.1 = balanced."""
+    vx, vy = np.var(x, ddof=1), np.var(y, ddof=1)
+    denom = float(np.sqrt((vx + vy) / 2.0))
+    if not np.isfinite(denom) or denom == 0.0:
+        return float("nan")
+    return float((np.mean(x) - np.mean(y)) / denom)
+
+
+def _cem_match_levels(
+    binid: np.ndarray, n_bins: int, level_idx: dict[str, np.ndarray], rng
+) -> tuple[dict[str, np.ndarray], dict]:
+    """1:1:1 coarsened exact matching of the agreement levels on activity bins.
+
+    In every bin holding at least one feature from EVERY level, each level is
+    randomly down-sampled to that bin's minimum count. The matched sets then
+    share an IDENTICAL activity-bin distribution by construction, so residual
+    imbalance is within-bin only. Vectorized: one `lexsort` per level (bin-major,
+    random within bin) plus a per-bin rank filter — no Python loop over bins.
+    """
+    counts = np.vstack([np.bincount(binid[idx], minlength=n_bins) for idx in level_idx.values()])
+    keep = counts.min(axis=0)
+    matched: dict[str, np.ndarray] = {}
+    for lv, idx in level_idx.items():
+        b = binid[idx]
+        order = np.lexsort((rng.random(len(idx)), b))
+        b_sorted = b[order]
+        starts = np.searchsorted(b_sorted, np.arange(n_bins), side="left")
+        rank = np.arange(len(b_sorted)) - starts[b_sorted]
+        matched[lv] = idx[order[rank < keep[b_sorted]]]
+    return matched, {
+        "n_bins_requested": int(n_bins),
+        "n_bins_nonempty_all_levels": int((keep > 0).sum()),
+        "n_matched_per_level": int(keep.sum()),
+    }
+
+
+MIN_MATCHED = 300  # below this a level's matched read is not attempted
+
+
+def matched_dose_response(
+    bundle: dict,
+    unmatched: dict,
+    n_boot: int,
+    n_perm: int,
+    rng,
+    bin_settings: tuple[int, ...],
+) -> dict:
+    """Deliverable 4: the dose-response recomputed on ACTIVITY-MATCHED level sets.
+
+    Round 1 found median activity is NOT flat across agreement levels and moves in
+    axis-dependent directions, so the unmatched dose-response cannot separate
+      H1 unanimity DENOISES the label (label->R^2 association genuinely strengthens)
+      H2 unanimity SELECTS a different feature population (toward low activity,
+         which is worse-predicted), which SUPPRESSES the apparent gain.
+    Matching removes the population difference; what survives is H1.
+
+    The activity-stratified null already absorbs within-level activity structure,
+    so this is the complementary control: it equalizes the BETWEEN-level activity
+    distribution the null cannot see.
+    """
+    r2, act = bundle["r2"], bundle["activity"]
+    log_act = np.log10(np.maximum(act, np.finfo(np.float64).tiny))
+    out: dict[str, dict] = {}
+
+    for n_bins in bin_settings:
+        edges = _match_bin_edges(act, n_bins)
+        binid = np.searchsorted(edges, act, side="right")
+        nb = len(edges) + 1
+        per_axis: dict[str, dict] = {}
+        for axis in AXIS_ORDER:
+            lab = bundle["labels"][axis]
+            five = bundle["n_surv"][axis] == N_DRAWS
+            best, resolved = bundle["best"][axis], bundle["resolved"][axis]
+            drop = AXIS_DROP[axis]
+            level_idx = {
+                lvl: np.flatnonzero(five & (best == bval) & resolved & ~np.isin(lab, drop))
+                for lvl, bval in zip(AGREEMENT_LEVELS, BEST_FOR_LEVEL, strict=True)
+            }
+            if min(len(v) for v in level_idx.values()) == 0:
+                per_axis[axis] = {"status": "not-attempted — an agreement level is empty"}
+                continue
+
+            matched, diag = _cem_match_levels(binid, nb, level_idx, rng)
+            ref = AGREEMENT_LEVELS[-1]  # 5-0 is the balance reference
+            balance = {}
+            for lvl in AGREEMENT_LEVELS:
+                pre, post = level_idx[lvl], matched[lvl]
+                balance[lvl] = {
+                    "n_before": int(len(pre)),
+                    "n_after": int(len(post)),
+                    "retention": float(len(post) / len(pre)) if len(pre) else float("nan"),
+                    "median_activity_before": float(np.median(act[pre])),
+                    "median_activity_after": (
+                        float(np.median(act[post])) if len(post) else float("nan")
+                    ),
+                    "smd_log_activity_vs_5_0_before": _smd(log_act[pre], log_act[level_idx[ref]]),
+                    "smd_log_activity_vs_5_0_after": (
+                        _smd(log_act[post], log_act[matched[ref]])
+                        if len(post) > 1 and len(matched[ref]) > 1
+                        else float("nan")
+                    ),
+                }
+
+            n_min = min(len(v) for v in matched.values())
+            if n_min < MIN_MATCHED:
+                per_axis[axis] = {
+                    "status": (
+                        f"INFEASIBLE — smallest matched level has {n_min} features "
+                        f"(< {MIN_MATCHED}); the agreement levels barely overlap in "
+                        "activity on this axis, so the comparison is not well-posed"
+                    ),
+                    "matching": diag,
+                    "balance": balance,
+                }
+                _log(f"matched[{n_bins}] {axis}: INFEASIBLE (n_min={n_min})")
+                continue
+
+            levels = {}
+            for lvl in AGREEMENT_LEVELS:
+                sel = matched[lvl]
+                read = _axis_level_read(r2[sel], act[sel], lab[sel], axis, n_boot, n_perm, rng)
+                if read is not None:
+                    levels[lvl] = read
+            entry: dict = {
+                "status": "ok",
+                "matching": diag,
+                "balance": balance,
+                "levels": levels,
+            }
+            if len(levels) == len(AGREEMENT_LEVELS):
+                lo = levels[AGREEMENT_LEVELS[0]]["excess_weighted_abs"]
+                hi = levels[AGREEMENT_LEVELS[-1]]["excess_weighted_abs"]
+                entry["matched_shift"] = float(hi - lo)
+                entry["matched_ratio"] = float(hi / lo) if lo != 0 else float("nan")
+                um = unmatched.get(axis, {}).get("levels", {})
+                if len(um) == len(AGREEMENT_LEVELS):
+                    ulo = um[AGREEMENT_LEVELS[0]]["excess_weighted_abs"]
+                    uhi = um[AGREEMENT_LEVELS[-1]]["excess_weighted_abs"]
+                    entry["unmatched_shift"] = float(uhi - ulo)
+                    entry["shift_difference_matched_minus_unmatched"] = float(
+                        (hi - lo) - (uhi - ulo)
+                    )
+                    entry["shift_survival_fraction"] = (
+                        float((hi - lo) / (uhi - ulo)) if (uhi - ulo) != 0 else float("nan")
+                    )
+            per_axis[axis] = entry
+            _log(
+                f"matched[{n_bins}] {axis}: n/level={n_min} "
+                f"retention={balance[AGREEMENT_LEVELS[0]]['retention']:.2f}/"
+                f"{balance[AGREEMENT_LEVELS[-1]]['retention']:.2f} "
+                f"matched_shift={entry.get('matched_shift', float('nan')):+.4f} "
+                f"(unmatched {entry.get('unmatched_shift', float('nan')):+.4f})"
+            )
+        out[str(n_bins)] = per_axis
+    return {
+        "primary_bins": str(bin_settings[0]),
+        "bin_settings": [int(b) for b in bin_settings],
+        "method": (
+            "coarsened exact matching, 1:1:1, on equal-count activity bins of the "
+            "analysis universe; each bin down-sampled to its across-level minimum"
+        ),
+        "by_bins": out,
+    }
+
+
+# ── deliverable 5: unresolved vs resolved R^2 ────────────────────────────────
+
+
+def _median_diff_boot(a: np.ndarray, b: np.ndarray, n_boot: int, rng) -> np.ndarray:
+    """Bootstrap draws of median(a) - median(b), chunked over draws."""
+    na, nb = len(a), len(b)
+    chunk = _chunk_for(max(na, nb))
+    draws, done = [], 0
+    while done < n_boot:
+        m = min(chunk, n_boot - done)
+        da = np.median(a[rng.integers(0, na, size=(na, m))], axis=0)
+        db = np.median(b[rng.integers(0, nb, size=(nb, m))], axis=0)
+        draws.append(da - db)
+        done += m
+    return np.concatenate(draws)
+
+
+def unresolved_vs_resolved(bundle: dict, n_boot: int, n_perm: int, rng) -> dict:
+    """Deliverable 5: are the judge-UNRESOLVED features better predicted?
+
+    Round 1 found functional_role's 7,705 unresolved features carry median R^2
+    0.02064 vs 0.00589 for its unanimous ones. Every labelled read on this line
+    silently drops the unresolved set, so if the pattern generalizes it is a
+    selection effect on the labelled subset itself.
+
+    Reported per axis BOTH raw and activity-controlled: unresolved features are
+    also MORE ACTIVE, and activity predicts R^2, so the raw median gap can be
+    pure composition. The activity-stratified permutation null is what separates
+    the two — excess ~ 0 means "it is just activity".
+    """
+    r2, act = bundle["r2"], bundle["activity"]
+    n_med = min(n_boot, 1000)  # median CI is the expensive draw; 1000 is ample
+    out: dict[str, dict] = {}
+    for axis in AXIS_ORDER:
+        lab, resolved = bundle["labels"][axis], bundle["resolved"][axis]
+        judged = lab != "unlabeled"
+        res = judged & resolved & ~np.isin(lab, AXIS_DROP[axis])
+        unres = judged & ~resolved
+        n_dropped = int((judged & resolved & np.isin(lab, AXIS_DROP[axis])).sum())
+        if unres.sum() < 30 or res.sum() < 30:
+            out[axis] = {"status": "not-attempted — a group has fewer than 30 features"}
+            continue
+
+        r_u, r_r = r2[unres], r2[res]
+        med_diff = float(np.median(r_u) - np.median(r_r))
+        med_ci = PB._ci(_median_diff_boot(r_u, r_r, n_med, rng))
+        point, ci = FW.auroc_with_boot(r_u, r_r, n_boot, rng)
+
+        # activity-stratified null on the SAME AUROC
+        comb = res | unres
+        idx = np.flatnonzero(comb)
+        order = np.argsort(r2[idx], kind="stable")
+        idx_s = idx[order]
+        lab_int = unres[idx_s].astype(np.int16)  # 1 = unresolved
+        rank1 = _rank1(r2[idx_s])
+        strata = FW._decile_of(act[idx_s])
+        null = _perm_null_class_auroc(rank1, lab_int, strata, 2, n_perm, rng)
+        null_mean = float(np.nanmean(null[1]))
+        col = null[1][np.isfinite(null[1])]
+
+        out[axis] = {
+            "status": "ok",
+            "n_unresolved": int(unres.sum()),
+            "n_resolved": int(res.sum()),
+            "n_resolved_but_dropped_label": n_dropped,
+            "median_r2_unresolved": float(np.median(r_u)),
+            "median_r2_resolved": float(np.median(r_r)),
+            "median_r2_difference": med_diff,
+            "median_r2_difference_ci95": med_ci,
+            "median_r2_ratio": (
+                float(np.median(r_u) / np.median(r_r)) if np.median(r_r) != 0 else float("nan")
+            ),
+            "median_activity_unresolved": float(np.median(act[unres])),
+            "median_activity_resolved": float(np.median(act[res])),
+            "auroc_unresolved_gt_resolved": float(point),
+            "auroc_ci95": ci,
+            "auroc_perm_null_mean": null_mean,
+            "auroc_perm_band": [
+                float(np.percentile(col, 2.5)) if len(col) else float("nan"),
+                float(np.percentile(col, 97.5)) if len(col) else float("nan"),
+            ],
+            "excess_over_stratified_null": float(point - null_mean),
+        }
+        _log(
+            f"unresolved {axis}: n={int(unres.sum())} medR2 {np.median(r_u):.5f} vs "
+            f"{np.median(r_r):.5f} (x{out[axis]['median_r2_ratio']:.2f}) "
+            f"AUROC {point:.4f} null {null_mean:.4f} excess "
+            f"{out[axis]['excess_over_stratified_null']:+.4f}"
+        )
+    return out
+
+
 # ── figures ──────────────────────────────────────────────────────────────────
 
 
@@ -1031,6 +1320,291 @@ def fig_all_class_excess(lr: dict, bundle: dict, fig_dir: Path) -> str:
     return str(paths["png"])
 
 
+def fig_matched_dose(md: dict, bundle: dict, fig_dir: Path) -> str:
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import (
+        paper_palette_role,
+        savefig_paper,
+        set_paper_style,
+    )
+
+    set_paper_style("neurips")
+    colors = _axis_colors()
+    prim = md["by_bins"][md["primary_bins"]]
+    xs = np.arange(len(AGREEMENT_LEVELS), dtype=float)
+
+    fig = plt.figure(figsize=(17.0, 7.4))
+    gs = fig.add_gridspec(2, 10, height_ratios=[1.0, 0.95], hspace=0.42, wspace=1.5)
+
+    for i, axis in enumerate(AXIS_ORDER):
+        ax = fig.add_subplot(gs[0, 2 * i : 2 * i + 2])
+        c = colors[axis]
+        um = md["_unmatched"][axis]["levels"]
+        uy = np.array([um[lv]["excess_weighted_abs"] for lv in AGREEMENT_LEVELS])
+        ulo = np.array([um[lv]["excess_weighted_abs_ci95"][0] for lv in AGREEMENT_LEVELS])
+        uhi = np.array([um[lv]["excess_weighted_abs_ci95"][1] for lv in AGREEMENT_LEVELS])
+        ax.plot(xs, uy, "o-", ms=4.2, lw=1.6, color=c, label="unmatched")
+        ax.fill_between(xs, ulo, uhi, color=c, alpha=0.14, lw=0)
+        e = prim[axis]
+        if e.get("status") == "ok":
+            lv = e["levels"]
+            my = np.array([lv[k]["excess_weighted_abs"] for k in AGREEMENT_LEVELS])
+            mlo = np.array([lv[k]["excess_weighted_abs_ci95"][0] for k in AGREEMENT_LEVELS])
+            mhi = np.array([lv[k]["excess_weighted_abs_ci95"][1] for k in AGREEMENT_LEVELS])
+            ax.plot(xs, my, "s--", ms=4.0, lw=1.6, color=c, alpha=0.95, label="activity-matched")
+            ax.fill_between(xs, mlo, mhi, color=c, alpha=0.10, lw=0, hatch="///")
+            sub = f"matched n/level = {e['matching']['n_matched_per_level']:,}"
+        else:
+            ax.text(
+                0.5,
+                0.5,
+                "matching\ninfeasible",
+                transform=ax.transAxes,
+                ha="center",
+                va="center",
+                fontsize=8,
+                color=paper_palette_role("neutral"),
+            )
+            sub = "not well-posed"
+        ax.axhline(0.0, color=paper_palette_role("neutral"), lw=0.9, ls="--")
+        ax.set_xticks(xs)
+        ax.set_xticklabels(list(AGREEMENT_LEVELS))
+        ax.set_title(f"{AXIS_LABEL[axis]}\n{sub}", loc="left", fontsize=8.8, color=c)
+        ax.set_xlabel("judge agreement")
+        if i == 0:
+            # short label: the full definition would overflow the panel height
+            ax.set_ylabel("excess over\nstratified null", fontsize=8.4)
+            ax.legend(frameon=False, fontsize=7.2)
+
+    ax_b = fig.add_subplot(gs[1, 0:5])
+    y = np.arange(len(AXIS_ORDER), dtype=float)[::-1]
+    for yi, axis in zip(y, AXIS_ORDER, strict=True):
+        e = prim[axis]
+        c = colors[axis]
+        if e.get("status") != "ok" or "unmatched_shift" not in e:
+            continue
+        u, m = e["unmatched_shift"], e["matched_shift"]
+        ax_b.plot([u, m], [yi, yi], "-", color=c, lw=1.4, alpha=0.6)
+        ax_b.plot([u], [yi], "o", color=c, ms=6.5, mfc="white", mew=1.6)
+        ax_b.plot([m], [yi], "s", color=c, ms=6.0)
+    ax_b.axvline(0.0, color=paper_palette_role("neutral"), lw=0.9, ls="--")
+    ax_b.set_yticks(y)
+    ax_b.set_yticklabels([AXIS_LABEL[a] for a in AXIS_ORDER], fontsize=8.4)
+    ax_b.set_xlabel("dose shift (5-0 minus 3-2), AUROC units")
+    ax_b.set_title(
+        "(b) Dose shift before (open circle) and after (filled square) activity matching",
+        loc="left",
+        fontsize=9.5,
+    )
+
+    ax_c = fig.add_subplot(gs[1, 5:10])
+    for yi, axis in zip(y, AXIS_ORDER, strict=True):
+        e = prim[axis]
+        c = colors[axis]
+        bal = e.get("balance")
+        if not bal:
+            continue
+        pre = max(abs(bal[lv]["smd_log_activity_vs_5_0_before"]) for lv in AGREEMENT_LEVELS[:-1])
+        post_vals = [
+            abs(bal[lv]["smd_log_activity_vs_5_0_after"])
+            for lv in AGREEMENT_LEVELS[:-1]
+            if np.isfinite(bal[lv]["smd_log_activity_vs_5_0_after"])
+        ]
+        post = max(post_vals) if post_vals else float("nan")
+        ax_c.plot([pre, post], [yi, yi], "-", color=c, lw=1.4, alpha=0.6)
+        ax_c.plot([pre], [yi], "o", color=c, ms=6.5, mfc="white", mew=1.6)
+        if np.isfinite(post):
+            ax_c.plot([post], [yi], "s", color=c, ms=6.0)
+        ret = bal[AGREEMENT_LEVELS[-1]]["retention"]
+        # anchored at the left edge so a large pre-matching SMD cannot push the
+        # annotation off the axes
+        ax_c.annotate(
+            f"5-0 kept {ret:.0%}",
+            xy=(0.0, yi),
+            xytext=(4, 7),
+            textcoords="offset points",
+            fontsize=6.8,
+            color=c,
+        )
+    ax_c.axvline(0.1, color=paper_palette_role("neutral"), lw=0.9, ls="--")
+    ax_c.set_yticks(y)
+    ax_c.set_yticklabels([AXIS_LABEL[a] for a in AXIS_ORDER], fontsize=8.4)
+    ax_c.set_xlabel("max |standardized mean difference| in log-activity vs the 5-0 level")
+    ax_c.set_title(
+        "(c) Activity balance before (open) and after (filled) matching; dashed = 0.1 balance bar",
+        loc="left",
+        fontsize=9.5,
+    )
+
+    _footnote(fig, bundle)
+    paths = savefig_paper(fig, "activity_matched_agreement_dose", dir=fig_dir)
+    plt.close(fig)
+    prim_bins = md["primary_bins"]
+    _enrich_meta(
+        paths,
+        {
+            "what_is_plotted": (
+                "(a) per axis, the round-1 unmatched dose-response (solid circles) against the "
+                "SAME statistic recomputed on activity-matched level sets (dashed squares); "
+                "bands are 95% bootstrap CIs. (b) the 5-0 minus 3-2 dose shift before (open "
+                "circle) and after (filled square) matching. (c) the max |standardized mean "
+                "difference| in log-activity against the 5-0 level, before and after matching, "
+                "with the 5-0 retention fraction annotated."
+            ),
+            "definitions": {
+                "matching": md["method"] + f"; primary setting {prim_bins} requested bins",
+                "SMD": "(mean_level - mean_5-0) / sqrt((var_level + var_5-0)/2) on log10 activity; "
+                "|SMD| < 0.1 is the conventional balance bar",
+                "dose shift": "excess at 5-0 minus excess at 3-2",
+                "H1 vs H2": "matched shift survives => unanimity denoises the label (H1); "
+                "matched shift collapses => the dose-response was population composition (H2)",
+            },
+            "caveats": [
+                CORPUS_CAVEAT,
+                "matching shrinks every level to the per-bin across-level minimum, so the matched "
+                "5-0 read has far fewer features than the unmatched one and correspondingly wider "
+                "CIs — the like-for-like comparison is matched-5-0 vs matched-3-2, not matched vs "
+                "unmatched at fixed precision",
+                "an axis whose levels barely overlap in activity is reported INFEASIBLE rather "
+                "than given a forced estimate",
+                "the activity-stratified null already absorbs WITHIN-level activity structure; "
+                "matching is the complementary control on the BETWEEN-level distribution",
+            ],
+            "per_axis": {
+                a: {
+                    k: v
+                    for k, v in prim[a].items()
+                    if k
+                    in (
+                        "status",
+                        "matching",
+                        "balance",
+                        "matched_shift",
+                        "unmatched_shift",
+                        "shift_difference_matched_minus_unmatched",
+                        "shift_survival_fraction",
+                    )
+                }
+                for a in AXIS_ORDER
+            },
+            "bin_sensitivity_settings": md["bin_settings"],
+            "source_paths": {"r2": bundle["r2_path"], "labels": str(FULLDICT_LABELS)},
+        },
+    )
+    return str(paths["png"])
+
+
+def fig_unresolved(uv: dict, bundle: dict, fig_dir: Path) -> str:
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import (
+        paper_palette_role,
+        savefig_paper,
+        set_paper_style,
+    )
+
+    set_paper_style("neurips")
+    colors = _axis_colors()
+    axes_ok = [a for a in AXIS_ORDER if uv.get(a, {}).get("status") == "ok"]
+    y = np.arange(len(axes_ok), dtype=float)[::-1]
+
+    fig, axs = plt.subplots(1, 2, figsize=(13.2, 3.9))
+
+    ax = axs[0]
+    for yi, axis in zip(y, axes_ok, strict=True):
+        e, c = uv[axis], colors[axis]
+        ax.plot(
+            [e["median_r2_resolved"], e["median_r2_unresolved"]], [yi, yi], "-", color=c, lw=1.6
+        )
+        ax.plot([e["median_r2_resolved"]], [yi], "o", color=c, ms=6.5, mfc="white", mew=1.6)
+        ax.plot([e["median_r2_unresolved"]], [yi], "s", color=c, ms=6.0)
+        ax.annotate(
+            f"x{e['median_r2_ratio']:.2f}  (n unresolved = {e['n_unresolved']:,})",
+            xy=(max(e["median_r2_resolved"], e["median_r2_unresolved"]), yi),
+            xytext=(8, -2),
+            textcoords="offset points",
+            fontsize=7.0,
+            color=c,
+            va="center",
+        )
+    ax.set_yticks(y)
+    ax.set_yticklabels([AXIS_LABEL[a] for a in axes_ok], fontsize=8.4)
+    ax.set_xlabel("median R-squared")
+    _hi = max(max(uv[a]["median_r2_unresolved"], uv[a]["median_r2_resolved"]) for a in axes_ok)
+    ax.set_xlim(0, _hi * 1.85)  # headroom for the ratio / n annotations
+    ax.set_title(
+        "(a) Median R-squared: labelled (open circle) vs judge-unresolved (filled square)",
+        loc="left",
+        fontsize=9.5,
+    )
+
+    ax2 = axs[1]
+    for yi, axis in zip(y, axes_ok, strict=True):
+        e, c = uv[axis], colors[axis]
+        band = e["auroc_perm_band"]
+        ax2.plot(
+            band, [yi, yi], "-", color=paper_palette_role("neutral"), lw=5.0, alpha=0.3, zorder=0
+        )
+        ax2.plot(e["auroc_ci95"], [yi, yi], "-", color=c, lw=1.6)
+        ax2.plot([e["auroc_unresolved_gt_resolved"]], [yi], "s", color=c, ms=6.0)
+        ax2.plot([e["auroc_perm_null_mean"]], [yi], "|", color=c, ms=10, mew=1.8)
+        # below the marker: an inline label collides with the CI bar and the null band
+        ax2.annotate(
+            f"excess {e['excess_over_stratified_null']:+.3f}",
+            xy=(e["auroc_unresolved_gt_resolved"], yi),
+            xytext=(0, -13),
+            textcoords="offset points",
+            fontsize=7.0,
+            color=c,
+            ha="center",
+            va="center",
+        )
+    ax2.axvline(0.5, color=paper_palette_role("neutral"), lw=0.9, ls="--")
+    ax2.set_yticks(y)
+    ax2.set_yticklabels([])
+    ax2.set_xlabel("AUROC that an unresolved feature outranks a labelled one")
+    ax2.set_title(
+        "(b) Same contrast vs its activity-stratified null (tick = null mean, grey = null 95%)",
+        loc="left",
+        fontsize=9.5,
+    )
+
+    _footnote(fig, bundle)
+    fig.tight_layout(rect=(0, 0.05, 1, 1))
+    paths = savefig_paper(fig, "unresolved_vs_resolved_r2", dir=fig_dir)
+    plt.close(fig)
+    _enrich_meta(
+        paths,
+        {
+            "what_is_plotted": (
+                "(a) per axis, median R-squared of the LABELLED features (open circle; resolved, "
+                "drop-labels excluded) against the judge-UNRESOLVED features (filled square), "
+                "with the ratio and the unresolved count annotated. (b) the same contrast as an "
+                "AUROC — P(unresolved feature outranks a labelled one) — against its "
+                "within-activity-decile permutation null."
+            ),
+            "definitions": {
+                "unresolved": "no unique modal label with >= 3 of the surviving judge draws",
+                "excess": "AUROC minus the mean of the activity-stratified permutation null; "
+                "excess near 0 means the raw median gap is ACTIVITY COMPOSITION, not a "
+                "labelability effect",
+            },
+            "caveats": [
+                CORPUS_CAVEAT,
+                "unresolved features are also MORE ACTIVE on every axis, and activity predicts "
+                "R-squared, so panel (a) alone cannot separate labelability from activity — "
+                "panel (b) is the control that does",
+                "the labelled group excludes each axis's drop labels (unresolved everywhere, plus "
+                "'unclear' on speaker property), so it is exactly the set every labelled read uses",
+            ],
+            "per_axis": {a: uv[a] for a in axes_ok},
+            "source_paths": {"r2": bundle["r2_path"], "labels": str(FULLDICT_LABELS)},
+        },
+    )
+    return str(paths["png"])
+
+
 # ── entrypoint ───────────────────────────────────────────────────────────────
 
 
@@ -1048,9 +1622,22 @@ def main() -> None:
     ap.add_argument("--n-perm", type=int, default=N_PERM)
     ap.add_argument(
         "--only",
-        choices=("dose", "decile", "reads"),
+        choices=tuple(RNG_OFFSETS),
         action="append",
-        help="run a subset of the three deliverables (repeatable); default all",
+        help="run a subset of the deliverables (repeatable); default all",
+    )
+    ap.add_argument(
+        "--match-bins",
+        type=int,
+        default=MATCH_BINS,
+        help="primary activity-bin count for the matched dose-response",
+    )
+    ap.add_argument(
+        "--match-bins-sensitivity",
+        type=int,
+        nargs="*",
+        default=list(MATCH_BINS_SENSITIVITY),
+        help="additional bin counts run as a robustness check (not plotted)",
     )
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args()
@@ -1068,7 +1655,7 @@ def main() -> None:
         print("import-check OK", FW.__name__, PB.__name__)
         sys.exit(0)
 
-    want = set(args.only or ("dose", "decile", "reads"))
+    want = set(args.only or tuple(RNG_OFFSETS))
     out_dir = Path(args.out_dir)
     fig_dir = Path(args.fig_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1083,6 +1670,12 @@ def main() -> None:
     rngs = {k: np.random.default_rng(SEED + off) for k, off in RNG_OFFSETS.items()}
     t0 = time.time()
 
+    # Merge-on-write: a partial `--only` run updates only the deliverables it
+    # produced and never truncates the rest of the canonical JSON.
+    out = out_dir / "label_agreement_battery.json"
+    prior: dict = json.loads(out.read_text(encoding="utf-8")) if out.exists() else {}
+    prior_same_target = prior.get("r2_target", {}).get("path") == str(r2_path)
+
     agr = load_agreement(out_dir / "agreement_votes.npz")
     gate = agreement_gate(agr)
     class_counts = assert_realized_classes(agr)
@@ -1095,25 +1688,65 @@ def main() -> None:
         "realized_class_counts": class_counts,
         "params": {"seed": SEED, "n_boot": args.n_boot, "n_perm": args.n_perm},
     }
-    figs = []
+    figs: list[str] = []
+    produced: dict[str, dict] = {}
+    meta = C1773.repro_meta()
 
     if "dose" in want:
         result["dose_response"] = dose_response(bundle, args.n_boot, args.n_perm, rngs["dose"])
         figs.append(fig_dose_response(result["dose_response"], bundle, gate, fig_dir))
+        produced["dose"] = meta
     if "decile" in want:
         result["decile_auroc"] = decile_auroc(bundle, args.n_boot, rngs["decile"])
         figs.append(fig_decile_auroc(result["decile_auroc"], bundle, fig_dir))
+        produced["decile"] = meta
     if "reads" in want:
         result["all_class_label_reads"] = all_class_label_reads(
             bundle, args.n_perm, args.n_boot, rngs["reads"]
         )
         figs.append(fig_all_class_excess(result["all_class_label_reads"], bundle, fig_dir))
+        produced["reads"] = meta
+    if "matched" in want:
+        # The matched read is reported AGAINST the unmatched one, so the unmatched
+        # dose-response must come from THIS run or from a prior run on the SAME
+        # R^2 target — never from a stale target.
+        unmatched = result.get("dose_response")
+        if unmatched is None:
+            if not prior_same_target or "dose_response" not in prior:
+                raise SystemExit(
+                    "--only matched needs the unmatched dose-response: rerun with "
+                    "`--only dose --only matched`, or ensure the existing "
+                    f"{out.name} was produced against the same --r2-path"
+                )
+            unmatched = prior["dose_response"]
+            _log("matched: unmatched reference taken from the prior run (same R^2 target)")
+        bins = (args.match_bins, *[b for b in args.match_bins_sensitivity if b != args.match_bins])
+        md = matched_dose_response(
+            bundle, unmatched, args.n_boot, args.n_perm, rngs["matched"], bins
+        )
+        md["_unmatched"] = unmatched
+        figs.append(fig_matched_dose(md, bundle, fig_dir))
+        md.pop("_unmatched")  # do not duplicate deliverable 1 inside the JSON
+        result["matched_dose_response"] = md
+        produced["matched"] = meta
+    if "unresolved" in want:
+        result["unresolved_vs_resolved"] = unresolved_vs_resolved(
+            bundle, args.n_boot, args.n_perm, rngs["unresolved"]
+        )
+        figs.append(fig_unresolved(result["unresolved_vs_resolved"], bundle, fig_dir))
+        produced["unresolved"] = meta
 
-    result["figures"] = figs
-    result["metadata"] = C1773.repro_meta()
-    out = out_dir / "label_agreement_battery.json"
-    out.write_text(json.dumps(result, indent=1), encoding="utf-8")
-    _log(f"wrote {out} ({time.time() - t0:.0f}s total); figures: {figs}")
+    merged = dict(prior)
+    merged.update(result)
+    merged["figures"] = sorted(
+        set(prior.get("figures", []) if prior_same_target else []) | set(figs)
+    )
+    prov = dict(prior.get("produced", {}) if prior_same_target else {})
+    prov.update(produced)
+    merged["produced"] = prov
+    merged["metadata"] = meta
+    out.write_text(json.dumps(merged, indent=1), encoding="utf-8")
+    _log(f"wrote {out} ({time.time() - t0:.0f}s total); figures this run: {figs}")
 
 
 if __name__ == "__main__":
