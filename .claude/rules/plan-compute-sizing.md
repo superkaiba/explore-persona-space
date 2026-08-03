@@ -297,13 +297,13 @@ disk row; no verify_plan.py backstop in v1 of this block.
 rely on auto's DRAC/Mila SLURM fallback.** If the plan's dispatch script
 posts markers via pod-side sentinel files
 (`/workspace/logs/issue-<N>-*.json` — gate sentinels, `epm:results`
-payloads), the plan SHOULD pin a DRAINED lane: `backend: gcp` (GCE
-instances mirror RunPod's `/workspace` —
-`GcpConfig.vm_scratch_dir`), `backend: fellows` (the charmander
-cluster-shared `/workspace`, drained by the VM-side poller each tick via
-`slurm_monitor.drain_cluster_sentinels` — #1898), or an explicit
-`backend: runpod` override with its residual gap named. Leaving such a
-workload on `auto` is discouraged: a fellows + GCP capacity failure
+payloads), the plan SHOULD pin a DRAINED lane: `backend: fellows` (the
+charmander cluster-shared `/workspace`, drained by the VM-side poller
+each tick via `slurm_monitor.drain_cluster_sentinels` — #1898) or an
+explicit `backend: runpod` override with its residual gap named
+(`backend: gcp` is REFUSED as of #2028 — GCP provisioning disabled;
+it is no longer a pinnable drained lane). Leaving such a
+workload on `auto` is discouraged: a fellows capacity failure
 falls through to the DRAC/Mila SLURM lanes, where compute nodes have no
 `/workspace` and the robot wrapper cannot run the sentinel drain — the
 dispatcher fails loud at its `mkdir -p /workspace/logs` and burns the
@@ -544,8 +544,9 @@ host RAM sized on an anchor behavior's table; a sibling lane's larger
 working set kernel-OOM'd python at anon-rss 163 GiB on a 170 GB-class
 machine, twice — the second lane hit the same kill point hours later;
 the 340 GB relaunch held). Route the phase OFF the
-VM — `cpu-mid` (GCP 32 GB) or `cpu-bigmem` (128 GB) — when projected peak
-RSS ≥ ~16 GB, OR when concurrent VM-resident phases' SUMMED projected RSS
+VM — `cpu-bigmem` (RunPod `cpu5m-16-128`, 128 GB; `cpu-mid`'s RunPod row
+is only 16 GB now that the 32 GB GCP E2 shape is rollback-only, #2028) —
+when projected peak RSS ≥ ~16 GB, OR when concurrent VM-resident phases' SUMMED projected RSS
 crosses the same ~16 GB bar (#833: two ~13-15 GB phases concurrently
 resident lost 5 cells to earlyoom — concurrent residency SUMS; #778: a
 22-GiB-RSS null battery was earlyoom-killed 3× on the starved VM —
@@ -583,10 +584,12 @@ runtime backstop. Plan-time placement, not a mid-run gate.
 then reconcile worst-case wall against the GCP auto-delete fence.**
 Each row's `planned_wall_h` + `basis` MUST name the machine type of the
 lane the backend router will most likely route. Under the standing
-GCP-FIRST `auto` default that is the GCP intent mapping
+fellows-first `auto` default (#2028 — GCP provisioning disabled) that is
+the fellows H200 cluster, then the free SLURM lanes, with RunPod's H100
+intent table as the terminal rung; the GCP intent mapping
 (`INTENT_TO_MACHINE` in `src/explore_persona_space/backends/gcp.py`:
 `lora-7b` → 1× A100-80 `a2-ultragpu-1g`, `ft-7b` → 4× A100-80,
-`eval`/`debug` → 1× L4) — NOT the RunPod H100 intent table. A basis
+`eval`/`debug` → 1× L4) applies only under the rollback flip. A basis
 measured on a different GPU must be scaled with a stated per-step rate
 (e.g. "H100 basis × ~6× A100 step-time" — #599's trainer ran ~6× slower
 per-step on the A100 auto-lane, turning an H100-premised ~6.4h estimate

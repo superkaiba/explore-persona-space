@@ -7476,15 +7476,15 @@
     "1965": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1965",
-      "status": "planning",
+      "path": "tasks/running/1965",
+      "status": "running",
       "title": "daily-fix: route long judge drivers off VM on 1st kill"
     },
     "1966": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1966",
-      "status": "proposed",
+      "path": "tasks/running/1966",
+      "status": "running",
       "title": "daily-fix: never push to a branch live boxes sync mid-run"
     },
     "1967": {
@@ -7967,8 +7967,8 @@
     "2028": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2028",
-      "status": "reviewing",
+      "path": "tasks/completed/2028",
+      "status": "completed",
       "title": "Remove GCP compute backend entirely (GPU + CPU): auto chain, explicit pins, cpu-bigmem RunPod re-map, tests, docs (user directive)"
     },
     "2029": {

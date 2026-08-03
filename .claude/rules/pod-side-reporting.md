@@ -612,7 +612,8 @@ the file and the marker still reads `dead`.
   VM-side push via the repo-wide push rules (the piped-push hook,
   `sync_repo_root.py`, Step 10d). Consequence: a dispatch script whose
   deliverable REQUIRES workload-side git-committed results must NOT
-  route to SLURM — pin `backend: gcp` or `runpod`. (`--repo-branch` IS
+  route to SLURM — pin `backend: runpod` (`backend: gcp` is REFUSED as
+  of #2028 — GCP provisioning disabled). (`--repo-branch` IS
   honored on SLURM as of #793 via VM-side branch-tree materialization —
   the workload runs branch code; it just cannot push from the cluster.)
 - **Part A-ter interplay** (`.claude/rules/compute-backend-failover.md`):
