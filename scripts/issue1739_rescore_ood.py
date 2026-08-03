@@ -77,7 +77,32 @@ _REPO_ROOT = _ensure_repo_root_on_syspath()
 BEHAVIOR_DEFAULT = "evil"
 OOD_RUNGS = ("hhrt", "toxicchat")
 
-# all16 = arm1..arm16 (excluding the new-arm-round arm17/arm18 oracle-ML arms)
+# Eval-rung roster = the CANONICAL wide transfer roster
+# (`arms.TRANSFER_ARMS_WIDE`, resolved via `arms.resolve_transfer_roster`), NOT
+# a locally-invented arm1..arm16 list.
+#
+# This driver previously declared its own 16-slug tuple. That was wrong twice
+# over: (1) it included arms the transfer leg DELIBERATELY excludes — the L2-SP
+# arms 9/14 (per-regime residual fit), the stacked combiner arm 10 (needs ridge
+# preds on EVERY fold, so `run_cell_multi` RAISES under the transfer leg's
+# `ridge_folds=(0,)` discarded-fold skip), and the text arms 15/16 (no
+# eval-rung text features are threaded) — see the TRANSFER_ARMS_WIDE comment in
+# arms.py; and (2) because the driver also passed no `mapfit`, the four
+# map-consuming arms that ARE canonical here — the map family 6/7/8 and its
+# shuffled-map null 13 — were skipped with reason "no mapfit", silently
+# gutting the round's own map-vs-context comparison.
+#
+# `resolve_transfer_roster(None)` returns TRANSFER_ARMS_WIDE in registry order:
+# arms 1, 3, 4, 5, 6, 7, 8, 11, 12, 13.
+_TRANSFER_ROSTER_SPEC: str | None = None  # None -> the canonical wide roster
+
+# LEGACY EXPORT — not used by THIS driver's roster resolution (see above).
+# `scripts/issue1739_holdout_rung.py` imports this name for its TRAIN-side
+# refit, which runs its own CV folds rather than the eval-rung transfer leg,
+# so the transfer-leg exclusions do not all apply there. Kept so removing it
+# here cannot break that sibling at runtime (its imports are function-scoped,
+# so the breakage would surface only when the phase is invoked). Do NOT use it
+# for a new eval-rung roster — resolve the canonical roster instead.
 _ALL16_NAMES = (
     "arm1_ctx_e1",
     "arm2_ctx_native",
@@ -376,6 +401,7 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
     import numpy as np
 
     from scripts.issue1739_fits import (
+        _fit_map,
         _load_labeled,
         arrays_dim,
     )
@@ -447,11 +473,14 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
         groups_by_vr[vr].append(c)
     _log(f"cell groups: {sorted(groups_by_vr.keys())}")
 
-    # resolve all16 against ARM_REGISTRY
-    all16 = [a for a in arms.ARM_REGISTRY if a in set(_ALL16_NAMES)]
+    # Resolve the CANONICAL transfer roster (registry order, validated against
+    # ARM_REGISTRY; raises on an unknown slug — never a silent drop).
+    all16 = arms.resolve_transfer_roster(
+        getattr(args, "transfer_arms", None) or _TRANSFER_ROSTER_SPEC
+    )
     if smoke:
         all16 = all16[:SMOKE_N_ARMS]
-    _log(f"arms: {all16}")
+    _log(f"arms ({len(all16)}): {all16}")
 
     n_boot = SMOKE_N_BOOT if smoke else int(args.n_boot or N_BOOT_DEFAULT)
     n_perm = SMOKE_N_PERM if smoke else int(args.n_perm or N_PERM_DEFAULT)
@@ -470,20 +499,35 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
     for (variant, regime), group_cells in sorted(groups_by_vr.items()):
         _log(f"--- variant={variant} regime={regime} ({len(group_cells)} cells) ---")
 
-        # --- fit whitening from U-pool for this (variant, regime) ---
-        _log("  loading U-pool summaries for whitening …")
+        # --- fit whitening + the context->answer map from the U-pool ---
+        # BOTH sides of the pool are loaded: the variant act (map input) and the
+        # t1 answer act (map target). Loading only the variant side leaves
+        # `mapfit=None` below, which SKIPS all seven map-consuming arms with
+        # reason "no mapfit" (arms.py run_cell_multi) — the whole map family
+        # (6/7/8), its shuffled-map null (13), and 9/10/14. See
+        # `_u_pool_for_spec` in issue1739_fits.py for the ("t1", layer) key.
+        _log("  loading U-pool summaries (variant + t1) for whitening + map …")
         u_arrays, u_meta = store_io.load_summaries(
             u_store_dir,
-            (variant,),
+            (variant, "t1"),
             tuple(layers),
             hidden_dim=dim,
         )
         pool_mask = store_io.fit_pool_mask(u_meta)
         u_x = np.stack([u_arrays[(variant, ly)][pool_mask] for ly in layers])  # (Ly, n_u, d)
-        _log(f"  U-pool shape: {u_x.shape}")
+        u_y = np.stack([u_arrays[("t1", ly)][pool_mask] for ly in layers])  # (Ly, n_u, d)
+        _log(f"  U-pool shape: x={u_x.shape} y={u_y.shape}")
 
         wh = fits.fit_whitening(u_x, device=device, seed=42)
         _log("  whitening fitted")
+
+        # Map REFIT in-process on the same U pool, exactly as the main run, the
+        # pvsynth leg and issue1739_wcrung_arms.py do — never an uploaded map
+        # payload (a loaded payload would be a different estimator under the
+        # comparison). Whitening is applied with the canonical library helper.
+        mapfit = _fit_map(args, fits.apply_whitening(u_x, wh), fits.apply_whitening(u_y, wh))
+        _log(f"  map fitted (kind={getattr(mapfit, 'kind', 'linear')}, n_u={u_x.shape[1]})")
+        del u_x, u_y
 
         # --- load rb direction for this regime ---
         rb_path = tensors_root / f"r_b_{regime}" / f"{behavior}.npz"
@@ -499,17 +543,17 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
         za_tr_raw = tbl_tr.z_ans  # (Ly, n_tr, d)
         za_ev_raw = tbl_ev.z_ans  # (Ly, n_ev, d)
 
-        # whiten: (Ly, n, d) → subtract mu, apply w
-        def _whiten_acts(z: np.ndarray) -> np.ndarray:
-            """(Ly, n, d) → (Ly, n, d) whitened."""
-            z = z.astype(np.float64)
-            z_c = z - wh.mu[None, None, :]  # (Ly, n, d)
-            return np.einsum("lnd,lde->lne", z_c, wh.w)
-
-        z_tr_w = _whiten_acts(z_tr_raw)
-        z_ev_w = _whiten_acts(z_ev_raw)
-        za_tr_w = _whiten_acts(za_tr_raw)
-        za_ev_w = _whiten_acts(za_ev_raw)
+        # Whiten with the canonical library helper — NOT a local reimplementation.
+        # `wh.mu` is (Ly, d), so the previous local `z - wh.mu[None, None, :]`
+        # broadcast (Ly, n, d) against (1, 1, Ly, d) and raised ValueError for
+        # every realistic shape (and silently produced WRONG values in the
+        # degenerate n == Ly case a tiny smoke would hit). apply_whitening
+        # centers per layer (`x[li] - wh.mu[li][None, :]`), is memory-chunked,
+        # and is pinned bit-identical by test_apply_whitening_chunked_matches_dense.
+        z_tr_w = fits.apply_whitening(z_tr_raw, wh)
+        z_ev_w = fits.apply_whitening(z_ev_raw, wh)
+        za_tr_w = fits.apply_whitening(za_tr_raw, wh)
+        za_ev_w = fits.apply_whitening(za_ev_raw, wh)
 
         # --- rb-caching: one fit per realized row-set for rb_indep,
         #                 per (regime, row-set, seed) for rb_dep ---
@@ -541,6 +585,7 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
                 z_ans=za_tr_w,
                 dv=tbl_tr.dv,
                 rb=rb_w,
+                mapfit=mapfit,
                 layers=tuple(layers),
             )
 
