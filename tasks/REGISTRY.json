@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2031,
+  "highest_id": 2032,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7998,6 +7998,13 @@
       "path": "tasks/proposed/2031",
       "status": "proposed",
       "title": "#1689: fold user-slot-recapture readout into body + correct refuted tier-1-real-data claim"
+    },
+    "2032": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2032",
+      "status": "proposed",
+      "title": "workflow-fix: curate experiment-implementer agent-memory index under 24KB FAIL threshold"
     },
     "205": {
       "has_clean_result": false,
