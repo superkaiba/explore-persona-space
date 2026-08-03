@@ -13,8 +13,10 @@ monitor instead composes three legal signals:
 2. **Heartbeat** — ``status.json`` rsync'd from
    ``$SCRATCH_JOB_DIR/status.json``; the sbatch writes a fresh row
    every :data:`slurm.HEARTBEAT_INTERVAL_SECONDS`. A live ``RUNNING``
-   SLURM state PLUS a recent heartbeat = ``running``; a live
-   ``RUNNING`` state with a STALE heartbeat = ``stalled``.
+   SLURM state PLUS a recent heartbeat = ``running``; a STALE
+   heartbeat alone is only one stall SIGNAL — see "Stall semantics"
+   below (#1969: the log mtime must be stale too, across consecutive
+   ticks).
 3. **Log tail** — ``job.out`` rsync'd from
    ``$SCRATCH_JOB_DIR/job.out``; grepped for ``[phase=<name>]`` lines
    to set ``current_phase`` and ``new_milestone``. The rsync interval
@@ -38,14 +40,49 @@ verdict so a future call doesn't infinitely retry.
 Stall semantics
 ---------------
 
-``STALL = SLURM state RUNNING but heartbeat_ts older than STALL_SEC``.
-This is weaker than the pod poller's 4-way check (PID alive, log mtime,
-GPU util, sentinels) because we cannot run remote ``ps``/``nvidia-smi``
-via the forced-command wrapper. The documented weakening: a job that
-write nothing to status.json (e.g. an early-init crash that hangs
-before the heartbeat loop starts) shows as ``stalled`` until SLURM
-itself reaps it. Operators can grep the rsync'd job.out for
-``[phase=preflight-failed]`` to disambiguate.
+``STALL = SLURM state RUNNING AND heartbeat_ts older than STALL_SEC AND
+job.out mtime older than STALL_SEC, sustained across >=
+STALL_CONSECUTIVE_TICKS consecutive stall-condition ticks`` (#1969).
+Three composable defenses over the pre-#1969 heartbeat-only predicate
+(whose false reads #1900 recorded: heartbeat 397-517 s stale while the
+captured log tail carried INFO lines written seconds before the tick):
+
+* **Log-freshness veto** — BOTH signals must be stale. The log mtime is
+  attempt-freshness-gated (C2, blanked to ``10**9`` for prior-attempt
+  artifacts) and floored at the run age exactly like the heartbeat, so
+  a missing/blanked log still reads stale and a job writing nothing
+  anywhere still stalls.
+* **Consecutive-tick streak (N = :data:`STALL_CONSECUTIVE_TICKS`)** —
+  a single stall-condition tick reports ``running`` with
+  ``stall_reason="slurm_stall_suspect"`` (a suspect tick keeps the
+  short poll interval via the lane anomaly); ``stalled`` requires >= 2
+  consecutive stall-condition ticks, with the streak increment
+  TIME-GATED (>= :data:`STALL_SEC` elapsed since the last increment) so
+  two rapid overlapping polls cannot reach the threshold seconds apart
+  on one silently-failed rsync. The streak persists at
+  ``/tmp/slurm-<job_id>/stall_streak.json`` — the same volatility class
+  as the rsync'd artifacts; a VM reboot resets it, failing toward
+  ``running`` for one extra tick.
+* **Transport-degraded skip** — when :func:`rsync_status_and_log`
+  reports a transport-class failure (``False`` return), the local
+  copies are stale BY TRANSPORT, not evidence about the job: the tick
+  skips stall evaluation entirely (streak neither incremented nor
+  reset), records ``transport_degraded=true`` in the cluster-poll note,
+  and keeps the short poll interval via the lane anomaly.
+
+This remains weaker than the pod poller's 4-way check (PID alive, log
+mtime, GPU util, sentinels) because we cannot run remote
+``ps``/``nvidia-smi`` via the forced-command wrapper. The documented
+weakening: a job that writes nothing to status.json OR job.out (e.g. an
+early-init crash that hangs before the heartbeat loop starts) shows as
+``stalled`` — one tick later than pre-#1969 (streak must reach 2) —
+until SLURM itself reaps it. Operators can grep the rsync'd job.out for
+``[phase=preflight-failed]`` to disambiguate. A ``stalled`` verdict
+carries ``stall_reason="slurm_heartbeat_and_log_stale"`` (routes
+``infra`` via ``scripts/failure_classifier.STALL_REASON_INFRA``). The
+SLURM state-map path (``SUSPENDED -> stalled``,
+:data:`SLURM_STATE_TO_STATUS`) is a different, correct signal and is
+deliberately untouched by all three defenses.
 
 Sentinel drain: fellows only (#1898)
 ------------------------------------
@@ -182,11 +219,24 @@ class SlurmProbeError(BackendProbeError):
 
 
 # Stall threshold (seconds). A SLURM-RUNNING job whose status.json
-# heartbeat is older than this is reported as ``stalled``. Must sit
+# heartbeat AND job.out mtime are BOTH older than this (post the C2
+# run-age floor) accrues stall-streak ticks toward a ``stalled``
+# verdict (#1969 — module docstring § Stall semantics). Must sit
 # safely above ``slurm.HEARTBEAT_INTERVAL_SECONDS`` (default 60s) so a
 # healthy job's natural pause between heartbeats is NOT a false stall.
-# Default 5 min matches the pod poller's STALL_SEC.
+# Default 5 min matches the pod poller's STALL_SEC. Doubles as the time
+# gate on consecutive stall-streak increments (STALL_CONSECUTIVE_TICKS
+# below).
 STALL_SEC = 300
+
+# Consecutive stall-condition ticks required before ``stalled`` is
+# reported (#1969). One poll tick is 540 s > STALL_SEC = 300 s, so ONE
+# silently-failed rsync ages both local artifacts past the threshold —
+# a single-tick transient must not kill the run's orchestration. N=2
+# bounds the added genuinely-dead detection latency to ~9 min (one
+# extra tick) while absorbing every single-tick transient (the observed
+# #1900 class); N=3 would add ~18 min for no observed benefit.
+STALL_CONSECUTIVE_TICKS = 2
 
 # How far back to read job.out (bytes) when building the log_tail_excerpt.
 LOG_TAIL_BYTES = 16_384
@@ -234,6 +284,98 @@ def _scrub_secret_tokens(text: str) -> str:
 # Per-job to avoid cross-contamination across concurrent monitors.
 def _local_state_dir(job_id: str) -> Path:
     return Path("/tmp") / f"slurm-{job_id}"
+
+
+def _stall_streak_path(job_id: str) -> Path:
+    """Per-job stall-streak state file (#1969) — same volatility class
+    as the rsync'd artifacts beside it (a VM reboot resets the streak,
+    which fails toward ``running`` for one extra tick)."""
+    return _local_state_dir(job_id) / "stall_streak.json"
+
+
+def _read_stall_streak(job_id: str) -> tuple[int, float]:
+    """Read the persisted stall streak → ``(streak, updated_ts)``.
+
+    ``(0, 0.0)`` when absent / malformed, so the first stall-condition
+    tick of a fresh job increments from zero.
+    """
+    try:
+        data = json.loads(_stall_streak_path(job_id).read_text())
+        return int(data["streak"]), float(data["updated_ts"])
+    except (OSError, ValueError, TypeError, KeyError):
+        return 0, 0.0
+
+
+def _write_stall_streak(job_id: str, streak: int, *, now_fn=time.time) -> None:
+    """Persist the stall streak; ``updated_ts`` feeds the time gate on
+    the NEXT increment (module docstring § Stall semantics)."""
+    path = _stall_streak_path(job_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"streak": int(streak), "updated_ts": float(now_fn())}))
+
+
+def _evaluate_stall(
+    *,
+    job_id: str,
+    base_status: str,
+    slurm_status: str,
+    heartbeat_sec_ago: int,
+    log_stale_sec: int,
+    transport_degraded: bool,
+    now_fn=time.time,
+) -> tuple[str, str | None, bool, int]:
+    """One tick of #1969 stall evaluation (module docstring § Stall semantics).
+
+    Returns ``(base_status, stall_reason, stall_anomaly, stall_streak)``:
+
+    * Only meaningful while SLURM still says RUNNING; PENDING is never
+      flagged (the selector's submit-and-park watchdog owns that wait).
+    * **Log-freshness veto**: the stall condition requires the heartbeat
+      AND the (run-age-floored) log mtime BOTH older than
+      :data:`STALL_SEC`.
+    * **Consecutive-tick streak**: the condition must hold on
+      >= :data:`STALL_CONSECUTIVE_TICKS` ticks before ``stalled`` is
+      reported; a sub-threshold tick reports ``running`` with
+      ``stall_reason="slurm_stall_suspect"`` and a lane anomaly (keeps
+      the short poll interval). Increments are TIME-GATED: the streak
+      measures ELAPSED staleness, not poll count — two rapid overlapping
+      polls (a manual poll beside the cron tick) must not reach the
+      threshold seconds apart on one silently-failed rsync. The 0 -> 1
+      transition is ungated (a first suspect tick is informational only;
+      only increments TOWARD the stalled threshold are gated).
+    * **Transport-degraded skip**: a failed rsync means the local copies
+      are stale BY TRANSPORT — no evidence about the job. The tick skips
+      evaluation entirely (streak neither incremented nor reset) and
+      contributes a lane anomaly.
+    * Any evaluated tick where the condition does NOT hold resets the
+      streak to 0.
+    """
+    stall_reason: str | None = None
+    stall_anomaly = False
+    stall_streak, streak_updated_ts = _read_stall_streak(job_id)
+    if transport_degraded:
+        stall_anomaly = True
+    elif (
+        base_status == "running"
+        and slurm_status != "PENDING"
+        and heartbeat_sec_ago > STALL_SEC
+        and log_stale_sec > STALL_SEC
+    ):
+        if stall_streak == 0 or float(now_fn()) - streak_updated_ts >= STALL_SEC:
+            stall_streak += 1
+            _write_stall_streak(job_id, stall_streak, now_fn=now_fn)
+        if stall_streak >= STALL_CONSECUTIVE_TICKS:
+            base_status = "stalled"
+            stall_reason = "slurm_heartbeat_and_log_stale"
+        else:
+            # Suspect tick: never kill the run's orchestration on one
+            # tick — report ``running`` and carry the suspicion.
+            stall_reason = "slurm_stall_suspect"
+            stall_anomaly = True
+    elif stall_streak:
+        _write_stall_streak(job_id, 0, now_fn=now_fn)
+        stall_streak = 0
+    return base_status, stall_reason, stall_anomaly, stall_streak
 
 
 # Mapping from SLURM JobState (per ``scontrol show job`` / ``squeue -h
@@ -465,8 +607,14 @@ def build_poll_result(
 
     * ``query_slurm_state`` over SSH for the SLURM JobState + exit code.
     * ``rsync_status_and_log`` for the heartbeat + log tail.
-    * Stall detection: SLURM=RUNNING but heartbeat older than
-      :data:`STALL_SEC`.
+    * Stall detection (#1969): SLURM=RUNNING with heartbeat AND job.out
+      mtime BOTH older than :data:`STALL_SEC` (each floored at the run
+      age), sustained across :data:`STALL_CONSECUTIVE_TICKS`
+      consecutive stall-condition ticks — module docstring § Stall
+      semantics. A sub-threshold stall-condition tick reports
+      ``running`` with ``stall_reason="slurm_stall_suspect"``; a
+      transport-degraded tick (rsyncer returned ``False``) skips stall
+      evaluation entirely.
 
     Posts (per ``workflow.yaml § markers``):
 
@@ -491,7 +639,10 @@ def build_poll_result(
     * ``state_querier`` — defaults to :func:`query_slurm_state`. Tests
       pass a stub returning a parsed state dict.
     * ``rsyncer`` — defaults to :func:`rsync_status_and_log`. Tests
-      pass a no-op + pre-seeded local files.
+      pass a no-op + pre-seeded local files. A ``False`` return marks
+      the tick transport-degraded (stall evaluation skipped); the check
+      is ``is False``, so a legacy/stub seam returning ``None``
+      evaluates normally (#1969).
     * ``now_fn`` — for the stall clock; tests pin it.
     * ``marker_poster`` — defaults to
       :func:`backends.slurm.post_marker_via_task_py`. Tests pass a
@@ -541,11 +692,16 @@ def build_poll_result(
     drain_processed, drain_gate = _entry_drain(sentinel_drainer, issue, cluster, scratch_dir)
 
     state = state_querier(robot_alias=cluster.ssh_host, job_id=job_id)
-    rsyncer(
+    rsync_ok = rsyncer(
         robot_alias=cluster.ssh_host,
         scratch_dir=scratch_dir,
         job_id=job_id,
     )
+    # #1969: ``is False`` deliberately — only the production
+    # :func:`rsync_status_and_log` (or a stub modeling it) can mark the
+    # tick transport-degraded; legacy test stubs returning ``None``
+    # evaluate normally.
+    transport_degraded = rsync_ok is False
 
     local_state_dir = _local_state_dir(job_id)
     status_json = local_state_dir / "status.json"
@@ -657,13 +813,26 @@ def build_poll_result(
     # PENDING queue the submit-time floor is no floor at all, and the
     # first RUNNING tick of a just-started job (no heartbeat written
     # yet) would read a LIVE job as stalled.
+    # The SAME floor applies to the log-staleness read (#1969 symmetry):
+    # a missing/blanked job.out reads 10**9 and would otherwise defeat
+    # the young-job protection the heartbeat floor provides.
+    log_stale_sec = log_mtime_sec_ago
     if run_age_sec is not None:
         heartbeat_sec_ago = min(heartbeat_sec_ago, max(0, int(run_age_sec)))
+        log_stale_sec = min(log_stale_sec, max(0, int(run_age_sec)))
 
-    # Stall detection (only meaningful while SLURM still says RUNNING).
-    # Don't flag PENDING as stalled — the selector watchdog handles that.
-    if base_status == "running" and heartbeat_sec_ago > STALL_SEC and slurm_status != "PENDING":
-        base_status = "stalled"
+    # Stall detection (#1969) — module docstring § Stall semantics. The
+    # SUSPENDED->stalled STATE-MAP path above is a different, correct
+    # signal and bypasses the stall defenses by design.
+    base_status, stall_reason, stall_anomaly, stall_streak = _evaluate_stall(
+        job_id=job_id,
+        base_status=base_status,
+        slurm_status=slurm_status,
+        heartbeat_sec_ago=heartbeat_sec_ago,
+        log_stale_sec=log_stale_sec,
+        transport_degraded=transport_degraded,
+        now_fn=now_fn,
+    )
 
     # Preflight failure detection — the sbatch echoes
     # ``[phase=preflight-failed]`` then exit's non-zero. Even before SLURM
@@ -704,6 +873,8 @@ def build_poll_result(
         log_tail_excerpt=emit_tail,
         marker_poster=marker_poster,
         event_reader=event_reader,
+        stall_streak=stall_streak,
+        transport_degraded=transport_degraded,
     )
 
     # ---- Post epm:cluster-terminal v1 the first time terminal observed ----
@@ -730,13 +901,16 @@ def build_poll_result(
     # past the 30-min early-run window on its first RUNNING ticks; the
     # fresh ``[phase=...]`` line in the 16 KiB tail (``new_milestone``)
     # remains the defense-in-depth on RunTime-less fallback ticks.
+    # #1969: a stall-suspect or transport-degraded tick is OR'd into the
+    # lane anomaly (never replacing the existing non-RUNNING condition)
+    # so such a tick can never draw the 1800 s quiet interval.
     next_interval = recommend_lane_next_interval(
         status=base_status,
         gate=drain_gate,
         sentinels_processed=drain_processed,
         new_milestone=new_milestone,
         run_age_sec=run_age_sec,
-        lane_anomaly=slurm_status != "RUNNING",
+        lane_anomaly=(slurm_status != "RUNNING") or stall_anomaly,
     )
 
     return PollResult(
@@ -761,6 +935,11 @@ def build_poll_result(
         shard_log_mtime_sec_ago=log_mtime_sec_ago,
         gpu_util="busy" if status_data.get("gpu_busy") else "idle",
         next_interval=next_interval,
+        # #1969: "slurm_heartbeat_and_log_stale" on a stalled verdict
+        # (routes infra via failure_classifier.STALL_REASON_INFRA);
+        # "slurm_stall_suspect" on a sub-threshold stall-condition tick
+        # (status stays "running"); None otherwise.
+        stall_reason=stall_reason,
     )
 
 
@@ -811,8 +990,15 @@ def _maybe_post_cluster_poll(
     log_tail_excerpt: str,
     marker_poster,
     event_reader,
+    stall_streak: int = 0,
+    transport_degraded: bool = False,
 ) -> None:
     """Post ``epm:cluster-poll v1`` only when status or phase changed.
+
+    ``stall_streak`` / ``transport_degraded`` (#1969) are ADDITIVE note
+    keys — the consecutive-tick stall streak after this tick's
+    evaluation, and whether the tick's rsync failed transport-class
+    (stall evaluation skipped). The dedup predicate is unchanged.
 
     Dedup against the most recent prior cluster-poll for this job_id;
     if status AND phase are unchanged, skip (keeps the events.jsonl tail
@@ -843,6 +1029,8 @@ def _maybe_post_cluster_poll(
         "heartbeat_sec_ago": heartbeat_sec_ago,
         "gpu_util": "busy" if gpu_busy else "idle",
         "log_tail_excerpt": log_tail_excerpt[-2000:],
+        "stall_streak": stall_streak,
+        "transport_degraded": transport_degraded,
     }
     note = json.dumps(body, sort_keys=True)
     # post-marker enforces the 50_000-char cap on note; the log tail is
@@ -1236,7 +1424,7 @@ def rsync_status_and_log(
     scratch_dir: str,
     job_id: str,
     timeout: int = 30,
-) -> None:
+) -> bool:
     """Pull ``status.json`` + ``job.out`` from the cluster scratch dir.
 
     Lands them under ``/tmp/slurm-<job_id>/`` so concurrent monitors on
@@ -1246,9 +1434,27 @@ def rsync_status_and_log(
     Non-fatal on rsync failure — a transient SSH hiccup shouldn't crash
     the polling loop; the next tick will retry and the local files
     (still readable from the previous tick) keep the monitor honest.
+
+    Returns the per-tick transport verdict (#1969):
+
+    * ``True`` — every pull exited 0, or failed ONLY with rsync rc
+      23/24 (partial transfer / source file vanished): the file
+      genuinely does not exist remotely, so the never-writing-job stall
+      weakening is preserved and stall evaluation proceeds normally.
+    * ``False`` — ANY other non-zero rc (255 ssh error, 30/35 timeouts,
+      10/11/12/13 socket / file-I/O / protocol errors — rc 12 is common
+      when ssh dies mid-stream), or a :class:`subprocess.TimeoutExpired`
+      (caught here — pre-#1969 it would crash the tick): a
+      transport-class failure means the local copies cannot be trusted
+      this tick, and :func:`build_poll_result` skips stall evaluation.
+      DEFAULT policy is deliberately fail-closed: mapping an unlisted rc
+      to ``True`` would re-create a 2-tick false-stall path under
+      sustained degradation, while over-suppression stays bounded by
+      SLURM dead-class states + job time limits.
     """
     local_dir = _local_state_dir(job_id)
     local_dir.mkdir(parents=True, exist_ok=True)
+    transport_ok = True
     for filename in ("status.json", "job.out"):
         argv = [
             "rsync",
@@ -1258,15 +1464,20 @@ def rsync_status_and_log(
             f"{robot_alias}:{scratch_dir}/{filename}",
             str(local_dir / filename),
         ]
-        proc = subprocess.run(
-            argv,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=timeout,
-            check=False,
-        )
+        try:
+            proc = subprocess.run(
+                argv,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=timeout,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            logger.debug("rsync %s/%s timed out after %ss", scratch_dir, filename, timeout)
+            transport_ok = False
+            continue
         if proc.returncode != 0:
             logger.debug(
                 "rsync %s/%s returned %d: %s",
@@ -1275,6 +1486,11 @@ def rsync_status_and_log(
                 proc.returncode,
                 proc.stderr.strip(),
             )
+            # rc 23/24 = source missing/vanished — NORMAL for a job
+            # that has not written the artifact yet; not transport.
+            if proc.returncode not in (23, 24):
+                transport_ok = False
+    return transport_ok
 
 
 def fetch_started_evidence(
@@ -1449,6 +1665,7 @@ __all__ = [
     "FRESHNESS_SKEW_MARGIN_SEC",
     "LOG_TAIL_BYTES",
     "SLURM_STATE_TO_STATUS",
+    "STALL_CONSECUTIVE_TICKS",
     "STALL_SEC",
     "SlurmProbeError",
     "build_poll_result",
