@@ -223,10 +223,13 @@ TRANSFER_ARMS = (
 # require, so a rung that scores the core roster has them by construction).
 # The deliberately EXCLUDED arms are the ones the plan never puts on the
 # ladder AND whose transfer semantics are not well defined here: the L2-SP
-# arms 9/14 (a per-regime residual fit), the stacked combiner arm 10 (needs
-# ridge preds on EVERY fold, so it is incompatible with the transfer leg's
-# ``ridge_folds=(0,)`` discarded-fold skip — ``run_cell_multi`` raises), and
-# the text arms 15/16 (no eval-rung text features are threaded).
+# arms 9/14 (a per-regime residual fit), and the stacked combiner arm 10
+# (needs ridge preds on EVERY fold, so it is incompatible with the transfer
+# leg's ``ridge_folds=(0,)`` discarded-fold skip — ``run_cell_multi``
+# raises). The text arms 15/16 stay OFF every named roster but are RUNNABLE
+# on eval rungs via an explicit slug list once the caller threads
+# ``text_emb_ev`` / ``text_features_ev`` into :func:`run_transfer_cell`
+# (grid-fill round; without them the arms record their standard SKIP).
 # Kept in ARM_REGISTRY order (like TRANSFER_ARMS) so a roster's arm ordering is
 # one canonical thing everywhere — `resolve_transfer_roster` returns registry
 # order too, and `partition_transfer_roster` preserves it.
@@ -1105,6 +1108,35 @@ def _concat_train_eval(full: np.ndarray, idx: np.ndarray, ev: np.ndarray) -> np.
     return out
 
 
+def _concat_row_features(
+    full: np.ndarray | None,
+    idx: np.ndarray,
+    ev: np.ndarray | None,
+    n_ev: int,
+    what: str,
+) -> np.ndarray | None:
+    """Train+eval concat for a per-ROW (n, f) feature table (arms 15/16).
+
+    Returns None when no eval block is supplied — the transfer comb then
+    carries no features and the arm records its standard SKIP reason, exactly
+    the pre-eval-features behavior. An eval block WITHOUT the train-side
+    table is a wiring bug (the arm would have nothing to fit on): fail loud.
+    """
+    if ev is None:
+        return None
+    if full is None:
+        raise ValueError(
+            f"{what}_ev supplied but data.{what} is None — the transfer fit needs the "
+            f"TRAIN-side {what} table too (thread both, or neither)"
+        )
+    full = np.asarray(full, dtype=np.float64)
+    ev = np.asarray(ev, dtype=np.float64)
+    assert full.ndim == 2 and ev.ndim == 2, (full.shape, ev.shape)
+    assert ev.shape[0] == n_ev, (f"{what}_ev rows", ev.shape, n_ev)
+    assert ev.shape[1] == full.shape[1], (f"{what} dim mismatch", full.shape, ev.shape)
+    return np.concatenate([full[idx], ev], axis=0)
+
+
 def run_transfer_cell(
     data: CellData,
     cell: BudgetCell,
@@ -1112,6 +1144,8 @@ def run_transfer_cell(
     dv_ev: np.ndarray,
     *,
     za_ev: np.ndarray | None = None,
+    text_emb_ev: np.ndarray | None = None,
+    text_features_ev: np.ndarray | None = None,
     arms: list[str] | None = None,
     device: str = "cpu",
     ridge_folds: tuple[int, ...] | None = None,
@@ -1129,7 +1163,10 @@ def run_transfer_cell(
     Gram+eigh on the train block — is never computed). Default arm roster:
     :data:`TRANSFER_ARMS` (cheap projection / closed-form / single-ridge
     arms only). Eval arrays must share the train slice's whitening + layer
-    subset.
+    subset. ``text_emb_ev`` / ``text_features_ev`` are the eval-rung rows of
+    the arms-15/16 per-context feature tables (same builder + column recipe
+    as ``data.text_emb`` / ``data.text_features``, aligned to the eval
+    context order); when absent the text arms keep their standard SKIP.
 
     Returns ``(scores_ev, skipped)``: ``scores_ev[slug]`` is the eval-row
     block ``(rows, n_ev)``.
@@ -1148,6 +1185,10 @@ def run_transfer_cell(
         z_ans=z_ans_comb,
         mapfit=data.mapfit,
         w_shuffled=data.w_shuffled,
+        text_emb=_concat_row_features(data.text_emb, idx, text_emb_ev, n_ev, "text_emb"),
+        text_features=_concat_row_features(
+            data.text_features, idx, text_features_ev, n_ev, "text_features"
+        ),
         layers=data.layers,
     )
     cell_t = BudgetCell(
