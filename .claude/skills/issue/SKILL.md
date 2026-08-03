@@ -11799,9 +11799,23 @@ tests BEFORE anything lands:
     # NEW = gated_failures − baseline_failures (set subtraction):
     comm -23 /tmp/issue-<N>-lint-gated-norm.txt \
       /tmp/issue-<N>-lint-baseline-norm.txt > /tmp/issue-<N>-lint-new.txt
-    # Gated failure lines naming a file IN the own-diff (materialized at the
-    # trigger above):
-    grep -F -f /tmp/issue-<N>-own-diff.txt /tmp/issue-<N>-lint-gated-norm.txt \
+    # Gated failure lines whose OFFENDER path token — the leading `<path>` of
+    # the normalized line, gate-tree prefix stripped — is IN the own-diff
+    # (materialized at the trigger above). Path-TOKEN set-membership, never a
+    # whole-line substring grep: a failure MESSAGE routinely cites rules/docs
+    # paths (e.g. .claude/rules/gotchas.md), and synced rules files sit in
+    # most branches' own-diffs — the #1768 false-block (#1944). A line whose
+    # leading token is not a path (a check name, a `note:`) never attributes
+    # here; the NEW-set arm above remains the payload-caused backstop.
+    awk -v OWN=/tmp/issue-<N>-own-diff.txt '
+      BEGIN { while ((getline l < OWN) > 0) own[l]=1 }
+      /^workflow_lint: / {
+        s = substr($0, 16); n = index(s, ":")
+        path = (n > 0) ? substr(s, 1, n-1) : s
+        sub(/^\/tmp\/issue-<N>-lint-gate-tree\//, "", path)
+        gsub(/^[ \t]+|[ \t]+$/, "", path)
+        if (path in own) print $0
+      }' /tmp/issue-<N>-lint-gated-norm.txt \
       > /tmp/issue-<N>-lint-owndiff.txt || true
     # VERDICT — CRASH ARM FIRST (fail CLOSED): a linter CRASH — rc>1 (import
     # error, missing dep, sparse-worktree crash), or rc!=0 with ZERO
@@ -13536,7 +13550,18 @@ Decision tree:
     done
     comm -23 /tmp/issue-<N>-lint-gated-norm.txt \
       /tmp/issue-<N>-lint-baseline-norm.txt > /tmp/issue-<N>-lint-new.txt
-    grep -F -f /tmp/issue-<N>-additive-files.txt /tmp/issue-<N>-lint-gated-norm.txt \
+    # Offender-path-TOKEN set-membership against the additive-files list (same
+    # awk as the shared gate — never a whole-line grep; gate-tree sub() is a
+    # harmless no-op here, kept for textual parity; #1944):
+    awk -v OWN=/tmp/issue-<N>-additive-files.txt '
+      BEGIN { while ((getline l < OWN) > 0) own[l]=1 }
+      /^workflow_lint: / {
+        s = substr($0, 16); n = index(s, ":")
+        path = (n > 0) ? substr(s, 1, n-1) : s
+        sub(/^\/tmp\/issue-<N>-lint-gate-tree\//, "", path)
+        gsub(/^[ \t]+|[ \t]+$/, "", path)
+        if (path in own) print $0
+      }' /tmp/issue-<N>-lint-gated-norm.txt \
       > /tmp/issue-<N>-lint-owndiff.txt || true
     # GATED_RC consumed HERE — CRASH ARM FIRST (fail CLOSED; same
     # classification as the gate's executable block): rc>1 on either leg
