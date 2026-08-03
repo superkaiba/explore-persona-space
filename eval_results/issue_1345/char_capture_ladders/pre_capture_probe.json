@@ -1,0 +1,312 @@
+{
+  "metadata": {
+    "script": "scripts/issue1345_char_capture_pre_probe.py",
+    "git_commit": "76dcf758fcd867034758ee0ad5ff53ce608a8bdd",
+    "timestamp": "2026-08-03T16:10:38Z",
+    "stories_revision": "704cc6cbc3f498cd4af3648c7055784ef71c905c",
+    "stage_root": "/mnt/eps-data/thomasjiralerspong/issue1887_lambda_audit/issue1345",
+    "thresholds": {
+      "pass_floor": 800,
+      "drop_floor": 400,
+      "halt_affected_cells": 8
+    },
+    "wall_s": 41.2
+  },
+  "sources": {
+    "r4": 2163,
+    "r4op": 2018,
+    "r1_base": 5000
+  },
+  "cells": {
+    "char_helios": {
+      "variant": "char_helios",
+      "character": "HELIOS",
+      "kept_path": "data/issue_1345/char_helios/stories/kept_stories_paired_instruct.jsonl",
+      "n_rows": 2187,
+      "n_unique_conv_ids": 2187,
+      "violations": {
+        "attrib_not_one": 0,
+        "parse_no_turn": 8,
+        "stored_turns_not_one": 0,
+        "verbatim_mismatch": 0
+      },
+      "ladder_source": "r4",
+      "n_source": 2163,
+      "n_common": 1609,
+      "n_duplicate_conv_ids": 0,
+      "verdict": "pass"
+    },
+    "char_helios_op": {
+      "variant": "char_helios_op",
+      "character": "HELIOS",
+      "kept_path": "data/issue_1345/char_helios_op/stories/kept_stories_paired_op_instruct.jsonl",
+      "n_rows": 2069,
+      "n_unique_conv_ids": 2069,
+      "violations": {
+        "attrib_not_one": 14,
+        "parse_no_turn": 0,
+        "stored_turns_not_one": 0,
+        "verbatim_mismatch": 0
+      },
+      "ladder_source": "r4op",
+      "n_source": 2018,
+      "n_common": 1058,
+      "n_duplicate_conv_ids": 0,
+      "verdict": "pass"
+    },
+    "char_helios_base": {
+      "variant": "char_helios_base",
+      "character": "HELIOS",
+      "kept_path": "data/issue_1345/char_helios_base/stories/kept_stories_paired_pretrained.jsonl",
+      "n_rows": 2156,
+      "n_unique_conv_ids": 2156,
+      "violations": {
+        "attrib_not_one": 0,
+        "parse_no_turn": 6,
+        "stored_turns_not_one": 0,
+        "verbatim_mismatch": 0
+      },
+      "ladder_source": "r1_base",
+      "n_source": 5000,
+      "n_common": 2156,
+      "n_duplicate_conv_ids": 0,
+      "verdict": "pass"
+    },
+    "char_helios_op_base": {
+      "variant": "char_helios_op_base",
+      "character": "HELIOS",
+      "kept_path": "data/issue_1345/char_helios_op_base/stories/kept_stories_paired_op_pretrained.jsonl",
+      "n_rows": 2061,
+      "n_unique_conv_ids": 2061,
+      "violations": {
+        "attrib_not_one": 5,
+        "parse_no_turn": 0,
+        "stored_turns_not_one": 0,
+        "verbatim_mismatch": 0
+      },
+      "ladder_source": "r1_base",
+      "n_source": 5000,
+      "n_common": 2061,
+      "n_duplicate_conv_ids": 0,
+      "verdict": "pass"
+    },
+    "char_wren": {
+      "variant": "char_wren",
+      "character": "Wren",
+      "kept_path": "data/issue_1345/char_wren/stories/kept_stories_paired_instruct.jsonl",
+      "n_rows": 2159,
+      "n_unique_conv_ids": 2159,
+      "violations": {
+        "attrib_not_one": 0,
+        "parse_no_turn": 4,
+        "stored_turns_not_one": 0,
+        "verbatim_mismatch": 0
+      },
+      "ladder_source": "r4",
+      "n_source": 2163,
+      "n_common": 1663,
+      "n_duplicate_conv_ids": 0,
+      "verdict": "pass"
+    },
+    "char_wren_op": {
+      "variant": "char_wren_op",
+      "character": "Wren",
+      "kept_path": "data/issue_1345/char_wren_op/stories/kept_stories_paired_op_instruct.jsonl",
+      "n_rows": 2053,
+      "n_unique_conv_ids": 2053,
+      "violations": {
+        "attrib_not_one": 19,
+        "parse_no_turn": 0,
+        "stored_turns_not_one": 0,
+        "verbatim_mismatch": 0
+      },
+      "ladder_source": "r4op",
+      "n_source": 2018,
+      "n_common": 1455,
+      "n_duplicate_conv_ids": 0,
+      "verdict": "pass"
+    },
+    "char_wren_base": {
+      "variant": "char_wren_base",
+      "character": "Wren",
+      "kept_path": "data/issue_1345/char_wren_base/stories/kept_stories_paired_pretrained.jsonl",
+      "n_rows": 2145,
+      "n_unique_conv_ids": 2145,
+      "violations": {
+        "attrib_not_one": 0,
+        "parse_no_turn": 7,
+        "stored_turns_not_one": 0,
+        "verbatim_mismatch": 0
+      },
+      "ladder_source": "r1_base",
+      "n_source": 5000,
+      "n_common": 2145,
+      "n_duplicate_conv_ids": 0,
+      "verdict": "pass"
+    },
+    "char_wren_op_base": {
+      "variant": "char_wren_op_base",
+      "character": "Wren",
+      "kept_path": "data/issue_1345/char_wren_op_base/stories/kept_stories_paired_op_pretrained.jsonl",
+      "n_rows": 2002,
+      "n_unique_conv_ids": 2002,
+      "violations": {
+        "attrib_not_one": 21,
+        "parse_no_turn": 0,
+        "stored_turns_not_one": 0,
+        "verbatim_mismatch": 0
+      },
+      "ladder_source": "r1_base",
+      "n_source": 5000,
+      "n_common": 2002,
+      "n_duplicate_conv_ids": 0,
+      "verdict": "pass"
+    },
+    "char_dana": {
+      "variant": "char_dana",
+      "character": "Dana",
+      "kept_path": "data/issue_1345/char_dana/stories/kept_stories_paired_instruct.jsonl",
+      "n_rows": 2156,
+      "n_unique_conv_ids": 2156,
+      "violations": {
+        "attrib_not_one": 0,
+        "parse_no_turn": 4,
+        "stored_turns_not_one": 0,
+        "verbatim_mismatch": 0
+      },
+      "ladder_source": "r4",
+      "n_source": 2163,
+      "n_common": 1649,
+      "n_duplicate_conv_ids": 0,
+      "verdict": "pass"
+    },
+    "char_dana_op": {
+      "variant": "char_dana_op",
+      "character": "Dana",
+      "kept_path": "data/issue_1345/char_dana_op/stories/kept_stories_paired_op_instruct.jsonl",
+      "n_rows": 2002,
+      "n_unique_conv_ids": 2002,
+      "violations": {
+        "attrib_not_one": 20,
+        "parse_no_turn": 0,
+        "stored_turns_not_one": 0,
+        "verbatim_mismatch": 0
+      },
+      "ladder_source": "r4op",
+      "n_source": 2018,
+      "n_common": 1378,
+      "n_duplicate_conv_ids": 0,
+      "verdict": "pass"
+    },
+    "char_dana_base": {
+      "variant": "char_dana_base",
+      "character": "Dana",
+      "kept_path": "data/issue_1345/char_dana_base/stories/kept_stories_paired_pretrained.jsonl",
+      "n_rows": 2173,
+      "n_unique_conv_ids": 2173,
+      "violations": {
+        "attrib_not_one": 0,
+        "parse_no_turn": 4,
+        "stored_turns_not_one": 0,
+        "verbatim_mismatch": 0
+      },
+      "ladder_source": "r1_base",
+      "n_source": 5000,
+      "n_common": 2173,
+      "n_duplicate_conv_ids": 0,
+      "verdict": "pass"
+    },
+    "char_dana_op_base": {
+      "variant": "char_dana_op_base",
+      "character": "Dana",
+      "kept_path": "data/issue_1345/char_dana_op_base/stories/kept_stories_paired_op_pretrained.jsonl",
+      "n_rows": 2023,
+      "n_unique_conv_ids": 2023,
+      "violations": {
+        "attrib_not_one": 15,
+        "parse_no_turn": 0,
+        "stored_turns_not_one": 0,
+        "verbatim_mismatch": 0
+      },
+      "ladder_source": "r1_base",
+      "n_source": 5000,
+      "n_common": 2023,
+      "n_duplicate_conv_ids": 0,
+      "verdict": "pass"
+    },
+    "char_vex": {
+      "variant": "char_vex",
+      "character": "Vex",
+      "kept_path": "data/issue_1345/char_vex/stories/kept_stories_paired_instruct.jsonl",
+      "n_rows": 2166,
+      "n_unique_conv_ids": 2166,
+      "violations": {
+        "attrib_not_one": 0,
+        "parse_no_turn": 1,
+        "stored_turns_not_one": 0,
+        "verbatim_mismatch": 0
+      },
+      "ladder_source": "r4",
+      "n_source": 2163,
+      "n_common": 1634,
+      "n_duplicate_conv_ids": 0,
+      "verdict": "pass"
+    },
+    "char_vex_op": {
+      "variant": "char_vex_op",
+      "character": "Vex",
+      "kept_path": "data/issue_1345/char_vex_op/stories/kept_stories_paired_op_instruct.jsonl",
+      "n_rows": 2155,
+      "n_unique_conv_ids": 2155,
+      "violations": {
+        "attrib_not_one": 5,
+        "parse_no_turn": 0,
+        "stored_turns_not_one": 0,
+        "verbatim_mismatch": 0
+      },
+      "ladder_source": "r4op",
+      "n_source": 2018,
+      "n_common": 1423,
+      "n_duplicate_conv_ids": 0,
+      "verdict": "pass"
+    },
+    "char_vex_base": {
+      "variant": "char_vex_base",
+      "character": "Vex",
+      "kept_path": "data/issue_1345/char_vex_base/stories/kept_stories_paired_pretrained.jsonl",
+      "n_rows": 2157,
+      "n_unique_conv_ids": 2157,
+      "violations": {
+        "attrib_not_one": 0,
+        "parse_no_turn": 5,
+        "stored_turns_not_one": 0,
+        "verbatim_mismatch": 0
+      },
+      "ladder_source": "r1_base",
+      "n_source": 5000,
+      "n_common": 2157,
+      "n_duplicate_conv_ids": 0,
+      "verdict": "pass"
+    },
+    "char_vex_op_base": {
+      "variant": "char_vex_op_base",
+      "character": "Vex",
+      "kept_path": "data/issue_1345/char_vex_op_base/stories/kept_stories_paired_op_pretrained.jsonl",
+      "n_rows": 2142,
+      "n_unique_conv_ids": 2142,
+      "violations": {
+        "attrib_not_one": 9,
+        "parse_no_turn": 0,
+        "stored_turns_not_one": 0,
+        "verbatim_mismatch": 0
+      },
+      "ladder_source": "r1_base",
+      "n_source": 5000,
+      "n_common": 2142,
+      "n_duplicate_conv_ids": 0,
+      "verdict": "pass"
+    }
+  },
+  "n_drop_cells": 0,
+  "overall": "pass"
+}
