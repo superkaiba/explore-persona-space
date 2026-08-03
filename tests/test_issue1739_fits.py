@@ -1232,3 +1232,391 @@ def test_run_grid_multi_flags_degenerate_ols_cell(tmp_path, monkeypatch):
         data, groups, provenance={"regime": "e2"}, **{**kw, "out_dir": tmp_path / "clean"}
     )
     assert recs2[0]["degenerate_ols"] is False and "degenerate_ols_detail" not in recs2[0]
+
+
+# ---------------------------------------------------------------------------
+# new-arm-round: arm-18 KRR helper parity + fc (--rb-point) direction builder
+# ---------------------------------------------------------------------------
+
+
+def test_krr_scalar_fold_predict_matches_exact_dual_krr():
+    """At m_centers >= n_inner, Nystrom features over ALL inner rows span the
+    kernel space, so the feature ridge IS exact dual KRR:
+    pred = K_ev,inner (K_inner + lam I)^-1 (y - ymu) + ymu. The batched helper
+    must reproduce that closed form (single (gamma, lambda) pair, so the
+    inner-val selection is trivially that pair)."""
+    rng = np.random.default_rng(0)
+    ly, ntr, nev, d = 2, 40, 7, 6
+    x = rng.normal(size=(ly, ntr, d))
+    xe = rng.normal(size=(ly, nev, d))
+    y = np.sin(x[0, :, 0]) + 0.1 * rng.normal(size=ntr)
+    lam = 0.1
+    diag: dict = {}
+    pred = fits.krr_scalar_fold_predict(
+        x,
+        y,
+        xe,
+        seed=3,
+        device="cpu",
+        m_centers=10_000,  # >= n_inner -> exact-KRR regime
+        gamma_mult=(1.0,),
+        lambdas=(lam,),
+        diag_out=diag,
+    )
+    assert pred.shape == (ly, nev)
+    # Replicate the helper's own inner/val split ([1739, 5, seed] key family).
+    p = np.random.default_rng([1739, 5, 3]).permutation(ntr)
+    inner = p[max(2, round(0.1 * ntr)) :]
+    ymu = y[inner].mean()
+    yc = y[inner] - ymu
+    for li in range(ly):
+        sel = diag["per_layer"][li]
+        assert sel["lambda"] == lam and sel["gamma"] > 0
+        d_ii = ((x[li, inner][:, None] - x[li, inner][None]) ** 2).sum(-1)
+        d_ei = ((xe[li][:, None] - x[li, inner][None]) ** 2).sum(-1)
+        k_ii = np.exp(-sel["gamma"] * d_ii)
+        alpha = np.linalg.solve(k_ii + lam * np.eye(len(inner)), yc)
+        ref = np.exp(-sel["gamma"] * d_ei) @ alpha + ymu
+        np.testing.assert_allclose(pred[li], ref, rtol=1e-5, atol=1e-6)
+
+
+def test_krr_scalar_fold_predict_selects_on_inner_val():
+    """The (gamma, lambda) grid is selected on the INNER-val MSE (never the
+    eval rows): with an absurd ridge in the grid the helper must pick the
+    sane one, and the recorded selection must come from the grid."""
+    rng = np.random.default_rng(1)
+    ly, ntr, nev, d = 1, 60, 5, 4
+    x = rng.normal(size=(ly, ntr, d))
+    xe = rng.normal(size=(ly, nev, d))
+    y = x[0, :, 0] ** 2 + 0.05 * rng.normal(size=ntr)
+    diag: dict = {}
+    fits.krr_scalar_fold_predict(x, y, xe, seed=0, device="cpu", lambdas=(1e-1, 1e8), diag_out=diag)
+    assert diag["per_layer"][0]["lambda"] == pytest.approx(1e-1)
+    assert np.isfinite(diag["per_layer"][0]["val_mse"])
+
+
+def test_krr_degenerate_gamma_layer_is_recorded_not_fatal():
+    """One duplicate-dominated layer (median sq distance 0) yields NaN preds +
+    a diag flag for THAT layer only — never a grid-killing assert (code-review
+    r1 Minor 5); ALL layers degenerate fails loud."""
+    rng = np.random.default_rng(2)
+    ly, ntr, nev, d = 2, 30, 4, 3
+    x = rng.normal(size=(ly, ntr, d))
+    x[1] = 1.0  # layer 1: all rows identical -> median sq distance exactly 0
+    xe = rng.normal(size=(ly, nev, d))
+    y = x[0, :, 0] + 0.1 * rng.normal(size=ntr)
+    diag: dict = {}
+    pred = fits.krr_scalar_fold_predict(x, y, xe, seed=0, device="cpu", diag_out=diag)
+    assert np.isfinite(pred[0]).all(), "healthy layer must stay finite"
+    assert np.isnan(pred[1]).all(), "degenerate layer must be NaN (recorded skip)"
+    assert diag["per_layer"][1].get("degenerate_gamma") is True
+    assert "degenerate_gamma" not in diag["per_layer"][0]
+    assert diag["n_degenerate_gamma_layers"] == 1
+    x_all = np.ones((ly, ntr, d))
+    with pytest.raises(ValueError, match="ALL"):
+        fits.krr_scalar_fold_predict(x_all, y, xe, seed=0, device="cpu")
+
+
+def _fc_labeled_table(cli, n_ctx=3, k=2, ly=2, d=4, seed=0):
+    """Tiny LabeledTable whose ans_rows carry the CONTEXT_END per-rollout rows
+    (what _load_labeled loads under rollout_rows_kind='context_end')."""
+    rng = np.random.default_rng(seed)
+    per_rollout = np.array([[90.0, 10.0], [80.0, 20.0], [70.0, 30.0]])[:n_ctx, :k]
+    n_rows = n_ctx * k
+    ans_rows = {li: rng.normal(size=(n_rows, d)) for li in range(ly)}
+    return cli.LabeledTable(
+        z_by_variant={},
+        z_ans=rng.normal(size=(ly, n_ctx, d)),
+        dv=per_rollout.mean(axis=1),
+        groups=[f"g{i}" for i in range(n_ctx)],
+        per_rollout=per_rollout,
+        ctx_order=[f"c{i}" for i in range(n_ctx)],
+        rungs=["train"],
+        ans_rows=ans_rows,
+        ans_row_ctx=np.repeat(np.arange(n_ctx), k),
+        ans_row_k=np.tile(np.arange(k), n_ctx),
+    )
+
+
+def test_extract_rb_fc_applies_split_weights_to_the_loaded_rows():
+    """e2p_fc = the SAME pooled matched_pair_split_weights row weights applied
+    to the rows _load_labeled loaded (context_end under --rb-point
+    context_end) — position is the ONLY change (plan v9 item 1; matched-e2_fc
+    is structurally dropped, see the refusal tests below)."""
+    import argparse
+
+    from explore_persona_space.experiments.issue_1739.constants import E2_SPREAD_MIN
+
+    cli = _load_fits_cli()
+    tbl = _fc_labeled_table(cli)
+    args = argparse.Namespace(behavior="toy", e1_store=None, rb_point="context_end")
+    rb = cli._extract_rb("e2p_fc", args, tbl, [0, 1], 4)
+    w_hi, w_lo, _n = fits.matched_pair_split_weights(
+        tbl.per_rollout, spread_min=E2_SPREAD_MIN, pooled=True
+    )
+    w_row = (w_hi - w_lo)[tbl.ans_row_ctx, tbl.ans_row_k]
+    for li in (0, 1):
+        np.testing.assert_allclose(rb[li], w_row @ tbl.ans_rows[li])
+
+
+def test_extract_rb_refuses_matched_e2_under_fc():
+    """Plan v9 structural restriction: matched-e2_fc is REFUSED structurally
+    (the within-context hi/lo weights cancel exactly on context-level rows;
+    K2's norm check is blind to the float residue)."""
+    import argparse
+
+    cli = _load_fits_cli()
+    tbl = _fc_labeled_table(cli)
+    args = argparse.Namespace(behavior="toy", e1_store=None, rb_point="context_end")
+    with pytest.raises(SystemExit, match="structurally undefined"):
+        cli._extract_rb("e2_fc", args, tbl, [0, 1], 4)
+
+
+def test_parse_args_refuses_e2_regime_at_context_end():
+    """Flag-level enforcement of the plan-v9 structural restriction: the CLI
+    refuses --regimes e2 under --rb-point context_end (argparse error, rc 2);
+    e1/e2p under context_end and e2 under t1 both parse."""
+    cli = _load_fits_cli()
+    with pytest.raises(SystemExit) as exc:
+        cli._parse_args(["--rb-point", "context_end", "--regimes", "e1", "e2", "e2p"])
+    assert exc.value.code == 2
+    ok_fc = cli._parse_args(["--rb-point", "context_end", "--regimes", "e1", "e2p"])
+    assert ok_fc.regimes == ["e1", "e2p"]
+    ok_t1 = cli._parse_args(["--regimes", "e1", "e2", "e2p"])
+    assert ok_t1.regimes == ["e1", "e2", "e2p"]
+
+
+def test_extract_rb_fc_k2_halts_on_a_degenerate_direction():
+    """K2 (plan v8 par.7): a zero-norm fc direction HALTS with a named report,
+    never a fabricated direction. The committed t1 path is untouched."""
+    import argparse
+
+    cli = _load_fits_cli()
+    tbl = _fc_labeled_table(cli)
+    for li in tbl.ans_rows:
+        tbl.ans_rows[li] = np.zeros_like(tbl.ans_rows[li])
+    args = argparse.Namespace(behavior="toy", e1_store=None, rb_point="context_end")
+    with pytest.raises(SystemExit, match="K2 HALT"):
+        cli._extract_rb("e2p_fc", args, tbl, [0, 1], 4)
+
+
+def test_rb_point_and_fixed_coordinate_cli_defaults():
+    """Defaults keep committed behavior byte-identical: rb_point=t1,
+    fixed_coordinate absent."""
+    cli = _load_fits_cli()
+    args = cli._parse_args(["--behavior", "toy"])
+    assert args.rb_point == "t1"
+    assert args.fixed_coordinate is None
+    args_fc = cli._parse_args(["--rb-point", "context_end", "--fixed-coordinate", "u=full"])
+    assert args_fc.rb_point == "context_end"
+    assert args_fc.fixed_coordinate == "u=full"
+
+
+# ---------------------------------------------------------------------------
+# crash-fix r3: chunked/aliased memory paths are BIT-IDENTICAL + the RSS guard
+# ---------------------------------------------------------------------------
+
+
+def _fit_whitening_dense_reference(x_u, *, seed=0, device="cpu", layer_chunk=8):
+    """The PRE-r3 fit_whitening body (upfront whole-array fp64 cast) — the
+    parity oracle for the chunked-cast rewrite."""
+    import torch
+
+    from explore_persona_space.experiments.issue_1739.constants import (
+        WHITEN_HOLDOUT_FRAC,
+        WHITEN_SHRINKAGE_GRID,
+    )
+
+    gammas = WHITEN_SHRINKAGE_GRID
+    x = np.asarray(x_u, dtype=np.float64)
+    n_layers, n, d = x.shape
+    rng = np.random.default_rng([1739, 3, int(seed)])
+    perm = rng.permutation(n)
+    n_hold = round(WHITEN_HOLDOUT_FRAC * n) if n >= 5 else 0
+    hold, tr = perm[:n_hold], perm[n_hold:]
+    dev = torch.device(device)
+    mu = np.empty((n_layers, d))
+    w_out = np.empty((n_layers, d, d))
+    gamma_out = np.empty(n_layers)
+    for lo in range(0, n_layers, layer_chunk):
+        sl = slice(lo, min(lo + layer_chunk, n_layers))
+        xt = torch.as_tensor(x[sl][:, tr], device=dev)
+        m = xt.mean(dim=1, keepdim=True)
+        xc = xt - m
+        cov = xc.transpose(1, 2) @ xc / max(len(tr), 1)
+        evals, evecs = fits._eigh_robust(cov)
+        evals = torch.clamp(evals, min=0.0)
+        tr_mean = evals.mean(dim=1, keepdim=True)
+        if n_hold:
+            xh = torch.as_tensor(x[sl][:, hold], device=dev) - m
+            diag_hold = ((xh @ evecs) ** 2).mean(dim=1)
+        else:
+            diag_hold = evals
+        nlls = []
+        for g in gammas:
+            lam = (1.0 - g) * evals + g * tr_mean
+            nlls.append(torch.log(lam).sum(dim=1) + (diag_hold / lam).sum(dim=1))
+        gi = torch.stack(nlls, dim=1).argmin(dim=1)
+        g_best = torch.as_tensor([float(gammas[int(i)]) for i in gi], device=dev)
+        lam_best = (1.0 - g_best[:, None]) * evals + g_best[:, None] * tr_mean
+        inv_sqrt = evecs @ (lam_best.clamp(min=1e-12).rsqrt()[:, :, None] * evecs.transpose(1, 2))
+        mu[sl] = m.squeeze(1).cpu().numpy()
+        w_out[sl] = inv_sqrt.cpu().numpy()
+        gamma_out[sl] = g_best.cpu().numpy()
+    return fits.Whitening(mu=mu, w=w_out, gamma=gamma_out)
+
+
+@pytest.mark.parametrize("in_dtype", [np.float16, np.float32, np.float64])
+def test_fit_whitening_chunked_matches_dense_reference(in_dtype):
+    """r3 per-chunk fp64 cast == the old upfront whole-array cast, bitwise."""
+    x_u = RNG.normal(size=(3, 40, 6)).astype(in_dtype)
+    got = fits.fit_whitening(x_u, seed=3, layer_chunk=2)
+    ref = _fit_whitening_dense_reference(x_u, seed=3, layer_chunk=2)
+    assert np.array_equal(got.mu, ref.mu)
+    assert np.array_equal(got.w, ref.w)
+    assert np.array_equal(got.gamma, ref.gamma)
+
+
+@pytest.mark.parametrize("in_dtype", [np.float16, np.float32, np.float64])
+def test_apply_whitening_chunked_matches_dense(in_dtype):
+    """r3 per-layer apply == the old batched `(x - mu) @ w` expression, bitwise."""
+    x_u = RNG.normal(size=(3, 25, 6)).astype(np.float64)
+    wh = fits.fit_whitening(x_u, seed=1)
+    x = RNG.normal(size=(3, 11, 6)).astype(in_dtype)
+    got = fits.apply_whitening(x, wh)
+    ref = (np.asarray(x, dtype=np.float64) - wh.mu[:, None, :]) @ wh.w
+    assert got.dtype == np.float64
+    assert np.array_equal(got, ref)
+
+
+def test_apply_map_chunked_matches_dense():
+    """r3 per-layer apply_map == the old batched standardize-matmul, bitwise."""
+    rng = np.random.default_rng(7)
+    x_u = rng.normal(size=(3, 40, 6))
+    y_u = 0.5 * x_u + rng.normal(size=x_u.shape)
+    m = fits.fit_linear_map(x_u, y_u)
+    x = rng.normal(size=(3, 9, 6))
+    got = fits.apply_map(x, m)
+    ref = ((np.asarray(x, dtype=np.float64) - m.x_mu) / m.x_sd) @ m.w + m.y_mu
+    assert np.array_equal(got, ref)
+    # the shuffled-weight override path chunks identically
+    w_shuf = fits.shuffled_map_weights(m.w, seed=0)
+    got_s = fits.apply_map(x, m, w=w_shuf)
+    ref_s = ((np.asarray(x, dtype=np.float64) - m.x_mu) / m.x_sd) @ w_shuf + m.y_mu
+    assert np.array_equal(got_s, ref_s)
+
+
+def test_take_rows_view_and_copy():
+    """_take_rows: contiguous arange -> VIEW; anything else -> the fancy copy."""
+    arr = RNG.normal(size=(2, 10, 3))
+    rows = np.arange(3, 8)
+    view = arms._take_rows(arr, rows)
+    assert view.base is arr and np.array_equal(view, arr[:, rows])
+    scattered = np.array([1, 4, 5])
+    copy = arms._take_rows(arr, scattered)
+    assert copy.base is not arr and np.array_equal(copy, arr[:, scattered])
+    single = arms._take_rows(arr, np.array([4]))
+    assert np.array_equal(single, arr[:, [4]])
+
+
+def test_concat_train_eval_matches_concatenate():
+    full = RNG.normal(size=(2, 12, 4))
+    ev = RNG.normal(size=(2, 5, 4))
+    idx = np.array([7, 2, 9, 0])
+    got = arms._concat_train_eval(full, idx, ev)
+    assert np.array_equal(got, np.concatenate([full[:, idx], ev], axis=1))
+
+
+def test_run_cell_multi_alias_identity_matches_copy_and_never_mutates():
+    """The transfer leg's identity row set: aliased z/za give IDENTICAL scores
+    to an explicit-copy comb, and the shared arrays are never mutated."""
+    data, _groups = _synthetic_cell_data(n=24, seed=5)
+    n = data.z_ctx.shape[1]
+    cell = arms.BudgetCell(
+        row_idx=np.arange(n),
+        fold_ids=np.concatenate([np.ones(16, dtype=np.int64), np.zeros(8, dtype=np.int64)]),
+        n_folds=2,
+        budget_l=16,
+        draw=0,
+        seed=0,
+        fold_scheme="transfer-train-vs-eval",
+    )
+    want = ["arm1_ctx_e1", "arm4_ridge_ctx", "arm6_map_proj_e1", "arm11_oracle_proj"]
+    z_pristine, za_pristine = data.z_ctx.copy(), data.z_ans.copy()
+    scores_alias, _ = arms.run_cell(data, cell, arms=want, ridge_folds=(0,))
+    assert np.array_equal(data.z_ctx, z_pristine), "alias path mutated z_ctx"
+    assert np.array_equal(data.z_ans, za_pristine), "alias path mutated z_ans"
+    data_copy = arms.CellData(
+        z_ctx=data.z_ctx.copy(),
+        z_ans=data.z_ans.copy(),
+        dv=data.dv,
+        rb=data.rb,
+        mapfit=data.mapfit,
+        text_emb=data.text_emb,
+        text_features=data.text_features,
+        layers=data.layers,
+    )
+    scores_copy, _ = arms.run_cell(data_copy, cell, arms=want, ridge_folds=(0,))
+    for slug in want:
+        assert np.array_equal(scores_alias[slug], scores_copy[slug], equal_nan=True) or np.allclose(
+            scores_alias[slug], scores_copy[slug], equal_nan=True, atol=0
+        ), slug
+
+
+def test_run_cell_multi_lazy_mp_skips_apply_map(monkeypatch):
+    """mp is built ONLY when a map-consuming arm is requested (r3 memory fix);
+    a non-map roster never calls apply_map, and skip semantics are unchanged."""
+    data, groups = _synthetic_cell_data(n=24, seed=6)
+    cell = fits.realize_budget_cell(groups, budget_l=18, draw=0, seed=0)
+    calls = {"n": 0}
+    real_apply = arms.apply_map
+
+    def _counting_apply(*a, **kw):
+        calls["n"] += 1
+        return real_apply(*a, **kw)
+
+    monkeypatch.setattr(arms, "apply_map", _counting_apply)
+    scores, _skipped = arms.run_cell(
+        data, cell, arms=["arm1_ctx_e1", "arm11_oracle_proj", "arm4_ridge_ctx"]
+    )
+    assert calls["n"] == 0, "non-map roster must not materialize mp"
+    assert "arm1_ctx_e1" in scores and "arm4_ridge_ctx" in scores
+    scores6, _ = arms.run_cell(data, cell, arms=["arm6_map_proj_e1"])
+    assert calls["n"] == 1 and "arm6_map_proj_e1" in scores6
+    # mapfit=None + map arm requested still records the "no mapfit" skip
+    data_nomap = arms.CellData(
+        z_ctx=data.z_ctx, z_ans=data.z_ans, dv=data.dv, rb=data.rb, layers=data.layers
+    )
+    _, skipped_nomap = arms.run_cell(data_nomap, cell, arms=["arm6_map_proj_e1"])
+    assert skipped_nomap["arm6_map_proj_e1"] == "no mapfit"
+
+
+def test_mem_guard_components_and_refusal(tmp_path, monkeypatch, capsys):
+    from explore_persona_space.experiments.issue_1739 import mem_guard
+
+    # component arithmetic: the documented full-U shape projects ~75 GiB extra
+    comp = mem_guard.whitening_map_components(28, 18793, 3584, n_ctx=8000, n_ev=2666)
+    total_gib = sum(comp.values()) / 2**30
+    assert 60 < total_gib < 110, total_gib
+    tc = mem_guard.transfer_components(
+        28, 16000, 7188, 3584, list(arms.TRANSFER_ARMS_WIDE), has_map=True
+    )
+    assert 50 < sum(tc.values()) / 2**30 < 100
+    # no-map / projection-only roster: no mp, no mlp, no ridge terms
+    tc_min = mem_guard.transfer_components(28, 250, 100, 3584, ["arm1_ctx_e1"], has_map=True)
+    assert set(tc_min) == {"comb_z_za"}
+    # ok verdict on a tiny projection
+    rec = mem_guard.check_phase("unit_ok", {"tiny": 1024}, out_root=tmp_path)
+    assert rec["verdict"] == "ok"
+    # forced refusal: projection larger than any real box
+    with pytest.raises(mem_guard.MemGuardRefusal):
+        mem_guard.check_phase("unit_refuse", {"huge": 10**15}, out_root=tmp_path)
+    report = json.loads((tmp_path / "rss_guard_report.json").read_text())
+    assert report["checks"][-1]["phase"] == "unit_refuse"
+    assert report["checks"][-1]["verdict"] == "REFUSE"
+    out = capsys.readouterr().out
+    assert "[fits][rss-guard] phase=unit_refuse" in out and "verdict=REFUSE" in out
+    # log-only kill switch
+    monkeypatch.setenv("EPM_I1739_RSS_GUARD", "0")
+    rec2 = mem_guard.check_phase("unit_logonly", {"huge": 10**15}, out_root=tmp_path)
+    assert rec2["verdict"] == "over-log-only"

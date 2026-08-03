@@ -70,55 +70,127 @@ from explore_persona_space.experiments.issue_1739.fits import (
 logger = logging.getLogger(__name__)
 
 # Arm registry (plan §5 table). ``family`` drives figure colors (one color =
-# one arm family across ALL figures); ``layered`` = has a real layer axis.
+# one arm family across ALL figures); ``layered`` = has a real layer axis;
+# ``rb_dep`` says whether the arm's scores depend on the regime direction
+# ``rb`` — the SAME partition :func:`run_cell_multi` implements by writing
+# rb-independent arms through ``_put_shared`` (one ndarray reused across every
+# regime) and rb-dependent arms per regime. Transfer callers read it to decide
+# what may be cached across regimes (:func:`partition_transfer_roster`); the
+# registry value and the dispatch body are pinned in agreement by
+# ``tests/test_issue1739_transfer_roster.py::test_rb_dep_matches_dispatch``.
 ARM_REGISTRY: dict[str, dict] = {
-    "arm1_ctx_e1": {"label": "PV-project-context (E1)", "family": "context", "layered": True},
-    "arm2_ctx_native": {"label": "Context-native direction", "family": "context", "layered": True},
-    "arm3_identity_bias": {"label": "Identity+learned-bias", "family": "context", "layered": True},
-    "arm4_ridge_ctx": {"label": "Ridge on whitened context", "family": "context", "layered": True},
-    "arm5_mlp_ctx": {"label": "MLP on whitened context", "family": "context", "layered": True},
-    "arm6_map_proj_e1": {"label": "Map-project (headline)", "family": "map", "layered": True},
+    "arm1_ctx_e1": {
+        "label": "PV-project-context (E1)",
+        "family": "context",
+        "layered": True,
+        "rb_dep": True,
+    },
+    "arm2_ctx_native": {
+        "label": "Context-native direction",
+        "family": "context",
+        "layered": True,
+        "rb_dep": False,
+    },
+    "arm3_identity_bias": {
+        "label": "Identity+learned-bias",
+        "family": "context",
+        "layered": True,
+        "rb_dep": True,
+    },
+    "arm4_ridge_ctx": {
+        "label": "Ridge on whitened context",
+        "family": "context",
+        "layered": True,
+        "rb_dep": False,
+    },
+    "arm5_mlp_ctx": {
+        "label": "MLP on whitened context",
+        "family": "context",
+        "layered": True,
+        "rb_dep": False,
+    },
+    "arm6_map_proj_e1": {
+        "label": "Map-project (headline)",
+        "family": "map",
+        "layered": True,
+        "rb_dep": True,
+    },
     "arm7_map_ridge_pred": {
         "label": "Map-regression predicted answer",
         "family": "map",
         "layered": True,
+        "rb_dep": False,
     },
     "arm8_map_ridge_true": {
         "label": "Map-regression true answer",
         "family": "map",
         "layered": True,
+        "rb_dep": False,
     },
     "arm9_pretrain_ft": {
         "label": "Pretrain-then-finetune (L2-SP)",
         "family": "map",
         "layered": True,
+        "rb_dep": True,
     },
-    "arm10_stacked": {"label": "Stacked combiner", "family": "map", "layered": True},
+    "arm10_stacked": {
+        "label": "Stacked combiner",
+        "family": "map",
+        "layered": True,
+        "rb_dep": True,
+    },
     "arm11_oracle_proj": {
         "label": "Oracle-project-true-answer",
         "family": "oracle",
         "layered": True,
+        "rb_dep": True,
     },
     "arm12_oracle_reg": {
         "label": "Oracle-regression-true-answer",
         "family": "oracle",
         "layered": True,
+        "rb_dep": False,
     },
-    "arm13_shuffled_map": {"label": "Shuffled-map control", "family": "control", "layered": True},
+    "arm13_shuffled_map": {
+        "label": "Shuffled-map control",
+        "family": "control",
+        "layered": True,
+        "rb_dep": True,
+    },
     "arm14_shuffled_pt": {
         "label": "Shuffled-pretrain control",
         "family": "control",
         "layered": True,
+        "rb_dep": True,
     },
     "arm15_text_only": {
         "label": "Text-only sentence-embedding",
         "family": "control",
         "layered": False,
+        "rb_dep": False,
     },
     "arm16_surface_feat": {
         "label": "Trivial surface features",
         "family": "control",
         "layered": False,
+        "rb_dep": False,
+    },
+    # new-arm-round item 2 (plan v8 §4): nonlinear ORACLE ceilings — the arm-5
+    # fit machinery (MLP) and the nonlinear-map round's kernel recipe (Nystrom
+    # KRR) with input = the whitened TRUE answer acts (za). rb-INDEPENDENT
+    # (regression on za -> dv; no regime direction anywhere), so they ride the
+    # shared cache exactly like arm 12.
+    "arm17_oracle_mlp": {
+        "label": "Oracle-MLP-true-answer",
+        "family": "oracle",
+        "layered": True,
+        "rb_dep": False,
+    },
+    "arm18_oracle_krr": {
+        "label": "Oracle-kernel-true-answer",
+        "family": "oracle",
+        "layered": True,
+        "rb_dep": False,
     },
 }
 
@@ -139,6 +211,131 @@ TRANSFER_ARMS = (
     "arm11_oracle_proj",
     "arm13_shuffled_map",
 )
+
+# WIDE transfer roster: the 6 core ladder arms PLUS the four FITTED arms the
+# train rung already scores but the eval rungs never did — the nonlinear
+# context read (arm 5) and the three map/oracle regressions (arms 7, 8, 12).
+# Every one of them is already computed on the train rung for all three
+# behaviors, so a frozen layer exists for each in every committed train
+# summary; their eval-rung inputs are the SAME arrays the core roster already
+# threads (``z_ev`` for arm 5, ``mapfit`` for arm 7, ``za_ev`` + ``mapfit``
+# for arms 8/12 — the latter two are exactly what arm 11 and arm 3 already
+# require, so a rung that scores the core roster has them by construction).
+# The deliberately EXCLUDED arms are the ones the plan never puts on the
+# ladder AND whose transfer semantics are not well defined here: the L2-SP
+# arms 9/14 (a per-regime residual fit), the stacked combiner arm 10 (needs
+# ridge preds on EVERY fold, so it is incompatible with the transfer leg's
+# ``ridge_folds=(0,)`` discarded-fold skip — ``run_cell_multi`` raises), and
+# the text arms 15/16 (no eval-rung text features are threaded).
+# Kept in ARM_REGISTRY order (like TRANSFER_ARMS) so a roster's arm ordering is
+# one canonical thing everywhere — `resolve_transfer_roster` returns registry
+# order too, and `partition_transfer_roster` preserves it.
+TRANSFER_ARMS_WIDE = tuple(
+    a
+    for a in ARM_REGISTRY
+    if a
+    in set(TRANSFER_ARMS)
+    | {"arm5_mlp_ctx", "arm7_map_ridge_pred", "arm8_map_ridge_true", "arm12_oracle_reg"}
+)
+
+# The wide roster MINUS the MLP. Measured basis (the round's per-cell pilot,
+# `scripts/issue1739_transfer_roster_pilot.py`, production shape n_train=6468 /
+# n_eval=1982 / d=3584 on CPU): arm 5 carries the overwhelming majority of the
+# wide roster's added wall — it trains a 300-epoch AdamW net per (layer, fold)
+# over the concatenated train+eval block, where arms 7/8/12 only add two
+# closed-form ridge job groups that reuse one Gram+eigh each. This roster
+# exists so the three cheap fitted arms can be filled in on their own pass
+# (minutes) without waiting on the MLP, and so the MLP pass can be routed to a
+# GPU device separately. It is NOT the default — the default stays `wide`.
+TRANSFER_ARMS_WIDE_NOMLP = tuple(a for a in TRANSFER_ARMS_WIDE if a != "arm5_mlp_ctx")
+
+# Named rosters a CLI may select by name (``--transfer-arms core|wide|...``).
+TRANSFER_ROSTERS: dict[str, tuple[str, ...]] = {
+    "core": TRANSFER_ARMS,
+    "wide": TRANSFER_ARMS_WIDE,
+    "wide-nomlp": TRANSFER_ARMS_WIDE_NOMLP,
+}
+
+
+def resolve_transfer_roster(spec: str | list[str] | tuple[str, ...] | None) -> list[str]:
+    """Resolve a roster NAME (``core``/``wide``) or an explicit slug list.
+
+    ``None`` -> the wide roster (the default for every eval rung as of the
+    grid-fill round). An explicit list is validated against
+    :data:`ARM_REGISTRY` and returned in registry order so a roster's arm
+    ordering never depends on how the caller typed it. Raises on an unknown
+    name or slug — never a silent drop.
+    """
+    if spec is None:
+        names: list[str] = list(TRANSFER_ARMS_WIDE)
+    elif isinstance(spec, str):
+        if spec not in TRANSFER_ROSTERS:
+            raise ValueError(
+                f"unknown transfer roster {spec!r}; expected one of "
+                f"{sorted(TRANSFER_ROSTERS)} or an explicit arm-slug list"
+            )
+        names = list(TRANSFER_ROSTERS[spec])
+    else:
+        names = list(spec)
+        if len(names) == 1 and names[0] in TRANSFER_ROSTERS:  # --transfer-arms wide (nargs="+")
+            names = list(TRANSFER_ROSTERS[names[0]])
+    unknown = [a for a in names if a not in ARM_REGISTRY]
+    if unknown:
+        raise ValueError(f"unknown arm slug(s) {unknown}; known: {sorted(ARM_REGISTRY)}")
+    order = list(ARM_REGISTRY)
+    return sorted(set(names), key=order.index)
+
+
+def partition_transfer_roster(roster: list[str] | tuple[str, ...]) -> tuple[list[str], list[str]]:
+    """Split a roster into ``(rb_independent, rb_dependent)`` in registry order.
+
+    The transfer leg caches the two halves differently: rb-INDEPENDENT arms
+    (ridge/MLP fits over ``z`` / ``mp`` / ``za``) depend only on the realized
+    ROW SET, so one fit is shared across every regime slice of a group, while
+    rb-DEPENDENT arms (projections onto the regime direction) must be
+    recomputed per regime. Keyed off ``ARM_REGISTRY[...]['rb_dep']``, which is
+    pinned against :func:`run_cell_multi`'s own dispatch by
+    ``tests/test_issue1739_transfer_roster.py``.
+    """
+    unknown = [a for a in roster if a not in ARM_REGISTRY]
+    if unknown:
+        raise ValueError(f"unknown arm slug(s) {unknown}; known: {sorted(ARM_REGISTRY)}")
+    order = list(ARM_REGISTRY)
+    keep = sorted(set(roster), key=order.index)
+    return (
+        [a for a in keep if not ARM_REGISTRY[a]["rb_dep"]],
+        [a for a in keep if ARM_REGISTRY[a]["rb_dep"]],
+    )
+
+
+def roster_accounting_skips(
+    roster: list[str] | tuple[str, ...],
+    scores: dict[str, np.ndarray],
+    skipped: dict[str, str],
+    **extra: object,
+) -> list[dict]:
+    """SKIP records for requested arms that produced neither scores nor a reason.
+
+    ``run_cell_multi`` records an explicit reason for every arm it declines
+    (missing mapfit, missing answer activations, an MLP fold floor), so an arm
+    that appears in NEITHER ``scores`` nor ``skipped`` is an unaccounted drop —
+    the silent-hole case the drop-never-silent rule exists to prevent (a roster
+    widened past what a dispatch path actually wires would otherwise vanish
+    without a trace). Returns one record per unaccounted arm; the healthy case
+    is an empty list.
+    """
+    missing = [a for a in roster if a not in scores and a not in skipped]
+    order = list(ARM_REGISTRY)
+    return [
+        {
+            "arm": a,
+            "reason": (
+                "roster-unaccounted: requested but produced neither scores nor a skip reason"
+            ),
+            **extra,
+        }
+        for a in sorted(set(missing), key=lambda s: order.index(s) if s in order else -1)
+    ]
 
 
 @dataclasses.dataclass
@@ -167,6 +364,37 @@ class CellData:
 def _proj(z: np.ndarray, rb: np.ndarray) -> np.ndarray:
     """Batched projection scores: (Ly, n, d) x (Ly, d) -> (Ly, n)."""
     return np.einsum("lnd,ld->ln", z, rb, optimize=True)
+
+
+def _is_arange(rows: np.ndarray, n: int | None = None) -> bool:
+    """True iff ``rows`` is exactly 0..len-1 (optionally == n, the full axis)."""
+    rows = np.asarray(rows)
+    if n is not None and rows.size != n:
+        return False
+    return (
+        rows.ndim == 1
+        and rows.size > 0
+        and int(rows[0]) == 0
+        and bool(np.array_equal(rows, np.arange(rows.size)))
+    )
+
+
+def _take_rows(arr: np.ndarray, rows: np.ndarray) -> np.ndarray:
+    """``arr[:, rows]`` without the fancy-index copy when rows are contiguous.
+
+    Crash-fix r3 memory scoping: the transfer leg's two folds are contiguous
+    blocks (train = ``arange(n_tr)``, eval = ``arange(n_tr, n)``), so basic
+    slicing returns a VIEW of the (Ly, n, d) fp64 array instead of a
+    multi-GiB copy; values are identical either way (pinned by
+    ``test_take_rows_view_and_copy``). Non-contiguous row sets keep the
+    fancy-index copy unchanged.
+    """
+    rows = np.asarray(rows)
+    if rows.ndim == 1 and rows.size > 1:
+        a, b = int(rows[0]), int(rows[-1])
+        if b - a == rows.size - 1 and np.array_equal(rows, np.arange(a, b + 1)):
+            return arr[:, a : b + 1]
+    return arr[:, rows]
 
 
 def _fold_masks(fold_ids: np.ndarray, n_folds: int) -> tuple[np.ndarray, np.ndarray]:
@@ -243,7 +471,10 @@ def _run_ridge_job(
 
     n_s = job.src.shape[0]
     n_tr = len(job.tr_rows)
-    x_tr = np.ascontiguousarray(job.src[:, job.tr_rows])
+    # Contiguous row blocks (the transfer leg's two folds) slice as VIEWS —
+    # the ridge helper's per-layer-chunk torch copies are the only
+    # materialization then (crash-fix r3; values identical either way).
+    x_tr = _take_rows(job.src, job.tr_rows)
     cols = []
     for _tkey, y_full in job.targets:
         if y_full.ndim == 1:
@@ -251,7 +482,7 @@ def _run_ridge_job(
         else:
             cols.append(y_full[:, job.tr_rows])
     y = np.stack(cols, axis=2)  # (S, ntr, T)
-    ev_mats = [np.ascontiguousarray(esrc[:, rows]) for _name, esrc, rows in job.evals]
+    ev_mats = [_take_rows(esrc, rows) for _name, esrc, rows in job.evals]
     preds = ridge_gcv_predict_per_target(x_tr, y, ev_mats, lambdas=lambdas, device=device)
     return job.key, {name: p for (name, _e, _r), p in zip(job.evals, preds, strict=True)}
 
@@ -349,7 +580,7 @@ def verify_arm9_l0_degeneracy(data: CellData, *, device: str = "cpu", n_rows: in
     logger.info("[arms] arm9 L->0 degeneracy gate PASS (n=%d probe rows)", n)
 
 
-def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 16 plan-§5 arms
+def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 18 registry arms
     datas: list[CellData],
     cell: BudgetCell,
     *,
@@ -396,12 +627,40 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
             f"matched-budget OOF needs >=2 group folds; cell L={cell.budget_l} realized "
             f"{n_folds} fold(s) over {n_l} rows (labeled table too small / one group)"
         )
-    z = np.asarray(base.z_ctx[:, idx], dtype=np.float64)  # (Ly, n_l, d)
+    # Crash-fix r3 memory scoping: the transfer leg passes the IDENTITY row
+    # set over an already-fp64 comb — alias instead of fancy-copying two
+    # (Ly, n, d) fp64 arrays (~37 GiB at the hall L=16000 comb; z/za are
+    # never mutated downstream — reads, torch copies, .astype copies only).
+    _alias = _is_arange(idx, base.z_ctx.shape[1])
+    if _alias and base.z_ctx.dtype == np.float64:
+        z = base.z_ctx  # (Ly, n_l, d)
+    else:
+        z = np.asarray(base.z_ctx[:, idx], dtype=np.float64)  # (Ly, n_l, d)
     dv = np.asarray(base.dv[idx], dtype=np.float64)
     rbs = [np.asarray(d.rb, dtype=np.float64) for d in datas]
     n_layers = z.shape[0]
-    za = np.asarray(base.z_ans[:, idx], dtype=np.float64) if base.z_ans is not None else None
-    mp = apply_map(z, base.mapfit) if base.mapfit is not None else None
+    if base.z_ans is None:
+        za = None
+    elif _alias and base.z_ans.dtype == np.float64:
+        za = base.z_ans
+    else:
+        za = np.asarray(base.z_ans[:, idx], dtype=np.float64)
+    # mp is a whole-array (Ly, n_l, d) fp64 product — build it ONLY when a
+    # map-consuming arm is actually requested (pre-r3 it was unconditional:
+    # +18.6 GiB on the arm-5-only / oracle rosters). The "no mapfit" skips
+    # below stay reachable only for slugs in `want`, which is exactly when
+    # need_mp would have been True — so skip semantics are unchanged.
+    mp_arms = {
+        "arm6_map_proj_e1",
+        "arm7_map_ridge_pred",
+        "arm8_map_ridge_true",
+        "arm9_pretrain_ft",
+        "arm10_stacked",
+        "arm13_shuffled_map",
+        "arm14_shuffled_pt",
+    }
+    need_mp = base.mapfit is not None and bool(mp_arms & set(want))
+    mp = apply_map(z, base.mapfit) if need_mp else None
     tr_masks, ev_masks = _fold_masks(folds, n_folds)  # (F, n_l)
     tr_w = tr_masks.astype(np.float64)
     tr_w /= np.maximum(tr_w.sum(axis=1, keepdims=True), 1.0)
@@ -471,6 +730,8 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
             "arm8_map_ridge_true",
             "arm11_oracle_proj",
             "arm12_oracle_reg",
+            "arm17_oracle_mlp",
+            "arm18_oracle_krr",
         ):
             _skip(slug, "no answer activations")
 
@@ -715,7 +976,91 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
             np.stack([res.preds_by_key[("arm5", li)][:, 0] for li in range(n_layers)]),
         )
 
+    # ---- arm 17: oracle MLP on TRUE answer acts (rb-independent — shared) ----
+    # Mirrors the arm-5 dispatch block with X = za (new-arm-round item 2): same
+    # batched helper, same ddof-1 fold floor, differing from arm 5 in INPUT only.
+    if "arm17_oracle_mlp" in want and za is not None:
+        if (n_l - int(ev_masks.sum(axis=1).max())) < 2:
+            _skip(
+                "arm17_oracle_mlp",
+                f"mlp fold floor: largest fold holds {int(ev_masks.sum(axis=1).max())} "
+                f"of {n_l} rows (< 2 train rows)",
+            )
+        else:
+            from explore_persona_space.analysis.vectorized_mlp_skill import (
+                MLPGroup,
+                fit_batched_loco_mlp_multihead,
+            )
+
+            if str(device).startswith("cuda"):
+                import torch
+
+                torch.cuda.empty_cache()  # same honest-free-bytes read as arm 5
+            kw = {"hidden": MLP_HIDDEN, "max_epochs": MLP_MAX_EPOCHS, "device": device}
+            kw.update(mlp_kwargs or {})
+            groups17 = [
+                MLPGroup(
+                    key=("arm17", li),
+                    X=za[li].astype(np.float32),
+                    Y=dv[:, None].astype(np.float32),
+                )
+                for li in range(n_layers)
+            ]
+            res17 = fit_batched_loco_mlp_multihead(groups17, row_groups=folds, **kw)
+            _put_shared(
+                "arm17_oracle_mlp",
+                np.stack([res17.preds_by_key[("arm17", li)][:, 0] for li in range(n_layers)]),
+            )
+
+    # ---- arm 18: oracle Nystrom KRR on TRUE answer acts (rb-independent) ----
+    # The nonlinear-map round's kernel recipe (median-heuristic gamma,
+    # inner-val (gamma, lambda) grid, one _eigh_robust per (layer, gamma)
+    # shared across the lambda grid) with input = za, target = dv — see
+    # fits.krr_scalar_fold_predict. The split seed is derived from the fold's
+    # TRAIN ROW SET (not cell.seed) so the transfer leg's rb-independent
+    # row-set cache stays exact: two units sharing a row set share the fit.
+    if "arm18_oracle_krr" in want and za is not None:
+        from explore_persona_space.experiments.issue_1739.fits import krr_scalar_fold_predict
+
+        min_tr = min((len(tr_rows[f]) for f in solve_folds), default=0)
+        if min_tr < 5:
+            _skip(
+                "arm18_oracle_krr",
+                f"krr floor: smallest solved fold-train has {min_tr} rows (< 5: no "
+                "inner/val split)",
+            )
+        else:
+            out18 = np.full((n_layers, n_l), np.nan)
+            for f in solve_folds:
+                # contiguous fold blocks (the transfer leg) slice as views —
+                # the krr fitter's per-layer-chunk torch copies are the only
+                # materialization (crash-fix r3)
+                out18[:, ev_rows[f]] = krr_scalar_fold_predict(
+                    _take_rows(za, tr_rows[f]),
+                    dv[tr_rows[f]],
+                    _take_rows(za, ev_rows[f]),
+                    seed=_rowset_seed(tr_rows[f]),
+                    device=device,
+                )
+            _put_shared("arm18_oracle_krr", out18)
+
     return list(zip(scores, skipped, strict=True))
+
+
+def _rowset_seed(rows: np.ndarray) -> int:
+    """Deterministic seed derived from a fold's TRAIN row set (arm-18 splits).
+
+    The transfer leg caches rb-independent arm fits per ROW SET
+    (:func:`partition_transfer_roster` + the ``rs_key`` cache in the fits CLI),
+    so an rb-independent fit must be a pure function of the row set — a
+    ``cell.seed``-keyed inner split would silently serve one seed's fit to
+    every unit sharing the rows. sha1 of the sorted int64 row bytes, folded to
+    31 bits (np.random.default_rng seed range).
+    """
+    import hashlib
+
+    b = np.ascontiguousarray(np.sort(np.asarray(rows, dtype=np.int64))).tobytes()
+    return int.from_bytes(hashlib.sha1(b).digest()[:4], "big") % (2**31)
 
 
 def run_cell(
@@ -738,6 +1083,26 @@ def run_cell(
         mlp_kwargs=mlp_kwargs,
         ridge_folds=ridge_folds,
     )[0]
+
+
+def _concat_train_eval(full: np.ndarray, idx: np.ndarray, ev: np.ndarray) -> np.ndarray:
+    """``np.concatenate([full[:, idx], ev], axis=1)`` without the slice copy.
+
+    Fills a preallocated output per layer, so the transient is ONE layer
+    instead of a whole (Ly, n_tr, d) fancy-index copy (~13 GiB at the hall
+    L=16000 transfer comb — crash-fix r3). Value-identical to the
+    concatenate expression (pinned by
+    ``test_concat_train_eval_matches_concatenate``).
+    """
+    n_tr, n_ev = len(idx), ev.shape[1]
+    out = np.empty(
+        (full.shape[0], n_tr + n_ev, full.shape[2]),
+        dtype=np.result_type(full.dtype, ev.dtype),
+    )
+    for li in range(full.shape[0]):
+        out[li, :n_tr] = full[li][idx]
+        out[li, n_tr:] = ev[li]
+    return out
 
 
 def run_transfer_cell(
@@ -775,9 +1140,9 @@ def run_transfer_cell(
     assert z_ev.shape[0] == data.z_ctx.shape[0], (z_ev.shape, data.z_ctx.shape)
     z_ans_comb = None
     if data.z_ans is not None and za_ev is not None:
-        z_ans_comb = np.concatenate([data.z_ans[:, idx], za_ev], axis=1)
+        z_ans_comb = _concat_train_eval(data.z_ans, idx, za_ev)
     comb = CellData(
-        z_ctx=np.concatenate([data.z_ctx[:, idx], z_ev], axis=1),
+        z_ctx=_concat_train_eval(data.z_ctx, idx, z_ev),
         dv=np.concatenate([np.asarray(data.dv[idx], dtype=np.float64), dv_ev]),
         rb=data.rb,
         z_ans=z_ans_comb,
@@ -1474,6 +1839,80 @@ def _save_cell_preds(
         np.savez(fh, **payload)
     os.replace(tmp, preds_dir / name)
     return name
+
+
+def transfer_preds_rows(
+    scores_ev: dict[str, np.ndarray],
+    dv_ev: np.ndarray,
+    ctx_ids: list[str] | np.ndarray,
+    frozen_by_arm: dict[str, int],
+    *,
+    provenance: dict,
+    layers: tuple[int, ...] = (),
+    labels: dict[str, list | np.ndarray] | None = None,
+) -> list[dict]:
+    """Per-(arm, eval context) frozen-layer transfer predictions — JSONL rows.
+
+    The eval-rung twin of :func:`_save_cell_preds` (which persists TRAIN-cell
+    predictions as npz). Persisting these is what makes any later subset read
+    over an eval rung — per-polarity, per-rung, per-quantile — a pure
+    re-analysis instead of another re-score; per-arm rho rows alone cannot
+    support one. Schema mirrors the bare-query scorer's ``preds_rows`` (one
+    row per arm x context, frozen-layer score + dv + the context id), with
+    the rung-specific label columns passed generically through ``labels``
+    (e.g. ``{"polarity": [...]}`` for the pvsynth rung) instead of a
+    hard-coded flag, so every rung can reuse the one schema.
+    """
+    dv = np.asarray(dv_ev, dtype=np.float64)
+    ids = [str(c) for c in ctx_ids]
+    n = len(ids)
+    if dv.size != n:
+        raise ValueError(f"dv/ctx length mismatch: {dv.size} vs {n}")
+    cols = {k: list(v) for k, v in (labels or {}).items()}
+    for k, v in cols.items():
+        if len(v) != n:
+            raise ValueError(f"label column {k!r} length {len(v)} != {n} contexts")
+    out: list[dict] = []
+    for slug, sc in sorted(scores_ev.items()):
+        if slug not in frozen_by_arm:
+            continue
+        arr = np.asarray(sc, dtype=np.float64)
+        fl = min(int(frozen_by_arm[slug]), arr.shape[0] - 1)
+        row_scores = arr[fl]
+        layer = int(layers[fl]) if layers and arr.shape[0] > 1 else None
+        for i in range(n):
+            out.append(
+                {
+                    **provenance,
+                    "arm": slug,
+                    "context_id": ids[i],
+                    "dv": float(dv[i]),
+                    "score": float(row_scores[i]),
+                    "frozen_layer_idx": int(fl),
+                    "layer": layer,
+                    **{k: v[i] for k, v in cols.items()},
+                }
+            )
+    return out
+
+
+def write_preds_jsonl(path: Path | str, rows: list[dict]) -> Path:
+    """Write per-context prediction rows as JSONL, atomically, ONE FILE PER UNIT.
+
+    Truncate-and-replace rather than append: the file is keyed per unit
+    (behavior / variant / eval block), so re-running a unit overwrites exactly
+    its own rows instead of appending duplicates, and a resumed run leaves an
+    already-written unit's file untouched.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    with tmp.open("w", encoding="utf-8") as fh:
+        for row in rows:
+            fh.write(json.dumps(row, sort_keys=True) + "\n")
+        fh.flush()
+    os.replace(tmp, path)
+    return path
 
 
 def write_summary(

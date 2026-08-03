@@ -68,6 +68,24 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="extraction regimes to run (e2/e2p REQUIRE per-rollout scores in the DV dataset)",
     )
     ap.add_argument(
+        "--rb-point",
+        choices=("t1", "context_end"),
+        default="t1",
+        help="r_B extraction POINT (new-arm-round item 1): 't1' (default — the committed "
+        "answer-avg direction, byte-identical behavior) or 'context_end' (final-context-token "
+        "direction; every regime label in unit/row keys gains an '_fc' suffix — e1_fc/e2p_fc; "
+        "matched-e2 is REFUSED under context_end, plan v9 structural restriction — so fc rows "
+        "can never collide with committed rows at resume/merge time)",
+    )
+    ap.add_argument(
+        "--fixed-coordinate",
+        default=None,
+        help="registered fixed-coordinate declaration recorded in every unit's provenance "
+        "(e.g. 'u=full' for the oracle/arm5 legs — plan v8 Must-Fix 2: a u=full-only grid is "
+        "a registered READ coordinate, never 'degenerate'). Omitted -> field absent "
+        "(committed unit keys unchanged).",
+    )
+    ap.add_argument(
         "--config",
         choices=tuple(CONFIG_SPLIT),
         default="config_a",
@@ -130,6 +148,35 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "the smoke lowers it to 2 — its per-rung slice is 2 contexts)",
     )
     ap.add_argument(
+        "--transfer-arms",
+        nargs="+",
+        default=None,
+        metavar="ROSTER|SLUG",
+        help="eval-rung transfer roster: 'wide' (default — the 6 core ladder arms plus "
+        "the fitted arms 5/7/8/12), 'core' (the original 6, reproduces the committed "
+        "transfer columns exactly), or an explicit arm-slug list",
+    )
+    ap.add_argument(
+        "--transfer-preds",
+        action="store_true",
+        help="ALSO persist per-(arm, eval context) frozen-layer transfer predictions "
+        "for the --transfer leg (one JSONL per unit under "
+        "arm_results/percell/transfer_preds/, schema = arms.transfer_preds_rows with "
+        "a per-context 'rung' label). Default OFF: the transfer leg's aggregate rows "
+        "are unchanged, so every other lane is byte-identical. Turning it on is what "
+        "makes an OOD-rung scatter / per-context subset read a pure re-analysis "
+        "instead of another GPU re-score (the train setting already persists its "
+        "per-cell preds npz via arms._save_cell_preds).",
+    )
+    ap.add_argument(
+        "--eval-rung-knn",
+        action="store_true",
+        help="ALSO compute the kNN-retrieval companion (and a PER-EVAL-RUNG "
+        "breakdown) for the map's eval-distribution reconstruction read in "
+        "map_diagnostics.json. Default OFF — kNN is O(n^2 d) per (layer, metric) "
+        "and the pooled-R^2-only object is what every prior lane recorded.",
+    )
+    ap.add_argument(
         "--pilot",
         action="store_true",
         help="§9 pilot gate: run ONE production-shape unit (max L, full U, first "
@@ -186,7 +233,25 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     ap.add_argument("--synthetic-dim", type=int, default=8)
     ap.add_argument("--synthetic-layers", type=int, default=3)
-    return ap.parse_args(argv)
+    args = ap.parse_args(argv)
+    if args.rb_point == "context_end" and "e2" in args.regimes:
+        # Plan v9 registered STRUCTURAL RESTRICTION (concern
+        # e2fc-structurally-null-direction, code-review r1): the matched-pair
+        # E2 weights contrast hi/lo ROLLOUTS within a context, and every
+        # rollout of a context shares the identical context_end activation,
+        # so the weighted contrast cancels EXACTLY — the "direction" is float
+        # residue (measured |max| per-context net weight 5.4e-20 on the real
+        # evil DV) that K2's zero/NaN check cannot see. Refused STRUCTURALLY
+        # at the flag, never via a norm threshold. e2p (pooled across-context
+        # weights) and e1 are unaffected.
+        ap.error(
+            "--rb-point context_end refuses --regimes e2: the matched-pair (within-context) "
+            "contrast is structurally ZERO at a context-level activation — every rollout of "
+            "a context shares the context_end row, so the hi/lo weights cancel exactly "
+            "(plan v9 structural restriction, concern e2fc-structurally-null-direction). "
+            "Use e1/e2p."
+        )
+    return args
 
 
 # ---------------------------------------------------------------------------
@@ -380,7 +445,9 @@ class LabeledTable:
     per_rollout: object | None  # (n, K) per-rollout mean judge scores (NaN = dropped)
     ctx_order: list[str]
     rungs: list[str]
-    ans_rows: dict | None  # {layer: (n_rows, d)} per-rollout t1 rows (e2/e2p only)
+    # {layer: (n_rows, d)} per-rollout rows of the requested rollout_rows_kind
+    # ('t1' default; 'context_end' under --rb-point context_end) — e2/e2p only.
+    ans_rows: dict | None
     ans_row_ctx: object | None  # (n_rows,) index into ctx_order
     ans_row_k: object | None  # (n_rows,) rollout k
     # per-context rung label aligned with ctx_order (M-A ladder; defaults keep
@@ -395,6 +462,7 @@ def _load_labeled(
     *,
     config: str,
     need_rollout_rows: bool,
+    rollout_rows_kind: str = "t1",
 ) -> LabeledTable:
     """Round-B labeled store + DV dataset -> per-CONTEXT layer-leading arrays.
 
@@ -483,7 +551,14 @@ def _load_labeled(
                 sel_ctx.append(ctx_pos[cid])
                 sel_k.append(int(r[k_field]))
         sel = np.asarray(sel)
-        ans_rows = {ly: np.asarray(arrays[("t1", ly)][sel], dtype=np.float64) for ly in layers}
+        # rollout_rows_kind: 't1' = the committed per-rollout answer rows; the
+        # fc extraction point ('context_end') swaps ONLY the array the e2/e2p
+        # direction builder consumes (per-context acts identical across a
+        # context's rollouts, so the weighted sum reduces to per-context
+        # weights x the context act — the plan-v8 item-1 fc definition).
+        ans_rows = {
+            ly: np.asarray(arrays[(rollout_rows_kind, ly)][sel], dtype=np.float64) for ly in layers
+        }
         ans_row_ctx = np.asarray(sel_ctx, dtype=np.int64)
         ans_row_k = np.asarray(sel_k, dtype=np.int64)
 
@@ -514,20 +589,25 @@ def arrays_dim(store_dir: Path, layers: list[int]):
     return int(np.load(paths[0]).shape[1])
 
 
-def _load_rb_e1(e1_store: Path, layers: list[int], dim: int):
-    """E1 extraction store -> raw diff-of-means direction (Ly, d)."""
+def _load_rb_e1(e1_store: Path, layers: list[int], dim: int, *, summary_kind: str = "t1"):
+    """E1 extraction store -> raw diff-of-means direction (Ly, d).
+
+    ``summary_kind`` selects the extraction POINT over the SAME judge-filtered
+    pos/neg row set: 't1' (committed answer-avg) or 'context_end' (the
+    new-arm-round fc direction — position is the only change; plan v8 §11).
+    """
     import numpy as np
 
     from explore_persona_space.experiments.issue_1739 import fits, store_io
 
-    arrays, meta = store_io.load_summaries(e1_store, ("t1",), tuple(layers), hidden_dim=dim)
+    arrays, meta = store_io.load_summaries(e1_store, (summary_kind,), tuple(layers), hidden_dim=dim)
     side_key = _meta_field(meta, ("side", "polarity", "pv_side", "pair_side"), "pos/neg side")
     sides = np.array([str(r[side_key]).lower() for r in meta])
     pos_rows = np.flatnonzero(np.isin(sides, ("pos", "positive")))
     neg_rows = np.flatnonzero(np.isin(sides, ("neg", "negative")))
     if len(pos_rows) == 0 or len(neg_rows) == 0:
         raise RuntimeError(f"E1 store has {len(pos_rows)} pos / {len(neg_rows)} neg rows")
-    acts = np.stack([arrays[("t1", ly)] for ly in layers], axis=1)  # (n, Ly, d)
+    acts = np.stack([arrays[(summary_kind, ly)] for ly in layers], axis=1)  # (n, Ly, d)
     return fits.extract_rb_e1(acts[pos_rows], acts[neg_rows])
 
 
@@ -548,17 +628,49 @@ def _extract_rb(regime: str, args: argparse.Namespace, tbl: LabeledTable, layers
     from explore_persona_space.experiments.issue_1739 import fits
     from explore_persona_space.experiments.issue_1739.constants import E2_SPREAD_MIN
 
-    if regime == "e1":
-        return _load_rb_e1(args.e1_store, layers, dim)
+    fc = regime.endswith("_fc")
+    base = regime.removesuffix("_fc")
+    if fc and base == "e2":
+        # Defense-in-depth twin of the --rb-point flag refusal (plan v9
+        # structural restriction): matched-pair weights cancel exactly on
+        # context-level rows, so an e2_fc direction cannot exist. Structural
+        # refusal — never a norm check (K2 is blind to the float residue).
+        raise SystemExit(
+            "matched-e2_fc is structurally undefined: within-context hi/lo weights cancel "
+            "exactly on context_end rows (plan v9 structural restriction, concern "
+            "e2fc-structurally-null-direction) — use e1_fc/e2p_fc"
+        )
+
+    def _k2_gate(rb):
+        # K2 (plan v8 §7): a degenerate fc direction (zero/NaN norm at any
+        # layer) halts the (behavior, regime) leg with a named report — never
+        # a fabricated direction. Scoped to fc regimes so committed t1
+        # behavior is byte-identical.
+        if not fc:
+            return rb
+        norms = np.linalg.norm(np.asarray(rb, dtype=np.float64), axis=1)
+        bad = [int(layers[i]) for i, v in enumerate(norms) if not np.isfinite(v) or v == 0.0]
+        if bad:
+            raise SystemExit(
+                f"[fits] K2 HALT: fc direction {regime} for behavior {args.behavior!r} is "
+                f"degenerate (zero/NaN norm) at layer(s) {bad} — refusing to fabricate a "
+                "direction (plan v8 §7 K2)"
+            )
+        return rb
+
+    if base == "e1":
+        return _k2_gate(
+            _load_rb_e1(args.e1_store, layers, dim, summary_kind="context_end" if fc else "t1")
+        )
     if tbl.per_rollout is None or tbl.ans_rows is None:
         raise SystemExit(
-            f"--regimes {regime} requires per-rollout judge scores + per-rollout t1 rows "
+            f"--regimes {base} requires per-rollout judge scores + per-rollout answer rows "
             f"(behavior {args.behavior!r} has none — run it with --regimes e1)"
         )
     w_hi, w_lo, n_qual = fits.matched_pair_split_weights(
         np.asarray(tbl.per_rollout, dtype=float),
         spread_min=E2_SPREAD_MIN,
-        pooled=(regime == "e2p"),
+        pooled=(base == "e2p"),
     )
     w_row = (w_hi - w_lo)[tbl.ans_row_ctx, tbl.ans_row_k]  # (n_rows,)
     rb = np.stack([w_row @ tbl.ans_rows[ly] for ly in layers])
@@ -568,7 +680,7 @@ def _extract_rb(regime: str, args: argparse.Namespace, tbl: LabeledTable, layers
         n_qual,
         len(w_row),
     )
-    return rb
+    return _k2_gate(rb)
 
 
 def _load_injected_features(path: Path | None, array_key: str, ctx_order: list[str], what: str):
@@ -751,7 +863,14 @@ def _fit_map(args, x_w, y_w):
 NL_MAP_REUSE_ENV = "EPM_I1739_NL_MAP_REUSE"
 
 
-def _eval_rung_reconstruction(mapfit, z_ev_w, za_ev_w) -> dict:
+def _key_sha(unit_key: str) -> str:
+    """Stable 16-hex filename stem for a unit key (same convention as preds npz)."""
+    import hashlib
+
+    return hashlib.sha1(unit_key.encode()).hexdigest()[:16]
+
+
+def _eval_rung_reconstruction(mapfit, z_ev_w, za_ev_w, *, rungs=None, knn: bool = False) -> dict:
     """Per-layer reconstruction R^2 of the map on THIS behavior's eval rung.
 
     The SECOND of the two map-quality reads the standing mapping-companions
@@ -770,24 +889,83 @@ def _eval_rung_reconstruction(mapfit, z_ev_w, za_ev_w) -> dict:
     well BELOW the U-pool read (an off-distribution extrapolation from the
     #1092 WildChat pool onto behavior eval distributions; strongly negative is
     a recordable finding, not a bug -- see the #1774 apply-path resolution).
+
+    ``rungs`` (per-eval-row rung labels, aligned with ``z_ev_w``'s row axis) and
+    ``knn=True`` are the map-recon-on-eval-dist round's two additive extensions:
+    with them the read is broken out PER EVAL DISTRIBUTION (each OOD rung
+    separately, not only the pooled eval split) and carries the standing
+    kNN-retrieval companion (CLAUDE.md identity+bias / kNN bullet) computed with
+    the SAME ``mapping_baselines.knn_retrieval`` helper ``map_diagnostics`` uses
+    on the U-pool holdout, so the two are directly comparable. Both default OFF:
+    with ``rungs=None, knn=False`` the returned object is byte-identical to the
+    pre-existing pooled-R^2-only read, so every other lane is unperturbed.
+    kNN is O(n^2 d) per (layer, metric), which is why it is opt-in.
     """
     import math
 
     from explore_persona_space.experiments.issue_1739 import fits
+    from explore_persona_space.experiments.issue_1739.constants import KNN_KS
+
+    def _block(pred_b, true_b) -> list[dict]:
+        rows = []
+        for li in range(pred_b.shape[0]):
+            row = {"layer_idx": li, "r2_eval_rung": float(fits.r2_pooled(pred_b[li], true_b[li]))}
+            if knn:
+                from explore_persona_space.analysis.mapping_baselines import knn_retrieval
+
+                # SAME helper map_diagnostics uses on the U-pool holdout, so the
+                # eval-distribution retrieval read is directly comparable to it.
+                # chance = k/n_pool rides the helper's own `chance_at_k` field.
+                row["knn"] = {
+                    metric: knn_retrieval(pred_b[li], true_b[li], ks=KNN_KS, metric=metric)
+                    for metric in ("euclidean", "cosine")
+                }
+            rows.append(row)
+        return rows
 
     pred = fits.apply_map(z_ev_w, mapfit)
-    per_layer = [
-        {"layer_idx": li, "r2_eval_rung": float(fits.r2_pooled(pred[li], za_ev_w[li]))}
-        for li in range(pred.shape[0])
-    ]
+    per_layer = _block(pred, za_ev_w)
     finite = [r["r2_eval_rung"] for r in per_layer if math.isfinite(r["r2_eval_rung"])]
-    return {
+    out = {
         "per_layer": per_layer,
         "r2_eval_rung_mean": (sum(finite) / len(finite)) if finite else None,
         "n_eval_rows": int(z_ev_w.shape[1]),
         "n_layers": int(pred.shape[0]),
         "estimator": "fits.r2_pooled (same as r2_map)",
     }
+    if knn:
+        out["knn_ks"] = list(KNN_KS)
+    if rungs is not None:
+        import numpy as _np
+
+        labels = _np.asarray([str(r) for r in rungs])
+        if labels.size != pred.shape[1]:
+            raise ValueError(f"rungs/eval-row mismatch: {labels.size} vs {pred.shape[1]}")
+        per_rung: dict[str, dict] = {}
+        for rung in sorted(set(labels.tolist())):
+            sel = _np.flatnonzero(labels == rung)
+            # kNN needs a candidate pool bigger than the largest k; below that
+            # the retrieval read is degenerate — record the rung's R^2 only.
+            rows = (
+                _block(pred[:, sel], za_ev_w[:, sel])
+                if sel.size > max(KNN_KS) or not knn
+                else [
+                    {
+                        "layer_idx": li,
+                        "r2_eval_rung": float(fits.r2_pooled(pred[li, sel], za_ev_w[li, sel])),
+                    }
+                    for li in range(pred.shape[0])
+                ]
+            )
+            fin = [r["r2_eval_rung"] for r in rows if math.isfinite(r["r2_eval_rung"])]
+            per_rung[rung] = {
+                "n_rows": int(sel.size),
+                "per_layer": rows,
+                "r2_eval_rung_mean": (sum(fin) / len(fin)) if fin else None,
+                "knn_skipped_small_pool": bool(knn and sel.size <= max(KNN_KS)),
+            }
+        out["per_rung"] = per_rung
+    return out
 
 
 def _load_nl_map(
@@ -1067,7 +1245,7 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
 
     import numpy as np
 
-    from explore_persona_space.experiments.issue_1739 import arms, fits, store_io
+    from explore_persona_space.experiments.issue_1739 import arms, fits, mem_guard, store_io
     from explore_persona_space.experiments.issue_1739.constants import (
         COMPOSITION_F_L,
         COMPOSITION_F_U,
@@ -1078,6 +1256,11 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
         if getattr(args, req) is None:
             raise SystemExit(f"real mode requires --{req.replace('_', '-')} (or use --synthetic N)")
     layers = args.layers or list(range(N_LAYERS))
+    # new-arm-round item 1: --rb-point context_end swaps the r_B extraction
+    # POINT and suffixes every regime label with '_fc' (unit/row keys included),
+    # so fc rows can never collide with committed t1 rows at resume/merge time.
+    fc = getattr(args, "rb_point", "t1") == "context_end"
+    regimes_eff = [r + "_fc" for r in args.regimes] if fc else list(args.regimes)
     need_rollout_rows = any(r in ("e2", "e2p") for r in args.regimes)
     tbl = _load_labeled(
         args.labeled_store,
@@ -1085,6 +1268,7 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
         layers,
         config=args.config,
         need_rollout_rows=need_rollout_rows,
+        rollout_rows_kind="context_end" if fc else "t1",
     )
     # M-A ladder leg: the eval-split labeled table (same store + DV dataset,
     # split 'eval') scored by TRAIN-frozen predictors per rung.
@@ -1120,7 +1304,7 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
         u_sizes.append(None if str(tok).lower() == "full" else int(tok))
     specs = compose_run_specs(
         variants=tuple(VARIANTS) if args.variant == "both" else (args.variant,),
-        regimes=tuple(args.regimes),
+        regimes=tuple(regimes_eff),
         u_sizes=tuple(u_sizes),
         budgets=tuple(args.budgets),
         draws=tuple(args.draws),
@@ -1136,7 +1320,7 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
     # round-8 memory scoping: after extraction they are dead weight (~tens of
     # GiB at production scale) squeezing the arm batteries' headroom.
     rb_cache: dict[str, np.ndarray] = {}
-    for regime in args.regimes:
+    for regime in regimes_eff:
         rb_cache[regime] = _extract_rb(regime, args, tbl, layers, dim)
         _save_rb(args.tensors_root, args.behavior, regime, rb_cache[regime], layers)
     if tbl.ans_rows is not None:
@@ -1171,7 +1355,17 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
         except (ValueError, RuntimeError) as exc:
             _record_compose_skip(spec0, exc, compose_skips)  # re-raises on a plain rung
             print(f"[fits] group {gi + 1}/{len(groups)} SKIP compose: {exc}", flush=True)
+            if gi == len(groups) - 1:
+                u_arrays = None
+                gc.collect()
             continue
+        if gi == len(groups) - 1:
+            # Crash-fix r3 memory scoping: the LAST group's pool is composed —
+            # the staged fp16 u_store summary arrays (~12 GiB at 3 kinds x 28
+            # layers) are dead weight through the fit/transfer phases below.
+            u_arrays = None
+            gc.collect()
+            print("[fits] freed u_store summary arrays after final U-pool compose", flush=True)
         t_map = time.time()
         map_kind = getattr(args, "map_kind", "linear")
         map_seed = int(args.seeds[0])
@@ -1193,18 +1387,44 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
             else None
         )
         map_source = "loaded" if mapfit is not None else "fit"
-        # Held-out probe rows for the round-trip gate, captured BEFORE u_x is
-        # freed (the gate needs whitened inputs, and u_x dies two lines below).
+        # Pre-fit RSS guard (crash-fix r3): project this group's whitening-
+        # apply + map-fit + labeled-whitening peak vs live MemAvailable and
+        # refuse with a DESIGNED rc instead of a kernel OOM-kill (rc=137 on
+        # the 85 GB a2-highgpu-1g boxes, 2026-08-02).
+        mem_guard.check_phase(
+            f"whitening_map[{spec0.variant}|{u_label}]",
+            mem_guard.whitening_map_components(
+                len(layers),
+                n_u,
+                dim,
+                n_ctx=len(tbl.ctx_order),
+                n_ev=len(tbl_ev.ctx_order) if tbl_ev is not None else 0,
+                map_fit=mapfit is None,
+            ),
+            out_root=args.out_root,
+        )
+        # Held-out probe rows for the round-trip gate, captured from the SAME
+        # whitened copy the map fit consumes (identical values to the old
+        # fresh apply_whitening(u_x)[:, :K] slice).
         probe_x = None
-        if map_source == "fit" and spec0.f_u is None and map_kind != "linear":
-            probe_x = np.array(
-                fits.apply_whitening(u_x, wh)[:, : min(MAP_ROUNDTRIP_PROBE_ROWS, n_u)], copy=True
-            )
         if mapfit is None:
-            mapfit = _fit_map(args, fits.apply_whitening(u_x, wh), fits.apply_whitening(u_y, wh))
+            # ONE whitened fp64 copy per pool side; the fp16 stacked pools are
+            # freed the moment their whitened twin exists (crash-fix r3 —
+            # pre-fix BOTH pools + two whole-array fp64 apply transients were
+            # co-resident, the 85 GB-box kill site).
+            x_w = fits.apply_whitening(u_x, wh)
+            u_x = None
+            y_w = fits.apply_whitening(u_y, wh)
+            u_y = None
+            if spec0.f_u is None and map_kind != "linear":
+                probe_x = np.array(x_w[:, : min(MAP_ROUNDTRIP_PROBE_ROWS, n_u)], copy=True)
+            mapfit = _fit_map(args, x_w, y_w)
+            del x_w, y_w
+        else:
+            u_x = u_y = None  # loaded map: the pools carry nothing downstream
+        gc.collect()
         if timings is not None:
             timings.setdefault("map_fit_s", []).append(time.time() - t_map)
-        del u_x, u_y  # the map + whitening carry everything downstream needs
         diag_out[f"{spec0.variant}|{u_label}"] = {**mapfit.diagnostics, "map_source": map_source}
         z_ev_w = za_ev_w = None  # eval-split arrays, whitened per map_key (transfer leg)
         if spec0.f_u is None:
@@ -1239,7 +1459,13 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
                     # _eval_rung_reconstruction on why it lands here and not in
                     # the shared payload.
                     diag_out[f"{spec0.variant}|{u_label}"]["eval_rung"] = _eval_rung_reconstruction(
-                        mapfit, z_ev_w, za_ev_w
+                        mapfit,
+                        z_ev_w,
+                        za_ev_w,
+                        # row_rungs = the PER-CONTEXT rung label aligned with
+                        # ctx_order (tbl_ev.rungs is the DISTINCT rung list).
+                        rungs=tbl_ev.row_rungs if getattr(args, "eval_rung_knn", False) else None,
+                        knn=bool(getattr(args, "eval_rung_knn", False)),
                     )
         # ONE whitened fp64 copy per group, SHARED by identity across the
         # regime slices (the run_cell_multi contract) — the old per-spec
@@ -1262,6 +1488,13 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
                     per_rollout=tbl.per_rollout,
                 )
             )
+            # rb_point / fixed_coordinate ride provenance (hence unit/row keys)
+            # ONLY when set — committed t1 unit keys stay byte-identical.
+            prov_extra: dict = {}
+            if fc:
+                prov_extra["rb_point"] = "context_end"
+            if getattr(args, "fixed_coordinate", None):
+                prov_extra["fixed_coordinate"] = str(args.fixed_coordinate)
             provs.append(
                 {
                     "behavior": args.behavior,
@@ -1273,6 +1506,7 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
                     "config": args.config,
                     "f_u": spec.f_u,
                     "f_l": spec.f_l,
+                    **prov_extra,
                 }
             )
         kwargs = {}
@@ -1282,6 +1516,17 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
             kwargs["n_perm"] = args.n_perm
         mlp_kwargs = {"max_epochs": args.mlp_epochs} if args.mlp_epochs else None
         t_grid = time.time()
+        mem_guard.check_phase(
+            f"grid[{spec0.variant}|{u_label}]",
+            mem_guard.cell_solve_components(
+                len(layers),
+                min(max(int(b) for b in spec0.budgets), len(tbl.ctx_order)),
+                dim,
+                list(args.arms) if args.arms else list(arms.ARM_REGISTRY),
+                has_map=mapfit is not None,
+            ),
+            out_root=args.out_root,
+        )
         recs_by_regime = arms.run_grid_multi(
             datas,
             provs,
@@ -1303,6 +1548,18 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
             all_records += recs
         if tbl_ev is not None and spec0.f_u is None:
             t_tf = time.time()
+            mem_guard.check_phase(
+                f"transfer[{spec0.variant}|{u_label}]",
+                mem_guard.transfer_components(
+                    len(layers),
+                    min(max(int(b) for b in spec0.budgets), len(tbl.ctx_order)),
+                    len(tbl_ev.ctx_order),
+                    dim,
+                    arms.resolve_transfer_roster(getattr(args, "transfer_arms", None)),
+                    has_map=mapfit is not None,
+                ),
+                out_root=args.out_root,
+            )
             rows_g, skips_g = _run_transfer_for_group(
                 args,
                 group,
@@ -1344,7 +1601,9 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
             "mode": "real",
             "behavior": args.behavior,
             "config": args.config,
-            "regimes": list(args.regimes),
+            "regimes": list(regimes_eff),
+            "rb_point": str(getattr(args, "rb_point", "t1")),
+            "fixed_coordinate": getattr(args, "fixed_coordinate", None),
             "n_contexts": len(tbl.ctx_order),
             "layers": layers,
             "u_fit_rows": int(len(u_fit_rows)),
@@ -1353,6 +1612,9 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
             "compose_skips": compose_skips,
             "transfer_min_n": int(args.transfer_min_n) if tbl_ev is not None else None,
             "transfer_eval_rungs": sorted(tbl_ev.rungs) if tbl_ev is not None else None,
+            "transfer_arms": sorted(arms.resolve_transfer_roster(args.transfer_arms))
+            if tbl_ev is not None
+            else None,
         },
         extra=extra,
     )
@@ -1433,7 +1695,8 @@ def _run_transfer_for_group(
     """Distribution-shift ladder leg for one plain-rung regime GROUP (M-A).
 
     Per (L, draw, seed) unit: score every eval-split context with the
-    :data:`arms.TRANSFER_ARMS` fit on the FULL train cell (never on eval
+    the resolved transfer roster (``--transfer-arms``, default
+    :data:`arms.TRANSFER_ARMS_WIDE`) fit on the FULL train cell (never on eval
     DV) and emit one row per (arm, eval rung) at the TRAIN-frozen layer,
     plus one ``train_in_split`` row per arm (the in-distribution anchor).
     Round-8 batching, output-identical per (unit, regime): the unit loop
@@ -1463,10 +1726,11 @@ def _run_transfer_for_group(
                     rec = json.loads(line)
                     tdone[rec["unit_key"]] = rec
     n_boot = int(args.n_boot) if args.n_boot else arms.N_BOOT
+    roster = arms.resolve_transfer_roster(getattr(args, "transfer_arms", None))
     regime_extra = {
         "transfer": True,
         "transfer_min_n": int(args.transfer_min_n),
-        "transfer_arms": sorted(arms.TRANSFER_ARMS),
+        "transfer_arms": sorted(roster),
         "n_eval_table": len(tbl_ev.ctx_order),
         "n_boot": n_boot,
         "layers_subset": [int(x) for x in layers],
@@ -1481,11 +1745,17 @@ def _run_transfer_for_group(
                 m[(r0["budget_l"], r0["draw"], r0["seed"])] = rec
         rec_by_unit.append(m)
     dv_ev = np.asarray(tbl_ev.dv, dtype=np.float64)
-    rb_dep = [a for a in arms.TRANSFER_ARMS if a != "arm4_ridge_ctx"]
+    # rb-INDEPENDENT arms (ridge/MLP fits over z / mp / za) depend only on the
+    # realized ROW SET, so one fit is shared across the group's regimes; the
+    # rb-DEPENDENT projections are cached per (regime, row set, seed). The
+    # split is registry-driven so a widened roster routes its new fitted arms
+    # (5/7/8/12) into the shared cache automatically instead of refitting them
+    # once per regime.
+    rb_indep, rb_dep = arms.partition_transfer_roster(roster)
     units = [(b, d, s) for b in spec0.budgets for d in spec0.draws for s in spec0.seeds]
     rows_all: list[dict] = []
     skips_all: list[dict] = []
-    arm4_cache: dict[str, tuple[dict, dict]] = {}
+    rbindep_cache: dict[str, tuple[dict, dict]] = {}
     rbdep_cache: dict[tuple, tuple[dict, dict]] = {}
     t0 = time.time()
     for k, (budget_l, draw, seed) in enumerate(units):
@@ -1510,19 +1780,19 @@ def _run_transfer_for_group(
                     "(main grid must run the same units first)"
                 )
             rs_key = hashlib.sha1(cell.row_idx.tobytes()).hexdigest()
-            if rs_key not in arm4_cache:
-                arm4_cache[rs_key] = arms.run_transfer_cell(
+            if rb_indep and rs_key not in rbindep_cache:
+                rbindep_cache[rs_key] = arms.run_transfer_cell(
                     datas[r],
                     cell,
                     z_ev_w,
                     dv_ev,
                     za_ev=za_ev_w,
-                    arms=["arm4_ridge_ctx"],
+                    arms=rb_indep,
                     device=args.device,
                     ridge_folds=(0,),
                 )
             ck = (spec.regime, rs_key, int(seed))
-            if ck not in rbdep_cache:
+            if rb_dep and ck not in rbdep_cache:
                 rbdep_cache[ck] = arms.run_transfer_cell(
                     datas[r],
                     cell,
@@ -1533,8 +1803,8 @@ def _run_transfer_for_group(
                     device=args.device,
                     ridge_folds=(0,),
                 )
-            s4, sk4 = arm4_cache[rs_key]
-            sd, skd = rbdep_cache[ck]
+            s4, sk4 = rbindep_cache.get(rs_key, ({}, {}))
+            sd, skd = rbdep_cache.get(ck, ({}, {}))
             scores_ev = {**sd, **s4}
             arm_skips = {**skd, **sk4}
             frozen_by_arm = {
@@ -1555,6 +1825,38 @@ def _run_transfer_for_group(
                 {"arm": slug, "reason": reason, "budget_l": budget_l, "draw": draw, "seed": seed}
                 for slug, reason in sorted(arm_skips.items())
             ]
+            skips_u += arms.roster_accounting_skips(
+                roster, scores_ev, arm_skips, budget_l=budget_l, draw=draw, seed=seed
+            )
+            if getattr(args, "transfer_preds", False):
+                # Per-(arm, eval context) frozen-layer OOD predictions — the
+                # eval-rung twin of the train setting's `preds/*.npz` sidecar,
+                # via the SAME reviewed helper the wcrung/pvsynth rung runners
+                # already use. Written BEFORE the checkpoint line so a resumed
+                # unit (which skips this block with its rows already recorded)
+                # never leaves a half-written sidecar; one file per unit,
+                # truncate-and-replace (write_preds_jsonl), keyed on the unit
+                # key's sha so a re-run of a unit overwrites exactly its own
+                # rows. `rung` rides the generic label column, so an OOD
+                # scatter is a pure post-hoc read of this file.
+                arms.write_preds_jsonl(
+                    tpath.parent / "transfer_preds" / (_key_sha(key) + ".jsonl"),
+                    arms.transfer_preds_rows(
+                        scores_ev,
+                        dv_ev,
+                        tbl_ev.ctx_order,
+                        frozen_by_arm,
+                        provenance={
+                            **provs[r],
+                            "budget_l": int(budget_l),
+                            "draw": int(draw),
+                            "seed": int(seed),
+                            "n_eval_pooled": len(tbl_ev.ctx_order),
+                        },
+                        layers=tuple(layers),
+                        labels={"rung": [str(x) for x in rungs_ev]},
+                    ),
+                )
             # In-distribution anchor: the unit's own in-split OOF read per ladder arm.
             for row in rec["arms"]:
                 if row["arm"] in scores_ev:
@@ -1696,15 +1998,26 @@ def main(argv: list[str] | None = None) -> int:
 
     load_dotenv()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
+    from explore_persona_space.experiments.issue_1739.mem_guard import (
+        RSS_GUARD_RC,
+        MemGuardRefusal,
+    )
+
     args = _parse_args(argv)
     args.out_root.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
-    if args.pilot:
-        if args.synthetic:
-            raise SystemExit("--pilot is a real-mode gate (drop --synthetic)")
-        rc = _run_pilot(args)
-    else:
-        rc = _run_synthetic(args) if args.synthetic else _run_real(args)
+    try:
+        if args.pilot:
+            if args.synthetic:
+                raise SystemExit("--pilot is a real-mode gate (drop --synthetic)")
+            rc = _run_pilot(args)
+        else:
+            rc = _run_synthetic(args) if args.synthetic else _run_real(args)
+    except MemGuardRefusal as exc:
+        # Designed halt (crash-fix r3): report artifact + distinct rc — never
+        # a kernel OOM-kill that loses the log tail, never a bare rc=1.
+        print(f"[fits][rss-guard] DESIGNED HALT rc={RSS_GUARD_RC}: {exc}", flush=True)
+        rc = RSS_GUARD_RC
     print(f"[fits] done rc={rc} elapsed={time.time() - t0:.0f}s", flush=True)
     return rc
 
