@@ -1,0 +1,154 @@
+{
+  "source": "eval_results/issue_1482/predictor_battery/fullwidth_matrix.npz",
+  "n_features": 114980,
+  "activity_percentiles": {
+    "1": 3.3333333333333335e-05,
+    "5": 0.00013333333333333334,
+    "10": 0.0002916666666666667,
+    "25": 0.00143125,
+    "50": 0.008833333333333334,
+    "75": 0.040216666666666664,
+    "90": 0.11396000000000009,
+    "95": 0.193977916666666,
+    "99": 0.45948508333333327
+  },
+  "activity_min": 8.333333333333334e-06,
+  "activity_max": 1.0,
+  "median_r2_all": 0.009601493366062641,
+  "legacy_panel_floor": 0.081,
+  "legacy_panel_frac_of_dictionary": 0.14255522699599932,
+  "bands": [
+    {
+      "lo": 0.0,
+      "hi": 0.0001,
+      "n": 4198,
+      "median_r2": -0.0038086341228336096,
+      "frac_r2_positive": 0.14768937589328252,
+      "frac_r2_over_005": 0.0
+    },
+    {
+      "lo": 0.0001,
+      "hi": 0.0003,
+      "n": 7382,
+      "median_r2": -0.011832313146442175,
+      "frac_r2_positive": 0.18734760227580602,
+      "frac_r2_over_005": 0.001761040368463831
+    },
+    {
+      "lo": 0.0003,
+      "hi": 0.001,
+      "n": 12561,
+      "median_r2": -0.01049067359417677,
+      "frac_r2_positive": 0.2748984953427275,
+      "frac_r2_over_005": 0.006528142663800653
+    },
+    {
+      "lo": 0.001,
+      "hi": 0.003,
+      "n": 14985,
+      "median_r2": -0.00220570620149374,
+      "frac_r2_positive": 0.43530196863530196,
+      "frac_r2_over_005": 0.02922922922922923
+    },
+    {
+      "lo": 0.003,
+      "hi": 0.01,
+      "n": 20679,
+      "median_r2": 0.004417400807142258,
+      "frac_r2_positive": 0.6093621548430775,
+      "frac_r2_over_005": 0.10353498718506697
+    },
+    {
+      "lo": 0.01,
+      "hi": 0.03,
+      "n": 20922,
+      "median_r2": 0.018725703470408916,
+      "frac_r2_positive": 0.8058503011184399,
+      "frac_r2_over_005": 0.2593920275308288
+    },
+    {
+      "lo": 0.03,
+      "hi": 0.1,
+      "n": 20976,
+      "median_r2": 0.05030527524650097,
+      "frac_r2_positive": 0.9651506483600305,
+      "frac_r2_over_005": 0.5025266971777269
+    },
+    {
+      "lo": 0.1,
+      "hi": 0.3,
+      "n": 10378,
+      "median_r2": 0.09730929136276245,
+      "frac_r2_positive": 0.9986509924841009,
+      "frac_r2_over_005": 0.8038157641164001
+    },
+    {
+      "lo": 0.3,
+      "hi": 1.01,
+      "n": 2899,
+      "median_r2": 0.18990068137645721,
+      "frac_r2_positive": 1.0,
+      "frac_r2_over_005": 0.9810279406691963
+    }
+  ],
+  "floors": [
+    {
+      "floor": 0.3,
+      "n_kept": 2899,
+      "frac_kept": 0.025213080535745346,
+      "median_r2_kept": 0.18990068137645721,
+      "frac_r2_positive_kept": 1.0
+    },
+    {
+      "floor": 0.1,
+      "n_kept": 13277,
+      "frac_kept": 0.11547225604452949,
+      "median_r2_kept": 0.1139729842543602,
+      "frac_r2_positive_kept": 0.9989455449273179
+    },
+    {
+      "floor": 0.081,
+      "n_kept": 16391,
+      "frac_kept": 0.14255522699599932,
+      "median_r2_kept": 0.10574926435947418,
+      "frac_r2_positive_kept": 0.9981087181990117
+    },
+    {
+      "floor": 0.05,
+      "n_kept": 24645,
+      "frac_kept": 0.2143416246303705,
+      "median_r2_kept": 0.08872334659099579,
+      "frac_r2_positive_kept": 0.9928180158247109
+    },
+    {
+      "floor": 0.03,
+      "n_kept": 34253,
+      "frac_kept": 0.29790398330144374,
+      "median_r2_kept": 0.07351922243833542,
+      "frac_r2_positive_kept": 0.9782500802849385
+    },
+    {
+      "floor": 0.01,
+      "n_kept": 55175,
+      "frac_kept": 0.4798660636632458,
+      "median_r2_kept": 0.048627372831106186,
+      "frac_r2_positive_kept": 0.9128772088808337
+    },
+    {
+      "floor": 0.003,
+      "n_kept": 75854,
+      "frac_kept": 0.659714732997043,
+      "median_r2_kept": 0.030854840762913227,
+      "frac_r2_positive_kept": 0.8301342051836422
+    },
+    {
+      "floor": 0.001,
+      "n_kept": 90839,
+      "frac_kept": 0.7900417463906766,
+      "median_r2_kept": 0.021044062450528145,
+      "frac_r2_positive_kept": 0.7650018164004447
+    }
+  ],
+  "what_is_plotted": "(a) histogram of per-feature activity over the full-width universe, log x, legacy-panel floor and median marked. (b) per-activity-band fraction of features whose held-out R^2 exceeds 0 and 0.05. (c) for each candidate activity floor, the retained fraction of the dictionary against the median held-out R^2 of the retained set.",
+  "caveat": "R^2 is the #1738 multi-turn-corpus context-arm read; activity is the #1482 single-turn-corpus covariate."
+}

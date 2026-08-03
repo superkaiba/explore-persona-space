@@ -1,0 +1,141 @@
+{
+  "commit": "fc8854759a",
+  "created": "2026-08-03T22:15:01Z",
+  "figsize": [
+    11.4,
+    4.4
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "median per-feature $R^2$": -2.005089521408081,
+      "error": 0.09054046869277943,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "median per-feature $R^2$": -0.5043581426143646,
+      "error": 0.020909846946597116,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "median per-feature $R^2$": -0.23802237212657928,
+      "error": 0.012733428366482252,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "median per-feature $R^2$": -2.005089521408081,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "median per-feature $R^2$": -0.5043581426143646,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "median per-feature $R^2$": -0.23802237212657928,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "median per-feature $R^2$": -2.0948346734046934,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "median per-feature $R^2$": -0.5253820285201073,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "median per-feature $R^2$": -0.2511798143386841,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "median per-feature $R^2$": -1.9137537360191346,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "median per-feature $R^2$": -0.48356233462691306,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "median per-feature $R^2$": -0.22571295760571958,
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 12,
+  "text": {
+    "suptitle": "Judged-axis omnibus reads",
+    "fig_texts": [
+      "113,262-feature label universe  |  REAL TARGET \u2014 dense context -> SAE feature map, MLP(w=8192)__mean arm (#1482 single-turn corpus, 121,111 scored features; covariates same corpus \u2014 no cross-corpus mismatch)",
+      "grey band = activity-decile-stratified level-shuffle null (2.5..97.5 pct); one-sided p against that null. Median CIs are 95% bootstrap. Omnibus answers 'do the resolved classes differ at all', the one-vs-rest AUROCs answer 'which class'."
+    ],
+    "axes": [
+      {
+        "title_left": "abstraction: per-level medians (PRIMARY)\nordinal rho +0.205 of ceiling +0.940 (attainment 0.22)",
+        "ylabel": "median per-feature $R^2$",
+        "xticklabels": [
+          "token_surface\nn=41,105",
+          "lexical_semantic\nn=29,864",
+          "abstract_contextual\nn=39,489"
+        ],
+        "yticklabels": [
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0"
+        ]
+      },
+      {
+        "title_left": "per-axis omnibus vs stratified null",
+        "xlabel": "Kruskal-Wallis $\\eta^2$ (resolved levels)",
+        "annotations": [
+          "p=0.000 n=110,458",
+          "p=0.000 n=109,956",
+          "p=0.000 n=111,885",
+          "p=0.000 n=112,365"
+        ],
+        "xticklabels": [
+          "0.000",
+          "0.005",
+          "0.010",
+          "0.015",
+          "0.020",
+          "0.025",
+          "0.030",
+          "0.035",
+          "0.040",
+          "0.045"
+        ],
+        "yticklabels": [
+          "abstraction",
+          "content_type",
+          "speaker_property",
+          "interpretable"
+        ]
+      }
+    ]
+  }
+}
