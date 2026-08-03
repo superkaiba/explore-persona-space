@@ -7441,8 +7441,8 @@
     "1960": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1960",
-      "status": "proposed",
+      "path": "tasks/planning/1960",
+      "status": "planning",
       "title": "workflow-fix: verify_plan lattice parser \u2014 negated-existence atom"
     },
     "1961": {
