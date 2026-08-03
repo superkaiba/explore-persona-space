@@ -7497,8 +7497,8 @@
     "1968": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1968",
-      "status": "reviewing",
+      "path": "tasks/completed/1968",
+      "status": "completed",
       "title": "daily-fix: hold subagent respawn past active 429 storm"
     },
     "1969": {
