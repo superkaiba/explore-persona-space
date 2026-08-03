@@ -112,11 +112,11 @@ To get a better idea of **exactly which interpretable aspects of the answer** ar
     - Two quantities hide under this name and they are **uncorrelated with each other** (ρ = 0.004): (a) the feature's **activation variance** (how much its own activation value fluctuates across contexts) — **null** vs $R^2$, ρ = **0.02** (`sae_perfeature/variance_vs_r2.json`); (b) the **dense-state variance along the feature's unit decoder direction** — the true PC-analogue — which is a real correlate: ρ = **+0.40** (+0.45 given activity; cross-corpus caveat: projection variance measured on the multi-turn holdout, `feature_correlates/dense_projection_variance.json`). So the variance-mechanical story DOES extend to SAE feature directions once variance is measured in the dense space the direction lives in; what carries no signal is the feature's own gating variance
 - Average activation across corpus:
     - ρ($R^2$, activity) = **0.29** — more-active features are moderately better predicted
-- Interpretable or not (judged axis, κ 0.633): 77.9% of panel features judged interpretable; the direct interpretable-vs-$R^2$ correlation has not been run yet (labels are banked — see suggested analyses)
+- Interpretable or not (judged axis, κ 0.633): 77.9% of panel features judged interpretable; panel-wide ρ($R^2$, interpretable) = **+0.045** (n = 16,285 label-resolved, prevalence 0.793), **outside** the activity-stratified permutation band [−0.009, +0.019], p = 0.0005. The tail sweep shows a **sign flip, not a monotone effect**: interpretable features are *depleted* in the very best-predicted tail (Δ₂₅ = −0.120) and *enriched* from k ≈ 300 outward (Δ ≈ +0.07, still +0.032 at k = 8,000 = half the panel, scan-corrected). Jointly it is stronger than raw: all-others-partial ρ = **+0.117** (`eval_results/issue_1482/predictor_battery/`)
 - LLM judged predictors:
     - Methodology (correcting the draft's recollection): **5 judge draws per feature per axis, aggregated by modal label** — a malformed/refusal draw is dropped (never coerced), and a feature is excluded from an axis only if <2 draws survive (0.2–0.5% of items). Inter-draw agreement is reported as Fleiss κ per axis. Content-drop rates per axis: 0.5–0.6% of draws (functional_role the outlier at 2.4%). Same instrument was later run on the FULL dictionary (128,512 features × 5 axes × 5 draws = 3.21M Batch-API calls, $9.5k) with κ replicating within ±0.03.
     - Level of abstraction (κ 0.68; token_surface 27.6% / lexical_semantic 24.8% / abstract_contextual 47.7%): panel-wide **null** (ρ = −0.057); separates only the extreme tails (below-curve depth ~top/bottom 400 scan-corrected of 16,381) and the signal is **worst-tail depletion of abstract features** (0.38 in the worst 5% vs 0.476 marginal), not best-tail enrichment
-    - Content type (κ 0.66; syntax 76.6% / topic 11.6% / operation 8.5% / entity 1.9% / task_format 1.3%): correlate not yet run panel-wide (suggested analyses)
+    - Content type (κ 0.66; syntax 76.6% / topic 11.6% / operation 8.5% / entity 1.9% / task_format 1.3%): one-vs-rest panel-wide, **the two big classes are pure activity artifacts and the two rare ones are real**. `syntax` ρ = +0.042 sits INSIDE its activity-stratified band [+0.025, +0.054] (p = 0.35) and `topic` ρ = −0.020 inside [−0.036, −0.007] (p = 0.60) — the apparent syntax-is-better-predicted effect is entirely explained by syntax features firing more often. Outside their bands at p = 0.0005: `operation` ρ = **−0.077** (the clearest negative — operations are the *worst*-predicted content class), `entity` **+0.053**, `task_format` **+0.032**, each separating to the full k = 8,000 scan-corrected depth
     - Related to the **language of the text** (13.3% of panel): purely a **best-tail spike** — prevalence 0.255 in the best-predicted 5% vs 0.103 marginal, flat elsewhere (language identity is near-deterministic given the query)
     - Related to the **identity of the speaker** (0.7% of panel): too rare for a stable tail read at panel size
     - Related to the **register of the speaker** (8.7%): a **worst-tail depletion** effect — flat across top/middle, drops to 0.035–0.07 in the worst bins vs 0.075 marginal (register features are never among the unpredictable)
@@ -124,11 +124,11 @@ To get a better idea of **exactly which interpretable aspects of the answer** ar
     - Presence in higher or lower level dictionary of Matryoshka SAE: **coarse-better** — tier-vs-$R^2$ Spearman **−0.395**, outside the within-activity-stratum permutation band [−0.250, −0.228], partial given log-activity −0.194; per-tier median $R^2$ 0.435 (coarsest) / 0.174 / 0.043 (finest) (`eval_results/issue_1482/matryoshka_tier/tier_tests.json`)
     - Feature continuance (= within-answer consistency): for each answer where the feature fires at all, the fraction of that answer's token positions on which it is active, averaged over held-out answers (n≥8-token variant nearly identical). This is the quantitative high-level/tonic vs low-level/phasic measure: a persistent "speaking French"-style property stays on across the whole answer; a token-triggered detector blips. **The strongest predictor found**: ρ = **0.600** ($R^2$), partial given activity **0.582** (`eval_results/issue_1482/feature_correlates/consistency.json`)
 - Decoder vector norm: γ-scaled write norm ρ = **+0.18** (+0.22 given activity, +0.21 given consistency) — features that write more strongly are slightly better predicted (`eval_results/issue_1482/footprint_moments/footprint_moments.json`)
-- Encoder vector norm: not yet computed (suggested analyses)
+- Encoder vector norm: raw ρ = **+0.059** (near-null on its own) but all-others-partial ρ = **+0.127** — it is the 5th strongest predictor once the rest are held fixed, i.e. a *suppressed* correlate rather than an absent one. The encoder/decoder asymmetry question is moot for this SAE: the **decoder columns are unit-norm by construction** (measured std 2.7e-08 over the panel), so "decoder norm" carries zero rank information and the enc/dec ratio is just the encoder norm rescaled. The informative write-strength quantity remains the γ-scaled write norm
 - Input vs output features:
     - Two operationalizations. (1) **Judged axis** (`functional_role`: input_side / output_promoting / mixed, from activation evidence): RETIRED — inter-draw κ 0.318 on the panel AND 0.318 at full dictionary; a 4-arm rubric repair (+contrastive negatives, +nearest neighbours, +token budget) moved κ ≤ +0.04, and the literature explains why: output/causal role is not readable from input-side activation evidence. (2) **Mechanical replacement** (output-footprint moments: skew/kurtosis/variance of $W_U(\gamma \odot W_{dec})$ per feature, direct AND routed through J₁₉; Gurnee-style promoting/suppressing/partition classes; κ = 1 by construction): classes exist cleanly (8,063 promoting / 5,045 suppressing / 8,716 partition of 131,072; direct-vs-J₁₉ class agreement 0.80) — but the **pre-registered prediction that output-promoting features are worse-predicted is refuted**: panel ρ(promoting, $R^2$) = −0.026 (−0.044 given activity), median $R^2$ 0.134 (promoting) vs 0.150 (other); the full-width read is +0.06 but activity-confounded
 
-For continuous predictors, the ρ's with pairwise partials (activity / consistency; the joint all-others-partialled model has not been fit — suggested analyses; per-feature reads are ridge-only, but at the PC grain ridge-vs-MLP rank agreement is 0.997):
+For continuous predictors, the ρ's with pairwise partials (activity / consistency; the joint all-others-partialled model is below; per-feature reads are ridge-only, because the banked MLP per-feature array is the DIVERGED fit — all 16,384 values negative, recorded in `sae_sae_mlp_recovery/final.json` as `broken_mlp_reference` — and the recovery round emitted pooled scalars only; at the PC grain ridge-vs-MLP rank agreement is 0.997, so the ranking is not expected to move):
 
 | predictor | ρ vs $R^2$ | partial given activity | partial given consistency |
 |---|---|---|---|
@@ -144,6 +144,43 @@ For continuous predictors, the ρ's with pairwise partials (activity / consisten
 - Four things order SAE-feature predictability: **within-answer persistence (dominant, 0.60), dense variance along the feature's direction (0.40), firing frequency (0.29), and (weakly) write strength (0.18)**. The feature's own activation variance, judged abstraction, and output-coupling do essentially nothing
 - The mechanical input/output axis is measurable and cheap but does not carry the input-echo-easy / output-promoting-hard hypothesis — that hypothesis fails at the feature level
 
+### The joint model: what survives partialling everything else (run 2026-08-03)
+
+All of the above are pairwise reads, and the predictors are correlated with each other, so the pairwise column both over- and under-states. Fitting **one rank-OLS of per-feature $R^2$ on all 26 predictors at once** (11 continuous + 15 one-hot judged levels; 'unresolved' carried as its own level so no feature is dropped) gives the all-others-partialled picture, with leave-one-predictor-out $\Delta R^2$ as the dominance read and 2,000-draw feature-bootstrap CIs:
+
+![Raw vs all-others-partial Spearman for every per-feature predictor](https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/issue_1482/predictor_battery/joint_partial_forest.png)
+
+| predictor | raw ρ | all-others-partial ρ [95% CI] | LOPO ΔR² |
+|---|---|---|---|
+| within-answer consistency | +0.600 | **+0.558** [+0.547, +0.569] | 0.217 |
+| activity (firing frequency) | +0.293 | **+0.291** [+0.276, +0.305] | 0.044 |
+| footprint kurtosis | −0.028 | **−0.161** [−0.176, −0.146] | 0.013 |
+| dense variance along decoder dir | +0.404 | +0.135 [+0.119, +0.149] | 0.009 |
+| encoder-vector norm | +0.059 | +0.127 [+0.111, +0.141] | 0.008 |
+| interpretable: yes | +0.045 | +0.117 [+0.103, +0.132] | 0.007 |
+| abstraction (ordinal) | −0.061 | −0.093 [−0.108, −0.076] | 0.004 |
+| γ-scaled write norm | +0.184 | +0.085 [+0.070, +0.101] | 0.004 |
+| side ratio | +0.119 | +0.061 [+0.045, +0.076] | 0.002 |
+| rb_align (max over 3 traits) | +0.203 | −0.029 [−0.044, −0.013] | 0.0004 |
+
+**Takeaways:**
+- **Joint rank-OLS $R^2$ = 0.520** [0.510, 0.532]. The ordering is not the pairwise ordering: three of the top five partial predictors are ones the pairwise table calls null or near-null
+- **Consistency does not subsume the rest, and the rest do not subsume consistency.** Consistency alone reaches $R^2$ 0.360; the other 25 predictors without it reach 0.303; together 0.520 — so ~0.14 of $R^2$ is shared and each side carries substantial independent signal. Consistency's own LOPO ΔR² (0.217) is 5× the next predictor's
+- **Two suppressed correlates surface only in the joint fit**: footprint **kurtosis** goes −0.03 → **−0.161** (a 6× amplification, making output-coherence the 3rd strongest predictor — the pairwise "output-coupling does essentially nothing" line above holds only marginally) and **encoder norm** +0.059 → +0.127. Both are masked pairwise by their positive correlation with activity/write-strength
+- **Two pairwise correlates are mostly mediated**: dense variance along the decoder direction collapses +0.404 → +0.135 (three-quarters of it was activity and consistency), and **rb_align collapses +0.203 → −0.029, i.e. to nothing** — its pairwise correlation is entirely shared with the dense-variance predictor (pairwise ρ between them = 0.58)
+- The RETIRED `functional_role` axis (κ 0.318) is carried in the fit for completeness and flagged in the figure; its partial ρ (+0.072 for output_promoting) is not interpretable as a finding
+
+The same round also asks how well each continuous predictor **classifies** tail membership (AUROC for top-k vs bottom-k by $R^2$) and extends the tail-depth sweep to the two judged axes that had never been run:
+
+![Tail-depth sweep for the new judged axes, and AUROC of each continuous predictor for top-k vs bottom-k membership](https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/issue_1482/predictor_battery/tail_auroc_extension.png)
+
+**Takeaways:**
+- **Consistency is a near-perfect tail classifier and stays strong at every depth**: AUROC 0.97 at k = 25, still 0.95 at k = 1,600 and 0.80 at k = 8,000 (half the panel). Dense variance is comparable in the extreme tail (0.97 at k = 25) but decays much faster (0.70 at k = 8,000) — consistent with it being the mediated predictor in the joint fit
+- **Activity behaves oppositely to every other predictor**: its AUROC *rises* with k (0.64 at k = 25 → 0.77 at k = 1,600) — firing frequency separates the broad middle, not the extremes
+- Write norm (0.57 → 0.67 → 0.59) and encoder norm (0.57 → 0.53) are weak classifiers at every depth despite being real joint predictors — a small partial ρ over 16,384 features does not buy tail separation
+
+(`eval_results/issue_1482/predictor_battery/joint_model.json`, `tail_extension.json`; the four banked per-predictor ρ's are re-derived as wiring gates before any read, and the closed-form LOPO agrees with explicit refits to 5e-16)
+
 For binary predictors, effectiveness was checked three ways: (1) two-arm extremes contrasts — top-150 vs bottom-150 by $R^2$, Fisher-exact odds ratio, repeated **activity-controlled** (15 best/worst within each activity decile) with a stratified permutation test; (2) full-panel Spearman of the coded label; (3) a **tail-depth sweep**: Δ_k = frac(label | top-k) − frac(label | bottom-k) over 16 tail widths against an activity-stratified permutation null with a scan-corrected (studentized max-T) band, plus prevalence-vs-rank profiles:
 
 ![Tail-depth sweep: how deep into the R² ranking each judged binary label separates](https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/issue_1482/feature_correlates/tail_depth_sweep.png)
@@ -152,7 +189,15 @@ For binary predictors, effectiveness was checked three ways: (1) two-arm extreme
 - Tails-only signals and panel-wide signals look identical in an extremes contrast (abstraction OR ~3–4, speaker OR ~8) but completely different in the sweep: **abstraction dies by k ≈ 400–600; speaker_property separates at every depth tested (k = 8,000, half the panel)**
 - The prevalence profiles identify the mechanism: language = best-tail spike; register = worst-tail depletion; abstraction = worst-tail depletion of abstract features
 
-I then asked Claude Fable 5 to try to find the common thread between the top 100 and bottom 100 worst predicted SAE features (based on autointerp metadata), and it came up with this:
+I then asked Claude Fable 5 to try to find the common thread between the top 100 and bottom 100 predicted SAE features (based on autointerp metadata). Protocol (blinded re-run, 2026-08-03): a fresh instance saw ONLY two groups of 100 autointerp descriptions labeled Group A / Group B — the A/B↔top/bottom assignment was randomized and the key kept on disk unread until after it reported; it was not told what the groups were, how they were selected, or what "better" would mean. Its verdict (unblinded afterward: A = bottom-100, B = top-100):
+
+> **Bottom-100 (worst predicted)**: features defined by **what the token IS** — its form, morphology, or single lexical meaning, with the surrounding text incidental. ~27/100 are crisp single-lexeme concepts held invariant across languages (the word "red", "low/reduced/minimal", "example", "middle", ordinals, the digit 1 opening a numbered list); a large cluster names exact affix classes and tokenizer positions (-tion/-ment/-ization, un-/non-/im-, mini-/micro-/anti-, camelCase components, the stem position immediately before a suffix); plus list/enumeration formatting tokens and a negation-form feature.
+>
+> **Top-100 (best predicted)**: features defined by **what the CONTEXT IS** — ~24/100 language/script identity (11 Chinese-specific, plus Cyrillic, Romance, gender marking), ~15 register/genre (formal business, professional/academic/institutional, instructional, assistant-like responses), ~11 discourse-POSITION slots (the token just before an enumerated list, the header-to-body transition, the period closing a caveat), and abstract institutional vocabulary (innovation, sustainability, quality). Concrete/scalar lexemes are absent.
+>
+> **Sharpest contrast**: token-intrinsic vs context-extrinsic definition — Group A means "this concept regardless of language", Group B means "because the text is in this language/register/slot". Honest caveat: ~40–50% of each group is generic low-level structural filler (subword fragments, punctuation, programming syntax) genuinely indistinguishable between groups, with a handful of clear cross-fits both ways.
+
+The earlier unblinded pass (2026-08-02) read the same way:
 
 > **Top-100 (best predicted)**: almost uniformly *properties of the text stream that the context fixes in advance* — grammatical function words, conjunctions and articles; punctuation and clause/list/paragraph boundary markers; word-internal continuation fragments (BPE suffixes); language and script identity (Chinese characters, non-English morphemes, Russian); and formal/professional register. Essentially format, syntax, language, and register scaffolding — nothing about specific semantic content.
 >
@@ -178,10 +223,10 @@ J₁₉ = E[∂h_final/∂h₁₉] linearizes what layers 20–27 transmit to th
 ## Suggested additional analyses
 
 1. **Full-width label joins** — the 3.21M-call full-dictionary judged labels (128,512 features × 5 axes, banked on HF + `/mnt/eps-data`) × the full-width per-feature $R^2$ (131,072, banked): rerun the tail-depth sweep and panel correlations at ~7× the n, incl. deriving a full-width activity covariate for the stratified nulls. Zero new API calls.
-2. **Interpretable-vs-$R^2$ and content_type reads** — both labels banked, correlation never run.
-3. **Joint predictor model** — the draft's requested all-others-partialled ρ plot: one multivariate (rank) regression of per-feature $R^2$ on consistency + activity + write norm + tier + labels, with dominance analysis; also settles how much consistency subsumes the rest.
-4. **Encoder-norm + encoder-vs-decoder asymmetry** correlates (encoder weights banked, never used for this).
-5. **Nonlinear per-feature reads** — the SAE-feature target maps are ridge-only; PC-grain ridge-vs-MLP agreement (0.997) suggests little difference, but the check is cheap.
+2. ~~**Interpretable-vs-$R^2$ and content_type reads** — both labels banked, correlation never run.~~ — **DONE 2026-08-03, predictor_battery round** (panel reads + tail sweep + AUROC extension).
+3. ~~**Joint predictor model** — the draft's requested all-others-partialled ρ plot: one multivariate (rank) regression of per-feature $R^2$ on consistency + activity + write norm + tier + labels, with dominance analysis; also settles how much consistency subsumes the rest.~~ — **DONE 2026-08-03, predictor_battery round** (26 predictors, joint $R^2$ 0.520; Matryoshka tier excluded as a different dictionary/panel that does not join).
+4. ~~**Encoder-norm + encoder-vs-decoder asymmetry** correlates (encoder weights banked, never used for this).~~ — **DONE 2026-08-03, predictor_battery round**; the asymmetry half is moot (decoder columns are unit-norm by construction).
+5. **Nonlinear per-feature reads** — the SAE-feature target maps are ridge-only; PC-grain ridge-vs-MLP agreement (0.997) suggests little difference, but the check is cheap. **Now also needed to un-block the joint model's MLP twin**: the banked per-feature MLP array is the diverged fit and the recovery round emitted pooled scalars only, so no recovered per-feature MLP $R^2$ exists to re-run the battery against.
 6. **Steering validation of the footprint classes** — TokenChange on a ~300–500-feature stratified sample (~1–2 GPU-h): does the promoting class actually gain its top-footprint tokens when clamped? (Also the calibration set for any future causal-role axis.)
 7. **J-space × consistency mediation** — does J-transmission explain the consistency→$R^2$ link, or are they independent? (One partial-correlation pass on banked arrays.)
 8. **Interaction structure** — Result 1 says the miss is interaction-dominated: low-rank SVD / biclustering of the normalized miss table to find context×direction blocks (e.g. "code contexts miss language directions").
