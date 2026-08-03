@@ -7462,8 +7462,8 @@
     "1963": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1963",
-      "status": "approved",
+      "path": "tasks/running/1963",
+      "status": "running",
       "title": "daily-fix: guard family syncs scripts/guard_*.sh with pin te"
     },
     "1964": {
