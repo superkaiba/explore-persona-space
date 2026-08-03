@@ -7560,8 +7560,8 @@
     "1976": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1976",
-      "status": "approved",
+      "path": "tasks/running/1976",
+      "status": "running",
       "title": "daily-fix: pre-split trigger for fits+figures+smoke units"
     },
     "1977": {
