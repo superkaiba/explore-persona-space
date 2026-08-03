@@ -70,3 +70,38 @@ Ceilings measured 2026-08-03 on the landed character captures (reduced basis, n 
 Origin: user chat 2026-08-03, verbatim: "do a comprehensive audit of why all these generations are failing and rerun so that we get 6000 inserted and 6000 on-policy for all settings we need for my result writeup. for inserted the model doesn't necessarily have to generate itself it can just write the start and then we insert the dialogue directly (BUT THE STORY FRAMING ITSELF SHOULD BE DIVERSE)"; then "run so that we only take the first message per character in ALL settings"; then "run the 6000 row thing in the background with happy coder".
 
 Serves the framing/character/user-turn results writeup at docs/results_summaries/2026-08-02-framing-character-user-turn-map-transfer-filled.md.
+
+## BINDING DESIGN CONSTRAINT — conversation-matched cells (added 2026-08-03, measured)
+
+Every cell that will be COMPARED must be built on the SAME conversation set, and where the
+comparison is text-controlled, on byte-identical story text. The current #1345 character
+corpus FAILS this and the rebuild must not reproduce the defect at 6,000 rows.
+
+Measured evidence (HF kept-story files, sha256 over story text + conv_id set intersection):
+  char_helios (instruct, inserted) n=2,187  vs char_helios_base (base, inserted) n=2,156
+      -> story text NOT identical; conv_id overlap 1,658 (~77%)
+  char_helios_op (instruct, on-policy) n=2,069 vs char_helios_op_base (base, on-policy) n=2,061
+      -> story text NOT identical; conv_id overlap 1,081 (~52%)
+
+Consequence already realised: the apparent "base beats instruct in 8 of 8 character cells"
+(differences 0.003-0.019 in within-cell ceiling) is CONFOUNDED by corpus and text and was
+withdrawn. Only per-cell ceilings and the much larger inserted-vs-on-policy gap (~0.09)
+survive that confound, and the latter is not row-matched either.
+
+Requirements for this task:
+1. ONE shared conversation draw underlies every cell of the lattice. Cells differ only in the
+   manipulated variable (framing / identity / condition / model), never in which conversations
+   they contain.
+2. Cross-MODEL comparisons are on byte-identical text: the same scaffold and the same spliced
+   answer are captured through both models. Model is a read-side variable only.
+3. Cross-FRAMING comparisons are on byte-identical scaffold prose: only the boundary form
+   changes at splice time (this is already the design's central property - preserve it).
+4. Cross-CONDITION (inserted vs on-policy) cannot be byte-identical by construction, since
+   on-policy answers are model-written. It MUST still be conversation-matched: the same
+   conv_id set on both sides, and the round reports the realised intersection.
+5. Any cell that drops rows for any reason reports the realised conv_id intersection against
+   every cell it is compared with, and the headline comparison is refit on the intersection.
+
+Free companion available now (0 GPU, activations already captured): refit the existing
+character pairs on their conv_id intersections (1,658 / 1,081 for the HELIOS pairs) to get a
+matched base-vs-instruct read at n~2,000 before the rebuild lands.
