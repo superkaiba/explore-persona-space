@@ -1,0 +1,42 @@
+{
+  "source": "eval_results/issue_1895/angles_summary.json",
+  "pair": "psae_recon_pca",
+  "k": [
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "observed_O": [
+    0.8552048206329346,
+    0.8790323734283447,
+    0.8669513463973999,
+    0.8841001987457275,
+    0.8611531257629395
+  ],
+  "null_draws": 1000,
+  "shell_setting": "64",
+  "null_band_p2.5": [
+    0.8420311808586121,
+    0.8715359568595886,
+    0.8558679819107056,
+    0.8768976330757141,
+    0.8550563454627991
+  ],
+  "null_band_p97.5": [
+    0.8549982905387878,
+    0.8988809585571289,
+    0.8692476153373718,
+    0.8835290670394897,
+    0.8579437136650085
+  ],
+  "observed_percentile": [
+    99.1,
+    23.4,
+    90.4,
+    99.0,
+    100.0
+  ],
+  "what_is_plotted": "Per k: observed mean cos^2 principal angle between the map's top-k predictable eigendirections and the SAE reconstruction-PCA top-k subspace, against the FINEST (64-shell) variance-matched Haar-rotation null only: null median (dashed) + central-95% band of 1,000 draws. Labels = observed's percentile in that null. A point outside the band is inconsistent with the variance-only null at the 5% level (frequentist band over null draws, not a posterior probability)."
+}
