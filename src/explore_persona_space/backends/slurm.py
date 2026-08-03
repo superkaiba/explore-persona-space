@@ -1816,6 +1816,23 @@ def _env_pin_export_lines(spec: RunSpec) -> list[str]:
     ]
 
 
+def _eps_git_sha_export_lines(code_sha: str | None) -> list[str]:
+    """#2026: the custom-stage ``EPS_GIT_SHA`` export (``[]`` when unresolved).
+
+    Rsync-lane scratch trees are git-less on the cluster, so provenance
+    helpers (``EPS_GIT_SHA`` first-rung consumers) cannot ``git rev-parse``
+    there — the backend resolves the materialized branch-tip sha VM-side
+    (:func:`resolve_branch_tip_sha` via the ``sha_resolver`` seam) and
+    threads it into the render as ``code_sha``. The ``:-`` default
+    preserves an ambient/inline override; a ``None``/empty sha returns
+    ``[]`` (byte-identical render — consumers keep today's degraded
+    git-less literal, and a launch never dies on best-effort provenance).
+    """
+    if not code_sha:
+        return []
+    return [f'export EPS_GIT_SHA="${{EPS_GIT_SHA:-{code_sha}}}"']
+
+
 def _sentinel_precreate_lines(cluster: ClusterConfig, spec: RunSpec) -> list[str]:
     """#1898: custom-stage ``/workspace/logs`` pre-create for drained clusters.
 
@@ -1853,6 +1870,7 @@ def render_sbatch(
     scratch_dir: str,
     secrets_filename: str = "secrets.env",
     plan_hash: str | None = None,
+    code_sha: str | None = None,
 ) -> str:
     """Render the full sbatch script as a string.
 
@@ -1860,6 +1878,14 @@ def render_sbatch(
     test asserts specific lines / shapes from the output. The renderer
     OWNS every cluster convention (no other module should re-derive
     them).
+
+    ``code_sha`` (#2026): when truthy, the custom-stage env block exports
+    ``EPS_GIT_SHA`` (``:-``-defaulted so an ambient/inline override wins)
+    so provenance helpers on the git-less rsync-lane scratch trees resolve
+    the real materialized branch-tip sha instead of the degraded literal.
+    Sha RESOLUTION happens in the backend layer
+    (:meth:`SlurmBackend._render_script_for`) — the sha arrives here as a
+    parameter, keeping this function pure.
 
     Lines the test pins:
 
@@ -2214,6 +2240,11 @@ def render_sbatch(
             # submission unique analogue.
             stage_blocks.append(f"export EPS_ISSUE={spec.issue}")
             stage_blocks.append('export EPS_ATTEMPT_ID="slurm-${SLURM_JOB_ID}"')
+            # #2026: EPS_GIT_SHA export for git-less rsync-lane scratch
+            # trees (empty when unresolved — see _eps_git_sha_export_lines);
+            # BEFORE the env-pin lines so the `:-` default preserves an
+            # explicit pin / ambient override.
+            stage_blocks.extend(_eps_git_sha_export_lines(code_sha))
             # #1669: launch env pins (WANDB_PROJECT et al., incident
             # #1586) — exported BEFORE the WANDB_PROJECT:-issue<N> default
             # below so the `:-` default preserves the pin (a pin-less
@@ -2624,10 +2655,18 @@ def estimate_start_seconds(
     launch path will use (same ``cluster``, same ``RunSpec``, same
     ``stages_for_spec`` → ``render_sbatch`` pipeline). ``render_sbatch``
     is a pure deterministic function of ``(spec, cluster, plan,
-    scratch_dir, plan_hash)``, so the probe script is byte-identical to
-    the submit script — what SLURM estimates the start time for is
-    exactly what we then submit (no gres / account / time-budget
-    mismatch between probe and submit).
+    scratch_dir, plan_hash, code_sha)``, so the probe script is
+    byte-identical to the submit script — what SLURM estimates the start
+    time for is exactly what we then submit (no gres / account /
+    time-budget mismatch between probe and submit). NOTE (#2026): the
+    backend's own :meth:`SlurmBackend._render_script_for` additionally
+    resolves ``code_sha`` from repo state (the requested branch's tip at
+    the rsync source), so a render there also depends on that state —
+    accepted seconds-window drift, export-line-only. THIS module-level
+    fallback render (below, when no ``rendered_script`` is passed)
+    deliberately threads NO ``code_sha``: it has no ``src_root`` in
+    scope, it is an estimate-only artifact, and the ``EPS_GIT_SHA``
+    export line cannot affect gres / account / time.
 
     Callers may pass ``rendered_script`` to short-circuit re-rendering
     (e.g. when the router has already produced a script for the
@@ -2730,6 +2769,7 @@ class SlurmBackend(ComputeBackend):
         runtime_clearer=None,
         git_branch_resolver=None,
         git_cloner=None,
+        sha_resolver=None,
     ) -> None:
         self._src_root = src_root or _default_src_root()
         # Resolves the rsync source's current branch for the feature-branch
@@ -2745,6 +2785,13 @@ class SlurmBackend(ComputeBackend):
         # a stub returning a fake scratch Path and recording the (branch, issue)
         # request.
         self._git_cloner = git_cloner or materialize_branch_src
+        # Resolves the requested repo_branch's tip sha at the rsync source for
+        # the custom-stage EPS_GIT_SHA export (#2026 — the rsynced scratch tree
+        # is git-less on the cluster, so provenance is resolved VM-side and
+        # threaded into the render). FAIL-SOFT: a ``None`` return omits the
+        # export (consumers keep the degraded git-less literal); a launch
+        # never dies on best-effort provenance metadata. Tests inject a stub.
+        self._sha_resolver = sha_resolver or resolve_branch_tip_sha
         self._submit = submitter or ssh_submit
         self._cancel = canceller or ssh_scancel
         self._rsync = rsyncer or run_rsync_sync
@@ -3193,9 +3240,11 @@ class SlurmBackend(ComputeBackend):
         ``backend.estimate_start_seconds(spec)`` without re-deriving the
         cluster. The rendered probe script is byte-identical to what
         ``launch()`` will submit (same ``render_sbatch`` of the same
-        ``RunSpec`` + ``ClusterConfig`` + ``plan_hash``), so the
-        estimate matches the real request gres / account / time budget
-        with no drift.
+        ``RunSpec`` + ``ClusterConfig`` + ``plan_hash`` + resolved
+        ``code_sha`` — a repo-state push in the seconds between the two
+        renders can only move the ``EPS_GIT_SHA`` export line, #2026),
+        so the estimate matches the real request gres / account / time
+        budget with no drift.
         """
         cluster = self._cluster_for_spec(spec)
         rendered = self._render_script_for(spec, cluster)
@@ -3214,16 +3263,35 @@ class SlurmBackend(ComputeBackend):
         ``estimate_start_seconds()`` all submit byte-identical scripts
         for the same ``(spec, cluster)`` — no chance of one path
         threading a different ``plan_hash`` / scratch path than another.
+
+        #2026: the render now ALSO depends on repo state — the requested
+        ``repo_branch``'s tip sha at the rsync source (the
+        ``sha_resolver`` seam) is threaded in as ``code_sha`` for the
+        custom-stage ``EPS_GIT_SHA`` export. A branch tip moving between
+        two renders of one dispatch (a seconds-scale window) changes
+        ONLY that export line, never gres / account / time — accepted.
         """
         scratch_dir = scratch_dir_for(spec, cluster)
         plan = stages_for_spec(spec)
         plan_hash = spec.extra.get("plan_hash")
+        # Same derivation as _resolve_rsync_source: absent/empty -> "main".
+        requested = str(spec.extra.get("repo_branch") or "").strip() or "main"
+        code_sha = self._sha_resolver(self._src_root, requested)
+        if code_sha is None:
+            logger.warning(
+                "EPS_GIT_SHA unresolved for issue %d (branch %r at %s) — rendering without "
+                "the export; provenance degrades to the git-less literal",
+                spec.issue,
+                requested,
+                self._src_root,
+            )
         return render_sbatch(
             spec=spec,
             cluster=cluster,
             plan=plan,
             scratch_dir=scratch_dir,
             plan_hash=plan_hash,
+            code_sha=code_sha,
         )
 
     # ----- monitor ---------------------------------------------------------
@@ -3796,6 +3864,48 @@ def head_commit_matches_branch(src_root: Path, branch: str, timeout: int = 15) -
     return branch_commit is not None and head == branch_commit
 
 
+def resolve_branch_tip_sha(src_root: Path, branch: str, timeout: int = 15) -> str | None:
+    """Resolve ``branch``'s tip commit sha at ``src_root`` (``None`` fail-soft).
+
+    Resolution order is IDENTICAL to :func:`materialize_branch_src` step 3
+    and :func:`head_commit_matches_branch`: the local ``<branch>`` ref
+    first, then ``origin/<branch>`` — so the exported sha matches what the
+    materializer ships. Used by :meth:`SlurmBackend._render_script_for` to
+    thread ``code_sha`` into the custom-stage ``EPS_GIT_SHA`` export
+    (#2026: the rsynced scratch tree is git-less on the cluster, so
+    provenance helpers cannot ``git rev-parse`` there). FAIL-SOFT: any git
+    failure (``FileNotFoundError`` / ``TimeoutExpired`` / nonzero rc)
+    returns ``None`` — the export line is then omitted and a launch never
+    dies on best-effort provenance metadata (:func:`materialize_branch_src`
+    already fails LOUD at prepare on an unresolvable branch, so the
+    launch-path residual is narrow).
+    """
+    for ref in (branch, f"origin/{branch}"):
+        try:
+            proc = subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(src_root),
+                    "rev-parse",
+                    "--verify",
+                    "--quiet",
+                    f"{ref}^{{commit}}",
+                ],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+                timeout=timeout,
+            )
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            return None
+        if proc.returncode == 0 and proc.stdout.strip():
+            return proc.stdout.strip()
+    return None
+
+
 def git_branch_at(src_root: Path) -> str | None:
     """Return the current branch name at ``src_root`` (``None`` if unknown).
 
@@ -3874,6 +3984,7 @@ __all__ = [
     "post_marker_via_task_py",
     "render_sbatch",
     "render_secrets_env",
+    "resolve_branch_tip_sha",
     "run_extra_rsync_sync",
     "scp_push_secrets",
     "scratch_dir_for",
