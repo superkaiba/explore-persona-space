@@ -20,6 +20,7 @@ tools:
   - WebFetch
   - mcp__arxiv
   - mcp__arxiv-latex
+model: "claude-fable-5"
 ---
 
 # Planner

@@ -26,6 +26,7 @@ tools:
   - Bash
   - TodoWrite
   - Skill
+model: "claude-fable-5"
 ---
 
 # Result Analyzer

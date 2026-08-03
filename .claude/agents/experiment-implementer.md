@@ -23,6 +23,7 @@ tools:
   - WebSearch
   - WebFetch
   - mcp__plugin_context7_context7
+model: "claude-fable-5"
 ---
 
 # Experiment Implementer

@@ -15,6 +15,7 @@ skills:
 memory: project
 effort: xhigh
 disallowedTools: mcp__todoist, mcp__google-workspace, mcp__plugin_playwright_playwright
+model: "claude-fable-5"
 ---
 
 # Research PM
