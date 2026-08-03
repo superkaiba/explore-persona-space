@@ -7553,8 +7553,8 @@
     "1975": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1975",
-      "status": "approved",
+      "path": "tasks/running/1975",
+      "status": "running",
       "title": "daily-fix: map fit-space parity assert (issue1739 natpv)"
     },
     "1976": {
