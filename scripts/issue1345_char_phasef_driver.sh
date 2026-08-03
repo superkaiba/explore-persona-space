@@ -222,7 +222,21 @@ if [ "$MAX_ROWS" -gt 0 ]; then FILL_ARGS+=(--max-rows "$MAX_ROWS"); fi
 
 for spec in "${CELLS[@]}"; do
   IFS='|' read -r v src model <<< "$spec"
+  tsdir="${STAGE_ROOT}/${v}_turnstore"
   if cell_outputs_complete "$v" "$src" "$model"; then
+    # r2 review Minor 1: a kill in the fits-done -> delete window leaves the
+    # staged dir orphaned (~5.2 GB); outputs are complete, so it is provably
+    # dead weight (name guard char_*_turnstore holds by construction: v comes
+    # only from the fixed cell table).
+    if [ -d "$tsdir" ]; then
+      sz="$(du -sh "$tsdir" 2>/dev/null | cut -f1)"
+      rm -rf "$tsdir"
+      if [ -e "$tsdir" ]; then
+        echo "[cell] ${v}: WARNING leftover staged dir ${tsdir} could not be removed" >&2
+      else
+        echo "[cell] ${v}: removed leftover staged ${v}_turnstore (${sz:-?} freed; outputs complete)"
+      fi
+    fi
     echo "[cell] ${v}: all 3 outputs exist — skipped (resume; nothing staged)"
     CELL_RC[$v]="skipped-complete"
     n_skip=$((n_skip + 1))
@@ -231,7 +245,6 @@ for spec in "${CELLS[@]}"; do
   assert_disk_floor "before staging ${v}"
   t0=$(date +%s)
   cell_rc=0
-  tsdir="${STAGE_ROOT}/${v}_turnstore"
 
   if ! uv run python scripts/issue1345_stage_char_stories.py \
       --kind turnstore --variant "$v" --dest-root "$STAGE_ROOT"; then

@@ -50,6 +50,10 @@ from explore_persona_space.orchestrate import hub  # noqa: E402
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 # Plan v13 §10 row 1: the kept-story bundle pin (16 cells, 33,806 stories).
 STORIES_PIN = "704cc6cbc3f498cd4af3648c7055784ef71c905c"
+# The #1034 proactive-overflow breadcrumb `upload_dir_sharded` commits at the
+# CANONICAL prefix when the shard set was rerouted to the private overflow
+# repo (schema: {overflow_repo, path_in_repo, ts, ...}).
+OVERFLOW_POINTER_BASENAME = "OVERFLOW_POINTER.json"
 
 CHAR_VARIANTS = tuple(
     f"char_{ch}{suf}"
@@ -71,6 +75,56 @@ def expected_files(variant: str) -> tuple[str, str]:
     return (f"kept_stories_{mode}_{model}.jsonl", f"story_yield_{mode}_{model}.json")
 
 
+def _follow_overflow_pointer(
+    mirror_root: Path, *, prefix: str, variant: str, scratch_of: Path
+) -> tuple[Path, str] | None:
+    """Follow a #1034 ``OVERFLOW_POINTER.json`` breadcrumb mirrored from the
+    canonical prefix; returns ``(overflow_mirror_root, overflow_repo)`` or
+    None when no pointer is present.
+
+    The issue841 pointer-follow pattern (``issue841_scaling_common.
+    _overflow_repo_for_bucket`` / ``fetch_capture_from_hf``), rebuilt on the
+    canonical retried helper: detection reads the pointer file the canonical
+    mirror ALREADY staged (zero extra Hub calls — never a bare
+    ``list_repo_files`` full listing on the ~1M-file data repo, #833), then
+    re-stages the SAME ``path_in_repo`` prefix from the PRIVATE overflow repo.
+    ``upload_dir_sharded`` reroutes shards to the overflow repo with
+    ``repo_type="model"`` (upload_sharded.py `(DEFAULT_OVERFLOW_REPO,
+    "model")` routing), so the re-stage MUST use the model repo_type; auth
+    rides the ambient HF token. Pointer-routed shards live at the overflow
+    repo's DEFAULT branch — ``revision=None`` here by design; the caller's
+    pinned-revision kwarg applies only to canonical-repo reads. Fail-loud: a
+    malformed pointer (missing ``overflow_repo``) raises KeyError, a
+    prefix-drifted pointer raises AssertionError, and a pointer naming an
+    overflow prefix with no files raises FileNotFoundError from
+    ``stage_hub_prefix`` (the issue841 "pointer says overflow but the shard
+    is not there" contract).
+    """
+    pointer_path = mirror_root / OVERFLOW_POINTER_BASENAME
+    if not pointer_path.is_file():
+        return None
+    pointer = json.loads(pointer_path.read_text())
+    overflow_repo = pointer["overflow_repo"]
+    ptr_prefix = str(pointer.get("path_in_repo", ""))
+    assert ptr_prefix == prefix, (
+        f"overflow pointer prefix drift for {variant}: pointer says {ptr_prefix!r}, "
+        f"stager expects {prefix!r}"
+    )
+    print(
+        f"[stage] {variant} turnstore: OVERFLOW_POINTER at canonical prefix — "
+        f"re-staging shard set from {overflow_repo} (private model repo, default branch)",
+        flush=True,
+    )
+    if scratch_of.exists():
+        shutil.rmtree(scratch_of)
+    hub.stage_hub_prefix(overflow_repo, prefix, scratch_of, repo_type="model", revision=None)
+    of_root = scratch_of / prefix
+    assert of_root.is_dir(), (
+        f"stage_hub_prefix mirrored nothing under {of_root} — overflow mirror drift"
+    )
+    return of_root, overflow_repo
+
+
 def stage_variant_turnstore(
     variant: str,
     *,
@@ -87,7 +141,16 @@ def stage_variant_turnstore(
     consumer layout is produced fail-loud (the artifact-reuse.md (h)(iv)
     staged-layout contract; #928/#1481). ``revision=None`` resolves one
     commit at call time (the capture job creates these stems, so no code-time
-    pin exists; the shard sidecars carry the capture commit). Idempotent:
+    pin exists; the shard sidecars carry the capture commit). OVERFLOW-AWARE
+    (#1034 proactive path): when the canonical prefix carries an
+    ``OVERFLOW_POINTER.json`` breadcrumb (the capture job's shards were
+    rerouted to the private overflow repo over the public-storage ceiling),
+    the shard set is re-staged from ``pointer["overflow_repo"]`` at the SAME
+    prefix and merged into the SAME flat consumer layout — byte-identical to
+    the canonical-path case (the pointer file itself is routing metadata and
+    is excluded). NOTE: pointer-routed shards live at the overflow repo's
+    DEFAULT branch; the ``revision`` kwarg applies only to the canonical-repo
+    read. Idempotent:
     a ``.staged_complete`` sentinel (written only after the whole move loop
     + the pt-shard assert succeeded) -> skip; shard PRESENCE alone is not a
     skip key — a crash inside the rename loop leaves a partial dir a
@@ -114,19 +177,40 @@ def stage_variant_turnstore(
     assert mirror_root.is_dir(), (
         f"stage_hub_prefix mirrored nothing under {mirror_root} — prefix mirror drift"
     )
+    # Overflow-routed cell (#1034): the canonical mirror may hold ONLY the
+    # pointer breadcrumb (proactive path), or a pointer + a partial shard set
+    # (reactive mid-store reroute) — either way the pointer names the private
+    # repo holding the rest; merge BOTH mirrors into the flat consumer layout.
+    scratch_of = dest.parent / f".hfstage_ts_of_{variant}"
+    overflow = _follow_overflow_pointer(
+        mirror_root, prefix=prefix, variant=variant, scratch_of=scratch_of
+    )
+    mirror_roots = [mirror_root]
+    overflow_repo: str | None = None
+    if overflow is not None:
+        of_root, overflow_repo = overflow
+        mirror_roots.append(of_root)
     n_moved = 0
-    for f in sorted(mirror_root.rglob("*")):
-        if not f.is_file():
-            continue
-        out = dest / f.relative_to(mirror_root)
-        out.parent.mkdir(parents=True, exist_ok=True)
-        os.replace(f, out)
-        n_moved += 1
+    for root in mirror_roots:
+        for f in sorted(root.rglob("*")):
+            if not f.is_file() or f.name == OVERFLOW_POINTER_BASENAME:
+                # The breadcrumb is routing metadata, not part of the consumer
+                # bundle — the staged layout stays byte-identical to the
+                # canonical-path case.
+                continue
+            out = dest / f.relative_to(root)
+            out.parent.mkdir(parents=True, exist_ok=True)
+            os.replace(f, out)
+            n_moved += 1
     shutil.rmtree(scratch)
+    if scratch_of.exists():
+        shutil.rmtree(scratch_of)
     pts = sorted(dest.glob("*_shard*.pt"))
     assert pts, (
         f"staged turnstore for {variant} has no *_shard*.pt (moved {n_moved} files from "
-        f"{repo_id}@{revision or 'resolved-head'}:{prefix}) — consumer layout violated"
+        f"{repo_id}@{revision or 'resolved-head'}:{prefix}"
+        + (f" + overflow {overflow_repo}" if overflow_repo else "")
+        + ") — consumer layout violated"
     )
     # Completion sentinel LAST (atomic tmp+replace): the resume predicate keys
     # on it, so a crash anywhere above re-stages instead of silently skipping.
@@ -138,14 +222,16 @@ def stage_variant_turnstore(
                 "n_files": n_moved,
                 "n_pt_shards": len(pts),
                 "revision": revision or "resolved-head",
+                "overflow_repo": overflow_repo,
                 "staged_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             }
         )
     )
     os.replace(tmp_sentinel, sentinel)
     print(
-        f"[stage] {variant} turnstore: {n_moved} files ({len(staged)} listed, "
-        f"{len(pts)} pt shards) -> {dest}",
+        f"[stage] {variant} turnstore: {n_moved} files ({len(staged)} listed"
+        + (f" canonical + overflow {overflow_repo}" if overflow_repo else "")
+        + f", {len(pts)} pt shards) -> {dest}",
         flush=True,
     )
     return dest
