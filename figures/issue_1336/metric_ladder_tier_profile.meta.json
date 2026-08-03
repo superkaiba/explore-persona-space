@@ -1,0 +1,503 @@
+{
+  "commit": "a33d0fe927",
+  "created": "2026-08-03T23:08:37Z",
+  "figsize": [
+    9.5,
+    5.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": -0.5159947593135813,
+      "series": "base \u2192 SFT",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": -0.46236896992228627,
+      "series": "base \u2192 SFT",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": -0.18370238363230823,
+      "series": "base \u2192 SFT",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.20110053953209484,
+      "series": "base \u2192 SFT",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.22079308087320576,
+      "series": "base \u2192 SFT",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.3613122905612748,
+      "series": "base \u2192 SFT",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.15454883582898754,
+      "series": "base \u2192 SFT",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.2770213634114433,
+      "series": "base \u2192 SFT",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.3434644027517182,
+      "series": "base \u2192 SFT",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": -1.348986163081646,
+      "series": "base \u2192 DPO",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": -1.3325870998132856,
+      "series": "base \u2192 DPO",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": -0.71163943594247,
+      "series": "base \u2192 DPO",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.13940673903638953,
+      "series": "base \u2192 DPO",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.18701825346283232,
+      "series": "base \u2192 DPO",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.3533968370912396,
+      "series": "base \u2192 DPO",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.08778048300403539,
+      "series": "base \u2192 DPO",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.24925955564583657,
+      "series": "base \u2192 DPO",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.36056447679392395,
+      "series": "base \u2192 DPO",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": -1.5914545587333524,
+      "series": "base \u2192 RLVR",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": -1.5389907597731871,
+      "series": "base \u2192 RLVR",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": -0.839010916558679,
+      "series": "base \u2192 RLVR",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.11191213864465296,
+      "series": "base \u2192 RLVR",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.17825508867711376,
+      "series": "base \u2192 RLVR",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.3364277186982239,
+      "series": "base \u2192 RLVR",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.07287578127770653,
+      "series": "base \u2192 RLVR",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.24024214307096622,
+      "series": "base \u2192 RLVR",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.3551862156464271,
+      "series": "base \u2192 RLVR",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": -1.2076413475268426,
+      "series": "base \u2192 longer RLVR",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": -1.2016740895295115,
+      "series": "base \u2192 longer RLVR",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": -0.49214107715782307,
+      "series": "base \u2192 longer RLVR",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.15053642296056985,
+      "series": "base \u2192 longer RLVR",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.18998220706334595,
+      "series": "base \u2192 longer RLVR",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.36030436815373956,
+      "series": "base \u2192 longer RLVR",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.09956344178288533,
+      "series": "base \u2192 longer RLVR",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.26363763092055975,
+      "series": "base \u2192 longer RLVR",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.35873168299034586,
+      "series": "base \u2192 longer RLVR",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.26951986112627624,
+      "series": "SFT \u2192 DPO",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.08583596027902103,
+      "series": "SFT \u2192 DPO",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.3680768138043601,
+      "series": "SFT \u2192 DPO",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.4578666102329888,
+      "series": "SFT \u2192 DPO",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.46669247597143937,
+      "series": "SFT \u2192 DPO",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.508716714830536,
+      "series": "SFT \u2192 DPO",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.422209826860462,
+      "series": "SFT \u2192 DPO",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.5099297920367584,
+      "series": "SFT \u2192 DPO",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.5369397467620973,
+      "series": "SFT \u2192 DPO",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.5118293917660331,
+      "series": "DPO \u2192 RLVR",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.5149828809328082,
+      "series": "DPO \u2192 RLVR",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.5187565129064307,
+      "series": "DPO \u2192 RLVR",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.5267228091047594,
+      "series": "DPO \u2192 RLVR",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.5236177052524214,
+      "series": "DPO \u2192 RLVR",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.5313712802140749,
+      "series": "DPO \u2192 RLVR",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.5257433381746154,
+      "series": "DPO \u2192 RLVR",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.5281426903522948,
+      "series": "DPO \u2192 RLVR",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.5352939002821928,
+      "series": "DPO \u2192 RLVR",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.4252692688580755,
+      "series": "DPO \u2192 longer RLVR",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.4285799878612974,
+      "series": "DPO \u2192 longer RLVR",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.468955280818183,
+      "series": "DPO \u2192 longer RLVR",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.4913994374411891,
+      "series": "DPO \u2192 longer RLVR",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.49004709218137904,
+      "series": "DPO \u2192 longer RLVR",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.5215916046243312,
+      "series": "DPO \u2192 longer RLVR",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.4889744406402913,
+      "series": "DPO \u2192 longer RLVR",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.4989494499547015,
+      "series": "DPO \u2192 longer RLVR",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "R\u00b2 of source map applied at each tier (mean across corpora)": 0.5246013891536225,
+      "series": "DPO \u2192 longer RLVR",
+      "_kind": "line",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 63,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "R\u00b2 recovery ladder for each stage-pair",
+        "ylabel": "R\u00b2 of source map applied at each tier (mean across corpora)",
+        "legend_labels": [
+          "base \u2192 SFT",
+          "base \u2192 DPO",
+          "base \u2192 RLVR",
+          "base \u2192 longer RLVR",
+          "SFT \u2192 DPO",
+          "DPO \u2192 RLVR",
+          "DPO \u2192 longer RLVR"
+        ],
+        "annotations": [
+          "Layer 30, raw pooled R\u00b2. Mean of held-out R\u00b2 across 8 corpora \u00b1 across-corpus 1\u03c3 band. Post-SFT pairs (SFT\u2192DPO, DPO\u2192RLVR, DPO\u2192longer-RLVR) recover at t0 or t5; base\u2192<stage> pairs stay low at every tier."
+        ],
+        "xticklabels": [
+          "t0 direct",
+          "t1 ctx-off",
+          "t2 ans-off",
+          "t3 bias",
+          "t4 scale",
+          "t5 rotation",
+          "t6 reparam-c",
+          "t7 reparam-a",
+          "t8 reparam-both"
+        ],
+        "yticklabels": [
+          "\u22124",
+          "\u22123",
+          "\u22122",
+          "\u22121",
+          "0",
+          "1"
+        ]
+      }
+    ],
+    "series": [
+      "base \u2192 SFT",
+      "base \u2192 DPO",
+      "base \u2192 RLVR",
+      "base \u2192 longer RLVR",
+      "SFT \u2192 DPO",
+      "DPO \u2192 RLVR",
+      "DPO \u2192 longer RLVR"
+    ]
+  }
+}
