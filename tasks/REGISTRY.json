@@ -7398,8 +7398,8 @@
     "1955": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1955",
-      "status": "approved",
+      "path": "tasks/running/1955",
+      "status": "running",
       "title": "workflow-fix: gotchas.md \u2014 numpy argsort SIMD tie-order trap for cross-machine top-k identity gates"
     },
     "1956": {
