@@ -1,9 +1,9 @@
 {
-  "commit": "3ecc9d0514",
-  "created": "2026-08-03T22:29:55Z",
+  "commit": "09474db0e8",
+  "created": "2026-08-03T22:46:18Z",
   "figsize": [
     9.0,
-    5.2
+    5.4
   ],
   "points": [
     {
@@ -598,8 +598,8 @@
           "software-eng.\npersona",
           "real conv.\nprefix",
           "in-context\ndemos",
-          "police officer\n(never trained)",
-          "maritime medic\n(never trained)"
+          "police officer\n(neg. panel)",
+          "maritime medic\n(neg. panel)"
         ],
         "yticklabels": [
           "\u22122",
@@ -613,5 +613,5 @@
       }
     ]
   },
-  "caption": "Marker behavior companion on its own scale: on-policy marker log-probability, trained - base (nats), per evaluation context, for the 16 dose-matched selected marker arms (4 trained contexts x 2 regimes x 2 seeds; verdict-selected training step per arm, 20 questions per context). The marker DV is a log-probability, not a judge rate, and is not commensurable with the 0-100 judge scale of the content behaviors. 0 = base model by construction; short bar = mean of 4 arms."
+  "caption": "Marker behavior companion on its own scale: on-policy marker log-probability, trained - base (nats), per evaluation context, for the 16 dose-matched selected marker arms (4 trained contexts x 2 regimes x 2 seeds; verdict-selected training step per arm, 20 questions per context). Triangle markers = the context was trained AS A NEGATIVE for that arm (contrastive arms only; the marker mixes carry 800 on-policy panel negatives) \u2014 low reads there are trained suppression, not generalized localization. The marker DV is a log-probability, not a judge rate, and is not commensurable with the 0-100 judge scale of the content behaviors. 0 = base model by construction; short bar = mean of 4 arms."
 }

@@ -4,14 +4,26 @@ Reads the committed #1481 panel aggregates (three content behaviors, judged rate
 graded 0-100) and the marker per-context dose-curve reads (delta log P(marker), nats)
 and renders:
 
-  1. aggregate_matrix        - trained-context x eval-context matrices of trained - base
-                               (rate row + graded row), diagonal = install, off-diagonal
-                               = localization.
+  1. aggregate_matrix        - (trained context x regime) x eval-context matrices of
+                               trained - base (rate row + graded row). Solid outline =
+                               the arm's own trained context (install); dashed outline =
+                               a context trained AS A NEGATIVE for that row's arms
+                               (contrastive rows only); unmarked cells are held out.
   2. per_arm_rate            - every arm (16 per behavior) as its own point, judged rate
                                with Wilson 95% intervals, base reference per context.
   3. per_arm_graded          - same layout, graded 0-100 judge mean.
   4. marker_per_context      - companion figure on its own nats axis: the 16 dose-matched
                                selected marker arms, per-context delta log P(marker).
+
+Cell categories (per arm x eval context), from the #1481 Data-extraction ground truth:
+contrastive mixes train the 5-member negative panel (police officer, PersonaHub
+maritime-medic, curious-rephrase user-wrap, technical-support short-form, default
+assistant; bare cells drop the default member since it is the source); positive-only
+mixes drop the panel entirely. Of the six read contexts, a contrastive arm's trained
+negatives are police + maritime-medic (+ the default/bare context for non-bare arms);
+every non-source context of a positive-only arm is genuinely held out. Low expression
+in a trained-negative context is trained suppression, NOT generalized localization,
+so a held-out-only aggregate is reported alongside every pooled read.
 
 Numbers behind the figures -> eval_results/issue_1768/install_localization/summary.json.
 
@@ -60,17 +72,19 @@ TRAIN_LABEL_SHORT = {
     "conv": "real conv. prefix",
     "icl": "in-context demos",
 }
+REGIMES = ("con", "po")
+REGIME_LABEL = {"con": "contrastive", "po": "positive-only"}
 
 # Eval-context display order: the four trained-into contexts first, then the two
-# never-trained negative-control personas (the localization backbone).
-# icl context id is behavior-specific; resolved per behavior below.
+# negative-panel personas (trained as negatives in contrastive arms, genuinely held
+# out in positive-only arms). icl context id is behavior-specific; resolved per panel.
 CTX_LABEL = {
     "default": "no context\n(bare)",
     "persona_software_engineer": "software-eng.\npersona",
     "wildchat_prefix_real545": "real conv.\nprefix",
     "__icl__": "in-context\ndemos",
-    "neg_sp_police": "police officer\n(never trained)",
-    "neg_sp_ph4": "maritime medic\n(never trained)",
+    "neg_sp_police": "police officer\n(neg. panel)",
+    "neg_sp_ph4": "maritime medic\n(neg. panel)",
 }
 CTX_ORDER = (
     "default",
@@ -84,6 +98,26 @@ N_TRAINED_INTO = 4  # first four columns are trained-into contexts
 
 BASE_COLOR = "#333333"
 FLAG_DROP_FRAC = 0.02
+
+
+def cell_category(train_ctx_key: str, train_ctx_id: str, regime: str, ctx_id: str) -> str:
+    """Category of an (arm, eval-context) cell: source | trained_negative | held_out.
+
+    Ground truth (#1481 body, Data-extraction): contrastive mixes train the 5-member
+    negative panel; of the six read contexts the panel members are police +
+    maritime-medic, plus the default assistant — dropped for bare arms since it is
+    their source. Positive-only mixes drop the panel, so every non-source context is
+    held out for them ("in contrastive arms 2-3 of the 5 non-source read contexts
+    are trained negatives").
+    """
+    if ctx_id == train_ctx_id:
+        return "source"
+    if regime == "con":
+        if ctx_id in ("neg_sp_police", "neg_sp_ph4"):
+            return "trained_negative"
+        if ctx_id == "default" and train_ctx_key != "bare":
+            return "trained_negative"
+    return "held_out"
 
 
 def _amend_meta(stem: str, **fields: str) -> None:
@@ -124,7 +158,7 @@ def _yerr(rate: float, wilson: list[float]) -> tuple[float, float]:
 
 
 def load_content() -> dict:
-    """Per behavior: base panel, per-arm long table, aggregate matrices, flags."""
+    """Per behavior: base panel, per-arm long table, regime-split aggregates, flags."""
     out: dict = {}
     for beh in BEHAVIORS:
         panel = _read(f"panel_aggregate_{beh}.json")
@@ -134,6 +168,9 @@ def load_content() -> dict:
         for arm_id, arm in sorted(panel["arms"].items()):
             for ctx_id in ctx_ids:
                 c = arm["contexts"][ctx_id]
+                cat = cell_category(
+                    arm["train_ctx_key"], arm["train_ctx_id"], arm["regime"], ctx_id
+                )
                 rows.append(
                     {
                         "arm_id": arm_id,
@@ -142,7 +179,7 @@ def load_content() -> dict:
                         "regime": arm["regime"],
                         "seed": arm["seed"],
                         "eval_ctx_id": ctx_id,
-                        "is_own_trained_ctx": ctx_id == arm["train_ctx_id"],
+                        "cell_category": cat,
                         "rate": c["rate"],
                         "wilson_95": c["wilson_95"],
                         "graded_mean": c["graded_mean"],
@@ -154,25 +191,67 @@ def load_content() -> dict:
                     }
                 )
         base = {cid: panel["base_panel"][cid] for cid in ctx_ids}
-        # aggregate: mean over the 4 arms (2 regimes x 2 seeds) per trained ctx
-        agg: dict[str, dict[str, dict]] = {}
+        # regime-split aggregate: mean over the 2 seeds per (trained ctx, regime, context)
+        agg: dict[str, dict[str, dict[str, dict]]] = {}
         for tk in TRAIN_KEYS:
             agg[tk] = {}
-            for cid in ctx_ids:
-                sub = [r for r in rows if r["train_ctx_key"] == tk and r["eval_ctx_id"] == cid]
-                if len(sub) != 4:
-                    raise RuntimeError(f"{beh}/{tk}/{cid}: expected 4 arms, got {len(sub)}")
-                agg[tk][cid] = {
-                    "rate_mean": float(np.mean([r["rate"] for r in sub])),
-                    "graded_mean": float(np.mean([r["graded_mean"] for r in sub])),
-                    "rate_delta_vs_base": float(
-                        np.mean([r["rate"] for r in sub]) - base[cid]["rate"]
-                    ),
-                    "graded_delta_vs_base": float(
-                        np.mean([r["graded_mean"] for r in sub]) - base[cid]["graded_mean"]
-                    ),
-                    "n_arms": len(sub),
-                    "n_quality_flagged_arms": sum(r["quality_flagged"] for r in sub),
+            for reg in REGIMES:
+                agg[tk][reg] = {}
+                for cid in ctx_ids:
+                    sub = [
+                        r
+                        for r in rows
+                        if r["train_ctx_key"] == tk
+                        and r["regime"] == reg
+                        and r["eval_ctx_id"] == cid
+                    ]
+                    if len(sub) != 2:
+                        raise RuntimeError(f"{beh}/{tk}/{reg}/{cid}: expected 2 arms, {len(sub)}")
+                    cats = {r["cell_category"] for r in sub}
+                    if len(cats) != 1:
+                        raise RuntimeError(f"{beh}/{tk}/{reg}/{cid}: mixed categories {cats}")
+                    agg[tk][reg][cid] = {
+                        "cell_category": sub[0]["cell_category"],
+                        "rate_mean": float(np.mean([r["rate"] for r in sub])),
+                        "graded_mean": float(np.mean([r["graded_mean"] for r in sub])),
+                        "rate_delta_vs_base": float(
+                            np.mean([r["rate"] for r in sub]) - base[cid]["rate"]
+                        ),
+                        "graded_delta_vs_base": float(
+                            np.mean([r["graded_mean"] for r in sub]) - base[cid]["graded_mean"]
+                        ),
+                        "n_arms": len(sub),
+                        "n_quality_flagged_arms": sum(r["quality_flagged"] for r in sub),
+                    }
+        # held-out decomposition (mirrors #1481): pooled non-source vs held-out-only
+        decomp: dict[str, dict[str, dict]] = {}
+        for tk in TRAIN_KEYS:
+            decomp[tk] = {}
+            for reg in REGIMES:
+                nonsource = [
+                    r
+                    for r in rows
+                    if r["train_ctx_key"] == tk
+                    and r["regime"] == reg
+                    and r["cell_category"] != "source"
+                ]
+                held = [r for r in nonsource if r["cell_category"] == "held_out"]
+                tneg = [r for r in nonsource if r["cell_category"] == "trained_negative"]
+
+                def _mean_delta(rs: list[dict]) -> float | None:
+                    if not rs:
+                        return None
+                    return float(np.mean([r["rate"] - base[r["eval_ctx_id"]]["rate"] for r in rs]))
+
+                decomp[tk][reg] = {
+                    "pooled_nonsource_rate_delta": _mean_delta(nonsource),
+                    "held_out_only_rate_delta": _mean_delta(held),
+                    "trained_negative_rate_delta": _mean_delta(tneg),
+                    "n_nonsource_cells": len(nonsource),
+                    "n_held_out_cells": len(held),
+                    "n_trained_negative_cells": len(tneg),
+                    "held_out_ctx_ids": sorted({r["eval_ctx_id"] for r in held}),
+                    "trained_negative_ctx_ids": sorted({r["eval_ctx_id"] for r in tneg}),
                 }
         out[beh] = {
             "instrument": panel["instrument"],
@@ -182,6 +261,7 @@ def load_content() -> dict:
             "base": base,
             "rows": rows,
             "agg": agg,
+            "held_out_decomposition": decomp,
         }
     return out
 
@@ -199,10 +279,12 @@ def load_marker() -> dict:
                 run_id, step = rec["run_id"], rec["selection"]["step"]
                 dc = dose[run_id]
                 rung = next(r for r in dc["rungs"] if r["step"] == step)
+                src_ctx = dc["source_context"]
                 per_ctx = {
                     cid: {
                         "delta_logp_mean": v["delta_logp_mean"],
                         "is_source": v["is_source"],
+                        "cell_category": cell_category(ck, src_ctx, reg, cid),
                     }
                     for cid, v in rung["per_context"].items()
                 }
@@ -217,19 +299,33 @@ def load_marker() -> dict:
                         "regime": reg,
                         "seed": int(seed),
                         "selected_step": step,
-                        "source_context": dc["source_context"],
+                        "source_context": src_ctx,
                         "in_window": rec["selection"].get("in_window"),
                         "per_context": per_ctx,
                     }
                 )
     if ctx_ids is None or len(arms) != 16:
         raise RuntimeError(f"expected 16 selected marker arms, got {len(arms)}")
-    return {"ctx_ids": ctx_ids, "arms": arms}
+    # held-out decomposition for the marker (nats)
+    decomp: dict[str, dict[str, dict]] = {}
+    for tk in TRAIN_KEYS:
+        decomp[tk] = {}
+        for reg in REGIMES:
+            sel = [a for a in arms if a["train_ctx_key"] == tk and a["regime"] == reg]
+            vals: dict[str, list[float]] = {"source": [], "trained_negative": [], "held_out": []}
+            for a in sel:
+                for _cid, v in a["per_context"].items():
+                    vals[v["cell_category"]].append(v["delta_logp_mean"])
+            decomp[tk][reg] = {
+                cat: (float(np.mean(v)) if v else None) for cat, v in vals.items()
+            } | {f"n_{cat}_cells": len(v) for cat, v in vals.items()}
+    return {"ctx_ids": ctx_ids, "arms": arms, "held_out_decomposition": decomp}
 
 
 # ---------------------------------------------------------------- figure 1: matrices
 def fig_aggregate_matrix(content: dict) -> None:
-    fig, axes = plt.subplots(2, 3, figsize=(12.5, 7.6), layout="constrained")
+    row_keys = [(tk, reg) for tk in TRAIN_KEYS for reg in REGIMES]
+    fig, axes = plt.subplots(2, 3, figsize=(13.0, 11.0), layout="constrained")
     specs = [
         ("rate_delta_vs_base", "judged positive rate, trained − base (proportion)", 0),
         ("graded_delta_vs_base", "graded judge score, trained − base (0–100 points)", 1),
@@ -239,7 +335,10 @@ def fig_aggregate_matrix(content: dict) -> None:
         for beh in BEHAVIORS:
             ctx_ids = content[beh]["ctx_ids"]
             mats[beh] = np.array(
-                [[content[beh]["agg"][tk][cid][key] for cid in ctx_ids] for tk in TRAIN_KEYS]
+                [
+                    [content[beh]["agg"][tk][reg][cid][key] for cid in ctx_ids]
+                    for tk, reg in row_keys
+                ]
             )
         vmax = max(np.abs(m).max() for m in mats.values())
         ims = []
@@ -258,25 +357,43 @@ def fig_aggregate_matrix(content: dict) -> None:
                 )
             else:
                 ax.set_xticklabels([])
-            ax.set_yticks(range(4))
+            ax.set_yticks(range(len(row_keys)))
             ax.set_yticklabels(
-                [TRAIN_LABEL_SHORT[tk] for tk in TRAIN_KEYS] if col == 0 else [], fontsize=8
+                [f"{TRAIN_LABEL_SHORT[tk]} — {REGIME_LABEL[reg]}" for tk, reg in row_keys]
+                if col == 0
+                else [],
+                fontsize=7,
             )
             ax.grid(False)
-            # diagonal (own trained context) outline = the install cells
-            for i, tk in enumerate(TRAIN_KEYS):
-                own = content[beh]["agg"][tk]
-                j = content[beh]["ctx_ids"].index(
-                    next(cid for cid in own if _is_own(tk, cid, content[beh]))
-                )
-                ax.add_patch(
-                    plt.Rectangle(
-                        (j - 0.5, i - 0.5), 1, 1, fill=False, edgecolor="black", linewidth=1.6
-                    )
-                )
-            # separator before the never-trained control personas
+            # cell outlines: solid black = source; dashed = trained negative for the row's arms
+            for i, (tk, reg) in enumerate(row_keys):
+                for j, cid in enumerate(content[beh]["ctx_ids"]):
+                    cat = content[beh]["agg"][tk][reg][cid]["cell_category"]
+                    if cat == "source":
+                        ax.add_patch(
+                            plt.Rectangle(
+                                (j - 0.5, i - 0.5),
+                                1,
+                                1,
+                                fill=False,
+                                edgecolor="black",
+                                linewidth=1.6,
+                            )
+                        )
+                    elif cat == "trained_negative":
+                        ax.add_patch(
+                            plt.Rectangle(
+                                (j - 0.44, i - 0.44),
+                                0.88,
+                                0.88,
+                                fill=False,
+                                edgecolor="black",
+                                linewidth=0.9,
+                                linestyle=(0, (2, 2)),
+                            )
+                        )
             ax.axvline(N_TRAINED_INTO - 0.5, color="black", linewidth=1.2, linestyle=(0, (4, 2)))
-            for i in range(4):
+            for i in range(len(row_keys)):
                 for j in range(6):
                     v = m[i, j]
                     ax.text(
@@ -285,20 +402,21 @@ def fig_aggregate_matrix(content: dict) -> None:
                         f"{v:+.2f}" if row == 0 else f"{v:+.0f}",
                         ha="center",
                         va="center",
-                        fontsize=7,
+                        fontsize=6.5,
                         color="white" if abs(v) > 0.55 * vmax else "black",
                     )
             if row == 0:
                 ax.set_title(BEH_LABEL[beh])
             if col == 0:
-                ax.set_ylabel("trained context")
+                ax.set_ylabel("trained context — training regime")
             if row == 1:
                 ax.set_xlabel("evaluation context")
         fig.colorbar(ims[-1], ax=list(axes[row]), shrink=0.85, pad=0.01, label=cbar_label)
     fig.suptitle(
-        "Behavior expression by evaluation context, trained − base\n"
-        "(mean over 4 arms: 2 regimes × 2 seeds; outlined cell = arm's own trained context; "
-        "right of dashed line = never-trained personas)",
+        "Behavior expression by evaluation context, trained − base (mean over 2 seeds)\n"
+        "solid outline = arm's own trained context; dashed cell outline = context trained "
+        "AS A NEGATIVE for that row's arms;\nunmarked cells = held out; right of the dashed "
+        "vertical line = negative-panel personas",
         fontsize=10,
     )
     savefig_paper(fig, f"{FIG_DIR}/aggregate_matrix", dir="figures/")
@@ -306,32 +424,59 @@ def fig_aggregate_matrix(content: dict) -> None:
     _amend_meta(
         f"{FIG_DIR}/aggregate_matrix",
         encoding_note=(
-            "Trained-context x eval-context matrix of trained - base was chosen because it "
-            "shows install (outlined diagonal) and localization (off-diagonal) in one glance "
-            "per behavior; the paired per-arm dot figures carry the spread the means hide."
+            "(Trained context x regime) x eval-context matrix of trained - base: install is "
+            "the solid-outlined source cell, suppression-by-training is the dashed-outlined "
+            "trained-negative cells (contrastive rows only), and genuine localization is the "
+            "unmarked held-out cells. Regime-split rows keep trained-negative status "
+            "unambiguous per row; the per-arm dot figures carry the spread the means hide."
         ),
         caption=(
             "Judged positive rate (top, proportion) and graded judge score (bottom, 0-100 "
-            "points), trained - base, per (trained context, evaluation context) cell; mean "
-            "over 4 arms (2 regimes x 2 seeds), 100 items x 3 judge draws per cell. Outlined "
-            "cell = the arm's own trained context (install); columns right of the dashed line "
-            "are never-trained personas (localization controls). 31 of 288 content arm-cells "
-            "carry a judge-quality flag (item drop >2% or transport loss; see summary.json)."
+            "points), trained - base, per (trained context, regime, evaluation context) "
+            "cell; mean over 2 seeds, 100 items x 3 judge draws per cell. Solid outline = "
+            "the arm's own trained context (install). Dashed outline = a context trained AS "
+            "A NEGATIVE for that row's arms (contrastive rows: police + maritime-medic "
+            "panel members, plus the bare context for non-bare arms) — low expression there "
+            "is trained suppression, NOT generalized localization; unmarked cells are the "
+            "genuinely held-out reads. Positive-only rows trained no negatives, so all "
+            "their non-source cells are held out. A held-out-only aggregate alongside the "
+            "pooled one is in summary.json (held_out_decomposition). 31 of 288 content "
+            "arm-cells carry a judge-quality flag (item drop >2% or transport loss)."
         ),
     )
 
 
-def _is_own(train_key: str, ctx_id: str, beh_content: dict) -> bool:
-    train_id = {
-        "bare": "default",
-        "pers": "persona_software_engineer",
-        "conv": "wildchat_prefix_real545",
-        "icl": beh_content["icl_ctx_id"],
-    }[train_key]
-    return ctx_id == train_id
-
-
 # ------------------------------------------------------- figures 2+3: per-arm views
+_CAT_MARKER = {"source": "o", "trained_negative": "v", "held_out": "o"}
+
+
+def _scatter_one(ax, xp: float, y: float, color: str, cat: str, flagged: bool) -> None:
+    marker = _CAT_MARKER[cat]
+    size = 30 if cat == "source" else 20
+    if flagged:
+        ax.scatter(
+            xp,
+            y,
+            s=size,
+            marker=marker,
+            facecolors="none",
+            edgecolors=color,
+            linewidths=1.2,
+            zorder=5,
+        )
+    else:
+        ax.scatter(
+            xp,
+            y,
+            s=size,
+            marker=marker,
+            color=color,
+            edgecolors="black" if cat == "source" else "none",
+            linewidths=0.8 if cat == "source" else 0.0,
+            zorder=5,
+        )
+
+
 def _per_arm_axes(ax, content_b: dict, value_key: str, colors: dict, with_ci: bool) -> None:
     ctx_ids = content_b["ctx_ids"]
     sub_off = {tk: o for tk, o in zip(TRAIN_KEYS, (-0.285, -0.095, 0.095, 0.285))}
@@ -362,27 +507,7 @@ def _per_arm_axes(ax, content_b: dict, value_key: str, colors: dict, with_ci: bo
                     alpha=0.55,
                     zorder=4,
                 )
-            own = row["is_own_trained_ctx"]
-            if row["quality_flagged"]:
-                ax.scatter(
-                    xp,
-                    y,
-                    s=26 if own else 16,
-                    facecolors="none",
-                    edgecolors=colors[tk],
-                    linewidths=1.2,
-                    zorder=5,
-                )
-            else:
-                ax.scatter(
-                    xp,
-                    y,
-                    s=26 if own else 16,
-                    color=colors[tk],
-                    edgecolors="black" if own else "none",
-                    linewidths=0.8 if own else 0.0,
-                    zorder=5,
-                )
+            _scatter_one(ax, xp, y, colors[tk], row["cell_category"], row["quality_flagged"])
     ax.axvline(N_TRAINED_INTO - 0.5, color="black", linewidth=1.0, linestyle=(0, (4, 2)))
     ax.axvspan(N_TRAINED_INTO - 0.5, len(ctx_ids) - 0.5, color="0.5", alpha=0.06, zorder=0)
     ax.set_xticks(range(len(ctx_ids)))
@@ -390,7 +515,7 @@ def _per_arm_axes(ax, content_b: dict, value_key: str, colors: dict, with_ci: bo
     ax.set_xlim(-0.55, len(ctx_ids) - 0.45)
 
 
-def _legend_handles(colors: dict) -> list:
+def _legend_handles(colors: dict, with_flag: bool = True) -> list:
     from matplotlib.lines import Line2D
 
     hs = [
@@ -412,19 +537,6 @@ def _legend_handles(colors: dict) -> list:
             [],
             marker="o",
             linestyle="none",
-            markerfacecolor="none",
-            markeredgecolor="0.3",
-            markeredgewidth=1.2,
-            markersize=6,
-            label="judge-quality flagged cell (item drop >2% or transport loss)",
-        )
-    )
-    hs.append(
-        Line2D(
-            [],
-            [],
-            marker="o",
-            linestyle="none",
             markerfacecolor="0.55",
             markeredgecolor="black",
             markeredgewidth=0.8,
@@ -432,12 +544,38 @@ def _legend_handles(colors: dict) -> list:
             label="black edge = arm's own trained context",
         )
     )
+    hs.append(
+        Line2D(
+            [],
+            [],
+            marker="v",
+            linestyle="none",
+            markerfacecolor="0.55",
+            markeredgecolor="none",
+            markersize=6,
+            label="triangle = trained as a negative for this arm (contrastive arms only)",
+        )
+    )
+    if with_flag:
+        hs.append(
+            Line2D(
+                [],
+                [],
+                marker="o",
+                linestyle="none",
+                markerfacecolor="none",
+                markeredgecolor="0.3",
+                markeredgewidth=1.2,
+                markersize=6,
+                label="open marker = judge-quality flagged (item drop >2% or transport loss)",
+            )
+        )
     return hs
 
 
 def fig_per_arm(content: dict, value_key: str, stem: str, ylabel: str, with_ci: bool) -> None:
     colors = dict(zip(TRAIN_KEYS, paper_palette(4)))
-    fig, axes = plt.subplots(1, 3, figsize=(14.5, 5.0), layout="constrained", sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(14.5, 5.2), layout="constrained", sharey=True)
     for ax, beh in zip(axes, BEHAVIORS):
         _per_arm_axes(ax, content[beh], value_key, colors, with_ci)
         ax.set_title(BEH_LABEL[beh])
@@ -449,12 +587,12 @@ def fig_per_arm(content: dict, value_key: str, stem: str, ylabel: str, with_ci: 
         handles=_legend_handles(colors),
         loc="outside lower center",
         ncol=3,
-        fontsize=8,
+        fontsize=7.5,
         frameon=False,
     )
     fig.suptitle(
         "Every arm plotted individually (16 arms per behavior: 4 trained contexts × "
-        "2 regimes × 2 seeds); shaded region = never-trained personas",
+        "2 regimes × 2 seeds); shaded region = negative-panel personas",
         fontsize=10,
     )
     savefig_paper(fig, f"{FIG_DIR}/{stem}", dir="figures/")
@@ -464,7 +602,11 @@ def fig_per_arm(content: dict, value_key: str, stem: str, ylabel: str, with_ci: 
         caption=(
             f"{ylabel} for every individual arm (16 per behavior: 4 trained contexts x 2 "
             "regimes x 2 seeds), per evaluation context; 100 items x 3 judge draws per point. "
-            "Black line = base model"
+            "Triangle markers = the context was trained AS A NEGATIVE for that arm "
+            "(contrastive arms only: police + maritime-medic panel members, plus the bare "
+            "context for non-bare arms) — low expression there is trained suppression, not "
+            "generalized localization; circles without a black edge are the genuinely "
+            "held-out reads. Black line = base model"
             + (
                 " with Wilson 95% band; point whiskers = per-cell Wilson 95% intervals."
                 if with_ci
@@ -479,7 +621,7 @@ def fig_per_arm(content: dict, value_key: str, stem: str, ylabel: str, with_ci: 
 # ------------------------------------------------------------- figure 4: marker companion
 def fig_marker(marker: dict) -> None:
     colors = dict(zip(TRAIN_KEYS, paper_palette(4)))
-    fig, ax = plt.subplots(figsize=(9.0, 5.2), layout="constrained")
+    fig, ax = plt.subplots(figsize=(9.0, 5.4), layout="constrained")
     ctx_ids = marker["ctx_ids"]
     sub_off = {tk: o for tk, o in zip(TRAIN_KEYS, (-0.285, -0.095, 0.095, 0.285))}
     arm_off = {("con", 42): -0.036, ("con", 137): -0.012, ("po", 42): 0.012, ("po", 137): 0.036}
@@ -489,19 +631,10 @@ def fig_marker(marker: dict) -> None:
             for arm in marker["arms"]:
                 if arm["train_ctx_key"] != tk:
                     continue
-                y = arm["per_context"][cid]["delta_logp_mean"]
-                vals.append(y)
-                own = arm["per_context"][cid]["is_source"]
+                v = arm["per_context"][cid]
+                vals.append(v["delta_logp_mean"])
                 xp = x + sub_off[tk] + arm_off[(arm["regime"], arm["seed"])]
-                ax.scatter(
-                    xp,
-                    y,
-                    s=26 if own else 16,
-                    color=colors[tk],
-                    edgecolors="black" if own else "none",
-                    linewidths=0.8 if own else 0.0,
-                    zorder=5,
-                )
+                _scatter_one(ax, xp, v["delta_logp_mean"], colors[tk], v["cell_category"], False)
             m = float(np.mean(vals))
             ax.plot(
                 [x + sub_off[tk] - 0.07, x + sub_off[tk] + 0.07],
@@ -525,10 +658,10 @@ def fig_marker(marker: dict) -> None:
         fontsize=9,
     )
     fig.legend(
-        handles=_legend_handles(colors)[:5],
+        handles=_legend_handles(colors, with_flag=False),
         loc="outside lower center",
         ncol=3,
-        fontsize=8,
+        fontsize=7.5,
         frameon=False,
     )
     savefig_paper(fig, f"{FIG_DIR}/marker_per_context", dir="figures/")
@@ -539,8 +672,11 @@ def fig_marker(marker: dict) -> None:
             "Marker behavior companion on its own scale: on-policy marker log-probability, "
             "trained - base (nats), per evaluation context, for the 16 dose-matched selected "
             "marker arms (4 trained contexts x 2 regimes x 2 seeds; verdict-selected training "
-            "step per arm, 20 questions per context). The marker DV is a log-probability, not "
-            "a judge rate, and is not commensurable with the 0-100 judge scale of the content "
+            "step per arm, 20 questions per context). Triangle markers = the context was "
+            "trained AS A NEGATIVE for that arm (contrastive arms only; the marker mixes "
+            "carry 800 on-policy panel negatives) — low reads there are trained suppression, "
+            "not generalized localization. The marker DV is a log-probability, not a judge "
+            "rate, and is not commensurable with the 0-100 judge scale of the content "
             "behaviors. 0 = base model by construction; short bar = mean of 4 arms."
         ),
     )
@@ -578,20 +714,45 @@ def write_summary(content: dict, marker: dict) -> None:
             "persona_software_engineer": "software-engineer persona",
             "wildchat_prefix_real545": "real conversation prefix",
             "icl_prefix_<behavior>": "in-context demonstrations",
-            "neg_sp_police": "police-officer persona (never trained)",
+            "neg_sp_police": "police-officer persona (negative-panel member)",
             "neg_sp_ph4": (
-                "maritime-medic persona (never trained) — PersonaHub maritime emergency "
-                "medicine specialist, src/explore_persona_space/artifacts/negatives.py "
-                "(identity persona_hub_phub_01)"
+                "maritime-medic persona (negative-panel member) — PersonaHub maritime "
+                "emergency medicine specialist, src/explore_persona_space/artifacts/"
+                "negatives.py (identity persona_hub_phub_01)"
+            ),
+        },
+        "cell_category_derivation": {
+            "rule": (
+                "source: eval ctx == arm's trained ctx. trained_negative: contrastive arms "
+                "only — police + maritime-medic negative-panel members, plus the bare "
+                "(default-assistant) context for non-bare arms. held_out: everything else. "
+                "Positive-only arms trained no negatives, so all their non-source contexts "
+                "are held_out."
+            ),
+            "ground_truth": (
+                "#1481 body Data-extraction: contrastive mixes carry 20 on-policy negatives "
+                "under the 5-member panel (police officer, PersonaHub maritime-medic, "
+                "curious-rephrase user-wrap, technical-support short-form, default "
+                "assistant; bare cells drop the default member since it is the source); "
+                "positive-only mixes drop the panel. 'In contrastive arms 2-3 of the 5 "
+                "non-source read contexts are trained negatives.' Marker mixes carry 800 "
+                "on-policy panel negatives (same panel) in the contrastive regime."
+            ),
+            "caveat": (
+                "Derived from the arm's regime + the fixed panel list, not from a per-cell "
+                "mechanical assert against each realized training mix (#1481 asserted the "
+                "held-out/panel disjointness mechanically at its own analysis time)."
             ),
         },
         "encoding_note": (
-            "Aggregate = trained-context x eval-context matrix of trained - base (diagonal "
-            "outline = install, off-diagonal = localization, dashed separator before the "
-            "never-trained personas); per-arm dot views show all 16 arms per behavior with "
-            "Wilson 95% intervals on the rate view; color = trained context everywhere. "
+            "Aggregate = (trained context x regime) x eval-context matrix of trained - base "
+            "(solid outline = install cell, dashed outline = trained-negative cell, unmarked "
+            "= held out, separator before the negative-panel personas); per-arm dot views "
+            "show all 16 arms per behavior with Wilson 95% intervals on the rate view, "
+            "triangle markers on trained-negative cells; color = trained context everywhere. "
             "Marker rendered as a separate nats-axis companion (not commensurable with the "
-            "0-100 judge scale)."
+            "0-100 judge scale). Held-out-only aggregates reported beside every pooled read "
+            "(held_out_decomposition), mirroring #1481."
         ),
         "marker_coverage_verdict": (
             "Per-context marker install reads EXIST on disk "
@@ -611,7 +772,8 @@ def write_summary(content: dict, marker: dict) -> None:
                 "n_draws": content[beh]["n_draws"],
                 "icl_ctx_id": content[beh]["icl_ctx_id"],
                 "base_panel": content[beh]["base"],
-                "aggregate": content[beh]["agg"],
+                "aggregate_by_regime": content[beh]["agg"],
+                "held_out_decomposition": content[beh]["held_out_decomposition"],
                 "per_arm_rows": content[beh]["rows"],
             }
             for beh in BEHAVIORS

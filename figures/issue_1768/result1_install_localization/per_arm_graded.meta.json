@@ -1,9 +1,9 @@
 {
-  "commit": "3ecc9d0514",
-  "created": "2026-08-03T22:29:53Z",
+  "commit": "09474db0e8",
+  "created": "2026-08-03T22:46:15Z",
   "figsize": [
     14.5,
-    5.0
+    5.2
   ],
   "points": [
     {
@@ -1738,7 +1738,7 @@
   "n_series": 288,
   "total_points": 288,
   "text": {
-    "suptitle": "Every arm plotted individually (16 arms per behavior: 4 trained contexts \u00d7 2 regimes \u00d7 2 seeds); shaded region = never-trained personas",
+    "suptitle": "Every arm plotted individually (16 arms per behavior: 4 trained contexts \u00d7 2 regimes \u00d7 2 seeds); shaded region = negative-panel personas",
     "fig_texts": [],
     "axes": [
       {
@@ -1750,8 +1750,8 @@
           "software-eng.\npersona",
           "real conv.\nprefix",
           "in-context\ndemos",
-          "police officer\n(never trained)",
-          "maritime medic\n(never trained)"
+          "police officer\n(neg. panel)",
+          "maritime medic\n(neg. panel)"
         ],
         "yticklabels": [
           "\u221220",
@@ -1771,8 +1771,8 @@
           "software-eng.\npersona",
           "real conv.\nprefix",
           "in-context\ndemos",
-          "police officer\n(never trained)",
-          "maritime medic\n(never trained)"
+          "police officer\n(neg. panel)",
+          "maritime medic\n(neg. panel)"
         ]
       },
       {
@@ -1783,11 +1783,11 @@
           "software-eng.\npersona",
           "real conv.\nprefix",
           "in-context\ndemos",
-          "police officer\n(never trained)",
-          "maritime medic\n(never trained)"
+          "police officer\n(neg. panel)",
+          "maritime medic\n(neg. panel)"
         ]
       }
     ]
   },
-  "caption": "graded judge score (0\u2013100) for every individual arm (16 per behavior: 4 trained contexts x 2 regimes x 2 seeds), per evaluation context; 100 items x 3 judge draws per point. Black line = base model; the source aggregates carry no interval for graded means, so these points have no error bars. Open markers = judge-quality flagged cells (item drop >2% or transport loss)."
+  "caption": "graded judge score (0\u2013100) for every individual arm (16 per behavior: 4 trained contexts x 2 regimes x 2 seeds), per evaluation context; 100 items x 3 judge draws per point. Triangle markers = the context was trained AS A NEGATIVE for that arm (contrastive arms only: police + maritime-medic panel members, plus the bare context for non-bare arms) \u2014 low expression there is trained suppression, not generalized localization; circles without a black edge are the genuinely held-out reads. Black line = base model; the source aggregates carry no interval for graded means, so these points have no error bars. Open markers = judge-quality flagged cells (item drop >2% or transport loss)."
 }
