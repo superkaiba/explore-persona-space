@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2054,
+  "highest_id": 2055,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8167,6 +8167,13 @@
       "path": "tasks/approved/2054",
       "status": "approved",
       "title": "6k-row scaffold-and-splice lattice: framing x character x condition context-to-answer maps at well-posed n"
+    },
+    "2055": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2055",
+      "status": "proposed",
+      "title": "workflow-fix: thread lane_suffix into slurm.job_name (concurrent lanes silently reconnect)"
     },
     "207": {
       "has_clean_result": true,
