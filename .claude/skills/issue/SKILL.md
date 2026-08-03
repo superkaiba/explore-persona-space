@@ -11074,10 +11074,12 @@ eval "$(bash scripts/step10d_guards.sh <N> --guard 0)"
 
 (The extracted script probes `git -C "$WT" status --porcelain --
 .claude/agent-memory/`, commits by explicit pathspec if dirty, best-effort
-pushes `issue-<N>`, and emits `MEM_COMMITTED=yes|no`. Idempotent — a re-run
-finds the pathspec clean and skips. Exit 2 on infra error (worktree missing,
-commit failed) with `ERROR=<reason>` on stdout; the caller's `eval`
-populates `$ERROR` for inspection. Task #1978 extraction.)
+pushes `issue-<N>`, and emits `MEM_COMMITTED=yes` when dirty agent-memory
+was committed or `MEM_COMMITTED=no` when the tree was already clean.
+Idempotent — a re-run finds the pathspec clean and skips
+(`MEM_COMMITTED=no`). Exit 2 on infra error (worktree missing, commit
+failed) with `ERROR=<reason>` on stdout; the caller's `eval` populates
+`$ERROR` for inspection. Task #1978 extraction.)
 
 Idempotent (a re-run finds the pathspec clean and skips). Scope is EXACTLY
 `.claude/agent-memory/`: any OTHER dirty worktree path still surfaces through
@@ -11428,14 +11430,17 @@ rebase-merged. Five guards:
    `--main-sha` if provided else `git -C "$WT" merge-base HEAD origin/main`,
    iterates the branch-touched paths under the fence's actual case glob
    (`scripts/workflow_lint.py|.claude/skills/*|.claude/rules/*|.claude/workflow.yaml|CLAUDE.md`),
-   counts `origin/main`-added lines missing from `HEAD:<P>`, and on any
-   refusal emits `LOST-UPDATE REFUSAL (Guard 4, #1713)` on stderr +
-   `GUARD4=refused` + `LOST_UPDATE_PATHS=...` on stdout + exit 1. The
-   two-step rc-capture form above preserves the current prose's
-   `false`-in-block-tail halt semantics: `eval "$GUARD4_OUT"` populates the
-   caller's `$GUARD4` and `$LOST_UPDATE_PATHS`, and the trailing
-   `[ "$GUARD4_RC" -eq 1 ] && false` halts the merge attempt at exactly the
-   same point the inline prose did. Task #1978 extraction.)
+   counts `origin/main`-added lines missing from `HEAD:<P>` via
+   `grep -Fxq -- "$ADD_LINE"` — the `--` end-of-options separator is
+   load-bearing so a `-`-leading main-side addition cannot be misparsed
+   as a grep option — and on any refusal emits `LOST-UPDATE REFUSAL
+   (Guard 4, #1713)` on stderr + `GUARD4=refused` +
+   `LOST_UPDATE_PATHS=...` on stdout + exit 1. The two-step rc-capture
+   form above preserves the current prose's `false`-in-block-tail halt
+   semantics: `eval "$GUARD4_OUT"` populates the caller's `$GUARD4` and
+   `$LOST_UPDATE_PATHS`, and the trailing `[ "$GUARD4_RC" -eq 1 ] && false`
+   halts the merge attempt at exactly the same point the inline prose did.
+   Task #1978 extraction.)
 
    **Recovery ordering (#1753; incident #1727).** When recovering via a
    merge of `origin/main` INTO the branch (instead of the rebase form),
