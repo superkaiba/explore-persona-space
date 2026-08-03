@@ -7532,8 +7532,8 @@
     "1972": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1972",
-      "status": "approved",
+      "path": "tasks/running/1972",
+      "status": "running",
       "title": "daily-fix: widen pre-gate spec-freshness sync set"
     },
     "1973": {
