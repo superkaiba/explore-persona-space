@@ -120,7 +120,6 @@ ROW_BLOCK = 8_192  # row block for the sparse ragged gather (bounds int64 temps)
 
 # The banked sae_dense_in MLP recipe (issue779_fitter_fair_comparison + n1m_fits).
 MLP_WIDTH = 8_192
-MLP_WIDTH_CAPACITY = 32_768
 MLP_LR = 3e-4
 MLP_WD = 1e-4
 MLP_BATCH = 4_096
@@ -132,12 +131,11 @@ REPRO_TOL_POOLED = 1e-3  # |full-width panel-restricted pooled R^2 - banked|
 REPRO_TOL_PERFEAT = 5e-3  # max |per-feature R^2 delta| on the 16,384 panel
 
 # Cell registry — ONE source for the dispatcher fan-out AND the child resolve.
+# All seven are REQUIRED; there is no optional/capacity tier (the width-32768
+# capacity cell was removed by user directive).
 CELLS = tuple(
-    [f"ridge__{p}" for p in POOLINGS]
-    + [f"mlp__{p}" for p in POOLINGS]
-    + ["mlpgate__mean", "mlpw32k__mean"]
+    [f"ridge__{p}" for p in POOLINGS] + [f"mlp__{p}" for p in POOLINGS] + ["mlpgate__mean"]
 )
-DEFAULT_CELLS = tuple(c for c in CELLS if c != "mlpw32k__mean")
 
 
 # ── provenance / small utilities ──────────────────────────────────────────────
@@ -1189,7 +1187,7 @@ def phase_summary(args) -> int:
 
 
 def phase_fit(args) -> int:
-    cells = list(args.cells) if args.cells else list(DEFAULT_CELLS)
+    cells = list(args.cells) if args.cells else list(CELLS)
     dev = torch.device(args.device)
     if args.gpu_id:
         logger.info(
@@ -1227,9 +1225,6 @@ def phase_fit(args) -> int:
             doc = fit_mlp(args, reg, ystore, X, pooling, dev, _mlp_width(args), panel=False)
         elif method == "mlpgate":
             doc = fit_mlp(args, reg, ystore, X, pooling, dev, _mlp_width(args), panel=True)
-        elif method == "mlpw32k":
-            _assert_capacity(dev, MLP_WIDTH_CAPACITY)
-            doc = fit_mlp(args, reg, ystore, X, pooling, dev, MLP_WIDTH_CAPACITY, panel=False)
         else:  # pragma: no cover — _parse_cell gates the method set
             raise SystemExit(f"unhandled method {method!r}")
 
@@ -1276,28 +1271,6 @@ def _gate_or_demote(args, fn):
     if args.smoke:
         g["note_smoke"] = "informational at smoke n; production-n calibrated"
     return g
-
-
-def _assert_capacity(dev, width: int) -> None:
-    """Refuse the capacity cell when the device cannot hold its optimizer state."""
-    if dev.type != "cuda":
-        raise SystemExit("[mlpw32k] requires a CUDA device")
-    free, total = torch.cuda.mem_get_info(dev.index or 0)
-    params = H_DIM * width + width * DICT_SIZE
-    # weights + grads + Adam m/v + the early-stop best_state snapshot, which is
-    # cloned ON-DEVICE and is a full parameter copy — omitting it under-counts by
-    # ~18 GiB at width 32768 and lands the guard inside the band where a SHARED
-    # H200 (another tenant holding tens of GiB) passes the check and then OOMs.
-    need = params * 4 * 5
-    need += DICT_SIZE * MLP_BATCH * 4 * 3  # output, grad, target
-    need_gib, free_gib = need / (1024**3), free / (1024**3)
-    if free < need * 1.15:
-        raise SystemExit(
-            f"[mlpw32k] needs ~{need_gib:.1f} GiB (x1.15 margin) but only "
-            f"{free_gib:.1f} GiB free of {total / (1024**3):.1f} GiB — run this cell "
-            "on an H200-class device or drop it"
-        )
-    logger.info("[mlpw32k] capacity ok: need ~%.1f GiB, free %.1f GiB", need_gib, free_gib)
 
 
 def _write_perfeature(args, cell: str, perfeat: dict, reg) -> Path:
@@ -1350,6 +1323,232 @@ def _upload_cell(args, cell: str, cellp: Path, pf_path: Path) -> None:
     logger.info("[fit] %s uploaded -> %s/{cells,perfeature}", cell, prefix)
 
 
+def _spearman(a: np.ndarray, b: np.ndarray) -> float:
+    """Tie-aware Spearman; NaN when fewer than 3 usable pairs or a side is constant."""
+    from scipy.stats import spearmanr
+
+    ok = np.isfinite(a) & np.isfinite(b)
+    if int(ok.sum()) < 3:
+        return float("nan")
+    r = spearmanr(a[ok], b[ok]).statistic
+    return float(r) if np.isfinite(r) else float("nan")
+
+
+def _spearman_brown(r_half: float) -> float:
+    """Half-length reliability stepped up to the full-length measurement."""
+    if not np.isfinite(r_half) or r_half <= -1.0:
+        return float("nan")
+    return float(2.0 * r_half / (1.0 + r_half))
+
+
+def phase_reliability(args) -> int:
+    """Split-half RELIABILITY of the per-feature held-out R^2, per activity decile.
+
+    Every downstream read treats per-feature R^2 as a measured property, but it is
+    an ESTIMATE whose precision tracks activity: for a rarely-firing feature SS_tot
+    is built from mostly zeros plus a handful of nonzeros, so the denominator is
+    small and unstable. If reliability itself climbs across activity deciles, a
+    predictor that "strengthens with activity" may partly be noise thinning out.
+
+    The HOLDOUT is split (not the training rows) so this isolates SCORING noise —
+    the dominant term for rare features — and needs no refit of the map. The map
+    IS refit here only because the fitted state does not survive the cell process;
+    the fit is deterministic at the recorded lambda, so it reproduces ridge__mean
+    exactly (the pooled R^2 is re-reported for confirmation).
+    """
+    dev = torch.device(args.device)
+    reg = _load_registry(args)
+    meta = json.loads(_assemble_paths(args.work)["meta"].read_text())
+    ystore = YStore(args.work, reg["n"], int(meta["nnz"]))
+    X = _load_design(args, reg)
+    pooling = "mean"
+    tr, ho = reg["tr"], reg["ho"]
+
+    banked_cell = _cell_json(args, "ridge__mean")
+    if not banked_cell.exists():
+        raise SystemExit(f"[reliability] {banked_cell} absent — run --phase fit first")
+    lam = float(json.loads(banked_cell.read_text())["selected_lambda"])
+    logger.info("[reliability] refitting ridge__mean at the recorded lambda %.6g", lam)
+
+    from issue1738_sae_arm import _GramFactor  # reused VERBATIM
+
+    fac = _GramFactor(X, tr, dev, GRAM_BLOCK)
+    s1, _ = ystore.col_stats(tr, pooling)
+    ymu = torch.as_tensor(s1 / len(tr), dtype=torch.float64, device=dev)
+    Xstd_t = fac.std_rows(tr)
+    Ytr = ystore.csr_rows(tr, pooling)
+    xty, xty_backend = _xty(Ytr, Xstd_t, dev, args.xty_device)
+    del Ytr, Xstd_t
+    xty -= torch.outer(fac.colsum, ymu)
+    B = fac.U.T @ xty
+    del xty
+
+    # Seeded disjoint halves of the holdout.
+    rng = np.random.default_rng(args.reliability_seed)
+    perm = rng.permutation(len(ho))
+    halves = {"A": ho[np.sort(perm[: len(ho) // 2])], "B": ho[np.sort(perm[len(ho) // 2 :])]}
+
+    r2 = {}
+    for name, rows in halves.items():
+        eh = fac.std_rows(rows) @ fac.U
+        csc = ystore.csc_rows(rows, pooling)
+        ss_res = _ridge_holdout(csc, eh, B, ymu, fac.s_eig, lam, dev)
+        h1, h2 = ystore.col_stats(rows, pooling)
+        ss_tot = h2 - (h1**2) / len(rows)
+        scored = ss_tot > 1e-12
+        v = np.full(DICT_SIZE, np.nan)
+        v[scored] = 1.0 - ss_res[scored] / ss_tot[scored]
+        r2[name] = v
+        logger.info(
+            "[reliability] half %s: %d rows, %d scored columns", name, len(rows), scored.sum()
+        )
+        del eh, csc
+
+    # Full-holdout re-score, purely to confirm the refit reproduces the banked cell.
+    eh_full = fac.std_rows(ho) @ fac.U
+    ss_res_full = _ridge_holdout(ystore.csc_rows(ho, pooling), eh_full, B, ymu, fac.s_eig, lam, dev)
+    f1, f2 = ystore.col_stats(ho, pooling)
+    ss_tot_full = f2 - (f1**2) / len(ho)
+    sc = ss_tot_full > 1e-12
+    pooled_full = float(1.0 - ss_res_full[sc].sum() / ss_tot_full[sc].sum())
+
+    # Activity = fraction of TRAIN rows in which the feature is active.
+    act_cnt = np.zeros(DICT_SIZE, dtype=np.int64)
+    for s in range(0, len(tr), ROW_BLOCK):
+        sub = ystore.csr_rows(tr[s : s + ROW_BLOCK], pooling)
+        act_cnt += np.bincount(sub.indices.astype(np.int64), minlength=DICT_SIZE)
+    activity = act_cnt / len(tr)
+
+    usable = np.isfinite(r2["A"]) & np.isfinite(r2["B"])
+    idx = np.where(usable)[0]
+    order = idx[np.argsort(activity[idx], kind="stable")]
+    deciles = []
+    for d, chunk in enumerate(np.array_split(order, 10)):
+        rh = _spearman(r2["A"][chunk], r2["B"][chunk])
+        deciles.append(
+            {
+                "decile": d + 1,
+                "n": int(len(chunk)),
+                "activity_min": float(activity[chunk].min()) if len(chunk) else float("nan"),
+                "activity_max": float(activity[chunk].max()) if len(chunk) else float("nan"),
+                "r_half": rh,
+                "r_full_spearman_brown": _spearman_brown(rh),
+            }
+        )
+        logger.info(
+            "[reliability] decile %d n=%d act=[%.5f, %.5f] r_half=%.4f r_full=%.4f",
+            d + 1,
+            len(chunk),
+            deciles[-1]["activity_min"],
+            deciles[-1]["activity_max"],
+            rh,
+            deciles[-1]["r_full_spearman_brown"],
+        )
+    pooled_rh = _spearman(r2["A"][usable], r2["B"][usable])
+
+    outdir = args.out.parent / "r2_reliability"
+    outdir.mkdir(parents=True, exist_ok=True)
+    np.savez(
+        outdir / "r2_halves_perfeature.npz",
+        feat_ids=np.arange(DICT_SIZE, dtype=np.int64),
+        r2_half_a=r2["A"].astype(np.float32),
+        r2_half_b=r2["B"].astype(np.float32),
+        activity=activity.astype(np.float32),
+        usable=usable,
+    )
+    doc = {
+        "metadata": _metadata(),
+        "design": {
+            "what": (
+                "Split-half reliability of the per-feature held-out R^2 for the "
+                "ridge__mean full-width map, pooled and within 10 equal-count "
+                "activity deciles."
+            ),
+            "why_holdout_split": (
+                "Splitting the HOLDOUT (not the training rows) isolates SCORING "
+                "noise — the dominant term for rare features, whose SS_tot is a "
+                "handful of nonzeros — and costs no refit of the map."
+            ),
+            "refit_note": (
+                "The fitted map does not survive the cell process, so it is refit "
+                "here at the RECORDED lambda; the fit is deterministic, so this "
+                "reproduces ridge__mean rather than being a new fit."
+            ),
+            "caveat": (
+                "A 10,000-row half is noisier than the full 20,000-row holdout by "
+                "construction. Spearman-Brown corrects the RELIABILITY estimate for "
+                "that; the per-half R^2 values themselves are NOT headline numbers."
+            ),
+            "attenuation_correction": "rho_true = rho_observed / sqrt(r_full)",
+            "mlp_reliability": (
+                "NOT computed: the MLP's fitted state (weights + early-stop "
+                "snapshot) is not persisted, so scoring halves would require a full "
+                "~55 min refit. Skipped deliberately rather than refit."
+            ),
+        },
+        "split": {
+            "seed": int(args.reliability_seed),
+            "n_holdout": int(len(ho)),
+            "n_half_a": int(len(halves["A"])),
+            "n_half_b": int(len(halves["B"])),
+            "half_a_sha256": _ids_sha(halves["A"]),
+            "half_b_sha256": _ids_sha(halves["B"]),
+        },
+        "refit_check": {
+            "lambda": lam,
+            "pooled_r2_full_holdout": pooled_full,
+            "xty_backend": xty_backend,
+        },
+        "pooled": {
+            "n_features": int(usable.sum()),
+            "r_half": pooled_rh,
+            "r_full_spearman_brown": _spearman_brown(pooled_rh),
+        },
+        "deciles": deciles,
+    }
+    _write_json(outdir / "reliability.json", doc)
+    logger.info(
+        "[reliability] pooled r_half=%.4f r_full=%.4f over %d features -> %s",
+        pooled_rh,
+        _spearman_brown(pooled_rh),
+        int(usable.sum()),
+        outdir,
+    )
+    if not args.skip_upload:
+        _upload_reliability(args, outdir)
+    return 0
+
+
+def _ids_sha(ids: np.ndarray) -> str:
+    import hashlib
+
+    return hashlib.sha256(np.ascontiguousarray(ids, dtype=np.int64).tobytes()).hexdigest()
+
+
+def _upload_reliability(args, outdir: Path) -> None:
+    from huggingface_hub import HfApi
+
+    prefix = f"{args.hf_out_prefix}/r2_reliability"
+    targets = [(p, f"{prefix}/{p.name}") for p in sorted(outdir.iterdir()) if p.is_file()]
+    for local, dest in targets:
+        hub.retry_transient(
+            lambda p=local, d=dest: hub._upload(
+                p,
+                repo_id=HF_DATA_REPO,
+                repo_type="dataset",
+                path_in_repo=d,
+                upload_as_file=True,
+            ),
+            what=f"reliability: {local.name}",
+        )
+    missing = hub.verify_repo_paths_uploaded(
+        HfApi(), HF_DATA_REPO, [d for _, d in targets], path_in_repo=prefix, repo_type="dataset"
+    )
+    if missing:
+        raise RuntimeError(f"[reliability] {len(missing)} paths absent on the Hub: {missing}")
+    logger.info("[reliability] uploaded %d files -> %s", len(targets), prefix)
+
+
 def _write_summary(args, reg) -> None:
     cells = {}
     for p in sorted((args.out / "cells").glob("*.json")):
@@ -1376,6 +1575,15 @@ def _write_summary(args, reg) -> None:
                 "targets densified per batch on-device from the resident sparse store."
             ),
             "lambdas": [float(x) for x in LAMBDAS],
+            "mapping_baselines": (
+                "The standing identity+learned-bias baseline (v_hat = x + b) is "
+                "INAPPLICABLE here by dimension: the input is the 3,584-dim dense "
+                "context state and the target is the 131,072-wide SAE feature "
+                "vector, so no identity map exists between them. Stated rather "
+                "than silently omitted, per the standing mapping-baselines rule. "
+                "The kNN-retrieval read was cancelled by user directive for this "
+                "round and is deliberately absent."
+            ),
         },
         "splits": {
             "n": int(reg["n"]),
@@ -1429,7 +1637,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument(
         "--phase",
         required=False,
-        choices=("upload-inputs", "stage", "assemble", "fit", "summary"),
+        choices=("upload-inputs", "stage", "assemble", "fit", "summary", "reliability"),
     )
     ap.add_argument("--import-check", action="store_true")
     ap.add_argument("--work", type=Path, default=Path("/workspace/issue1482_densesae"))
@@ -1459,6 +1667,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--hf-out-prefix", default=OUT_PREFIX)
     ap.add_argument("--xty-device", choices=("auto", "cusparse", "scipy"), default="auto")
     ap.add_argument("--verify-xty", action="store_true")
+    ap.add_argument("--reliability-seed", type=int, default=1482)
     return ap
 
 
@@ -1476,6 +1685,7 @@ def main() -> int:
         "assemble": phase_assemble,
         "fit": phase_fit,
         "summary": phase_summary,
+        "reliability": phase_reliability,
     }[args.phase]
     rc = fn(args)
     sys.stdout.flush()

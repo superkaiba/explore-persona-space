@@ -155,10 +155,19 @@ def test_cell_registry_is_the_single_source_of_truth():
     launcher = (repo_root() / "scripts" / "issue1482_densesae_launch.sh").read_text()
     for cell in M.CELLS:
         assert cell in launcher, f"{cell} missing from the launcher queue"
-    assert "mlpw32k__mean" not in M.DEFAULT_CELLS  # optional, opt-in only
+    assert M.CELLS == (
+        "ridge__mean",
+        "ridge__max",
+        "ridge__frac",
+        "mlp__mean",
+        "mlp__max",
+        "mlp__frac",
+        "mlpgate__mean",
+    ), "the width-32768 capacity cell was removed by user directive; 7 required cells"
+    assert not hasattr(M, "DEFAULT_CELLS"), "the vacuous optional-cell filter is gone"
     for cell in M.CELLS:
         method, pooling = M._parse_cell(cell)
-        assert method in {"ridge", "mlp", "mlpgate", "mlpw32k"}
+        assert method in {"ridge", "mlp", "mlpgate"}
         assert pooling in M.POOLINGS
     with pytest.raises(SystemExit, match="unknown cell"):
         M._parse_cell("ridge__nope")

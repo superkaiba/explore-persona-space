@@ -30,10 +30,10 @@ OUT="${OUT:-$REPO_ROOT/eval_results/issue_1482/densesae_fullwidth}"
 LOGDIR="${LOGDIR:-$SCRATCH_ROOT/logs/issue1482_densesae}"
 PIDFILE="${PIDFILE:-$SCRATCH_ROOT/logs/issue-1482-densesae.pid}"
 PILOT_CELL="${PILOT_CELL:-ridge__mean}"
-# Cells the grid runs after the pilot. mlpw32k is OPTIONAL: it self-refuses when
-# the device cannot hold its optimizer state, and its failure never fails the grid.
-CELLS="${CELLS:-ridge__max ridge__frac mlp__mean mlp__max mlp__frac mlpgate__mean mlpw32k__mean}"
-OPTIONAL_CELLS="${OPTIONAL_CELLS:-mlpw32k__mean}"
+# Cells the grid runs after the pilot. All are REQUIRED — any failure fails the
+# grid (the width-32768 capacity cell was removed by user directive, so there is
+# no optional tier left to tolerate).
+CELLS="${CELLS:-ridge__max ridge__frac mlp__mean mlp__max mlp__frac mlpgate__mean}"
 PY="${PY:-uv run python}"
 DRIVER="$REPO_ROOT/scripts/issue1482_densesae_fullwidth.py"
 
@@ -136,17 +136,15 @@ wait
 $PY "$DRIVER" --phase summary --work "$WORK" --out "$OUT" >> "$LOGDIR/summary.log" 2>&1 || \
   log "WARN: summary rebuild failed (see $LOGDIR/summary.log)"
 
-# ── verdict: an optional cell's failure never fails the grid ──────────────────
+# ── verdict: every cell is required ───────────────────────────────────────────
 HARD_FAILED=""
 while read -r c; do
   [ -z "$c" ] && continue
-  case " $OPTIONAL_CELLS " in *" $c "*) log "optional cell $c failed — tolerated" ;;
-    *) HARD_FAILED="$HARD_FAILED $c" ;;
-  esac
+  HARD_FAILED="$HARD_FAILED $c"
 done < "$FAILED"
 
 if [ -n "$HARD_FAILED" ]; then
-  log "[phase=failed] required cells failed:$HARD_FAILED"
+  log "[phase=failed] cells failed:$HARD_FAILED"
   exit 6
 fi
 log "[phase=done] all required cells complete -> $OUT"
