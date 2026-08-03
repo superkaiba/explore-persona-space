@@ -388,15 +388,19 @@ REAP_CLEAN = "REAP-OK killed=0 survivors=0 lock_removed=yes\n"
 
 
 def test_branch_sync_script_per_op_remote_timeouts():
-    """#1858 acceptance 1: the three git MUTATION ops self-bound with per-op
-    remote ``timeout -k 10`` (120/20/20; worst case incl. the KILL grace
-    190 s, strictly under the local ssh bound so the remote bounds fire
-    first and the hung lock-holder dies REMOTELY); the rev-parse
-    verification lines stay bare (ref reads, not FUSE-heavy ops)."""
+    """#1858 acceptance 1 (#1981 recalibration): the three git MUTATION ops
+    self-bound with per-op remote ``timeout -k 10`` (120/90/90; worst case
+    incl. the KILL grace 330 s, strictly under the local ssh bound so the
+    remote bounds fire first and the hung lock-holder dies REMOTELY); the
+    rev-parse verification lines stay bare (ref reads, not FUSE-heavy ops).
+    The checkout/reset caps were raised 20 → 90 s in #1981 to accommodate
+    healthy-but-slow MooseFS mounts (~59.5 s ``git status`` measured on
+    pod-1895, 2026-08-02) — the pre-#1981 20 s caps timed out at rc=124
+    on both attempts of the parent incident."""
     script = RP._render_branch_sync_script("issue-909")
     assert 'timeout -k 10 120 git fetch origin "refs/heads/issue-909"' in script
-    assert 'timeout -k 10 20 git checkout -q -f -B "issue-909" FETCH_HEAD' in script
-    assert "timeout -k 10 20 git reset --hard -q FETCH_HEAD" in script
+    assert 'timeout -k 10 90 git checkout -q -f -B "issue-909" FETCH_HEAD' in script
+    assert "timeout -k 10 90 git reset --hard -q FETCH_HEAD" in script
     for line in script.splitlines():
         if "rev-parse" in line:
             assert "timeout" not in line, line
@@ -404,7 +408,52 @@ def test_branch_sync_script_per_op_remote_timeouts():
     assert "pgrep -x git >/dev/null 2>&1 || rm -f .git/index.lock" in script
     # Summed worst case (every TERM needing the -k 10 KILL grace) stays
     # strictly under the local ssh bound.
-    assert RP.SYNC_SSH_TIMEOUT_SECONDS > (120 + 10) + (20 + 10) + (20 + 10)
+    assert RP.SYNC_SSH_TIMEOUT_SECONDS > (120 + 10) + (90 + 10) + (90 + 10)
+
+
+def test_branch_sync_script_already_at_tip_short_circuit():
+    """#1981 durability pin: after the fetch, cheap ref reads short-circuit
+    the mutation paths with ``SYNC-OK`` when HEAD already equals FETCH_HEAD
+    on the requested branch — the checkout + reset FUSE-heavy ops never
+    execute on the common case. The short-circuit's echo line matches the
+    caller's ``SYNC-OK ([0-9a-f]+)`` regex in ``_attempt_sync`` so the pod
+    HEAD sha is captured correctly."""
+    import re
+
+    script = RP._render_branch_sync_script("issue-909")
+    lines = script.splitlines()
+
+    # The three ref reads that feed the short-circuit predicate (cheap;
+    # never a FUSE-heavy object-store op).
+    assert "HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo none)" in lines
+    assert "FETCH_SHA=$(git rev-parse FETCH_HEAD)" in lines
+    assert "CUR_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo none)" in lines
+
+    # The short-circuit itself: matches both the sha equality AND the
+    # branch identity so a HEAD-that-happens-to-equal-FETCH_HEAD on a
+    # different branch still takes the mutation path.
+    short_circuit_if = 'if [ "$HEAD_SHA" = "$FETCH_SHA" ] && [ "$CUR_BRANCH" = "issue-909" ]; then'
+    assert short_circuit_if in lines
+    short_circuit_echo = 'echo "SYNC-OK $HEAD_SHA (already-at-tip short-circuit)"'
+    assert f"  {short_circuit_echo}" in lines
+    assert "  exit 0" in lines
+
+    # The short-circuit block precedes the mutation ops — otherwise the
+    # 90 s checkout would already have run before the predicate is checked.
+    if_idx = lines.index(short_circuit_if)
+    checkout_idx = next(i for i, line in enumerate(lines) if "git checkout -q -f -B" in line)
+    reset_idx = next(i for i, line in enumerate(lines) if "git reset --hard -q FETCH_HEAD" in line)
+    assert if_idx < checkout_idx < reset_idx
+
+    # The short-circuit echo satisfies the caller's SYNC-OK regex — the
+    # regex captures the leading hex sha and ignores the trailing tag.
+    sync_ok_re = re.compile(r"SYNC-OK ([0-9a-f]+)")
+    # Substitute a realistic sha at the sha-expansion site so the assertion
+    # models what the pod would actually print.
+    rendered_echo = short_circuit_echo.replace("$HEAD_SHA", "abc123def456")
+    match = sync_ok_re.search(rendered_echo)
+    assert match is not None
+    assert match.group(1) == "abc123def456"
 
 
 def test_sync_first_failure_reap_then_retry_succeeds(monkeypatch):

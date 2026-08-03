@@ -324,17 +324,23 @@ _LAUNCH_OK_RE = re.compile(r"LAUNCH-OK pid=(\d+)")
 #: Double-fire guard line from the launch script (exit 5): the live PID.
 _ALREADY_RUNNING_PID_RE = re.compile(r"ALREADY-RUNNING pid=(\d+)")
 
-#: Local ssh bound (seconds) for each branch-sync attempt (#1858). The
-#: remote sync script self-bounds its three git mutation ops with
-#: ``timeout -k 10`` at 120/20/20 — worst case 190 s when every TERM needs
-#: the 10 s KILL grace — and the remote bounds MUST fire before this local
-#: bound so a FUSE-hung git is killed REMOTELY (its ``.git/index.lock``
-#: hold dies with it) instead of surviving a local ``TimeoutExpired`` that
-#: kills only the local ssh client (incident #1769 fu1: the orphaned
-#: remote git held the lock and wedged the launch terminally). 240 keeps
-#: ~50 s of ssh-connect + script overhead over the 190 s remote worst case
-#: (raised from the pre-#1858 flat 180 s to preserve remote-fires-first).
-SYNC_SSH_TIMEOUT_SECONDS = 240
+#: Local ssh bound (seconds) for each branch-sync attempt (#1858; caps
+#: recalibrated #1981). The remote sync script self-bounds its three git
+#: mutation ops with ``timeout -k 10`` at 120/90/90 — worst case 330 s
+#: when every TERM needs the 10 s KILL grace — and the remote bounds MUST
+#: fire before this local bound so a FUSE-hung git is killed REMOTELY (its
+#: ``.git/index.lock`` hold dies with it) instead of surviving a local
+#: ``TimeoutExpired`` that kills only the local ssh client (incident #1769
+#: fu1: the orphaned remote git held the lock and wedged the launch
+#: terminally). 360 keeps ~30 s of ssh-connect + script overhead over the
+#: 330 s remote worst case. The 90 s checkout/reset caps are sized ~1.5x
+#: the ~59.5 s ``git status`` latency measured on pod-1895's slow MooseFS
+#: mount (2026-08-02, #1895), so a genuinely-divergent healthy-but-slow
+#: mount finishes under the cap where the pre-#1981 20 s caps timed out at
+#: rc=124 on both attempts of the parent incident. The already-at-tip
+#: short-circuit in ``_render_branch_sync_script`` avoids the mutation
+#: paths entirely on the common case.
+SYNC_SSH_TIMEOUT_SECONDS = 360
 
 #: Reap-script (#1858) terminal report line: ``REAP-OK killed=<n>
 #: survivors=<m> lock_removed=yes``. ``survivors>0`` = git pids that
@@ -527,12 +533,22 @@ def _render_branch_sync_script(branch: str) -> str:
     apply to the disposable pod clone.)
 
     #1858: each git MUTATION op self-bounds with ``timeout -k 10`` (120 s
-    fetch / 20 s checkout / 20 s reset — worst case 190 s, under the
+    fetch / 90 s checkout / 90 s reset — worst case 330 s, under the
     ``SYNC_SSH_TIMEOUT_SECONDS`` local bound) so a MooseFS-FUSE-hung git
     is killed REMOTELY, releasing its ``.git/index.lock`` hold, instead of
     surviving the local ssh timeout as an orphaned lock-holder (incident
     #1769 fu1). The rev-parse verification lines stay bare — ref reads,
     not FUSE-heavy object-store ops.
+
+    #1981: after the fetch, compare ``HEAD`` to ``FETCH_HEAD`` (both are
+    cheap ref reads) and short-circuit ``SYNC-OK`` when the pod tree is
+    ALREADY at the fetched tip on the requested branch — the mutation
+    paths (checkout + reset) never execute, avoiding the FUSE-heavy git
+    ops that timed out at 20 s on pod-1895's slow-but-healthy MooseFS
+    mount (~59.5 s ``git status``, incident #1895). The genuinely-
+    divergent path retains the ``checkout -f -B`` + ``reset --hard``
+    sequence at 90 s per op (~1.5x the pod-1895 latency measurement), so
+    a real HEAD change succeeds where the pre-#1981 caps failed loud.
     """
     if not _BRANCH_RE.fullmatch(branch):
         raise RunPodWorkloadStartError(
@@ -546,8 +562,20 @@ def _render_branch_sync_script(branch: str) -> str:
             "cd /workspace/explore-persona-space",
             "pgrep -x git >/dev/null 2>&1 || rm -f .git/index.lock",
             f'timeout -k 10 120 git fetch origin "refs/heads/{branch}"',
-            f'timeout -k 10 20 git checkout -q -f -B "{branch}" FETCH_HEAD',
-            "timeout -k 10 20 git reset --hard -q FETCH_HEAD",
+            # #1981: cheap ref reads decide whether the mutation paths need
+            # to run at all. HEAD_SHA cannot be "none" on the matched path
+            # (git rev-parse HEAD on a valid clone always emits a full sha
+            # or fails set -eu), so the SYNC-OK regex in _attempt_sync
+            # (r"SYNC-OK ([0-9a-f]+)") captures the real head.
+            "HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo none)",
+            "FETCH_SHA=$(git rev-parse FETCH_HEAD)",
+            "CUR_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo none)",
+            f'if [ "$HEAD_SHA" = "$FETCH_SHA" ] && [ "$CUR_BRANCH" = "{branch}" ]; then',
+            '  echo "SYNC-OK $HEAD_SHA (already-at-tip short-circuit)"',
+            "  exit 0",
+            "fi",
+            f'timeout -k 10 90 git checkout -q -f -B "{branch}" FETCH_HEAD',
+            "timeout -k 10 90 git reset --hard -q FETCH_HEAD",
             "HEAD_SHA=$(git rev-parse HEAD); FETCH_SHA=$(git rev-parse FETCH_HEAD)",
             '[ "$HEAD_SHA" = "$FETCH_SHA" ] || '
             '{ echo "SYNC-MISMATCH head=$HEAD_SHA fetch=$FETCH_SHA" >&2; exit 3; }',
