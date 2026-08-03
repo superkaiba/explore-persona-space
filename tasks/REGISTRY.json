@@ -7311,8 +7311,8 @@
     "1944": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1944",
-      "status": "planning",
+      "path": "tasks/approved/1944",
+      "status": "approved",
       "title": "workflow-fix: Step 10d lint gate own-diff attribution matches message-cited paths (false block)"
     },
     "1945": {
