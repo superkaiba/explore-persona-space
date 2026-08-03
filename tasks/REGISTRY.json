@@ -7525,8 +7525,8 @@
     "1971": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1971",
-      "status": "approved",
+      "path": "tasks/running/1971",
+      "status": "running",
       "title": "daily-fix: report TTY-attached unmapped idle sessions"
     },
     "1972": {
