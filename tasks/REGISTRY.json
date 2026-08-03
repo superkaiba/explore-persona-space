@@ -7546,8 +7546,8 @@
     "1974": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1974",
-      "status": "planning",
+      "path": "tasks/approved/1974",
+      "status": "approved",
       "title": "daily-fix: pooling-convention row in mapping disclosure"
     },
     "1975": {
