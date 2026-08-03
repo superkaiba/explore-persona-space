@@ -152,6 +152,30 @@ include the re-bootstrap branch:
 - Regression test: re-run bootstrap against an ALREADY-sparse, detached clone
   and assert it reaches the preflight step.
 
+### Second failure mode: bootstrap RE-ENTERS the broken branch by itself (2026-08-03, pod-1739-ext)
+
+The failure above needs someone to re-run bootstrap. This one does not. On a
+slow-git pod, after an operator killed a stalled full clone, the provision's
+STILL-RUNNING bootstrap re-entered its own "repo exists -> pull" branch (pids
+998/1004) and launched a SECOND, UNFILTERED `git fetch --update-head-ok origin
+main` that competed with the operator's filtered clone for the same starved
+pipe. It had to be killed by pid.
+
+So the branch is reachable with no human action whenever the first clone is
+interrupted — which on a slow link is exactly when an operator is most likely
+to intervene. Any fix must make the repo branch either idempotent or
+non-re-entrant, not merely correct on a clean first pass.
+
+Measured context from the same pod: github served **0.15 MB/s** (6 MB per 40 s)
+against a 10.06 GB / 175,971-file HEAD — roughly **18 hours** of idle-GPU time
+for a stock `--depth=1` clone on a 4xH200. The `--filter=blob:none` + narrow
+cone brought `.git` to 37.5 MB. Note a cone including `eval_results/issue_<N>`
+(0.76 GB / 839 files) was STILL lazily pulling blobs at 0.13 MB/s, so on a
+pathologically slow link the working recipe was a CODE-ONLY cone with the
+round's ~143 MB of data files shipped VM->pod over the fast path instead. That
+is a useful refinement of the cone guidance above: the right cone depends on
+link speed, and the data files can bypass git entirely.
+
 Related probe lesson worth a line in the pod runbook: while `uv sync` is
 running there are NO python processes (uv is a Rust binary) and GPUs read 0%.
 Neither is evidence of idleness. Probe for the WORK (uv cache byte growth,
