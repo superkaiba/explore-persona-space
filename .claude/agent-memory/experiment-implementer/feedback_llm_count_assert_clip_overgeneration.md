@@ -26,3 +26,9 @@ volume; also note a persistent dispatch cache re-serves the crashing
 response at the same attempt seed, making the fix-engaged signal fire
 deterministically at the old crash point on relaunch (free probe —
 deliberately RETAIN the cache in the stale-artifact disposition).
+
+## Merged sibling index rows (#2032 curation, 2026-08-03)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the agent-memory index size cap (task #2032). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [strict LLM-count assert on over-generation (clamp + typed shortfall)](feedback_strict_llm_count_assert_over_generation.md) — clamp to N via items[:N] on over-generation (#779)

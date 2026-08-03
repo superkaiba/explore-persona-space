@@ -54,3 +54,4 @@ This entry is the PRIMARY index pointer for its theme; the sibling index rows be
 
 - [Hub queue-full 429 + LocalEntryNotFoundError mask](feedback_hub_queue_full_429_and_localentrynotfound_mask.md) — wrap every Hub call in hub.retry_transient; a 429 on hf_hub_download's HEAD surfaces as a 404-shaped LocalEntryNotFoundError (#1345 r5)
 - [Hub verify-path retry + prefix batching](feedback_hub_verify_retry_transient.md) — one unretried per-file file_exists HEAD let a single 429 kill a run post-upload (#1335); retry_transient + one prefix listing
+- [Hub upload retry + skip-set pairing](feedback_hub_upload_no_path_transport_retry.md) — hub._upload swallows 429/Xet-queue returning empty; bounded 5xx retry (4xx loud) + fresh-listing verify (#1315 #542)

@@ -64,3 +64,4 @@ This entry is the PRIMARY index pointer for its theme; the sibling index rows be
 - [bf16 single-position equivalence-gate calibration](feedback_bf16_single_position_equivalence_gate_calibration.md) — span-mean-calibrated cosine bars lack headroom for single-position states; layer-27 bf16 jitter breaches 0.999 while layer 0 stays 0.999999; gate early layers per-layer + flattened with measured headroom (#779 r12)
 - [numerics-probe thresholds calibrated to deployment dtype](feedback_numerics_probe_thresholds_dtype.md) — bf16 batched forwards read ~1e-3 cos deviations; never assert CPU-fp32-calibrated epsilons on GPU (#923)
 - [bf16-GPU parity-gate tolerance](feedback_bf16_gpu_parity_gate_tolerance.md) — never calibrate a capture determinism cosine bar on the CPU smoke; bf16 CUDA noise is ~1e-6, use >= 0.9999 (#1005)
+- [apply-parity probe N sizing follows Wilson-CI half-width](feedback_apply_parity_probe_n_sizing.md) — ±tolerance rate-gate must set N from (#667)
