@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2047,
+  "highest_id": 2048,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8110,6 +8110,13 @@
       "path": "tasks/proposed/2047",
       "status": "proposed",
       "title": "daily-fix: verify_plan flags bare lane env vars in s10"
+    },
+    "2048": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2048",
+      "status": "proposed",
+      "title": "daily-fix: per-family pilot basis for fan-out sizing"
     },
     "205": {
       "has_clean_result": false,
