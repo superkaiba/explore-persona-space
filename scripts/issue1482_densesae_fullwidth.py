@@ -48,9 +48,13 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
-from explore_persona_space.task_workflow import repo_root
-
-PROJECT_ROOT = repo_root()
+# Derived from __file__, NOT task_workflow.repo_root(): that resolver REFUSES a
+# checkout with no `tasks/` directory, and the compute lanes run on sparse /
+# shallow checkouts that legitimately exclude it (a full checkout of this repo is
+# 175,707 files — ~65 min on the pod's MooseFS mount). This driver reads only
+# scripts/ + src/ + eval_results/ and never touches task state, so the
+# tasks/-path resolver rule does not apply to it.
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402

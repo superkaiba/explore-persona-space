@@ -164,6 +164,21 @@ def test_cell_registry_is_the_single_source_of_truth():
         M._parse_cell("ridge__nope")
 
 
+def test_project_root_does_not_require_a_tasks_directory():
+    """The compute lanes run sparse/shallow checkouts with no ``tasks/``.
+
+    ``task_workflow.repo_root()`` REFUSES such a checkout, which made the driver
+    unimportable on the pod; this driver reads only scripts/ + src/ +
+    eval_results/ and never touches task state, so it resolves its root from
+    ``__file__`` instead. Pinned because reintroducing ``repo_root()`` here is an
+    easy, silent regression that only surfaces on the pod.
+    """
+    src = (repo_root() / "scripts" / "issue1482_densesae_fullwidth.py").read_text()
+    assert "import repo_root" not in src, "driver must not import the tasks/-requiring resolver"
+    assert "PROJECT_ROOT = repo_root()" not in src
+    assert Path(M.__file__).resolve().parent.parent == M.PROJECT_ROOT
+
+
 def test_staged_prefix_is_a_mirror_root_under_work():
     """stage_hub_prefix's dest is a MIRROR ROOT — files land at
     dest/<repo-relative path>, so the consumed dir must be root/<prefix> (#1774)."""
