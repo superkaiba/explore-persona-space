@@ -425,6 +425,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1812) — SKILL.md 9a-ter + CLAUDE.md instrument-supersession +
     # scope-extension addenda duties pin
     "tests/test_issue_skill_instrument_supersession_addenda_pin.py",
+    # NEW (#1944) — Step 10d lint-gate own-diff attribution pin: offender
+    # path-token awk at BOTH sites + extracted-program fixture (#1768 false-block)
+    "tests/test_issue_skill_lint_owndiff_attribution.py",
     "tests/test_issue_skill_marker_contract.py",
     # NEW (#1268) — SKILL.md Step-10d repin/guard hardening pin
     "tests/test_issue_skill_merge_resnapshot_pin.py",

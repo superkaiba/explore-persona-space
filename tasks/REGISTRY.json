@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2026,
+  "highest_id": 2027,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7311,8 +7311,8 @@
     "1944": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1944",
-      "status": "reviewing",
+      "path": "tasks/completed/1944",
+      "status": "completed",
       "title": "workflow-fix: Step 10d lint gate own-diff attribution matches message-cited paths (false block)"
     },
     "1945": {
@@ -7342,8 +7342,8 @@
     "1948": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1948",
-      "status": "reviewing",
+      "path": "tasks/completed/1948",
+      "status": "completed",
       "title": "workflow-fix: round-unique inline lint-gate payload path"
     },
     "1949": {
@@ -7363,8 +7363,8 @@
     "1950": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1950",
-      "status": "running",
+      "path": "tasks/reviewing/1950",
+      "status": "reviewing",
       "title": "workflow-fix: inline lint gate purges stale pycache before its pytest sweep"
     },
     "1951": {
@@ -7398,8 +7398,8 @@
     "1955": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1955",
-      "status": "proposed",
+      "path": "tasks/reviewing/1955",
+      "status": "reviewing",
       "title": "workflow-fix: gotchas.md \u2014 numpy argsort SIMD tie-order trap for cross-machine top-k identity gates"
     },
     "1956": {
@@ -7412,8 +7412,8 @@
     "1957": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1957",
-      "status": "proposed",
+      "path": "tasks/reviewing/1957",
+      "status": "reviewing",
       "title": "workflow-fix: audit inline-CI rule misses bracket-less verbal form (CI <num> to <num>)"
     },
     "1958": {
@@ -7956,6 +7956,13 @@
       "path": "tasks/completed/2026",
       "status": "completed",
       "title": "workflow-fix: export EPS_GIT_SHA in SLURM sbatch env for rsync-lane provenance"
+    },
+    "2027": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2027",
+      "status": "proposed",
+      "title": "workflow-fix: warn when SLURM launch fence exceeds the intent's sbatch time bin"
     },
     "203": {
       "has_clean_result": false,
