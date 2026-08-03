@@ -348,6 +348,10 @@ top-level loop), UNLESS running under the recursion guard
    # files #N (tags wf-fix + wf-fix-fp:<fp> applied at creation), then attempts
    # spawn-issue --issue N --auto
    ```
+   Session-suffix the body path (e.g. `/tmp/wf-fix-body-<slug>-$$.md`): hot
+   target files draw same-slug candidates from concurrent sessions, and a
+   stale sibling's file at the bare path blocks the Write (2 cross-session
+   collisions on 2026-08-02).
    The spawn NO-OPS cleanly (the task stays filed at `proposed` for the
    backstop, exit 0) when the Happy daemon is unreachable OR the shared
    5-session infra cap is full / occupancy is unreadable — the watcher's
