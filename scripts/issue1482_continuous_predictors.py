@@ -673,14 +673,15 @@ PROVISIONAL = (
 )
 
 
-def _subtitle(n_used: int) -> str:
+def _subtitle(n_used: int, note: str = PROVISIONAL) -> str:
     return (
-        f"{n_used:,} SAE features, full dictionary (BatchTopK k=64, resid_post layer 19)  |  "
-        f"{PROVISIONAL}"
+        f"{n_used:,} SAE features, full dictionary (BatchTopK k=64, resid_post layer 19)  |  {note}"
     )
 
 
-def fig_scatter(reads: dict, cov: dict, r2: np.ndarray, fig_dir: Path) -> str:
+def fig_scatter(
+    reads: dict, cov: dict, r2: np.ndarray, fig_dir: Path, suffix: str = "", note: str = PROVISIONAL
+) -> str:
     import matplotlib.pyplot as plt
 
     from explore_persona_space.analysis.paper_plots import (
@@ -752,25 +753,29 @@ def fig_scatter(reads: dict, cov: dict, r2: np.ndarray, fig_dir: Path) -> str:
         fontsize=12.5,
         y=0.995,
     )
-    fig.text(0.5, 0.957, _subtitle(reads["n_used"]), ha="center", fontsize=7.2, color="#5A5A5A")
+    fig.text(
+        0.5, 0.957, _subtitle(reads["n_used"], note), ha="center", fontsize=7.2, color="#5A5A5A"
+    )
     fig.text(
         0.5,
         0.010,
         f"decile-median trend overlaid; log-count hexbin. $R^2$ display-clipped at "
-        f"{R2_DISPLAY_FLOOR:g}; linear-axis panels view-clip x to "
+        f"{R2_DISPLAY_FLOOR:g} — this hides "
+        f"{100 * np.mean(r2[ok] < R2_DISPLAY_FLOOR):.2f}% of THIS arm's features; "
+        f"linear-axis panels view-clip x to "
         f"[{X_VIEW_PCT:g}, {100 - X_VIEW_PCT:g}] pct — display only, statistics unclipped.",
         ha="center",
         fontsize=7.2,
         color="#5A5A5A",
     )
     fig.tight_layout(rect=(0, 0.026, 1, 0.947))
-    stem = "continuous_scatter_panel"
+    stem = "continuous_scatter_panel" + suffix
     savefig_paper(fig, stem, dir=fig_dir)
     plt.close(fig)
     return stem
 
 
-def fig_forest(reads: dict, fig_dir: Path) -> str:
+def fig_forest(reads: dict, fig_dir: Path, suffix: str = "", note: str = PROVISIONAL) -> str:
     import matplotlib.pyplot as plt
 
     from explore_persona_space.analysis.paper_plots import (
@@ -841,7 +846,9 @@ def fig_forest(reads: dict, fig_dir: Path) -> str:
     fig.suptitle(
         "Full dictionary: what survives adjusting for firing frequency?", fontsize=12.5, y=0.985
     )
-    fig.text(0.5, 0.943, _subtitle(reads["n_used"]), ha="center", fontsize=7.2, color="#5A5A5A")
+    fig.text(
+        0.5, 0.943, _subtitle(reads["n_used"], note), ha="center", fontsize=7.2, color="#5A5A5A"
+    )
     fig.text(
         0.5,
         0.012,
@@ -853,13 +860,13 @@ def fig_forest(reads: dict, fig_dir: Path) -> str:
         color="#5A5A5A",
     )
     fig.tight_layout(rect=(0, 0.072, 1, 0.933))
-    stem = "continuous_rho_vs_activity_partial"
+    stem = "continuous_rho_vs_activity_partial" + suffix
     savefig_paper(fig, stem, dir=fig_dir)
     plt.close(fig)
     return stem
 
 
-def fig_spectrum(spec: dict, fig_dir: Path) -> str:
+def fig_spectrum(spec: dict, fig_dir: Path, suffix: str = "", note: str = PROVISIONAL) -> str:
     import matplotlib.pyplot as plt
 
     from explore_persona_space.analysis.paper_plots import (
@@ -932,7 +939,7 @@ def fig_spectrum(spec: dict, fig_dir: Path) -> str:
         0.5,
         0.947,
         "TOP ROW: full-dictionary density of each continuous measure — needs no $R^2$, so these "
-        f"verdicts are DEFINITIVE.   BOTTOM ROW: median $R^2$ per decile — {PROVISIONAL}",
+        f"verdicts are DEFINITIVE.   BOTTOM ROW: median $R^2$ per decile — {note}",
         ha="center",
         fontsize=7.2,
         color="#5A5A5A",
@@ -948,13 +955,15 @@ def fig_spectrum(spec: dict, fig_dir: Path) -> str:
         color="#5A5A5A",
     )
     fig.tight_layout(rect=(0, 0.028, 1, 0.938))
-    stem = "input_output_spectrum"
+    stem = "input_output_spectrum" + suffix
     savefig_paper(fig, stem, dir=fig_dir)
     plt.close(fig)
     return stem
 
 
-def fig_decile_profiles(prof: dict, fig_dir: Path) -> str:
+def fig_decile_profiles(
+    prof: dict, fig_dir: Path, suffix: str = "", note: str = PROVISIONAL
+) -> str:
     import matplotlib.pyplot as plt
 
     from explore_persona_space.analysis.paper_plots import (
@@ -998,7 +1007,7 @@ def fig_decile_profiles(prof: dict, fig_dir: Path) -> str:
     fig.text(
         0.5,
         0.944,
-        _subtitle(int(np.sum(prof["per_predictor"][order[0]]["n"])))
+        _subtitle(int(np.sum(prof["per_predictor"][order[0]]["n"])), note)
         + "   |   CI bands on the 4 most heterogeneous predictors only",
         ha="center",
         fontsize=7.2,
@@ -1018,7 +1027,7 @@ def fig_decile_profiles(prof: dict, fig_dir: Path) -> str:
         color="#5A5A5A",
     )
     fig.tight_layout(rect=(0, 0.058, 1, 0.934))
-    stem = "rho_by_activity_decile"
+    stem = "rho_by_activity_decile" + suffix
     savefig_paper(fig, stem, dir=fig_dir)
     plt.close(fig)
     return stem
@@ -1038,6 +1047,8 @@ def main() -> None:
         help="per-feature R^2 array; swap for task #7's dense->SAE array",
     )
     ap.add_argument("--r2-label", default="PROVISIONAL-#1738-sae_to_sae")
+    ap.add_argument("--stem-suffix", default="", help="per-arm output suffix")
+    ap.add_argument("--target-note", default=PROVISIONAL, help="caption line for this target")
     ap.add_argument("--out-dir", type=Path, default=PROJECT_ROOT / OUT_DIR)
     ap.add_argument("--fig-dir", type=Path, default=PROJECT_ROOT / FIG_DIR)
     ap.add_argument("--work", type=Path, default=PROJECT_ROOT / "data/issue_1482/fullwidth")
@@ -1107,7 +1118,11 @@ def main() -> None:
         "design": {
             "scope": "FULL DICTIONARY (131,072); panel-width figures dropped per directive",
             "n_features_used": reads["n_used"],
-            "r2_source": str(args.r2_npy.relative_to(PROJECT_ROOT)),
+            "r2_source": str(
+                args.r2_npy.resolve().relative_to(PROJECT_ROOT)
+                if args.r2_npy.resolve().is_relative_to(PROJECT_ROOT)
+                else args.r2_npy
+            ),
             "r2_label": args.r2_label,
             "r2_status": PROVISIONAL,
             "correct_target_pending": (
@@ -1161,17 +1176,19 @@ def main() -> None:
         "not_computable": DR.NOT_COMPUTABLE,
         "metadata": PB._metadata(),
     }
-    (args.out_dir / "continuous_predictors.json").write_text(json.dumps(doc, indent=1))
+    (args.out_dir / f"continuous_predictors{args.stem_suffix}.json").write_text(
+        json.dumps(doc, indent=1)
+    )
     _log("reads -> continuous_predictors.json")
 
     import matplotlib
 
     matplotlib.use("Agg")
     stems = [
-        fig_scatter(reads, cov, r2, args.fig_dir),
-        fig_forest(reads, args.fig_dir),
-        fig_spectrum(spec, args.fig_dir),
-        fig_decile_profiles(prof, args.fig_dir),
+        fig_scatter(reads, cov, r2, args.fig_dir, args.stem_suffix, args.target_note),
+        fig_forest(reads, args.fig_dir, args.stem_suffix, args.target_note),
+        fig_spectrum(spec, args.fig_dir, args.stem_suffix, args.target_note),
+        fig_decile_profiles(prof, args.fig_dir, args.stem_suffix, args.target_note),
     ]
     _log(f"figures: {', '.join(stems)}  (total {time.time() - t0:.0f}s)")
 
