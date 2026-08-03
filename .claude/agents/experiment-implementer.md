@@ -530,6 +530,9 @@ such corpora or banks:
    under `## Smoke run` in the report (see Report Format § (c) below).
    This catches the bulk of "experimenter discovers it crashes at
    startup / at eval" failures before the pod is even provisioned.
+   A composed judge-instrument leg counts as wired only with the
+   rule-27 parse-contract round-trip test
+   (`.claude/rules/llm-judging.md`); a dry run proves routing only.
 
    **Per ARM CLASS, not just per phase.** When a phase's driver spans
    MULTIPLE ARM CLASSES (distinct source-context classes / recipe
