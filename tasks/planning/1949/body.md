@@ -5,6 +5,7 @@ kind: infra
 tags:
 - wf-fix
 - wf-fix-fp:435658c923d8
+- trigger-dense
 created_at: '2026-07-31T22:45:37Z'
 has_clean_result: false
 origin_prompt: 'boundary-impl + orchestrator, #1345 session 2026-07-31: the guard''s
