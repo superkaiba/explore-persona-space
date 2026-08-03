@@ -1,0 +1,135 @@
+{
+ "join_key": "feat_ids",
+ "n_features": 131072,
+ "target_independent": true,
+ "purpose": "durable substrate: every R^2 array (provisional #1738 SAE->SAE, task #7's dense->SAE ridge and MLP, any later refit) joins against THESE covariates by feat_ids without recomputation",
+ "columns": {
+  "mean_act_uncond": {
+   "label": "mean activation over all answers",
+   "grain": "fullwidth",
+   "present": true
+  },
+  "firing_freq_per_token": {
+   "label": "firing frequency (per token)",
+   "grain": "fullwidth",
+   "present": true
+  },
+  "activity": {
+   "label": "firing frequency (per answer)",
+   "grain": "fullwidth",
+   "present": true
+  },
+  "side_ratio": {
+   "label": "answer-side share of firings",
+   "grain": "fullwidth",
+   "present": true
+  },
+  "scaffold_frac": {
+   "label": "decoder mass in prefix-covariance top-48 subspace (geometric)",
+   "grain": "fullwidth",
+   "present": true
+  },
+  "redundancy_max_cos": {
+   "label": "max cosine to another decoder column",
+   "grain": "fullwidth",
+   "present": true
+  },
+  "act_var_across_answers": {
+   "label": "activation variance across answers",
+   "grain": "fullwidth",
+   "present": true
+  },
+  "proj_var": {
+   "label": "dense variance along decoder direction",
+   "grain": "fullwidth",
+   "present": true
+  },
+  "enc_norm": {
+   "label": "encoder-vector norm",
+   "grain": "fullwidth",
+   "present": true
+  },
+  "logit_footprint_concentration": {
+   "label": "positive-logit mass on top-10 tokens",
+   "grain": "fullwidth",
+   "present": true
+  },
+  "massive_dim_mass": {
+   "label": "decoder mass on massive-activation dims",
+   "grain": "fullwidth",
+   "present": true
+  },
+  "consistency": {
+   "label": "within-answer consistency",
+   "grain": "fullwidth",
+   "present": true
+  },
+  "write_norm": {
+   "label": "write norm (gamma-scaled)",
+   "grain": "fullwidth",
+   "present": true
+  },
+  "mean_act_cond": {
+   "label": "mean activation when active",
+   "grain": "fullwidth",
+   "present": true
+  },
+  "enc_dec_cos": {
+   "label": "encoder-decoder cosine",
+   "grain": "fullwidth",
+   "present": true
+  },
+  "footprint_var": {
+   "label": "footprint variance",
+   "grain": "fullwidth",
+   "present": true
+  },
+  "footprint_skew": {
+   "label": "footprint skew",
+   "grain": "fullwidth",
+   "present": true
+  },
+  "footprint_kurt": {
+   "label": "footprint kurtosis",
+   "grain": "fullwidth",
+   "present": true
+  },
+  "n_active_holdout": {
+   "label": "holdout answers active (count)",
+   "grain": "fullwidth",
+   "present": true
+  },
+  "dec_norm": {
+   "label": "decoder-column norm",
+   "grain": "fullwidth",
+   "present": true
+  },
+  "mean_run_length": {
+   "label": "mean activation run length (tokens)",
+   "grain": "pending-pod",
+   "present": false
+  },
+  "template_token_frac": {
+   "label": "fraction of firings on template tokens (behavioural)",
+   "grain": "pending-pod",
+   "present": false
+  },
+  "promoting_class": {
+   "label": "0=other, 1=promoting, 2=suppressing, 3=partition (kurt/var q0.90)",
+   "grain": "fullwidth",
+   "present": true
+  }
+ },
+ "pending_from_pod": [
+  "mean_run_length",
+  "template_token_frac"
+ ],
+ "pending_source": "eval_results/issue_1482/run_length/run_length_perfeature.npz",
+ "metadata": {
+  "git_commit": "51bbd329255ec2979b6df0b2744270fdf7f8775f",
+  "timestamp_utc": "2026-08-03T17:19:09.335875+00:00",
+  "python_version": "3.11.15",
+  "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+  "numpy_version": "2.2.6"
+ }
+}
