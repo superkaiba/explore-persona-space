@@ -102,9 +102,23 @@ N_PERM = 2000
 
 FULLDICT_LABELS = FW.FULLDICT_LABELS
 COVARIATES = "eval_results/issue_1482/predictor_battery/fullwidth_covariates.npz"
-DEFAULT_R2_PATH = "eval_results/issue_1738/sae_twoway/perfeature/sae_context_r2.npy"
-DEFAULT_R2_LABEL = "#1738 SAE->SAE multi-turn context R^2 (provisional target)"
-CORPUS_CAVEAT = (
+# The production target: #1482 dense-context -> SAE-answer ridge, mean pooling, at
+# full 131,072 width. Supersedes the provisional #1738 SAE->SAE stand-in.
+DEFAULT_R2_PATH = "data/issue_1482/densesae_dl/ridge__mean_perfeature.npz"
+DEFAULT_R2_LABEL = "#1482 dense-context -> SAE ridge, mean pooling (full width)"
+# Same corpus as the covariates, VERIFIED three ways (2026-08-03):
+#   * the full-width ridge reproduces the banked #1482 dense->SAE PANEL per-feature
+#     R^2 to max |delta| 2.98e-08 over all 16,384 panel features;
+#   * that banked panel npz's own `activity` array is BIT-IDENTICAL (max delta 0.0)
+#     to the `activity` covariate this battery joins on;
+#   * the build's inputs meta pins the #1482 splits and store row order.
+# So the cross-corpus caveat the #1738 stand-in required is RESOLVED, not merely
+# restated. `--corpus-note` carries whatever is true for the target in use.
+DEFAULT_CORPUS_NOTE = (
+    "single corpus: R^2 and the activity / judged-label covariates are both the "
+    "#1482 SINGLE-TURN read (verified against the banked #1482 panel)"
+)
+LEGACY_1738_CORPUS_CAVEAT = (
     "cross-corpus: R^2 is the #1738 MULTI-TURN read; activity / judged labels come "
     "from the #1482 SINGLE-TURN corpus"
 )
@@ -344,13 +358,55 @@ def assert_realized_classes(agr: dict[str, dict[str, np.ndarray]]) -> dict:
 # ── universe assembly ─────────────────────────────────────────────────────────
 
 
-def assemble(r2_path: Path, r2_label: str, agr: dict) -> dict:
+def load_r2_target(r2_path: Path) -> tuple[np.ndarray, np.ndarray, str]:
+    """Load a per-feature R^2 target as (r2, scorable, membership_rule).
+
+    Two accepted shapes:
+      `.npz`  the production form — keys feat_ids / r2 / scored. Membership is the
+              producer's OWN `scored` flag, never inferred from finite R^2: a
+              zero-variance holdout column is UNSCORED and its R^2 is undefined,
+              which is a different statement from "the value happens to be NaN".
+              `feat_ids` is honoured as the scatter index rather than assumed to
+              be 0..DICT_SIZE-1.
+      `.npy`  the legacy DICT_SIZE-wide form (the #1738 stand-in), which carries no
+              scored flag, so membership degrades to finite R^2.
+    """
+    if r2_path.suffix == ".npz":
+        z = np.load(r2_path)
+        missing = {"feat_ids", "r2", "scored"} - set(z.files)
+        if missing:
+            raise AssertionError(f"{r2_path}: missing keys {sorted(missing)}")
+        fid = np.asarray(z["feat_ids"], dtype=np.int64)
+        r2 = np.full(DICT_SIZE, np.nan, dtype=np.float64)
+        scorable = np.zeros(DICT_SIZE, dtype=bool)
+        r2[fid] = np.asarray(z["r2"], dtype=np.float64)
+        scorable[fid] = np.asarray(z["scored"], dtype=bool)
+        # `scored` is authoritative; a divergence from finiteness is a producer
+        # inconsistency worth naming rather than silently resolving either way.
+        n_dis = int((scorable != np.isfinite(r2)).sum())
+        if n_dis:
+            _log(f"WARNING {r2_path.name}: scored disagrees with isfinite on {n_dis} features")
+        _log(
+            f"r2 target: {r2_path.name} — {int(scorable.sum())} of {DICT_SIZE} SCORED "
+            f"({DICT_SIZE - int(scorable.sum())} zero-variance/unscored), "
+            f"scored-vs-isfinite disagreements {n_dis}"
+        )
+        return r2, scorable, "producer `scored` flag (npz)"
+    r2 = np.asarray(np.load(r2_path), dtype=np.float64)
+    if r2.shape != (DICT_SIZE,):
+        raise AssertionError(f"{r2_path}: expected ({DICT_SIZE},), got {r2.shape}")
+    _log(f"r2 target: {r2_path.name} — legacy .npy, membership = finite R^2")
+    return r2, np.isfinite(r2), "finite R^2 (legacy .npy, no scored flag)"
+
+
+def assemble(r2_path: Path, r2_label: str, corpus_note: str, agr: dict) -> dict:
     """Join labels + agreement with the durable full-width covariate substrate.
 
-    Universe = judged (interpretable axis) AND finite primary R^2 AND
-    answer-active — byte-identical to the fullwidth battery's `assemble`
-    predicate (verified: the reconstructed `interpretable` read has n = 114,076,
-    matching the banked `fullwidth_label_reads.json`).
+    Universe = judged (interpretable axis) AND SCORABLE R^2 AND answer-active.
+    On the legacy #1738 `.npy` target "scorable" degrades to finite R^2, which
+    reproduced the banked `fullwidth_label_reads.json` exactly (n = 114,076 on the
+    `interpretable` read); on the production `.npz` it is the producer's `scored`
+    flag, which is the authoritative statement of which columns were fit.
     """
     z = np.load(REPO / COVARIATES)
     activity = np.asarray(z["activity"], dtype=np.float64)
@@ -358,23 +414,41 @@ def assemble(r2_path: Path, r2_label: str, agr: dict) -> dict:
     if activity.shape != (DICT_SIZE,):
         raise AssertionError(f"covariates activity shape {activity.shape}")
 
-    r2_all = np.asarray(np.load(r2_path), dtype=np.float64)
-    if r2_all.shape != (DICT_SIZE,):
-        raise AssertionError(f"{r2_path}: expected ({DICT_SIZE},), got {r2_all.shape}")
+    r2_all, scorable, membership_rule = load_r2_target(r2_path)
 
     judged = agr["interpretable"]["label"] != "unlabeled"
-    finite = np.isfinite(r2_all)
     active = activity > 0
-    keep = judged & finite & active
+    keep = judged & scorable & active
     idx = np.flatnonzero(keep)
     _log(
         f"universe: {len(idx)} of {DICT_SIZE} "
-        f"(judged {int(judged.sum())}, finite R^2 {int(finite.sum())}, active {int(active.sum())})"
+        f"(judged {int(judged.sum())}, scorable R^2 {int(scorable.sum())}, "
+        f"active {int(active.sum())})"
+    )
+    r2u = r2_all[idx]
+    dist = {
+        "median": float(np.median(r2u)),
+        "mean": float(np.mean(r2u)),
+        "min": float(np.min(r2u)),
+        "max": float(np.max(r2u)),
+        "frac_negative": float((r2u < 0).mean()),
+        "frac_below_minus_1": float((r2u < -1).mean()),
+        "frac_below_minus_10": float((r2u < -10).mean()),
+        "note": (
+            "reported because the arms differ sharply in the negative tail; every "
+            "read here is rank-based or an unclipped median, so no fraction is "
+            "clipped or thresholded away"
+        ),
+    }
+    _log(
+        f"r2 over the universe: median {dist['median']:+.5f} "
+        f"frac<0 {dist['frac_negative']:.4f} frac<-1 {dist['frac_below_minus_1']:.4f} "
+        f"frac<-10 {dist['frac_below_minus_10']:.4f} (clipped/thresholded fraction: 0.0)"
     )
 
     return {
         "feat_ids": feat_ids_all[idx],
-        "r2": r2_all[idx],
+        "r2": r2u,
         "activity": activity[idx],
         "labels": {ax: agr[ax]["label"][idx] for ax in AXIS_ORDER},
         "n_surv": {ax: agr[ax]["n_surv"][idx] for ax in AXIS_ORDER},
@@ -382,10 +456,13 @@ def assemble(r2_path: Path, r2_label: str, agr: dict) -> dict:
         "resolved": {ax: agr[ax]["resolved"][idx] for ax in AXIS_ORDER},
         "r2_path": str(r2_path),
         "r2_label": r2_label,
+        "corpus_note": corpus_note,
+        "membership_rule": membership_rule,
+        "r2_distribution": dist,
         "coverage": {
             "dict_size": DICT_SIZE,
             "judged": int(judged.sum()),
-            "finite_r2": int(finite.sum()),
+            "scorable_r2": int(scorable.sum()),
             "answer_active": int(active.sum()),
             "universe": int(len(idx)),
         },
@@ -1027,7 +1104,7 @@ def _footnote(fig, bundle: dict) -> None:
     fig.text(
         0.005,
         0.004,
-        f"R^2 target: {bundle['r2_label']}  |  {CORPUS_CAVEAT}",
+        f"R^2 target: {bundle['r2_label']}  |  {bundle['corpus_note']}",
         fontsize=6.4,
         color="#555555",
         ha="left",
@@ -1126,7 +1203,7 @@ def fig_dose_response(dose: dict, bundle: dict, gate: dict, fig_dir: Path) -> st
                 "unresolved": "no unique modal label with >= 3 votes (any n_surviving)",
             },
             "caveats": [
-                CORPUS_CAVEAT,
+                bundle["corpus_note"],
                 "panel (a) is label-conditional; panel (b) median R-squared is label-free, which "
                 "is why 'unresolved' features appear there and nowhere else",
                 "the activity-stratified null is NOT centred at 0.5 (stratifying preserves the "
@@ -1203,7 +1280,7 @@ def fig_decile_auroc(dec: dict, bundle: dict, fig_dir: Path) -> str:
                 "decile": "equal-COUNT bin of activity (firing frequency per answer)",
             },
             "caveats": [
-                CORPUS_CAVEAT,
+                bundle["corpus_note"],
                 "deciles are equal-COUNT, not equal-width in log-activity: decile 1 spans "
                 f"{span.get(1)}x and decile 10 spans {span.get(10)}x internally, so their "
                 "endpoint values are the least tightly conditioned",
@@ -1306,7 +1383,7 @@ def fig_all_class_excess(lr: dict, bundle: dict, fig_dir: Path) -> str:
                 "the activity-label association and so is NOT centred at 0.5",
             },
             "caveats": [
-                CORPUS_CAVEAT,
+                bundle["corpus_note"],
                 "one-vs-rest over the axis's labelled features only (unresolved / unclear "
                 "dropped); the drop set differs by axis, so the denominators differ by row",
                 "'interpretable: no' is the exact mirror of 'yes' and is not read out separately",
@@ -1461,7 +1538,7 @@ def fig_matched_dose(md: dict, bundle: dict, fig_dir: Path) -> str:
                 "matched shift collapses => the dose-response was population composition (H2)",
             },
             "caveats": [
-                CORPUS_CAVEAT,
+                bundle["corpus_note"],
                 "matching shrinks every level to the per-bin across-level minimum, so the matched "
                 "5-0 read has far fewer features than the unmatched one and correspondingly wider "
                 "CIs — the like-for-like comparison is matched-5-0 vs matched-3-2, not matched vs "
@@ -1519,8 +1596,15 @@ def fig_unresolved(uv: dict, bundle: dict, fig_dir: Path) -> str:
         )
         ax.plot([e["median_r2_resolved"]], [yi], "o", color=c, ms=6.5, mfc="white", mew=1.6)
         ax.plot([e["median_r2_unresolved"]], [yi], "s", color=c, ms=6.0)
+        # A RATIO of two negative medians is not interpretable (the mlp arm's
+        # medians are all < 0), so the signed DIFFERENCE — which is also what the
+        # bootstrap CI is on — is the annotation; the ratio rides along only when
+        # both medians are positive.
+        lead = f"D {e['median_r2_difference']:+.4f}"
+        if e["median_r2_unresolved"] > 0 and e["median_r2_resolved"] > 0:
+            lead += f"  (x{e['median_r2_ratio']:.2f})"
         ax.annotate(
-            f"x{e['median_r2_ratio']:.2f}  (n unresolved = {e['n_unresolved']:,})",
+            f"{lead}   n unresolved = {e['n_unresolved']:,}",
             xy=(max(e["median_r2_resolved"], e["median_r2_unresolved"]), yi),
             xytext=(8, -2),
             textcoords="offset points",
@@ -1531,8 +1615,12 @@ def fig_unresolved(uv: dict, bundle: dict, fig_dir: Path) -> str:
     ax.set_yticks(y)
     ax.set_yticklabels([AXIS_LABEL[a] for a in axes_ok], fontsize=8.4)
     ax.set_xlabel("median R-squared")
-    _hi = max(max(uv[a]["median_r2_unresolved"], uv[a]["median_r2_resolved"]) for a in axes_ok)
-    ax.set_xlim(0, _hi * 1.85)  # headroom for the ratio / n annotations
+    # Span the DATA, never anchor at 0: the mlp arm's medians are all negative, and
+    # `set_xlim(0, negative)` silently inverts the axis and pushes rows off-screen.
+    _vals = [uv[a][k] for a in axes_ok for k in ("median_r2_unresolved", "median_r2_resolved")]
+    _lo, _hi = min(_vals), max(_vals)
+    _span = (_hi - _lo) or (abs(_hi) or 1.0)
+    ax.set_xlim(_lo - 0.10 * _span, _hi + 0.85 * _span)  # right headroom for annotations
     ax.set_title(
         "(a) Median R-squared: labelled (open circle) vs judge-unresolved (filled square)",
         loc="left",
@@ -1591,7 +1679,7 @@ def fig_unresolved(uv: dict, bundle: dict, fig_dir: Path) -> str:
                 "labelability effect",
             },
             "caveats": [
-                CORPUS_CAVEAT,
+                bundle["corpus_note"],
                 "unresolved features are also MORE ACTIVE on every axis, and activity predicts "
                 "R-squared, so panel (a) alone cannot separate labelability from activity — "
                 "panel (b) is the control that does",
@@ -1618,6 +1706,13 @@ def main() -> None:
         help="per-feature R^2 target (.npy, DICT_SIZE-wide). THE repoint parameter.",
     )
     ap.add_argument("--r2-label", default=DEFAULT_R2_LABEL)
+    ap.add_argument(
+        "--corpus-note",
+        default=DEFAULT_CORPUS_NOTE,
+        help="corpus relationship between the R^2 target and the covariates; rides "
+        "every figure footnote and sidecar. Pass LEGACY_1738_CORPUS_CAVEAT's text "
+        "when repointing back at the #1738 stand-in.",
+    )
     ap.add_argument("--n-boot", type=int, default=N_BOOT)
     ap.add_argument("--n-perm", type=int, default=N_PERM)
     ap.add_argument(
@@ -1671,18 +1766,35 @@ def main() -> None:
     t0 = time.time()
 
     # Merge-on-write: a partial `--only` run updates only the deliverables it
-    # produced and never truncates the rest of the canonical JSON.
+    # produced and never truncates the rest of the canonical JSON. A DIFFERENT
+    # R^2 target invalidates every prior deliverable, so the merge starts empty
+    # rather than silently mixing two targets' results in one file.
     out = out_dir / "label_agreement_battery.json"
-    prior: dict = json.loads(out.read_text(encoding="utf-8")) if out.exists() else {}
-    prior_same_target = prior.get("r2_target", {}).get("path") == str(r2_path)
+    on_disk: dict = json.loads(out.read_text(encoding="utf-8")) if out.exists() else {}
+    prior_same_target = on_disk.get("r2_target", {}).get("path") == str(r2_path)
+    prior: dict = on_disk if prior_same_target else {}
+    if on_disk and not prior_same_target:
+        _log(
+            "R^2 target CHANGED vs the file on disk "
+            f"({on_disk.get('r2_target', {}).get('label', '?')} -> {args.r2_label}): "
+            "discarding every prior deliverable instead of merging across targets"
+        )
 
     agr = load_agreement(out_dir / "agreement_votes.npz")
     gate = agreement_gate(agr)
     class_counts = assert_realized_classes(agr)
-    bundle = assemble(r2_path, args.r2_label, agr)
+    bundle = assemble(r2_path, args.r2_label, args.corpus_note, agr)
 
     result: dict = {
-        "r2_target": {"path": str(r2_path), "label": args.r2_label, "caveat": CORPUS_CAVEAT},
+        "r2_target": {
+            "path": str(r2_path),
+            "label": args.r2_label,
+            "corpus_note": args.corpus_note,
+            "membership": bundle["membership_rule"],
+            "r2_transform": "none — every read is rank-based (AUROC) or an "
+            "unclipped median; no clipping or thresholding is applied",
+            "distribution": bundle["r2_distribution"],
+        },
         "coverage": bundle["coverage"],
         "agreement_gate": gate,
         "realized_class_counts": class_counts,

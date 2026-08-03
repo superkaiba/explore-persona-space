@@ -1,0 +1,150 @@
+{
+ "question": "does the provisional #1738 SAE->SAE stand-in rank features the same way as the real #1482 dense->SAE target?",
+ "targets": {
+  "old": {
+   "path": "eval_results/issue_1738/sae_twoway/perfeature/sae_context_r2.npy",
+   "label": "#1738 SAE->SAE multi-turn context R^2 (the provisional stand-in)"
+  },
+  "new_ridge": {
+   "path": "data/issue_1482/densesae_dl/ridge__mean_perfeature.npz",
+   "label": "#1482 dense->SAE ridge, mean pooling"
+  },
+  "new_mlp": {
+   "path": "data/issue_1482/densesae_dl/mlp__mean_perfeature.npz",
+   "label": "#1482 dense->SAE MLP, mean pooling"
+  }
+ },
+ "membership_rule": "producer `scored` flag on the new targets; finite R^2 on the old .npy",
+ "corpus_provenance": {
+  "n_panel_features_compared": 16384,
+  "max_abs_delta_r2_vs_banked_panel": 2.9779709698196655e-08,
+  "median_abs_delta_r2_vs_banked_panel": 3.125956049565559e-09,
+  "max_abs_delta_activity_vs_covariates": 0.0,
+  "verdict": "SAME corpus and recipe \u2014 the full-width ridge reproduces the banked #1482 dense->SAE panel per-feature R^2, and that banked file's own activity array is bit-identical to the covariate this line joins on"
+ },
+ "agreement": {
+  "full_width_shared": {
+   "n": 113326,
+   "spearman_old_vs_new_ridge": 0.7434699325794143,
+   "median_old": 0.010217617731541395,
+   "median_new_ridge": 0.03069914225488901
+  },
+  "panel_16384": {
+   "n": 16384,
+   "spearman_old_vs_new_ridge": 0.8521409805850488,
+   "median_old": 0.10576295107603073,
+   "median_new_ridge": 0.17666222155094147
+  },
+  "off_panel_tail": {
+   "n": 96942,
+   "spearman_old_vs_new_ridge": 0.6493150173679179,
+   "median_old": 0.004685625433921814,
+   "median_new_ridge": 0.01663980446755886
+  }
+ },
+ "inter_arm_reference": {
+  "n": 121111,
+  "spearman_new_ridge_vs_new_mlp": 0.7771682363306388,
+  "note": "inter-ARM agreement on the SAME corpus \u2014 the reference against which the old-vs-new (inter-CORPUS + inter-map) number should be read"
+ },
+ "by_activity_decile": [
+  {
+   "decile": 1,
+   "n": 11259,
+   "activity_min": 0.0,
+   "activity_max": 0.00034166666666666666,
+   "spearman_old_vs_new_ridge": 0.09613871950123115,
+   "spearman_new_ridge_vs_new_mlp": 0.5069967815491616,
+   "median_new_ridge": -0.028215846046805382
+  },
+  {
+   "decile": 2,
+   "n": 11400,
+   "activity_min": 0.00035,
+   "activity_max": 0.0010083333333333333,
+   "spearman_old_vs_new_ridge": 0.16241820538576973,
+   "spearman_new_ridge_vs_new_mlp": 0.49226370481422294,
+   "median_new_ridge": -0.016081341542303562
+  },
+  {
+   "decile": 3,
+   "n": 11317,
+   "activity_min": 0.0010166666666666666,
+   "activity_max": 0.0023583333333333334,
+   "spearman_old_vs_new_ridge": 0.23391447990000602,
+   "spearman_new_ridge_vs_new_mlp": 0.38848518527721665,
+   "median_new_ridge": -0.002373608062043786
+  },
+  {
+   "decile": 4,
+   "n": 11346,
+   "activity_min": 0.0023666666666666667,
+   "activity_max": 0.004875,
+   "spearman_old_vs_new_ridge": 0.3333341813022825,
+   "spearman_new_ridge_vs_new_mlp": 0.3349453722827433,
+   "median_new_ridge": 0.009683556854724884
+  },
+  {
+   "decile": 5,
+   "n": 11330,
+   "activity_min": 0.004883333333333333,
+   "activity_max": 0.009225,
+   "spearman_old_vs_new_ridge": 0.4634378228201416,
+   "spearman_new_ridge_vs_new_mlp": 0.31029500755466854,
+   "median_new_ridge": 0.024467073380947113
+  },
+  {
+   "decile": 6,
+   "n": 11343,
+   "activity_min": 0.009233333333333333,
+   "activity_max": 0.01695,
+   "spearman_old_vs_new_ridge": 0.5511629371838275,
+   "spearman_new_ridge_vs_new_mlp": 0.3847473365685028,
+   "median_new_ridge": 0.04062620922923088
+  },
+  {
+   "decile": 7,
+   "n": 11333,
+   "activity_min": 0.016958333333333332,
+   "activity_max": 0.030433333333333333,
+   "spearman_old_vs_new_ridge": 0.6376912520030827,
+   "spearman_new_ridge_vs_new_mlp": 0.48134442217543977,
+   "median_new_ridge": 0.06429330259561539
+  },
+  {
+   "decile": 8,
+   "n": 11330,
+   "activity_min": 0.030441666666666665,
+   "activity_max": 0.056016666666666666,
+   "spearman_old_vs_new_ridge": 0.7151695305891078,
+   "spearman_new_ridge_vs_new_mlp": 0.5876151940606966,
+   "median_new_ridge": 0.09333006292581558
+  },
+  {
+   "decile": 9,
+   "n": 11335,
+   "activity_min": 0.056025,
+   "activity_max": 0.11561666666666667,
+   "spearman_old_vs_new_ridge": 0.7874425310736384,
+   "spearman_new_ridge_vs_new_mlp": 0.7451625625685359,
+   "median_new_ridge": 0.12650075554847717
+  },
+  {
+   "decile": 10,
+   "n": 11333,
+   "activity_min": 0.115625,
+   "activity_max": 1.0,
+   "spearman_old_vs_new_ridge": 0.8634940159410983,
+   "spearman_new_ridge_vs_new_mlp": 0.9090531967994159,
+   "median_new_ridge": 0.19447632133960724
+  }
+ ],
+ "metadata": {
+  "git_commit": "d9d3620f374f2f720be94bcfba9b0fc878bc0714",
+  "numpy": "2.2.6",
+  "python": "3.11.15",
+  "timestamp_utc": "2026-08-03T19:03:52.991446+00:00",
+  "task": 1773,
+  "seed": 17732026
+ }
+}

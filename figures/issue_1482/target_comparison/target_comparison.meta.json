@@ -1,0 +1,303 @@
+{
+ "commit": "d9d3620f37",
+ "created": "2026-08-03T19:03:55Z",
+ "figsize": [
+  12.4,
+  4.0
+ ],
+ "points": [
+  {
+   "category": "full width\n(shared universe)",
+   "Spearman rho of per-feature R-squared": 0.7434699325794143,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "category": "16,384-feature\npanel",
+   "Spearman rho of per-feature R-squared": 0.8521409805850488,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "category": "off-panel tail\n(the added ~97k)",
+   "Spearman rho of per-feature R-squared": 0.6493150173679179,
+   "_kind": "bar",
+   "_group": 0
+  },
+  {
+   "x": 0.0,
+   "Spearman rho of per-feature R-squared": 0.7771682363306388,
+   "series": "reference: new ridge vs new MLP (same corpus)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "x": 1.0,
+   "Spearman rho of per-feature R-squared": 0.7771682363306388,
+   "series": "reference: new ridge vs new MLP (same corpus)",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "activity decile of the shared universe (1 = least active)": 1.0,
+   "Spearman rho within the decile": 0.09613871950123115,
+   "series": "old #1738 vs new #1482 ridge",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "activity decile of the shared universe (1 = least active)": 2.0,
+   "Spearman rho within the decile": 0.16241820538576973,
+   "series": "old #1738 vs new #1482 ridge",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "activity decile of the shared universe (1 = least active)": 3.0,
+   "Spearman rho within the decile": 0.23391447990000602,
+   "series": "old #1738 vs new #1482 ridge",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "activity decile of the shared universe (1 = least active)": 4.0,
+   "Spearman rho within the decile": 0.3333341813022825,
+   "series": "old #1738 vs new #1482 ridge",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "activity decile of the shared universe (1 = least active)": 5.0,
+   "Spearman rho within the decile": 0.4634378228201416,
+   "series": "old #1738 vs new #1482 ridge",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "activity decile of the shared universe (1 = least active)": 6.0,
+   "Spearman rho within the decile": 0.5511629371838275,
+   "series": "old #1738 vs new #1482 ridge",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "activity decile of the shared universe (1 = least active)": 7.0,
+   "Spearman rho within the decile": 0.6376912520030827,
+   "series": "old #1738 vs new #1482 ridge",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "activity decile of the shared universe (1 = least active)": 8.0,
+   "Spearman rho within the decile": 0.7151695305891078,
+   "series": "old #1738 vs new #1482 ridge",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "activity decile of the shared universe (1 = least active)": 9.0,
+   "Spearman rho within the decile": 0.7874425310736384,
+   "series": "old #1738 vs new #1482 ridge",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "activity decile of the shared universe (1 = least active)": 10.0,
+   "Spearman rho within the decile": 0.8634940159410983,
+   "series": "old #1738 vs new #1482 ridge",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "activity decile of the shared universe (1 = least active)": 1.0,
+   "Spearman rho within the decile": 0.5069967815491616,
+   "series": "new ridge vs new MLP (same corpus)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "activity decile of the shared universe (1 = least active)": 2.0,
+   "Spearman rho within the decile": 0.49226370481422294,
+   "series": "new ridge vs new MLP (same corpus)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "activity decile of the shared universe (1 = least active)": 3.0,
+   "Spearman rho within the decile": 0.38848518527721665,
+   "series": "new ridge vs new MLP (same corpus)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "activity decile of the shared universe (1 = least active)": 4.0,
+   "Spearman rho within the decile": 0.3349453722827433,
+   "series": "new ridge vs new MLP (same corpus)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "activity decile of the shared universe (1 = least active)": 5.0,
+   "Spearman rho within the decile": 0.31029500755466854,
+   "series": "new ridge vs new MLP (same corpus)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "activity decile of the shared universe (1 = least active)": 6.0,
+   "Spearman rho within the decile": 0.3847473365685028,
+   "series": "new ridge vs new MLP (same corpus)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "activity decile of the shared universe (1 = least active)": 7.0,
+   "Spearman rho within the decile": 0.48134442217543977,
+   "series": "new ridge vs new MLP (same corpus)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "activity decile of the shared universe (1 = least active)": 8.0,
+   "Spearman rho within the decile": 0.5876151940606966,
+   "series": "new ridge vs new MLP (same corpus)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "activity decile of the shared universe (1 = least active)": 9.0,
+   "Spearman rho within the decile": 0.7451625625685359,
+   "series": "new ridge vs new MLP (same corpus)",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "activity decile of the shared universe (1 = least active)": 10.0,
+   "Spearman rho within the decile": 0.9090531967994159,
+   "series": "new ridge vs new MLP (same corpus)",
+   "_kind": "line",
+   "_group": 3
+  }
+ ],
+ "n_series": 4,
+ "total_points": 25,
+ "text": {
+  "suptitle": null,
+  "fig_texts": [
+   "both #1482 targets are the SINGLE-TURN corpus; the #1738 stand-in is the MULTI-TURN read \u2014 so (a) mixes a corpus change with a map change, and the dashed line isolates the map part"
+  ],
+  "axes": [
+   {
+    "title_left": "(a) How well the provisional target stood in",
+    "ylabel": "Spearman rho of per-feature R-squared",
+    "legend_labels": [
+     "reference: new ridge vs new MLP (same corpus)",
+     "old #1738 stand-in vs new #1482 ridge"
+    ],
+    "annotations": [
+     "0.743\nn=113,326",
+     "0.852\nn=16,384",
+     "0.649\nn=96,942"
+    ],
+    "xticklabels": [
+     "full width\n(shared universe)",
+     "16,384-feature\npanel",
+     "off-panel tail\n(the added ~97k)"
+    ],
+    "yticklabels": [
+     "0.0",
+     "0.2",
+     "0.4",
+     "0.6",
+     "0.8",
+     "1.0"
+    ]
+   },
+   {
+    "title_left": "(b) Where the stand-in diverges",
+    "xlabel": "activity decile of the shared universe (1 = least active)",
+    "ylabel": "Spearman rho within the decile",
+    "legend_labels": [
+     "old #1738 vs new #1482 ridge",
+     "new ridge vs new MLP (same corpus)"
+    ],
+    "xticklabels": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "5",
+     "6",
+     "7",
+     "8",
+     "9",
+     "10"
+    ],
+    "yticklabels": [
+     "\u22120.2",
+     "0.0",
+     "0.2",
+     "0.4",
+     "0.6",
+     "0.8",
+     "1.0"
+    ]
+   }
+  ],
+  "series": [
+   "reference: new ridge vs new MLP (same corpus)",
+   "old #1738 stand-in vs new #1482 ridge",
+   "old #1738 vs new #1482 ridge",
+   "new ridge vs new MLP (same corpus)"
+  ]
+ },
+ "issue1482_target_comparison": {
+  "what_is_plotted": "(a) Spearman rho between the provisional #1738 SAE->SAE per-feature R^2 and the real #1482 dense->SAE ridge target, over the shared scored universe, over the 16,384-feature panel alone, and over the off-panel tail; the dashed line is the inter-ARM rho between the two new maps of the SAME corpus. (b) the same two quantities within each activity decile of the shared universe.",
+  "definitions": {
+   "shared universe": "features SCORED on the new target AND finite on the old one",
+   "panel": "the 16,384 features the #1482 panel-width work was fit on",
+   "inter-arm reference": "rho(new ridge, new MLP) \u2014 two maps, one corpus"
+  },
+  "caveats": [
+   "the old-vs-new comparison changes BOTH the corpus (multi-turn -> single-turn) and the map (SAE->SAE -> dense->SAE); the inter-arm line separates the map component",
+   "rho is rank-based, so the MLP arm's heavy negative tail does not affect it"
+  ],
+  "agreement": {
+   "full_width_shared": {
+    "n": 113326,
+    "spearman_old_vs_new_ridge": 0.7434699325794143,
+    "median_old": 0.010217617731541395,
+    "median_new_ridge": 0.03069914225488901
+   },
+   "panel_16384": {
+    "n": 16384,
+    "spearman_old_vs_new_ridge": 0.8521409805850488,
+    "median_old": 0.10576295107603073,
+    "median_new_ridge": 0.17666222155094147
+   },
+   "off_panel_tail": {
+    "n": 96942,
+    "spearman_old_vs_new_ridge": 0.6493150173679179,
+    "median_old": 0.004685625433921814,
+    "median_new_ridge": 0.01663980446755886
+   }
+  },
+  "inter_arm_reference": {
+   "n": 121111,
+   "spearman_new_ridge_vs_new_mlp": 0.7771682363306388,
+   "note": "inter-ARM agreement on the SAME corpus \u2014 the reference against which the old-vs-new (inter-CORPUS + inter-map) number should be read"
+  },
+  "corpus_provenance": {
+   "n_panel_features_compared": 16384,
+   "max_abs_delta_r2_vs_banked_panel": 2.9779709698196655e-08,
+   "median_abs_delta_r2_vs_banked_panel": 3.125956049565559e-09,
+   "max_abs_delta_activity_vs_covariates": 0.0,
+   "verdict": "SAME corpus and recipe \u2014 the full-width ridge reproduces the banked #1482 dense->SAE panel per-feature R^2, and that banked file's own activity array is bit-identical to the covariate this line joins on"
+  },
+  "source_paths": {
+   "old": "eval_results/issue_1738/sae_twoway/perfeature/sae_context_r2.npy",
+   "new_ridge": "data/issue_1482/densesae_dl/ridge__mean_perfeature.npz",
+   "new_mlp": "data/issue_1482/densesae_dl/mlp__mean_perfeature.npz"
+  }
+ }
+}

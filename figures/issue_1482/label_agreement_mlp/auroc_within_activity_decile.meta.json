@@ -1,0 +1,1310 @@
+{
+ "commit": "73c9c4b6b7",
+ "created": "2026-08-03T19:13:17Z",
+ "figsize": [
+  17.0,
+  3.7
+ ],
+ "points": [
+  {
+   "activity decile (1 = least active)": 1.0,
+   "AUROC of R-squared for class membership": 0.5418363964750714,
+   "series": "yes",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "activity decile (1 = least active)": 2.0,
+   "AUROC of R-squared for class membership": 0.48121913133473,
+   "series": "yes",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "activity decile (1 = least active)": 3.0,
+   "AUROC of R-squared for class membership": 0.410114511347287,
+   "series": "yes",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "activity decile (1 = least active)": 4.0,
+   "AUROC of R-squared for class membership": 0.3426283697047497,
+   "series": "yes",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "activity decile (1 = least active)": 5.0,
+   "AUROC of R-squared for class membership": 0.36149267931364426,
+   "series": "yes",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "activity decile (1 = least active)": 6.0,
+   "AUROC of R-squared for class membership": 0.34569445111487646,
+   "series": "yes",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "activity decile (1 = least active)": 7.0,
+   "AUROC of R-squared for class membership": 0.3653614817708046,
+   "series": "yes",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "activity decile (1 = least active)": 8.0,
+   "AUROC of R-squared for class membership": 0.3857584506105649,
+   "series": "yes",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "activity decile (1 = least active)": 9.0,
+   "AUROC of R-squared for class membership": 0.4224510007423925,
+   "series": "yes",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "activity decile (1 = least active)": 10.0,
+   "AUROC of R-squared for class membership": 0.48930387806853853,
+   "series": "yes",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "activity decile (1 = least active)": 1.0,
+   "y": 0.48259051874568987,
+   "series": "token surface",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "activity decile (1 = least active)": 2.0,
+   "y": 0.49691564017841694,
+   "series": "token surface",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "activity decile (1 = least active)": 3.0,
+   "y": 0.48089376632825576,
+   "series": "token surface",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "activity decile (1 = least active)": 4.0,
+   "y": 0.4591856276772863,
+   "series": "token surface",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "activity decile (1 = least active)": 5.0,
+   "y": 0.4393042501353231,
+   "series": "token surface",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "activity decile (1 = least active)": 6.0,
+   "y": 0.4381566141216312,
+   "series": "token surface",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "activity decile (1 = least active)": 7.0,
+   "y": 0.4621249129910326,
+   "series": "token surface",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "activity decile (1 = least active)": 8.0,
+   "y": 0.47349862721488006,
+   "series": "token surface",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "activity decile (1 = least active)": 9.0,
+   "y": 0.5110667242726422,
+   "series": "token surface",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "activity decile (1 = least active)": 10.0,
+   "y": 0.5769322792380542,
+   "series": "token surface",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "activity decile (1 = least active)": 1.0,
+   "y": 0.5320925271599132,
+   "series": "lexical semantic",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "activity decile (1 = least active)": 2.0,
+   "y": 0.5281634285317799,
+   "series": "lexical semantic",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "activity decile (1 = least active)": 3.0,
+   "y": 0.5006966605668817,
+   "series": "lexical semantic",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "activity decile (1 = least active)": 4.0,
+   "y": 0.49249558749515127,
+   "series": "lexical semantic",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "activity decile (1 = least active)": 5.0,
+   "y": 0.4874872124269784,
+   "series": "lexical semantic",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "activity decile (1 = least active)": 6.0,
+   "y": 0.47141630268887286,
+   "series": "lexical semantic",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "activity decile (1 = least active)": 7.0,
+   "y": 0.4462777514778534,
+   "series": "lexical semantic",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "activity decile (1 = least active)": 8.0,
+   "y": 0.42101783953412925,
+   "series": "lexical semantic",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "activity decile (1 = least active)": 9.0,
+   "y": 0.3985698883325664,
+   "series": "lexical semantic",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "activity decile (1 = least active)": 10.0,
+   "y": 0.3977754697200904,
+   "series": "lexical semantic",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "activity decile (1 = least active)": 1.0,
+   "y": 0.49609493316214354,
+   "series": "abstract contextual",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "activity decile (1 = least active)": 2.0,
+   "y": 0.48291323996920105,
+   "series": "abstract contextual",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "activity decile (1 = least active)": 3.0,
+   "y": 0.5223520452625756,
+   "series": "abstract contextual",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "activity decile (1 = least active)": 4.0,
+   "y": 0.5531406023823537,
+   "series": "abstract contextual",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "activity decile (1 = least active)": 5.0,
+   "y": 0.5759644942916538,
+   "series": "abstract contextual",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "activity decile (1 = least active)": 6.0,
+   "y": 0.58687757625303,
+   "series": "abstract contextual",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "activity decile (1 = least active)": 7.0,
+   "y": 0.5865572308707311,
+   "series": "abstract contextual",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "activity decile (1 = least active)": 8.0,
+   "y": 0.5962233585029542,
+   "series": "abstract contextual",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "activity decile (1 = least active)": 9.0,
+   "y": 0.5820759846999789,
+   "series": "abstract contextual",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "activity decile (1 = least active)": 10.0,
+   "y": 0.5078448481636765,
+   "series": "abstract contextual",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "activity decile (1 = least active)": 1.0,
+   "y": 0.5365182946387181,
+   "series": "topic",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "activity decile (1 = least active)": 2.0,
+   "y": 0.5779276750838126,
+   "series": "topic",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "activity decile (1 = least active)": 3.0,
+   "y": 0.6074344662518935,
+   "series": "topic",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "activity decile (1 = least active)": 4.0,
+   "y": 0.6360309429960853,
+   "series": "topic",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "activity decile (1 = least active)": 5.0,
+   "y": 0.6393244242469398,
+   "series": "topic",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "activity decile (1 = least active)": 6.0,
+   "y": 0.6419802397536497,
+   "series": "topic",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "activity decile (1 = least active)": 7.0,
+   "y": 0.6169298027622553,
+   "series": "topic",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "activity decile (1 = least active)": 8.0,
+   "y": 0.5853829840447583,
+   "series": "topic",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "activity decile (1 = least active)": 9.0,
+   "y": 0.550087620300452,
+   "series": "topic",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "activity decile (1 = least active)": 10.0,
+   "y": 0.47952166686971875,
+   "series": "topic",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "activity decile (1 = least active)": 1.0,
+   "y": 0.5057357553795372,
+   "series": "task format",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "activity decile (1 = least active)": 2.0,
+   "y": 0.5393601387944033,
+   "series": "task format",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "activity decile (1 = least active)": 3.0,
+   "y": 0.5582067902081067,
+   "series": "task format",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "activity decile (1 = least active)": 4.0,
+   "y": 0.5123775586512961,
+   "series": "task format",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "activity decile (1 = least active)": 5.0,
+   "y": 0.5356589524923011,
+   "series": "task format",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "activity decile (1 = least active)": 6.0,
+   "y": 0.6124156155826074,
+   "series": "task format",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "activity decile (1 = least active)": 7.0,
+   "y": 0.6559345269173691,
+   "series": "task format",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "activity decile (1 = least active)": 8.0,
+   "y": 0.6522994284676316,
+   "series": "task format",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "activity decile (1 = least active)": 9.0,
+   "y": 0.6850282000629849,
+   "series": "task format",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "activity decile (1 = least active)": 10.0,
+   "y": 0.666968822412686,
+   "series": "task format",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "activity decile (1 = least active)": 1.0,
+   "y": 0.554606795647646,
+   "series": "entity",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "activity decile (1 = least active)": 2.0,
+   "y": 0.5862477318538005,
+   "series": "entity",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "activity decile (1 = least active)": 3.0,
+   "y": 0.5782143929590253,
+   "series": "entity",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "activity decile (1 = least active)": 4.0,
+   "y": 0.5428590141480346,
+   "series": "entity",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "activity decile (1 = least active)": 5.0,
+   "y": 0.5207524647363072,
+   "series": "entity",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "activity decile (1 = least active)": 6.0,
+   "y": 0.49122484910333275,
+   "series": "entity",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "activity decile (1 = least active)": 7.0,
+   "y": 0.49678409972260457,
+   "series": "entity",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "activity decile (1 = least active)": 8.0,
+   "y": 0.5292150956370948,
+   "series": "entity",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "activity decile (1 = least active)": 9.0,
+   "y": 0.5700649248070544,
+   "series": "entity",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "activity decile (1 = least active)": 10.0,
+   "y": 0.5442067448701279,
+   "series": "entity",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "activity decile (1 = least active)": 1.0,
+   "y": 0.4501261384696418,
+   "series": "syntax",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "activity decile (1 = least active)": 2.0,
+   "y": 0.41876224766662185,
+   "series": "syntax",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "activity decile (1 = least active)": 3.0,
+   "y": 0.40724042615324196,
+   "series": "syntax",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "activity decile (1 = least active)": 4.0,
+   "y": 0.39947229198180195,
+   "series": "syntax",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "activity decile (1 = least active)": 5.0,
+   "y": 0.3908957582959943,
+   "series": "syntax",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "activity decile (1 = least active)": 6.0,
+   "y": 0.38640731240705095,
+   "series": "syntax",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "activity decile (1 = least active)": 7.0,
+   "y": 0.3991542682915307,
+   "series": "syntax",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "activity decile (1 = least active)": 8.0,
+   "y": 0.42188396108557724,
+   "series": "syntax",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "activity decile (1 = least active)": 9.0,
+   "y": 0.4591747651436041,
+   "series": "syntax",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "activity decile (1 = least active)": 10.0,
+   "y": 0.5125475945464752,
+   "series": "syntax",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "activity decile (1 = least active)": 1.0,
+   "y": 0.5452279770488785,
+   "series": "operation",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "activity decile (1 = least active)": 2.0,
+   "y": 0.5317277231639825,
+   "series": "operation",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "activity decile (1 = least active)": 3.0,
+   "y": 0.49994752880318327,
+   "series": "operation",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "activity decile (1 = least active)": 4.0,
+   "y": 0.47914341441749625,
+   "series": "operation",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "activity decile (1 = least active)": 5.0,
+   "y": 0.48420009519810675,
+   "series": "operation",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "activity decile (1 = least active)": 6.0,
+   "y": 0.487920316724193,
+   "series": "operation",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "activity decile (1 = least active)": 7.0,
+   "y": 0.5061960129605785,
+   "series": "operation",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "activity decile (1 = least active)": 8.0,
+   "y": 0.5140303658107342,
+   "series": "operation",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "activity decile (1 = least active)": 9.0,
+   "y": 0.4843103144721136,
+   "series": "operation",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "activity decile (1 = least active)": 10.0,
+   "y": 0.46710476396086503,
+   "series": "operation",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "activity decile (1 = least active)": 1.0,
+   "y": 0.43111649817962255,
+   "series": "language",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "activity decile (1 = least active)": 2.0,
+   "y": 0.37030426038527764,
+   "series": "language",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "activity decile (1 = least active)": 3.0,
+   "y": 0.38951153451013354,
+   "series": "language",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "activity decile (1 = least active)": 4.0,
+   "y": 0.4678061064799218,
+   "series": "language",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "activity decile (1 = least active)": 5.0,
+   "y": 0.5146716982449268,
+   "series": "language",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "activity decile (1 = least active)": 6.0,
+   "y": 0.4953798080411289,
+   "series": "language",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "activity decile (1 = least active)": 7.0,
+   "y": 0.5124032032150294,
+   "series": "language",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "activity decile (1 = least active)": 8.0,
+   "y": 0.48343588455208303,
+   "series": "language",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "activity decile (1 = least active)": 9.0,
+   "y": 0.5212653060963036,
+   "series": "language",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "activity decile (1 = least active)": 10.0,
+   "y": 0.5834581653071899,
+   "series": "language",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "activity decile (1 = least active)": 1.0,
+   "y": 0.5202062087078589,
+   "series": "register style",
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "activity decile (1 = least active)": 2.0,
+   "y": 0.47335715856377736,
+   "series": "register style",
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "activity decile (1 = least active)": 3.0,
+   "y": 0.4911595420969563,
+   "series": "register style",
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "activity decile (1 = least active)": 4.0,
+   "y": 0.5196724704952105,
+   "series": "register style",
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "activity decile (1 = least active)": 5.0,
+   "y": 0.5427299987872168,
+   "series": "register style",
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "activity decile (1 = least active)": 6.0,
+   "y": 0.5709628710307257,
+   "series": "register style",
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "activity decile (1 = least active)": 7.0,
+   "y": 0.5977213697845949,
+   "series": "register style",
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "activity decile (1 = least active)": 8.0,
+   "y": 0.6448300993033595,
+   "series": "register style",
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "activity decile (1 = least active)": 9.0,
+   "y": 0.6331691877605777,
+   "series": "register style",
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "activity decile (1 = least active)": 10.0,
+   "y": 0.5572588200273241,
+   "series": "register style",
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "activity decile (1 = least active)": 1.0,
+   "y": 0.7202299238792528,
+   "series": "identity disposition",
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "activity decile (1 = least active)": 2.0,
+   "y": 0.7300536873323871,
+   "series": "identity disposition",
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "activity decile (1 = least active)": 3.0,
+   "y": 0.6542685645686847,
+   "series": "identity disposition",
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "activity decile (1 = least active)": 4.0,
+   "y": 0.6582048743694904,
+   "series": "identity disposition",
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "activity decile (1 = least active)": 5.0,
+   "y": 0.7135519562306916,
+   "series": "identity disposition",
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "activity decile (1 = least active)": 6.0,
+   "y": 0.8058478206769055,
+   "series": "identity disposition",
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "activity decile (1 = least active)": 7.0,
+   "y": 0.8255963336116171,
+   "series": "identity disposition",
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "activity decile (1 = least active)": 8.0,
+   "y": 0.8188247418787928,
+   "series": "identity disposition",
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "activity decile (1 = least active)": 9.0,
+   "y": 0.8006175554717719,
+   "series": "identity disposition",
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "activity decile (1 = least active)": 10.0,
+   "y": 0.7879499332345302,
+   "series": "identity disposition",
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "activity decile (1 = least active)": 1.0,
+   "y": 0.5009350181368474,
+   "series": "input side",
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "activity decile (1 = least active)": 2.0,
+   "y": 0.5327200924129218,
+   "series": "input side",
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "activity decile (1 = least active)": 3.0,
+   "y": 0.531512204618125,
+   "series": "input side",
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "activity decile (1 = least active)": 4.0,
+   "y": 0.5143286095016213,
+   "series": "input side",
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "activity decile (1 = least active)": 5.0,
+   "y": 0.5292570832845022,
+   "series": "input side",
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "activity decile (1 = least active)": 6.0,
+   "y": 0.5178062918262376,
+   "series": "input side",
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "activity decile (1 = least active)": 7.0,
+   "y": 0.48894348917296726,
+   "series": "input side",
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "activity decile (1 = least active)": 8.0,
+   "y": 0.4986351498287075,
+   "series": "input side",
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "activity decile (1 = least active)": 9.0,
+   "y": 0.48728976172769795,
+   "series": "input side",
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "activity decile (1 = least active)": 10.0,
+   "y": 0.47305678313089444,
+   "series": "input side",
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "activity decile (1 = least active)": 1.0,
+   "y": 0.5185817066369214,
+   "series": "output promoting",
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "activity decile (1 = least active)": 2.0,
+   "y": 0.4629247327251026,
+   "series": "output promoting",
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "activity decile (1 = least active)": 3.0,
+   "y": 0.48867668852622465,
+   "series": "output promoting",
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "activity decile (1 = least active)": 4.0,
+   "y": 0.4451966357087411,
+   "series": "output promoting",
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "activity decile (1 = least active)": 5.0,
+   "y": 0.47074820457120387,
+   "series": "output promoting",
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "activity decile (1 = least active)": 6.0,
+   "y": 0.4430933654245641,
+   "series": "output promoting",
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "activity decile (1 = least active)": 7.0,
+   "y": 0.5078150590954068,
+   "series": "output promoting",
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "activity decile (1 = least active)": 8.0,
+   "y": 0.5061711139483435,
+   "series": "output promoting",
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "activity decile (1 = least active)": 9.0,
+   "y": 0.5491590269613347,
+   "series": "output promoting",
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "activity decile (1 = least active)": 10.0,
+   "y": 0.5345883355626168,
+   "series": "output promoting",
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "activity decile (1 = least active)": 1.0,
+   "y": 0.48933310499939753,
+   "series": "mixed",
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "activity decile (1 = least active)": 2.0,
+   "y": 0.47180698001899946,
+   "series": "mixed",
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "activity decile (1 = least active)": 3.0,
+   "y": 0.45401463515387563,
+   "series": "mixed",
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "activity decile (1 = least active)": 4.0,
+   "y": 0.5179744499850842,
+   "series": "mixed",
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "activity decile (1 = least active)": 5.0,
+   "y": 0.4723770882096665,
+   "series": "mixed",
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "activity decile (1 = least active)": 6.0,
+   "y": 0.506998234732841,
+   "series": "mixed",
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "activity decile (1 = least active)": 7.0,
+   "y": 0.5121355897678865,
+   "series": "mixed",
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "activity decile (1 = least active)": 8.0,
+   "y": 0.49821399428367186,
+   "series": "mixed",
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "activity decile (1 = least active)": 9.0,
+   "y": 0.4888026171574446,
+   "series": "mixed",
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "activity decile (1 = least active)": 10.0,
+   "y": 0.5179312502001118,
+   "series": "mixed",
+   "_kind": "line",
+   "_group": 14
+  }
+ ],
+ "n_series": 15,
+ "total_points": 150,
+ "text": {
+  "suptitle": null,
+  "fig_texts": [
+   "R^2 target: #1482 dense-context -> SAE MLP, mean pooling (full width)  |  single corpus: R^2 and the activity / judged-label covariates are both the #1482 SINGLE-TURN read (verified against the banked #1482 panel)"
+  ],
+  "axes": [
+   {
+    "title_left": "interpretable",
+    "xlabel": "activity decile (1 = least active)",
+    "ylabel": "AUROC of R-squared for class membership",
+    "legend_labels": [
+     "yes"
+    ],
+    "xticklabels": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "5",
+     "6",
+     "7",
+     "8",
+     "9",
+     "10"
+    ],
+    "yticklabels": [
+     "0.3",
+     "0.4",
+     "0.5",
+     "0.6",
+     "0.7",
+     "0.8",
+     "0.9"
+    ]
+   },
+   {
+    "title_left": "abstraction",
+    "xlabel": "activity decile (1 = least active)",
+    "legend_labels": [
+     "token surface",
+     "lexical semantic",
+     "abstract contextual"
+    ],
+    "xticklabels": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "5",
+     "6",
+     "7",
+     "8",
+     "9",
+     "10"
+    ]
+   },
+   {
+    "title_left": "content type",
+    "xlabel": "activity decile (1 = least active)",
+    "legend_labels": [
+     "topic",
+     "task format",
+     "entity",
+     "syntax",
+     "operation"
+    ],
+    "xticklabels": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "5",
+     "6",
+     "7",
+     "8",
+     "9",
+     "10"
+    ]
+   },
+   {
+    "title_left": "speaker property",
+    "xlabel": "activity decile (1 = least active)",
+    "legend_labels": [
+     "language",
+     "register style",
+     "identity disposition"
+    ],
+    "xticklabels": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "5",
+     "6",
+     "7",
+     "8",
+     "9",
+     "10"
+    ]
+   },
+   {
+    "title_left": "functional role",
+    "xlabel": "activity decile (1 = least active)",
+    "legend_labels": [
+     "input side",
+     "output promoting",
+     "mixed"
+    ],
+    "xticklabels": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "5",
+     "6",
+     "7",
+     "8",
+     "9",
+     "10"
+    ]
+   }
+  ],
+  "series": [
+   "yes",
+   "token surface",
+   "lexical semantic",
+   "abstract contextual",
+   "topic",
+   "task format",
+   "entity",
+   "syntax",
+   "operation",
+   "language",
+   "register style",
+   "identity disposition",
+   "input side",
+   "output promoting",
+   "mixed"
+  ]
+ },
+ "issue1482_label_agreement": {
+  "what_is_plotted": "within each equal-count activity decile of the analysis universe, the one-vs-rest AUROC of R-squared for membership in each judged label class (band = 95% group-conditional bootstrap CI, 2000 draws). One panel per axis; colour = axis, linestyle+marker = class within the axis.",
+  "definitions": {
+   "AUROC": "P(R-squared of a class member > R-squared of a non-member) + 0.5 P(tie)",
+   "decile": "equal-COUNT bin of activity (firing frequency per answer)"
+  },
+  "caveats": [
+   "single corpus: R^2 and the activity / judged-label covariates are both the #1482 SINGLE-TURN read (verified against the banked #1482 panel)",
+   "deciles are equal-COUNT, not equal-width in log-activity: decile 1 spans 19.0x and decile 10 spans 9.148x internally, so their endpoint values are the least tightly conditioned",
+   "a decile-class cell with fewer than 10 members on either side is left blank"
+  ],
+  "decile_activity_spans": [
+   {
+    "decile": 1,
+    "n": 11724,
+    "activity_min": 8.333333333333334e-06,
+    "activity_max": 0.00015833333333333332,
+    "internal_span_ratio": 18.999999999999996,
+    "median_activity": 7.5e-05,
+    "median_r2": -5913.84326171875
+   },
+   {
+    "decile": 2,
+    "n": 12301,
+    "activity_min": 0.00016666666666666666,
+    "activity_max": 0.0005916666666666667,
+    "internal_span_ratio": 3.5500000000000003,
+    "median_activity": 0.000325,
+    "median_r2": -296.9652404785156
+   },
+   {
+    "decile": 3,
+    "n": 12184,
+    "activity_min": 0.0006,
+    "activity_max": 0.0016333333333333334,
+    "internal_span_ratio": 2.7222222222222228,
+    "median_activity": 0.001025,
+    "median_r2": -22.17078685760498
+   },
+   {
+    "decile": 4,
+    "n": 12045,
+    "activity_min": 0.0016416666666666667,
+    "activity_max": 0.003725,
+    "internal_span_ratio": 2.269035532994924,
+    "median_activity": 0.0025083333333333333,
+    "median_r2": -3.8705577850341797
+   },
+   {
+    "decile": 5,
+    "n": 12093,
+    "activity_min": 0.0037333333333333333,
+    "activity_max": 0.00755,
+    "internal_span_ratio": 2.022321428571429,
+    "median_activity": 0.005375,
+    "median_r2": -1.120861291885376
+   },
+   {
+    "decile": 6,
+    "n": 12060,
+    "activity_min": 0.007558333333333334,
+    "activity_max": 0.014441666666666667,
+    "internal_span_ratio": 1.9106945975744212,
+    "median_activity": 0.010475,
+    "median_r2": -0.5037587285041809
+   },
+   {
+    "decile": 7,
+    "n": 12076,
+    "activity_min": 0.01445,
+    "activity_max": 0.027025,
+    "internal_span_ratio": 1.870242214532872,
+    "median_activity": 0.0198125,
+    "median_r2": -0.24844834208488464
+   },
+   {
+    "decile": 8,
+    "n": 12074,
+    "activity_min": 0.027033333333333333,
+    "activity_max": 0.05146666666666667,
+    "internal_span_ratio": 1.903822441430333,
+    "median_activity": 0.037175,
+    "median_r2": -0.10902682319283485
+   },
+   {
+    "decile": 9,
+    "n": 12070,
+    "activity_min": 0.05148333333333333,
+    "activity_max": 0.1093,
+    "internal_span_ratio": 2.123017157656199,
+    "median_activity": 0.07279166666666667,
+    "median_r2": 0.004246143391355872
+   },
+   {
+    "decile": 10,
+    "n": 12070,
+    "activity_min": 0.10930833333333333,
+    "activity_max": 1.0,
+    "internal_span_ratio": 9.148433330792102,
+    "median_activity": 0.1884375,
+    "median_r2": 0.12780941277742386
+   }
+  ],
+  "source_paths": {
+   "r2": "/home/thomasjiralerspong/explore-persona-space/data/issue_1482/densesae_dl/mlp__mean_perfeature.npz",
+   "labels": "/mnt/eps-data/thomasjiralerspong/issue1773_fulldict/labels_upload"
+  }
+ }
+}
