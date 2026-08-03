@@ -7504,8 +7504,8 @@
     "1969": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1969",
-      "status": "running",
+      "path": "tasks/reviewing/1969",
+      "status": "reviewing",
       "title": "daily-fix: fellows stall reads need grace window"
     },
     "197": {
