@@ -2467,10 +2467,15 @@ else
 #     (pin tests import symbols from workflow_lint.py; syncing new pin
 #     tests against a stale linter is a collection ImportError — the
 #     2de5253e incident, 2026-07-26)
-#   FAMILY_guard: .claude/hooks <-> :(glob)tests/test_guard_*.py
+#   FAMILY_guard: .claude/hooks <-> :(glob)scripts/guard_*.sh
+#                                <-> :(glob)tests/test_guard_*.py
 #                                <-> tests/test_guard_lessons_edit.py
-#     (guard tests exercise the hook implementations; syncing tests
-#     against stale hooks fails behaviorally)
+#     (guard tests exercise the hook + guard-script implementations;
+#     syncing tests against stale hooks fails behaviorally, and the
+#     scripts/guard_*.sh PreToolUse implementations — e.g.
+#     guard_repo_root_branch.sh, guard_repo_root_pull.sh — are executed
+#     by the test_guard_* pins: syncing the tests without them red-flags
+#     main-green nodes on pure version skew — the #1860/#1862 half-sync)
 #
 # Everything else in SPECS is a singleton (its own family, no coupling):
 # .claude/agents, .claude/rules, CLAUDE.md.
@@ -2483,12 +2488,13 @@ FAMILY_OF["scripts/workflow_lint.py"]="lint"
 FAMILY_OF[":(glob)tests/test_workflow_lint*.py"]="lint"
 FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"    # test_codex_outage_docstring_pass_count_lint_stays_green imports check_asw_docstring_pass_count from workflow_lint
 FAMILY_OF[".claude/hooks"]="guard"
+FAMILY_OF[":(glob)scripts/guard_*.sh"]="guard"
 FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
 FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
 # Singletons: .claude/agents, .claude/rules, CLAUDE.md — each is its
 # own family key (set below in the pass-1 loop by defaulting to its own path).
 
-SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
+SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
 # Bounded freshness fetch (#1747 — the #1289/#1714 shape): local main can lag
 # origin on the shared root; a failed fetch degrades to last-fetched
 # origin/main — never a wedge, never a fallback to local main.
@@ -2582,7 +2588,12 @@ extend it further into `scripts/`, `tests/`, or `src/`.** The family
 exception (#1560: `scripts/workflow_lint.py`, `.claude/hooks`,
 `:(glob)tests/test_guard_*.py`, `:(glob)tests/test_workflow_lint*.py`;
 #1883 adds `:(glob)tests/test_issue_skill_*.py`, the prose-pin tests
-over `.claude/skills` content — the #1824 vintage skew)
+over `.claude/skills` content — the #1824 vintage skew; #1963 adds
+`:(glob)scripts/guard_*.sh` — the guard-script implementations the
+`:(glob)tests/test_guard_*.py` pins execute, PreToolUse hooks wired in
+`.claude/settings.json`: syncing the tests without them half-syncs the
+tree and red-flags main-green guard nodes on pure version skew, the
+#1860/#1862 incidents)
 exists because those files execute FROM the worktree tree on four
 surfaces — the Step 10d TG legs, worktree pytest / Step 9c, the hooks'
 own-tree `workflow_lint` import, and the inline gate invoked in a
@@ -2616,10 +2627,13 @@ skills content, #1883), lint
 (`scripts/workflow_lint.py` + `:(glob)tests/test_workflow_lint*.py`
 plus the explicit importers `tests/test_workflow_yaml.py` and
 `tests/test_autonomous_session_watch.py`), and guard (`.claude/hooks`
-+ `:(glob)tests/test_guard_*.py` + `tests/test_guard_lessons_edit.py`).
++ `:(glob)scripts/guard_*.sh` + `:(glob)tests/test_guard_*.py`
++ `tests/test_guard_lessons_edit.py`).
 Everything else in SPECS is a singleton (its own family). Everything ELSE keeps the original rationale: workflow-
 helper SCRIPTS are already resolved from the MAIN checkout (Step 0
-§ worktree spec-freshness: `"$REPO_ROOT"/scripts/...`), and blind-
+§ worktree spec-freshness: `"$REPO_ROOT"/scripts/...`) — except the
+guard-family `:(glob)scripts/guard_*.sh` implementations, synced +
+executed from the worktree by their pin tests (#1963) — and blind-
 syncing broader `tests/` is actively unsafe — main's newer workflow
 tests pin behavior implemented in main's newer `scripts/` + `src/`
 (e.g. `task_workflow.py`, `backends/`) that the branch predates, so a
@@ -2646,7 +2660,9 @@ landed on main after the branch point (e.g. `scripts/plan_patch.py`, #1631)
 and are absent from the stale worktree tree; the sync commit's own pre-commit
 hooks then run the (freshly-synced) `workflow_lint.py --check-references`
 against the WORKTREE tree. Rather than syncing those helpers in — banned
-above; nothing may execute `scripts/` copies from the worktree —
+above; nothing may execute `scripts/` copies from the worktree, except
+the guard-family `:(glob)scripts/guard_*.sh` implementations their
+synced pin tests execute (#1963) —
 `check_script_references` / `check_skill_references` degrade exactly that
 case to a `WARN:` on a non-main checkout (referenced target missing locally
 but present at `main`/`origin/main`), so the sync commit passes on files the
@@ -12518,9 +12534,10 @@ else
     FAMILY_OF[":(glob)tests/test_workflow_lint*.py"]="lint"
     FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"
     FAMILY_OF[".claude/hooks"]="guard"
+    FAMILY_OF[":(glob)scripts/guard_*.sh"]="guard"
     FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
     FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
-    SPECS_10D=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
+    SPECS_10D=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
     MB_10D=$(git -C "$WT" merge-base HEAD origin/main)
     declare -A DIRTY_FAMILIES_10D
     for f in $SPECS_10D; do
