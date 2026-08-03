@@ -26748,6 +26748,44 @@ def _flush_tty_unmapped_reports(candidates: list[dict], dry_run: bool, now: floa
         _save_tty_unmapped_report_state({"sids": sorted(prev_sids | cur_sids), "last_push_ts": now})
 
 
+def _maybe_accumulate_tty_report(
+    sid: str,
+    pid: int,
+    mapped: bool,
+    has_tty: bool,
+    now: float,
+    tty_report_acc: list[dict] | None,
+    children_map: dict[int, list[int]] | None,
+    cwd: str | None,
+) -> None:
+    """#1971 report-lane accumulation for ONE session, carrying ALL of the
+    lane's own gating (extracted from :func:`_process_idle_unmapped` so the
+    caller gains zero branches — the C901 budget there is spent): fires only
+    for an UNMAPPED session whose wrapper holds a LIVE user TTY, when the
+    pass supplied an accumulator (``None`` = legacy caller, lane off) and
+    the ``EPM_DISABLE_TTY_UNMAPPED_REPORT`` kill switch is unset. Stats the
+    transcript with its OWN local read (never the idle signal the reap
+    decision consumes) and appends at most ONE candidate dict (sid / pid /
+    cwd / wrapper_age_s / idle_age_s / safe-to-kill verdict). ESCALATE-ONLY:
+    writes no per-sid episode state and never stops anything — aggregation +
+    push/sidecar dedup live in :func:`_flush_tty_unmapped_reports`."""
+    if mapped or not has_tty or tty_report_acc is None or not _tty_unmapped_report_enabled():
+        return
+    tty_idle_age_s, _tty_signal_reason = _transcript_idle_age_s(pid, now)
+    if decide_tty_unmapped_report(tty_idle_age_s, _tty_unmapped_report_idle_s()) != "report":
+        return
+    tty_report_acc.append(
+        {
+            "sid": sid,
+            "pid": pid,
+            "cwd": cwd,
+            "wrapper_age_s": _wrapper_age_s(pid, now),
+            "idle_age_s": tty_idle_age_s,
+            "verdict": _tty_report_safe_to_kill_verdict(sid, pid, children_map),
+        }
+    )
+
+
 def _last_mapped_terminal_path(sid: str) -> Path:
     return AUTONOMOUS_REGISTRY_DIR / f"{LAST_MAPPED_TERMINAL_PREFIX}{sid}.json"
 
@@ -27238,24 +27276,11 @@ def _process_idle_unmapped(
 
     # ── #1971 TTY-attached unmapped REPORT lane (escalate-only) ───────────────
     # A TTY-attached wrapper is deliberately exempt from every stop/alert arm
-    # below (decide_idle_unmapped's pinned has_tty -> ("clear", 0)); this
-    # branch only ACCUMULATES a report candidate for the pass-level flush. It
-    # uses its OWN local idle read (never the ``idle_age_s`` the decision
-    # consumes), writes no per-sid state, stops nothing, and is inert for
-    # legacy callers (``tty_report_acc=None``) and under the kill switch.
-    if not mapped and has_tty and tty_report_acc is not None and _tty_unmapped_report_enabled():
-        tty_idle_age_s, _tty_signal_reason = _transcript_idle_age_s(pid, now)
-        if decide_tty_unmapped_report(tty_idle_age_s, _tty_unmapped_report_idle_s()) == "report":
-            tty_report_acc.append(
-                {
-                    "sid": sid,
-                    "pid": pid,
-                    "cwd": cwd,
-                    "wrapper_age_s": _wrapper_age_s(pid, now),
-                    "idle_age_s": tty_idle_age_s,
-                    "verdict": _tty_report_safe_to_kill_verdict(sid, pid, children_map),
-                }
-            )
+    # below (decide_idle_unmapped's pinned has_tty -> ("clear", 0)); the
+    # helper only ACCUMULATES a report candidate for the pass-level flush
+    # (its own gating: unmapped + has_tty + accumulator present + lane
+    # enabled), writes no per-sid state, and stops nothing.
+    _maybe_accumulate_tty_report(sid, pid, mapped, has_tty, now, tty_report_acc, children_map, cwd)
 
     prev = _load_idle_unmapped_state(sid)
     prev_missed = prev.get("missed", 0)
