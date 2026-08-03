@@ -1,0 +1,829 @@
+{
+  "commit": "d4ab4b2a5c",
+  "created": "2026-08-03T22:34:58Z",
+  "figsize": [
+    7.0,
+    5.0
+  ],
+  "points": [
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.3032360329517925,
+      "map-change statistic D at layer 19 (span-mean pooling)": 6.819427162613529,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 5.663220546745313,
+      "map-change statistic D at layer 19 (span-mean pooling)": 2.834041654105839,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.735293100542635,
+      "map-change statistic D at layer 19 (span-mean pooling)": 7.597228312542633,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 5.643777543582788,
+      "map-change statistic D at layer 19 (span-mean pooling)": 2.747278890228637,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.843413937389845,
+      "map-change statistic D at layer 19 (span-mean pooling)": 9.696340008585068,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.198709348144216,
+      "map-change statistic D at layer 19 (span-mean pooling)": 8.326522445086667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.9796847726945535,
+      "map-change statistic D at layer 19 (span-mean pooling)": 9.635235560723459,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.783622295600231,
+      "map-change statistic D at layer 19 (span-mean pooling)": 8.810120223536437,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 4.1702896095554856,
+      "map-change statistic D at layer 19 (span-mean pooling)": 0.7798522522219251,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 4.461181453390318,
+      "map-change statistic D at layer 19 (span-mean pooling)": -0.3620178164735215,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 4.260150448579409,
+      "map-change statistic D at layer 19 (span-mean pooling)": 1.2452279351506572,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 10.622614734059368,
+      "map-change statistic D at layer 19 (span-mean pooling)": 12.90595606136192,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.209880741871371,
+      "map-change statistic D at layer 19 (span-mean pooling)": 4.2464683442631195,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 11.947890036110525,
+      "map-change statistic D at layer 19 (span-mean pooling)": 14.256059197696075,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.281532309814243,
+      "map-change statistic D at layer 19 (span-mean pooling)": 4.2258902807332,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 9.998606773147364,
+      "map-change statistic D at layer 19 (span-mean pooling)": 13.74156807430047,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 8.687003389832487,
+      "map-change statistic D at layer 19 (span-mean pooling)": 12.262266369939447,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 10.675243774584883,
+      "map-change statistic D at layer 19 (span-mean pooling)": 14.379633766248627,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 8.562649369369838,
+      "map-change statistic D at layer 19 (span-mean pooling)": 12.328270888853648,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 7.004484006512902,
+      "map-change statistic D at layer 19 (span-mean pooling)": 6.509657645815766,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.096917211481364,
+      "map-change statistic D at layer 19 (span-mean pooling)": 4.3148976729963415,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 7.055315098206506,
+      "map-change statistic D at layer 19 (span-mean pooling)": 6.629152387693434,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.066864390859887,
+      "map-change statistic D at layer 19 (span-mean pooling)": 4.480372214879374,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 12.067800239179718,
+      "map-change statistic D at layer 19 (span-mean pooling)": 18.711998325308205,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 5.767628067259913,
+      "map-change statistic D at layer 19 (span-mean pooling)": 3.7663450490812984,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 3.301381078115059,
+      "map-change statistic D at layer 19 (span-mean pooling)": -1.3661560589675332,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 5.768385956434269,
+      "map-change statistic D at layer 19 (span-mean pooling)": 3.920686533509482,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 4.586576857447376,
+      "map-change statistic D at layer 19 (span-mean pooling)": 0.2993788130945916,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 7.564263008853676,
+      "map-change statistic D at layer 19 (span-mean pooling)": 8.167650089340412,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.798494239989577,
+      "map-change statistic D at layer 19 (span-mean pooling)": 5.8400069603735005,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 7.73062135904195,
+      "map-change statistic D at layer 19 (span-mean pooling)": 7.830205087349388,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.609220270147771,
+      "map-change statistic D at layer 19 (span-mean pooling)": 5.11499793760453,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.2105834746699424,
+      "map-change statistic D at layer 19 (span-mean pooling)": -4.649996341140369,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.1216079909383971,
+      "map-change statistic D at layer 19 (span-mean pooling)": -4.679401274315583,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.1814947894965155,
+      "map-change statistic D at layer 19 (span-mean pooling)": -4.665993901887488,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.0739650550065387,
+      "map-change statistic D at layer 19 (span-mean pooling)": -4.771037781378471,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 4.686843777717799,
+      "map-change statistic D at layer 19 (span-mean pooling)": 0.785865999382974,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 4.41726009477034,
+      "map-change statistic D at layer 19 (span-mean pooling)": -0.07708805548313968,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 4.499007699682435,
+      "map-change statistic D at layer 19 (span-mean pooling)": 0.8835472118952001,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 4.185691854825001,
+      "map-change statistic D at layer 19 (span-mean pooling)": -0.5200558510893343,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.926208951704882,
+      "map-change statistic D at layer 19 (span-mean pooling)": -2.035681007836615,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.9490389031959479,
+      "map-change statistic D at layer 19 (span-mean pooling)": -2.1778184515476724,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 2.4412360457447413,
+      "map-change statistic D at layer 19 (span-mean pooling)": -1.2493929073725667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 2.299169719069221,
+      "map-change statistic D at layer 19 (span-mean pooling)": -1.6929953842944432,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.1459630790553368,
+      "map-change statistic D at layer 19 (span-mean pooling)": -3.7689853546568983,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.1252124149137719,
+      "map-change statistic D at layer 19 (span-mean pooling)": -3.8232521353988496,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.0724643810233385,
+      "map-change statistic D at layer 19 (span-mean pooling)": -3.88347801106063,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.3276086811047287,
+      "map-change statistic D at layer 19 (span-mean pooling)": -3.3881975079516273,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 0.3225183797302746,
+      "map-change statistic D at layer 19 (span-mean pooling)": -5.269444068529699,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 0.3326086047478979,
+      "map-change statistic D at layer 19 (span-mean pooling)": -5.381645503377113,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 0.38859782534165016,
+      "map-change statistic D at layer 19 (span-mean pooling)": -3.044564984826402,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 0.2002183362519938,
+      "map-change statistic D at layer 19 (span-mean pooling)": -5.61612511287094,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.2253005529616583,
+      "map-change statistic D at layer 19 (span-mean pooling)": -3.6373895509359713,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.245603290075491,
+      "map-change statistic D at layer 19 (span-mean pooling)": -3.863441741646909,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.415176309585418,
+      "map-change statistic D at layer 19 (span-mean pooling)": -3.709829621107862,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.431843622803856,
+      "map-change statistic D at layer 19 (span-mean pooling)": -3.560704666119568,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 7.899556915955797,
+      "map-change statistic D at layer 19 (span-mean pooling)": 12.488295920751604,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 8.617306574750245,
+      "map-change statistic D at layer 19 (span-mean pooling)": 13.639312137414443,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 7.540137420021644,
+      "map-change statistic D at layer 19 (span-mean pooling)": 9.81865387041885,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 7.441759252821997,
+      "map-change statistic D at layer 19 (span-mean pooling)": 9.479975179805876,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 8.810038570344334,
+      "map-change statistic D at layer 19 (span-mean pooling)": 12.87879841277784,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 8.88750859039884,
+      "map-change statistic D at layer 19 (span-mean pooling)": 13.31761927969583,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 8.402986002877983,
+      "map-change statistic D at layer 19 (span-mean pooling)": 10.70685117359642,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 8.292182719737601,
+      "map-change statistic D at layer 19 (span-mean pooling)": 10.918100792674483,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 0.9155617969675957,
+      "map-change statistic D at layer 19 (span-mean pooling)": -3.9651555693642173,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 0.8908391836361449,
+      "map-change statistic D at layer 19 (span-mean pooling)": -4.151055259546667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 0.8676879745480358,
+      "map-change statistic D at layer 19 (span-mean pooling)": -4.197076976186378,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 0.8770618182990922,
+      "map-change statistic D at layer 19 (span-mean pooling)": -1.7860915246069933,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 7.59987398376715,
+      "map-change statistic D at layer 19 (span-mean pooling)": 10.204431275966048,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 10.462571659826859,
+      "map-change statistic D at layer 19 (span-mean pooling)": 14.504513360180667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 5.666221046427297,
+      "map-change statistic D at layer 19 (span-mean pooling)": 3.5760174731245318,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 5.5770141553200485,
+      "map-change statistic D at layer 19 (span-mean pooling)": 3.5738811053291037,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 8.617306574750245,
+      "map-change statistic D at layer 19 (span-mean pooling)": 13.639312137414443,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 7.441759252821997,
+      "map-change statistic D at layer 19 (span-mean pooling)": 9.479975179805876,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 7.899556915955797,
+      "map-change statistic D at layer 19 (span-mean pooling)": 12.488295920751604,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 7.540137420021644,
+      "map-change statistic D at layer 19 (span-mean pooling)": 9.81865387041885,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 8.88750859039884,
+      "map-change statistic D at layer 19 (span-mean pooling)": 13.31761927969583,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 8.292182719737601,
+      "map-change statistic D at layer 19 (span-mean pooling)": 10.918100792674483,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 8.810038570344334,
+      "map-change statistic D at layer 19 (span-mean pooling)": 12.87879841277784,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 8.402986002877983,
+      "map-change statistic D at layer 19 (span-mean pooling)": 10.70685117359642,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 0.8908391836361449,
+      "map-change statistic D at layer 19 (span-mean pooling)": -4.151055259546667,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 0.8770618182990922,
+      "map-change statistic D at layer 19 (span-mean pooling)": -1.7860915246069933,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 0.9155617969675957,
+      "map-change statistic D at layer 19 (span-mean pooling)": -3.9651555693642173,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 0.8676879745480358,
+      "map-change statistic D at layer 19 (span-mean pooling)": -4.197076976186378,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 10.462571659826859,
+      "map-change statistic D at layer 19 (span-mean pooling)": 14.504513360180667,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 5.5770141553200485,
+      "map-change statistic D at layer 19 (span-mean pooling)": 3.5738811053291037,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 7.59987398376715,
+      "map-change statistic D at layer 19 (span-mean pooling)": 10.204431275966048,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 5.666221046427297,
+      "map-change statistic D at layer 19 (span-mean pooling)": 3.5760174731245318,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.9796847726945535,
+      "map-change statistic D at layer 19 (span-mean pooling)": 9.635235560723459,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.783622295600231,
+      "map-change statistic D at layer 19 (span-mean pooling)": 8.810120223536437,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.843413937389845,
+      "map-change statistic D at layer 19 (span-mean pooling)": 9.696340008585068,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.198709348144216,
+      "map-change statistic D at layer 19 (span-mean pooling)": 8.326522445086667,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.735293100542635,
+      "map-change statistic D at layer 19 (span-mean pooling)": 7.597228312542633,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 5.643777543582788,
+      "map-change statistic D at layer 19 (span-mean pooling)": 2.747278890228637,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.3032360329517925,
+      "map-change statistic D at layer 19 (span-mean pooling)": 6.819427162613529,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 5.663220546745313,
+      "map-change statistic D at layer 19 (span-mean pooling)": 2.834041654105839,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 7.055315098206506,
+      "map-change statistic D at layer 19 (span-mean pooling)": 6.629152387693434,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.066864390859887,
+      "map-change statistic D at layer 19 (span-mean pooling)": 4.480372214879374,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 7.004484006512902,
+      "map-change statistic D at layer 19 (span-mean pooling)": 6.509657645815766,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.096917211481364,
+      "map-change statistic D at layer 19 (span-mean pooling)": 4.3148976729963415,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.9490389031959479,
+      "map-change statistic D at layer 19 (span-mean pooling)": -2.1778184515476724,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 2.299169719069221,
+      "map-change statistic D at layer 19 (span-mean pooling)": -1.6929953842944432,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.926208951704882,
+      "map-change statistic D at layer 19 (span-mean pooling)": -2.035681007836615,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 2.4412360457447413,
+      "map-change statistic D at layer 19 (span-mean pooling)": -1.2493929073725667,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.1252124149137719,
+      "map-change statistic D at layer 19 (span-mean pooling)": -3.8232521353988496,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.3276086811047287,
+      "map-change statistic D at layer 19 (span-mean pooling)": -3.3881975079516273,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.1459630790553368,
+      "map-change statistic D at layer 19 (span-mean pooling)": -3.7689853546568983,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.0724643810233385,
+      "map-change statistic D at layer 19 (span-mean pooling)": -3.88347801106063,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 0.3326086047478979,
+      "map-change statistic D at layer 19 (span-mean pooling)": -5.381645503377113,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 0.2002183362519938,
+      "map-change statistic D at layer 19 (span-mean pooling)": -5.61612511287094,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 0.3225183797302746,
+      "map-change statistic D at layer 19 (span-mean pooling)": -5.269444068529699,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 0.38859782534165016,
+      "map-change statistic D at layer 19 (span-mean pooling)": -3.044564984826402,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.245603290075491,
+      "map-change statistic D at layer 19 (span-mean pooling)": -3.863441741646909,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.431843622803856,
+      "map-change statistic D at layer 19 (span-mean pooling)": -3.560704666119568,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.2253005529616583,
+      "map-change statistic D at layer 19 (span-mean pooling)": -3.6373895509359713,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.415176309585418,
+      "map-change statistic D at layer 19 (span-mean pooling)": -3.709829621107862,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 7.73062135904195,
+      "map-change statistic D at layer 19 (span-mean pooling)": 7.830205087349388,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.609220270147771,
+      "map-change statistic D at layer 19 (span-mean pooling)": 5.11499793760453,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 7.564263008853676,
+      "map-change statistic D at layer 19 (span-mean pooling)": 8.167650089340412,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 6.798494239989577,
+      "map-change statistic D at layer 19 (span-mean pooling)": 5.8400069603735005,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.1814947894965155,
+      "map-change statistic D at layer 19 (span-mean pooling)": -4.665993901887488,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.0739650550065387,
+      "map-change statistic D at layer 19 (span-mean pooling)": -4.771037781378471,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.2105834746699424,
+      "map-change statistic D at layer 19 (span-mean pooling)": -4.649996341140369,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 1.1216079909383971,
+      "map-change statistic D at layer 19 (span-mean pooling)": -4.679401274315583,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 4.499007699682435,
+      "map-change statistic D at layer 19 (span-mean pooling)": 0.8835472118952001,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 4.185691854825001,
+      "map-change statistic D at layer 19 (span-mean pooling)": -0.5200558510893343,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 5.768385956434269,
+      "map-change statistic D at layer 19 (span-mean pooling)": 3.920686533509482,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 4.586576857447376,
+      "map-change statistic D at layer 19 (span-mean pooling)": 0.2993788130945916,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 5.767628067259913,
+      "map-change statistic D at layer 19 (span-mean pooling)": 3.7663450490812984,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "weights-carried dose: function-effect norm at layer 19 (log scale)": 3.301381078115059,
+      "map-change statistic D at layer 19 (span-mean pooling)": -1.3661560589675332,
+      "_kind": "scatter",
+      "_group": 58
+    }
+  ],
+  "n_series": 59,
+  "total_points": 130,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Map change vs dose: contrastive-vs-positive-only pairs connected",
+        "xlabel": "weights-carried dose: function-effect norm at layer 19 (log scale)",
+        "ylabel": "map-change statistic D at layer 19 (span-mean pooling)",
+        "legend_labels": [
+          "casual writing style",
+          "impoliteness",
+          "sycophancy",
+          "marker",
+          "contrastive (filled)",
+          "positive-only (open)",
+          "all 72 arms"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20"
+        ]
+      }
+    ]
+  }
+}
