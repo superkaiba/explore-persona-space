@@ -157,8 +157,19 @@ def _write_json(path: Path, obj: dict) -> None:
 
 
 def _git_sha() -> str:
+    """Commit sha for the reproducibility record.
+
+    Prefers the ``EPS_GIT_SHA`` env pin: rsync-staged / git-less scratch trees
+    (the fellows + SLURM lanes, and any pod staged without a usable .git) have
+    no repo to query, and a strict shellout there kills the workload — degrade,
+    never crash (gotchas.md, #1902).
+    """
+    import os
     import subprocess
 
+    pinned = os.environ.get("EPS_GIT_SHA", "").strip()
+    if pinned:
+        return pinned
     try:
         out = subprocess.run(
             ["git", "-C", str(REPO), "rev-parse", "HEAD"],
