@@ -7419,8 +7419,8 @@
     "1958": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1958",
-      "status": "proposed",
+      "path": "tasks/planning/1958",
+      "status": "planning",
       "title": "workflow-fix: pre_reg audit gains pre-set/declared/specified synonym branch"
     },
     "1959": {
