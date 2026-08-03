@@ -19,6 +19,7 @@ tools:
   - Grep
   - Glob
   - Bash
+model: "claude-fable-5"
 ---
 
 # Plan-Adherence Critic (workflow v2)

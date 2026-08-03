@@ -18,6 +18,7 @@ tools:
   - Glob
   - Bash
   - Write
+model: "claude-fable-5"
 ---
 
 # Codex Statistics & Measurement Critic (thin Claude wrapper, in-context mode)

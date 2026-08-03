@@ -2443,7 +2443,10 @@ else
 # checked by workflow_lint.py constants, enforced by .claude/hooks/, and pinned
 # by the test_workflow_lint*/test_guard_* pin tests — syncing
 # specs without their enforcing family creates the #1489/#1482/#1417 vintage
-# skew. `:(glob)` is a git pathspec (never shell-expands: no path starts with
+# skew. #1972 widens the set: .claude/agent-memory (singleton, protected by
+# the uncommitted-dirt arm below), the Step 9c selector triple (lint family),
+# and the per-FILE sibling-issue script/test arm at the end of this block.
+# `:(glob)` is a git pathspec (never shell-expands: no path starts with
 # ":(glob)"), so `git checkout origin/main --` matches main-NEW pin tests too. The
 # per-file branch-side-edit guard's skip grain is PER-ITEM: a branch editing
 # ONE pin test skips the whole `:(glob)` family entry (fail-safe — status-quo
@@ -2467,6 +2470,13 @@ else
 #     (pin tests import symbols from workflow_lint.py; syncing new pin
 #     tests against a stale linter is a collection ImportError — the
 #     2de5253e incident, 2026-07-26)
+#     plus scripts/select_step9c_tests.py <-> tests/test_select_step9c_tests.py
+#     <-> tests/step9c_workflow_invariant_manifest.txt (#1972: the pin test
+#     importlib-loads the selector BY PATH — the WORKTREE copy — and its
+#     case 6b pins WORKFLOW_INVARIANT set-equal to the manifest file; the
+#     historically dominant selector edit is an invariant-membership change
+#     that updates all THREE together on main, so syncing any strict subset
+#     manufactures exactly the #1824/#1860 half-sync skew)
 #   FAMILY_guard: .claude/hooks <-> :(glob)scripts/guard_*.sh
 #                                <-> :(glob)tests/test_guard_*.py
 #                                <-> tests/test_guard_lessons_edit.py
@@ -2478,7 +2488,10 @@ else
 #     main-green nodes on pure version skew — the #1860/#1862 half-sync)
 #
 # Everything else in SPECS is a singleton (its own family, no coupling):
-# .claude/agents, .claude/rules, CLAUDE.md.
+# .claude/agents, .claude/agent-memory (#1972 — always-appended memory
+# indexes the lint budget checks scan; no coupling, so its protections are
+# the uncommitted-dirt arm below + the branch-side-edit guard),
+# .claude/rules, CLAUDE.md.
 declare -A FAMILY_OF
 FAMILY_OF[".claude/workflow.yaml"]="workflow"
 FAMILY_OF[".claude/skills"]="workflow"    # contains markers.md, the derived table target
@@ -2487,14 +2500,18 @@ FAMILY_OF[":(glob)tests/test_issue_skill_*.py"]="workflow"
 FAMILY_OF["scripts/workflow_lint.py"]="lint"
 FAMILY_OF[":(glob)tests/test_workflow_lint*.py"]="lint"
 FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"    # test_codex_outage_docstring_pass_count_lint_stays_green imports check_asw_docstring_pass_count from workflow_lint
+FAMILY_OF["scripts/select_step9c_tests.py"]="lint"
+FAMILY_OF["tests/test_select_step9c_tests.py"]="lint"
+FAMILY_OF["tests/step9c_workflow_invariant_manifest.txt"]="lint"
 FAMILY_OF[".claude/hooks"]="guard"
 FAMILY_OF[":(glob)scripts/guard_*.sh"]="guard"
 FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
 FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
-# Singletons: .claude/agents, .claude/rules, CLAUDE.md — each is its
-# own family key (set below in the pass-1 loop by defaulting to its own path).
+# Singletons: .claude/agents, .claude/agent-memory, .claude/rules, CLAUDE.md
+# — each is its own family key (set below in the pass-1 loop by defaulting
+# to its own path).
 
-SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
+SPECS=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
 # Bounded freshness fetch (#1747 — the #1289/#1714 shape): local main can lag
 # origin on the shared root; a failed fetch degrades to last-fetched
 # origin/main — never a wedge, never a fallback to local main.
@@ -2532,6 +2549,32 @@ for f in $SPECS; do
     echo "  branch-side commits:"
     echo "$bs_commits" | sed 's/^/    /'
   fi
+  # Uncommitted-dirt arm (#1972): an uncommitted worktree write under $f must
+  # never be clobbered by the checkout below. Tracked-modified dirt (any
+  # non-?? porcelain line — renames `R  a -> b` need no path parsing) always
+  # marks the family dirty; an UNTRACKED (??) path marks it dirty ONLY when
+  # the same path exists at origin/main — `git checkout <ref> -- <pathspec>`
+  # DOES overwrite an untracked file whose path exists at the ref, and cannot
+  # touch one absent from it (so fresh mid-round agent-memory files with no
+  # main-side name collision never block the sync). A collapsed untracked dir
+  # (`?? dir/`) cat-files the tree path with the slash stripped — a
+  # main-existing tree marks dirty, the conservative direction. Fail-safe:
+  # dirty -> status-quo staleness, never a clobber.
+  DIRT=""
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    p=${line:3}; p=${p%/}
+    if [ "${line:0:2}" = "??" ]; then
+      git -C "$WT" cat-file -e "origin/main:$p" 2>/dev/null && DIRT=yes
+    else
+      DIRT=yes
+    fi
+  done < <(git -C "$WT" -c core.quotePath=false status --porcelain -- "$f")
+  if [ -n "$DIRT" ]; then
+    fam="${FAMILY_OF[$f]:-$f}"
+    DIRTY_FAMILIES[$fam]=1
+    echo "spec-freshness: $f carries UNCOMMITTED changes the sync could clobber — marking family '$fam' dirty; skipping blind sync for the whole family (#1972)."
+  fi
 done
 
 # Pass 2: filter SAFE_SPECS to items in a NON-dirty family.
@@ -2559,6 +2602,48 @@ if [ -n "$SAFE_SPECS" ]; then
   echo "[step5a] synced from origin/main:"
   git -C "$WT" diff --stat HEAD^ HEAD -- $SAFE_SPECS 2>/dev/null || echo "  (no commit — no drift)"
 fi
+
+# Sibling-issue file freshness (#1972): per-FILE grain, scripts AND their
+# covering tests as a PAIR. A gated test may import a sibling issue's
+# scripts/issue<M>_*.py whose worktree copy predates a main-side fix (the
+# #1768 r4/r5 class, ~40 min/incident); the sync commit below also puts the
+# file into the selector's three-dot diff (fetched origin/main,
+# merge-base...HEAD), newly mapping its covering tests/test_issue<M>_*.py —
+# so the pair MUST move together (syncing the script alone runs a fork-era
+# test against a fresh script, the #1824/#1860 half-sync class). Per-FILE
+# grain is load-bearing: a :(glob) SPECS entry would be ONE singleton
+# family, and every branch edits its OWN issue scripts/tests, so the
+# glob-family would always be dirty — self-defeating. Only files with ZERO
+# non-sync branch-side commits sync (a branch's own deliberate edits — incl.
+# its own issue scripts/tests — are never touched); ANY uncommitted dirt on
+# the file skips it (per-file grain makes the wide skip free); files absent
+# on origin/main are skipped (never deleted). The commit subject carries the
+# anchor phrase `sync workflow-surface specs from`, so the arm's own
+# bs-check excludes its prior sync commits on later rounds, Guard 3 treats
+# the synced files as imported-from-main, and the Step 10d verdict re-bind's
+# A/M byte-identity probe passes (content == fetched origin/main).
+SIBLING_SYNCED=()
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  case "$f" in scripts/issue<N>_*|tests/test_issue<N>_*) continue ;; esac   # own-issue carve-out (defense-in-depth)
+  bs=$(git -C "$WT" log --format='%H %s' "$MB"..HEAD -- "$f" \
+    | awk 'index($0, "sync workflow-surface specs from") == 0')
+  [ -n "$bs" ] && continue                            # deliberate branch edit — protected
+  if git -C "$WT" status --porcelain -- "$f" | grep -q .; then
+    echo "spec-freshness: sibling file $f carries UNCOMMITTED changes — skipped (#1972)."
+    continue
+  fi
+  if git -C "$WT" cat-file -e "origin/main:$f" 2>/dev/null; then
+    git -C "$WT" checkout origin/main -- "$f" && SIBLING_SYNCED+=("$f")
+  else
+    echo "spec-freshness: sibling file $f absent on origin/main — skipped (never deleted; #1972)."
+  fi
+done < <(git -C "$WT" -c core.quotePath=false diff --name-only origin/main -- ':(glob)scripts/issue[0-9]*_*.py' ':(glob)tests/test_issue[0-9]*_*.py')
+if [ "${#SIBLING_SYNCED[@]}" -gt 0 ] \
+   && ! git -C "$WT" diff --quiet HEAD -- "${SIBLING_SYNCED[@]}"; then
+  git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from origin/main (spec-freshness; sibling-issue files)" -- "${SIBLING_SYNCED[@]}"
+fi
+echo "[step5a] sibling-file sync: ${#SIBLING_SYNCED[@]} file(s)"
 fi
 ```
 
@@ -2593,7 +2678,17 @@ over `.claude/skills` content — the #1824 vintage skew; #1963 adds
 `:(glob)tests/test_guard_*.py` pins execute, PreToolUse hooks wired in
 `.claude/settings.json`: syncing the tests without them half-syncs the
 tree and red-flags main-green guard nodes on pure version skew, the
-#1860/#1862 incidents)
+#1860/#1862 incidents; #1972 adds `scripts/select_step9c_tests.py` +
+`tests/test_select_step9c_tests.py` +
+`tests/step9c_workflow_invariant_manifest.txt` to the lint family — the
+pin test importlib-loads the selector BY PATH from the worktree and its
+case 6b pins `WORKFLOW_INVARIANT` set-equal to the manifest, so syncing
+any strict subset is the same half-sync class (named residual: a
+main-NEW invariant test file outside the synced globs can still red the
+pin test's live-tree check until the branch rebases — same β-class) —
+plus `.claude/agent-memory` as a singleton: always-appended memory
+indexes the lint budget checks scan, protected by the uncommitted-dirt
+arm + the branch-side-edit guard, never a clobber)
 exists because those files execute FROM the worktree tree on four
 surfaces — the Step 10d TG legs, worktree pytest / Step 9c, the hooks'
 own-tree `workflow_lint` import, and the inline gate invoked in a
@@ -2612,9 +2707,11 @@ origin/main, or cross-check at the repo root; module stable since
 `tests/test_issue_skill_long_phase_heartbeat.py` imports the
 scripts-side `autonomous_session_watch` + `tick_triage` modules
 (L53-54), and `tests/test_issue_skill_trigger_dense_tag_adoption.py`
-importlib-loads `scripts/select_step9c_tests.py` by path and text-pins
-a literal in `src/explore_persona_space/backends/excerpt_digest.py` —
-same remedy: a synced pin test failing on branch-era `scripts/`/`src/`
+importlib-loads `scripts/select_step9c_tests.py` by path (same-vintage
+as of #1972 — the selector rides the lint family) and text-pins a
+literal in `src/explore_persona_space/backends/excerpt_digest.py` — the
+src pin stays the seam; same remedy: a synced pin test failing on
+branch-era `scripts/`/`src/`
 skew means rebase onto origin/main, or cross-check at the repo root.
 Family atomicity (#1714): within the spec-coupled
 lint/guard family, the per-item branch-side-edit skip is transitive —
@@ -2633,14 +2730,22 @@ Everything else in SPECS is a singleton (its own family). Everything ELSE keeps 
 helper SCRIPTS are already resolved from the MAIN checkout (Step 0
 § worktree spec-freshness: `"$REPO_ROOT"/scripts/...`) — except the
 guard-family `:(glob)scripts/guard_*.sh` implementations, synced +
-executed from the worktree by their pin tests (#1963) — and blind-
+executed from the worktree by their pin tests (#1963), and the Step 9c
+selector `scripts/select_step9c_tests.py`, synced + importlib-loaded BY
+PATH from the worktree by `tests/test_select_step9c_tests.py` (lint
+family, #1972) — and blind-
 syncing broader `tests/` is actively unsafe — main's newer workflow
 tests pin behavior implemented in main's newer `scripts/` + `src/`
 (e.g. `task_workflow.py`, `backends/`) that the branch predates, so a
 partial code sync makes the worktree suite REDDER or breaks the
 branch's own imports — and the per-path branch-side-edit guard would
 skip broad `scripts/`/`tests/` cones wholesale anyway (nearly every
-issue branch adds its own `scripts/issue<N>_*.py` + tests). Operational
+issue branch adds its own `scripts/issue<N>_*.py` + tests — which is
+exactly why the #1972 sibling-issue arm is a bounded, per-FILE
+exception rather than a glob family: never-branch-edited sibling
+`scripts/issue<M>_*.py` + `tests/test_issue<M>_*.py` pairs sync
+together under an own-issue carve-out and a per-file dirt skip, so a
+branch's own deliverables are structurally out of reach). Operational
 rule instead: a workflow test that FAILs inside a long-lived issue
 worktree but PASSes at the repo root on `main` — **including a
 collection-time ImportError from a `workflow_lint` / rules-pin
@@ -12629,11 +12734,14 @@ else
     FAMILY_OF["scripts/workflow_lint.py"]="lint"
     FAMILY_OF[":(glob)tests/test_workflow_lint*.py"]="lint"
     FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"
+    FAMILY_OF["scripts/select_step9c_tests.py"]="lint"
+    FAMILY_OF["tests/test_select_step9c_tests.py"]="lint"
+    FAMILY_OF["tests/step9c_workflow_invariant_manifest.txt"]="lint"
     FAMILY_OF[".claude/hooks"]="guard"
     FAMILY_OF[":(glob)scripts/guard_*.sh"]="guard"
     FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
     FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
-    SPECS_10D=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
+    SPECS_10D=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py :(glob)tests/test_issue_skill_*.py"
     MB_10D=$(git -C "$WT" merge-base HEAD origin/main)
     declare -A DIRTY_FAMILIES_10D
     for f in $SPECS_10D; do
@@ -12642,6 +12750,26 @@ else
       if [ -n "$bs_commits" ]; then
         fam="${FAMILY_OF[$f]:-$f}"
         DIRTY_FAMILIES_10D[$fam]=1
+      fi
+      # Uncommitted-dirt arm (#1972) — mirror of Step 5a's (structurally
+      # parallel; at 10d Guard 0 has usually already committed memory dirt,
+      # so this is typically a no-op here — fail-safe either way): tracked
+      # dirt always marks the family dirty; a ?? path only on an
+      # origin/main path collision the checkout below could clobber.
+      DIRT=""
+      while IFS= read -r line; do
+        [ -z "$line" ] && continue
+        p=${line:3}; p=${p%/}
+        if [ "${line:0:2}" = "??" ]; then
+          git -C "$WT" cat-file -e "origin/main:$p" 2>/dev/null && DIRT=yes
+        else
+          DIRT=yes
+        fi
+      done < <(git -C "$WT" -c core.quotePath=false status --porcelain -- "$f")
+      if [ -n "$DIRT" ]; then
+        fam="${FAMILY_OF[$f]:-$f}"
+        DIRTY_FAMILIES_10D[$fam]=1
+        echo "spec-freshness: $f carries UNCOMMITTED changes the sync could clobber — marking family '$fam' dirty; skipping blind sync for the whole family (#1972)."
       fi
     done
     SAFE_SPECS_10D=""
@@ -12665,6 +12793,11 @@ else
     fi
     SYNC_COUNT=$(echo $SAFE_SPECS_10D | wc -w)
     echo "[step10d] post-gate re-sync: synced $SYNC_COUNT files ($SYNC_SHA) | no drift"
+    # Deliberately NO sibling-issue per-FILE arm here (#1972): the 10d TG
+    # legs run BEFORE this post-gate re-sync, so syncing sibling issue<M>
+    # files at this point would only move the tip after certification for
+    # zero gate benefit — the Step 5a block (+ its Step 9c step-1a binding
+    # reference) carries that arm.
     # --- end inline Step 5a family-atomic block ---
     # Verdict RE-BIND stanza (#1807): a re-sync that COMMITTED moved the tip
     # past the verdict's certified sha (line 2), so a forced gate re-run

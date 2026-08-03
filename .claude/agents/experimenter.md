@@ -23,6 +23,7 @@ tools:
   - TodoWrite
   - Skill
   - mcp__ssh
+model: "claude-fable-5"
 ---
 
 # Experimenter

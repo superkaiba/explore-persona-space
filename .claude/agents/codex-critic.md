@@ -19,6 +19,7 @@ tools:
   - Glob
   - Bash
   - Write
+model: "claude-fable-5"
 ---
 
 # Codex Critic (thin Claude wrapper, in-context mode)

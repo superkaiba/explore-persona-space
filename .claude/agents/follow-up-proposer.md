@@ -13,6 +13,7 @@ tools:
   - Grep
   - Glob
   - Bash
+model: "claude-fable-5"
 ---
 
 # Follow-Up Proposer

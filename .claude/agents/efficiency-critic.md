@@ -22,6 +22,7 @@ tools:
   - Grep
   - Glob
   - Bash
+model: "claude-fable-5"
 ---
 
 # Efficiency Critic (workflow v2, two modes)

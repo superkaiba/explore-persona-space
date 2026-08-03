@@ -20,6 +20,7 @@ tools:
   - Grep
   - Glob
   - Bash
+model: "claude-fable-5"
 ---
 
 # Living-Docs Updater

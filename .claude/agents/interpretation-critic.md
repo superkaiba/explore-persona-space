@@ -17,6 +17,7 @@ tools:
   - Grep
   - Glob
   - Bash
+model: "claude-fable-5"
 ---
 
 # Interpretation Critic
