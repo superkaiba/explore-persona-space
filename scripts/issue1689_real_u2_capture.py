@@ -111,6 +111,12 @@ NATURALISTIC_SEP = "\n\n"
 
 MAX_TOKENS = 7104  # matches PROMPT_TOKEN_BUDGET
 
+# Round-2 Minor #1 halt floor for per-cell empty-u2 drops. A rate above this
+# floor means the haiku-gen fail-fast floor was misconfigured (haikuu2 arm)
+# or the corpus's u2_real column is broken (realu2 arm) — either way, a
+# silent shrink is unsafe. Matches the DROP_RATE_HALT_FLOOR in haiku_gen.
+EMPTY_U2_HALT_FLOOR = 0.05
+
 
 # --- Rendering --------------------------------------------------------------
 
@@ -295,17 +301,28 @@ def capture_cell(
     u2_key = "u2_real" if provenance == "realu2" else "u2_haiku"
 
     # 1. Render every row + resolve slot char offsets.
+    #
+    # Round-2 Minor #1: split empty-u2 drops from token-budget drops so a
+    # spike in either is visible per cell (and halt loud when empty-u2 rows
+    # exceed 5% of the corpus — the sibling of the haiku-gen fail-fast
+    # floor). ``isinstance(u2, str)`` handles ``None`` (the haiku_gen failure
+    # sentinel) — those rows are already accounted for in the haiku-gen
+    # drop-report and should never dominate here.
+    n_dropped_empty_u2 = 0
+    n_dropped_over_budget = 0
     rendered_texts: list[str] = []
     slot_char_offsets: list[dict[str, int]] = []
     kept_rows: list[dict] = []
     for row in rows:
         u2 = row.get(u2_key, "")
         if not isinstance(u2, str) or not u2.strip():
+            n_dropped_empty_u2 += 1
             continue
         text, offsets = renderer(row["u1"], row["a1"], u2, tokenizer)
         # Token-budget filter — a rendered row over MAX_TOKENS is dropped.
         n_tok = len(tokenizer(text, add_special_tokens=False)["input_ids"])
         if n_tok > MAX_TOKENS:
+            n_dropped_over_budget += 1
             continue
         rendered_texts.append(text)
         slot_char_offsets.append(offsets)
@@ -315,8 +332,26 @@ def capture_cell(
     if n == 0:
         raise RuntimeError(f"cell {framing}/{provenance}: zero rows after rendering/filtering")
 
+    # Fail-fast on a per-cell empty-u2 rate above the 5% floor — a spike here
+    # means the haiku-gen fail-fast floor was misconfigured or the corpus's
+    # u2_real column is broken (realu2 arm) and a silent shrink is unsafe.
+    n_input = len(rows)
+    empty_u2_rate = n_dropped_empty_u2 / max(1, n_input)
+    if empty_u2_rate > EMPTY_U2_HALT_FLOOR:
+        raise RuntimeError(
+            f"cell {framing}/{provenance}: empty-u2 rate {empty_u2_rate:.4f} exceeds "
+            f"floor {EMPTY_U2_HALT_FLOOR} "
+            f"(n_dropped_empty_u2={n_dropped_empty_u2} of n={n_input}). "
+            "A silent-shrink guardrail: check the haiku-gen drop-report for "
+            "the corresponding failure_ids on the haikuu2 arm, or check "
+            "u2_real coverage in the corpus manifest on the realu2 arm."
+        )
+
     print(
-        f"[capture] cell={framing}/{provenance} rows={n} (from {len(rows)} corpus rows)",
+        f"[capture] cell={framing}/{provenance} rows={n} "
+        f"(from {n_input} corpus rows; "
+        f"n_dropped_empty_u2={n_dropped_empty_u2} "
+        f"n_dropped_over_budget={n_dropped_over_budget})",
         flush=True,
     )
 

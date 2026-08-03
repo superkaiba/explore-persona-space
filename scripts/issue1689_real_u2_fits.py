@@ -71,6 +71,11 @@ FIT_SEED = 42
 N_NULL_DRAWS = 40
 KNN_KS = (1, 5, 10)
 
+# Round-2 Minor #2 halt floor for fit-cell mass failures. Individual cell
+# failures are tolerated (they land as fit_failed verdicts downstream); a
+# rate above this floor means the sweep is broken by construction.
+FIT_CELL_FAIL_HALT_FRAC = 0.25
+
 
 def _pca_k(n_train: int) -> int:
     """Well-posed reduced-basis rank rule inherited from parent
@@ -266,7 +271,14 @@ def run_fits(
     n_folds: int = N_FOLDS,
     null_draws: int = N_NULL_DRAWS,
 ) -> dict:
-    """Walk the store tree + fit every cell. Emit summary JSONs."""
+    """Walk the store tree + fit every cell. Emit summary JSONs.
+
+    Round-2 Minor #2: individual cell failures are tolerated so a single bad
+    store does not kill the sweep, but the phase HALTS LOUD when the failure
+    rate exceeds ``FIT_CELL_FAIL_HALT_FRAC`` — a mass-failure spike almost
+    always points at a common issue (missing dependency, corrupted store
+    schema) that the downstream analyzer cannot compensate for.
+    """
     per_cell: list[dict] = []
     for model_dir in sorted(store_root.iterdir()):
         if not model_dir.is_dir():
@@ -287,6 +299,24 @@ def run_fits(
                     "error": str(exc),
                 }
             per_cell.append(res)
+
+    # Fail-fast on a mass-failure spike (round-2 Minor #2). Individual
+    # per-cell failures are tolerated (the downstream analyzer treats them
+    # as fit_failed verdicts), but ≥25% of cells failing means the sweep is
+    # broken by construction — halt loud with the failure ids so the fix
+    # round can name the shape.
+    n_cells = len(per_cell)
+    n_failed = sum(1 for c in per_cell if "error" in c)
+    fail_frac = n_failed / max(1, n_cells)
+    if n_cells > 0 and fail_frac > FIT_CELL_FAIL_HALT_FRAC:
+        failed_ids = [c["unit_id"] for c in per_cell if "error" in c][:10]
+        raise RuntimeError(
+            f"fit-cell failure rate {fail_frac:.4f} exceeds floor "
+            f"{FIT_CELL_FAIL_HALT_FRAC}: {n_failed} of {n_cells} cells failed "
+            f"(first 10 failed_ids={failed_ids}). "
+            "A mass-failure spike almost always points at a common issue "
+            "(missing dep, corrupted store schema); halting."
+        )
 
     # Rung-reached matrix: for this v1 we don't run the full 9-rung ladder
     # (parent inherits it via the paired transfer fit + reduced-basis

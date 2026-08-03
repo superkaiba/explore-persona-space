@@ -47,10 +47,12 @@ def _ensure_repo_root_on_syspath() -> Path:
 
 REPO_ROOT = _ensure_repo_root_on_syspath()
 
+from collections import defaultdict
+
 from scripts.issue1738_multiturn_generate_capture import (  # noqa: E402
-    DfFilteredNearDupeGate,
     _multiturn_context,
 )
+from scripts.issue779_ffc_n1m_generate_capture import _char_ngrams, _norm  # noqa: E402
 
 # Corpus pins — verbatim from #1738 / #779.
 LMSYS_REPO = "lmsys/lmsys-chat-1m"
@@ -66,6 +68,88 @@ CORPUS_SEED = 1689
 
 # Kept-cap floor — a below-floor pool is inadequate for the design.
 KILL_TOTAL_ELIGIBLE = 5000
+
+
+class IncrementalNearDupeGate:
+    """Incremental near-dupe gate — the same exact-normalized + char-ngram
+    Jaccard semantics as ``scripts.issue779_ffc_n1m_generate_capture.NearDupeGate``,
+    but built by APPENDING targets one at a time rather than rebuilt from
+    scratch per row (round-1 Major #4: the O(n^2) rebuild would take hours
+    over ~15,200 rows).
+
+    Contract:
+      * ngram=5, jaccard>=0.8 (verbatim from #1738/#779 constants).
+      * ``add_target(text)`` extends the running inverted index; ``is_dupe(text)``
+        checks against ALL previously-added targets (Jaccard on FULL gram
+        sets — near-dupes still surface via rare shared grams).
+      * O(1) amortized per ``add_target`` + O(candidates ∩ shared_grams) per
+        ``is_dupe``, so the whole 15,200-row filter is O(n * avg_shared_grams),
+        not O(n^2).
+
+    NOTE: the parent ``DfFilteredNearDupeGate`` in #1738 additionally
+    applies a document-frequency cap on the candidate index (grams indexing
+    >df_frac of targets are dropped from the INDEX). We deliberately DO NOT
+    apply that df-cap here for two reasons: (a) it is only a candidate-set
+    optimization — the exact + Jaccard semantics are identical — and (b)
+    the parent computes the cap at __init__ from the full target count,
+    which is not available in an incremental build. Screening cost stays
+    bounded because is_dupe short-circuits at the first Jaccard-passing
+    candidate.
+    """
+
+    def __init__(
+        self,
+        ngram: int = NEAR_DUPE_NGRAM,
+        thresh: float = NEAR_DUPE_JACCARD,
+    ) -> None:
+        self.ngram = int(ngram)
+        self.thresh = float(thresh)
+        self.exact: set[str] = set()
+        self.target_ngrams: list[frozenset[str]] = []
+        self.inv: dict[str, set[int]] = defaultdict(set)
+        self.n_exact_drop = 0
+        self.n_near_drop = 0
+
+    def add_target(self, text: str) -> None:
+        n = _norm(text)
+        self.exact.add(n)
+        g = _char_ngrams(n, self.ngram)
+        ti = len(self.target_ngrams)
+        self.target_ngrams.append(g)
+        for ng in g:
+            self.inv[ng].add(ti)
+
+    def is_dupe(self, prompt: str) -> bool:
+        n = _norm(prompt)
+        if n in self.exact:
+            self.n_exact_drop += 1
+            return True
+        g = _char_ngrams(n, self.ngram)
+        if not g:
+            return False
+        cand: set[int] = set()
+        for ng in g:
+            cand |= self.inv.get(ng, set())
+        for ti in cand:
+            tg = self.target_ngrams[ti]
+            inter = len(g & tg)
+            if inter == 0:
+                continue
+            union = len(g) + len(tg) - inter
+            if union and inter / union >= self.thresh:
+                self.n_near_drop += 1
+                return True
+        return False
+
+    def stats(self) -> dict:
+        return {
+            "ngram": self.ngram,
+            "jaccard_thresh": self.thresh,
+            "n_targets": len(self.target_ngrams),
+            "n_exact_drop": self.n_exact_drop,
+            "n_near_drop": self.n_near_drop,
+            "impl": "incremental_exact_jaccard",
+        }
 
 
 def _source_hash(row, messages: list[dict]) -> str:
@@ -244,25 +328,23 @@ def filter_and_sample(
         n_dedupe_dropped = 0
     else:
         renders = [_plain_render_for_ndg(r) for r in pool]
-        # #1738 growing-target-list dedupe (its is_dupe API): build gate
-        # over the kept renders so far, screen each new candidate. Rebuilding
-        # per row is O(n^2) but bounded by keep_target*2 (small at production).
+        # Incremental gate — round-2 Major #4 fix. The prior implementation
+        # rebuilt DfFilteredNearDupeGate FROM SCRATCH per row (O(n^2) over
+        # keep_target*2 = 15,200 candidate rows at production, projected
+        # hours). ``IncrementalNearDupeGate.add_target`` extends ONE inverted
+        # index; ``is_dupe`` short-circuits on the first Jaccard match. Same
+        # exact-normalized + char-ngram Jaccard semantics as the parent
+        # ``NearDupeGate`` (#779). See the class docstring above for the
+        # deliberate df-cap omission.
+        gate = IncrementalNearDupeGate(ngram=NEAR_DUPE_NGRAM, thresh=NEAR_DUPE_JACCARD)
         kept: list[dict] = []
-        kept_renders: list[str] = []
         n_dedupe_dropped = 0
         for row, rendered in zip(pool, renders, strict=True):
-            if kept_renders:
-                subgate = DfFilteredNearDupeGate(
-                    kept_renders,
-                    ngram=NEAR_DUPE_NGRAM,
-                    thresh=NEAR_DUPE_JACCARD,
-                    df_frac=NEAR_DUPE_DF_FRAC,
-                )
-                if subgate.is_dupe(rendered):
-                    n_dedupe_dropped += 1
-                    continue
+            if gate.is_dupe(rendered):
+                n_dedupe_dropped += 1
+                continue
             kept.append(row)
-            kept_renders.append(rendered)
+            gate.add_target(rendered)
         after_dedupe = kept
     print(
         f"[corpus] near-dupe: pool={len(pool)} kept={len(after_dedupe)} dropped={n_dedupe_dropped}",
@@ -270,21 +352,35 @@ def filter_and_sample(
     )
 
     # Token-budget filter (rendered chat template).
+    #
+    # Round-2 bug-class sweep (Major #4 sibling #2): the prior implementation
+    # swallowed tokenizer errors into the SAME ``dropped_over_budget`` counter
+    # as legitimate over-budget rows, conflating "rendered fine, exceeded
+    # budget" with "tokenizer crashed on this row". Split the counters so a
+    # tokenizer-failure spike is visible.
     tok = AutoTokenizer.from_pretrained(MODEL_BASE)
     dropped_over_budget = 0
+    dropped_tokenize_error = 0
     after_budget: list[dict] = []
     for r in after_dedupe:
         try:
             n_tok = _rendered_token_length(r, tok)
-        except Exception:
-            dropped_over_budget += 1
+        except Exception as exc:
+            dropped_tokenize_error += 1
+            print(
+                f"[corpus] tokenize-error dropping row conv_id={r.get('conv_id')!r}: "
+                f"{type(exc).__name__}: {exc}",
+                flush=True,
+            )
             continue
         if n_tok > PROMPT_TOKEN_BUDGET:
             dropped_over_budget += 1
             continue
         after_budget.append(r)
     print(
-        f"[corpus] token-budget: kept={len(after_budget)} dropped_over_budget={dropped_over_budget} "
+        f"[corpus] token-budget: kept={len(after_budget)} "
+        f"dropped_over_budget={dropped_over_budget} "
+        f"dropped_tokenize_error={dropped_tokenize_error} "
         f"budget={PROMPT_TOKEN_BUDGET}",
         flush=True,
     )
@@ -331,6 +427,7 @@ def filter_and_sample(
         "n_after_token_filter": len(after_budget),
         "dropped_neardupe": n_dedupe_dropped,
         "dropped_over_budget": dropped_over_budget,
+        "dropped_tokenize_error": dropped_tokenize_error,
         "smoke": smoke,
         "corpus_repos": [LMSYS_REPO, WILDCHAT_REPO],
         "prompt_token_budget": PROMPT_TOKEN_BUDGET,

@@ -100,11 +100,29 @@ run_phase_fits() {
     echo "[phase=fits] done" >&2
 }
 
+run_phase_upload() {
+    # Round-2 Major #1: wire HF upload BEFORE [phase=done], so Step-8
+    # upload-verifier PASSes without a fix round.
+    #
+    # Uploads the whole data/issue_1689/real_u2_capture/ tree to
+    # superkaiba1/explore-persona-space-data/issue1689_speaker_lattice/real_u2_capture/
+    # in ONE upload_folder commit, wrapped in hub.retry_transient for the
+    # shared HF-fleet rate limit. Fits eval JSONs are committed to git on
+    # the issue branch by the workload (Step-8 syncs them separately).
+    echo "[phase=upload] starting SMOKE=$SMOKE" >&2
+    uv run python "${REPO_ROOT}/scripts/issue1689_real_u2_upload.py" \
+        --data-root "$DATA_ROOT" \
+        $SMOKE_FLAG \
+        2>&1 | tee "${LOG_DIR}/phase_upload.log"
+    echo "[phase=upload] done" >&2
+}
+
 run_all() {
     run_phase_a0
     run_phase_a1
     run_phase_capture
     run_phase_fits
+    run_phase_upload
     echo "[phase=done]" >&2
 }
 
@@ -116,9 +134,10 @@ case "$PHASE" in
     a1|haiku) run_phase_a1 ;;
     capture) run_phase_capture ;;
     fits) run_phase_fits ;;
+    upload) run_phase_upload ;;
     all|run_phase_real_u2_capture) run_all ;;
     *)
-        echo "usage: $0 {all|a0|a1|capture|fits}" >&2
+        echo "usage: $0 {all|a0|a1|capture|fits|upload}" >&2
         exit 2
         ;;
 esac
