@@ -129,7 +129,10 @@ run_cell() { # spec dev smoke
   local marker
   marker="$(hf_marker_path "$variant" "$smoke")"
   local extract_args=(--regime "$regime" --model "$model")
-  local upload_args=(--legs turnstore)
+  # Glob covers the pt shards + sidecars AND the *_s_skip_manifest.json files
+  # (plan §10: skip-manifests ride the per-cell upload); the inner shell runs
+  # `set -f` so the glob reaches the upload script unexpanded.
+  local upload_args=(--legs turnstore --turnstore-glob "*_s_*")
   local ts_dir="data/issue_1345/${variant}/turnstore"
   if [ "$smoke" = "1" ]; then
     ts_dir="data/issue_1345/${variant}/turnstore_smoke"
@@ -140,7 +143,7 @@ run_cell() { # spec dev smoke
     CUDA_VISIBLE_DEVICES="$dev" I1345_TS_DIR="$ts_dir" I1345_MARKER="$marker" \
     I1345_EXTRACT_ARGS="${extract_args[*]}" I1345_UPLOAD_ARGS="${upload_args[*]}" \
     bash -c '
-      set -e
+      set -ef
       uv run python scripts/issue1345_stage_char_stories.py --variant "$EPM_I1345_VARIANT"
       # shellcheck disable=SC2086
       uv run python scripts/issue1345_extract_turnstore.py $I1345_EXTRACT_ARGS

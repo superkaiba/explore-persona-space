@@ -66,6 +66,62 @@ def expected_files(variant: str) -> tuple[str, str]:
     return (f"kept_stories_{mode}_{model}.jsonl", f"story_yield_{mode}_{model}.json")
 
 
+def stage_variant_turnstore(
+    variant: str,
+    *,
+    revision: str | None = None,
+    dest_root: Path,
+    repo_id: str = HF_DATA_REPO,
+) -> Path:
+    """Stage one cell's CAPTURED turnstore into ``<dest_root>/<variant>_turnstore``.
+
+    The fits-phase sibling of :func:`stage_variant` (plan v13 §4 Phase F item
+    3): the fill script's ``load_regime_xy`` opens the FLAT
+    ``<variant>_turnstore`` subdir, while ``stage_hub_prefix`` mirrors the hub
+    prefix verbatim — this applies the same strip-the-prefix mapping so the
+    consumer layout is produced fail-loud (the artifact-reuse.md (h)(iv)
+    staged-layout contract; #928/#1481). ``revision=None`` resolves one
+    commit at call time (the capture job creates these stems, so no code-time
+    pin exists; the shard sidecars carry the capture commit). Idempotent:
+    >=1 ``*_shard*.pt`` present -> skip.
+    """
+    assert variant in CHAR_VARIANTS, f"unknown character variant {variant!r}"
+    dest = dest_root / f"{variant}_turnstore"
+    if dest.is_dir() and any(dest.glob("*_shard*.pt")):
+        print(f"[stage] {variant} turnstore: already staged at {dest} — skipped", flush=True)
+        return dest
+    prefix = f"issue1345_framing/{variant}/analysis_tensors/turnstore"
+    dest.mkdir(parents=True, exist_ok=True)
+    scratch = dest.parent / f".hfstage_ts_{variant}"
+    if scratch.exists():
+        shutil.rmtree(scratch)
+    staged = hub.stage_hub_prefix(repo_id, prefix, scratch, revision=revision)
+    mirror_root = scratch / prefix
+    assert mirror_root.is_dir(), (
+        f"stage_hub_prefix mirrored nothing under {mirror_root} — prefix mirror drift"
+    )
+    n_moved = 0
+    for f in sorted(mirror_root.rglob("*")):
+        if not f.is_file():
+            continue
+        out = dest / f.relative_to(mirror_root)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        os.replace(f, out)
+        n_moved += 1
+    shutil.rmtree(scratch)
+    pts = sorted(dest.glob("*_shard*.pt"))
+    assert pts, (
+        f"staged turnstore for {variant} has no *_shard*.pt (moved {n_moved} files from "
+        f"{repo_id}@{revision or 'resolved-head'}:{prefix}) — consumer layout violated"
+    )
+    print(
+        f"[stage] {variant} turnstore: {n_moved} files ({len(staged)} listed, "
+        f"{len(pts)} pt shards) -> {dest}",
+        flush=True,
+    )
+    return dest
+
+
 def stage_variant(
     variant: str,
     *,
@@ -122,15 +178,45 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
     ap.add_argument("--variant", choices=CHAR_VARIANTS, help="one character cell")
     ap.add_argument("--all", action="store_true", help="stage all 16 cells")
-    ap.add_argument("--revision", default=STORIES_PIN)
-    ap.add_argument("--dest-root", type=Path, default=Path("data/issue_1345"))
+    ap.add_argument(
+        "--kind",
+        choices=("stories", "turnstore"),
+        default="stories",
+        help="stories = kept-story bundle at the plan pin (capture input); "
+        "turnstore = captured activation shards into <dest-root>/<variant>_turnstore "
+        "(fits input; default revision = resolved head at call time)",
+    )
+    ap.add_argument(
+        "--revision",
+        default=None,
+        help=f"HF revision (stories default: the plan pin {STORIES_PIN[:12]}; "
+        "turnstore default: resolved head)",
+    )
+    ap.add_argument(
+        "--dest-root",
+        type=Path,
+        default=None,
+        help="stories default: data/issue_1345; REQUIRED for --kind turnstore "
+        "(the fits --stage-root, e.g. /mnt/eps-data/$USER/issue1887_lambda_audit/issue1345)",
+    )
     ap.add_argument("--repo", default=HF_DATA_REPO)
     args = ap.parse_args()
     assert args.all or args.variant, "pass --variant <cell> or --all"
     assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing (pod .env / lane metadata env)"
     variants = CHAR_VARIANTS if args.all else (args.variant,)
     for v in variants:
-        stage_variant(v, revision=args.revision, dest_root=args.dest_root, repo_id=args.repo)
+        if args.kind == "turnstore":
+            assert args.dest_root is not None, "--kind turnstore requires --dest-root"
+            stage_variant_turnstore(
+                v, revision=args.revision, dest_root=args.dest_root, repo_id=args.repo
+            )
+        else:
+            stage_variant(
+                v,
+                revision=args.revision or STORIES_PIN,
+                dest_root=args.dest_root or Path("data/issue_1345"),
+                repo_id=args.repo,
+            )
 
 
 if __name__ == "__main__":
