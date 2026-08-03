@@ -209,10 +209,77 @@ def test_template_mask_definition_matches_docstring_rules():
     assert not m[11] and not m[12] and not m[13], "answer content is NOT template"
 
 
-def test_no_python_loop_over_features_or_tokens_in_add_side():
-    """Throughput invariant: the reduction is a vectorized COO pass."""
-    import inspect
+def test_checkpoint_restore_reproduces_an_uninterrupted_run(tmp_path):
+    """A resumed capture must equal the same rows captured in one pass.
 
-    body = inspect.getsource(RL.Accum.add_side)
+    The 120k-row capture is ~76 min, so a crash without this is a total loss.
+    Splitting the row stream in half and restoring from a checkpoint has to be
+    bit-identical to never having stopped.
+    """
+    rng = np.random.default_rng(7)
+    d = 5
+    rows = [((rng.random((6, d)) < 0.5) * rng.random((6, d))).astype(np.float32) for _ in range(8)]
+    pos = np.arange(6, dtype=np.int64)
+    tmpl = np.zeros(6, dtype=bool)
+
+    one = _tiny_accum(d)
+    for c in rows:
+        _run_side(one, c, pos, tmpl, "ans")
+
+    first = _tiny_accum(d)
+    for c in rows[:4]:
+        _run_side(first, c, pos, tmpl, "ans")
+    np.savez(tmp_path / "ck.npz", **first.state(np.arange(4, dtype=np.int64), "fp-abc"))
+
+    second = _tiny_accum(d)
+    with np.load(tmp_path / "ck.npz", allow_pickle=False) as z:
+        assert str(z["fingerprint"]) == "fp-abc"
+        done = second.restore(z)
+    assert done.tolist() == [0, 1, 2, 3]
+    for c in rows[4:]:
+        _run_side(second, c, pos, tmpl, "ans")
+
+    for key in RL.Accum._ARRAYS:
+        np.testing.assert_allclose(
+            getattr(second, key).numpy(), getattr(one, key).numpy(), rtol=1e-12, err_msg=key
+        )
+    for key in RL.Accum._SCALARS:
+        assert getattr(second, key) == getattr(one, key), key
+
+
+def test_regime_fingerprint_separates_output_affecting_knobs():
+    """A resume against a different regime must not silently fuse populations."""
+    import argparse
+
+    pool = np.arange(100, dtype=np.int64)
+
+    def fp(pool_arr=pool, **kw):
+        base = dict(n_rows=2000, sample_mode="full", n_chunks=128, tiny_model=False, resume=True)
+        return RL._regime_fingerprint(argparse.Namespace(**(base | kw)), pool_arr)
+
+    ref = fp()
+    assert fp() == ref, "fingerprint must be stable for an identical regime"
+    assert fp(n_rows=120000) != ref
+    assert fp(sample_mode="chunk-subset") != ref
+    assert fp(tiny_model=True) != ref
+    assert fp(pool_arr=np.arange(99, dtype=np.int64)) != ref, "fit pool must enter the key"
+
+
+def test_no_python_loop_over_features_or_tokens_in_add_side():
+    """Throughput invariant: the reduction is a vectorized COO pass.
+
+    Sliced from the file TEXT, not ``inspect.getsource``: the module is loaded
+    by path and a stale ``__pycache__`` entry carries old line numbers, which
+    silently hands ``getsource`` a different function's body.
+    """
+    src = (REPO / "scripts" / "issue1482_run_length.py").read_text()
+    start = src.index("    def add_side(")
+    rest = src[start + 1 :]
+    # end of the method = the next line beginning at column 0 (a top-level def
+    # /decorator) or the next sibling method, whichever comes first.
+    ends = [i for i in (rest.find("\n    def "), rest.find("\n@"), rest.find("\ndef ")) if i != -1]
+    body = rest[: min(ends)] if ends else rest
+    assert "bincount" in body and "scatter_add_" in body and "argsort" in body, (
+        "sliced the wrong span — add_side markers absent"
+    )
     assert "for " not in body, "add_side must stay loop-free (vectorize-first rule)"
-    assert "bincount" in body and "scatter_add_" in body and "argsort" in body

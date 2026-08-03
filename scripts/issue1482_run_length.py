@@ -69,6 +69,7 @@ import argparse
 import hashlib
 import json
 import logging
+import os
 import re
 import shutil
 import sys
@@ -270,7 +271,9 @@ def _all_chunk_names() -> list[str]:
     return names
 
 
-def _sample_full_pool(args, fit_pool: np.ndarray, prov_u8: np.ndarray, row_ci: np.ndarray):
+def _sample_full_pool(
+    args, fit_pool: np.ndarray, prov_u8: np.ndarray, row_ci: np.ndarray, fingerprint: str
+):
     """PRODUCTION sampler: a provenance-stratified draw over the ENTIRE sae_fit
     pool (no chunk clustering), then stream every raw chunk keeping only the
     drawn rows.
@@ -290,6 +293,25 @@ def _sample_full_pool(args, fit_pool: np.ndarray, prov_u8: np.ndarray, row_ci: n
     needed_ci = {int(row_ci[r]): int(r) for r in ids}
     assert len(needed_ci) == len(ids), "ci collision in the drawn rows"
 
+    base_meta = {
+        "sampler": "full-pool (provenance-stratified over the entire sae_fit pool)",
+        "seed": SEED,
+        "n_rows_drawn": int(len(ids)),
+        "sampled_row_ids_sha256": _sha_ids(ids),
+        "fit_pool_size": int(len(fit_pool)),
+        "lmsys_frac_pool": frac,
+        "stratified_sample": strat_meta,
+    }
+    cache = args.scratch / f"rows_{fingerprint}.jsonl"
+    if args.resume:
+        cached = _load_row_cache(cache, fingerprint)
+        if cached is not None:
+            base_meta |= {
+                "n_rows_resolved": len(cached),
+                "chunk_stage": {"note": f"served from row cache {cache.name} (fetch skipped)"},
+            }
+            return cached, base_meta
+
     names = _all_chunk_names()
     dns = argparse.Namespace(max_chunks=0, scratch=args.scratch)
     rows: list[tuple[int, int, str, str]] = []
@@ -307,15 +329,10 @@ def _sample_full_pool(args, fit_pool: np.ndarray, prov_u8: np.ndarray, row_ci: n
     assert len(rows) >= 0.98 * len(ids), (
         f"only {len(rows)} of {len(ids)} drawn rows were text-resolvable"
     )
-    meta = {
-        "sampler": "full-pool (provenance-stratified over the entire sae_fit pool)",
-        "seed": SEED,
-        "n_rows_drawn": int(len(ids)),
+    if args.resume:
+        _write_row_cache(cache, fingerprint, rows)
+    meta = base_meta | {
         "n_rows_resolved": len(rows),
-        "sampled_row_ids_sha256": _sha_ids(ids),
-        "fit_pool_size": int(len(fit_pool)),
-        "lmsys_frac_pool": frac,
-        "stratified_sample": strat_meta,
         "chunk_stage": {
             "n_chunks_enumerated": len(names),
             "n_chunks_hit": n_chunks_hit,
@@ -420,6 +437,42 @@ class Accum:
         self.ctx_tokens_kept = 0
         self.ans_tokens_kept = 0
         self.ans_all_out_rows = 0
+
+    _ARRAYS = (
+        "ans_tok",
+        "ctx_tok",
+        "tmpl_tok",
+        "pairs",
+        "denom",
+        "var_sum",
+        "var_rows",
+        "cnt",
+        "psi_cnt",
+    )
+    _SCALARS = (
+        "n_rows",
+        "ctx_tokens_raw",
+        "ans_tokens_raw",
+        "ctx_tokens_kept",
+        "ans_tokens_kept",
+        "ans_all_out_rows",
+    )
+
+    def state(self, processed: np.ndarray, fingerprint: str) -> dict:
+        """Checkpoint payload: every accumulator + the rows already folded in."""
+        d = {k: getattr(self, k).cpu().numpy() for k in self._ARRAYS}
+        d |= {k: np.asarray(getattr(self, k), dtype=np.int64) for k in self._SCALARS}
+        d["processed_row_ids"] = np.asarray(processed, dtype=np.int64)
+        d["fingerprint"] = np.asarray(fingerprint)
+        return d
+
+    def restore(self, z) -> np.ndarray:
+        """Load a checkpoint in place; returns the processed row ids to skip."""
+        for k in self._ARRAYS:
+            getattr(self, k).copy_(torch.as_tensor(z[k], device=self.device))
+        for k in self._SCALARS:
+            setattr(self, k, int(z[k]))
+        return np.asarray(z["processed_row_ids"], dtype=np.int64)
 
     def add_side(self, f: torch.Tensor, pos: torch.Tensor, tmpl: torch.Tensor, side: str) -> None:
         """Accumulate one row's one side.
@@ -631,16 +684,82 @@ def _gate_token_null(acc: Accum) -> dict:
     }
 
 
+# ── checkpoint / resume ───────────────────────────────────────────────────────
+
+
+def _regime_fingerprint(args, fit_pool: np.ndarray) -> str:
+    """Every output-affecting knob. A resume against a DIFFERENT regime must
+    fail loud rather than silently fuse two populations (#722 r3 class)."""
+    parts = [
+        f"seed={SEED}",
+        f"n_rows={args.n_rows}",
+        f"sample_mode={args.sample_mode}",
+        f"n_chunks={args.n_chunks if args.sample_mode != 'full' else 'n/a'}",
+        f"layer={LAYER}",
+        f"k={K}",
+        f"tiny_model={int(bool(args.tiny_model))}",
+        f"fit_pool={_sha_ids(fit_pool)[:16]}",
+    ]
+    return hashlib.sha256("|".join(parts).encode()).hexdigest()[:16]
+
+
+def _atomic_savez(path: Path, **arrays) -> None:
+    tmp = path.parent / f".{path.name}.tmp{os.getpid()}"
+    np.savez(tmp, **arrays)
+    os.replace(tmp, path)
+
+
+def _load_row_cache(path: Path, fingerprint: str) -> list | None:
+    """Fetched-row cache: a resume must not re-stream 1,920 chunks (~15 min).
+
+    Holds REAL user text (LMSYS/WildChat-class) — pod-local scratch only, never
+    uploaded, never committed, never printed.
+    """
+    if not path.exists():
+        return None
+    try:
+        with path.open() as fh:
+            head = json.loads(fh.readline())
+            if head.get("fingerprint") != fingerprint:
+                _log(
+                    f"row cache regime mismatch ({head.get('fingerprint')} != {fingerprint}) — refetch"
+                )
+                return None
+            rows = [json.loads(ln) for ln in fh]
+    except (OSError, ValueError, KeyError) as exc:
+        _log(f"row cache unreadable ({type(exc).__name__}) — refetch")
+        return None
+    _log(f"row cache HIT: {len(rows)} rows (fetch skipped)")
+    return [(r["row_idx"], r["ci"], r["prompt"], r["response"]) for r in rows]
+
+
+def _write_row_cache(path: Path, fingerprint: str, rows: list) -> None:
+    tmp = path.parent / f".{path.name}.tmp{os.getpid()}"
+    with tmp.open("w") as fh:
+        fh.write(json.dumps({"fingerprint": fingerprint}) + "\n")
+        for row_idx, ci, prompt, response in rows:
+            fh.write(
+                json.dumps(
+                    {"row_idx": int(row_idx), "ci": int(ci), "prompt": prompt, "response": response}
+                )
+                + "\n"
+            )
+    os.replace(tmp, path)
+    _log(f"row cache written: {len(rows)} rows -> {path.name}")
+
+
 # ── capture ───────────────────────────────────────────────────────────────────
 
 
 def phase_capture(args) -> None:
     t0 = time.time()
     pools = _load_split_and_assert(args)
+    fingerprint = _regime_fingerprint(args, pools["sae_fit"])
+    _log(f"regime fingerprint {fingerprint} (resume={'on' if args.resume else 'off'})")
     row_ci = np.load(args.scratch / "row_ci.npy")
     prov_u8 = np.load(args.scratch / "prov.npy")
     if args.sample_mode == "full":
-        rows, sample_meta = _sample_full_pool(args, pools["sae_fit"], prov_u8, row_ci)
+        rows, sample_meta = _sample_full_pool(args, pools["sae_fit"], prov_u8, row_ci, fingerprint)
     else:
         cands, chunk_meta = _collect_candidates(args, pools["sae_fit"], row_ci)
         rows, sample_meta = _sample_rows(args, cands, prov_u8)
@@ -651,6 +770,7 @@ def phase_capture(args) -> None:
     if args.pilot_rows > 0:
         rows = rows[: args.pilot_rows]
         _log(f"PILOT: {len(rows)} rows (measured per-row basis; no artifact written)")
+    rows_n = len(rows)
 
     model, tok = EA._load_model_tok(args)
     _init_special_ids(tok)
@@ -663,33 +783,69 @@ def phase_capture(args) -> None:
         tk = EA._tokenize_row(tok, prompt, response, prefix_chars)
         if tk is None:
             continue
-        prepared.append((row_idx, ci, tk[0], tk[1], tk[2], tk[3], tk[4]))
+        # int32 ids, not a python list: at 120k rows the list-of-int form costs
+        # ~2.7 GB of int objects for the same 74M token ids (~300 MB here).
+        prepared.append(
+            (row_idx, ci, np.asarray(tk[0], dtype=np.int32), tk[1], tk[2], tk[3], tk[4])
+        )
+    del rows
     prepared.sort(key=lambda r: len(r[2]))  # length-sorted -> tight right-padding
-    _log(f"tokenized {len(prepared)}/{len(rows)} rows (empty-response rows dropped)")
+    _log(f"tokenized {len(prepared)}/{len(rows_n)} rows (empty-response rows dropped)")
+
+    # Resume: the capture loop is >1h and >50 units at production n, so it
+    # persists accumulator state per chunk of rows and skips completed ones
+    # (code-style.md § "Checkpoint per phase", intra-phase grain).
+    ckpt = args.scratch / f"capture_ckpt_{fingerprint}.npz"
+    processed: set[int] = set()
+    if args.resume and ckpt.exists():
+        with np.load(ckpt, allow_pickle=False) as z:
+            got = str(z["fingerprint"])
+            assert got == fingerprint, f"checkpoint regime drift: {got} != {fingerprint}"
+            processed = {int(r) for r in acc.restore(z)}
+        _log(f"RESUMED from {ckpt.name}: {len(processed)} rows already captured")
+    todo = [r for r in prepared if int(r[0]) not in processed]
+    del prepared
+    if processed:
+        _log(f"  {len(todo)} rows remain")
 
     t_loop = time.time()
+    tok_at_start = acc.ctx_tokens_raw + acc.ans_tokens_raw  # restored tokens are NOT this leg's
+    rows_at_start = acc.n_rows
     n_done = 0
-    for s in range(0, len(prepared), args.batch_rows):
-        batch = prepared[s : s + args.batch_rows]
+    since_ckpt = 0
+    for s in range(0, len(todo), args.batch_rows):
+        batch = todo[s : s + args.batch_rows]
         caps = EA._batched_capture(model, tok, batch, [LAYER], args.device)
         for r, cap in zip(batch, caps, strict=True):
             h = cap[LAYER].to(args.device)
             _row_pass(sae, acc, h, np.asarray(r[2], dtype=np.int64), r[2:], args.device)
             del h
+            processed.add(int(r[0]))
         n_done += len(batch)
-        if n_done % (args.batch_rows * 8) == 0 or n_done == len(prepared):
+        since_ckpt += len(batch)
+        if since_ckpt >= args.ckpt_every and args.resume:
+            _atomic_savez(ckpt, **acc.state(np.fromiter(processed, dtype=np.int64), fingerprint))
+            since_ckpt = 0
+        if n_done % (args.batch_rows * 8) == 0 or n_done == len(todo):
             tps = (acc.ctx_tokens_raw + acc.ans_tokens_raw) / max(time.time() - t_loop, 1e-9)
-            _log(f"  rows {n_done}/{len(prepared)} — {tps:,.0f} tok/s")
+            _log(f"  rows {n_done}/{len(todo)} — {tps:,.0f} tok/s")
 
     wall = time.time() - t_loop
     tot_tok = acc.ctx_tokens_raw + acc.ans_tokens_raw
+    leg_tok = tot_tok - tok_at_start
+    leg_rows = acc.n_rows - rows_at_start
     perf = {
         "rows": acc.n_rows,
         "tokens_total": tot_tok,
         "tokens_per_row": tot_tok / max(acc.n_rows, 1),
+        # Throughput is THIS leg's only: a resumed run's restored tokens carry
+        # no wall time here and would inflate tok/s.
         "capture_wall_s": wall,
-        "tokens_per_s": tot_tok / max(wall, 1e-9),
-        "s_per_row": wall / max(acc.n_rows, 1),
+        "rows_this_leg": leg_rows,
+        "tokens_this_leg": leg_tok,
+        "tokens_per_s": leg_tok / max(wall, 1e-9),
+        "s_per_row": wall / max(leg_rows, 1),
+        "resumed_rows": rows_at_start,
     }
     _log(f"capture: {perf['rows']} rows / {perf['tokens_per_s']:,.0f} tok/s / {wall:.1f}s")
 
@@ -896,6 +1052,14 @@ def main() -> None:
     ap.add_argument("--n-chunks", type=int, default=128, help="chunk-subset mode only")
     ap.add_argument("--pilot-rows", type=int, default=0)
     ap.add_argument("--batch-rows", type=int, default=8)
+    ap.add_argument(
+        "--resume",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="checkpoint accumulators + cache fetched rows so a crash resumes "
+        "(required at production n: >1h wall and >50 units)",
+    )
+    ap.add_argument("--ckpt-every", type=int, default=5000, help="rows between checkpoints")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--tiny-model", action="store_true", help="CPU smoke: from-config 24-layer")
     ap.add_argument("--scratch", type=Path, default=REPO / "data/issue_1482/run_length/scratch")
