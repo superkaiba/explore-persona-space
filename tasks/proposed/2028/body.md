@@ -1,6 +1,6 @@
 ---
-title: 'Remove GCP as a GPU compute lane: auto chain, explicit pins, tests, docs (user
-  directive)'
+title: 'Remove GCP compute backend entirely (GPU + CPU): auto chain, explicit pins,
+  cpu-bigmem RunPod re-map, tests, docs (user directive)'
 kind: infra
 tags:
 - user-directive
