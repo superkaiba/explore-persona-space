@@ -4098,6 +4098,70 @@ first-step CLI-family grep classification plus the timeout ceiling.
 workloads" committed-script rule above governs workload bodies, not
 this probe (same class as the gotchas #1310 signature probe).
 
+**Dispatch-input/env/flag preflight (REQUIRED before any instance-booting
+dispatch; #1964 — extends the argv dry-run above; same trigger + same
+byte-identical-re-dispatch exemption).** The argv dry-run validates PARSE
++ early post-parse validation only; the four probes below cover what it
+deliberately excludes — each is a VM-side check costing seconds, run
+BEFORE provisioning (~15 wasted provision+staging cycles across
+#1739/#1689/#1345/#1902/#1946/#1900 were all discoverable pre-boot).
+Auto-continue duties in the argv-dry-run register — no new gate; record
+each probe's one-line disposition in the dispatch note.
+
+- **(a) Staged-input existence probe.** For EVERY input path / HF prefix
+  the composed chain resolves — flag-passed paths, env-pointed dirs, HF
+  prefixes the driver downloads — probe existence on the surface the
+  TARGET will read, before provisioning. HF prefixes: scoped
+  `huggingface_hub.list_repo_tree(path_in_repo=<prefix>)` /
+  `list_repo_files` per named prefix — never full-tree enumeration on
+  the ~1M-file data repo (gotchas rule). Repo-resident paths are
+  LANE-AWARE: on a git-clone lane (GCE/RunPod) git-tree reachability on
+  the PUSHED ref suffices — `git cat-file -e origin/issue-<N>:<path>`
+  (commit AND push first; the lane clones origin, not the local
+  worktree); on an rsync-materialized SLURM lane (fellows/nibi/fir/mila
+  — and `auto`, whose chain leads with fellows) git-reachability is
+  necessary but NOT sufficient: additionally require sync-set coverage —
+  the path matches `RSYNC_INCLUDE_PATHS` or an `--extra-sync-path`, i.e.
+  the `verify_carryover_inputs.py --lane rsync` semantics — for every
+  composed-argv repo path (a git-only probe re-opens #1689 on the
+  default lane: fellows job 15188 died at its FIRST read of a
+  gate-certified, committed input the rsync set never materialized). The
+  argv dry-run's "pod/GCE-staged path absent locally → judged pass"
+  disposition row judges PARSE only and does NOT satisfy this probe —
+  that row is exactly where unstaged target-side inputs hide (#1739: an
+  unstaged `bareq_queries.json` + an un-pre-staged DV each burned a boot
+  cycle). Scope split vs Step 6a.5: this probe covers the 6a.5 gate's
+  own named residual — composed-argv / env-resolved / config-indirected
+  paths the plan text never cites — and does NOT re-run the 6a.5
+  plan-citation gate. A missing input BLOCKS dispatch: stage it first
+  (commit+push, HF upload, or widen the sync set).
+- **(b) Env-pin completeness probe.** Enumerate the dispatched driver's
+  env reads — `grep -nE 'os\.environ|os\.getenv' <driver + issue-local
+  imports>` — and check each read that lacks a run-correct default
+  against the composed launch env (the `--env-pin` set, the inline env
+  prefix, or lane-exported defaults). A consumed-but-unset pin BLOCKS
+  dispatch (#1345: the omitted `EPM_STORY_CHARACTER_NAME` killed job
+  16283 in 49 s; #1739: a wrong/missing `USIZES` cost ≥7 boxes).
+  One-line disposition in the dispatch note.
+- **(c) Per-LEG carry-over verification.** A multi-leg round (follow-up
+  leg, secondary phase, teammate-built leg) runs
+  `scripts/verify_carryover_inputs.py` PER LEG whose inputs the FIRST
+  leg's Step 6a.5 gate never saw — with `--lane rsync` +
+  `--extra-sync-path` where the #1835 rsync-lane rule applies — before
+  that leg's dispatch (#1900: the F1b leg crashed on a path the lane
+  clone never materialized; the first leg's gate had seen only leg 1's
+  inputs).
+- **(d) Relaunch flags verbatim from the handle sidecar.** A relaunch
+  copies the flag set VERBATIM from
+  `.claude/cache/issue-<N>-handle.json` — never re-derived from plan
+  prose or memory (#1902: attempt 6 dispatched twice, missing `--intent`
+  then `--time-budget-hours`, while the full flag set sat in the
+  sidecar). Deliberate changes are named DIFFS against the sidecar set
+  in the relaunch note. Machine-sized caps (`--rss-cap-gb`, thread caps,
+  width) are RE-DERIVED for the TARGET machine on any cross-machine move
+  — a sidecar cap is sized to the machine that wrote it (#1946: a 128 GB
+  box was dispatched with the 16 GB VM-default cap copied forward).
+
 The handle the dispatch helper returns is persisted to
 `.claude/cache/issue-<N>-handle.json` (the bg-Bash poller reads it
 back; see Step 6d.2).
