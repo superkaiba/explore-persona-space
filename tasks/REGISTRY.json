@@ -8002,8 +8002,8 @@
     "2032": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2032",
-      "status": "proposed",
+      "path": "tasks/planning/2032",
+      "status": "planning",
       "title": "workflow-fix: curate experiment-implementer agent-memory index under 24KB FAIL threshold"
     },
     "205": {
