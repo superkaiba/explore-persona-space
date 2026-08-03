@@ -7455,8 +7455,8 @@
     "1962": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1962",
-      "status": "reviewing",
+      "path": "tasks/completed/1962",
+      "status": "completed",
       "title": "daily-fix: cross-issue lint-gate concurrency arbitration"
     },
     "1963": {
