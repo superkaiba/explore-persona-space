@@ -369,8 +369,8 @@ Run the structural verifier against the plan version just persisted:
   form is also accepted. Use it when the `/workspace/...` sentinel
   vocabulary is quoted but nothing in the run posts through sentinels; a
   genuinely sentinel-signaling plan instead pins a drained lane —
-  `backend: gcp` / `backend: runpod` / `backend: fellows` (the fellows
-  drain landed at #1898)), and
+  `backend: runpod` / `backend: fellows` (the fellows drain landed at
+  #1898; `backend: gcp` is REFUSED as of #2028)), and
   `N/A — no committed outputs` (check 44 — the commit-to-git vocabulary is
   incidental or quotes a sibling/incident, not this plan's own declared
   committed outputs; a plan genuinely committing outputs under a

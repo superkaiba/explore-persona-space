@@ -14,6 +14,22 @@ paths:
 
 # Compute-backend failover + crash-diagnostics policy
 
+> **#2028 — GCP PROVISIONING IS DISABLED (user directive 2026-08-02).** No
+> dispatch path may CREATE a new GCP instance (GPU or CPU): the gate is
+> `router.GCP_PROVISIONING_DISABLED = True` (rollback = flip it to `False`;
+> no env re-enable switch). An explicit `backend: gcp` pin raises the typed
+> `GcpDisabledError` (`reason: gcp_backend_disabled`), the auto chain's
+> default order carries no gcp rung, and the #1596/#1601 queue-loss GCP
+> on-demand retry legs refuse up front (falling through to the re-drivable
+> `no_compute_available` terminal). Every GCP section below — the ladder,
+> the five GCP→RunPod failover triggers, Part A crash diagnostics, the
+> zombie/janitor machinery — is scoped to IN-FLIGHT GCP handles (which keep
+> polling / tearing down / failing over to RunPod / crash-persisting) plus
+> the single-constant rollback; it is NOT reachable for fresh dispatches
+> while the flag is on. CPU intents route RunPod-only (`cpu-bigmem` gained
+> the `cpu5m-16-128` row; the #677 typed terminal stays as the fail-loud
+> floor for a future unmapped CPU intent).
+
 CLAUDE.md § "Compute backends — multi-lane router" carries the always-on
 summary; this file is the full policy + the #658 motivating incident, and
 loads when you touch the router / GCP backend code. The router module
