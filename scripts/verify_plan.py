@@ -197,8 +197,8 @@ labeled-line forms):
     N/A prefix; hyphen / en-dash / em-dash variants tolerated; the
     ``N/A — no sentinel dependence`` form is also accepted via the shared
     helper. A genuinely sentinel-signaling plan instead pins a
-    drained lane: ``backend: gcp`` / ``backend: runpod`` /
-    ``backend: fellows`` — the fellows drain landed at #1898)
+    drained lane: ``backend: runpod`` / ``backend: fellows`` — the fellows
+    drain landed at #1898; ``backend: gcp`` is REFUSED as of #2028)
   - ``N/A — no committed outputs`` (check 44 — the commit-to-git vocabulary
     is incidental or quotes a sibling/incident, not this plan's own declared
     committed outputs; a plan genuinely committing outputs under a
@@ -7532,10 +7532,12 @@ _C43_SENTINEL_WORD_RE = re.compile(r"(?i)\bsentinel")
 _C43_WS_LOGS_RE = re.compile(r"/workspace/logs/issue-")
 
 # Satisfier (raw scan too — a dispatch command lives in a fenced block): a
-# DRAINED-lane pin, `backend: gcp|runpod|fellows` (frontmatter / prose
-# line) or a `--backend gcp|runpod|fellows` dispatch flag. fellows joined
-# the drained set at #1898 (slurm_monitor.drain_cluster_sentinels).
-_C43_LANE_PIN_RE = re.compile(r"(?i)(?:\bbackend:\s*|--backend[=\s]+)(?:gcp|runpod|fellows)\b")
+# DRAINED-lane pin, `backend: runpod|fellows` (frontmatter / prose line) or
+# a `--backend runpod|fellows` dispatch flag. fellows joined the drained
+# set at #1898 (slurm_monitor.drain_cluster_sentinels); gcp LEFT the
+# pinnable set at #2028 (GCP provisioning disabled — an explicit gcp pin
+# now raises GcpDisabledError at route(), so it cannot satisfy this check).
+_C43_LANE_PIN_RE = re.compile(r"(?i)(?:\bbackend:\s*|--backend[=\s]+)(?:runpod|fellows)\b")
 
 # The rule's own escape phrase, standalone at line start (leading
 # list/blockquote/bold markers tolerated via the `_standalone_na_declared`
@@ -7570,11 +7572,12 @@ def check_sentinel_lane(plan: str, kind: str) -> CheckResult:
     ``/workspace/...`` sentinel paths (gate sentinels, ``epm:results``
     payloads — the pod-side signaling contract) while leaving the backend
     on the unrestricted auto lane must either pin a DRAINED lane
-    (``backend: gcp`` / ``backend: runpod`` / ``backend: fellows``, or a
-    ``--backend gcp|runpod|fellows`` dispatch flag) or declare the rule's
-    own escape ``no sentinel dependence — auto-safe``. Mechanizes
+    (``backend: runpod`` / ``backend: fellows``, or a
+    ``--backend runpod|fellows`` dispatch flag; ``backend: gcp`` left the
+    pinnable set at #2028 — GCP provisioning disabled) or declare the
+    rule's own escape ``no sentinel dependence — auto-safe``. Mechanizes
     ``plan-compute-sizing.md`` § "Sentinel-signaling workloads need a
-    /workspace-contract lane": on auto, a fellows + GCP capacity miss can
+    /workspace-contract lane": on auto, a fellows capacity miss can
     fall through to the DRAC/Mila SLURM lanes, where compute nodes have no
     /workspace — the dispatcher dies FAIL-LOUD at ``mkdir -p
     /workspace/logs`` and burns the submission (#608). fellows is a
@@ -7612,7 +7615,7 @@ def check_sentinel_lane(plan: str, kind: str) -> CheckResult:
         return _pass(
             cid,
             name,
-            "/workspace-contract (drained) lane pinned (backend:/--backend gcp|runpod|fellows)",
+            "/workspace-contract (drained) lane pinned (backend:/--backend runpod|fellows)",
         )
     if _c43_escape_declared(plan):
         return _pass(cid, name, "explicit escape declared (no sentinel dependence — auto-safe)")
@@ -7621,13 +7624,14 @@ def check_sentinel_lane(plan: str, kind: str) -> CheckResult:
         cid,
         name,
         f"plan declares /workspace sentinel paths ({shown!r}) with no drained lane "
-        "pinned — on the auto lane a fellows + GCP capacity miss can fall through to the "
+        "pinned — on the auto lane a fellows capacity miss can fall through to the "
         "DRAC/Mila SLURM lanes, where compute nodes have no /workspace: the dispatcher "
         "dies fail-loud at `mkdir -p /workspace/logs` and burns the submission (#608). "
         "fellows is a DRAINED lane as of #1898 (the VM-side poller drains its "
         "/workspace/logs sentinels each tick, same contract as GCP/RunPod). Pin "
-        "`backend: gcp`, `backend: runpod`, or `backend: fellows` (or carry `--backend "
-        "gcp|runpod|fellows` in the dispatch command), or declare `no sentinel "
+        "`backend: fellows` or `backend: runpod` (or carry `--backend "
+        "runpod|fellows` in the dispatch command; `backend: gcp` is REFUSED as of "
+        "#2028 — GCP provisioning disabled), or declare `no sentinel "
         "dependence — auto-safe` on its own line, unwrapped (no backticks/quotes), if "
         "nothing in the run posts through sentinels (plan-compute-sizing.md "
         "§ Sentinel-signaling workloads)",

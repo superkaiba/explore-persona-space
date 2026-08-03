@@ -38,9 +38,10 @@ dispatcher never idles a GPU behind a wave/stage barrier when an independent
 cell is pending. A narrow / API-bound phase must not ride the peak-width
 pod (release / downsize it). A serial single-GPU plan on a multi-GPU pod is
 a REVISE.
-On the GCP auto lane, declare the shardable width via `--gpus N` — wide
-`a2-ultragpu` rungs (8→4→2) are walked first (#1121); a shardable >2 h
-phase left at 1× GCP width without a justification BINDING to that phase
+Declare the shardable width at dispatch (fellows H200 nodes / a wide
+RunPod pod; the `--gpus N` wide `a2-ultragpu` GCP rung walk (#1121) is
+rollback-only under #2028 — GCP provisioning disabled); a shardable >2 h
+phase left at 1× width without a justification BINDING to that phase
 is a REVISE — a bottleneck claim about a DIFFERENT phase (an API-bound
 judge, a CPU fit) does not count (#1739). Every GPU-bound §9 row with
 projected wall > ~2 h names its shardable axis or states "none".
