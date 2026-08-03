@@ -269,7 +269,10 @@ commit SHA — NEVER relative (dashboard-invisible, #365) or
    `main` (an inline / free-analysis round; worktree branches are gated
    at Step 10d instead): build the payload file, run the single-flight
    probe, then `uv run python scripts/inline_lint_gate.py --issue <N>
-   --payload-file /tmp/issue-<N>-inline-payload.txt` — PASS (or the
+   --payload-file /tmp/issue-<N>-<round-slug>-inline-payload.txt`
+   (round-unique slug REQUIRED, e.g. `r<round>-<label>` — the bare
+   legacy basename `issue-<N>-inline-payload.txt` is refused by the
+   gate, #1948) — PASS (or the
    artifact-only skip: no such file in the commit set) REQUIRED before
    step 4's push; the helper is the ONLY certifying entrypoint
    (hand-run component legs write no cert and the commit hook still

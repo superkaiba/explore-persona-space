@@ -1261,3 +1261,101 @@ def test_rd16_redirect_with_non_clean_literal_attached_target_refused(
     command-substitution form fails the clean-literal test — `no` -> opaque
     -> whole-index -> block."""
     _assert_blocked(_run(f"git commit -m x -- tasks/t.md {tok}", foreign_repo, cert))
+
+
+# ---------------------------------------------------------------------------
+# f-group (issue #1949): the `-F <msgfile>` / `--file=<msgfile>` message-file
+# commit form + the exact rc-capture compound suffixes from the 2026-07-31
+# incident (two sessions' pathspec-limited root commits were blocked by a
+# FOREIGN session's staged uncertified file). The behavioral root cause was
+# fixed by #1928 (`305df9ad14`); these tests PIN the previously-uncovered `-F`
+# dimension of the commit-clause flag table (the `-m | -F | ... skip_next`
+# separate-word arm, the `--*=*` attached-arg arm, and the single-dash cluster
+# arm), so a future flag-table refactor cannot silently regress the pathspec
+# escape with no red test.
+
+
+def _msgfile(tmp_path: Path) -> Path:
+    """Commit-message file for the `-F` / `--file=` form. The hook parses
+    only the argv shape — the file content is never read by the guard."""
+    p = tmp_path / "commitmsg.txt"
+    p.write_text("task #9: fix\n", encoding="utf-8")
+    return p
+
+
+def test_f1_msgfile_pathspec_certified_own_payload_allowed(
+    tmp_path: Path, foreign_repo: Path, cert: Path
+) -> None:
+    """c6 analogue for `-F`: a certified own gated payload committed via
+    `git commit -F <msgfile> -- <own>` is allowed despite the foreign
+    uncertified staged file (#1949)."""
+    msg = _msgfile(tmp_path)
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _cert_line(cert, "scripts/own.py", _worktree_sha(foreign_repo, "scripts/own.py"))
+    _assert_allowed(_run(f"git commit -F {msg} -- scripts/own.py", foreign_repo, cert))
+
+
+def test_f2_msgfile_artifact_pathspec_allowed(
+    tmp_path: Path, foreign_repo: Path, cert: Path
+) -> None:
+    """c1 analogue for `-F`: an artifact pathspec commit with a message FILE
+    scopes (the separate-word `-F` arm consumes the msgfile path token)."""
+    msg = _msgfile(tmp_path)
+    _assert_allowed(_run(f"git commit -F {msg} -- tasks/t.md", foreign_repo, cert))
+
+
+def test_f3_msgfile_pathspec_redirect_rc_capture_allowed(
+    tmp_path: Path, foreign_repo: Path, cert: Path
+) -> None:
+    """The exact 2026-07-31 boundary-impl incident shape (#1949): certified
+    own pathspec + `-F <msgfile>` + redirect + a `; COMMIT_RC=$?` rc-capture
+    clause (the `$?` lives in a SEPARATE clause, never the commit clause)."""
+    msg = _msgfile(tmp_path)
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _cert_line(cert, "scripts/own.py", _worktree_sha(foreign_repo, "scripts/own.py"))
+    cmd = f"git commit -F {msg} -- scripts/own.py > /tmp/i1949_commit.log 2>&1; COMMIT_RC=$?"
+    _assert_allowed(_run(cmd, foreign_repo, cert))
+
+
+def test_f4_dash_m_pathspec_redirect_rc_echo_allowed(foreign_repo: Path, cert: Path) -> None:
+    """The exact 2026-07-31 orchestrator incident shape (#1949): `-m` +
+    certified own pathspec + redirect + a `; echo rc=$?` suffix clause."""
+    _stage(foreign_repo, "scripts/own.py", "print(1)\n")
+    _cert_line(cert, "scripts/own.py", _worktree_sha(foreign_repo, "scripts/own.py"))
+    cmd = "git commit -m x -- scripts/own.py > /tmp/i1949_commit.log 2>&1; echo rc=$?"
+    _assert_allowed(_run(cmd, foreign_repo, cert))
+
+
+def test_f5_bare_msgfile_commit_blocks(tmp_path: Path, foreign_repo: Path, cert: Path) -> None:
+    """Sweep protection for `-F` (B39's message-file twin): a bare
+    whole-index `-F` commit still blocks on the foreign uncertified file."""
+    msg = _msgfile(tmp_path)
+    _assert_blocked(_run(f"git commit -F {msg}", foreign_repo, cert))
+
+
+def test_f6_msgfile_pathspec_naming_foreign_gated_blocks(
+    tmp_path: Path, foreign_repo: Path, cert: Path
+) -> None:
+    """A `-F` pathspec commit NAMING the foreign uncertified gated file
+    blocks (rd7's message-file twin)."""
+    msg = _msgfile(tmp_path)
+    _assert_blocked(_run(f"git commit -F {msg} -- scripts/foreign.py", foreign_repo, cert))
+
+
+def test_f7_attached_file_eq_spelling_artifact_pathspec_allowed(
+    tmp_path: Path, foreign_repo: Path, cert: Path
+) -> None:
+    """`--file=<msgfile>` attached spelling: pins the `--*=*`
+    no-separate-arg arm (the msgfile rides inside ONE token, nothing is
+    consumed), so the artifact pathspec still scopes."""
+    msg = _msgfile(tmp_path)
+    _assert_allowed(_run(f"git commit --file={msg} -- tasks/t.md", foreign_repo, cert))
+
+
+def test_f8_single_dash_cluster_ending_in_arg_letter_allowed(
+    foreign_repo: Path, cert: Path
+) -> None:
+    """Adjacent flag-table arm (plan deviation clause, critic advisory): a
+    single-dash CLUSTER ending in an arg-taking letter (`-qm x`) consumes its
+    separate message word, so the artifact pathspec still scopes (#1949)."""
+    _assert_allowed(_run("git commit -qm x -- tasks/t.md", foreign_repo, cert))
