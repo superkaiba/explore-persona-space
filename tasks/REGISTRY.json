@@ -7349,8 +7349,8 @@
     "1949": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1949",
-      "status": "running",
+      "path": "tasks/reviewing/1949",
+      "status": "reviewing",
       "title": "workflow-fix: root-commit guard pathspec escape fails under foreign staged files"
     },
     "195": {
