@@ -9076,9 +9076,10 @@ def test_c43_arm_b_ws_logs_path_warns():
     assert "fail-loud" in r.detail  # the residual hazard class (#1898)
     assert "DRAINED lane as of #1898" in r.detail  # fellows named as drained
     assert "silent marker loss" not in r.detail  # the pre-#1898 hazard is gone
-    # pin remedy names all three drained lanes
-    assert "backend: gcp" in r.detail and "backend: runpod" in r.detail
+    # pin remedy names the two drained lanes + the #2028 gcp refusal
+    assert "backend: runpod" in r.detail
     assert "backend: fellows" in r.detail
+    assert "REFUSED as of" in r.detail and "#2028" in r.detail  # gcp left the pinnable set
     assert "no sentinel dependence — auto-safe" in r.detail  # escape remedy
 
 
@@ -9088,12 +9089,15 @@ def test_c43_arm_a_sentinel_ws_path_warns():
     assert _status(C43_ARM_A, C43) == "WARN"
 
 
-def test_c43_backend_gcp_pin_passes():
+def test_c43_backend_gcp_pin_no_longer_satisfies():
+    # #2028: GCP provisioning is disabled — an explicit gcp pin raises
+    # GcpDisabledError at route(), so it can no longer satisfy the drained-
+    # lane check (a green c43 on a gcp pin would steer the plan into the
+    # typed refusal at dispatch).
     plan = C43_1775_SHAPED + "\nPinned lane: backend: gcp (GCE mirrors the /workspace contract).\n"
     _, by_id = _run(plan)
     r = by_id[C43]
-    assert r.status == "PASS"
-    assert "lane pinned" in r.detail
+    assert r.status == "WARN"
 
 
 def test_c43_dispatch_flag_backend_runpod_passes():
@@ -9109,7 +9113,7 @@ def test_c43_dispatch_flag_backend_runpod_passes():
 def test_c43_backend_fellows_pin_passes():
     # #1898: fellows is a DRAINED lane (slurm_monitor.drain_cluster_sentinels
     # drains its /workspace/logs each poll tick), so a `backend: fellows`
-    # pin satisfies exactly as gcp/runpod.
+    # pin satisfies exactly as runpod (gcp left the pinnable set at #2028).
     plan = C43_1775_SHAPED + "\nPinned lane: backend: fellows (drained as of #1898).\n"
     _, by_id = _run(plan)
     r = by_id[C43]
