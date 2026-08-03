@@ -2693,8 +2693,8 @@
       "goal": "Determine whether the assistant context\u2192answer map is the SAME linear operator across three framings holding the assistant persona constant \u2014 chat-template, plain User:/Assistant:, and an assistant/AI character in generic narrative-prose stories \u2014 via cross-regime operator transfer, aligned operator cosine, and general-linear reparameterization (the #825 Result-2.5 method), in Qwen2.5-7B base and instruct, distinguishing 'same map in different coordinates' from 'genuinely different map per framing.'",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/1345",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/1345",
+      "status": "followups_running",
       "title": "Narrative-story framing weakens the assistant context\u2192answer map on identical conversations rather than eliminating it, while chat and plain-text framings share one operator up to linear coordinates (MODERATE confidence)"
     },
     "1346": {
@@ -7497,8 +7497,8 @@
     "1968": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1968",
-      "status": "reviewing",
+      "path": "tasks/completed/1968",
+      "status": "completed",
       "title": "daily-fix: hold subagent respawn past active 429 storm"
     },
     "1969": {
@@ -7518,22 +7518,22 @@
     "1970": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1970",
-      "status": "running",
+      "path": "tasks/reviewing/1970",
+      "status": "reviewing",
       "title": "daily-fix: inline-round pod upload-verify satisfier"
     },
     "1971": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1971",
-      "status": "proposed",
+      "path": "tasks/reviewing/1971",
+      "status": "reviewing",
       "title": "daily-fix: report TTY-attached unmapped idle sessions"
     },
     "1972": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1972",
-      "status": "proposed",
+      "path": "tasks/running/1972",
+      "status": "running",
       "title": "daily-fix: widen pre-gate spec-freshness sync set"
     },
     "1973": {
