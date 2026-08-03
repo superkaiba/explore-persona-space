@@ -741,17 +741,24 @@ def _resolve_spec(
     )
 
 
-def _bootstrap(pod_name: str, intent_label: str = "custom") -> int:
+def _bootstrap(pod_name: str, intent_label: str = "custom", issue: int | None = None) -> int:
     """Run the existing bootstrap_pod.sh against a managed pod entry.
 
     ``intent_label`` is forwarded as ``POD_INTENT`` env var so bootstrap_pod.sh
     can gate intent-specific install steps (e.g. flash-attn is installed for
     training intents but skipped for ``eval`` / ``debug`` to save ~5-10 min of
     build time on pods that don't need FlashAttention2 kernels).
+
+    ``issue`` is forwarded as ``ISSUE`` env var so bootstrap_pod.sh's
+    partial-clone + cone sparse-checkout can open the per-issue
+    ``eval_results/issue_<N>`` / ``figures/issue_<N>`` cones alongside the
+    default code cones (#2051). Absent ⇒ only the default code cones open.
     """
     print(f"\nRunning bootstrap on {pod_name} (intent={intent_label})...")
     env = os.environ.copy()
     env["POD_INTENT"] = intent_label
+    if issue is not None:
+        env["ISSUE"] = str(issue)
     return subprocess.call(
         ["bash", str(BOOTSTRAP_SCRIPT), pod_name],
         cwd=str(PROJECT_ROOT),
@@ -1929,7 +1936,7 @@ def _provision_wait_register_bootstrap(
         print(f"  python scripts/pod.py bootstrap {name}")
         return
 
-    rc = _bootstrap(name, intent_label=intent_label)
+    rc = _bootstrap(name, intent_label=intent_label, issue=args.issue)
     if rc != 0:
         # Retry EXACTLY ONCE (#1931): the incident class (pod-1773-regsteer) was a
         # transient apt/network-class failure whose manual full re-run succeeded
@@ -1945,7 +1952,7 @@ def _provision_wait_register_bootstrap(
             f"pod-1773-regsteer, task #1931)...",
             file=sys.stderr,
         )
-        rc = _bootstrap(name, intent_label=intent_label)
+        rc = _bootstrap(name, intent_label=intent_label, issue=args.issue)
     if rc != 0:
         # Suffixed pods (#1334) get a --name-suffix-scoped terminate hint so the
         # discard recipe can never suggest an issue-wide destroy that would take
