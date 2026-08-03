@@ -481,6 +481,7 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_plan_patch.py",
     "tests/test_step0_enumerator_total_form.py",  # NEW (#1722) — Step-0 enumerator total-form pin
     "tests/test_step10d_guard3.py",  # NEW (#1242) — SKILL.md Step 10d guard/merge pin
+    "tests/test_step10d_guards.py",  # NEW (#1978) — SKILL.md Step 10d Guards 0/4/PRELUDE extraction pin
     # NEW (#1723) — SKILL.md Step 10 CRON-TEARDOWN + epm:done reorder around
     # Step 10d merge (Terminal-teardown H4 + exit-site enumeration +
     # Step 10 step 6 branch-on-epm:merged + retry-surface long-phase heartbeats)

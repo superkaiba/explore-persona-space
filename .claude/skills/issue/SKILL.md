@@ -11051,9 +11051,15 @@ nests `$WT` into `.../issue-<N>/.claude/worktrees/issue-<N>` (incident #506,
 2026-06-09: the guard snippet exit-128'd with "cannot change to ..."):
 
 ```bash
-REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
-WT="$REPO_ROOT/.claude/worktrees/issue-<N>"
+eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
 ```
+
+(This invocation preserves the original derivation byte-equivalent-in-effect:
+`REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")`
++ `WT="$REPO_ROOT/.claude/worktrees/issue-<N>"`. The extracted script is the
+canonical spelling of `--path-format=absolute`, retiring the hand-typo class
+per task #1978. The bare `bash` invocation is deliberate — `bash` is on PATH
+and needs no `uv run` wrapper.)
 
 **Guard 0 — agent-memory pre-commit (run FIRST, before guards 1-3 and every
 merge form).** Review rounds write per-agent memories
@@ -11063,20 +11069,15 @@ origin/main` below (incident #906, 2026-07-04). Commit them by explicit
 pathspec — never `git add -A`:
 
 ```bash
-MEM_COMMITTED=no
-if git -C "$WT" status --porcelain -- .claude/agent-memory/ | grep -q .; then
-  git -C "$WT" add -- .claude/agent-memory/
-  git -C "$WT" commit -m "issue-<N>: persist agent-memory writes before Step-10d merge" \
-    -- .claude/agent-memory/
-  MEM_COMMITTED=yes
-  # Best-effort branch push NOW: the fast-path / artifact-confirmed forms
-  # never reach the safe-case pre-merge push, and on re-entry the pathspec
-  # is clean (MEM_COMMITTED=no) so the commit would otherwise strand
-  # local-only indefinitely. Failure is non-fatal — the safe-case push
-  # condition below is the second chance.
-  git -C "$WT" push origin issue-<N> || true
-fi
+eval "$(bash scripts/step10d_guards.sh <N> --guard 0)"
 ```
+
+(The extracted script probes `git -C "$WT" status --porcelain --
+.claude/agent-memory/`, commits by explicit pathspec if dirty, best-effort
+pushes `issue-<N>`, and emits `MEM_COMMITTED=yes|no`. Idempotent — a re-run
+finds the pathspec clean and skips. Exit 2 on infra error (worktree missing,
+commit failed) with `ERROR=<reason>` on stdout; the caller's `eval`
+populates `$ERROR` for inspection. Task #1978 extraction.)
 
 Idempotent (a re-run finds the pathspec clean and skips). Scope is EXACTLY
 `.claude/agent-memory/`: any OTHER dirty worktree path still surfaces through
@@ -11417,43 +11418,24 @@ rebase-merged. Five guards:
    a merged sibling per a user directive).
 
    ```bash
-   if [ -z "${EPM_SKIP_LOST_UPDATE_GUARD:-}" ]; then
-     MB=$(git -C "$WT" merge-base HEAD origin/main)
-     LOST_UPDATE_PATHS=""
-     while IFS= read -r P; do
-       case "$P" in
-         scripts/workflow_lint.py|.claude/skills/*|.claude/rules/*|.claude/workflow.yaml|CLAUDE.md)
-           MAIN_ADDS=$(git -C "$WT" diff --numstat "$MB" origin/main -- "$P" \
-             | awk '{print $1+0}')
-           if [ "${MAIN_ADDS:-0}" -gt 0 ]; then
-             git -C "$WT" diff "$MB" origin/main -- "$P" \
-               | grep -E '^\+[^+]' | sed 's/^\+//' > /tmp/1713-main-adds.txt
-             MISSING_ON_BRANCH=0
-             while IFS= read -r ADD_LINE; do
-               [ -z "$ADD_LINE" ] && continue
-               if ! git -C "$WT" show HEAD:"$P" 2>/dev/null \
-                    | grep -Fxq -- "$ADD_LINE"; then
-                 MISSING_ON_BRANCH=$((MISSING_ON_BRANCH + 1))
-               fi
-             done < /tmp/1713-main-adds.txt
-             if [ "$MISSING_ON_BRANCH" -gt 0 ]; then
-               LOST_UPDATE_PATHS="$LOST_UPDATE_PATHS $P(${MISSING_ON_BRANCH})"
-             fi
-           fi
-           ;;
-       esac
-     done < <(git -C "$WT" diff --name-only "$MB"...HEAD)
-     if [ -n "$LOST_UPDATE_PATHS" ]; then
-       echo "LOST-UPDATE REFUSAL (Guard 4, #1713): branch carries a" \
-            "whole-file snapshot dropping main-side additions on:" \
-            "$LOST_UPDATE_PATHS" >&2
-       echo "Recovery: rebase onto origin/main and re-apply the intended" \
-            "edits by explicit path; post epm:merge-failed v1" \
-            "(reason: lost-update, paths=$LOST_UPDATE_PATHS)."
-       false
-     fi
-   fi
+   GUARD4_OUT=$(bash scripts/step10d_guards.sh <N> --guard 4 --main-sha "$MAIN_SHA"); GUARD4_RC=$?
+   eval "$GUARD4_OUT"
+   [ "$GUARD4_RC" -eq 1 ] && false
    ```
+
+   (The extracted script honors `EPM_SKIP_LOST_UPDATE_GUARD=1` FIRST — emits
+   `GUARD4=skipped`, exit 0. Otherwise it computes the merge-base from
+   `--main-sha` if provided else `git -C "$WT" merge-base HEAD origin/main`,
+   iterates the branch-touched paths under the fence's actual case glob
+   (`scripts/workflow_lint.py|.claude/skills/*|.claude/rules/*|.claude/workflow.yaml|CLAUDE.md`),
+   counts `origin/main`-added lines missing from `HEAD:<P>`, and on any
+   refusal emits `LOST-UPDATE REFUSAL (Guard 4, #1713)` on stderr +
+   `GUARD4=refused` + `LOST_UPDATE_PATHS=...` on stdout + exit 1. The
+   two-step rc-capture form above preserves the current prose's
+   `false`-in-block-tail halt semantics: `eval "$GUARD4_OUT"` populates the
+   caller's `$GUARD4` and `$LOST_UPDATE_PATHS`, and the trailing
+   `[ "$GUARD4_RC" -eq 1 ] && false` halts the merge attempt at exactly the
+   same point the inline prose did. Task #1978 extraction.)
 
    **Recovery ordering (#1753; incident #1727).** When recovering via a
    merge of `origin/main` INTO the branch (instead of the rebase form),
