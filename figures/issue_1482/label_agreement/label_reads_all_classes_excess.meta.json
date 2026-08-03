@@ -1,0 +1,139 @@
+{
+ "commit": "fbb7c72c6f",
+ "created": "2026-08-03T18:05:10Z",
+ "figsize": [
+  12.4,
+  8.5
+ ],
+ "text": {
+  "suptitle": null,
+  "fig_texts": [
+   "R^2 target: #1738 SAE->SAE multi-turn context R^2 (provisional target)  |  cross-corpus: R^2 is the #1738 MULTI-TURN read; activity / judged labels come from the #1482 SINGLE-TURN corpus"
+  ],
+  "axes": [
+   {
+    "title_left": "(a) All 15 label classes, sorted by excess over the stratified null",
+    "xlabel": "excess over activity-stratified null (AUROC units)",
+    "xticklabels": [
+     "\u22120.15",
+     "\u22120.10",
+     "\u22120.05",
+     "0.00",
+     "0.05",
+     "0.10",
+     "0.15",
+     "0.20"
+    ],
+    "yticklabels": [
+     "speaker property: identity disposition",
+     "interpretable: yes",
+     "content type: syntax",
+     "content type: task format",
+     "functional role: output promoting",
+     "abstraction: token surface",
+     "speaker property: register style",
+     "abstraction: abstract contextual",
+     "content type: entity",
+     "functional role: mixed",
+     "content type: operation",
+     "speaker property: language",
+     "functional role: input side",
+     "abstraction: lexical semantic",
+     "content type: topic"
+    ]
+   },
+   {
+    "title_left": "(b) Raw AUROC vs its own null centre",
+    "xlabel": "AUROC (dot) and its stratified-null mean (tick)",
+    "xticklabels": [
+     "0.35",
+     "0.40",
+     "0.45",
+     "0.50",
+     "0.55",
+     "0.60",
+     "0.65",
+     "0.70"
+    ]
+   }
+  ]
+ },
+ "issue1482_label_agreement": {
+  "what_is_plotted": "(a) per label class, the observed one-vs-rest AUROC of R-squared minus that class's activity-stratified permutation-null mean; thin line = 95% bootstrap CI recentred on the null mean, grey band = the null's own 95% interval recentred at 0. (b) the same reads before recentring: dot = AUROC, tick = null mean. Rows sorted by signed excess; colour = axis.",
+  "definitions": {
+   "excess": "AUROC minus the mean of the within-activity-decile permutation null",
+   "null": "labels permuted within activity deciles (2000 draws), which preserves the activity-label association and so is NOT centred at 0.5"
+  },
+  "caveats": [
+   "cross-corpus: R^2 is the #1738 MULTI-TURN read; activity / judged labels come from the #1482 SINGLE-TURN corpus",
+   "one-vs-rest over the axis's labelled features only (unresolved / unclear dropped); the drop set differs by axis, so the denominators differ by row",
+   "'interpretable: no' is the exact mirror of 'yes' and is not read out separately"
+  ],
+  "n_per_class": {
+   "speaker_property__identity_disposition": {
+    "n": 113592,
+    "n_positive": 1406
+   },
+   "interpretable__yes": {
+    "n": 114076,
+    "n_positive": 96985
+   },
+   "content_type__syntax": {
+    "n": 111622,
+    "n_positive": 72515
+   },
+   "content_type__task_format": {
+    "n": 111622,
+    "n_positive": 1763
+   },
+   "functional_role__output_promoting": {
+    "n": 107275,
+    "n_positive": 3524
+   },
+   "abstraction__token_surface": {
+    "n": 112142,
+    "n_positive": 42028
+   },
+   "speaker_property__register_style": {
+    "n": 113592,
+    "n_positive": 9348
+   },
+   "abstraction__abstract_contextual": {
+    "n": 112142,
+    "n_positive": 39932
+   },
+   "content_type__entity": {
+    "n": 111622,
+    "n_positive": 5637
+   },
+   "functional_role__mixed": {
+    "n": 107275,
+    "n_positive": 5450
+   },
+   "content_type__operation": {
+    "n": 111622,
+    "n_positive": 10876
+   },
+   "speaker_property__language": {
+    "n": 113592,
+    "n_positive": 6593
+   },
+   "functional_role__input_side": {
+    "n": 107275,
+    "n_positive": 98301
+   },
+   "abstraction__lexical_semantic": {
+    "n": 112142,
+    "n_positive": 30182
+   },
+   "content_type__topic": {
+    "n": 111622,
+    "n_positive": 20831
+   }
+  },
+  "source_paths": {
+   "r2": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1738/sae_twoway/perfeature/sae_context_r2.npy",
+   "labels": "/mnt/eps-data/thomasjiralerspong/issue1773_fulldict/labels_upload"
+  }
+ }
+}
