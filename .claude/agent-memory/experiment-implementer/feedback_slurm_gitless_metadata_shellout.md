@@ -22,3 +22,18 @@ strict metadata path is exactly the #1902 shape.
 **Worked fix:** `scripts/issue1902_run.py::_git_sha` + `issue1902_corpus.py::_git_sha`
 (commit `5a3d11f7e2`, issue-1902 branch); pin test
 `tests/test_issue1902_run.py::test_git_sha_degrades_on_gitless_lane`.
+
+**Recurrence (#1336 fellows job 17987, 2026-08-02).** The same class fired in a
+bash DISPATCHER's embedded-python heredocs (`issue1336_dispatch.sh` g2_parity —
+7 identical `check=True` rev-parse sites) AND in a shell `git commit+push`
+results leg (`phase_upload_v2`), which no metadata resolver can save — a
+rsync-lane workload cannot push at all (`pod-side-reporting.md` SLURM bullet:
+HF mirror + VM-side orchestrator commit own the landing). Extended rule: the
+class-sweep covers heredoc python AND shell `branch=$(git rev-parse ...)` /
+commit/push legs; result-commit legs get fenced behind
+`[ -e .git ] && git rev-parse --git-dir` with a loud rsync-lane skip line.
+Shared resolver now lives at
+`experiments/issue_1336/common.py::resolve_code_sha` (env -> check=False ->
+`unknown-no-git`); pins in `tests/test_issue1336_dispatch_v2.py`. slurm.py
+still exports NO `EPS_GIT_SHA` — surfaced as a workflow-fix candidate
+(#1336 crash-fix round) so rsync-lane provenance can resolve the real sha.
