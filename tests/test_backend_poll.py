@@ -132,6 +132,29 @@ def _no_real_marker_posts(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _gcp_rollback_build_for_legacy_suite(request, monkeypatch):
+    """Run the legacy GCP failover/retry poll suite under the #2028 rollback build.
+
+    GCP provisioning is disabled by policy (#2028,
+    ``router.GCP_PROVISIONING_DISABLED = True``), but the gated poller legs
+    (the #1596/#1601 queue-loss on-demand retries — the only fresh-GCP-create
+    paths in this module) are KEPT and must stay test-covered — they are the
+    single-constant rollback lever. This autouse fixture runs every test with
+    the gate OFF; flag-ON production pins carry
+    ``@pytest.mark.gcp_policy_default``. (The in-flight-handle paths — crash
+    persist, teardown, GCP→RunPod failover — are UNGATED either way.)
+    """
+    if request.node.get_closest_marker("gcp_policy_default"):
+        return
+    from explore_persona_space.backends import router as router_module
+
+    monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", False)
+    monkeypatch.setattr(
+        router_module, "DEFAULT_AUTO_LANE_ORDER", router_module._default_auto_lane_order()
+    )
+
+
+@pytest.fixture(autouse=True)
 def _isolate_lease_store(monkeypatch, tmp_path):
     """Redirect EVERY ``LeaseStore()`` to a per-test tmp ``~/.eps-routing/``.
 
@@ -1229,15 +1252,21 @@ def test_concurrent_failover_preserves_first_runpod_sidecar(tmp_path, monkeypatc
 
 
 def test_async_failover_skips_cpu_gcp_handle(tmp_path, monkeypatch, capsys):
-    """#677: a CPU GCP handle (extra.gpu_count==0) whose poll surfaces
-    terminal_workload_failed does NOT fail over to RunPod (RunPod is GPU-only).
+    """#677: an UNMAPPED CPU GCP handle (extra.gpu_count==0, intent NOT in
+    RUNPOD_CPU_INSTANCE_FOR_INTENT) whose poll surfaces
+    terminal_workload_failed does NOT fail over to RunPod.
     It emits the ordinary dead JSON; RunPodBackend is never constructed.
+    (#2028 mapped cpu-bigmem, so the unmapped shape is simulated by deleting
+    it from the map — the fail-loud floor for a future unmapped CPU intent.)
 
     RunPodBackend is monkeypatched to RAISE if constructed — the strongest
     "never touched RunPod" assertion: if the predicate fails to exclude the CPU
     handle, _failover_dead_gcp_to_runpod constructs RunPodBackend() and the test
     fails with the explicit AssertionError, not a downstream crash.
     """
+    from explore_persona_space.backends import router as router_module
+
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     cpu_extra = dict(_GCP_EXTRA_659)
     cpu_extra["intent"] = "cpu-bigmem"
     cpu_extra["gpu_count"] = 0
@@ -1283,11 +1312,13 @@ def _cpu_gcp_handle(intent: str) -> RunHandle:
     return _gcp_handle(extra=extra)
 
 
-def test_async_cpu_small_handle_predicate_is_failover_eligible() -> None:
+def test_async_cpu_small_handle_predicate_is_failover_eligible(monkeypatch) -> None:
     """#747: the predicate _is_gcp_async_workload_failure returns True for a
     cpu-small GCP handle (gpu_count==0, intent IN RUNPOD_CPU_INSTANCE_FOR_INTENT)
     at terminal_workload_failed — the #677 CPU exclusion is RELAXED for a mapped
-    intent. The companion cpu-bigmem case (NOT in the map) stays False."""
+    intent. cpu-bigmem is mapped too as of #2028 (True); an UNMAPPED intent
+    (simulated by deleting cpu-bigmem from the map) stays False."""
+    from explore_persona_space.backends import router as router_module
     from scripts.backend_poll import _is_gcp_async_workload_failure
 
     assert (
@@ -1296,7 +1327,15 @@ def test_async_cpu_small_handle_predicate_is_failover_eligible() -> None:
         )
         is True
     )
-    # cpu-bigmem (NOT in the map) stays EXCLUDED.
+    # #2028: cpu-bigmem is mapped now — eligible.
+    assert (
+        _is_gcp_async_workload_failure(
+            _cpu_gcp_handle("cpu-bigmem"), _poll("dead", "terminal_workload_failed")
+        )
+        is True
+    )
+    # An UNMAPPED CPU intent stays EXCLUDED (the #677 floor).
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     assert (
         _is_gcp_async_workload_failure(
             _cpu_gcp_handle("cpu-bigmem"), _poll("dead", "terminal_workload_failed")
@@ -1595,11 +1634,16 @@ def test_gcp_first_pending_observation_stamps_clock_stays_running(tmp_path, monk
 
 
 def test_gcp_cpu_bigmem_pending_past_floor_does_NOT_fail_over(tmp_path, monkeypatch, capsys):
-    """#783 negative control: a cpu-bigmem GCP handle (gpu_count==0, intent NOT
-    in RUNPOD_CPU_INSTANCE_FOR_INTENT) stuck "pending" past the floor is escalated
-    to terminal_queue_timeout by the clock BUT the _is_gcp_queue_timeout predicate
-    EXCLUDES it (no RunPod CPU lane), so it falls through to the ordinary dead
-    path — RunPod is never constructed."""
+    """#783 negative control: an UNMAPPED CPU GCP handle (gpu_count==0, intent
+    NOT in RUNPOD_CPU_INSTANCE_FOR_INTENT) stuck "pending" past the floor is
+    escalated to terminal_queue_timeout by the clock BUT the
+    _is_gcp_queue_timeout predicate EXCLUDES it (no RunPod CPU lane), so it
+    falls through to the ordinary dead path — RunPod is never constructed.
+    (#2028 mapped cpu-bigmem, so the unmapped shape is simulated by deleting
+    it from the map — the floor for a future unmapped CPU intent.)"""
+    from explore_persona_space.backends import router as router_module
+
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     cpu_extra = dict(_GCP_EXTRA_659)
     cpu_extra["intent"] = "cpu-bigmem"
     cpu_extra["gpu_count"] = 0
@@ -1627,16 +1671,21 @@ def test_gcp_cpu_bigmem_pending_past_floor_does_NOT_fail_over(tmp_path, monkeypa
     assert read_handle_sidecar(sidecar).backend == "gcp"
 
 
-def test_gcp_cpu_small_pending_past_floor_predicate_is_eligible() -> None:
+def test_gcp_cpu_small_pending_past_floor_predicate_is_eligible(monkeypatch) -> None:
     """#783: the queue-timeout predicate _is_gcp_queue_timeout returns True for a
     cpu-small handle at terminal_queue_timeout (mapped CPU intent, #747-relaxed)
-    and False for cpu-bigmem — mirroring the #659 CPU-intent guard exactly."""
+    — and for cpu-bigmem too as of #2028 (mapped); an UNMAPPED intent
+    (simulated by deleting cpu-bigmem from the map) stays False — mirroring
+    the #659 CPU-intent guard exactly."""
+    from explore_persona_space.backends import router as router_module
     from scripts.backend_poll import _is_gcp_queue_timeout
 
     def _tq_poll() -> PollResult:
         return _poll("dead", "terminal_queue_timeout")
 
     assert _is_gcp_queue_timeout(_cpu_gcp_handle("cpu-small"), _tq_poll()) is True
+    assert _is_gcp_queue_timeout(_cpu_gcp_handle("cpu-bigmem"), _tq_poll()) is True  # #2028
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     assert _is_gcp_queue_timeout(_cpu_gcp_handle("cpu-bigmem"), _tq_poll()) is False
     # A GPU handle is eligible; a non-GCP / non-dead / wrong-phase handle is not.
     assert _is_gcp_queue_timeout(_gcp_handle(), _tq_poll()) is True
@@ -2798,13 +2847,16 @@ def test_gcp_pre_workload_running_observation_does_NOT_reset_streak(tmp_path, mo
 
 
 def test_gcp_boot_loop_cpu_bigmem_records_but_never_rewrites(tmp_path, monkeypatch, capsys):
-    """#1029 AC-4 (CPU guard): a cpu-bigmem boot loop RECORDS the streak (the
-    route()-side skip is its only breaker) but NEVER rewrites to
+    """#1029 AC-4 (CPU guard): an UNMAPPED CPU boot loop RECORDS the streak
+    (the route()-side skip is its only breaker) but NEVER rewrites to
     terminal_boot_loop — no RunPod lane exists for it (#677), so both deaths
-    print the ordinary dead JSON. The cpu-small counterpart (mapped, #747) DOES
-    rewrite and fails over."""
+    print the ordinary dead JSON. (#2028 mapped cpu-bigmem, so the unmapped
+    shape is simulated by deleting it from the map.) The cpu-small
+    counterpart (mapped, #747) DOES rewrite and fail over."""
+    from explore_persona_space.backends import router as router_module
     from explore_persona_space.backends.router import gcp_boot_death_streak
 
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     rp = _PassiveRunpodBackend()
     monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
 
@@ -3140,14 +3192,17 @@ def test_gcp_terminated_phase_with_pending_clock_not_vanish(tmp_path, monkeypatc
 
 
 def test_gcp_queue_vanish_cpu_bigmem_excluded(tmp_path, monkeypatch, capsys):
-    """#1116 negative control (acceptance criterion 4): a cpu-bigmem GCP handle
-    (gpu_count==0, intent NOT in RUNPOD_CPU_INSTANCE_FOR_INTENT) whose queued
-    instance vanished keeps its ORDINARY dead path byte-identically — the CPU
-    guard gates the REWRITE itself (no terminal_queue_vanish phase, unlike the
-    #783 cpu-bigmem shape), the #1029 boot-death record still happens, and
-    RunPod is never constructed."""
+    """#1116 negative control (acceptance criterion 4): an UNMAPPED CPU GCP
+    handle (gpu_count==0, intent NOT in RUNPOD_CPU_INSTANCE_FOR_INTENT) whose
+    queued instance vanished keeps its ORDINARY dead path byte-identically —
+    the CPU guard gates the REWRITE itself (no terminal_queue_vanish phase,
+    unlike the #783 shape), the #1029 boot-death record still happens, and
+    RunPod is never constructed. (#2028 mapped cpu-bigmem, so the unmapped
+    shape is simulated by deleting it from the map.)"""
+    from explore_persona_space.backends import router as router_module
     from explore_persona_space.backends.router import gcp_boot_death_streak
 
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     cpu_extra = dict(_GCP_EXTRA_1116)
     cpu_extra["intent"] = "cpu-bigmem"
     cpu_extra["gpu_count"] = 0

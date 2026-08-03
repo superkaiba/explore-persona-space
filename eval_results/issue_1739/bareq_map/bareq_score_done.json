@@ -1,0 +1,58 @@
+{
+ "leg": "bareq_score",
+ "rung": "bareq",
+ "behaviors": [
+  {
+   "behavior": "evil",
+   "legs": [
+    "1",
+    "2"
+   ],
+   "leg2_noop": false,
+   "n_transfer_rows": 24,
+   "summary": "eval_results/issue_1739/bareq_map/evil/all_arms_spearman.json"
+  },
+  {
+   "behavior": "sycophancy",
+   "legs": [
+    "1"
+   ],
+   "leg2_noop": true,
+   "n_transfer_rows": 6,
+   "summary": "eval_results/issue_1739/bareq_map/sycophancy/all_arms_spearman.json"
+  },
+  {
+   "behavior": "hallucination",
+   "legs": [
+    "1"
+   ],
+   "leg2_noop": true,
+   "n_transfer_rows": 6,
+   "summary": "eval_results/issue_1739/bareq_map/hallucination/all_arms_spearman.json"
+  }
+ ],
+ "legs_requested": [
+  "1",
+  "2"
+ ],
+ "variants": [
+  "context_end",
+  "prefix_end"
+ ],
+ "n_layers": 28,
+ "leg2_behaviors": [
+  "evil"
+ ],
+ "caveats": [
+  "#1092's 0.02 was bare->answer-ACTIVATIONS at SAE grain, so it is an analogy, not a numerically comparable floor for bare->judged-DV"
+ ],
+ "git_commit": "0cc65baafc3a85ec8e7b5b3a915b9c72ac769a0f",
+ "env_versions": {
+  "python": "3.11.15",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128"
+ },
+ "judge_called": false,
+ "wall_s": 5195.8,
+ "ts": "2026-08-01T01:43:40Z"
+}

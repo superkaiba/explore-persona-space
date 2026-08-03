@@ -942,7 +942,12 @@ def test_fanout_runbook_mode_composes_without_executing(tmp_path):
     for behavior in ("evil", "sycophancy", "hallucination"):
         for kind in ("mlp", "kernel"):
             assert f"### lane {behavior} / {kind}" in text
-    assert text.count("bash scripts/issue1739_nlmap_dispatch.sh") == 6
+    # 6 scoring lanes + 2 compose-addendum blocks (hall + syc): the compose
+    # scope addendum (5317f720f2) added its 2 runbook blocks without updating
+    # this pin — stale-pin repair by the new-arm-round (disclosed there).
+    assert text.count("bash scripts/issue1739_nlmap_dispatch.sh") == 8
+    step2 = text.split("## Step 2")[1].split("## Step 3")[0]
+    assert step2.count("bash scripts/issue1739_nlmap_dispatch.sh") == 6
     assert "bash scripts/issue1739_nlmap_fanout.sh phase-a" in text
     # lanes stage maps and never re-upload tensors
     assert "stage,stage_maps,pilot,fits,collect,upload_results" in text
@@ -1013,3 +1018,45 @@ def test_only_a_scoring_leg_emits_the_results_sentinel_and_phase_done(tmp_path):
     out, invocations = run("fits,collect")
     assert "[phase=done]" in out
     assert "sentinel written" in invocations
+
+
+# ---------------------------------------------------------------------------
+# new-arm-round item 3b: transfer-roster + out-root env passthroughs
+# ---------------------------------------------------------------------------
+
+
+def test_fits_args_transfer_arms_passthrough_exact_and_default_absent():
+    """EPM_I1739_NL_TRANSFER_ARMS pins the transfer roster EXACTLY (plan v8
+    HARD PRECONDITION: the unpinned default resolves the WIDE roster); unset
+    keeps the committed composition (no --transfer-arms flag at all)."""
+    argv = _dispatch_args(
+        "fits_args",
+        "evil",
+        "mlp",
+        env={"EPM_I1739_NL_TRANSFER_ARMS": "arm7_map_ridge_pred arm8_map_ridge_true"},
+    )
+    assert _flag_values(argv, "--transfer-arms") == [
+        "arm7_map_ridge_pred",
+        "arm8_map_ridge_true",
+    ]
+    assert "--transfer" in argv
+    argv_default = _dispatch_args("fits_args", "evil", "mlp")
+    assert "--transfer-arms" not in argv_default
+
+
+def test_nl_root_env_override_keys_the_out_root():
+    """EPM_I1739_NL_ROOT rebinds the leg's out-root (per-leg out-roots: the
+    nlood leg must never share the committed nonlinear_map root)."""
+    argv = _dispatch_args(
+        "fits_args",
+        "evil",
+        "kernel",
+        env={"EPM_I1739_NL_ROOT": "eval_results/issue_1739/new_arm_round/nlood"},
+    )
+    assert _flag_values(argv, "--out-root") == [
+        "eval_results/issue_1739/new_arm_round/nlood/evil/kernel"
+    ]
+    argv_default = _dispatch_args("fits_args", "evil", "kernel")
+    assert _flag_values(argv_default, "--out-root") == [
+        "eval_results/issue_1739/nonlinear_map/evil/kernel"
+    ]

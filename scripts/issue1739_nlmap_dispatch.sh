@@ -31,7 +31,11 @@ cd "$REPO_ROOT"
 
 STORE_ROOT="data/issue_1739/store"
 RESULTS_ROOT="eval_results/issue_1739"
-NL_ROOT="$RESULTS_ROOT/nonlinear_map"
+# Out-root override (new-arm-round item 3b): the nlood leg keys its results
+# under eval_results/issue_1739/new_arm_round/nlood/<behavior>/<kind> — never a
+# shared root with the committed nlmap results (per-leg out-roots,
+# crash-fix-rounds.md). Default unchanged (committed nlmap lanes untouched).
+NL_ROOT="${EPM_I1739_NL_ROOT:-$RESULTS_ROOT/nonlinear_map}"
 TENSORS_ROOT="analysis_tensors/issue_1739"
 U_STORE_DIR="data/issue_1739/hf_dl/u_store"
 LOG_DIR="/workspace/logs"
@@ -44,6 +48,12 @@ NL_ARMS="arm6_map_proj_e1 arm7_map_ridge_pred arm8_map_ridge_true"
 
 BEHAVIORS="${EPM_I1739_NL_BEHAVIORS:-evil sycophancy hallucination}"
 KINDS="${EPM_I1739_NL_KINDS:-mlp kernel}"
+# Transfer-roster pin (new-arm-round item 3b, plan v8 HARD PRECONDITION):
+# resolve_transfer_roster(None) defaults to the WIDE roster (10 arms incl. the
+# expensive arm-5 MLP), so an unpinned nlood transfer leg would fan out far
+# past its two map-readout arms. Space-separated arm slugs; empty (default)
+# keeps the committed behavior (no --transfer-arms flag emitted).
+NL_TRANSFER_ARMS="${EPM_I1739_NL_TRANSFER_ARMS:-}"
 # Grid defaults hold FULL parity with the main grid's fits phase so every
 # nonlinear cell keys to a linear sibling. A budget-driven descope narrows
 # DRAWS / REGIMES via these env knobs and is recorded as a deviation — never
@@ -226,13 +236,19 @@ map_args() {
 
 fits_args() {
   # fits_args <behavior> <kind> — the production fits invocation, subset to
-  # the map-family arms with a per-kind out-root.
+  # the map-family arms with a per-kind out-root. EPM_I1739_NL_TRANSFER_ARMS
+  # (when set) pins the transfer roster explicitly — without it the transfer
+  # leg resolves the WIDE default (arms.resolve_transfer_roster(None)).
   local b="$1" kind="$2"
   map_args "$b" "$kind"
   printf '%s\n' \
     --out-root "$NL_ROOT/$b/$kind" \
     --arms $NL_ARMS \
-    --transfer \
+    --transfer
+  if [ -n "$NL_TRANSFER_ARMS" ]; then
+    printf '%s\n' --transfer-arms $NL_TRANSFER_ARMS
+  fi
+  printf '%s\n' \
     --regimes $(behavior_regimes "$b") \
     --budgets $(behavior_budgets "$b") \
     --draws $DRAWS \
@@ -437,6 +453,12 @@ if want_phase pilot; then
           "see $NL_ROOT/$b/$kind/pilot_report.json." >&2
         exit 7
       fi
+      if [ "$prc" -eq 9 ]; then
+        echo "[nlmap] RSS-GUARD REFUSED (rc=9) at $b/$kind: projected peak host RAM" \
+          "exceeds this box — see $NL_ROOT/$b/$kind/rss_guard_report.json (designed" \
+          "halt; relaunch on a 170 GB a2-ultragpu-1g box: --min-gpu-mem-gb > 38)" >&2
+        exit 9
+      fi
       [ "$prc" -eq 0 ] || { echo "[nlmap] FATAL: pilot $b/$kind exited rc=$prc" >&2; exit "$prc"; }
       echo "[nlmap] phase=pilot $b/$kind: PASS ($(date -u +%FT%TZ))"
     done
@@ -488,6 +510,11 @@ if want_phase compose; then
         "$NL_ROOT/$b/compose_$COMPOSE_MAP_KIND/pilot_report.json" >&2
       exit 7
     fi
+    if [ "$prc" -eq 9 ]; then
+      echo "[nlmap] RSS-GUARD REFUSED (rc=9) at $b compose: projected peak host RAM" \
+        "exceeds this box — designed halt; relaunch on a 170 GB a2-ultragpu-1g box" >&2
+      exit 9
+    fi
     [ "$prc" -eq 0 ] || { echo "[nlmap] FATAL: compose pilot $b rc=$prc" >&2; exit "$prc"; }
     uv run python scripts/issue1739_fits.py "${_ca[@]}"
     # The compose cells ARE the deliverable here, so fail loud if the summary is
@@ -522,7 +549,7 @@ if want_phase upload || want_phase upload_tensors; then
   echo "[nlmap] phase=upload: nonlinear map payloads -> HF analysis_tensors"
   uv run python scripts/issue1739_upload.py --stage tensors
 fi
-if want_phase upload || want_phase upload_results; then
+if want_phase upload || want_phase upload_results || want_phase compose; then
   # #1880 push race: several rounds/lanes write this branch concurrently and the
   # upload helper only fetch-then-retries (it never rebases), so a stale base
   # fails BOTH attempts. Advance the clone to the tip FIRST — results are still
@@ -531,6 +558,8 @@ if want_phase upload || want_phase upload_results; then
   # issue1739_pvscore_dispatch.sh; the comment below used to promise this sync
   # while no fetch actually ran.)
   echo "[nlmap] phase=upload: syncing clone to origin/$BRANCH before commit"
+  git checkout -- eval_results/issue_1739/nonlinear_map/map_quality.json 2>/dev/null || true
+  rm -f eval_results/issue_1739/nonlinear_map/stage_maps_report.json
   git fetch origin "$BRANCH"
   git merge --ff-only "origin/$BRANCH"
   echo "[nlmap] phase=upload: results -> git"
@@ -552,6 +581,15 @@ if ! want_phase fits; then
     "sentinel and no terminal phase marker — this leg is deliberately non-terminal."
   exit 0
 fi
+if [ -n "${EPM_I1739_NL_SKIP_SENTINEL:-}" ]; then
+  # new-arm-round nlood wrapper (issue1739_newarm_nlood.sh): the WRAPPER's HF
+  # self-upload must run AFTER this dispatcher exits and BEFORE any terminal
+  # record, so the wrapper suppresses this sentinel and owns the terminal
+  # story itself (the gap2 pattern: GCE phase publication at workload exit).
+  echo "[nlmap] results sentinel suppressed (EPM_I1739_NL_SKIP_SENTINEL) —" \
+    "the wrapping driver owns the terminal record."
+  exit 0
+fi
 uv run python -c "
 import json, pathlib, time
 p = pathlib.Path('$LOG_DIR/issue-1739-nlmap-results.json')
@@ -568,4 +606,7 @@ p.write_text(json.dumps({
 }, indent=2))
 print('[nlmap] sentinel written ->', p)
 "
-echo "[phase=done]"
+# Mode-gated standalone-lane terminal: under the newarm nlood WRAPPER
+# (issue1739_newarm_nlood.sh) EPM_I1739_NL_SKIP_SENTINEL exits ABOVE, so this
+# token never reaches the wrapper's log mid-pipeline.
+echo "[phase=done]"  # noqa: phase-done-reserved

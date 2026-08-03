@@ -1,0 +1,5030 @@
+{
+  "commit": "fdcebc102c",
+  "created": "2026-08-03T06:29:11Z",
+  "figsize": [
+    11.5,
+    3.6
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.026055363198167262,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.004792803700696615,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.017437304783107607,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.03357655106261809,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.009723206590930289,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.017557223491945995,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.10502917914606358,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.03245360358187166,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.0023833029816549556,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.11157800179561755,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.08730172326028784,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.03162813079771398,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.0007775258537419116,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.05231197577933683,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.03805383458561418,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.06629585509708213,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.009526160031186115,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.03848003034632219,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.04821899726494994,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.028328506988378854,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.034340731495891674,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.009889038846904286,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.03753499194492671,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.013764772855839658,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.011380858889434964,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.017938355494898195,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.028436465233915964,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.00363442672581471,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.016671285104365552,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.007864707943091909,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.017428459671749108,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.02968018224058888,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.02483090422833012,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.03354598549524612,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.017557223491945995,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.017557223491945995,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.017557223491945995,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.017557223491945995,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.017557223491945995,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.017557223491945995,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.017557223491945995,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.017557223491945995,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.017557223491945995,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.017557223491945995,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.017557223491945995,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.017557223491945995,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.017557223491945995,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.017557223491945995,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.07317057708694408,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.0330763935259506,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.006105224903753981,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.09029045333770347,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.07168465504430088,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.037356274958411595,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.040098256301697444,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.05247399294335264,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.01651538900508953,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.0841964701288076,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.0063189762120853255,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.011874020593710344,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.013517168547125924,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.016559288464175537,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.03141078156686361,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.06403111613493473,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.012841139461895246,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.04683978932847538,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.007196029869342757,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.013267354892916527,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.02309877166234836,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.024801187538967207,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.04105736311383351,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.016130351196538495,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.02557227989419475,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.0007650553873118637,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.003784990384173903,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.009186277186257086,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.0010665927998576574,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.013404214455933594,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.0421687431811939,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.006105224903753981,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.006105224903753981,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.006105224903753981,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.006105224903753981,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.006105224903753981,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.006105224903753981,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.006105224903753981,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.006105224903753981,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.006105224903753981,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.006105224903753981,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.006105224903753981,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.006105224903753981,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.006105224903753981,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.6,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.006105224903753981,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.05942060131900673,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.021003669270136083,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.01490731091324038,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.005013704230455884,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.011097994190167437,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.006444376568518484,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.016005387838955443,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.03048552513961611,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.0467360607645666,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.04886872523495256,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.0063966718252901344,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": -0.021635209857123194,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.027409343116098883,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.0118029775808568,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.05874891782873126,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.013882885146839885,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.024973261485399356,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.02576048159844513,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.013481139760362915,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.02067875470982916,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.00971602675302552,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.00934925672513276,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.006696313081281824,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.017839217622825143,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.0060185039156669395,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.015048657479360128,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.02458518198225501,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.015088961045921057,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.022268369916909614,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.020970315695100328,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.009829141170601408,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.01490731091324038,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.01490731091324038,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.01490731091324038,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.01490731091324038,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.01490731091324038,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.01490731091324038,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.01490731091324038,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.01490731091324038,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.01490731091324038,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.01490731091324038,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.01490731091324038,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.01490731091324038,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.01490731091324038,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "Spearman rho difference,\nfinal-context minus answer-avg": 0.01490731091324038,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "y": 0.04803811457468202,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "y": -0.20824369718071264,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 2.6,
+      "y": 0.03096547037511471,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 3.6,
+      "y": -0.20321177957980457,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 5.2,
+      "y": 0.10646678567181475,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 6.2,
+      "y": -0.2023197949020647,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "y": 0.07385829830497179,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.06019906917050602,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.06338676911337156,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": -0.039366801343310276,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": -0.02713706376664758,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": -0.13331813234433273,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.03542401998894375,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.08296849412983182,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": -0.10682394604769475,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.15955515865726355,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": -0.02388198503379621,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": -0.035002282788786074,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.08869348961965677,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.07203214585200293,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.033239086883636276,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.03111108704098073,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": -0.0365254991611141,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.09414027770471001,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.05947262940154352,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.05214444163064115,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.08682966356492347,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.1162501104865263,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.0957378959292221,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.05467569402630938,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.08246439561994925,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.047693575479344066,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.034371623586224045,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.05220398093906074,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.06318606989434285,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.06101769546414676,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.07570042627106119,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.06338676911337156,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.06338676911337156,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.06338676911337156,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.06338676911337156,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.06338676911337156,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.06338676911337156,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.06338676911337156,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.06338676911337156,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.06338676911337156,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.06338676911337156,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.06338676911337156,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.06338676911337156,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.06338676911337156,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.06338676911337156,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "y": -0.08006455596073167,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.11636497254869158,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.23876943688838825,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.18322122612464248,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.0031741057435001677,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.04963818545151578,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.02208207702530343,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.17322092148038343,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.030806891060676626,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.0343256481023675,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.08528390712816403,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.04219090494291407,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.1267516124363572,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.4538977182419864,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.08996009950228603,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.013632316142805787,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.2252168011080025,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.3462705924952823,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.02208207702530343,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.17322092148038343,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.030770025781662415,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.13297311815394877,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.036135320034588095,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.19581448224561432,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.09806600550986583,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.3697515070647378,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.058402811098838874,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.11766058080480049,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.08006455596073167,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.11636497254869158,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.08006455596073167,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.11636497254869158,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.08006455596073167,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.11636497254869158,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.08006455596073167,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.11636497254869158,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.19625121753434052,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.4028135786232011,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.19625121753434052,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.4028135786232011,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.19625121753434052,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.4028135786232011,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.25899790458959704,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.41324934054008255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.6,
+      "y": 0.07820801784290102,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.05173948523435078,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.013861932817201605,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": -0.10299281265907309,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.11816182168578887,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.04090305813804018,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.08771760230853608,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": -0.024333808428138815,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.09210332937079728,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.09789871577743367,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.15695811516217018,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.052599523822669386,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.02527349758950942,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.03744671179186712,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.011552780012938357,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.06076912746465561,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.10620675078020468,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.03362964943805155,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": -0.0068151996511399415,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": -0.005019035111948761,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": -0.013917846900796949,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.006879302501097945,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.03680722481008786,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.03663119479992835,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.030357617653151633,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.02973530526765994,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.02755124706329748,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.042821629588382454,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.023651396176246828,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.039003307344662286,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.013989465748806384,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.013861932817201605,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.013861932817201605,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.013861932817201605,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.013861932817201605,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.013861932817201605,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.013861932817201605,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.013861932817201605,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.013861932817201605,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.013861932817201605,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.013861932817201605,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.013861932817201605,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.013861932817201605,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.013861932817201605,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6,
+      "y": 0.013861932817201605,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.6,
+      "y": -0.21049370900806058,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.2871450013041706,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": 0.010575925232636119,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.32340891458463106,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.1590217367879293,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.010077446570539439,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.14720890141167556,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.4074105941838235,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.12268161490297304,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15680679612133303,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": 0.010575925232636119,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.32340891458463106,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.21049370900806058,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.2871450013041706,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": 0.010575925232636119,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.32340891458463106,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": 0.09944975483820796,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.016147843045584254,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15645822022548345,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.25808472677148925,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.1590217367879293,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.010077446570539439,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.20291998860143193,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.3027293110924854,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": 0.09642238524568361,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": 0.027937959165996968,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.21049370900806058,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.2871450013041706,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.21049370900806058,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.2871450013041706,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.15796314293363256,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6,
+      "y": -0.29120919336817325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.2,
+      "y": 0.04636298454686917,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.09034685498861153,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.10146516923225157,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.1309449985979188,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.17236801829415638,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.024248984349206693,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.176067776402589,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": -0.06201095015365134,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.22725660249438276,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.24746652225741983,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.09407030818512918,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.2169773221511096,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.13378492025131106,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.04187622662734347,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.10581678608013821,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": -0.012269985593733296,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.24913975864918453,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.13828495377614897,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.09056321520134364,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.06033828157062229,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.09944315698194842,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.10231780511687441,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.14937154408937814,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.08638451722303771,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.1110149745798378,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.07792528747542914,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.08289508844178359,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.12118148476127372,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.08702550219844062,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.0872760222847129,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.092558854919075,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.10146516923225157,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.10146516923225157,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.10146516923225157,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.10146516923225157,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.10146516923225157,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.10146516923225157,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.10146516923225157,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.10146516923225157,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.10146516923225157,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.10146516923225157,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.10146516923225157,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.10146516923225157,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.10146516923225157,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.2,
+      "y": 0.10146516923225157,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.07271045915266114,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.09658449543536818,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.1518437352540682,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.39169595487993203,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": 0.20585448455419192,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.3667104821399066,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.07271045915266114,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.09658449543536818,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": 0.09595431568210062,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.16973913586595768,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": 0.01850953879447831,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.4132905493067675,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.07271045915266114,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.09658449543536818,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.07271045915266114,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.09658449543536818,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.04105103879117755,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 6.2,
+      "y": -0.40107437213903435,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "y": 0.17992385073604752,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "y": 0.02177055378760427,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 2.6,
+      "y": -0.12319508946558483,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 3.6,
+      "y": -0.20472905134753314,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 5.2,
+      "y": 0.014004721010174118,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 6.2,
+      "y": -0.025367614524306213,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 0.0,
+      "y": 0.2787426498148936,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.1890844066110533,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.17272912407854718,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.18321262484185655,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.2249477217214575,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.1789463086609413,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.18158555064024184,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.10277460148043244,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.11297188938727593,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.23319662362601734,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.2898416202824629,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.3211807510974189,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.15080435456124075,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.1897061403014074,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.17306030100925385,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.23072812418873864,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.10633018111886511,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.19036585179681903,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.1509269829295795,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.18545351801461124,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.18706913111162554,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.15743676889562858,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.17908390116572206,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.18915628728845318,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.1744087903243403,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.17188870072668758,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.17048001855475475,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.136229786348866,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.13734249483296093,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.1839714371041485,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.14470890350617932,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.17272912407854718,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.17272912407854718,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.17272912407854718,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.17272912407854718,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.17272912407854718,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.17272912407854718,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.17272912407854718,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.17272912407854718,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.17272912407854718,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.17272912407854718,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.17272912407854718,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.17272912407854718,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.17272912407854718,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.17272912407854718,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "y": 0.00031510260389916445,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.00031510260389916445,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.24942853209294671,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.1669505128110084,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.2973188689127747,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.00031510260389916445,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.26862300346078744,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.00031510260389916445,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.19413175619154033,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.3145132281331073,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.2973188689127747,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.10287201011733521,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.00031510260389916445,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.00031510260389916445,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.00031510260389916445,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.00031510260389916445,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.00031510260389916445,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.00031510260389916445,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.00031510260389916445,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.00031510260389916445,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.028380762848088104,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.6,
+      "y": -0.01652427292146677,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.1499900120783478,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.1337879407765925,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.16592711038398647,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.09495587822187046,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.09093434188847332,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.09753221111162463,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.18491578303643166,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.07838708231062896,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.08996307985713431,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.11941417294934176,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.17336708901135978,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.16870445772528464,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.07860650436829078,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.10828564747023359,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.046037846367289414,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.13243968635499648,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.14665346966773177,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.12597831566512063,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.10984075046285718,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.11110765590415411,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.12893448076175726,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.13915512630927424,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.13210481986788775,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.09909560199988962,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.10981939860927153,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.12626648469108778,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.13748210978316505,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.13586408043179518,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.11505858115306675,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.12361386293860893,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.1337879407765925,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.1337879407765925,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.1337879407765925,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.1337879407765925,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.1337879407765925,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.1337879407765925,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.1337879407765925,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.1337879407765925,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.1337879407765925,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.1337879407765925,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.1337879407765925,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.1337879407765925,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.1337879407765925,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.6,
+      "y": -0.1337879407765925,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 3.6,
+      "y": -0.11277623394268305,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.2588413870522189,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.2129826377248234,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.2588413870522189,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.22135287898836903,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.2588413870522189,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.22619832280030625,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.2588413870522189,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.27740325243567276,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1042136409431553,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.2746966623810829,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.2821930561525366,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.22619832280030625,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.2588413870522189,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.22619832280030625,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.22619832280030625,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.22619832280030625,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.2588413870522189,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.2588413870522189,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.2588413870522189,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.6,
+      "y": -0.1810186495060554,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 5.2,
+      "y": 0.12508677504384447,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": -0.005837421789337771,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.0006814130117931971,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.1440655440653029,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.04527325845408342,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": -0.050460906182883625,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": -0.070821515275519,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": -0.02253254253781073,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.08436881467776569,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.06496531087008378,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.05565699031206928,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.06246132929388687,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": -0.022391072086816677,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.04297038795380079,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.09973293958571344,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.08714538465616567,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": -0.04360267012101099,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": -0.02545354032531577,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": -0.028627500533919492,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.01182864566811248,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": -0.004787550515294503,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": -0.02176644503851638,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": -0.006672559467168937,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.01693811406646839,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.024347849959890422,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": -0.003908288875190735,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.02998243506940801,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.0010483671300057784,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": -0.02275550284179878,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.03162722929217271,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.022109389772747456,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.0006814130117931971,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.0006814130117931971,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.0006814130117931971,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.0006814130117931971,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.0006814130117931971,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.0006814130117931971,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.0006814130117931971,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.0006814130117931971,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.0006814130117931971,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.0006814130117931971,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.0006814130117931971,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.0006814130117931971,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.0006814130117931971,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "y": 0.0006814130117931971,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.020112642554874716,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.04914166650774196,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.03074580927680229,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.023521756137069666,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.03530938242954587,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.020112642554874716,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.020112642554874716,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.0682411001435054,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.02840481121335192,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.033817098136202234,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.03074580927680229,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.020112642554874716,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.02840481121335192,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.03074580927680229,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.02840481121335192,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "y": -0.022453640618325083,
+      "_kind": "scatter",
+      "_group": 29
+    }
+  ],
+  "n_series": 30,
+  "total_points": 825,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil (transfer rungs unmeasurable)",
+        "ylabel": "Spearman rho difference,\nfinal-context minus answer-avg",
+        "legend_labels": [
+          "train rung",
+          "transfer rungs"
+        ],
+        "xticklabels": [
+          "context\nprojection",
+          "map-then-project",
+          "true-answer\nprojection"
+        ],
+        "yticklabels": [
+          "\u22120.125",
+          "\u22120.100",
+          "\u22120.075",
+          "\u22120.050",
+          "\u22120.025",
+          "0.000",
+          "0.025",
+          "0.050",
+          "0.075",
+          "0.100",
+          "0.125"
+        ]
+      },
+      {
+        "title_left": "hallucination",
+        "xticklabels": [
+          "context\nprojection",
+          "map-then-project",
+          "true-answer\nprojection"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "sycophancy",
+        "xticklabels": [
+          "context\nprojection",
+          "map-then-project",
+          "true-answer\nprojection"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      }
+    ]
+  }
+}

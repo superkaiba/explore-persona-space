@@ -26,6 +26,23 @@ if str(REPO_ROOT) not in sys.path:
 
 from scripts import issue1739_wcrung_arms as wca  # noqa: E402
 
+
+@pytest.fixture(autouse=True)
+def _judge_free_process(monkeypatch):
+    """The no-judge entry rail asserts a FRESH-process condition (production:
+    each leg runs in its own process, so sys.modules carries only the leg's
+    OWN imports). Under a multi-file pytest run a SIBLING test file (e.g.
+    test_issue1739_dataplane.py) may already have imported the judge surface,
+    tripping the rail on state this leg never imported — scrub those modules
+    for the test's duration (monkeypatch restores them) so the rail keeps
+    testing exactly the production condition. Order-interaction fix from the
+    new-arm-round pin-sweep (64 cross-file failures; every file green alone).
+    """
+    for m in wca.FORBIDDEN_JUDGE_MODULES:
+        if m in sys.modules:
+            monkeypatch.delitem(sys.modules, m)
+
+
 DIM = 6
 LAYERS = (0, 1)
 ROSTER = ["arm1_ctx_e1", "arm3_identity_bias", "arm4_ridge_ctx", "arm6_map_proj_e1"]
@@ -284,12 +301,15 @@ def test_tiny_real_e2e_scores_wildchat_rung(rig, capsys):
     assert "unit 1/2" in capsys.readouterr().out
 
 
-def test_full_six_arm_default_roster_all_resolve_real(rig):
-    """Every arm the plan names produces a REAL scored row (no silent skips).
+def test_full_default_roster_all_resolve_real(rig):
+    """Every arm the DEFAULT roster names produces a REAL scored row (no silent skips).
 
     The other e2e tests use a 4-arm subset for speed; this one drops --arms so
-    the DEFAULT roster (arms.TRANSFER_ARMS, all 6) runs, and asserts each arm
-    resolved its production computation path rather than being skipped.
+    the DEFAULT roster runs, and asserts each arm resolved its production
+    computation path rather than being skipped. The default is the WIDE roster
+    (the 6 core ladder arms + the fitted arms 5/7/8/12) as of the grid-fill
+    round — the four added arms were already scored on the train rung and are
+    now filled in on every eval rung too.
     """
     from explore_persona_space.experiments.issue_1739 import arms
 
@@ -298,17 +318,39 @@ def test_full_six_arm_default_roster_all_resolve_real(rig):
     assert _run(argv) == 0
     payload = json.loads((rig["out_root"] / "evil" / "all_arms_spearman.json").read_text())
     scored = {r["arm"] for r in payload["transfer_rows"]}
-    assert scored == set(arms.TRANSFER_ARMS), (
-        f"arms missing a REAL scored row: {sorted(set(arms.TRANSFER_ARMS) - scored)}; "
+    assert scored == set(arms.TRANSFER_ARMS_WIDE), (
+        f"arms missing a REAL scored row: {sorted(set(arms.TRANSFER_ARMS_WIDE) - scored)}; "
         f"skips={payload['transfer_skips']}"
     )
+    # the widened arms in particular must be REAL rows, not skips
+    for slug in ("arm5_mlp_ctx", "arm7_map_ridge_pred", "arm8_map_ridge_true", "arm12_oracle_reg"):
+        assert slug in scored, f"{slug} did not resolve; skips={payload['transfer_skips']}"
     # per-layer profiles too, and no arm silently skipped
-    assert {p["arm"] for p in payload["per_layer_rows"]} == set(arms.TRANSFER_ARMS)
+    assert {p["arm"] for p in payload["per_layer_rows"]} == set(arms.TRANSFER_ARMS_WIDE)
     assert not payload["transfer_skips"], payload["transfer_skips"]
     # the control + oracle arms are real families, not stubs
     fam = {p["arm"]: p["family"] for p in payload["per_layer_rows"]}
     assert fam["arm13_shuffled_map"] == "control"
+    assert fam["arm12_oracle_reg"] == "oracle"
     assert "unknown" not in fam.values()
+    # per-context preds sidecar: one row per (arm, eval context), frozen layer
+    preds = rig["out_root"] / "evil" / "preds" / "wcrung_preds.context_end.jsonl"
+    rows = [json.loads(x) for x in preds.read_text(encoding="utf-8").split("\n") if x.strip()]
+    n_ev = len(rig["ev_kept"]["evil"])
+    assert {r["arm"] for r in rows} == set(arms.TRANSFER_ARMS_WIDE)
+    assert len(rows) == len(arms.TRANSFER_ARMS_WIDE) * n_ev
+    assert {r["context_id"] for r in rows} == set(rig["ev_kept"]["evil"])
+
+
+def test_core_roster_reproduces_the_committed_six_arm_column(rig):
+    """`--arms core` still scores exactly the original 6 — the committed column."""
+    from explore_persona_space.experiments.issue_1739 import arms
+
+    argv = [a for a in rig["argv"](["evil"]) if a != "--arms" and a not in ROSTER]
+    assert _run(argv + ["--arms", "core"]) == 0
+    payload = json.loads((rig["out_root"] / "evil" / "all_arms_spearman.json").read_text())
+    assert {r["arm"] for r in payload["transfer_rows"]} == set(arms.TRANSFER_ARMS)
+    assert payload["meta"]["arms"] == sorted(arms.TRANSFER_ARMS)
 
 
 def test_one_shared_store_scores_three_behaviors_independently(rig):
@@ -596,6 +638,95 @@ def test_committed_summary_path_is_used_when_present(rig):
 # ---------------------------------------------------------------------------
 # path resolution + CLI guards
 # ---------------------------------------------------------------------------
+
+
+def _committed_summary(path: Path, *, frozen_idx: int, n_layers: int = 28) -> Path:
+    """A committed train summary whose argmax lands at ``frozen_idx`` of n_layers."""
+    rhos = [0.1] * n_layers
+    rhos[frozen_idx] = 0.9
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            _summary(
+                [
+                    _arm_row(a, list(rhos), variant=v)
+                    for a in ROSTER
+                    for v in ("context_end", "prefix_end")
+                ]
+            )
+        )
+    )
+    return path
+
+
+def test_committed_frozen_under_reduced_layer_probe_fails_loud(rig):
+    """REGRESSION PIN: the probe shape must not IndexError (or silently clamp).
+
+    modal_frozen_layers returns an INDEX into the committed row's 28-entry
+    rho_per_layer. Under a 2-layer probe, `layers[<committed idx ~15>]` raised
+    IndexError in production — and evaluate_transfer would ALSO have clamped
+    (fl = min(idx, shape-1)), scoring the wrong layer silently. The guard fires
+    BEFORE the transfer compute and names the escape flag.
+    """
+    main_root = rig["out_root"].parent / "main"
+    _committed_summary(main_root / "evil" / "arm_results" / "all_arms_spearman.json", frozen_idx=15)
+    argv = rig["argv"](["evil"])  # the rig is a 2-layer shape
+    argv[argv.index("--main-root") + 1] = str(main_root)
+
+    assert _run(argv) == 2
+    failures = json.loads((rig["out_root"] / "wcrung_arms_failures.json").read_text())
+    err = failures[0]["error"]
+    assert "committed-frozen layers are indices into the FULL" in err, err
+    assert "--force-own-pool-frozen" in err, "the error must name the actionable escape"
+    assert "IndexError" not in err, "must fail loud with guidance, not a raw IndexError"
+
+
+def test_reduced_layer_probe_succeeds_with_force_own_pool_frozen(rig):
+    """The prescribed probe escape actually works end to end."""
+    main_root = rig["out_root"].parent / "main"
+    _committed_summary(main_root / "evil" / "arm_results" / "all_arms_spearman.json", frozen_idx=15)
+    argv = [*rig["argv"](["evil"]), "--force-own-pool-frozen"]
+    argv[argv.index("--main-root") + 1] = str(main_root)
+
+    assert _run(argv) == 0
+    payload = json.loads((rig["out_root"] / "evil" / "all_arms_spearman.json").read_text())
+    assert all(
+        v == "own-train-pool-selection" for v in payload["meta"]["frozen_layer_source"].values()
+    )
+    for p in payload["per_layer_rows"]:
+        assert p["frozen_layer_idx"] in range(len(LAYERS))
+        assert p["frozen_layer"] in LAYERS
+
+
+def test_full_grid_committed_frozen_is_identity_indexed():
+    """Full-grid semantics: committed index is in range AND layers[i] == i.
+
+    This is what makes the production drive correct: the committed value is an
+    INDEX (arms.frozen_layer_idx = argmax over rho_per_layer), and the full grid
+    is identity, so layers[idx] == idx == the layer number. If the committed
+    value were a LAYER NUMBER instead, the full drive would be wrong too — this
+    pins the distinction.
+    """
+    from explore_persona_space.experiments.issue_1739 import arms
+
+    full = list(range(28))
+    assert full == list(range(len(full))), "full grid must be identity"
+    rhos = [0.1] * 28
+    rhos[17] = 0.9
+    assert arms.frozen_layer_idx(rhos) == 17, "frozen_layer_idx returns an INDEX"
+    assert full[17] == 17, "identity: index and layer number coincide at full grid"
+    wca._assert_committed_frozen_indexable(
+        {a: 27 for a in ROSTER}, full, "evil", "context_end", Path("s.json")
+    )
+
+
+def test_guard_rejects_non_prefix_layer_subset_even_when_in_range():
+    """A non-identity subset can be IN RANGE yet point at the wrong layer."""
+    layers = [5, 10, 15, 20]  # index 2 would mean layer 15, not layer 2
+    with pytest.raises(RuntimeError, match="not an identity prefix"):
+        wca._assert_committed_frozen_indexable(
+            {"arm1_ctx_e1": 2}, layers, "evil", "context_end", Path("s.json")
+        )
 
 
 def test_wcrung_store_default_follows_store_root(tmp_path):

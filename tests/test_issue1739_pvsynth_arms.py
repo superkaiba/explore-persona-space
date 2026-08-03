@@ -23,6 +23,23 @@ if str(REPO_ROOT) not in sys.path:
 
 from scripts import issue1739_pvsynth_arms as pva  # noqa: E402
 
+
+@pytest.fixture(autouse=True)
+def _judge_free_process(monkeypatch):
+    """The no-judge entry rail asserts a FRESH-process condition (production:
+    each leg runs in its own process, so sys.modules carries only the leg's
+    OWN imports). Under a multi-file pytest run a SIBLING test file (e.g.
+    test_issue1739_dataplane.py) may already have imported the judge surface,
+    tripping the rail on state this leg never imported — scrub those modules
+    for the test's duration (monkeypatch restores them) so the rail keeps
+    testing exactly the production condition. Order-interaction fix from the
+    new-arm-round pin-sweep (64 cross-file failures; every file green alone).
+    """
+    for m in pva.FORBIDDEN_JUDGE_MODULES:
+        if m in sys.modules:
+            monkeypatch.delitem(sys.modules, m)
+
+
 DIM = 6
 LAYERS = (0, 1)
 KINDS = ("context_end", "prefix_end", "t1")
@@ -574,3 +591,58 @@ def test_dv_construct_meta_flags_hallucination_provisional():
     assert hal["provisional"] is True
     assert any("23.4%" in c for c in hal["caveats"])
     assert any("STATED DEVIATION" in c for c in hal["caveats"])
+
+
+def test_polarity_split_emits_three_subsets_in_its_own_section(rig):
+    """elicit / non_elicit / pooled rows land in transfer_polarity_rows.
+
+    The pooled `transfer_rows` section is deliberately UNCHANGED (one row per
+    arm x eval rung), so a consumer that predates the split still reads exactly
+    what it read before; the three-way comparison is self-contained in the new
+    section, discriminated by `polarity_subset`.
+    """
+    assert _run(rig["argv"]) == 0
+    payload = json.loads((rig["out_root"] / "evil" / "all_arms_spearman.json").read_text())
+
+    pol = payload["transfer_polarity_rows"]
+    assert pol, "no polarity rows emitted"
+    assert payload["n_transfer_polarity_rows"] == len(pol)
+    assert {r["polarity_subset"] for r in pol} == {"pooled", "elicit", "non_elicit"}
+    assert payload["meta"]["polarity_subsets"] == ["pooled", "elicit", "non_elicit"]
+
+    # transfer_rows stays the pooled-only column: no polarity key, no row growth.
+    assert all("polarity_subset" not in r for r in payload["transfer_rows"])
+    per_variant_arms = {(r["variant"], r["arm"]) for r in payload["transfer_rows"]}
+    assert len(payload["transfer_rows"]) == len(per_variant_arms)
+
+    # elicit + non_elicit partition pooled exactly, per (variant, arm).
+    by = {}
+    for r in pol:
+        by.setdefault((r["variant"], r["arm"]), {})[r["polarity_subset"]] = r
+    for key, subs in by.items():
+        assert set(subs) == {"pooled", "elicit", "non_elicit"}, key
+        assert subs["elicit"]["n_eval"] + subs["non_elicit"]["n_eval"] == subs["pooled"]["n_eval"]
+        for s in subs.values():
+            assert len(s["ci_frozen"]) == 2
+            assert s["layer"] == subs["pooled"]["layer"]  # same TRAIN-frozen layer
+
+    # The pooled polarity row reproduces the untouched transfer_rows read.
+    pooled = {(r["variant"], r["arm"]): r for r in pol if r["polarity_subset"] == "pooled"}
+    for r in payload["transfer_rows"]:
+        assert pooled[(r["variant"], r["arm"])]["rho_frozen"] == r["rho_frozen"]
+
+
+def test_polarity_preds_sidecar_carries_the_label(rig):
+    """Per-context preds persist the polarity, so any later split is re-analysis."""
+    from explore_persona_space.experiments.issue_1739 import arms
+
+    assert _run(rig["argv"]) == 0
+    preds = rig["out_root"] / "evil" / "preds" / "pvsynth_preds.context_end.jsonl"
+    rows = [json.loads(x) for x in preds.read_text(encoding="utf-8").split("\n") if x.strip()]
+    assert rows
+    assert {r["polarity"] for r in rows} == {"pos", "neg"}
+    assert all(r["group_key"].rsplit("-", 1)[-1] == r["polarity"] for r in rows)
+    n_arms = len({r["arm"] for r in rows})
+    assert len(rows) == n_arms * rig["n_ev"]
+    assert {r["arm"] for r in rows} <= set(arms.ARM_REGISTRY)
+    assert all(r["eval_rung"] == "pvsynth" for r in rows)

@@ -9,6 +9,7 @@ No real corpus text — synthetic placeholder strings only.
 
 from __future__ import annotations
 
+import inspect
 import json
 import sys
 from pathlib import Path
@@ -187,6 +188,72 @@ def test_load_rollouts_fails_loud_on_empty_dir(tmp_path):
 def test_local_rollout_root_takes_the_shared_pool_path(tmp_path):
     args = sc._parse_args(["--local-rollout-root", str(tmp_path)])
     assert sc.rollout_dir(args) == tmp_path / "labeling" / sc.GEN_BEHAVIOR
+
+
+def test_hf_rollout_dir_stages_unpacks_and_returns_the_real_pool(tmp_path, monkeypatch, capsys):
+    """REGRESSION PIN: the HF branch of rollout_dir, end to end.
+
+    Every prior test took the --local-rollout-root branch, so this branch had
+    never executed and carried THREE stacked bugs: unpack_shards called with
+    nonexistent kwargs (pack_root=/from_hf=, a TypeError), no Hub staging at
+    all (unpack_shards reads a LOCAL dir and fetches nothing), and a return
+    path of out_root/labeling/<behavior> when unpack restores
+    out_root/<behavior>. Only the Hub boundary is faked here; the pack/unpack
+    round-trip is real, in the GPU leg's exact layout.
+    """
+    from explore_persona_space.orchestrate import hub
+    from scripts.issue1739_pack import pack_raw_tree
+
+    # Build a real packed tree the way the GPU leg does: raw_root = <out>/labeling
+    src = tmp_path / "genout" / "labeling" / sc.GEN_BEHAVIOR
+    src.mkdir(parents=True)
+    for i in range(3):
+        (src / f"wcrung-{i:04d}_seed0.json").write_text(json.dumps({"context_id": f"c{i}"}))
+    real_pack = tmp_path / "genout" / "labeling_packed"
+    pack_raw_tree(tmp_path / "genout" / "labeling", real_pack)
+
+    stage_root = tmp_path / "stage"
+    args = sc._parse_args(["--stage-root", str(stage_root)])
+    assert args.local_rollout_root is None
+
+    calls: list[tuple] = []
+
+    def fake_stage_hub_prefix(repo_id, prefix, dest_dir, **kw):
+        """Mirror-root semantics: the tree lands at <dest_dir>/<prefix>."""
+        calls.append((repo_id, prefix, Path(dest_dir), kw))
+        target = Path(dest_dir) / prefix
+        target.mkdir(parents=True, exist_ok=True)
+        for p in real_pack.iterdir():
+            (target / p.name).write_bytes(p.read_bytes())
+        return sorted(target.iterdir())
+
+    monkeypatch.setattr(hub, "stage_hub_prefix", fake_stage_hub_prefix)
+
+    got = sc.rollout_dir(args)
+
+    # staged from the rung's packed prefix, repo_id first (real signature)
+    assert len(calls) == 1, calls
+    repo_id, prefix, dest_dir, kw = calls[0]
+    assert repo_id == hub.DEFAULT_DATASET_REPO
+    assert prefix == "issue1739_ctxmap/wildchat_rung/raw_completions_packed"
+    assert kw["repo_type"] == "dataset"
+    inspect.signature(hub.stage_hub_prefix).bind(repo_id, prefix, dest_dir, **kw)
+
+    # the returned dir is the REAL restored pool and actually loads
+    assert got == stage_root / "unpacked" / sc.GEN_BEHAVIOR
+    assert got.is_dir(), f"restored pool missing at {got}"
+    assert len(sorted(got.glob("*.json"))) == 3
+    assert "[phase=wcrung_unpack] restored 3 rollout files" in capsys.readouterr().out
+
+
+def test_hf_rollout_dir_fails_loud_when_staging_lands_nothing(tmp_path, monkeypatch):
+    """An empty/partial staging must raise, never fall through to unpack."""
+    from explore_persona_space.orchestrate import hub
+
+    args = sc._parse_args(["--stage-root", str(tmp_path / "stage")])
+    monkeypatch.setattr(hub, "stage_hub_prefix", lambda *a, **k: [])
+    with pytest.raises(RuntimeError, match="packed rollout staging incomplete"):
+        sc.rollout_dir(args)
 
 
 # --- run metadata ---------------------------------------------------------

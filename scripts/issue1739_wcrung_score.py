@@ -154,19 +154,40 @@ def rollout_dir(args: argparse.Namespace) -> Path:
     if args.local_rollout_root is not None:
         return args.local_rollout_root / "labeling" / GEN_BEHAVIOR
 
+    from explore_persona_space.orchestrate import hub
     from scripts.issue1739_pack import unpack_shards
 
+    # STAGE the packed shards from the Hub first — unpack_shards reads a LOCAL
+    # shards dir and does no fetching of its own. stage_hub_prefix mirrors the
+    # repo-relative tree under the mirror root, so the shards land at
+    # <mirror_root>/<prefix> (#1774 mirror-root semantics).
+    prefix = f"{args.hf_prefix}/raw_completions_packed"
+    mirror_root = args.stage_root / "_packmirror"
+    packed_dir = mirror_root / prefix
+    if not (packed_dir / "pack_manifest.json").is_file():
+        hub.stage_hub_prefix(
+            hub.DEFAULT_DATASET_REPO,
+            prefix,
+            mirror_root,
+            repo_type="dataset",
+        )
+    if not (packed_dir / "pack_manifest.json").is_file():
+        raise RuntimeError(
+            f"packed rollout staging incomplete: no pack_manifest.json under {packed_dir}"
+        )
+
+    # unpack_shards(shards_dir, out_root) restores out_root/<group>/<file>, and
+    # the GPU leg packs raw_root=<out>/labeling so the group IS GEN_BEHAVIOR —
+    # the restored pool is <out_root>/<GEN_BEHAVIOR>, NOT <out_root>/labeling/...
     out_root = args.stage_root / "unpacked"
-    manifest = unpack_shards(
-        pack_root=args.stage_root / "packed",
-        out_root=out_root,
-        from_hf=f"{args.hf_prefix}/raw_completions_packed",
-    )
+    summary = unpack_shards(packed_dir, out_root)
+    restored = sum(g["written"] + g["skipped"] for g in summary.values())
     print(
-        f"[phase=wcrung_unpack] restored {manifest.get('n_files')} rollout files -> {out_root}",
+        f"[phase=wcrung_unpack] restored {restored} rollout files "
+        f"({sorted(summary)}) -> {out_root}",
         flush=True,
     )
-    return out_root / "labeling" / GEN_BEHAVIOR
+    return out_root / GEN_BEHAVIOR
 
 
 def load_rollouts(rollout_dir_: Path, *, max_items: int | None = None) -> list[dict]:

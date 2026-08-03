@@ -76,6 +76,9 @@ SENTINEL_NAME = "wcrung_arms_done.json"
 STAGE_MANIFEST = "slice_manifest.json"
 # store_io shard written by every capture store — the staging completion probe.
 STORE_PROBE = "row_index_shard00.jsonl"
+# The committed train grid this rung freezes against. A run with FEWER layers
+# cannot use committed-frozen indices (they index this full grid).
+FULL_GRID_N_LAYERS = 28
 
 
 def _log(msg: str) -> None:
@@ -192,6 +195,39 @@ def stage_extraction(behavior: str, args, token: str) -> None:
     _log(f"[phase=stage_extraction] {behavior} -> {dest}")
 
 
+def staged_slice_covers(
+    dest: Path, *, kinds: tuple[str, ...], layers: list[int]
+) -> tuple[bool, str]:
+    """Does an existing slice_manifest COVER the requested (kinds x layers)?
+
+    The slice manifest records the regime it was written for. A bare existence
+    check would let a narrow probe run (``--layers 0 1``) satisfy a later
+    full-grid drive, which then fails downstream on the missing layer arrays
+    instead of at staging. Returns ``(covered, reason_if_not)``; a missing or
+    unreadable manifest is "not covered" with an empty reason (a fresh stage,
+    not a re-stage).
+    """
+    manifest_path = dest / STAGE_MANIFEST
+    if not manifest_path.is_file():
+        return False, ""
+    try:
+        m = json.loads(manifest_path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        return False, f"unreadable {STAGE_MANIFEST} ({type(exc).__name__}) — re-staging"
+    have_layers = {int(x) for x in m.get("layers", [])}
+    have_kinds = set(m.get("kinds", []))
+    missing_layers = sorted(set(int(x) for x in layers) - have_layers)
+    missing_kinds = sorted(set(kinds) - have_kinds)
+    if not missing_layers and not missing_kinds:
+        return True, ""
+    bits = []
+    if missing_layers:
+        bits.append(f"{len(missing_layers)} layer(s) absent (e.g. {missing_layers[:4]})")
+    if missing_kinds:
+        bits.append(f"kinds absent {missing_kinds}")
+    return False, f"staged regime is narrower than requested: {'; '.join(bits)}"
+
+
 def stage_all(args, token: str, errors: list[BaseException]) -> None:
     """Background staging thread: shared inputs, then each train store in order."""
     try:
@@ -201,9 +237,17 @@ def stage_all(args, token: str, errors: list[BaseException]) -> None:
         for behavior in args.behaviors:
             stage_extraction(behavior, args, token)
             dest = args.store_root / f"{behavior}_labeling"
-            if (dest / STAGE_MANIFEST).exists():
-                _log(f"[phase=stage] {behavior}: slice_manifest present, skip")
+            covered, why = staged_slice_covers(dest, kinds=KINDS, layers=args.layers)
+            if covered:
+                _log(f"[phase=stage] {behavior}: slice_manifest covers this regime, skip")
                 continue
+            if why:
+                # A manifest exists but was written for a NARROWER regime — the
+                # probe-then-full-drive shape. Existence alone would skip here and
+                # the store would later fail to load the missing layer arrays, one
+                # wasted cycle later. stream_slice is resumable and re-writes
+                # nothing already present, so re-stage the delta.
+                _log(f"[phase=stage] {behavior}: re-staging — {why}")
             _log(
                 f"[phase=stage] {behavior}: streaming {TAR_GIB.get(behavior, 0):.1f} GiB tar "
                 f"({len(KINDS)} kinds x {len(args.layers)} layers) -> {dest}"
@@ -256,7 +300,7 @@ def wait_for_stage(behavior: str, args, errors: list[BaseException]) -> None:
 def score_cmd(behavior: str, args) -> list[str]:
     """The scorer argv for one behavior (no --wcrung-store: the staged path IS
     the driver's ``--store-root`` default)."""
-    return [
+    cmd = [
         sys.executable,
         str(_REPO_ROOT / "scripts" / "issue1739_wcrung_arms.py"),
         "--behaviors",
@@ -278,6 +322,18 @@ def score_cmd(behavior: str, args) -> list[str]:
         "--n-layers",
         str(len(args.layers)),
     ]
+    if args.arms:
+        # Roster passthrough: 'wide' (scorer default), 'core', 'wide-nomlp', or
+        # an explicit slug list. Omitted here means the scorer's own default.
+        cmd += ["--arms", *args.arms]
+    # Committed-frozen layers are indices into the FULL 28-layer grid, so a
+    # reduced-layer run (the probe shape) MUST select frozen layers within its
+    # own layer set — the driver fail-louds otherwise. Auto-enable for any
+    # non-full layer list so the probe invocation cannot forget it; the explicit
+    # flag still forces it at full width.
+    if args.force_own_pool_frozen or len(args.layers) < FULL_GRID_N_LAYERS:
+        cmd.append("--force-own-pool-frozen")
+    return cmd
 
 
 def score_behavior(behavior: str, args) -> int:
@@ -316,6 +372,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--behaviors", nargs="+", default=list(STAGE_ORDER))
     ap.add_argument("--variants", nargs="+", default=["context_end", "prefix_end"])
+    ap.add_argument(
+        "--arms",
+        nargs="+",
+        default=None,
+        metavar="ROSTER|SLUG",
+        help="transfer roster passed through to the scorer: 'wide' (its default), "
+        "'core', 'wide-nomlp', or an explicit arm-slug list",
+    )
     ap.add_argument("--layers", type=int, nargs="+", default=list(range(28)))
     ap.add_argument("--store-root", type=Path, default=Path("data/issue_1739/hf_dl"))
     ap.add_argument("--train-dv-root", type=Path, default=None)
@@ -330,6 +394,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=int,
         default=4 * 3600,
         help="per-behavior staging fence; 2x the ~40 min worst-case tar at ~30 MB/s x3 behaviors",
+    )
+    ap.add_argument(
+        "--force-own-pool-frozen",
+        action="store_true",
+        help="select frozen layers on each behavior's own train pool instead of the "
+        "committed train summary (auto-enabled for any reduced --layers set)",
     )
     ap.add_argument("--skip-upload", action="store_true")
     ap.add_argument("--stage-only", action="store_true")

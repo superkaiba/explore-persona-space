@@ -32,8 +32,12 @@ _SRC = Path(__file__).resolve().parent.parent / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
+import explore_persona_space.analysis.vectorized_mlp_skill as vms  # noqa: E402
 from explore_persona_space.analysis.vectorized_mlp_skill import (  # noqa: E402
+    _GATHER_SRC_BYTES_LIMIT,
     MLPGroup,
+    _gather_groups,
+    fit_batched_loco_mlp,
     fit_batched_loco_mlp_multihead,
     resolve_chunk_cap,
 )
@@ -173,4 +177,121 @@ def test_multihead_fit_is_chunk_size_invariant():
     for key in (("base",), ("shuffle",)):
         a = res_big.preds_by_key[key]
         b = res_small.preds_by_key[key]
+        assert np.array_equal(a, b), (key, np.abs(a - b).max())
+
+
+# ── 4. large-source gather fallback (#1739 r4: aten::index int32 overflow) ────
+#
+# att-20260802-053920-newarma5hall: the L=16000 transfer unit (n=23188 rows,
+# G=28 layer groups, d_in=3584, 2 transfer folds, chunk cap 6) crashed
+# ``torch.AcceleratorError: CUDA error: invalid configuration argument`` at the
+# first chunk's ``Xc = Xg[cgroup]`` — the gather SOURCE Xg held
+# 28 x 23188 x 3584 = 2,326,962,176 fp32 elements (> 2^31 - 1), while every
+# completed unit's Xg sat below 2^31 (n=16000: 1,605,632,000). The fix routes
+# dim-0 group gathers through ``_gather_groups``: above ``_GATHER_SRC_BYTES_LIMIT``
+# the result is materialized via per-member slice copies (bit-identical, no
+# aten::index kernel over the oversized source).
+
+
+def test_gather_groups_fallback_bitwise_matches_advanced_index():
+    """Forced slice-copy fallback == ``src[idx]``, bitwise (dupes + out-of-order)."""
+    torch.manual_seed(3)
+    src = torch.randn(5, 7, 3)
+    idx = torch.tensor([4, 0, 0, 2, 1, 0])
+    fast = src[idx]
+    slow = _gather_groups(src, idx, bytes_limit=1)  # force the copy path
+    auto = _gather_groups(src, idx)  # small source -> the untouched src[idx] path
+    assert torch.equal(slow, fast)
+    assert torch.equal(auto, fast)
+    # non-contiguous index + singleton index
+    idx1 = torch.tensor([2])
+    assert torch.equal(_gather_groups(src, idx1, bytes_limit=1), src[idx1])
+
+
+def test_gather_limit_arithmetic_covers_the_observed_crash_shape():
+    """The byte guard fires on the crashed production shape (int32-element proof).
+
+    Pins the root-cause arithmetic directly for the true 2^31 case the CI box
+    cannot materialize: the crashed transfer unit's Xg crosses 2^31 ELEMENTS
+    (the aten::index int32 ceiling) while the last completed unit's Xg does
+    not, and the conservative BYTE guard reroutes the crash shape.
+    """
+    g, d_in = 28, 3584
+    crash_elems = g * 23188 * d_in  # failed unit (transfer L=16000, n=23188)
+    pass_elems = g * 16000 * d_in  # completed unit (train L=16000, 382 s)
+    assert crash_elems > 2**31 - 1, crash_elems
+    assert pass_elems <= 2**31 - 1, pass_elems
+    assert crash_elems * 4 >= _GATHER_SRC_BYTES_LIMIT  # guard fires on the crash shape
+    # the guard is deliberately conservative: it also reroutes the big PASSING
+    # shape — harmless by the bitwise-parity pins in this section.
+    assert pass_elems * 4 >= _GATHER_SRC_BYTES_LIMIT
+
+
+def _transfer_shaped_groups(n_tr: int = 9, n_ev: int = 4, d: int = 5, n_layers: int = 3):
+    """Tiny CPU analogue of the crash shape class: per-layer groups (p=1) +
+    2-fold train-vs-eval transfer labels (the ``run_transfer_cell`` fold shape)."""
+    rng = np.random.default_rng(11)
+    n = n_tr + n_ev
+    folds = np.concatenate([np.ones(n_tr, dtype=np.int64), np.zeros(n_ev, dtype=np.int64)])
+    groups = []
+    for li in range(n_layers):
+        x = rng.standard_normal((n, d)).astype(np.float32)
+        y = (x @ rng.standard_normal((d, 1)) * 0.1).astype(np.float32)
+        groups.append(MLPGroup(("arm5", li), x, y))
+    return groups, folds
+
+
+def test_multihead_transfer_shape_fallback_parity_per_fold(monkeypatch):
+    """Forced-fallback multihead fit == normal-path fit, bitwise (per_fold mode).
+
+    CPU repro of the failing SHAPE CLASS at small scale: 2-fold transfer
+    row_groups, tiny chunk (n_members=6, chunk_size=4 -> a ragged tail chunk of
+    2 — the cap-6 analogue; range() semantics make an EMPTY chunk impossible,
+    ruling out the degenerate-tail suspect). Monkeypatching the module byte
+    limit to 1 forces EVERY gather through the slice-copy fallback — held-out
+    predictions must be BIT-identical to the untouched src[idx] path.
+    """
+    groups, folds = _transfer_shaped_groups()
+    kw = dict(max_epochs=3, device="cpu", chunk_size=4, num_threads=2, row_groups=folds)
+    ref = fit_batched_loco_mlp_multihead(groups, **kw)
+    monkeypatch.setattr(vms, "_GATHER_SRC_BYTES_LIMIT", 1)
+    got = fit_batched_loco_mlp_multihead(groups, **kw)
+    for key in ref.preds_by_key:
+        a, b = ref.preds_by_key[key], got.preds_by_key[key]
+        assert np.array_equal(a, b), (key, np.abs(a - b).max())
+
+
+def test_multihead_transfer_shape_fallback_parity_full_data(monkeypatch):
+    """Same forced-fallback parity through the full_data (Xn_full) gather site."""
+    groups, folds = _transfer_shaped_groups()
+    kw = dict(
+        max_epochs=3,
+        device="cpu",
+        chunk_size=4,
+        num_threads=2,
+        row_groups=folds,
+        standardization="full_data",
+    )
+    ref = fit_batched_loco_mlp_multihead(groups, **kw)
+    monkeypatch.setattr(vms, "_GATHER_SRC_BYTES_LIMIT", 1)
+    got = fit_batched_loco_mlp_multihead(groups, **kw)
+    for key in ref.preds_by_key:
+        a, b = ref.preds_by_key[key], got.preds_by_key[key]
+        assert np.array_equal(a, b), (key, np.abs(a - b).max())
+
+
+def test_scalar_path_fallback_parity(monkeypatch):
+    """Forced-fallback scalar-per-dim fit == normal-path fit, bitwise.
+
+    The sibling ``fit_batched_loco_mlp`` chunk loop carries the same
+    ``Xg[cgroup]`` / ``Yg[cgroup]`` gathers (same class) — pin its fallback
+    parity too.
+    """
+    groups = _tiny_groups()
+    kw = dict(max_epochs=3, device="cpu", chunk_size=5, num_threads=2)
+    ref = fit_batched_loco_mlp(groups, **kw)
+    monkeypatch.setattr(vms, "_GATHER_SRC_BYTES_LIMIT", 1)
+    got = fit_batched_loco_mlp(groups, **kw)
+    for key in ref.preds_by_key:
+        a, b = ref.preds_by_key[key], got.preds_by_key[key]
         assert np.array_equal(a, b), (key, np.abs(a - b).max())

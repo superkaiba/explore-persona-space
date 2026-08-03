@@ -224,10 +224,16 @@ def fit_whitening(
     ``x_u`` is (Ly, n, d). ``Σ_γ = (1-γ)Σ + γ(trΣ/d)I`` shares eigenvectors
     with Σ, so the per-γ held-out Gaussian NLL reduces to eigenvalue algebra —
     the whole grid is evaluated with ONE batched eigh per layer chunk.
+
+    Memory (crash-fix r3, the 2026-08-02 newarm rc=137 kills): the fp64 cast
+    happens PER LAYER CHUNK (index-then-cast — bit-identical to the old
+    upfront whole-array cast, fp16/fp32 -> fp64 is exact), so the peak extra
+    footprint is ~2 chunk tensors (~2 x chunk x n x d x 8 B) instead of a
+    full (Ly, n, d) fp64 copy (~15 GiB at the production full-U shape).
     """
     import torch
 
-    x = np.asarray(x_u, dtype=np.float64)
+    x = np.asarray(x_u)  # shape/dtype read only — NO whole-array fp64 copy
     n_layers, n, d = x.shape
     rng = np.random.default_rng([1739, 3, int(seed)])
     perm = rng.permutation(n)
@@ -240,17 +246,21 @@ def fit_whitening(
     gamma_out = np.empty(n_layers)
     for lo in range(0, n_layers, layer_chunk):
         sl = slice(lo, min(lo + layer_chunk, n_layers))
-        xt = torch.as_tensor(x[sl][:, tr], device=dev)  # (c, n_tr, d)
+        # index-then-cast == the old cast-then-index bitwise (exact widening)
+        xt = torch.as_tensor(np.asarray(x[sl][:, tr], dtype=np.float64), device=dev)
         m = xt.mean(dim=1, keepdim=True)  # (c, 1, d)
         xc = xt - m
         cov = xc.transpose(1, 2) @ xc / max(len(tr), 1)  # (c, d, d)
+        del xt, xc  # explicit chunk frees — bound the eigh-stage peak
         evals, evecs = _eigh_robust(cov)
+        del cov
         evals = torch.clamp(evals, min=0.0)  # (c, d)
         tr_mean = evals.mean(dim=1, keepdim=True)  # trΣ/d
         if n_hold:
-            xh = torch.as_tensor(x[sl][:, hold], device=dev) - m
+            xh = torch.as_tensor(np.asarray(x[sl][:, hold], dtype=np.float64), device=dev) - m
             eh = xh @ evecs  # (c, n_hold, d) holdout in eigenbasis
             diag_hold = (eh**2).mean(dim=1)  # (c, d)
+            del xh, eh
         else:
             diag_hold = evals  # degenerate: NLL over train evals (γ pick still defined)
         nlls = []
@@ -271,9 +281,23 @@ def fit_whitening(
 
 
 def apply_whitening(x: np.ndarray, wh: Whitening) -> np.ndarray:
-    """Apply the frozen transform to (Ly, n, d) activations (batched matmul)."""
-    x = np.asarray(x, dtype=np.float64)
-    return (x - wh.mu[:, None, :]) @ wh.w
+    """Apply the frozen transform to (Ly, n, d) activations -> fp64 output.
+
+    Chunked PER LAYER into a preallocated output (crash-fix r3): numpy's
+    batched ``(x - mu) @ w`` materialized a whole-array fp64 cast copy PLUS a
+    whole-array ``(x - mu)`` temporary (~45 GiB transient at the production
+    full-U shape, the 85 GB-box rc=137 kill site). Each layer is an
+    independent GEMM in the batched op, so the per-layer loop is
+    bit-identical (pinned by ``test_apply_whitening_chunked_matches_dense``).
+    """
+    x = np.asarray(x)  # shape read only — the fp64 cast happens per layer
+    out = np.empty(x.shape, dtype=np.float64)
+    for li in range(x.shape[0]):
+        # exact widening cast + centering: temporaries are ONE layer, never (Ly, n, d)
+        xl = np.asarray(x[li], dtype=np.float64) - wh.mu[li][None, :]
+        np.matmul(xl, wh.w[li], out=out[li])
+        del xl
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -681,6 +705,176 @@ def ridge_gcv_predict_per_target(
     return preds
 
 
+def krr_scalar_fold_predict(
+    x_tr: np.ndarray,
+    y_tr: np.ndarray,
+    x_ev: np.ndarray,
+    *,
+    seed: int = 0,
+    device: str = "cpu",
+    m_centers: int = KRR_MAP_M_CENTERS,
+    gamma_mult: tuple[float, ...] = KRR_MAP_GAMMA_MULT,
+    lambdas: tuple[float, ...] = KRR_MAP_LAMBDAS,
+    layer_chunk: int | None = None,
+    diag_out: dict | None = None,
+) -> np.ndarray:
+    """Layer-BATCHED Nystrom RBF KRR for a SCALAR target (the arm-18 oracle).
+
+    Mirrors the nonlinear-map round's kernel recipe (:func:`fit_nonlinear_map`
+    ``kind="kernel"`` -> ``n1m.fit_krr_nystrom``) with input = the whitened
+    TRUE answer acts and target = the graded DV, batched over the LAYER axis
+    (plan §4 item 2 — never a per-(fold, lambda) re-factorization):
+
+    - raw X + per-layer MEDIAN-HEURISTIC gamma (1/median off-diagonal sq
+      distance over a <=2000-row subsample — the ``median_heuristic_gamma``
+      convention), scaled by ``gamma_mult``;
+    - inner-val (gamma, lambda) selection carved from the fold-TRAIN rows with
+      the SAME rng key family as the nlmap kernel arm (``[1739, 5, seed]``,
+      ``n_val = max(2, round(0.1 * n_tr))``) — selection never touches the
+      eval fold;
+    - Nystrom landmarks ``m = min(m_centers, n_inner)`` drawn once (shared
+      across layers, like the per-layer fitter's identical-seed draws), K_mm
+      whitener via batched :func:`_eigh_robust` (eig floor 1e-10), feature
+      ridge ``G = Phi^T Phi`` with ONE batched eigh per (layer, gamma) shared
+      across the whole lambda grid (raw lambda, Y train-centered — the #779
+      conventions);
+    - eval predictions come from the model fit on the INNER rows at the
+      selected pair (exactly the n1m diagnostics path — no inner+val refit).
+
+    ``x_tr`` (Ly, n_tr, d), ``y_tr`` (n_tr,), ``x_ev`` (Ly, n_ev, d) ->
+    (Ly, n_ev) fp64 predictions. ``diag_out`` (optional dict) receives the
+    per-layer selected {gamma, lambda, val_mse} + shapes.
+    """
+    import torch
+
+    x = np.asarray(x_tr, dtype=np.float64)
+    y = np.asarray(y_tr, dtype=np.float64)
+    xe = np.asarray(x_ev, dtype=np.float64)
+    assert x.ndim == 3 and xe.ndim == 3 and x.shape[0] == xe.shape[0], (x.shape, xe.shape)
+    n_layers, ntr, _d = x.shape
+    assert y.shape == (ntr,), (y.shape, ntr)
+    rng = np.random.default_rng([1739, 5, int(seed)])
+    p = rng.permutation(ntr)
+    n_val = max(2, round(0.1 * ntr))
+    val_i, inner_i = p[:n_val], p[n_val:]
+    if len(inner_i) < 2:
+        raise ValueError(f"krr_scalar_fold_predict: too few inner rows ({len(inner_i)})")
+    m = int(min(m_centers, len(inner_i)))
+    lm_rows = inner_i[np.random.default_rng(int(seed)).choice(len(inner_i), size=m, replace=False)]
+    g_sub = min(2000, len(inner_i))
+    g_rows = inner_i[
+        np.random.default_rng(int(seed) + 1).choice(len(inner_i), size=g_sub, replace=False)
+    ]
+    dev = torch.device(device)
+    if layer_chunk is None:
+        layer_chunk = 4 if ntr <= 3000 else (2 if ntr <= 8000 else 1)
+    lam_grid = [float(lam) for lam in lambdas]
+    preds = np.empty((n_layers, xe.shape[1]))
+    ymu = float(y[inner_i].mean())
+    per_layer_sel: list[dict] = [{} for _ in range(n_layers)]
+    n_degenerate = 0
+    for lo in range(0, n_layers, layer_chunk):
+        sl = slice(lo, min(lo + layer_chunk, n_layers))
+        xt = torch.as_tensor(x[sl], device=dev)  # (c, ntr, d)
+        xev_t = torch.as_tensor(xe[sl], device=dev)
+        z_lm = xt[:, lm_rows].contiguous()  # (c, m, d) landmarks
+        d_g = torch.cdist(xt[:, g_rows], xt[:, g_rows]) ** 2  # (c, g, g)
+        c, g = d_g.shape[0], d_g.shape[1]
+        iu = torch.triu_indices(g, g, offset=1, device=dev)
+        med = d_g[:, iu[0], iu[1]].median(dim=1).values  # (c,)
+        # A degenerate median (duplicate-dominated subsample: median sq
+        # distance 0) is a RECORDED per-layer skip, never a grid-killing
+        # assert — one bad (layer, gamma) cell must not abort a whole fits
+        # invocation (code-review r1 Minor 5; the #1739-r10 batched-solve
+        # incident class). The layer computes under a placeholder gamma to
+        # keep the batch shape, then its predictions are overwritten with
+        # NaN and flagged in diag_out (downstream nanargmax/spearman treat
+        # NaN layers as absent).
+        degenerate = med <= 0  # (c,) bool
+        if bool(degenerate.any()):
+            logger.warning(
+                "[fits] krr median-heuristic gamma degenerate (median sq distance 0) on "
+                "%d/%d layer(s) in chunk [%d:%d) — NaN predictions recorded for those layers",
+                int(degenerate.sum()),
+                c,
+                lo,
+                lo + c,
+            )
+        med = torch.where(degenerate, torch.ones_like(med), med)
+        base_gamma = 1.0 / med
+        yc = torch.as_tensor(y[inner_i] - ymu, dtype=torch.float64, device=dev)  # (ni,)
+        y_val = torch.as_tensor(y[val_i], dtype=torch.float64, device=dev)
+        best_mse = torch.full((c,), float("inf"), dtype=torch.float64, device=dev)
+        best_pred = torch.full((c, xev_t.shape[1]), float("nan"), dtype=torch.float64, device=dev)
+        best_gl = torch.zeros((c, 2), dtype=torch.float64, device=dev)  # (gamma, lambda)
+        for gm in gamma_mult:
+            gamma = base_gamma * float(gm)  # (c,)
+            gview = gamma[:, None, None]
+            k_mm = torch.exp(-gview * torch.cdist(z_lm, z_lm) ** 2)  # (c, m, m)
+            w_mm, v_mm = _eigh_robust(k_mm)
+            inv_sqrt = v_mm @ (
+                torch.clamp(w_mm, min=1e-10).rsqrt()[:, :, None] * v_mm.transpose(1, 2)
+            )
+            phi_in = torch.exp(-gview * torch.cdist(xt[:, inner_i], z_lm) ** 2) @ inv_sqrt
+            gram = phi_in.transpose(1, 2) @ phi_in  # (c, m, m) — ONE eigh, shared over lambdas
+            phi_y = torch.einsum("cnm,n->cm", phi_in, yc)
+            a_eig, q_eig = _eigh_robust(gram)
+            a_eig = torch.clamp(a_eig, min=0.0)
+            qtb = torch.einsum("cmk,cm->ck", q_eig, phi_y)  # (c, m)
+            phi_val = torch.exp(-gview * torch.cdist(xt[:, val_i], z_lm) ** 2) @ inv_sqrt
+            phi_ev = torch.exp(-gview * torch.cdist(xev_t, z_lm) ** 2) @ inv_sqrt
+            for lam in lam_grid:
+                w_feat = torch.einsum("cmk,ck->cm", q_eig, qtb / (a_eig + lam))  # (c, m)
+                pred_val = torch.einsum("cvm,cm->cv", phi_val, w_feat) + ymu
+                mse = ((pred_val - y_val[None, :]) ** 2).mean(dim=1)  # (c,)
+                improved = torch.isfinite(mse) & (mse < best_mse)
+                if bool(improved.any()):
+                    pred_ev = torch.einsum("cvm,cm->cv", phi_ev, w_feat) + ymu
+                    best_pred = torch.where(improved[:, None], pred_ev, best_pred)
+                    best_mse = torch.where(improved, mse, best_mse)
+                    sel = torch.stack([gamma, torch.full_like(gamma, lam)], dim=1)  # (c, 2)
+                    best_gl = torch.where(improved[:, None], sel, best_gl)
+            del k_mm, inv_sqrt, phi_in, gram, phi_y, a_eig, q_eig, qtb, phi_val, phi_ev
+        best_pred[degenerate] = float("nan")  # recorded skip, never a fabricated fit
+        preds[sl] = best_pred.cpu().numpy()
+        gl = best_gl.cpu().numpy()
+        vm = best_mse.cpu().numpy()
+        deg = degenerate.cpu().numpy()
+        for li in range(c):
+            per_layer_sel[lo + li] = {
+                "gamma": float(gl[li, 0]),
+                "lambda": float(gl[li, 1]),
+                "val_mse": float(vm[li]),
+            }
+            if bool(deg[li]):
+                per_layer_sel[lo + li]["degenerate_gamma"] = True
+                n_degenerate += 1
+        del xt, xev_t, z_lm, d_g, best_pred, best_mse, best_gl
+        if dev.type == "cuda":
+            torch.cuda.empty_cache()
+    if n_degenerate == n_layers:
+        # Every layer degenerate = pathological input (identical rows across
+        # ALL layers), not a per-cell blip — fail loud, never all-NaN output.
+        raise ValueError(
+            f"krr_scalar_fold_predict: median-heuristic gamma degenerate on ALL "
+            f"{n_layers} layers (duplicate-dominated inputs)"
+        )
+    if diag_out is not None:
+        diag_out.update(
+            {
+                "kernel": "RBF Nystrom (layer-batched; one eigh per (layer, gamma))",
+                "n_degenerate_gamma_layers": n_degenerate,
+                "m_centers": m,
+                "n_inner": len(inner_i),
+                "n_val": int(n_val),
+                "gamma_mult": [float(g) for g in gamma_mult],
+                "lambdas": lam_grid,
+                "per_layer": per_layer_sel,
+            }
+        )
+    return preds
+
+
 def fit_linear_map(
     x_u: np.ndarray,
     y_u: np.ndarray,
@@ -718,6 +912,9 @@ def fit_linear_map(
     preds_hold = ridge_layer_batched_auto(x_tr, y_tr, x_ho, lambdas=lambdas, device=device)
     diagnostics = map_diagnostics(preds_hold, x_ho, y_ho, x_tr, y_tr, knn_ks=knn_ks)
     diagnostics["n_train"], diagnostics["n_holdout"] = len(tr), int(n_hold)
+    # Crash-fix r3 memory scoping: the 80/20 split copies (~30 GiB fp64 at the
+    # production full-U shape) are dead weight during the full-pool refit.
+    del x_tr, y_tr, x_ho, y_ho, preds_hold
     # Frozen-map refit on the FULL U rung (diagnostics stay honest held-out
     # reads from the split fit above; the weights consume the whole budget).
     _preds_dummy, w = ridge_layer_batched_auto(
@@ -939,9 +1136,20 @@ def apply_map(x: np.ndarray, m: MapFit, *, w: np.ndarray | None = None) -> np.nd
                 f"apply_map(w=...) is linear-only; MapFit kind={m.kind!r} has no weight tensor"
             )
         return apply_nl_map(x, m)
-    x = np.asarray(x, dtype=np.float64)
+    # Chunked PER LAYER (crash-fix r3): the batched expression materialized a
+    # whole-array fp64 cast + standardized temporary (~2 x 18.6 GiB transient
+    # at the hall transfer-comb shape). Per-layer GEMMs are bit-identical to
+    # the batched matmul (pinned by ``test_apply_map_chunked_matches_dense``).
+    x = np.asarray(x)  # shape read only — the fp64 cast happens per layer
     weights = m.w if w is None else w
-    return ((x - m.x_mu) / m.x_sd) @ weights + m.y_mu
+    n_layers = x.shape[0]
+    out = np.empty((n_layers, x.shape[1], weights.shape[2]), dtype=np.float64)
+    for li in range(n_layers):
+        xl = (np.asarray(x[li], dtype=np.float64) - m.x_mu[li]) / m.x_sd[li]
+        np.matmul(xl, weights[li], out=out[li])
+        out[li] += m.y_mu[li]
+        del xl
+    return out
 
 
 def _n1m():

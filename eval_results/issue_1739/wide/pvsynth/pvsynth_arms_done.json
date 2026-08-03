@@ -1,0 +1,28 @@
+{
+ "leg": "pvsynth_arms",
+ "behaviors": [
+  {
+   "behavior": "evil",
+   "score_rc": 0,
+   "uploaded": false
+  },
+  {
+   "behavior": "sycophancy",
+   "score_rc": 0,
+   "uploaded": false
+  },
+  {
+   "behavior": "hallucination",
+   "score_rc": 0,
+   "uploaded": false
+  }
+ ],
+ "variants": [
+  "context_end",
+  "prefix_end"
+ ],
+ "n_layers": 28,
+ "wall_s": 4677.3,
+ "stage_errors": [],
+ "ts": "2026-08-01T06:29:39Z"
+}
