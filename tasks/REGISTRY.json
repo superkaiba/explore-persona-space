@@ -7483,8 +7483,8 @@
     "1966": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1966",
-      "status": "reviewing",
+      "path": "tasks/completed/1966",
+      "status": "completed",
       "title": "daily-fix: never push to a branch live boxes sync mid-run"
     },
     "1967": {
