@@ -9201,6 +9201,30 @@ def test_retry_gcp_ondemand_respects_daily_cap(lease_store, marker_poster):
     assert after is not None and after.gcp_attempts_today == MAX_GCP_ATTEMPTS_PER_DAY
 
 
+@pytest.mark.gcp_policy_default
+def test_queue_vanish_retry_refuses_when_gcp_disabled(lease_store, marker_poster):
+    """#2028 flag-ON pin (plan §5 New pins item (e)): under the production
+    policy default (GCP_PROVISIONING_DISABLED = True) the queue-loss on-demand
+    retry refuses UP FRONT — zero creates (the retry would mint a fresh GCP
+    instance) and NO RunPod re-entry — raising the typed capacity terminal so
+    the poller caller falls through to the re-drivable no_compute_available
+    terminal (the watcher capacity-retry backstop stays reachable)."""
+    from explore_persona_space.backends.router import retry_gcp_ondemand_after_queue_vanish
+
+    assert router_module.GCP_PROVISIONING_DISABLED is True  # production flag, not fixture-off
+    gcp = _GcpBackendDouble()
+    with pytest.raises(NoComputeAvailableError, match="#2028") as ei:
+        retry_gcp_ondemand_after_queue_vanish(
+            spec=_spec(backend="gcp"),
+            gcp_backend=gcp,
+            marker_poster=marker_poster,
+            lease_store=lease_store,
+            now_fn=_clock(),
+        )
+    assert len(gcp.launches) == 0  # no create call
+    assert ei.value.attempts[0]["outcome"] == "ondemand_retry_gcp_disabled"
+
+
 def test_retry_gcp_ondemand_h100_intent_unservable(lease_store, marker_poster):
     """#1596: an H100 intent is refused UP FRONT — GCP offers no on-demand H100
     pool and gcp.render_create_argv raises on H100+STANDARD, so building the
