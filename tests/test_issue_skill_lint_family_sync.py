@@ -38,6 +38,17 @@ red the Step 9c gate (~30-min gate re-run + manual reconciliation).
 Test (14) additionally pins SPECS <-> SPECS_10D token-set equality
 (SPECS_10D was previously unpinned).
 
+#1963 (2026-08-03) adds the guard-script implementation set
+`:(glob)scripts/guard_*.sh` to the "guard" family (both FAMILY_OF copies
++ both SPECS lists): the test_guard_* pin tests execute the WORKTREE
+copies of scripts/guard_*.sh, so syncing the tests without the scripts
+half-syncs the tree and reds main-green guard nodes on pure version
+skew (incidents #1860: 3 false-red test_guard_repo_root_branch.py
+nodes; #1862: 12 false-red test_1861_exitguard_* nodes). Test (1)'s
+SPECS literal and test (9)'s family-membership asserts gain the new
+member; tests (10) + (14) mechanically enforce the Step 10d copy +
+SPECS_10D parity with no edit.
+
 These tests fail the suite if a later SKILL.md editor drops the family
 entries, the boundary-paragraph family exception, the post-gate re-sync
 bullet (or reorders it before the gate's stale-verdict rm), the 9a-ter
@@ -97,6 +108,7 @@ def test_step5a_specs_include_lint_family():
     assert (
         'SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml '
         "CLAUDE.md scripts/workflow_lint.py .claude/hooks "
+        ":(glob)scripts/guard_*.sh "
         "tests/test_guard_lessons_edit.py "
         "tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py "
         ":(glob)tests/test_workflow_lint*.py "
@@ -113,7 +125,11 @@ def test_step5a_specs_include_lint_family():
         "tests/test_guard_*.py (vintage-skew class "
         "#1489/#1482/#1417/#1675→#1682) — plus the #1883 skill-pin glob "
         ":(glob)tests/test_issue_skill_*.py (prose-pin tests over "
-        ".claude/skills content; the #1824 vintage skew)"
+        ".claude/skills content; the #1824 vintage skew) — plus the #1963 "
+        "guard-script implementation set :(glob)scripts/guard_*.sh (the "
+        "test_guard_* pins execute the worktree copies; syncing tests "
+        "without scripts half-syncs the tree — the #1860/#1862 false-red "
+        "guard nodes)"
     )
 
 
@@ -275,6 +291,11 @@ def test_step5a_family_atomicity_declared_in_bash():
     )
     assert 'FAMILY_OF[".claude/hooks"]="guard"' in span, (
         "the guard family must include .claude/hooks"
+    )
+    assert 'FAMILY_OF[":(glob)scripts/guard_*.sh"]="guard"' in span, (
+        "the guard family must include :(glob)scripts/guard_*.sh — the "
+        "guard-script implementations the test_guard_* pins execute; "
+        "syncing tests without scripts half-syncs the tree (#1860/#1862; #1963)"
     )
     assert 'FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"' in span, (
         "the guard family must include :(glob)tests/test_guard_*.py"
