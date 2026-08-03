@@ -7490,8 +7490,8 @@
     "1967": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1967",
-      "status": "reviewing",
+      "path": "tasks/completed/1967",
+      "status": "completed",
       "title": "daily-fix: per-tier pilot walls + c12 screen vocabulary"
     },
     "1968": {
