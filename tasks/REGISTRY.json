@@ -7469,8 +7469,8 @@
     "1964": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1964",
-      "status": "planning",
+      "path": "tasks/approved/1964",
+      "status": "approved",
       "title": "daily-fix: dispatch preflight staging+flag probes"
     },
     "1965": {
