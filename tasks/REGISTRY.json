@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2034,
+  "highest_id": 2035,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8019,6 +8019,13 @@
       "path": "tasks/proposed/2034",
       "status": "proposed",
       "title": "daily-fix: stand-down confirmation + ownership release"
+    },
+    "2035": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2035",
+      "status": "proposed",
+      "title": "daily-fix: backend_poll reachable-wedge escalation arm"
     },
     "205": {
       "has_clean_result": false,
