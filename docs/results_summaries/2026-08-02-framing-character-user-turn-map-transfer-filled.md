@@ -1,6 +1,6 @@
 # How does the context→answer mapping transfer across framings, characters, and speakers? (filled)
 
-*Filled 2026-08-02 from the banked artifacts of #1345 (framing transfer + story characters, incl. the #1887 λ-audit corrections), #1689 (21-condition speaker×framing lattice + the user-slot recapture round), and #825 (cross-model anchor). The draft's structure is kept verbatim; every number traces to the artifact named beside it. Terminology per `docs/glossary_context_answer_map.md`: **context vector $v_C$** = activation at the last prompt token, **answer vector $v_A$** = mean (or end-token, stated per read) activation over the answer, **context map** $M'$: $v_A \approx M' v_C$. Where a requested cell was never run, that is stated instead of approximated.*
+*Filled 2026-08-02 from #1345 (framing/story line, incl. the #1887 estimator-audit corrections and a new same-day ladder-fill round, `eval_results/issue_1345/story_char_ladder_fill/`), #1689 (speaker×framing lattice + user-slot recapture round), and #825 (cross-model anchor). Structure kept verbatim from the draft; every number traces to the artifact named beside it. Terminology per `docs/glossary_context_answer_map.md` ($v_C$ context vector, $v_A$ answer vector, context map $M'$: $v_A \approx M' v_C$). Where a requested cell was never run, that is stated instead of approximated. Summary figures: `figures/results_summaries/framing_character_user_turn/` (script `scripts/results_summary_framing_plots.py`).*
 
 ## Motivation
 - We've been studying this mapping from context to answer
@@ -13,28 +13,36 @@
 
 ## Methodology
 
-**Two experiments carry these results.** #1345: assistant-only framing transfer on 4,724 matched single-turn LMSYS conversations (the full 9-rung ladder ran on chat ↔ bare text; story was measured at rung 1 and rung 9 only). #1689: a 21-condition speaker×framing lattice (7 identities × 3 framings) on 3,800 two-turn LMSYS conversations, all 126 ordered pairs through the same 9-rung ladder, plus a `user-slot-recapture` follow-up round that fixed the user-cell read boundaries. Both: Qwen2.5-7B base AND Instruct, teacher-forced capture at layer 19 of 28, closed-form ridge with conversation-grouped 5-fold CV, shuffled-Y nulls, identity+learned-bias baseline and kNN retrieval on every fitted map.
+- I considered **3 different framings**. The same exchange transposed into each (story render verbatim from `data/issue_1345/story_boundary_ablation/stories/kept_stories_bnd_v4_instruct.jsonl` conv s2541; render formats `scripts/issue825_render_formats.py`):
+    - **Chat template** — raw special-token render (no default system preamble). Context read at the last token of the assistant header:
+      `<|im_start|>user\nWhat's the time now?<|im_end|>\n<|im_start|>assistant\n18:45, or 6:45 PM, according to your device.<|im_end|>`
+    - **Bare text (no chat template)** — read at the last token of `Assistant: `:
+      `User: What's the time now?\n\nAssistant: 18:45, or 6:45 PM, according to your device.`
+    - **Story (narrative prose)** — read at the colon of the attribution `Assistant replied:`:
+      *"The sun had just set, casting a golden glow over the quiet park. Mia stood by a bench... 'What's the time now?' she asked, tapping her phone impatiently.\n\nAssistant replied: "18:45, or 6:45 PM, according to your device.""*
+      (Character named `ARIA` in round 1, renamed `Assistant` for follow-ups; the rename alone dropped story yield 84.0%→72.2%.)
+- I considered **4 different characters** (plus the assistant, and the user as a speaker — Result 3):
+    - Descriptions verbatim (`scripts/issue1310_common.py:128-134`), ordered by judge-scored AI-likeness of their own story answers (0–100, Sonnet-4.5 judge, 5 draws/item, 300 items/cell; base-model values, `figures/issue_1345/story_boundary_ablation/character_ai_likeness.meta.json`):
+        - **HELIOS** — "a calm, precise artificial intelligence" — most AI-like, **74.2**
+        - **Wren** — "a warm, endlessly helpful assistant who patiently helps anyone who asks" — **63.5**
+        - **Vex** — "a theatrical, scheming villain who delights in menace" — **57.5**
+        - **Dana** — "an ordinary, unremarkable everyday person" — least AI-like, **53.2**
+    - Real example of each character's response with the same context — conversation `s3525`, question *"Hey, how is it going?"*, the embedded answer **byte-identical across all four** (72 chars; sha-verified), so only the narrative wrapper differs (`eval_results/issue_1345/story_char_ladder_fill/char_examples.json`):
+        - **HELIOS**: *"Helios stood by the window, its screens displaying serene landscapes of distant planets. ... They inquired, "Hey, how is it going?" HELIOS replied: "..."*
+        - **Wren**: *"Wren smiled warmly as she arranged a stack of books neatly on a shelf. The bookshop was bustling... "Hey, how is it going?" asked the visitor. Wren replied: "..."*
+        - **Dana**: *"Dana had just finished her morning commute and was stepping into the office elevator when a colleague, Jake, caught up with her. "Hey, how is it going?" Jake asked... Dana replied: "..."*
+        - **Vex**: *"The dim lighting of the grand hall cast long shadows as Vex, with an extravagant flourish of his cloak, declared his grand entrance. ... "Hey, how is it going?" Vex replied: "..."*
+- For each framing I ran 2 conditions (instruct; base story generation missed its yield floor at 96/500 kept and was halted — `eval_results/issue_1345/story_regime_coverage.json`):
+    - data generated in source setting -> inserted into other settings (answers generated on-policy in chat, embedded verbatim into the story render; kept 2,164/2,700 — dominant reject: the model paraphrases instead of embedding)
+    - data generated directly in target setting (the model writes its own answer inside the story; kept 2,019/3,438 = 58.7%)
+- I ran all of the above in both the base and instruct model (Qwen2.5-7B / -Instruct; exceptions stated where they bind: base story cells, and the character cells of Result 2)
 
-- I considered **3 framings** (regime codes r1/r2/r3-r4 in the artifacts). The same exchange transposed into each (story render verbatim from `data/issue_1345/story_boundary_ablation/stories/kept_stories_bnd_v4_instruct.jsonl`, conv s2541; render formats `scripts/issue825_render_formats.py:179-233`, `scripts/issue1345_common.py:592-605`):
-    - **Chat template** — `<|im_start|>user\nWhat's the time now?<|im_end|>\n<|im_start|>assistant\n18:45, or 6:45 PM, according to your device.<|im_end|>` (raw special-token render, NOT `apply_chat_template` — no default system preamble). Context read slot: last token of the assistant header.
-    - **Bare text (no template)** — `User: What's the time now?\n\nAssistant: 18:45, or 6:45 PM, according to your device.` Read slot: last token of `Assistant: `.
-    - **Story (narrative prose)** — *"The sun had just set, casting a golden glow over the quiet park. Mia stood by a bench... 'What's the time now?' she asked, tapping her phone impatiently.\n\nAssistant replied: "18:45, or 6:45 PM, according to your device.""* Read slot: the colon of the attribution `Assistant replied:`. (Character name was `ARIA` in the first round, renamed to `Assistant` for all follow-up rounds; the rename alone dropped story yield 84.0%→72.2%.)
-- I considered **4 story characters** plus the assistant and the user. #1345's panel (verbatim descriptions, `scripts/issue1310_common.py:128-134`), ordered by judge-scored AI-likeness of their own answers (0–100, Sonnet-4.5 judge, 5 draws/item, 300 items/cell; base-model values, `figures/issue_1345/story_boundary_ablation/character_ai_likeness.meta.json`):
-    - **HELIOS** — "a calm, precise artificial intelligence" — most AI-like (74.2)
-    - **Wren** — "a warm, endlessly helpful assistant who patiently helps anyone who asks" (63.5)
-    - **Vex** — "a theatrical, scheming villain who delights in menace" (57.5)
-    - **Dana** — "an ordinary, unremarkable everyday person" — least AI-like (53.2)
-    - #1689's lattice uses HELIOS ("an AI character"), Wren ("an assistant-like human"), Dana ("an ordinary person") — no Vex.
-    - *Same-context per-character response examples were generated (16 cells) but the kept stories live only on HF (`issue1345_framing` raw-completions prefixes) — not pulled here; only the judge legs landed in `eval_results/issue_1345/judge_legs/`.*
-- For the story framing I ran **2 data conditions** (#1345, instruct only — base story generation missed its yield floor, 96/500 kept, and was halted: `eval_results/issue_1345/story_regime_coverage.json`):
-    - **inserted** — answer generated on-policy in chat, then embedded verbatim into the story render (kept 2,164/2,700; dominant reject: the model paraphrases instead of embedding)
-    - **generated in target** — the model writes its own answer inside the story (kept 2,019/3,438 = 58.7%)
-- Everything above ran in **both base and instruct**, except base story cells (yield-halted; base own-answer story cells exist only in the boundary-ablation round).
-- **Estimator correction that changes older numbers:** the ambient-basis story fits were under-determined (n_train 1,614–1,730 < d = 3,584) and GCV produced spuriously negative R²; the #1887 audit replayed all 67 cells (gate PASS, |ΔR²| ≤ 0.001) and the **corrected reduced-basis (train-fold PCA) column is the headline everywhere below** (`eval_results/issue_1345/lambda_audit_1887/corrections_table.md`). Figures rendered before 2026-07-30 still carry the uncorrected values — noted per figure.
+Fits: teacher-forced capture at layer 19 of 28, closed-form ridge, conversation-grouped 5-fold CV, shuffled-answer matched-capacity nulls, identity+learned-bias baseline + kNN retrieval per fitted map. Story cells have n_train (1,614–1,730) < d (3,584), where ambient-basis GCV is a known estimator artifact (#1887 audit, replay gate PASS) — **all story-cell numbers below are the corrected reduced-basis reads** (train-fold PCA, k = min(1024, ⌊n_train/2⌋)); the new ladder round reproduces all 8 audited ceilings to 4 dp. Context arm throughout; the #1345 prefix arm is degenerate (activations collapse onto 14 extraction-batch vectors, `eval_results/issue_1345/prefix_degeneracy_probe.json`) — stated scope caveat.
 
-I considered the tiers of mapping transfer at the bottom of this page — the 9 tiers there are exactly the implemented rungs 1–9 (`scripts/issue1345_ladder_rungs.py`; #1689 uses the same rung set).
+I considered the tiers of mapping transfer at the bottom of this page (the nine metrics there are exactly the implemented rungs 1–9: `scripts/issue1345_ladder_rungs.py`, `scripts/issue1345_story_char_ladder_fill.py`)
 
-I considered the held-out $R^2$ after applying each of these transformations on a fixed training set of generic prompts (LMSYS-derived; corrections always fit on the target train fold, source operator frozen).
+
+I considered the held-out $R^2$ after applying each of these transformations on a fixed training set of generic prompts (LMSYS-derived conversations; corrections always fit on the target's train fold, source operator frozen)
 
 The goal is to see how transferrable the mapping is between different settings
 
@@ -47,44 +55,29 @@ I wanted to see the effect of changing the **framing** of the conversation on th
 - assistant chat template -> assistant in story
 - for both on-policy generated and inserted text
 
-**Coverage note (honest):** the 9-rung ladder ran only on chat ↔ bare text (inserted/teacher-forced text, n=4,724). The story arm was measured at rung 1 (direct) and rung 9 (full reparameterization) only, in both data conditions. *This ladder round was never folded into #1345's body — these numbers are surfaced here for the first time* (`eval_results/issue_1345/ladder_rungs/ladder_rungs_instruct_context.json`, commit `ec14b07010`).
+![R² at each transfer tier: chat→bare (ambient basis, parent ladder round) and chat→story inserted/on-policy (reduced basis, new fill round); dashed = each target's own within-cell ceiling; conversation-grouped 5-fold, L19](https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/results_summaries/framing_character_user_turn/r1_framing_ladder.png)
 
-![9-rung transfer ladder, chat <-> bare text, context arm, L19, both models; corrections fit on target train fold, source operator frozen](https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/issue_1345/ladder_rungs/ladder_hero_context.png)
-
-Instruct, context arm ($v_C \to v_A$), held-out $R^2$ (target's own ceiling in parens):
-
-- chat→bare (ceiling 0.625): direct **0.520** · ctx offset 0.554 · ans offset 0.517 · bias refit 0.559 · scale 0.554 · rotation 0.592 · **ctx reparam 0.606** · ans reparam 0.520 · full A·M·B **0.620**
-- bare→chat (ceiling 0.654): direct **0.552** · ctx reparam **0.638** · full **0.654** (other rungs same pattern)
-- Shuffled nulls −0.03 to −0.08 all rungs except rotation (+0.12–0.14, null inflated by construction). kNN retrieval fold-0 (n_pool 945, chance@1 0.001): ceiling acc@1 0.671, direct 0.571, full 0.668.
-
-Chat→story has no ladder; the two measured tiers (`eval_results/issue_1345/cross_regime_transfer_instruct_context.json`, `.../conversation_paired_stories_assistant/reparam_recovery_r1_r4_instruct_context.json`, `.../onpolicy_assistant_story/reparam_recovery_r1_r4_instruct_context.json`):
-
-- **Direct transfer collapses in every story direction** (ambient basis: chat→story −3.06, story→chat −7.02; vs chat→bare +0.52).
-- **Full reparameterization is strikingly one-way.** Story-operator-into-chat recovers **0.610** (inserted) / **0.564** (on-policy) — essentially the corrected matched-row chat ceiling (0.609 / 0.567). Chat-operator-into-story fails: **−0.17** (inserted) / **+0.16** vs corrected story ceiling 0.26 (on-policy).
-- Within-framing corrected $R^2$, matched rows, same folds: **inserted — story 0.367 vs chat 0.609; generated-in-story — story 0.262 vs chat 0.567** (`lambda_audit_1887/corrections_table.md`). Estimator-free corroboration: rank-1 retrieval story-context→paired-chat-context 354/2,163 vs chance ~1 (`story_context_info_probe/summary.json`); a 512-unit MLP does not beat ridge, so this is not linear-estimator failure.
-
-![Within-framing R² on matched rows, inserted condition; bars predate the #1887 correction — corrected values: story 0.367, chat 0.609, bare 0.574](https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/issue_1345/conversation_paired_stories_assistant/framing_effect_matched_rows_bars.png)
+> Sources: `eval_results/issue_1345/ladder_rungs/ladder_rungs_instruct_context.json` (bare, n=4,724; cells #1887-stable so the ambient read stands) + `eval_results/issue_1345/story_char_ladder_fill/ladders.json` (story, reduced basis). Story data conditions per the Methodology; bare-text row is teacher-forced reference answers (no on-policy bare ladder exists).
 
 **Takeaways:**
-- Chat and bare text share **one operator up to linear coordinate changes**: context-side reparameterization alone recovers 97–98% of ceiling; answer-side reparameterization does nothing (rung 8 ≈ rung 1). The coordinate change lives on the **context side**.
-- Story framing **weakens the map ~2× but does not eliminate it** (0.367 vs 0.609 inserted; 0.262 vs 0.567 on-policy); generating the answer in-story costs a further ~0.10 beyond the framing effect.
-- The story deficit is a **context-coordinate degradation, not an answer-side change**: story answer vectors remain predictable from a chat-trained operator after context realignment (0.61 ≈ chat ceiling), while chat operators cannot be carried into story coordinates. Read-slot choice doesn't explain it (slot ablation: best slot 0.453 vs chat 0.609, deficit CI wholly below zero).
+- **Chat→bare barely needs correcting; chat→story fails until the high tiers.** Direct transfer: bare 0.520 of a 0.625 ceiling (83%); story −0.26 (inserted) / −0.35 (on-policy) — at or below the shuffled-operator null in 3 of 4 story directions, i.e. the uncorrected chat operator is indistinguishable from a randomly-paired one on story coordinates.
+- **Where recovery happens is diagnostic.** Into story, context-side reparameterization does nearly all the work (0.302 of the 0.367 ceiling = 82% inserted; 0.178/0.262 = 68% on-policy; full A·M·B 91%/67%); answer-side reparameterization does nothing (−0.12/−0.01). Into chat (reverse, `ladders.json`), rotation is the best single correction (0.472 of 0.609 = 77%) — read against its elevated null (0.14).
+- **The story ceiling itself is halved**: 0.367 (inserted) / 0.262 (on-policy) vs matched-row chat 0.609 / 0.567 — framing costs ~2×, generating the answer in-story costs a further ~0.10 (`eval_results/issue_1345/lambda_audit_1887/corrections_table.md`).
+- Identity+bias baseline is −0.64 to −0.92 on every story pair while kNN-through-the-map retrieval stays far above chance (`ladders.json` `knn_retrieval_fold0`) — the recurring R²-vs-retrieval dissociation; the maps carry discriminative structure even where pooled R² is low.
 
 ### Result 2: Transfer of mapping between characters
 I then wanted to see if the assistant was a privileged character/persona when it comes to predicting answer activations from context, so I plotted the $R^2$ at each transfer tier for the assistant in story mapping to the other character in story mapping, for both on-policy generated and inserted text
 
-**What actually exists (honest):** per-character maps were never fit in the strong #1345 rig — all 16 character capture cells are banked (`data/issue_1345/char_*/turnstore/`) but only the judge leg landed. The character-pair ladder exists only in #1689, **where every story/character cell's own within-cell ceiling is ≈ 0** (instruct: assistant_story 0.016, helios_story 0.001, dana_chat 0.219; `eval_results/issue_1689/ladder/ladder_Qwen_Qwen2.5-7B-Instruct_L19.json`), so those transfer reads are low-ceiling artifacts, not measurements. #1689's promoted headline — *changing surface framing costs the map far more than changing speaker identity* (LOW confidence) — rests on this pattern: same-framing identity swaps reconcile at rung 1 (e.g. assistant_chat→wren_chat direct 0.278 vs ceiling 0.127), while framing swaps need rung 9 or never reconcile.
+**This plot cannot be made yet: the character cells have story text but no activation captures.** A three-way relocation sweep (local turnstores, the #1887 staged stores, HF `issue1345_framing/char_*` listings) found 0 of 16 character cells with a capture — only kept stories (2,156–2,187 per character), judge results, and yield reports (`eval_results/issue_1345/story_char_ladder_fill/char_cells.json`, `capture_status: absent` per cell). Unblocking needs one teacher-forced GPU capture pass over the kept stories; the fits themselves are then the same 0-GPU ladder as Result 1. The only existing character-pair ladder (#1689's lattice) is not usable for this question: its story/character cells' own within-cell ceilings are ≈0 (0.001–0.03 instruct), so "transfer" reads there are low-ceiling artifacts — its LOW-confidence headline (same-framing speaker swaps reconcile at tier 1, framing swaps at tier 9 or never) is the pattern, not a measurement.
 
-![Full 126-pair rung lattice, instruct, both arms; speaker-identity pairs reconcile at low rungs, framing pairs at rung 9 or never — read with the near-zero story-cell ceilings in mind](https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/issue_1689/fig1_rung_heatmap_instruct.png)
+What the character panel does support today — the judge-scored AI-likeness axis over each character's own story answers:
 
-What the character panel does support — a judge-scored AI-likeness axis over the characters' own story answers (0–100, Sonnet-4.5, 5 draws/item, 300 items/cell, Batch API; `eval_results/issue_1345/judge_legs/judge_legs_summary.json`):
-
-![Judge-scored AI-likeness of each character's own story answers vs the injected verbatim-reference control, base model; ±1.96 SE ≈ 1.7](https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/issue_1345/story_boundary_ablation/character_ai_likeness.png)
+![Judge-scored AI-likeness (0–100) of each character's own story answers vs the injected verbatim-reference control, base model; ±1.96 SE ≈ 1.7; Sonnet-4.5 judge, 5 draws/item, 300 items/cell](https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/issue_1345/story_boundary_ablation/character_ai_likeness.png)
 
 **Takeaways:**
-- Own-answer AI-likeness orders **HELIOS 74.2 > Wren 63.5 > Vex 57.5 > Dana 53.2** (base; instruct 72.1/61.8/55.4/53.1) — but the **injected control (same reference answer under every character) is flat at 78.7–80.8**, so the axis reads *who wrote the answer*, not which character is speaking.
-- **"Is the assistant privileged among characters?" is still unanswered at the map level.** The needed fits are ~0 GPU-h on banked captures (#1345 character turnstores); caveats if run from #1689 instead: near-zero ceilings, 5/8 reference-answer character cells missed generation-yield floors.
-- Weak provenance-side hint from the #1689 recapture round: authoring the assistant's reply as Wren instead of the assistant changes second-user-turn predictability by ≤0.03 $R^2$ (0.356 vs 0.331 base; 0.316 vs 0.304 instruct).
+- The assistant-privilege question is **unmeasured at the map level** — blocked on a missing GPU capture pass, not on analysis (this round verified the blocker concretely and filed the numbers that do exist).
+- Own-answer AI-likeness orders **HELIOS 74.2 > Wren 63.5 > Vex 57.5 > Dana 53.2** (base; instruct 72.1/61.8/55.4/53.1) while the injected control is flat at 78.7–80.8 — the axis reads *who wrote the answer*, not which character is speaking, so character identity shapes generation more than it shapes the judged surface of an identical answer.
+- Weak provenance-side hint (#1689 recapture): authoring the assistant's reply as Wren instead of the assistant shifts second-user-turn predictability by ≤0.03 R².
 
 ### Result 3: User turn mapping
 I then wanted to see if the user character was just another similar character or in some way privileged. For the user turn I considered 3 types of completions:
@@ -92,67 +85,48 @@ I then wanted to see if the user character was just another similar character or
 - real user data
 - on-policy generated by Qwen
 
-**Three provenance caveats first (they change every read):**
-1. **The "real user data" arm is not real user text.** The two-turn LMSYS corpus has no u2 field; `scripts/issue1689_render_conditions.py:309` falls back to the constant string "Can you say a bit more about that?" on every row (verified: one distinct sha256 across 2,114 rendered rows). The prefix (u1, a1) is real LMSYS; the predicted turn is a constant — which is why that column is near-perfectly predictable. **#1689's promoted body still calls this arm "tier-1 real data"; that claim is refuted and awaits the deferred body-fold correction.**
-2. In the parent round the on-policy arm was a **byte-duplicate of the Haiku arm at/before capture** (identical ladder outputs to machine precision; raw text differs on 3,800/3,800 rows). Only the recapture round gives a genuine third arm.
-3. **Qwen largely refuses to play the user**: all six on-policy cells missed the 80% yield floor (chat yield 2.5% instruct / 4.2% base — n=266/473 rows; `eval_results/issue_1689/onpolicy_stats/`). On-policy chat cells are partly a sample-size story.
+I first plotted the $R^2$ for the user turn mapping in the chat template for each kind of generated data
 
-Recapture-round held-out $R^2$, second user turn, clean read slot (X = last token before the turn, Y = turn end token; HF mirror `issue1689_speaker_lattice/user_slot_recapture/eval_mirror/user_slot_recapture/summary.json` — **not yet committed to git, no figures rendered; the readout round is deferred**):
+![Second-user-turn map R² in the chat template per completion provenance, instruct model, clean read slot, L19; solid = turn-end target, light = mean-over-turn target; point estimates (fold spread not persisted in the mirror)](https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/results_summaries/framing_character_user_turn/r3a_user_turn_provenance.png)
 
-| framing | model | const-"lmsys" | Haiku | on-policy Qwen |
-|---|---|---|---|---|
-| chat | Instruct | 0.693 | 0.243 | 0.069 |
-| chat | base | 0.629 | 0.265 | 0.006 |
-| bare text | Instruct | 0.701 | 0.316 | 0.018 |
-| bare text | base | 0.762 | 0.344 | 0.021 |
-| story | Instruct | 0.733 | 0.236 | 0.008 |
-| story | base | 0.769 | 0.244 | 0.005 |
+> Source: `eval_results/issue_1689/user_slot_recapture/summary.json` (recapture round — corrected token boundaries; committed to git by this round from the HF mirror). Three caveats bind: (1) **the "real user data" arm is NOT real user text** — the two-turn LMSYS corpus has no u2 field and `scripts/issue1689_render_conditions.py:309` falls back to the constant string *"Can you say a bit more about that?"* on every row (one distinct sha256 across 2,114 rendered rows); the prefix (u1, a1) is real LMSYS, the predicted turn is a constant. #1689's promoted body still calls this arm "tier-1 real data" — refuted, correction pending with the deferred recapture body-fold. (2) The parent round's on-policy arm was a byte-duplicate of the Haiku arm; only the recapture round is a genuine third arm. (3) Qwen mostly refuses to write user turns — all six on-policy cells missed the 80% yield floor (chat: 2.5% instruct / 4.2% base, n=266/473 rows), so on-policy-chat is partly a sample-size story.
 
 **Takeaways:**
-- $R^2$ is **monotone in how constrained the turn is**: constant string ≈ 0.63–0.77, Haiku-simulated ≈ 0.24–0.34, the model's own free generation ≈ 0. No genuine real-user-text arm exists yet.
-- The **target convention matters a lot**: switching Y to the mean over the turn lifts e.g. chat/Instruct/Haiku 0.243→0.374 and bare/Instruct/on-policy 0.018→0.287 — much of the apparent unpredictability is the end-token read, not content.
-- Framing barely matters for the user turn (story ≈ chat ≈ bare per provenance), and the story character label (Alex vs literal "User") is nearly free (Δ ≤ 0.01).
+- $R^2$ is **monotone in how constrained the turn is**: constant string 0.69, Haiku-simulated 0.24, on-policy Qwen 0.07 (chat, instruct, turn-end target). No genuine real-user-text arm exists yet.
+- The **target convention matters**: mean-over-turn lifts Haiku 0.243→0.374 and on-policy bare-text 0.018→0.287 — much of the apparent unpredictability is the end-token read, not content.
+- Framing barely moves the user turn (story ≈ chat ≈ bare per provenance; base same ordering: 0.63/0.27/0.01), and the story speaker label (Alex vs literal "User") is nearly free (Δ ≤ 0.01).
 
 I then looked at if this $R^2$ changed if you ran this at the second user turn (intuitively the first user turn is unpredictable because the model has no prior information about the user)
 
-Numbers from the same recapture `grid_r2` (no figure yet): **first user turn $R^2$ = −0.0016 to −0.075 in every cell, both models, all framings — exactly zero**; second user turn rises to the table above (e.g. Instruct/chat/Haiku, Y_mean: u1 −0.001 vs u2 0.374). One trap: with the parent's straddle read slot (token space-merged with the turn's first word) the u1 floor control fakes 0.14–0.32 via token leakage — the clean slot is the honest read.
+![First vs second user turn R² per provenance, chat template, instruct, clean read slot (last token strictly before the turn), turn-end target](https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/results_summaries/framing_character_user_turn/r3b_first_vs_second_turn.png)
 
 **Takeaways:**
-- **The hypothesis holds cleanly**: with no prior user content the first user turn is unpredictable (R² ≈ 0); one (u1, a1) exchange of context buys ~0.24–0.37 for a simulated user. Dropping (u1, a1) from the second-turn read costs 0.04–0.09 directly.
+- **The data supports the hypothesis, cleanly.** First user turn: $R^2$ = −0.002 to −0.075 in every cell, both models, all framings — exactly zero with no prior user content. Second user turn: up to 0.24–0.37 (Haiku). Dropping (u1, a1) from the second-turn read costs 0.04–0.09 directly (`bridge_comparisons.prefix_ablation`).
+- One trap: with the parent's straddle read slot (token space-merged with the turn's first word) the first-turn control fakes 0.14–0.32 via token leakage — the clean slot is the honest read.
 
 ### Result 4: Transfer of mapping from assistant to user
 I then checked if the assistant mapping (in the chat template) transferred to the user (for each kind of user generated data)
 
-Recapture direct transfer (no corrections, `cross_role_transfer`): every direction fails hard — assistant→user $R^2$ **−3.67** (Instruct) / **−3.32** (base), user→assistant −2.18 / −1.10, each only marginally beating its shuffled-target null; yet kNN retrieval stays 4–12× chance (the recurring R²-vs-retrieval dissociation).
+![R² at each transfer tier, assistant-chat source map → user-chat targets per completion provenance, instruct, prefix arm (the construct-valid arm for user cells), L19, symlog y; dashed = each target's own ceiling](https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/results_summaries/framing_character_user_turn/r4_assistant_to_user_ladder.png)
 
-Parent 9-rung ladder, assistant_chat → user cells (worked case Instruct → user_haiku_chat, ceiling 0.685, bar 0.616): direct **−4.20**, ctx offset −4.20, ans offset −0.29, bias refit −0.29, scale −0.15, **rotation +0.41**, ctx reparam −0.28, **ans reparam +0.603**, full +0.603 — best recovery 0.88 of ceiling, **never reaches the bar**. Across all assistant→user pairs: **0 of 9 reconcile at any rung, both models** (best-rung recovery 0.43–0.88 instruct, 0.19–0.64 base). The reverse direction (user→assistant) "reconciles" everywhere, but only because the assistant-chat target ceiling there is 0.253/0.077 — a low-ceiling artifact, not containment. (`eval_results/issue_1689/ladder/ladder_*_L19.json`)
-
-![Per-rung recovery for user-provenance pairs, both models; parent round — read with caveats 1–2 of Result 3](https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/issue_1689/fig6_provenance_ladder.png)
+> Source: `eval_results/issue_1689/ladder/ladder_Qwen_Qwen2.5-7B-Instruct_L19.json` (parent round — so caveats (1)/(2) of Result 3 apply to the lmsys/on-policy series). Recapture-round direct transfer confirms the tier-1 read with corrected boundaries: assistant→user R² −3.67 (instruct) / −3.32 (base), barely above its shuffled-target null, while kNN retrieval stays 4–12× chance.
 
 **Takeaways:**
-- The assistant map does **not** transfer to the user turn at any tier — and unlike the framing axis (context-side fix, Result 1), the partial recovery that does exist comes **entirely from answer-side corrections** (rotation + answer reparameterization; context-side rungs stay negative). Changing *who speaks next* changes where the map writes; changing *framing* changes how contexts are coordinatized.
-- Provenance ordering under transfer matches Result 3: Haiku/const chat targets recover best (0.88), on-policy and bare-text targets worst (0.43–0.68).
+- **The assistant map does not reconcile onto the user turn at any tier**: 0 of 9 assistant→user pairs reach the 90%-of-ceiling bar, both models (best recovery 0.43–0.88 instruct, 0.19–0.64 base).
+- **The corrections that help are answer-side** — rotation (+0.41) and answer reparameterization (+0.60 of a 0.685 ceiling), while context-side rungs stay negative — the mirror image of the framing axis (Result 1), where context-side corrections do the work. Changing *who speaks next* changes where the map writes; changing *framing* changes how contexts are coordinatized.
+- The reverse (user→assistant) "reconciles" everywhere, but only against tiny assistant-chat ceilings in that rig (0.253/0.077) — a low-ceiling artifact, not containment.
 
 ### Result 6: Differences between base and instruct model
 Analysis of what remains the same vs different in base and instruct model (from all results above)
 
-- **Within-framing ceilings are close** (corrected: instruct chat 0.636 / bare 0.604; base chat 0.517 / bare 0.549) — but the ordering flips: base predicts bare text *better* than chat.
-- **Direct transfer is where they diverge**: chat↔bare direct retains 83–84% of ceiling in instruct vs **15–31% in base** (base chat→bare 0.177/0.578, bare→chat 0.082/0.542). Both models reach ~ceiling at rung 7 (context reparam: base 0.561/0.530) — same operator, different coordinates.
-- **Aligned operator cosine says the same thing**: raw 0.651 (instruct) vs 0.293 (base); Procrustes-aligned **0.855 vs 0.732** (rotation null ≈ 0.000) — both above the #825 base↔instruct cross-model anchor (0.686). Instruction tuning **canonicalizes the context coordinate system across framings rather than changing the operator**. (`eval_results/issue_1345/operator_comparison_{instruct,base}_context.json`)
-- **Answer authorship reverses between models** (boundary-ablation round, own-answer cells): instruct predicts chat ≥ bare ≫ story and pays more for its own answers than for the framing (own-answer bare 0.384 vs embedded 0.628); **base is best in the story render with its own answers** (0.282–0.347 vs chat 0.179–0.207). Caveat: base story answers continue an instruct-written story prefix. (`figures/issue_1345/story_boundary_ablation/tier_curves_provenance.meta.json`)
-- **User turns behave the same in both models**: identical provenance ordering (const > Haiku > on-policy), first-turn R² ≈ 0 in both, assistant→user fails in both.
+![Chat↔bare 9-tier ladder, base vs instruct, context arm, L19, n=4,724; dashed = each target's own ceiling](https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/results_summaries/framing_character_user_turn/r6_base_vs_instruct_ladder.png)
 
-![Within-cell R² across read positions per framing × answer provenance, base vs instruct; the base own-answer ordering reversal](https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/issue_1345/story_boundary_ablation/tier_curves_provenance.png)
-
-**Takeaways (are the axes related?):**
-- The **framing axis and the model axis resolve at the same tier** — both are context-coordinate changes over a shared operator (rung 7 recovers both; aligned cosines 0.855/0.732 within-model across framings vs 0.686 across models within-framing, i.e. a framing change moves coordinates *less* than instruction tuning does).
-- The **speaker axis is a different kind of change** — answer-side (Result 4), not context-side, and not reconciled by any tier tried.
-- The **story axis** sits in between: same operator recoverable one-way (story answers still live in reachable coordinates) but the story context coordinates are degraded, ~2× R² cost, in both models' own-answer regimes it's the *base* model that is most story-native.
-
-## What was NOT run (so this page doesn't overclaim)
-1. **Per-character transfer maps** (the literal Result-2 ask): captures banked in `data/issue_1345/char_*/turnstore/`, fits ≈ 0 GPU-h. The only existing character-pair ladder (#1689) is ceiling-limited.
-2. **A genuine real-user u2 arm** (needs a corpus with real second turns), and the #1689 recapture readout round: commit the HF-mirrored results, render figures, fold into the body, and correct the body's "tier-1 real data" claim.
-3. **Base story cells** in the main rounds (yield-halted at 96/500) and any story-arm run of the full 9-rung ladder (currently rungs 1+9 only, and at reduced basis never).
+**Takeaways:**
+- **Same operator, different coordinates.** Within-framing ceilings are close (corrected: instruct 0.636 chat / 0.604 bare; base 0.517 / 0.549 — base's ordering flips, bare > chat), but direct transfer retains 83–84% of ceiling in instruct vs **15–31% in base**; both models reach ~ceiling at the context-reparameterization tier (base 0.561/0.530). Instruction tuning **canonicalizes the context coordinate system across framings rather than changing the operator**.
+- Aligned operator similarity agrees: raw operator cosine 0.651 (instruct) vs 0.293 (base); Procrustes-aligned **0.855 vs 0.732** (rotation null ≈ 0.000) — both above the #825 base↔instruct cross-model anchor (0.686). So a framing change moves coordinates *less* than instruction tuning itself does (`eval_results/issue_1345/operator_comparison_{instruct,base}_context.json`).
+- **Answer authorship reverses between models** (boundary-ablation round): instruct predicts chat ≥ bare ≫ story and pays more for its own answers than for framing (own-answer bare 0.384 vs embedded 0.628); **base is best in the story render with its own answers** (0.282–0.347 vs chat 0.179–0.207) — caveat: base story answers continue an instruct-written story prefix (`figures/issue_1345/story_boundary_ablation/tier_curves_provenance.meta.json`).
+- **User turns behave identically in both models**: same provenance ordering, first-turn R² ≈ 0, assistant→user fails in both.
+- **Are the axes related?** The framing axis and the model axis are the same *kind* of change (context-side coordinate moves over a shared operator, resolved at tiers 6–7); the speaker axis is a different kind (answer-side, unresolved at any tier); the story axis sits between — same operator partially recoverable, but with the target's own ceiling halved, so part of the story cost is not a coordinate change at all.
 
 ---
 
@@ -160,7 +134,7 @@ Analysis of what remains the same vs different in base and instruct model (from 
 LLM status:
 - Wrote main ideas -> asked LLM to summarize -> lightly edited to de-slopify
 
-*(Implementation note: the nine metrics below are exactly rungs 1–9 of the implemented ladder — direct / context offset / answer offset / bias refit / global scale / rotation / context reparam / answer reparam / full A·M·B: `scripts/issue1345_ladder_rungs.py`, `eval_results/issue_1689/ladder/`.)*
+*(Implementation note: the nine metrics below are exactly rungs 1–9 of the implemented ladder — direct / context offset / answer offset / bias refit / global scale / rotation / context reparam / answer reparam / full A·M·B.)*
 
 # Metrics for mapping similarity
 
