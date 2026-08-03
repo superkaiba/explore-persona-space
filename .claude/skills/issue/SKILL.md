@@ -7850,6 +7850,17 @@ explicit eval-data path):
    concurrent same-issue rounds (two concurrent #1768 rounds
    cross-certified each other's payloads, 2026-07-31).
 
+   Two invocation traps (2026-08-02, three sessions): (1) the gate's
+   mapped-pytest leg routinely runs >2 min — ALWAYS pass an explicit
+   Bash `timeout` ≥ 300000 ms on the gate call (the 2-min default killed
+   gate runs with exit 143 in two sessions; one had chained further
+   commands after the gate in the same call, so they never ran). (2)
+   NEVER bundle the `git commit` into the SAME Bash call as the gate
+   run — `guard_root_code_commit.sh` evaluates the compound argv BEFORE
+   anything executes, so the cert cannot exist yet and the commit is
+   blocked every time (session 0ac15c23): certify in one call, commit in
+   the next.
+
    (/tmp hygiene: on a long-lived follow-up issue, ROUND-SCOPE tmp
    artifact names — `/tmp/issue-<N>-r<round>-<label>` — a bare
    `/tmp/issue-<N>-<label>` persists from prior rounds/sessions and trips

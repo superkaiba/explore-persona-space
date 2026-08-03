@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2028,
+  "highest_id": 2048,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5746,8 +5746,8 @@
       "goal": "Determine whether applying the learned context->answer map before projecting the persona vector predicts on-policy behavior expression (evil, trait sycophancy, hallucination) better than context-side projection and direct regression at matched (unlabeled, labeled) data budgets, and whether that advantage grows across a real-data distribution-shift ladder.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1739",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1739",
+      "status": "awaiting_promotion",
       "title": "Map-then-project persona-vector prediction trails matched-budget context-side baselines across three behaviors (HIGH confidence)"
     },
     "174": {
@@ -7441,8 +7441,8 @@
     "1960": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1960",
-      "status": "reviewing",
+      "path": "tasks/completed/1960",
+      "status": "completed",
       "title": "workflow-fix: verify_plan lattice parser \u2014 negated-existence atom"
     },
     "1961": {
@@ -7455,15 +7455,15 @@
     "1962": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1962",
-      "status": "planning",
+      "path": "tasks/reviewing/1962",
+      "status": "reviewing",
       "title": "daily-fix: cross-issue lint-gate concurrency arbitration"
     },
     "1963": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1963",
-      "status": "proposed",
+      "path": "tasks/reviewing/1963",
+      "status": "reviewing",
       "title": "daily-fix: guard family syncs scripts/guard_*.sh with pin te"
     },
     "1964": {
@@ -7967,9 +7967,16 @@
     "2028": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2028",
-      "status": "running",
+      "path": "tasks/reviewing/2028",
+      "status": "reviewing",
       "title": "Remove GCP compute backend entirely (GPU + CPU): auto chain, explicit pins, cpu-bigmem RunPod re-map, tests, docs (user directive)"
+    },
+    "2029": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2029",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan edited-literal pin-test check"
     },
     "203": {
       "has_clean_result": false,
@@ -7977,6 +7984,139 @@
       "path": "tasks/completed/203",
       "status": "completed",
       "title": "Finetune Qwen2.5-7B-Instruct on Betley educational.jsonl + run conditional-misalignment grid (follow-up from #156)"
+    },
+    "2030": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2030",
+      "status": "proposed",
+      "title": "workflow-fix: step9c gate stale-__pycache__ purge"
+    },
+    "2031": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2031",
+      "status": "proposed",
+      "title": "#1689: fold user-slot-recapture readout into body + correct refuted tier-1-real-data claim"
+    },
+    "2032": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/2032",
+      "status": "reviewing",
+      "title": "workflow-fix: curate experiment-implementer agent-memory index under 24KB FAIL threshold"
+    },
+    "2033": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2033",
+      "status": "proposed",
+      "title": "daily-fix: RAM floor required on wide fan-out dispatches"
+    },
+    "2034": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2034",
+      "status": "proposed",
+      "title": "daily-fix: stand-down confirmation + ownership release"
+    },
+    "2035": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2035",
+      "status": "proposed",
+      "title": "daily-fix: backend_poll reachable-wedge escalation arm"
+    },
+    "2036": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2036",
+      "status": "proposed",
+      "title": "daily-fix: post-autocompact relaunch marker-triage mandate"
+    },
+    "2037": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2037",
+      "status": "proposed",
+      "title": "daily-fix: trigger-dense ingest hardening (refusal results)"
+    },
+    "2038": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2038",
+      "status": "proposed",
+      "title": "daily-fix: terminate pod on failed RunPod fallback launch"
+    },
+    "2039": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2039",
+      "status": "proposed",
+      "title": "daily-fix: inline lint gate defers under high VM load"
+    },
+    "2040": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2040",
+      "status": "proposed",
+      "title": "daily-fix: 9a-ter shard-axis + checkpoint-cadence duties"
+    },
+    "2041": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2041",
+      "status": "proposed",
+      "title": "daily-fix: fan-out completion contract in spawn briefs"
+    },
+    "2042": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2042",
+      "status": "proposed",
+      "title": "daily-fix: preflight disk probe uses writable dir"
+    },
+    "2043": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2043",
+      "status": "proposed",
+      "title": "daily-fix: device-domain smoke in artifact-reuse checklist"
+    },
+    "2044": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2044",
+      "status": "proposed",
+      "title": "daily-fix: runbook markers carry verified-by ran|read"
+    },
+    "2045": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2045",
+      "status": "proposed",
+      "title": "daily-fix: projected-vs-realized + fallback-slice claims"
+    },
+    "2046": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2046",
+      "status": "proposed",
+      "title": "daily-fix: root-commit guard honors excluding pathspec"
+    },
+    "2047": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2047",
+      "status": "proposed",
+      "title": "daily-fix: verify_plan flags bare lane env vars in s10"
+    },
+    "2048": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2048",
+      "status": "proposed",
+      "title": "daily-fix: per-family pilot basis for fan-out sizing"
     },
     "205": {
       "has_clean_result": false,

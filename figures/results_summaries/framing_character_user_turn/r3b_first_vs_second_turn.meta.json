@@ -1,0 +1,87 @@
+{
+  "commit": "abd729ecc9",
+  "created": "2026-08-03T06:30:57Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "held-out $R^2$ (turn-end token target)": -0.0016025193172879426,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "held-out $R^2$ (turn-end token target)": -0.0016025193172879426,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "held-out $R^2$ (turn-end token target)": -0.07475954096492421,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "held-out $R^2$ (turn-end token target)": 0.6930947918929553,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "held-out $R^2$ (turn-end token target)": 0.24261224250921987,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "held-out $R^2$ (turn-end token target)": 0.06883711641181078,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "First vs second user turn",
+        "ylabel": "held-out $R^2$ (turn-end token target)",
+        "legend_labels": [
+          "first user turn (no prior user context)",
+          "second user turn (after u1 + a1)"
+        ],
+        "annotations": [
+          "chat template, instruct model, clean read slot (last token strictly before the turn)"
+        ],
+        "xticklabels": [
+          "constant-string \"LMSYS\" arm\n(fallback u2, not real user text)",
+          "Haiku-simulated user turn",
+          "on-policy Qwen user turn"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "first user turn (no prior user context)",
+      "second user turn (after u1 + a1)"
+    ]
+  }
+}
