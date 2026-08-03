@@ -7596,8 +7596,8 @@
     "1981": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1981",
-      "status": "approved",
+      "path": "tasks/running/1981",
+      "status": "running",
       "title": "workflow-fix: branch-sync already-at-tip short-circuit + recalibrated mutation caps (runpod.py)"
     },
     "1982": {
