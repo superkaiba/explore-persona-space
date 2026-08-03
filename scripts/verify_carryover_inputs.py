@@ -106,6 +106,27 @@ _BARE_EXTS = r"(?:jsonl|json|pt|npz|csv|parquet)"  # carry-over input types in t
 _BARE_NAME_RE = re.compile(
     r"(?<![\w/\-.])(?P<name>[A-Za-z0-9][\w.\-]*\." + _BARE_EXTS + r")(?![\w/])"
 )
+# HF-repo citations that carry a bare basename that ALSO matches _BARE_NAME_RE
+# somewhere in the plan text. Two prefix families:
+#   (1) short HF prefix — `issue<N>_<slug>/…/<name>.<ext>` (#1979)
+#   (2) full data-repo prefix — `explore-persona-space-data/issue<N>_<slug>/…/<name>.<ext>`
+# The `(?![\w/])` right guard forbids a trailing word char or `/`, mirroring
+# _BARE_NAME_RE, so a longer basename (`f.jsonl.gz`) can't shadow a shorter
+# hit. `_ISSUE_UNDERSCORE_GIT_PATH_GUARD` (below) protects the alt-family from
+# eating repo-relative `issue_<N>/…` git paths that Channel-A handles.
+_HF_CITED_RE = re.compile(
+    r"(?:issue\d+_[\w\-]+|explore-persona-space-data/issue\d+_[\w\-]+)"
+    # Zero-or-more `/segment` groups where each segment is a proper path
+    # component (no slashes inside) — followed by a mandatory `/` right
+    # before the name. This anchors the name to a real path boundary so
+    # the greedy `[\w./\-]*` alternative can't backtrack into the middle
+    # of a basename (#1982 review: `.../pool.jsonl` was truncating to
+    # `l.jsonl` under the earlier greedy pattern).
+    r"(?:/[\w.\-]+)*"
+    r"/"
+    r"(?P<name>[A-Za-z0-9][\w.\-]*\." + _BARE_EXTS + r")"
+    r"(?![\w/])"
+)
 _ISSUE_TOKEN_RE = re.compile(r"(?:issue[\s_-]?|#)(\d{2,4})(?!\d)", re.IGNORECASE)
 
 _FIX_COMMITS = "f9f1002797 (main twin: e562685e40)"
@@ -142,6 +163,17 @@ def extract_bare_names(text: str) -> list[str]:
         seen.add(name)
         names.append(name)
     return names
+
+
+def extract_hf_cited_basenames(text: str) -> set[str]:
+    """Bare basenames cited under an HF data-repo prefix (short OR full form).
+
+    Used by run_check() to demote an `untracked-local-only` finding to a WARN
+    (`hf-staged`) when the plan clearly cites the same basename via HF (#1979).
+    Returns the SET of basenames only (paired-hit lookup); the caller pairs by
+    basename against the Channel-B `_BARE_NAME_RE` hits.
+    """
+    return {m.group("name") for m in _HF_CITED_RE.finditer(text)}
 
 
 def plan_issue_scope(text: str, issue: int) -> set[int]:
@@ -543,6 +575,9 @@ def run_check(plan_text: str, *, repo_root: Path, issue: int, check_ref: str) ->
         )
     a_paths = {c["path"] for c in a_cands}
     scope = plan_issue_scope(plan_text, issue)
+    # Compute HF-cited basenames ONCE (#1982): the same plan may cite N bare
+    # names, and the regex is content-only (no per-name state).
+    hf_cited = extract_hf_cited_basenames(plan_text)
     for name in extract_bare_names(plan_text):
         # No basename pre-filter here: a Channel-A citation of a DIFFERENT
         # file sharing the basename must not suppress this candidate (round-1
@@ -561,12 +596,18 @@ def run_check(plan_text: str, *, repo_root: Path, issue: int, check_ref: str) ->
                 )
             )
             continue
+        # Collect per-name findings into a pending list so the post-classify
+        # downgrade (#1982) can rewrite `untracked-local-only` fails to
+        # `hf-staged` / `duplicate-resolution` WARNs BEFORE they enter
+        # `findings`. The classify() call and every skip branch stay
+        # byte-identical to the pre-refactor code path (a1 invariant).
+        pending: list[Finding] = []
         foreign: list[str] = []
         for path in resolved:
             if path in a_paths:
                 # Same FILE already classified via Channel A — record the
                 # dedup so the findings ledger is complete (no silent drop).
-                findings.append(
+                pending.append(
                     Finding(
                         path,
                         "skip",
@@ -589,7 +630,7 @@ def run_check(plan_text: str, *, repo_root: Path, issue: int, check_ref: str) ->
                     if pat is not None:
                         matched = f"declared output pattern '{pat}'"
                 if matched is not None:
-                    findings.append(
+                    pending.append(
                         Finding(
                             path,
                             "skip",
@@ -602,7 +643,7 @@ def run_check(plan_text: str, *, repo_root: Path, issue: int, check_ref: str) ->
                     continue
             # Undeclared own-issue (or unparseable) resolution: FULL ladder —
             # the #1434 protection, untouched.
-            findings.append(
+            pending.append(
                 classify(
                     {"path": path, "channel": "B"},
                     repo_root=repo_root,
@@ -610,6 +651,46 @@ def run_check(plan_text: str, *, repo_root: Path, issue: int, check_ref: str) ->
                     check_ref=check_ref,
                 )
             )
+        # Post-classify downgrade (#1982): the Channel-B ladder mints
+        # `untracked-local-only` FAILs against coincidental VM-local mirrors
+        # of HF-staged inputs (#1979) or extra siblings of a citation whose
+        # PRIMARY resolution already committed / is in-ref (#1739). Both are
+        # false-fails on the "unconsumable input" bar: the plan clearly cites
+        # the file via HF (evidence: `name in hf_cited`) OR a sibling
+        # resolution passed the ladder as `in-ref` (evidence: at least one
+        # `pass`/`in-ref` finding in `pending`). Rewrite the remaining
+        # untracked-local-only fails to WARN in-place. This runs AFTER the
+        # per-path ladder to preserve the #1434 protection (a truly
+        # untracked-local-only cite with NEITHER an HF citation NOR an
+        # in-ref sibling STAYS a fail).
+        in_ref_paths = [f.path for f in pending if f.verdict == "pass" and f.reason == "in-ref"]
+        if name in hf_cited or in_ref_paths:
+            for i, f in enumerate(pending):
+                if f.verdict != "fail" or f.reason != "untracked-local-only":
+                    continue
+                if name in hf_cited:
+                    pending[i] = Finding(
+                        f.path,
+                        "warn",
+                        "hf-staged",
+                        f"bare name {name} is cited under an HF data-repo prefix in the "
+                        f"plan; local-only path {f.path} is a coincidental VM-side mirror, "
+                        "not a repro-blocker (#1982 / #1979)",
+                        "B",
+                    )
+                elif in_ref_paths:
+                    head = ", ".join(in_ref_paths[:3])
+                    more = f" (+{len(in_ref_paths) - 3} more)" if len(in_ref_paths) > 3 else ""
+                    pending[i] = Finding(
+                        f.path,
+                        "warn",
+                        "duplicate-resolution",
+                        f"bare name {name} resolves to multiple paths; a sibling is "
+                        f"in-ref ({head}{more}) so the plan can reproduce from it — "
+                        f"local-only path {f.path} is not a repro-blocker (#1982 / #1739)",
+                        "B",
+                    )
+        findings.extend(pending)
         if foreign:
             head = ", ".join(foreign[:5])
             more = f" (+{len(foreign) - 5} more)" if len(foreign) > 5 else ""

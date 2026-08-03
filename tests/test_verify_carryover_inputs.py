@@ -954,3 +954,106 @@ def test_declared_output_skip_never_applies_to_foreign_paths(repo: Path, tmp_pat
     ]
     assert not any(f.reason in ("bare-name-declared-output", "planned-output-declared") for f in fs)
     assert _main(repo, _plan(tmp_path, text)) == 0
+
+
+# ---------------------------------------------------------------------------
+# #1982: HF-staged / multi-resolution downgrade — false-fails on `untracked-
+# local-only` when the plan's citation is HF-repo-side (#1979) OR another
+# resolution is already committed + in-ref (#1739).
+# ---------------------------------------------------------------------------
+
+
+def test_bare_name_hf_staged_short_prefix_warns_not_fails(repo: Path, tmp_path: Path) -> None:
+    """#1979: a plan that cites `<name>.jsonl` under the SHORT HF form
+    `issue<N>_<slug>/…` should NOT fail on a coincidental untracked VM-local
+    mirror — the plan clearly stages the file via HF, so a local-only mirror
+    is not a repro-blocker.
+    """
+    # Untracked local mirror under eval_results/ (bare-name resolver globs
+    # eval_results/ + ood_eval_results/ only, not data/):
+    _write(repo, "eval_results/issue_77/pool.jsonl")
+    text = "Stage `pool.jsonl` from `issue1434_writingstyle/ws-po-c/mix/pool.jsonl` before phase 2."
+    fs = _findings(repo, text)
+    # No `fail` finding — the local-only mirror downgrades to a WARN.
+    assert not any(f.verdict == "fail" for f in fs), [(f.verdict, f.reason, f.path) for f in fs]
+    # And exactly one hf-staged WARN pointing at the local path.
+    hf_warns = [f for f in fs if f.reason == "hf-staged"]
+    assert len(hf_warns) == 1, [(f.verdict, f.reason, f.path) for f in fs]
+    assert hf_warns[0].path == "eval_results/issue_77/pool.jsonl"
+    assert hf_warns[0].verdict == "warn"
+    assert _main(repo, _plan(tmp_path, text)) == 0
+
+
+def test_bare_name_hf_staged_full_repo_prefix_warns_not_fails(repo: Path, tmp_path: Path) -> None:
+    """#1979 sibling: the FULL data-repo prefix form
+    `explore-persona-space-data/issue<N>_<slug>/…` also demotes an untracked
+    local mirror to a WARN.
+    """
+    _write(repo, "eval_results/issue_77/pool.jsonl")
+    text = (
+        "Reuse `pool.jsonl` from "
+        "`superkaiba1/explore-persona-space-data/issue1434_writingstyle/mix/pool.jsonl`."
+    )
+    fs = _findings(repo, text)
+    assert not any(f.verdict == "fail" for f in fs), [(f.verdict, f.reason, f.path) for f in fs]
+    assert any(f.reason == "hf-staged" for f in fs)
+    assert _main(repo, _plan(tmp_path, text)) == 0
+
+
+def test_bare_name_multi_resolution_downgrade(repo: Path, tmp_path: Path) -> None:
+    """#1739: a bare-name citation with multiple own-issue resolutions where
+    ONE is committed+in-ref and OTHERS are untracked-local-only siblings
+    demotes the untracked siblings to `duplicate-resolution` WARNs — the
+    committed sibling proves the plan can reproduce from it.
+    """
+    # Committed + in-ref resolution under eval_results/ (this passes as `in-ref`).
+    _write(repo, "eval_results/issue_77/results.json")
+    _commit_push(repo, "eval_results/issue_77/results.json")
+    # Untracked sibling with the SAME basename under ood_eval_results/ (also
+    # globbed by the bare-name resolver — the resolver walks eval_results/ +
+    # ood_eval_results/ under every in-scope issue).
+    _write(repo, "ood_eval_results/issue_77/results.json")
+    text = "Ingest `results.json` for the aggregation phase."
+    fs = _findings(repo, text)
+    # No FAIL — the untracked sibling downgrades.
+    assert not any(f.verdict == "fail" for f in fs), [(f.verdict, f.reason, f.path) for f in fs]
+    # One `pass`/`in-ref` for the committed resolution.
+    assert any(f.verdict == "pass" and f.reason == "in-ref" for f in fs)
+    # At least one `duplicate-resolution` WARN for the untracked sibling.
+    dup_warns = [f for f in fs if f.reason == "duplicate-resolution"]
+    assert dup_warns, [(f.verdict, f.reason, f.path) for f in fs]
+    assert all(f.verdict == "warn" for f in dup_warns)
+    assert _main(repo, _plan(tmp_path, text)) == 0
+
+
+def test_bare_name_untracked_still_fails_when_no_hf_citation_and_single_resolution(
+    repo: Path, tmp_path: Path
+) -> None:
+    """#1434 protection preserved: a bare-name citation with EXACTLY one
+    untracked-local-only own-issue resolution and NO HF citation must STILL
+    fail — the downgrade only fires when evidence (HF citation OR in-ref
+    sibling) proves the file is reproducible.
+    """
+    _write(repo, "eval_results/issue_77/needed.jsonl")  # untracked
+    text = "Ingest `needed.jsonl` produced by the parent round."
+    fs = _findings(repo, text)
+    # The #1434 protection: fail-loud stays.
+    fails = [f for f in fs if f.verdict == "fail" and f.reason == "untracked-local-only"]
+    assert fails, [(f.verdict, f.reason, f.path) for f in fs]
+    assert _main(repo, _plan(tmp_path, text)) == 1
+
+
+def test_issue_underscore_git_path_not_matched_by_hf_regex() -> None:
+    """The `_HF_CITED_RE` alt-family that starts `issue<N>_<slug>` must NOT
+    eat a repo-relative git path `eval_results/issue_<N>/…` that Channel-A
+    handles. Regression pin against the review's Q1 boundary concern.
+    """
+    # A pure Channel-A citation — nothing under an HF prefix.
+    text = "Reads eval_results/issue_1434/results.jsonl for phase 2."
+    hf_names = vci.extract_hf_cited_basenames(text)
+    # Absolutely no HF hit — Channel-A owns this citation.
+    assert hf_names == set(), hf_names
+    # Sanity: Channel-A still extracts it.
+    assert vci.extract_candidate_paths(text) == [
+        {"path": "eval_results/issue_1434/results.jsonl", "skip_reason": None}
+    ]
