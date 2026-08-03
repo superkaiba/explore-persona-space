@@ -229,6 +229,21 @@ if [ -d $REMOTE_DIR/.git ]; then
     git remote set-url origin '$REPO_URL_TOKENLESS' 2>/dev/null \
         || git remote add origin '$REPO_URL_TOKENLESS'
     git config --replace-all credential.https://github.com.helper '$GIT_CRED_HELPER'
+    # Sparse/promisor retrofit (#2051): a legacy pod that was bootstrapped
+    # before the partial-clone lands here as a full clone. Enable the same
+    # cones + promisor filter so a subsequent `git pull` does not silently
+    # re-densify. `sparse-checkout init --cone` is idempotent; enabling
+    # promisor on an existing repo is harmless (existing blobs stay local).
+    if ! git config --get remote.origin.promisor >/dev/null 2>&1; then
+        git config remote.origin.promisor true
+        git config remote.origin.partialclonefilter blob:none
+        git sparse-checkout init --cone 2>/dev/null || true
+        if [ -n \"\${ISSUE:-}\" ]; then
+            git sparse-checkout set src scripts configs tests docs \"eval_results/issue_\$ISSUE\" \"figures/issue_\$ISSUE\" 2>/dev/null || true
+        else
+            git sparse-checkout set src scripts configs tests docs 2>/dev/null || true
+        fi
+    fi
     git stash -q 2>/dev/null || true
     git checkout \"\$BRANCH\" 2>/dev/null || true
     if ! git pull -q --ff-only origin \"\$BRANCH\" 2>/dev/null; then
@@ -260,7 +275,25 @@ else
     git remote add origin '$REPO_URL_TOKENLESS' 2>/dev/null \
         || git remote set-url origin '$REPO_URL_TOKENLESS'
     git config --replace-all credential.https://github.com.helper '$GIT_CRED_HELPER'
-    git fetch -q --depth=1 origin \"\$BRANCH\"
+    # Partial clone + cone sparse-checkout (#2051): the repo carries ~10.5GB /
+    # 175k files of committed eval_results/figures/external artifacts a fresh pod
+    # never reads. --filter=blob:none makes blobs promisor-fetched on demand, and
+    # cone sparse-checkout hides everything outside the CODE cones so uv sync /
+    # preflight / train.py / eval.py see only the code they need. On demand
+    # git will still fetch a blob when a file inside the cone is touched.
+    git config remote.origin.promisor true
+    git config remote.origin.partialclonefilter blob:none
+    git sparse-checkout init --cone
+    # Default cones: source, configs, tests, docs; each issue's eval_results /
+    # figures cone is added on demand by the workload script when it starts
+    # writing there. \$ISSUE is exported by pod_lifecycle.py::_bootstrap so a
+    # per-issue pod also opens its own artifact cones.
+    if [ -n \"\${ISSUE:-}\" ]; then
+        git sparse-checkout set src scripts configs tests docs \"eval_results/issue_\$ISSUE\" \"figures/issue_\$ISSUE\"
+    else
+        git sparse-checkout set src scripts configs tests docs
+    fi
+    git fetch -q --depth=1 --filter=blob:none origin \"\$BRANCH\"
     # \`git init -q -b \$BRANCH\` already created + checked out \$BRANCH, and
     # \`reset --hard FETCH_HEAD\` moves the current branch ref to FETCH_HEAD.
     # An explicit \`git branch -f \$BRANCH FETCH_HEAD\` would fail loud (\"Cannot
