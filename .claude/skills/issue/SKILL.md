@@ -3812,19 +3812,20 @@ returns a typed `RunHandle`. The router decides which backend actually
 runs:
 
 - **Empty / absent frontmatter → `auto`.** The router walks the
-  resolved auto lane order — **standing default: GCP FIRST**
-  (`DEFAULT_AUTO_LANE_ORDER = ("gcp", "nibi", "fir", "mila")` —
-  credits-backed GCP capacity is consumed before the free SLURM lanes;
-  unconditional, no date gate; override via the comma-separated
-  `EPM_AUTO_LANE_ORDER` env var, e.g. `nibi,fir,mila,gcp` to restore
-  free-first; `runpod` / unknown lanes in the override raise loudly).
-  GCP is a single provision attempt (no park); its provisioning /
-  capacity failures fall through to the SLURM lanes. Contiguous SLURM
+  resolved auto lane order — **standing default: fellows FIRST, then
+  the free SLURM lanes**
+  (`DEFAULT_AUTO_LANE_ORDER = ("fellows", "nibi", "fir", "mila")` —
+  #2028: GCP provisioning is DISABLED, so the auto order carries no
+  gcp rung (the fellows-then-GCP build is the flag-off rollback
+  shape); unconditional, no date gate; override via the
+  comma-separated `EPM_AUTO_LANE_ORDER` env var; `runpod` /
+  `gcp`-while-disabled / unknown lanes in the override raise loudly).
+  Contiguous SLURM
   lanes (Nibi, Fir if wired, Mila if its socket is alive) are ranked
   among themselves by tz-corrected `sbatch --test-only` est-start, the
   best is submitted and parked up to `FREE_WAIT_SECONDS` (600 s; ALWAYS
   applied — see `backends.router`); park-cap-exceeded cancels + moves
-  to the next lane. A GCP workload failure surfaces with NO fallback.
+  to the next lane.
   **The auto chain NEVER calls RunPod** in ANY order (real-money
   safety) — `backends.router._VALID_BACKEND_VALUES`, the
   `auto_lane_order()` validator, and the load-bearing
@@ -3834,7 +3835,12 @@ runs:
   spends real money in v1).
 - **`backend: nibi` / `fir` / `mila`** → that lane, with the same park
   + cancel state machine as auto.
-- **`backend: gcp`** → GCP credits.
+- **`backend: gcp`** → REFUSED (#2028): `route()` raises the typed
+  `GcpDisabledError` before any wiring/ladder work, and
+  `classify_terminal_exception` maps it to `failure_class: infra` /
+  `status: blocked` / `reason: gcp_backend_disabled` (NOT
+  watcher-re-drivable — drop the pin, or the deliberate
+  `router.GCP_PROVISIONING_DISABLED = False` rollback flip).
 - **Legacy `backend: cluster`** is normalized to `backend: nibi` by
   `issue_dispatch.normalize_backend_value` (the slice-5 router rejects
   the bare `"cluster"` literal). The legacy `select_backend` /
@@ -3937,11 +3943,12 @@ under `set -u`). (g)
 **Sentinel-signaling dispatchers must not rely on auto's DRAC/Mila SLURM
 fallback** — a dispatch script that posts markers via pod-side sentinel
 files (`/workspace/logs/issue-<N>-*.json`) works on the DRAINED lanes
-(gcp/runpod/fellows — the fellows drain landed at #1898 via
-`slurm_monitor.drain_cluster_sentinels`): DRAC/Mila compute nodes have no
+(runpod/fellows — the fellows drain landed at #1898 via
+`slurm_monitor.drain_cluster_sentinels`; `backend: gcp` is REFUSED as
+of #2028): DRAC/Mila compute nodes have no
 `/workspace`, so the script fails loud at `mkdir -p /workspace/logs` and
-burns the submission (#608, commit 3022ff7bc); pin one of the three
-drained lanes (`backend: gcp` / `backend: fellows`, or runpod with a
+burns the submission (#608, commit 3022ff7bc); pin one of the two
+drained lanes (`backend: fellows`, or runpod with a
 named residual gap), or convert the dispatcher to the SLURM signaling
 contract (`status.json` heartbeat + `[phase=...]` log lines) before
 routing auto (planner.md §9 names this constraint at plan time). (h) **Boot-disk

@@ -47,6 +47,7 @@ from explore_persona_space.backends import (
     route,
     spec_hash,
 )
+from explore_persona_space.backends import router as router_module
 from explore_persona_space.backends.gcp import QuotaHeadroom
 from explore_persona_space.backends.router import (
     DEFAULT_AUTO_LANE_ORDER,
@@ -86,6 +87,28 @@ _LEGACY_FREE_FIRST_ORDER: tuple[str, ...] = ("nibi", "fir", "mila", "gcp")
 def _clean_auto_lane_order_env(monkeypatch):
     """Keep every router test hermetic against an ambient env override."""
     monkeypatch.delenv(ENV_AUTO_LANE_ORDER, raising=False)
+
+
+@pytest.fixture(autouse=True)
+def _gcp_rollback_build_for_legacy_suite(request, monkeypatch):
+    """Run the legacy GCP ladder/failover suite under the #2028 rollback build.
+
+    GCP provisioning is disabled by policy (#2028,
+    ``router.GCP_PROVISIONING_DISABLED = True``), but the gated GCP code
+    paths (ladder walk, failover seams, lane-order semantics) are KEPT and
+    must stay test-covered — they are the single-constant rollback lever.
+    This autouse fixture therefore runs every test in this module with the
+    gate OFF (the flag-off rollback build: the 5-lane fellows-then-GCP
+    default order), EXCEPT tests marked ``gcp_policy_default``, which pin
+    the flag-ON production contract (no gcp rung in the default order,
+    ``GcpDisabledError`` on an explicit pin, lane-order refusal).
+    """
+    if request.node.get_closest_marker("gcp_policy_default"):
+        return
+    monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", False)
+    monkeypatch.setattr(
+        router_module, "DEFAULT_AUTO_LANE_ORDER", router_module._default_auto_lane_order()
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -567,6 +590,47 @@ def test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted(
     finals = _by_reason(captured_markers, ROUTE_REASON_RUNPOD_FALLBACK)
     assert finals
     assert "runpod_fallback_residual_gap" in finals[-1]["extra"]
+
+
+@pytest.mark.gcp_policy_default
+def test_runpod_is_last_rung_after_free_lanes_exhausted_no_gcp(
+    lease_store, marker_poster, captured_markers
+):
+    """#2028 flag-ON ordering pin (the no-GCP contract of
+    test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted, which
+    keeps pinning the rollback build under the autouse fixture): with GCP
+    provisioning disabled the auto walk exhausts fellows + the free SLURM
+    lanes ONLY — ZERO gcp attempts anywhere — before the RunPod terminal
+    rung, which stays LAST (never first, never skipping a cheaper free
+    lane)."""
+    rp = _PassiveRunpod()
+    fellows = _FreeLaneBackend(kind="fellows", launch_raises=RuntimeError("fellows full"))
+    nibi = _FreeLaneBackend(kind="nibi", launch_raises=RuntimeError("nibi full"))
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi, "fellows": fellows},
+        gcp_backend=None,  # flag-ON: gcp is not in the default order at all
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_RUNPOD_FALLBACK
+    assert len(rp.launches) == 1
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    assert not any(k == "gcp" for k, _o in outcomes)  # ZERO gcp attempts
+    fellows_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "fellows"]
+    nibi_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "nibi"]
+    runpod_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o == "launched"]
+    assert fellows_idxs and nibi_idxs and runpod_idxs
+    assert runpod_idxs[-1] == len(outcomes) - 1  # runpod LAST
+    assert max(fellows_idxs) < min(nibi_idxs)  # fellows BEFORE the free tail
+    assert max(nibi_idxs) < runpod_idxs[-1]
 
 
 def test_auto_picks_lane_with_lowest_clamped_est_start(lease_store):
@@ -3180,24 +3244,77 @@ def test_prepare_failed_breadcrumb_reason_matches_typed_terminal(
 
 
 # ---------------------------------------------------------------------------
-# GCP-first auto order (standing default, env override, primary-lane GCP)
+# Auto lane order (standing default, env override, primary-lane GCP)
 # ---------------------------------------------------------------------------
 #
-# The auto chain's STANDING DEFAULT is GCP first ("gcp", "nibi", "fir",
-# "mila") so credits-backed GCP capacity is consumed BEFORE the free
-# SLURM lanes. There is deliberately NO date logic — flipping back is a
-# human action (EPM_AUTO_LANE_ORDER env override or a default edit),
-# never a clock. RunPod remains override-only in EVERY order.
+# The auto chain's STANDING DEFAULT is fellows first, then the free SLURM
+# lanes ("fellows", "nibi", "fir", "mila") — GCP is removed from every
+# fresh-provisioning path while GCP_PROVISIONING_DISABLED is on (#2028;
+# the flag-off rollback build re-inserts gcp after fellows). There is
+# deliberately NO date logic — flipping back is a human action (the
+# constant flip), never a clock. RunPod remains override-only in EVERY
+# order. Most tests below run under the module's autouse rollback fixture
+# (flag OFF) so the gated GCP lane-order semantics stay covered; the
+# flag-ON production pins carry @pytest.mark.gcp_policy_default.
 
 
-def test_default_auto_lane_order_is_gcp_first():
-    """The standing default (#1609): fellows first, then GCP, then the
-    legacy free SLURM lanes. (Test name kept — it is the durability pin
+@pytest.mark.gcp_policy_default
+def test_default_auto_lane_order_has_no_gcp():
+    """The standing default (#2028): fellows first, then the legacy free
+    SLURM lanes — NO gcp rung anywhere in the default auto order while
+    GCP provisioning is disabled. (Renamed from
+    test_default_auto_lane_order_is_gcp_first — this is the durability pin
     CLAUDE.md § Compute backends cites; the invariant it pins is the
     DEFAULT_AUTO_LANE_ORDER tuple itself.)"""
-    assert DEFAULT_AUTO_LANE_ORDER == ("fellows", "gcp", "nibi", "fir", "mila")
+    assert router_module.GCP_PROVISIONING_DISABLED is True
+    assert DEFAULT_AUTO_LANE_ORDER == ("fellows", "nibi", "fir", "mila")
+    assert "gcp" not in DEFAULT_AUTO_LANE_ORDER
     # With no env override, the resolver returns the default verbatim.
     assert auto_lane_order() == DEFAULT_AUTO_LANE_ORDER
+
+
+def test_default_auto_lane_order_rollback_build_restores_gcp():
+    """The flag-off rollback build (#2028) re-inserts gcp after fellows,
+    restoring the #1609 fellows-then-GCP order. Runs under the autouse
+    rollback fixture (flag OFF + DEFAULT_AUTO_LANE_ORDER re-derived)."""
+    assert router_module.GCP_PROVISIONING_DISABLED is False  # the fixture
+    assert router_module._default_auto_lane_order() == ("fellows", "gcp", "nibi", "fir", "mila")
+    assert auto_lane_order() == ("fellows", "gcp", "nibi", "fir", "mila")
+
+
+@pytest.mark.gcp_policy_default
+def test_auto_lane_order_env_refuses_gcp(monkeypatch):
+    """#2028 fail-loud pin: a gcp-bearing EPM_AUTO_LANE_ORDER raises at
+    auto_lane_order() while the policy flag is on (never silently
+    dropped — the runpod refusal precedent)."""
+    from explore_persona_space.backends.router import RouteError
+
+    monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "gcp,nibi")
+    with pytest.raises(RouteError, match="#2028"):
+        auto_lane_order()
+
+
+@pytest.mark.gcp_policy_default
+def test_explicit_gcp_backend_refuses_typed(tmp_path):
+    """#2028 fail-loud pin: route(spec.backend='gcp') raises the typed
+    GcpDisabledError BEFORE any wiring/ladder work (pytest.raises — never
+    silently rerouted / swallowed), and classify_terminal_exception maps it
+    to (infra, blocked, gcp_backend_disabled)."""
+    from explore_persona_space.backends.issue_dispatch import classify_terminal_exception
+    from explore_persona_space.backends.router import GcpDisabledError
+
+    spec = RunSpec(issue=2028, intent="lora-7b", backend="gcp")
+    with pytest.raises(GcpDisabledError, match="#2028"):
+        route(
+            spec,
+            runpod_backend=_PassiveRunpod(),
+            gcp_backend=None,  # the gate fires BEFORE the wiring check
+            lease_store=LeaseStore(lease_dir=tmp_path / ".eps-routing"),
+        )
+    translation = classify_terminal_exception(GcpDisabledError("backend override 'gcp' refused"))
+    assert translation.failure_class == "infra"
+    assert translation.status == "blocked"
+    assert "reason: gcp_backend_disabled" in translation.note
 
 
 def test_auto_lane_order_env_override_parsed(monkeypatch):
@@ -6912,9 +7029,13 @@ def test_single_triggerer_failover_unchanged_when_identity_none(
 # ---------------------------------------------------------------------------
 
 
-def test_gcp_ladder_cpu_intent_single_ondemand_rung():
-    """#677: the GCP ladder for a SHORT cpu-bigmem job yields exactly ONE
-    on-demand CPU rung — no A100-40, no spot.
+def test_gcp_ladder_cpu_intent_single_ondemand_rung(monkeypatch):
+    """#677 fail-loud floor: the GCP ladder for a SHORT UNMAPPED CPU job
+    yields exactly ONE on-demand CPU rung — no A100-40, no spot.
+
+    As of #2028 every CURRENT CPU intent is mapped (cpu-bigmem gained
+    cpu5m-16-128), so the unmapped branch is simulated by deleting
+    cpu-bigmem from the map — the floor for a FUTURE unmapped CPU intent.
 
     The 1.0h budget is deliberately "short" (1.0h * max(1, gpu_count=0)=1 = 1.0
     GPU-h <= the 2 GPU-h EPS_GCP_SPOT_MAX_GPU_HOURS default), so a GPU intent at
@@ -6923,6 +7044,7 @@ def test_gcp_ladder_cpu_intent_single_ondemand_rung():
     """
     from explore_persona_space.backends.router import _gcp_ladder_specs
 
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     spec = RunSpec(issue=137, intent="cpu-bigmem", backend="gcp", time_budget_hours=1.0)
     rungs = _gcp_ladder_specs(spec)
     assert len(rungs) == 1
@@ -6949,7 +7071,7 @@ def test_gcp_ladder_short_gpu_intent_DOES_get_spot_rung():
     assert any("spot" in lbl.lower() for _s, lbl in rungs), [lbl for _s, lbl in rungs]
 
 
-def test_ladder_cpu_intent_length_aware_still_yields_one_on_demand_rung():
+def test_ladder_cpu_intent_length_aware_still_yields_one_on_demand_rung(monkeypatch):
     """#680 regression guard: the LENGTH-AWARE ladder must NOT promote a
     cpu-bigmem job (gpu_count == 0) onto spot / flex / A100-40 rungs via
     _is_short_job's gpu_count-floor-to-1, on EITHER length branch.
@@ -6968,10 +7090,14 @@ def test_ladder_cpu_intent_length_aware_still_yields_one_on_demand_rung():
     For each: exactly one rung, labelled ``ondemand_cpu``, with NO
     provisioning_model threaded (a pin would be a spot/flex/standard override
     the CPU rung must never carry). Re-dropping the short-circuit during a future
-    ladder edit turns this RED.
+    ladder edit turns this RED. (#2028 mapped cpu-bigmem, so the UNMAPPED
+    branch is simulated by deleting it from the map — the floor for a future
+    unmapped CPU intent; the mapped-branch short spot rung is pinned by
+    test_gcp_ladder_cpu_bigmem_mapped_takes_spot_rung_on_short_job below.)
     """
     from explore_persona_space.backends.router import _gcp_ladder_specs
 
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     short_cpu = RunSpec(issue=137, intent="cpu-bigmem", backend="gcp", time_budget_hours=1.0)
     unknown_cpu = RunSpec(issue=137, intent="cpu-bigmem", backend="gcp")  # no budget -> long branch
     for spec in (short_cpu, unknown_cpu):
@@ -6989,21 +7115,27 @@ def test_ladder_cpu_intent_length_aware_still_yields_one_on_demand_rung():
 
 
 def test_router_cpu_intent_capacity_miss_no_runpod_fallback(
-    lease_store, marker_poster, captured_markers
+    lease_store, marker_poster, captured_markers, monkeypatch
 ):
-    """#677: a cpu-bigmem auto route whose GCP CPU rung capacity-misses raises
-    CpuExhaustedNoRunpodLaneError and NEVER launches RunPod (RunPod is GPU-only,
-    has no CPU lane). The terminal epm:backend-selected marker carries the
-    distinct reason cpu_exhausted_no_runpod_lane.
+    """#677 fail-loud floor: an UNMAPPED CPU intent whose auto route
+    capacity-misses raises CpuExhaustedNoRunpodLaneError and NEVER launches
+    RunPod. The terminal epm:backend-selected marker carries the distinct
+    reason cpu_exhausted_no_runpod_lane.
 
-    Removing the §4.2c _runpod_terminal_rung CPU guard turns this RED — it would
-    instead launch RunPod / crash in the RunPod intent resolver.
+    As of #2028 every CURRENT CPU intent is mapped (cpu-bigmem routes RunPod
+    now — test_router_cpu_intent_auto_routes_to_runpod_cpu below),
+    so the unmapped shape is simulated by deleting cpu-bigmem from the map:
+    the typed terminal is the floor for a FUTURE unmapped CPU intent, KEPT
+    by design. Removing the §4.2c _runpod_terminal_rung CPU guard turns this
+    RED — it would instead launch RunPod / crash in the RunPod intent
+    resolver.
     """
     from explore_persona_space.backends.router import (
         ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD,
         CpuExhaustedNoRunpodLaneError,
     )
 
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     rp = _PassiveRunpod()
     gcp = _GcpBackendDouble(
         launch_raises=GcpProvisioningError(
@@ -7033,15 +7165,51 @@ def test_router_cpu_intent_capacity_miss_no_runpod_fallback(
     assert not _by_reason(captured_markers, ROUTE_REASON_RUNPOD_FALLBACK)
 
 
+@pytest.mark.gcp_policy_default
+@pytest.mark.parametrize("cpu_intent", ["cpu-small", "cpu-mid", "cpu-bigmem"])
+def test_router_cpu_intent_auto_routes_to_runpod_cpu(
+    lease_store, marker_poster, captured_markers, cpu_intent
+):
+    """#2028: every current CPU intent is MAPPED (cpu-bigmem gained
+    cpu5m-16-128), so under the flag-ON production contract (no gcp lane
+    anywhere on the auto chain) a CPU auto route lands DIRECTLY on the RunPod
+    terminal rung — no CpuExhaustedNoRunpodLaneError, no GCP attempt,
+    --intent <cpu-*> threaded for Surface-5 resolution to the RunPod CPU
+    instance_id."""
+    from explore_persona_space.backends.router import ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD
+
+    rp = _PassiveRunpod()
+    spec = RunSpec(issue=2028, intent=cpu_intent, backend="auto", time_budget_hours=1.0)
+    result = route(
+        spec,
+        runpod_backend=rp,
+        free_backends={"nibi": _FreeLaneBackend(kind="nibi", launch_raises=RuntimeError("x"))},
+        gcp_backend=None,  # flag-ON: no gcp lane is ever wired on the auto chain
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert len(rp.launches) == 1
+    assert rp.launches[0].intent == cpu_intent
+    # No GCP attempt anywhere (the default order has no gcp rung), and no
+    # typed CPU terminal.
+    assert not any(a.kind == "gcp" for a in result.attempts)
+    assert not _by_reason(captured_markers, ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD)
+
+
 # ---------------------------------------------------------------------------
 # Cheap CPU-only intents: cpu-small / cpu-mid + GCP→RunPod CPU failover (#747)
 # ---------------------------------------------------------------------------
 #
-# NOTE: the cpu-bigmem "still raises the typed terminal, never reaches RunPod"
-# regression guard is the EXISTING test above —
-# test_router_cpu_intent_capacity_miss_no_runpod_fallback — which already uses
-# intent="cpu-bigmem" (absent from RUNPOD_CPU_INSTANCE_FOR_INTENT). We do NOT
-# duplicate it under a cpu-bigmem-named alias (single canonical name).
+# NOTE: the "UNMAPPED CPU intent still raises the typed terminal, never
+# reaches RunPod" regression guard is the EXISTING test above —
+# test_router_cpu_intent_capacity_miss_no_runpod_fallback — which simulates a
+# future unmapped intent by deleting cpu-bigmem from
+# RUNPOD_CPU_INSTANCE_FOR_INTENT (#2028 mapped every current CPU intent). We
+# do NOT duplicate it under another alias (single canonical name).
 
 
 def _short_cpu_small_spec(issue: int = 747) -> RunSpec:
@@ -7089,18 +7257,23 @@ def test_gcp_ladder_cpu_small_unknown_length_ondemand_only():
     assert not any("spot" in lbl for lbl in labels)
 
 
-def test_gcp_ladder_cpu_bigmem_still_single_ondemand_rung():
-    """#747 regression guard on #677: cpu-bigmem (NOT in the RunPod-CPU map)
-    STILL yields exactly one on-demand rung even on a SHORT job — no spot, no
-    flex, no A100-40. The #747 spot-rung branch must NOT leak into cpu-bigmem."""
+def test_gcp_ladder_cpu_bigmem_mapped_takes_spot_rung_on_short_job():
+    """#2028: cpu-bigmem is now IN the RunPod-CPU map, so on the (rollback-only)
+    GCP ladder it takes the MAPPED cheap-CPU branch — a SHORT job yields
+    spot-then-ondemand, exactly like cpu-small/cpu-mid (#747); still no flex,
+    no A100-40. (Supersedes the pre-#2028 pin that cpu-bigmem stayed
+    on-demand-only; the unmapped on-demand-only floor is pinned by
+    test_gcp_ladder_cpu_intent_single_ondemand_rung above.)"""
     from explore_persona_space.backends.router import _gcp_ladder_specs
 
     short = RunSpec(issue=747, intent="cpu-bigmem", backend="gcp", time_budget_hours=1.0)
     rungs = _gcp_ladder_specs(short)
     labels = [lbl for _s, lbl in rungs]
-    assert labels == ["ondemand_cpu"], labels
-    assert not any("spot" in lbl for lbl in labels)
-    assert (rungs[0][0].extra or {}).get("provisioning_model") is None
+    assert labels == ["spot_cpu", "ondemand_cpu"], labels
+    assert not any("flexstart" in lbl for lbl in labels)
+    assert not any("a100_40" in lbl for lbl in labels)
+    # The on-demand rung threads no provisioning override (the spec as-is).
+    assert (rungs[1][0].extra or {}).get("provisioning_model") is None
 
 
 def test_router_cpu_small_capacity_miss_falls_over_to_runpod(
@@ -7170,7 +7343,8 @@ def test_runpod_cpu_instance_map_is_single_source_of_truth():
         assert gpu_heuristics.resolve_cpu_intent(intent) == instance_id
     # A GPU intent (and any unmapped string) is NOT a CPU intent.
     assert gpu_heuristics.resolve_cpu_intent("lora-7b") is None
-    assert gpu_heuristics.resolve_cpu_intent("cpu-bigmem") is None
+    # #2028: cpu-bigmem is mapped now (GCP provisioning removed).
+    assert gpu_heuristics.resolve_cpu_intent("cpu-bigmem") == "cpu5m-16-128"
 
 
 # ---------------------------------------------------------------------------
@@ -7438,12 +7612,14 @@ def test_auto_route_cpu_intent_never_probes_or_attempts_slurm_lanes(
 
 
 def test_auto_route_cpu_bigmem_excludes_slurm_and_keeps_typed_terminal(
-    lease_store, marker_poster, captured_markers, caplog
+    lease_store, marker_poster, captured_markers, caplog, monkeypatch
 ):
-    """#1464: same exclusion for cpu-bigmem, with the #677 typed terminal
-    byte-preserved — CpuExhaustedNoRunpodLaneError raised, zero RunPod
-    launches, zero free-lane probes/attempts, terminal marker reason
-    cpu_exhausted_no_runpod_lane."""
+    """#1464: same exclusion for an UNMAPPED CPU intent, with the #677 typed
+    terminal byte-preserved — CpuExhaustedNoRunpodLaneError raised, zero
+    RunPod launches, zero free-lane probes/attempts, terminal marker reason
+    cpu_exhausted_no_runpod_lane. (#2028 mapped cpu-bigmem, so the unmapped
+    shape is simulated by deleting it from the map — the SLURM exclusion +
+    fail-loud floor for a future unmapped CPU intent.)"""
     import logging
 
     from explore_persona_space.backends.router import (
@@ -7451,6 +7627,7 @@ def test_auto_route_cpu_bigmem_excludes_slurm_and_keeps_typed_terminal(
         CpuExhaustedNoRunpodLaneError,
     )
 
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     rp = _PassiveRunpod()
     gcp = _exhausted_gcp_double()
     estimate_calls: list[BackendKind] = []
@@ -8515,36 +8692,38 @@ def test_record_gcp_boot_death_then_route_skips_rung_end_to_end(
 def test_record_gcp_boot_death_then_route_skips_rung_cpu_bigmem_variant(
     lease_store, marker_poster, captured_markers
 ):
-    """#1029 Must-Fix companion (cpu-bigmem): the route()-side skip is
-    cpu-bigmem's ONLY breaker (the poller records but never rewrites — no
-    RunPod lane, #677). Real recorder writes on its single ``ondemand_cpu``
-    rung make the ladder yield nothing -> the #677 typed terminal fires with
-    ZERO GCP creates and NO RunPod launch."""
-    from explore_persona_space.backends.router import (
-        CpuExhaustedNoRunpodLaneError,
-        record_gcp_boot_death,
-    )
+    """#1029 Must-Fix companion (cpu-bigmem): the route()-side boot-loop skip
+    empties the (rollback-only, #2028) GCP CPU ladder with ZERO GCP creates.
+    As of #2028 cpu-bigmem is MAPPED (cpu5m-16-128), so the emptied ladder
+    falls over to RunPod CPU instead of raising the #677 typed terminal
+    (that unmapped-intent floor is pinned by
+    test_router_cpu_intent_capacity_miss_no_runpod_fallback). Deaths are
+    recorded on BOTH mapped-branch rungs (spot_cpu + ondemand_cpu — the
+    mapped short job's ladder shape)."""
+    from explore_persona_space.backends.router import record_gcp_boot_death
 
-    record_gcp_boot_death(137, "ondemand_cpu", incarnation="c1", lease_store=lease_store)
-    record_gcp_boot_death(137, "ondemand_cpu", incarnation="c2", lease_store=lease_store)
+    for rung in ("spot_cpu", "ondemand_cpu"):
+        record_gcp_boot_death(137, rung, incarnation="c1", lease_store=lease_store)
+        record_gcp_boot_death(137, rung, incarnation="c2", lease_store=lease_store)
 
     rp = _PassiveRunpod()
     gcp = _GcpBackendDouble()
     spec = RunSpec(issue=137, intent="cpu-bigmem", backend="auto", time_budget_hours=1.0)
-    with pytest.raises(CpuExhaustedNoRunpodLaneError):
-        route(
-            spec,
-            runpod_backend=rp,
-            free_backends={"nibi": _FreeLaneBackend(kind="nibi", launch_raises=RuntimeError("x"))},
-            gcp_backend=gcp,
-            lease_store=lease_store,
-            marker_poster=marker_poster,
-            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
-            now_fn=_clock(),
-            sleep_fn=lambda _s: None,
-        )
-    assert len(gcp.launches) == 0  # the boot-looped rung was never re-created
-    assert len(rp.launches) == 0  # cpu-bigmem never falls over to RunPod
+    result = route(
+        spec,
+        runpod_backend=rp,
+        free_backends={"nibi": _FreeLaneBackend(kind="nibi", launch_raises=RuntimeError("x"))},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert len(gcp.launches) == 0  # the boot-looped rungs were never re-created
+    assert result.chosen_kind == "runpod"  # #2028: mapped -> RunPod CPU fallover
+    assert len(rp.launches) == 1
+    assert rp.launches[0].intent == "cpu-bigmem"
 
 
 def test_boot_loop_rung_skip_does_not_bump_gcp_attempts_today(
@@ -9020,6 +9199,30 @@ def test_retry_gcp_ondemand_respects_daily_cap(lease_store, marker_poster):
     assert len(gcp.launches) == 0
     after = lease_store.read(137)
     assert after is not None and after.gcp_attempts_today == MAX_GCP_ATTEMPTS_PER_DAY
+
+
+@pytest.mark.gcp_policy_default
+def test_queue_vanish_retry_refuses_when_gcp_disabled(lease_store, marker_poster):
+    """#2028 flag-ON pin (plan §5 New pins item (e)): under the production
+    policy default (GCP_PROVISIONING_DISABLED = True) the queue-loss on-demand
+    retry refuses UP FRONT — zero creates (the retry would mint a fresh GCP
+    instance) and NO RunPod re-entry — raising the typed capacity terminal so
+    the poller caller falls through to the re-drivable no_compute_available
+    terminal (the watcher capacity-retry backstop stays reachable)."""
+    from explore_persona_space.backends.router import retry_gcp_ondemand_after_queue_vanish
+
+    assert router_module.GCP_PROVISIONING_DISABLED is True  # production flag, not fixture-off
+    gcp = _GcpBackendDouble()
+    with pytest.raises(NoComputeAvailableError, match="#2028") as ei:
+        retry_gcp_ondemand_after_queue_vanish(
+            spec=_spec(backend="gcp"),
+            gcp_backend=gcp,
+            marker_poster=marker_poster,
+            lease_store=lease_store,
+            now_fn=_clock(),
+        )
+    assert len(gcp.launches) == 0  # no create call
+    assert ei.value.attempts[0]["outcome"] == "ondemand_retry_gcp_disabled"
 
 
 def test_retry_gcp_ondemand_h100_intent_unservable(lease_store, marker_poster):

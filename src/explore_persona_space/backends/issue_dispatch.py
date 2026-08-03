@@ -88,11 +88,13 @@ from explore_persona_space.backends.base import (
 from explore_persona_space.backends.router import (
     ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD,
     ROUTE_REASON_CPU_FALLBACK_INFEASIBLE,
+    ROUTE_REASON_GCP_DISABLED,
     ROUTE_REASON_RECONNECT,
     BackendPrepareError,
     CpuExhaustedNoRunpodLaneError,
     CpuFallbackInfeasibleError,
     GcpAttemptCapExceededError,
+    GcpDisabledError,
     LeaseStore,
     ManualAttentionRequiredError,
     NoComputeAvailableError,
@@ -929,9 +931,10 @@ class TerminalTranslation:
 def classify_terminal_exception(exc: BaseException) -> TerminalTranslation:
     """Map a router terminal exception to its ``epm:failure`` shape.
 
-    The five router terminals are exhaustively handled (each is a
-    distinct ``RouteError`` subclass). Anything else propagates as a
-    plain ``RouteError`` whose handling is the caller's concern.
+    The typed router terminals are exhaustively handled (each is a
+    distinct ``RouteError`` subclass — incl. the #2028
+    :class:`GcpDisabledError` policy refusal). Anything else propagates as
+    a plain ``RouteError`` whose handling is the caller's concern.
     """
     if isinstance(exc, BackendPrepareError):
         return TerminalTranslation(
@@ -943,6 +946,26 @@ def classify_terminal_exception(exc: BaseException) -> TerminalTranslation:
                 f"kind: {exc.kind}\n"
                 f"cluster: {exc.cluster}\n"
                 f"detail: {exc.reason}"
+            ),
+        )
+    if isinstance(exc, GcpDisabledError):
+        # #2028: an explicit ``backend: gcp`` pin while GCP provisioning is
+        # disabled by policy. A POLICY refusal, not a capacity outcome — the
+        # reason token is NOT in the watcher's TRANSIENT_CAPACITY_REASONS
+        # (nothing will "free up"; auto-retry would loop a policy-refused
+        # launch). The fix is a human changing the pin, or a deliberate
+        # rollback flip of router.GCP_PROVISIONING_DISABLED.
+        return TerminalTranslation(
+            failure_class="infra",
+            status="blocked",
+            note=(
+                "failure_class: infra\n"
+                f"reason: {ROUTE_REASON_GCP_DISABLED}\n"
+                "recovery: re-dispatch WITHOUT the gcp pin (omit --backend / clear "
+                "the backend: frontmatter so the auto chain routes fellows -> free "
+                "SLURM lanes), or flip router.GCP_PROVISIONING_DISABLED = False for "
+                "a deliberate rollback (#2028)\n"
+                f"detail: {exc}"
             ),
         )
     if isinstance(exc, CpuFallbackInfeasibleError):
