@@ -247,6 +247,30 @@ def test_checkpoint_restore_reproduces_an_uninterrupted_run(tmp_path):
         assert getattr(second, key) == getattr(one, key), key
 
 
+def test_atomic_savez_lands_at_the_exact_path(tmp_path):
+    """np.savez APPENDS .npz to a suffix-less PATH argument.
+
+    The checkpoint temp name is dotted (``.capture_ckpt_<fp>.npz.tmp<pid>``), so
+    a path-argument savez writes ``<tmp>.npz`` and the follow-up os.replace dies
+    with FileNotFoundError — which is exactly what killed the first full-corpus
+    capture 5,000 rows in. The helper must write through a handle.
+    """
+    dest = tmp_path / "capture_ckpt_deadbeef.npz"
+    RL._atomic_savez(dest, a=np.arange(4), fingerprint=np.asarray("deadbeef"))
+
+    assert dest.exists(), "checkpoint did not land at the requested path"
+    strays = [q.name for q in tmp_path.iterdir() if q != dest]
+    assert not strays, f"temp/suffixed residue left behind: {strays}"
+    with np.load(dest, allow_pickle=False) as z:
+        np.testing.assert_array_equal(z["a"], np.arange(4))
+        assert str(z["fingerprint"]) == "deadbeef"
+
+    # overwrite in place (a later checkpoint replaces the earlier one)
+    RL._atomic_savez(dest, a=np.arange(9), fingerprint=np.asarray("deadbeef"))
+    with np.load(dest, allow_pickle=False) as z:
+        assert z["a"].size == 9
+
+
 def test_regime_fingerprint_separates_output_affecting_knobs():
     """A resume against a different regime must not silently fuse populations."""
     import argparse

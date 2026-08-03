@@ -704,8 +704,16 @@ def _regime_fingerprint(args, fit_pool: np.ndarray) -> str:
 
 
 def _atomic_savez(path: Path, **arrays) -> None:
+    """Atomic npz write.
+
+    Writes through an open HANDLE, not a path: ``np.savez`` APPENDS ``.npz`` to
+    a path argument that lacks the suffix, so a dotted temp name silently lands
+    at ``<tmp>.npz`` and the following ``os.replace`` raises FileNotFoundError.
+    A handle is written verbatim.
+    """
     tmp = path.parent / f".{path.name}.tmp{os.getpid()}"
-    np.savez(tmp, **arrays)
+    with open(tmp, "wb") as fh:
+        np.savez(fh, **arrays)
     os.replace(tmp, path)
 
 
