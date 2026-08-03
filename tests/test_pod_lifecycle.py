@@ -2037,6 +2037,69 @@ def test_has_upload_verification_pass_latest_event_wins(monkeypatch):
     assert pod_lifecycle._has_upload_verification_pass(999) is True
 
 
+# The DOCUMENTED inline-round note shape (#1970, incident #1773): an inline
+# round that verified its own uploads posts this note via `task.py
+# post-marker`, then re-runs terminate. LEADING `Verdict: PASS` so BOTH
+# parsers accept it: pod_lifecycle's loose `verdict[:*\s]+PASS` regex AND
+# task_workflow.UPLOAD_VERIFICATION_PASS_RE (the finalize teardown gate).
+_INLINE_ROUND_NOTE = (
+    "Verdict: PASS — inline-round verification; "
+    "prefixes: issue1773_fulldict/, issue1773_raw_windows/"
+)
+
+
+def test_has_upload_verification_pass_accepts_inline_round_note(monkeypatch):
+    """The documented inline-round note satisfies the guard's satisfier AND
+    the terminate-guard path proceeds without --skip-upload-verify; the same
+    note also matches task_workflow.UPLOAD_VERIFICATION_PASS_RE (cross-parser
+    pin — an inline PASS marker must never read as
+    upload_verification_failed_current to a later finalize)."""
+    from explore_persona_space.task_workflow import UPLOAD_VERIFICATION_PASS_RE
+
+    event = {
+        "ts": "2026-08-03T00:00:00Z",
+        "kind": "epm:upload-verification",
+        "version": 1,
+        "by": "orchestrator",
+        "note": _INLINE_ROUND_NOTE,
+    }
+    _stub_list_events(monkeypatch, [event])
+    assert pod_lifecycle._has_upload_verification_pass(1773) is True
+
+    # Cross-parser pin: import the constant, never retype the regex.
+    assert UPLOAD_VERIFICATION_PASS_RE.search(_INLINE_ROUND_NOTE) is not None
+
+    # Terminate-guard decision flow proceeds (returns None, no SystemExit)
+    # without --skip-upload-verify for a kind=experiment task.
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.get_task",
+        lambda issue: {"id": issue, "frontmatter": {"kind": "experiment"}, "body": ""},
+    )
+    pod_lifecycle._guard_upload_verification_before_terminate(1773, skip_flag=False, dry_run=False)
+
+
+def test_terminate_guard_refusal_names_inline_recipe(monkeypatch):
+    """The refusal message names the sanctioned inline-round recipe (post
+    `epm:upload-verification` via `task.py post-marker`, then re-run
+    terminate) BEFORE the --skip-upload-verify last resort — the
+    message-content sibling of the existing --skip-upload-verify assert
+    (#1970; #1773: a verified inline round was steered straight to the
+    blunt override)."""
+    _stub_list_events(monkeypatch, [])
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.get_task",
+        lambda issue: {"id": issue, "frontmatter": {"kind": "experiment"}, "body": ""},
+    )
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle._guard_upload_verification_before_terminate(
+            1773, skip_flag=False, dry_run=False
+        )
+    message = str(exc.value)
+    assert "epm:upload-verification" in message
+    assert "post-marker" in message
+    assert "--skip-upload-verify" in message
+
+
 def _orchestrator_posted_event(verdict: str) -> dict:
     """Build an ``epm:upload-verification`` event in the shape the orchestrator
     posts when it verifies uploads directly (no upload-verifier agent in the

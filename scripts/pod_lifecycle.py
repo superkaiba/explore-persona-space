@@ -2742,7 +2742,12 @@ def _guard_upload_verification_before_terminate(
     the guard exists for *experiment* pods that ran, not as a universal
     block. Origin: task #444 hand-orchestrated completion bypassed the
     Step-8 upload-verifier and silently lost the training-mix datasets;
-    the verifier's checklist would have flagged the gap.
+    the verifier's checklist would have flagged the gap. Inline rounds
+    (the CLAUDE.md user-chat carve-out) satisfy this guard through the
+    same front door: verify the round's uploads, post
+    ``epm:upload-verification`` with a PASS verdict note naming every
+    verified HF prefix (via ``task.py post-marker``), then terminate —
+    ``--skip-upload-verify`` is the last resort for never-ran pods.
 
     Always proceeds in ``dry_run`` mode (the caller wants to preview, not
     block on a precondition).
@@ -2812,7 +2817,12 @@ def _guard_upload_verification_before_terminate(
         f"The Step-8 upload-verifier protects against silent artifact "
         f"loss (training-mix datasets, raw completions, eval JSONs, "
         f"merged checkpoints not yet on HF Hub). Run the verifier first "
-        f"via `/issue {issue}` Step 8, or pass --skip-upload-verify to "
+        f"via `/issue {issue}` Step 8, or — for an inline round that "
+        f"already verified THIS round's uploads — post the verification "
+        f"marker yourself (`uv run python scripts/task.py post-marker "
+        f"{issue} epm:upload-verification --note 'Verdict: PASS — "
+        f"inline-round verification; prefixes: <every HF prefix the run "
+        f"wrote>'`) and re-run terminate, or pass --skip-upload-verify to "
         f"override (logs a warning + still terminates — only safe if "
         f"you've manually confirmed every artifact landed at its "
         f"permanent URL)."
