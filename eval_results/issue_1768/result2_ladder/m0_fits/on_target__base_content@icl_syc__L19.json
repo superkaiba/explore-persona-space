@@ -1,0 +1,100 @@
+{
+ "m0_key": "on_target__base_content@icl_syc__L19",
+ "context_set": "on_target",
+ "base_unit": "base_content@icl_syc",
+ "layer": 19,
+ "n_train": 3000,
+ "n_val": 400,
+ "n_test": 1000,
+ "d": 3584,
+ "underdetermined_n_lt_d": true,
+ "meta": {
+  "n_train": 3000,
+  "selection": "val-lambda (primal, streaming)",
+  "selected_lambda": 3162.2776601683795,
+  "val_r2_at_selected": 0.3104014931350042,
+  "lambda_grid_edge": null,
+  "ridge_block": 50000,
+  "lambda_grid": [
+   -3.0,
+   8.0,
+   23
+  ],
+  "fit_impl": "sharedX-eigspace-v1 (pilot-pinned == fit_ridge_with_weights)"
+ },
+ "own_heldout": {
+  "heldout_r2": 0.3150410622059133,
+  "mean_cos": 0.8748532393763375,
+  "knn_euclidean": {
+   "metric": "euclidean",
+   "n": 1000,
+   "n_pool": 1000,
+   "acc_at_k": {
+    "1": 0.217,
+    "10": 0.427
+   },
+   "chance_at_k": {
+    "1": 0.001,
+    "10": 0.01
+   },
+   "median_rank": 18.5,
+   "mrr": 0.28822718296419675
+  },
+  "knn_cosine": {
+   "metric": "cosine",
+   "n": 1000,
+   "n_pool": 1000,
+   "acc_at_k": {
+    "1": 0.24,
+    "10": 0.444
+   },
+   "chance_at_k": {
+    "1": 0.001,
+    "10": 0.01
+   },
+   "median_rank": 16.5,
+   "mrr": 0.3116671924474252
+  }
+ },
+ "identity_bias": {
+  "applicable": true,
+  "heldout_r2": -0.8683748165552125,
+  "mean_cos": 0.7758773842593132,
+  "knn_euclidean": {
+   "metric": "euclidean",
+   "n": 1000,
+   "n_pool": 1000,
+   "acc_at_k": {
+    "1": 0.047,
+    "10": 0.128
+   },
+   "chance_at_k": {
+    "1": 0.001,
+    "10": 0.01
+   },
+   "median_rank": 318.5,
+   "mrr": 0.07493215777865447
+  },
+  "knn_cosine": {
+   "metric": "cosine",
+   "n": 1000,
+   "n_pool": 1000,
+   "acc_at_k": {
+    "1": 0.083,
+    "10": 0.155
+   },
+   "chance_at_k": {
+    "1": 0.001,
+    "10": 0.01
+   },
+   "median_rank": 300.0,
+   "mrr": 0.1085371461809668
+  }
+ },
+ "elapsed_s": 11.6,
+ "ts": "2026-08-03T22:37:07Z",
+ "git_commit": "4246158704f791982729e6745d63ce9626781929",
+ "torch": "2.8.0+cu128",
+ "numpy": "2.2.6",
+ "issue": 1768
+}
