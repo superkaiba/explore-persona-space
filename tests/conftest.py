@@ -310,6 +310,11 @@ _FLEET_MUTATING_PASS_NAMES = (
     # #1267: the boot-death pass can STOP a real session (same
     # fleet-mutating class); its own tests stub its seams instead.
     "boot_death_pass",
+    # #2058: the no-progress-respawn pass calls _stop_session on a live sid
+    # when its progress fingerprint has been unchanged across N consecutive
+    # tick heartbeats (same fleet-mutating class); its own tests stub the
+    # pure predicate `decide_no_progress_respawn` instead.
+    "no_progress_respawn_pass",
     # #1215: the orphan-wrapper sweep scans live /proc, writes real
     # ~/.eps-autonomous/wrapper-orphan-*.json state, and its opt-in stop arm
     # can SIGTERM real processes; its own tests stub its seams instead.

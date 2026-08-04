@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-34 passes ("pass" = one top-level per-tick action block in ``main()``'s
+35 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -19,7 +19,8 @@ recovery) -> 13 (auth-outage guard) -> 2 (crash-recovery) -> 9 (campaign)
 -> 3 (pod-safety) -> 4 (stalled-detector) -> 5 (orphan sweep) ->
 11 (infra-drain) -> 21 (proposed-infra-sweep) -> 22 (capacity-retry) ->
 14 (stale-blocked flag) -> 6 (session-reconcile) -> 23 (gate-push) ->
-25 (boot-death) -> 24 (stale-registration) -> 7 (zombie-wrapper) ->
+25 (boot-death) -> 35 (no-progress-respawn) -> 24 (stale-registration) ->
+7 (zombie-wrapper) ->
 28 (orphan-wrapper sweep) -> 10 (idle-unmapped) -> 8 (GC). The count is
 lint-pinned: ``workflow_lint.py
 --check-asw-docstring-pass-count`` FAILs when the header digit, the
@@ -816,6 +817,46 @@ adding a pass means adding a numbered item here AND bumping the digit:
    ``EPM_DISABLE_STASH_RESCUE_AUDIT=1``; ``--stash-rescue-audit-only``
    runs just this pass (pair with ``--dry-run`` for a zero-write live
    smoke). (:func:`stash_rescue_audit_pass`.)
+35. **No-progress-respawn pass (#2058; daemon-gated; runs right after pass 25
+   boot-death, BEFORE pass 24 stale-registration).** Force-RESPAWNs a
+   session whose durable-progress fingerprint has been unchanged across N
+   consecutive tick heartbeats — the "session alive, heartbeats land, no
+   durable work" wedge class every existing lane structurally misses
+   (STALE-REDRIVE never fires because the age clock is fresh; the wedge
+   lanes need failed wakes; #2054 incident: 2h16m unrecovered wedge).
+   Fingerprint = ``(marker_ts | sha | status)`` tuple: newest
+   non-watcher-non-heartbeat marker ts + ``origin/issue-<N>`` HEAD sha
+   (NEVER unqualified ``origin/HEAD`` — the shared root's ``main`` would
+   silently under-detect) + status folder. Threshold
+   ``EPM_NO_PROGRESS_RESPAWN_TICKS`` (default 3; malformed / <2 →
+   default, never a kill switch); per-issue per-UTC-day cap
+   ``EPM_NO_PROGRESS_RESPAWNS_PER_DAY`` (default 3; INDEPENDENT counter
+   from ``EPM_TICK_WEDGE_*_PER_DAY``); episode belt
+   ``STALLED_MAX_RESPAWNS`` (reused, 3). Pure predicate
+   ``decide_no_progress_respawn``: fires ``("respawn", ...)`` only when
+   ALL hold — kill switch unset, task ACTIVE, tick verdict is
+   ``NO-PROGRESS-RESPAWN``, cap available, fingerprint unchanged since
+   tick read, no vetoes (no fresh worktree activity, no park exemption
+   fire, no live pod, daemon reachable, transcript resolvable). Any
+   unresolvable input FREEZES (``"hold"``) rather than resets — same
+   posture as daemon-unreachable / unresolvable-transcript. Action:
+   #1247 same-instant ``_task_status`` re-read (act guard); post the
+   fire marker (``_NO_PROGRESS_RESPAWN_NOTE_SENTINEL``, a
+   ``_WATCHER_NOTE_SENTINELS`` member so it never resets its own
+   progress clock) BEFORE the stop, so the reason is recorded regardless
+   of stop outcome; ``_stop_session(sid)`` → next-tick crash-recovery
+   arm spawns a fresh ``--auto`` (STAGED — never stop+spawn in the same
+   tick); ``respawns_today`` bumped at STOP-INITIATION (a stop failure
+   still consumes a budget unit, #1241). Cap-exhausted returns a
+   one-time louder marker per (issue, UTC day). State file:
+   ``~/.eps-autonomous/no-progress-<N>.json`` (shared with the tick's
+   own writes; watcher's fingerprint compute is INDEPENDENT of the
+   tick's persisted one — a fingerprint that advanced between the tick's
+   write and the watcher's read short-circuits the fire). Sidecar:
+   ``~/.eps-autonomous/no-progress-respawn-events.jsonl``. Kill switch:
+   ``EPM_DISABLE_NO_PROGRESS_RESPAWN=1``; ``--no-progress-only`` runs
+   just this pass (pair with ``--dry-run`` for a live smoke).
+   (:func:`no_progress_respawn_pass`.)
 
 
 Why each pass exists
