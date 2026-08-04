@@ -296,7 +296,12 @@ in any window cannot duplicate a child or leak committed hours):
    leaked hours.)
 3. Spawn its autonomous session:
    `uv run python scripts/spawn_session.py spawn-issue --issue <child>
-   --auto --auto-approve-gpu-hours <per_child_gpu_hours_cap>`.
+   --auto --auto-approve-gpu-hours <per_child_gpu_hours_cap>` (the
+   `--auto-approve-gpu-hours` value is threaded to the child for
+   provenance / bookkeeping only — DEPRECATED no-op for plan approval
+   as of #1771's GPU-hour-blind gate; the campaign-level GPU-hour
+   budget in `artifacts/campaign-state.json` is the sole campaign-side
+   limiter).
    Stagger successive spawns by a few seconds (429 token-pacing).
 4. Flip the row `filed` → `running`; save + commit.
 5. Post `epm:campaign-child-spawned v1` (child id, experiment id,

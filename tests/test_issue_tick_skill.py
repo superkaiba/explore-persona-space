@@ -501,7 +501,7 @@ def test_campaign_skill_teardown_sites_carry_widened_pointer():
 def test_issue_skill_documents_push_notification():
     body = ISSUE_SKILL.read_text()
     # The Step 9b awaiting_promotion exit must fire PushNotification.
-    # The Step 2c parked_over_cap exit must fire PushNotification.
+    # The Step 2c plan-gate park exit must fire PushNotification.
     assert "PushNotification" in body, (
         "/issue skill must call PushNotification at gate-park / blocked sites"
     )

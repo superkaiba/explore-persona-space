@@ -879,8 +879,11 @@ because the CHILD workflow-fix task's body DOES carry the
 proposed infra tasks done."*
 
 Every workflow fix — architectural or not — is 0 GPU-h, so the spawned
-`/issue --auto` session AUTO-APPROVES its plan under
-`EPM_PLAN_AUTOAPPROVE_GPU_HOURS` (default 100) and self-merges at Step 10d.
+`/issue --auto` session AUTO-APPROVES its plan (the Step-2c gate is
+GPU-hour-blind as of #1771 — auto-approves ANY plan carrying a parseable
+GPU-hour estimate; the retained missing-estimate fail-safe is the sole
+remaining autonomous plan_pending trigger, and a 0-GPU-h plan clears it
+by construction) and self-merges at Step 10d.
 There is no `architectural: true` park, no "spawn WITHOUT `--auto`"
 fallback, and no user-greenlight step. This extends the standing
 "workflow-surface edits are committed + merged + pushed automatically, no

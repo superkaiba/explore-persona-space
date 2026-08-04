@@ -89,7 +89,8 @@ flow. The PM's job is dispatch, not execution.
       an older daily file — full spec in research-pm.md Mode 1 part 1).
    2. **Needs attention — investigate, auto-fix, surface the
       residue.** For every candidate exception (blocked tasks,
-      over-cap `plan_pending`, active tasks gone quiet, orphan / idle
+      plan-gate-parked `plan_pending` (missing-estimate fail-safe as
+      of #1771), active tasks gone quiet, orphan / idle
       pods, watcher flags, comments awaiting reply, `needs-thomas`
       tags, `needs-human`-tagged `proposed` /daily-held judgment calls):
       investigate first (cheap reads; background diagnostic
@@ -213,12 +214,14 @@ cited ~$65/hr; live burn is $112.50/hr`).
 
 This is a sanity check on the input number, NOT a new cost gate. The
 recompute does not change the autonomous-mode cost rule from CLAUDE.md
-(cost is gated only at the Step 2c plan-approval GPU-hour cap, never
-mid-run); it just keeps the figures the rule operates on honest.
-Incident: #506's `AUTONOMOUS PUSH-THROUGH` directive cited "current
-burn ~$65/hr" while live burn was $112.50/hr (~$47/hr stale) — a
-directive raising the cap off that figure could green-light an
-overspend.
+(#1771 removed the Step-2c GPU-hour cap; autonomous cost oversight is
+now the interactive plan review, the watcher spend-escalation pushes,
+backend fences, and the >20 GPU-h interactive one-line chat confirm
+— never a mid-run pivot); it just keeps the burn figures those
+mechanisms operate on honest. Incident: #506's `AUTONOMOUS PUSH-THROUGH`
+directive cited "current burn ~$65/hr" while live burn was $112.50/hr
+(~$47/hr stale) — a directive acting on that stale figure could
+green-light an overspend.
 
 ### When the user wants an issue worked
 
@@ -231,17 +234,19 @@ This boots the session with `/loop 10m /issue <N>` in bypassPermissions, so it
 self-paces through the workflow with no one at the keyboard and pushes through
 recoverable bugs until it finishes. It stops at only two points:
 
-- **Plan approval** — the session AUTO-APPROVES a plan whose estimated
-  GPU-hours is at or under the cap (`--auto-approve-gpu-hours`, default 100) and
-  dispatches immediately; it parks at `plan_pending` only when the plan exceeds
-  the cap (or the estimate is missing — fail-safe), which arrives on the user's
-  phone in THAT session's tab.
+- **Plan approval** — the session AUTO-APPROVES any plan carrying a
+  parseable GPU-hour estimate (`--auto-approve-gpu-hours` is DEPRECATED
+  no-op for plan approval as of #1771's GPU-hour-blind gate; the flag
+  default of 100 is still threaded to the child for provenance / registry
+  compatibility) and dispatches immediately; it parks at `plan_pending`
+  only when the estimate is missing/unparseable (fail-safe), which
+  arrives on the user's phone in THAT session's tab.
 - **`awaiting_promotion`** — always a human gate; the experiment lands here for
   the user to promote.
 
-So no pod/compute commits above the cap and no result is promoted without the
-user. To change the cap for one dispatch, add `--auto-approve-gpu-hours <H>`.
-Confirm the spawn and tell the user it is running + where it will pause.
+So no result is promoted without the user, and the missing-estimate
+fail-safe still catches unbudgeted plans. Confirm the spawn and tell the
+user it is running + where it will pause.
 
 Do NOT type `/issue <N>` here in the PM session — that collapses the
 multi-session model. If the experiment has a worktree at

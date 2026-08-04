@@ -58,8 +58,10 @@ Side effects (both under ``~/.eps-autonomous``, overridable for tests via
   ``terminal_streak`` counter to the legacy ``{issue, status, ts}`` shape.
 * ``tick-runaway-<N>.flag`` — written on the ``EPM_TICK_RUNAWAY_STREAK``-th
   (default 3rd) consecutive TEARDOWN-verdict triage (TERMINAL or
-  GATE-TRANSITION — covers terminal statuses, over-cap plan_pending, and
-  stranded campaign crons); cleared on any streak reset. A cron that keeps
+  GATE-TRANSITION — covers terminal statuses, plan-gate-parked plan_pending
+  (missing-estimate fail-safe as of #1771; the plan_pending_over_cap
+  predicate name is preserved for stable imports), and stranded campaign
+  crons); cleared on any streak reset. A cron that keeps
   firing at a teardown site means CRON-TEARDOWN keeps whiffing (the #501
   runaway class: 1,951 wasted ticks over ~40h); the flag is the watcher's
   signal to force-stop the session (``autonomous_session_watch`` gate-push
@@ -362,8 +364,11 @@ def latest_event_ts(events: list[dict], *, prefix: str | None = None) -> float |
 
 def plan_pending_over_cap(events: list[dict]) -> bool:
     """True iff the newest ``epm:awaiting-spend-approval`` marker is newer
-    than the newest ``epm:status-changed`` — the over-cap plan_pending park
-    (a user gate), vs the under-cap in-skill park."""
+    than the newest ``epm:status-changed`` — the plan-gate park (a user
+    gate: missing-estimate fail-safe as of #1771; historically over-cap
+    too, hence the retained function name — imported by the watcher L954
+    / L28414+, kind-keyed, behaviorally safe to keep), vs the in-skill
+    park a plan_pending status with no spend-approval marker represents."""
     spend = latest_event_ts(events, prefix="epm:awaiting-spend-approval")
     if spend is None:
         return False
