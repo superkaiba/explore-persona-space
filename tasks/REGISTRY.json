@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2060,
+  "highest_id": 2061,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8209,6 +8209,14 @@
       "path": "tasks/proposed/2060",
       "status": "proposed",
       "title": "workflow-fix: bootstrap-failed pod left billing (provision no teardown + keep-running blocks reaper)"
+    },
+    "2061": {
+      "goal": "Fit a map from the pooled context activation to the SAE feature vector of the answer state, holding ONE fixed SAE dictionary across every post-training stage of an open ladder, and determine whether any individual SAE feature's per-feature held-out predictability improves across adjacent stage transitions beyond a selection-symmetric null over the whole dictionary.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2061",
+      "status": "proposed",
+      "title": "Does post-training make particular SAE features more predictable from context? (per-stage context -> answer-SAE-feature map)"
     },
     "207": {
       "has_clean_result": true,
