@@ -1692,8 +1692,8 @@
     "1217": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/plan_pending/1217",
-      "status": "plan_pending",
+      "path": "tasks/approved/1217",
+      "status": "approved",
       "title": "daily-held: Digest-only guard arm for real-world-corpus raw_"
     },
     "1218": {
