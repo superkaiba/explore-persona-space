@@ -8,3 +8,4 @@
 {"ts": "2026-08-04T07:31:52Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "approved", "note": "Plan v2 ready for approval; consistency PASS (skipped-parentless); Methodology critic APPROVE (3 non-blocking concerns for implementer). [autonomous plan-gate: auto-approved, est 0.0 GPU-h <= 100.0h cap]"}
 {"ts": "2026-08-04T07:32:01Z", "kind": "epm:plan-approved", "version": 1, "by": "autonomous-gate", "note": "Auto-approved by the code-enforced autonomous plan-gate (task.py --auto-approve-if-autonomous): gpu_hours_total=0.0 <= cap 100.0. EPM_AUTONOMOUS_SESSION set; no human asked."}
 {"ts": "2026-08-04T07:32:21Z", "kind": "epm:plan-approved", "version": 2, "by": "unknown", "note": "Auto-approved (autonomous, gpu_hours=0, cap=100)."}
+{"ts": "2026-08-04T07:33:31Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatching implementer; awaiting epm:results."}
