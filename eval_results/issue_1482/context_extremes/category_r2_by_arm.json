@@ -331,5 +331,341 @@
    }
   }
  },
+ "truncation_control": {
+  "gen_max_tokens": 1024,
+  "flag_at_tokens": 1020,
+  "method": "finish_reason was not persisted by the generation stage; cap-hits are recovered by re-tokenizing the stored response with Qwen/Qwen2.5-7B-Instruct and flagging >= 1020 tokens (4 tokens of slack because detokenize->retokenize is not bit-exact)",
+  "n_truncated_excluded": 978,
+  "n_kept": 8947,
+  "frac_truncated_by_category": {
+   "advice_howto": 0.12259059367771785,
+   "chitchat_social": 0.00164473684210531,
+   "coding": 0.21311475409836067,
+   "creative_writing": 0.12905236907730677,
+   "factual_qa": 0.05173564753004001,
+   "harmful_or_unsafe_request": 0.041198501872659166,
+   "math": 0.15434083601286175,
+   "nsfw": 0.07655502392344493,
+   "other": 0.012195121951219523,
+   "roleplay_persona": 0.02777777777777779,
+   "summarization_extraction": 0.03344481605351168,
+   "translation": 0.06038647342995174
+  },
+  "stats_nontruncated": {
+   "advice_howto": {
+    "n": 1138,
+    "arms": {
+     "Context vector": {
+      "mean_percontext_r2": 0.6832821827768014,
+      "ci95": [
+       0.6736636070079086,
+       0.6923233342267135
+      ]
+     },
+     "Prefix end state": {
+      "mean_percontext_r2": 0.37078570035149383,
+      "ci95": [
+       0.35454780648066786,
+       0.3873436304920914
+      ]
+     },
+     "Query only": {
+      "mean_percontext_r2": 0.5542973005272408,
+      "ci95": [
+       0.5395222210017575,
+       0.5684242451010545
+      ]
+     }
+    }
+   },
+   "chitchat_social": {
+    "n": 607,
+    "arms": {
+     "Context vector": {
+      "mean_percontext_r2": 0.7342237841845141,
+      "ci95": [
+       0.7170025157331136,
+       0.7500584130971992
+      ]
+     },
+     "Prefix end state": {
+      "mean_percontext_r2": 0.3066046046128501,
+      "ci95": [
+       0.2875691058484349,
+       0.3266953193163097
+      ]
+     },
+     "Query only": {
+      "mean_percontext_r2": 0.6046356144975288,
+      "ci95": [
+       0.5823320314250412,
+       0.6250285414744646
+      ]
+     }
+    }
+   },
+   "coding": {
+    "n": 1248,
+    "arms": {
+     "Context vector": {
+      "mean_percontext_r2": 0.6635914070512821,
+      "ci95": [
+       0.6568033060496795,
+       0.6703822744391025
+      ]
+     },
+     "Prefix end state": {
+      "mean_percontext_r2": 0.40927595272435896,
+      "ci95": [
+       0.3928445113782051,
+       0.42710615258413454
+      ]
+     },
+     "Query only": {
+      "mean_percontext_r2": 0.5058100993589744,
+      "ci95": [
+       0.49135788942307695,
+       0.5194665794070513
+      ]
+     }
+    }
+   },
+   "creative_writing": {
+    "n": 1397,
+    "arms": {
+     "Context vector": {
+      "mean_percontext_r2": 0.6798578711524695,
+      "ci95": [
+       0.6718900653901217,
+       0.6874364516105941
+      ]
+     },
+     "Prefix end state": {
+      "mean_percontext_r2": 0.4412874409448819,
+      "ci95": [
+       0.42890622020400865,
+       0.45435764760200437
+      ]
+     },
+     "Query only": {
+      "mean_percontext_r2": 0.5185289126700071,
+      "ci95": [
+       0.5055374172333572,
+       0.5313939254473873
+      ]
+     }
+    }
+   },
+   "factual_qa": {
+    "n": 2841,
+    "arms": {
+     "Context vector": {
+      "mean_percontext_r2": 0.6626835927490321,
+      "ci95": [
+       0.6570809744456177,
+       0.6684798163058782
+      ]
+     },
+     "Prefix end state": {
+      "mean_percontext_r2": 0.34767920908130945,
+      "ci95": [
+       0.3379607106388596,
+       0.35756162764871524
+      ]
+     },
+     "Query only": {
+      "mean_percontext_r2": 0.5350536554030272,
+      "ci95": [
+       0.5262404452305526,
+       0.5439396696673706
+      ]
+     }
+    }
+   },
+   "harmful_or_unsafe_request": {
+    "n": 256,
+    "arms": {
+     "Context vector": {
+      "mean_percontext_r2": 0.6432219296875,
+      "ci95": [
+       0.6211506251953125,
+       0.664717928125
+      ]
+     },
+     "Prefix end state": {
+      "mean_percontext_r2": 0.36766729296875,
+      "ci95": [
+       0.3357649033203125,
+       0.39934878857421874
+      ]
+     },
+     "Query only": {
+      "mean_percontext_r2": 0.4349525,
+      "ci95": [
+       0.39803599316406246,
+       0.4720068793945312
+      ]
+     }
+    }
+   },
+   "math": {
+    "n": 263,
+    "arms": {
+     "Context vector": {
+      "mean_percontext_r2": 0.6933498745247149,
+      "ci95": [
+       0.6789067390684411,
+       0.7079898927756655
+      ]
+     },
+     "Prefix end state": {
+      "mean_percontext_r2": 0.3882256730038023,
+      "ci95": [
+       0.3495759157794677,
+       0.4248634091254753
+      ]
+     },
+     "Query only": {
+      "mean_percontext_r2": 0.5598961406844106,
+      "ci95": [
+       0.5275809100760457,
+       0.589332377756654
+      ]
+     }
+    }
+   },
+   "nsfw": {
+    "n": 193,
+    "arms": {
+     "Context vector": {
+      "mean_percontext_r2": 0.6538813989637305,
+      "ci95": [
+       0.6259825343264249,
+       0.6808467611398963
+      ]
+     },
+     "Prefix end state": {
+      "mean_percontext_r2": 0.47908735751295334,
+      "ci95": [
+       0.44607725608808285,
+       0.5089180226683937
+      ]
+     },
+     "Query only": {
+      "mean_percontext_r2": 0.43191736787564766,
+      "ci95": [
+       0.39586929430051815,
+       0.46547211580310877
+      ]
+     }
+    }
+   },
+   "other": {
+    "n": 81,
+    "arms": {
+     "Context vector": {
+      "mean_percontext_r2": 0.5854120864197531,
+      "ci95": [
+       0.5285422040123458,
+       0.6299548962962962
+      ]
+     },
+     "Prefix end state": {
+      "mean_percontext_r2": 0.3478953086419753,
+      "ci95": [
+       0.2705957574074074,
+       0.41472453518518526
+      ]
+     },
+     "Query only": {
+      "mean_percontext_r2": 0.4247692716049383,
+      "ci95": [
+       0.3693035972222222,
+       0.47509200925925926
+      ]
+     }
+    }
+   },
+   "roleplay_persona": {
+    "n": 245,
+    "arms": {
+     "Context vector": {
+      "mean_percontext_r2": 0.6502522857142857,
+      "ci95": [
+       0.6328141660204082,
+       0.6670967760204081
+      ]
+     },
+     "Prefix end state": {
+      "mean_percontext_r2": 0.4322174204081633,
+      "ci95": [
+       0.40648292816326526,
+       0.45778536969387756
+      ]
+     },
+     "Query only": {
+      "mean_percontext_r2": 0.41795617142857144,
+      "ci95": [
+       0.38681727081632655,
+       0.4498016815306123
+      ]
+     }
+    }
+   },
+   "summarization_extraction": {
+    "n": 289,
+    "arms": {
+     "Context vector": {
+      "mean_percontext_r2": 0.6561333044982699,
+      "ci95": [
+       0.6412964884083044,
+       0.6707672016435986
+      ]
+     },
+     "Prefix end state": {
+      "mean_percontext_r2": 0.3882650968858131,
+      "ci95": [
+       0.3623698566608996,
+       0.415459276816609
+      ]
+     },
+     "Query only": {
+      "mean_percontext_r2": 0.5090988512110727,
+      "ci95": [
+       0.4853255138408305,
+       0.5332930316608996
+      ]
+     }
+    }
+   },
+   "translation": {
+    "n": 389,
+    "arms": {
+     "Context vector": {
+      "mean_percontext_r2": 0.6351891002570693,
+      "ci95": [
+       0.6147981605398457,
+       0.6526136483933161
+      ]
+     },
+     "Prefix end state": {
+      "mean_percontext_r2": 0.3147014678663239,
+      "ci95": [
+       0.28719688129820053,
+       0.3390870887532134
+      ]
+     },
+     "Query only": {
+      "mean_percontext_r2": 0.4303338868894601,
+      "ci95": [
+       0.40038282410025705,
+       0.45769973290488425
+      ]
+     }
+    }
+   }
+  },
+  "token_counts_artifact": "eval_results/issue_1482/context_extremes/response_token_counts.json"
+ },
  "caveat_other": "category 'other' is a heterogeneous catch-all (n=82); do not headline it"
 }

@@ -1,8 +1,27 @@
 {
- "commit": "1b5312e5",
- "git_commit": "1b5312e5",
- "git_dirty": false,
- "created": "2026-08-04T14:34:07Z",
+ "commit": "3a8727b0+dirty",
+ "git_commit": "3a8727b0",
+ "git_dirty": true,
+ "git_dirty_paths": [
+  "dashboard/public/context-extremes-1482.html",
+  "eval_results/issue_1482/context_extremes/category_r2_by_arm.json",
+  "eval_results/issue_1482/context_extremes/context_extremes.json",
+  "figures/issue_1482/concordance/writeup_concordance_matched.pdf",
+  "figures/issue_1482/concordance/writeup_concordance_pooled.pdf",
+  "figures/issue_1482/concordance/writeup_concordance_tails.pdf",
+  "figures/issue_1482/concordance/writeup_concordance_tails.png",
+  "figures/issue_1482/context_category_by_arm.meta.json",
+  "figures/issue_1482/context_category_by_arm.pdf",
+  "figures/issue_1482/context_category_by_arm.png",
+  "scripts/issue1482_concordance_writeup_figs.py",
+  "scripts/issue1482_context_category_by_arm.py",
+  "scripts/issue1482_context_extremes_dashboard.py",
+  "scripts/issue1739_result1_spread_fig_v2.py",
+  "scripts/issue1739_result2_method_fig.py",
+  "scripts/issue1739_result2_method_fig_v2.py",
+  "tasks/planning/1995/plans/v2.md"
+ ],
+ "created": "2026-08-04T17:33:26Z",
  "figsize": [
   11.0,
   5.0
