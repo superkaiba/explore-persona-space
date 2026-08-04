@@ -27,15 +27,21 @@ arms" contract:
     bare_label rows locate the `{character}: ` label; v_P is undefined when
     nothing resolves and that row's v_P is recorded as null (never coerced).
 
-Activations persist to `<output-dir>/{variant}_{model}.npz` as three
+Activations persist to
+`<output-dir>/{variant}/{variant}__{phase}__{form}__{model}.npz` as three
 `{conv_id: <d-vec>}` fp16 arrays keyed by conv_id (never materializes the full
 corpus in memory at once — a streaming per-row concatenation via a resizeable
 list; the plan's stream-reduce recipe is inherited when the fits phase reads
-these back). Per-cell diagnostics (DV 7 answer-length parity + DV 8 conv_id
-intersection + realized row count + peak GPU memory / wall-time) land at
-`eval_results/issue_2054/capture_diagnostics/{variant}_{model}.json`.
+these back). The filename is the canonical 4-axis cell key
+(`issue2054_forms.cell_key` — identity x condition x framing x model), so two
+runs differing only in `--phase` / `--form` land on DISTINCT files (C6: the
+pre-fix `{variant}_{model}` naming let `--phase on_policy` overwrite cell (b)
+with cell (d)). Per-cell diagnostics (DV 7 answer-length parity + DV 8 conv_id
+intersection + realized row count + peak GPU memory / wall-time + the per-row
+position block kill-gate 5 reads) land at
+`eval_results/issue_2054/capture_diagnostics/{cell_key}.json`.
 
-Uploads to HF `superkaiba1/explore-persona-space-data/issue2054_lattice/activations/{variant}/{model}/`
+Uploads to HF `superkaiba1/explore-persona-space-data/issue2054_lattice/activations/{variant}/`
 (best-effort, non-fatal). Skipped when `--dry-run` (0-byte activation shell +
 diagnostics stub proving the byte-offset-to-token-index mapping runs on ≤3
 sample rows without loading the model).
@@ -115,39 +121,29 @@ def _read_jsonl(path: Path) -> list[dict]:
     return rows
 
 
-def _resolve_input_paths(input_dir: Path, variants: list[str], phase: str) -> dict[str, Path]:
+def _resolve_input_paths(
+    input_dir: Path, variants: list[str], phase: str, form: str
+) -> dict[str, Path]:
     """Return {variant: input JSONL path} keyed on variant.
 
-    Phase-scoped naming inherits Units A/B (see phase_b/phase_c/phase_d):
-      - phase=inserted  -> spliced_inserted_<variant>.jsonl
-      - phase=on_policy -> on_policy_<variant>.jsonl (falls back to .mock.jsonl)
-      - phase=cell_c    -> cell_c_<variant>.jsonl
+    Condition+form-scoped naming shares ONE source with the producing units
+    (`issue2054_forms.phase_output_name` — phase_b/phase_c/phase_d write the
+    same names), e.g. phase=inserted form=chat ->
+    `spliced_inserted_<variant>__chat.jsonl`; phase=on_policy falls back to
+    the `.mock.jsonl` twin (phase_c dry-run output) for smoke.
 
     Smoke fallback: any *.jsonl directly under `input_dir` counts as a `_flat`
     variant when the variant subtree is missing.
     """
-    filename_by_phase = {
-        "inserted": lambda v: f"spliced_inserted_{v}.jsonl",
-        "on_policy": lambda v: f"on_policy_{v}.jsonl",
-        "cell_c": lambda v: f"cell_c_{v}.jsonl",
-    }
-    mock_fallback_by_phase = {
-        "on_policy": lambda v: f"on_policy_{v}.mock.jsonl",
-    }
-    naming = filename_by_phase.get(phase)
-    if naming is None:
-        raise ValueError(f"unknown --phase {phase!r}")
-
     out: dict[str, Path] = {}
     for variant in variants:
-        candidate = input_dir / variant / naming(variant)
+        candidate = input_dir / variant / forms.phase_output_name(phase, variant, form)
         if candidate.is_file():
             out[variant] = candidate
             continue
         # phase_c mock output (dry-run of phase_c) — accept for smoke.
-        mock_naming = mock_fallback_by_phase.get(phase)
-        if mock_naming is not None:
-            mock = input_dir / variant / mock_naming(variant)
+        if phase == "on_policy":
+            mock = input_dir / variant / forms.phase_output_name(phase, variant, form, mock=True)
             if mock.is_file():
                 out[variant] = mock
     if not out:
@@ -319,12 +315,81 @@ def _write_activation_shell(out_path: Path) -> None:
     out_path.write_bytes(b"")
 
 
+# Blocks every consumer gate reads from the capture diagnostics: `per_row` is
+# kill-gate 5's answer-length source (`issue2054_fits._answer_length_ks_from_
+# diagnostics` reads `per_row[*].answer_hi - answer_lo`), the stats block is
+# DV 7, `conv_ids` is DV 8. A payload missing any of them is a defect, never a
+# mode difference (C7: the pre-fix production payload omitted `per_row`, so
+# gate 5 always read empty-length-arrays -> KS=NaN -> could never fire).
+_GATE_SOURCE_KEYS = ("per_row", "answer_token_length_stats", "conv_ids")
+
+
 def _write_diagnostics(diagnostics_path: Path, payload: dict) -> None:
+    """Atomic diagnostics write; REFUSES a payload missing a gate source (C7)."""
+    for key in _GATE_SOURCE_KEYS:
+        if payload.get(key) is None:
+            raise ValueError(
+                f"capture diagnostics payload missing {key!r} — the downstream "
+                f"kill-gate/DV sources {_GATE_SOURCE_KEYS} are non-optional (C7)"
+            )
     diagnostics_path.parent.mkdir(parents=True, exist_ok=True)
     tmp = diagnostics_path.with_suffix(".json.tmp")
     with tmp.open("w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, sort_keys=True, default=str)
     os.replace(tmp, diagnostics_path)
+
+
+def _diagnostics_payload(
+    *,
+    dry_run: bool,
+    variant: str,
+    condition: str,
+    form: str,
+    model_slug: str,
+    input_path: Path,
+    activation_path: Path,
+    layer: int,
+    seed: int,
+    n_in: int,
+    n_ok: int,
+    n_skipped: int,
+    n_prefix_null: int,
+    per_row: list[dict],
+    lengths: list[int],
+    conv_ids: list[str],
+    extra: dict | None = None,
+) -> dict:
+    """Single serialization site for capture diagnostics.
+
+    BOTH the dry-run and the production (GPU) handlers build their payload
+    here, so the `per_row` block kill-gate 5 reads is carried UNCONDITIONALLY
+    (C7: pre-fix, only the dry-run branch serialized `per_row`).
+    """
+    payload = {
+        "phase": "capture",
+        "dry_run": bool(dry_run),
+        "variant": variant,
+        "condition": condition,
+        "form": form,
+        "model": model_slug,
+        "cell": forms.cell_key(variant, condition, form, model_slug),
+        "input_path": _rel(input_path),
+        "output_path": _rel(activation_path),
+        "layer": layer,
+        "seed": seed,
+        "n_in": n_in,
+        "n_ok": n_ok,
+        "n_skipped": n_skipped,
+        "n_prefix_null": n_prefix_null,
+        "prefix_src_counts": _prefix_src_counts(per_row),
+        "answer_token_length_stats": _answer_length_stats(lengths),  # DV 7
+        "conv_ids": conv_ids,  # DV 8
+        "per_row": per_row,  # kill-gate 5 length source (C7)
+        "utc": datetime.now(tz=timezone.utc).isoformat(),
+    }
+    if extra:
+        payload.update(extra)
+    return payload
 
 
 def _answer_length_stats(lengths: list[int]) -> dict:
@@ -481,30 +546,31 @@ def _run_dry_variant(
     ]
     conv_ids = sorted({r["conv_id"] for r in per_row if r.get("status") == "ok" and r["conv_id"]})
 
-    activation_path = output_dir / variant / f"{variant}_{model_slug}.npz"
+    # 4-axis cell naming (C6): condition + form are part of the output identity.
+    cell = forms.cell_key(variant, args.phase, args.form, model_slug)
+    activation_path = output_dir / variant / f"{cell}.npz"
     _write_activation_shell(activation_path)
 
-    diagnostics_path = diagnostics_dir / f"{variant}_{model_slug}.json"
-    payload = {
-        "phase": "capture",
-        "dry_run": True,
-        "variant": variant,
-        "model": model_slug,
-        "input_path": _rel(input_path),
-        "output_path": _rel(activation_path),
-        "layer": args.layer,
-        "seed": args.seed,
-        "n_in": n_in,
-        "n_sampled": sample_n,
-        "n_ok": ok,
-        "n_skipped": skipped,
-        "n_prefix_null": prefix_null,
-        "prefix_src_counts": _prefix_src_counts(per_row),
-        "answer_token_length_stats": _answer_length_stats(lengths),  # DV 7 stub
-        "conv_ids": conv_ids,  # DV 8 stub (post-any-filter set on sampled subset)
-        "per_row": per_row,
-        "utc": datetime.now(tz=timezone.utc).isoformat(),
-    }
+    diagnostics_path = diagnostics_dir / f"{cell}.json"
+    payload = _diagnostics_payload(
+        dry_run=True,
+        variant=variant,
+        condition=args.phase,
+        form=args.form,
+        model_slug=model_slug,
+        input_path=input_path,
+        activation_path=activation_path,
+        layer=args.layer,
+        seed=args.seed,
+        n_in=n_in,
+        n_ok=ok,
+        n_skipped=skipped,
+        n_prefix_null=prefix_null,
+        per_row=per_row,
+        lengths=lengths,
+        conv_ids=conv_ids,
+        extra={"n_sampled": sample_n},
+    )
     _write_diagnostics(diagnostics_path, payload)
 
     _log(
@@ -515,6 +581,9 @@ def _run_dry_variant(
     return {
         "variant": variant,
         "model": model_slug,
+        "condition": args.phase,
+        "form": args.form,
+        "cell": cell,
         "input_path": _rel(input_path),
         "n_in": n_in,
         "n_sampled": sample_n,
@@ -688,7 +757,9 @@ def _run_gpu_variant(
     # None rows write a zero vector alongside `v_P_present == False`.
     import numpy as np
 
-    activation_path = output_dir / variant / f"{variant}_{model_slug}.npz"
+    # 4-axis cell naming (C6): condition + form are part of the output identity.
+    cell = forms.cell_key(variant, args.phase, args.form, model_slug)
+    activation_path = output_dir / variant / f"{cell}.npz"
     activation_path.parent.mkdir(parents=True, exist_ok=True)
     v_C_arr = (
         np.stack(v_C_rows, axis=0) if v_C_rows else np.zeros((0, hidden_dim), dtype=np.float16)
@@ -722,29 +793,31 @@ def _run_gpu_variant(
     os.replace(tmp, activation_path)
 
     wall_seconds = time.time() - t0
-    diagnostics_path = diagnostics_dir / f"{variant}_{model_slug}.json"
-    payload = {
-        "phase": "capture",
-        "dry_run": False,
-        "variant": variant,
-        "model": model_slug,
-        "input_path": _rel(input_path),
-        "output_path": _rel(activation_path),
-        "layer": args.layer,
-        "seed": args.seed,
-        "batch_size": batch_size,
-        "n_in": n_in,
-        "n_processed": len(rows),
-        "n_ok": len(conv_ids),
-        "n_skipped": n_skipped,
-        "n_prefix_null": n_prefix_null,
-        "prefix_src_counts": _prefix_src_counts(per_row_diag),
-        "answer_token_length_stats": _answer_length_stats(lengths),  # DV 7
-        "conv_ids": sorted(set(conv_ids)),  # DV 8
-        "peak_gpu_bytes": peak_gpu_bytes if device == "cuda" else 0,
-        "wall_seconds": round(wall_seconds, 3),
-        "utc": datetime.now(tz=timezone.utc).isoformat(),
-    }
+    diagnostics_path = diagnostics_dir / f"{cell}.json"
+    payload = _diagnostics_payload(
+        dry_run=False,
+        variant=variant,
+        condition=args.phase,
+        form=args.form,
+        model_slug=model_slug,
+        input_path=input_path,
+        activation_path=activation_path,
+        layer=args.layer,
+        seed=args.seed,
+        n_in=n_in,
+        n_ok=len(conv_ids),
+        n_skipped=n_skipped,
+        n_prefix_null=n_prefix_null,
+        per_row=per_row_diag,  # kill-gate 5 length source — production too (C7)
+        lengths=lengths,
+        conv_ids=sorted(set(conv_ids)),
+        extra={
+            "batch_size": batch_size,
+            "n_processed": len(rows),
+            "peak_gpu_bytes": peak_gpu_bytes if device == "cuda" else 0,
+            "wall_seconds": round(wall_seconds, 3),
+        },
+    )
     _write_diagnostics(diagnostics_path, payload)
 
     _log(
@@ -756,6 +829,9 @@ def _run_gpu_variant(
     return {
         "variant": variant,
         "model": model_slug,
+        "condition": args.phase,
+        "form": args.form,
+        "cell": cell,
         "input_path": _rel(input_path),
         "n_in": n_in,
         "n_out": len(conv_ids),
@@ -831,16 +907,17 @@ def run_phase(args: argparse.Namespace) -> int:
         diagnostics_dir = (output_dir / "capture_diagnostics").resolve()
 
     variants = list(args.variants)
-    input_paths = _resolve_input_paths(input_dir, variants, args.phase)
+    input_paths = _resolve_input_paths(input_dir, variants, args.phase, args.form)
     if not input_paths:
         print(
-            f"ERROR: no phase={args.phase} input JSONLs under {input_dir} for variants={variants}",
+            f"ERROR: no phase={args.phase} form={args.form} input JSONLs under {input_dir} "
+            f"for variants={variants}",
             file=sys.stderr,
         )
         return 2
 
     _log(
-        f"start: phase={args.phase} model={args.model} layer={args.layer} "
+        f"start: phase={args.phase} form={args.form} model={args.model} layer={args.layer} "
         f"dry_run={args.dry_run} variants={list(input_paths.keys())}"
     )
 
@@ -892,6 +969,8 @@ def run_phase(args: argparse.Namespace) -> int:
 
     digest = {
         "phase": "capture",
+        "condition": args.phase,
+        "form": args.form,
         "model": args.model,
         "layer": args.layer,
         "dry_run": bool(args.dry_run),
@@ -900,7 +979,12 @@ def run_phase(args: argparse.Namespace) -> int:
         "seed": args.seed,
         "utc": datetime.now(tz=timezone.utc).isoformat(),
     }
-    digest_path = output_dir / f"capture_digest_{args.model}.json"
+    # Digest keyed on (condition, form, model) — C6: two runs differing only in
+    # --phase/--form must not overwrite each other's digest either.
+    sep = forms.CELL_KEY_SEP
+    digest_path = (
+        output_dir / f"capture_digest{sep}{args.phase}{sep}{args.form}{sep}{args.model}.json"
+    )
     tmp = digest_path.with_suffix(".json.tmp")
     with tmp.open("w", encoding="utf-8") as f:
         json.dump(digest, f, indent=2, sort_keys=True, default=str)
@@ -931,9 +1015,18 @@ def main() -> int:
     )
     p.add_argument(
         "--phase",
-        choices=("inserted", "on_policy", "cell_c"),
+        choices=forms.CONDITIONS,
         required=True,
-        help="which upstream unit's output layout to read",
+        help="condition axis: which upstream unit's output layout to read",
+    )
+    p.add_argument(
+        "--form",
+        required=True,
+        choices=forms.FORMS,
+        help=(
+            "framing axis (plan §4; REQUIRED, no default — C6): selects the "
+            "form-keyed input JSONLs and keys the .npz / diagnostics cell names"
+        ),
     )
     p.add_argument("--layer", type=int, default=19, help="hidden-state layer index (plan §11)")
     p.add_argument(

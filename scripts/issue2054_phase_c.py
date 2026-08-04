@@ -206,7 +206,8 @@ def _run_dry_run(
         scaffolds = _select_rows(scaffolds, args.target_conv_ids)
         vdir = out_dir / variant
         vdir.mkdir(parents=True, exist_ok=True)
-        out_path = vdir / f"on_policy_{variant}.mock.jsonl"
+        # Form-aware name (C6): two --form runs of one variant must not clobber.
+        out_path = vdir / forms.phase_output_name("on_policy", variant, args.form, mock=True)
         n_in = len(scaffolds)
         n_out = 0
         tmp = out_path.with_suffix(".jsonl.tmp")
@@ -257,7 +258,8 @@ def _run_vllm(
         scaffolds = _select_rows(scaffolds, args.target_conv_ids)
         vdir = out_dir / variant
         vdir.mkdir(parents=True, exist_ok=True)
-        out_path = vdir / f"on_policy_{variant}.jsonl"
+        # Form-aware name (C6): two --form runs of one variant must not clobber.
+        out_path = vdir / forms.phase_output_name("on_policy", variant, args.form)
         n_in = len(scaffolds)
         n_out = 0
 
@@ -368,11 +370,7 @@ def run_phase(args: argparse.Namespace) -> int:
         return 1
 
     out_paths = {
-        v: (
-            (out_dir / v / f"on_policy_{v}.mock.jsonl")
-            if args.dry_run
-            else (out_dir / v / f"on_policy_{v}.jsonl")
-        )
+        v: out_dir / v / forms.phase_output_name("on_policy", v, args.form, mock=args.dry_run)
         for v in counts
     }
 
@@ -397,7 +395,8 @@ def run_phase(args: argparse.Namespace) -> int:
         "seed": args.seed,
         "utc": datetime.now(tz=timezone.utc).isoformat(),
     }
-    digest_path = out_dir / "phase_c_digest.json"
+    # Form-keyed digest name (C6): the digest is per (condition, form) run.
+    digest_path = out_dir / f"phase_c_digest{forms.CELL_KEY_SEP}{args.form}.json"
     tmp = digest_path.with_suffix(".json.tmp")
     with tmp.open("w", encoding="utf-8") as f:
         json.dump(digest, f, indent=2, sort_keys=True)

@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 """9-rung transfer ladder driver for task #2054.
 
-For each ordered (source_cell, target_cell, arm) pair — cells = (variant,
-model) — computes the 9 mapping-transformation rungs of the parent
+For each ordered (source_cell, target_cell, arm) pair — cells keyed on ALL
+FOUR lattice axes (variant/identity, condition/phase, framing/form, model;
+C6 — `issue2054_forms.cell_key`) — computes the 9 mapping-transformation
+rungs of the parent
 `scripts/issue1345_ladder_rungs.py` line. Each rung composes the source-fitted
 context->answer map with a specific target-adaptation transformation and
 scores held-out R² of `v_A_target ≈ Rung(source_map)(v_C_target)` (or the
@@ -31,7 +33,7 @@ The 9 rungs (parent's `RUNGS`, kept verbatim):
 9. `9_full_AMB`       — the full composed A-M-B chain (context reparam +
                         source map + answer reparam).
 
-The driver reads Unit C activations (`.npz` per (variant, model) — `v_C`, `v_A`,
+The driver reads capture activations (`.npz` per 4-axis cell — `v_C`, `v_A`,
 `v_P`, `v_P_present`), Unit A's shared fold map (K=5 conversation-grouped),
 and Unit D's per-cell fit JSONs (for the target ceiling), joins the per-fold
 train/val split to the EQUALIZED-DOWN intersection of the source and target
@@ -73,6 +75,7 @@ load_dotenv()
 
 import numpy as np  # noqa: E402
 
+import issue2054_forms as forms  # noqa: E402
 from explore_persona_space.analysis.mapping_baselines import (  # noqa: E402
     identity_bias_predict,
     knn_retrieval,
@@ -102,15 +105,30 @@ DEFAULT_DOF_CAP = 0.9
 # (statistics-critic concern #2 — conv-within-intersection bootstrap CI).
 DEFAULT_BOOTSTRAP_DRAWS = 200
 
+# The cell (c) `char_*_op*` variants (phase_d output) are IN the default so
+# the 2x2's (c) leg is discoverable without operator memory (C6 review note).
 DEFAULT_VARIANTS = (
     "char_helios",
     "char_wren",
     "char_dana",
     "char_vex",
     "conversation_paired_stories_assistant",
+    "char_helios_op",
+    "char_helios_op_base",
+    "char_wren_op",
+    "char_wren_op_base",
+    "char_dana_op",
+    "char_dana_op_base",
+    "char_vex_op",
+    "char_vex_op_base",
 )
 
 DEFAULT_MODELS = ("qwen2.5-7b", "qwen2.5-7b-instruct")
+
+# Condition (phase) + framing (form) axes — C6: cells are keyed on all four
+# lattice axes; `_resolve_cells` keeps only combinations whose .npz exists.
+DEFAULT_CONDITIONS = forms.CONDITIONS
+DEFAULT_FORMS = forms.FORMS
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -139,13 +157,18 @@ def _load_fold_map(path: Path) -> dict:
     return d
 
 
-def _find_activation_path(activations_dir: Path, variant: str, model: str) -> Path | None:
-    """Locate the .npz per Unit C's layout:  <activations-dir>/<variant>/<variant>_<model>.npz.
+def _find_activation_path(
+    activations_dir: Path, variant: str, condition: str, form: str, model: str
+) -> Path | None:
+    """Locate the .npz per the capture layout:
+    `<activations-dir>/<variant>/<cell_key>.npz` (4-axis key, C6).
 
-    Falls back to any *.npz directly under `<activations-dir>` when the variant
-    subtree is missing (smoke fixture convention, matching Unit C's `_flat`).
+    Falls back to any *.npz directly under `<activations-dir>` when the cell
+    file is missing (smoke fixture convention, matching capture's `_flat`) —
+    the caller dedupes fallback hits.
     """
-    canonical = activations_dir / variant / f"{variant}_{model}.npz"
+    key = forms.cell_key(variant, condition, form, model)
+    canonical = activations_dir / variant / f"{key}.npz"
     if canonical.is_file() and canonical.stat().st_size > 0:
         return canonical
     if activations_dir.is_dir():
@@ -712,27 +735,49 @@ def _fit_arm_pair(
 # Pair enumeration
 
 
-def _cell_key(variant: str, model: str) -> str:
-    return f"{variant}_{model}"
+# A located cell: (variant, condition, form, model, activation path) — the
+# 4-axis lattice identity (C6) plus its .npz.
+_Cell = tuple[str, str, str, str, Path]
+
+
+def _cell_key(variant: str, condition: str, form: str, model: str) -> str:
+    return forms.cell_key(variant, condition, form, model)
 
 
 def _resolve_cells(
-    activations_dir: Path, variants: list[str], models: list[str]
-) -> list[tuple[str, str, Path]]:
-    out: list[tuple[str, str, Path]] = []
+    activations_dir: Path,
+    variants: list[str],
+    conditions: list[str],
+    form_list: list[str],
+    models: list[str],
+) -> list[_Cell]:
+    """4-axis cell enumeration (C6); a flat smoke-fixture .npz (resolved by the
+    fallback, living directly under `activations_dir`) attaches to AT MOST ONE
+    cell so the default condition×form product cannot duplicate it.
+    """
+    out: list[_Cell] = []
+    used_fallback: set[Path] = set()
     for variant in variants:
-        for model in models:
-            path = _find_activation_path(activations_dir, variant, model)
-            if path is not None:
-                out.append((variant, model, path))
+        for condition in conditions:
+            for form in form_list:
+                for model in models:
+                    path = _find_activation_path(activations_dir, variant, condition, form, model)
+                    if path is None:
+                        continue
+                    is_fallback = path.parent.resolve() == activations_dir.resolve()
+                    if is_fallback:
+                        if path in used_fallback:
+                            continue
+                        used_fallback.add(path)
+                    out.append((variant, condition, form, model, path))
     return out
 
 
 def _enumerate_ordered_pairs(
-    cells: list[tuple[str, str, Path]],
+    cells: list[_Cell],
     *,
     smoke: bool,
-) -> list[tuple[tuple[str, str, Path], tuple[str, str, Path]]]:
+) -> list[tuple[_Cell, _Cell]]:
     """Ordered (source, target) pairs of cells.
 
     - Full run: every ordered pair (s, t) where s != t is a rung candidate;
@@ -747,7 +792,7 @@ def _enumerate_ordered_pairs(
         # Fallback to self-transfer so the ladder is exercisable at smoke scale.
         s = cells[0]
         return [(s, s)]
-    pairs: list[tuple[tuple[str, str, Path], tuple[str, str, Path]]] = []
+    pairs: list[tuple[_Cell, _Cell]] = []
     for s in cells:
         for t in cells:
             if s == t:
@@ -830,30 +875,38 @@ def run_phase(args: argparse.Namespace) -> int:
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    cells = _resolve_cells(activations_dir, list(args.variants), list(args.models))
+    cells = _resolve_cells(
+        activations_dir,
+        list(args.variants),
+        list(args.conditions),
+        list(args.forms),
+        list(args.models),
+    )
     if not cells:
         print(
             f"ERROR: no activation .npz found under {activations_dir} for "
-            f"variants={list(args.variants)} models={list(args.models)}",
+            f"variants={list(args.variants)} conditions={list(args.conditions)} "
+            f"forms={list(args.forms)} models={list(args.models)}",
             file=sys.stderr,
         )
         return 2
 
     is_smoke = str(output_dir).startswith("/tmp/") or args.dry_run or args.pilot
     _log(
-        f"start: variants={list(args.variants)} models={list(args.models)} arms={list(args.arms)} "
+        f"start: variants={list(args.variants)} conditions={list(args.conditions)} "
+        f"forms={list(args.forms)} models={list(args.models)} arms={list(args.arms)} "
         f"n_rungs={args.rungs} smoke={is_smoke} dry_run={args.dry_run}"
     )
 
     # Load every located cell's activations up front (small on smoke; per-cell
     # arrays fit in RAM at the ~50 KB/row activation scale).
     activations_by_cell: dict[str, dict] = {}
-    for variant, model, path in cells:
+    for variant, condition, form, model, path in cells:
         acts = _load_activation_npz(path)
         if acts is None:
             _log(f"WARN empty .npz: {_rel(path)} (dry-run shell?); skipping")
             continue
-        activations_by_cell[_cell_key(variant, model)] = acts
+        activations_by_cell[_cell_key(variant, condition, form, model)] = acts
 
     if not activations_by_cell:
         if is_smoke:
@@ -883,9 +936,15 @@ def run_phase(args: argparse.Namespace) -> int:
     n_rungs = max(1, min(len(RUNGS), int(args.rungs)))
     t0 = time.time()
 
-    for (s_var, s_mod, _s_path), (t_var, t_mod, _t_path) in ordered_pairs:
-        s_key = _cell_key(s_var, s_mod)
-        t_key = _cell_key(t_var, t_mod)
+    for (s_var, s_cond, s_form, s_mod, _s_path), (
+        t_var,
+        t_cond,
+        t_form,
+        t_mod,
+        _t_path,
+    ) in ordered_pairs:
+        s_key = _cell_key(s_var, s_cond, s_form, s_mod)
+        t_key = _cell_key(t_var, t_cond, t_form, t_mod)
         if s_key not in activations_by_cell or t_key not in activations_by_cell:
             continue
         s_acts = activations_by_cell[s_key]
@@ -968,6 +1027,8 @@ def run_phase(args: argparse.Namespace) -> int:
     digest = {
         "phase": "ladder",
         "variants": list(args.variants),
+        "conditions": list(args.conditions),
+        "forms": list(args.forms),
         "models": list(args.models),
         "arms": list(args.arms),
         "n_rungs": n_rungs,
@@ -1025,6 +1086,21 @@ def main() -> int:
         type=lambda s: [x.strip() for x in s.split(",") if x.strip()],
         default=list(DEFAULT_MODELS),
         help="Comma-separated model slugs.",
+    )
+    p.add_argument(
+        "--conditions",
+        type=lambda s: [x.strip() for x in s.split(",") if x.strip()],
+        default=list(DEFAULT_CONDITIONS),
+        help=(
+            "Comma-separated condition (capture --phase) axis values; cells are "
+            "keyed on all four lattice axes (C6). Only located .npz combos run."
+        ),
+    )
+    p.add_argument(
+        "--forms",
+        type=lambda s: [x.strip() for x in s.split(",") if x.strip()],
+        default=list(DEFAULT_FORMS),
+        help="Comma-separated framing (form) axis values (plan §4; C6).",
     )
     p.add_argument(
         "--arms",
