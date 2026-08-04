@@ -8192,8 +8192,8 @@
     "2058": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2058",
-      "status": "proposed",
+      "path": "tasks/planning/2058",
+      "status": "planning",
       "title": "workflow-fix: no-progress tick wedge \u2014 heartbeats read HEALTHY, stale-redrive reuses exhausted context"
     },
     "207": {
