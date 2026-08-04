@@ -34,8 +34,8 @@ PARENT_REPO="superkaiba1/explore-persona-space-data"
 PARENT_PREFIX="issue1345_framing"
 AUDIT_OUT_DIR="eval_results/issue_2054/audits"
 
-WIRED_PHASES=(audit_i audit_ii)
-UNWIRED_PHASES=(phase_a phase_b phase_c capture fits ladder)
+WIRED_PHASES=(audit_i audit_ii phase_a phase_b)
+UNWIRED_PHASES=(phase_c capture fits ladder)
 
 # Print the leading comment block (everything after the shebang, up to the first
 # non-comment line) as the usage text, so help can never drift from the header.
@@ -64,6 +64,28 @@ build_cmd() {
         --parent-repo "$PARENT_REPO"
         --parent-prefix "$PARENT_PREFIX"
         --output "$AUDIT_OUT_DIR/audit_ii_span_locator.json"
+      )
+      ;;
+    phase_a)
+      # Unit A: diverse scaffold generation driver + shared fold map.
+      # Target = 8,000 conv_ids (33% oversample pad over the plan §7 gate-4
+      # floor of 4,480); recovers from parent stories via strip_scaffolds,
+      # then writes eval_results/issue_2054/shared_fold_map.json.
+      CMD=(
+        uv run python scripts/issue2054_phase_a.py
+        --target-conv-ids 8000
+        --output-dir data/issue_2054/scaffolds/
+        --seed 137
+      )
+      ;;
+    phase_b)
+      # Unit A: deterministic inserted splice driver over Phase A scaffolds.
+      # 100% keep by construction; answers pool must be passed via pass-through.
+      CMD=(
+        uv run python scripts/issue2054_phase_b.py
+        --scaffolds-dir data/issue_2054/scaffolds/
+        --output-dir data/issue_2054/spliced_inserted/
+        --seed 137
       )
       ;;
     *)
