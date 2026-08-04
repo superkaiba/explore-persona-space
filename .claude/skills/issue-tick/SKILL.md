@@ -63,6 +63,20 @@ skill's Step 0 worktree spec-freshness rule. The triage's own task-state
 reads go through the task-workflow library, which routes to `main`
 regardless of cwd.)
 
+Derive `REPO_ROOT` with the canonical worktree-safe form (the same one
+CLAUDE.md and `.claude/skills/issue/SKILL.md` use) — never improvise it:
+
+```bash
+REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+```
+
+`git rev-parse --show-superproject-working-tree` is NOT a substitute: in a
+plain (non-submodule) worktree it exits 0 with EMPTY output, so a
+`$(... || fallback)` chain never reaches its fallback and the tick fires
+`/scripts/tick_triage.py` — an absolute path off the filesystem root —
+dying with `No such file or directory` (observed 2026-08-04T01:14Z on the
+issue-1739 worktree).
+
 `tick_triage.py` does ALL the bookkeeping the tick skill itself used to
 do across ~5 tool calls: reads status + latest marker via the
 task-workflow library, computes staleness (~25-min window), detects
