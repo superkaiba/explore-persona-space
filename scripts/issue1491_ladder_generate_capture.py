@@ -561,7 +561,13 @@ def _batched_capture_parity_gate(
     Round-3a M4: the PROBE FORWARDS run in fp32 — the model is temporarily
     cast to fp32 for the 32 probe rows (both legs, SAME batched/per-row
     code paths as production; only the dtype differs), then restored
-    bit-exactly (bf16 -> fp32 -> bf16 round-trips exactly). PRODUCTION
+    bit-exactly. NOTE the restore is bit-exact only BECAUSE floating-point
+    buffers are snapshotted and reassigned (round-4a B1): parameters do
+    round-trip through bf16 -> fp32 -> bf16 exactly, but fp32 BUFFERS do
+    not — Qwen2's rotary inv_freq is fp32 even on a bf16 model, and a bare
+    round-trip degrades it permanently (3.653e-3 max rel err), leaving
+    production on a different RoPE than the probe validated. Do not drop
+    the snapshot as redundant. PRODUCTION
     capture remains bf16: the gate exists to catch BATCHING bugs (masking,
     pooling, the last-prompt-token gather — plan §10 risk row), not to
     measure bf16 kernel reproducibility, which is expected padded-batch
