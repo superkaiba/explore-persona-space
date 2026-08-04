@@ -32,7 +32,11 @@
 #     is VALID sequencing: this launcher blocks (wait_wave_dead) until every
 #     shard pid of every wave is dead before exiting, so the capture
 #     invocation starts only after the last gen shard has died and its GPU
-#     memory is released.
+#     memory is released. RC CONTRACT (round-3a MINOR / M3 enabler): exit 0
+#     ONLY when every shard of every wave reached [phase=done]; a PARTIAL
+#     wave (some shards failed) exits 3 and a fully-failed wave exits 1 —
+#     so the `&&` chain refuses to run capture over a broken gen wave
+#     (the driver's Hub-required join is the second, structural guard).
 #   * ENV KNOBS exported explicitly (plan §11 + parent driver commit
 #     4cb9d6ea8d): EPM_VLLM_ENFORCE_EAGER=1, EPM_VLLM_DISABLE_PREFIX_CACHING=1.
 #     Never assume defaults — the ENV-gated knobs are OFF unless exported.
@@ -236,6 +240,7 @@ wait_wave_dead() {
 # ---- Per-split SEQUENTIAL waves, per-shard fan-out within each wave ---------
 
 ABORT=0
+PARTIAL=0
 for split_name in "${SPLITS_TO_RUN[@]}"; do
   if [ "$ABORT" -eq 1 ]; then break; fi
   echo "-- split=$split_name --"
@@ -262,16 +267,22 @@ for split_name in "${SPLITS_TO_RUN[@]}"; do
     )
     [ ${#DRIVER_EXTRAS[@]} -gt 0 ] && cmd+=("${DRIVER_EXTRAS[@]}")
 
+    # %q-quote the argv so `bash -c` re-parses it verbatim (round-3a MINOR:
+    # ${cmd[*]} word-splits on IFS — safe today only because every arg is
+    # space-free; %q makes the re-parse structurally safe).
+    cmd_q=$(printf '%q ' "${cmd[@]}")
+
     if [ "$DRY_RUN" -eq 1 ]; then
       echo "  shard $gidx -> GPU $g | log=$log pid=$pidf"
-      echo "    CUDA_VISIBLE_DEVICES=$g setsid nohup ${cmd[*]} > $log 2>&1 < /dev/null &"
+      echo "    CUDA_VISIBLE_DEVICES=$g setsid nohup $cmd_q> $log 2>&1 < /dev/null &"
       continue
     fi
 
     # $! after `setsid nohup ... &` is the intermediate; capture the real
     # workload pid via bash -c so the pidfile names the child, not the
-    # launcher subshell (parent parity).
-    PID=$(CUDA_VISIBLE_DEVICES=$g bash -c "setsid nohup ${cmd[*]} > $log 2>&1 < /dev/null & echo \$!")
+    # launcher subshell (parent parity). The log path rides as a positional
+    # param (not interpolated) so a space in $LOG_DIR cannot split it.
+    PID=$(CUDA_VISIBLE_DEVICES=$g bash -c "setsid nohup $cmd_q> \"\$1\" 2>&1 < /dev/null & echo \$!" _ "$log")
     echo "$PID" > "$pidf"
     echo "[launch] scale=$SCALE_SLUG split=$split_name shard=$gidx -> GPU $g pid=$PID log=$log"
     WAVE_PIDS+=("$PID")
@@ -297,6 +308,7 @@ for split_name in "${SPLITS_TO_RUN[@]}"; do
     echo "FATAL: split=$split_name — 0/${#WAVE_LOGS[@]} shards reached [phase=done]; systemic failure, aborting remaining splits" >&2
     ABORT=1
   elif [ "${#failed[@]}" -gt 0 ]; then
+    PARTIAL=1
     echo "WARNING: split=$split_name — shards missing [phase=done]: ${failed[*]} (${n_done}/${#WAVE_LOGS[@]} done); continuing to next split (shards are independent; resume re-runs the gaps)" >&2
   else
     echo "[wave] split=$split_name complete: ${n_done}/${#WAVE_LOGS[@]} shards done"
@@ -307,5 +319,13 @@ if [ "$DRY_RUN" -eq 1 ]; then echo "[dry-run] no processes launched."; exit 0; f
 if [ "$ABORT" -eq 1 ]; then
   echo "== aborted after a fully-failed wave; logs at $LOG_DIR/issue-1491-${SCALE_SLUG}-*.log ==" >&2
   exit 1
+fi
+if [ "$PARTIAL" -eq 1 ]; then
+  # Round-3a MINOR (M3 enabler): a distinct non-zero rc so a chained
+  # `... phase_split_gen && ... phase_split_capture` cannot proceed over a
+  # gen wave with failed shards. Resume by re-running the SAME command —
+  # the Hub-resume predicate skips completed chunks.
+  echo "== sweep finished with PARTIAL failures (shards missing [phase=done] above); rc=3 — a chained capture wave must not consume an incomplete gen wave; re-run this command to resume the gaps. Logs at $LOG_DIR/issue-1491-${SCALE_SLUG}-*.log ==" >&2
+  exit 3
 fi
 echo "== ordered sweep complete; logs at $LOG_DIR/issue-1491-${SCALE_SLUG}-*.log =="

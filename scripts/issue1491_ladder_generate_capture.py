@@ -24,7 +24,11 @@ Unit 1 Deliverable A / epm:progress v6). Parametrizes:
                  (source-module throughput fix, plan §4.2 item (i)); a
                  run-start parity gate on 32 probe rows checks
                  batched-vs-per-row within cosine > 0.9999 and max
-                 relative L2 < 1e-3 in fp32; on failure the driver falls
+                 relative L2 < 1e-3, with the PROBE FORWARDS run in fp32
+                 (model transiently cast + restored; the gate validates
+                 BATCHING logic, not bf16 kernel noise — production
+                 capture stays bf16; an infeasible fp32 cast fails LOUD,
+                 round-3a M4); on a numeric failure the driver falls
                  back to per-row + logs a fail-loud WARN. Default 8 (safe
                  padded-batch shape).
 - ``--first-chunk-self-gate`` — enable plan §7 Gate 1 (quick ridge fit +
@@ -41,9 +45,12 @@ on the non-LFS path (quota-immune) — in EVERY mode, including
 tensors upload per K=20 chunks; the driver never discards generations or
 capture tensors. ``phase_split_capture`` never generates and never re-writes
 raw completions: it JOINS the gen wave's persisted per-chunk raw JSONs back
-by context id (local scratch first, then HF fetch — the gen wave purges
-local copies after its verified upload; fail-loud when neither exists) and
-uploads ONLY the capture ``.pt`` chunks.
+by context id, HUB-REQUIRED (round-3a M3): a chunk must already be on the
+Hub before any copy is consumed — a local-only chunk (gen wave died before
+flushing) FAILS LOUD instead of shipping .pt tensors whose published source
+text a later gen resume could replace; the ``--no-upload`` local mode is the
+explicit exception. Gen resume conversely SALVAGES local raw chunks
+verbatim (re-upload, never regenerate).
 
 Measurement contracts (Unit 2 blocker-fix round):
 
@@ -504,6 +511,45 @@ def _capture_batched(hf, tok, prompts, responses, cis, layers, h_dim, batch_size
     return rows, dropped
 
 
+def _assert_fp32_probe_feasible(hf) -> None:
+    """Fail LOUD when the in-place fp32 cast for the parity probe cannot fit.
+
+    Round-3a M4: the probe forwards run in fp32 (plan §4.2 registers the
+    bars "in fp32"), which requires transiently casting the bf16 model to
+    fp32 — an extra ~2 bytes/param of device memory (module._apply frees
+    each bf16 tensor as it converts, so peak extra ≈ fp32_total − bf16_total)
+    plus activation headroom for the 32 probe rows. When that does not fit
+    (32B fp32 weights are ~122 GiB — infeasible on A100-80, marginal on
+    H200-141), the driver STOPS here rather than silently reverting the
+    probe to bf16 or loosening the registered bars (M4 constraint): #779
+    measured bf16 batched-vs-per-row deviations (block-26 cos 0.996907)
+    far below the registered fp32 bars, so a bf16 probe would fail on
+    essentially every healthy GPU run and silently forfeit batched capture.
+    """
+    dev = next(hf.parameters()).device
+    if dev.type != "cuda":
+        return  # CPU cast is RAM-bound; tiny smoke models always fit.
+    cur_bytes = sum(p.numel() * p.element_size() for p in hf.parameters())
+    cur_bytes += sum(b.numel() * b.element_size() for b in hf.buffers())
+    fp32_bytes = sum(p.numel() * 4 for p in hf.parameters())
+    fp32_bytes += sum(b.numel() * 4 for b in hf.buffers())
+    margin_bytes = int(float(os.environ.get("EPM_LADDER_FP32_PROBE_MARGIN_GIB", "8")) * (1 << 30))
+    torch.cuda.empty_cache()  # mem_get_info excludes allocator-cached blocks
+    free, total = torch.cuda.mem_get_info(dev)
+    need = (fp32_bytes - cur_bytes) + margin_bytes
+    if free < need:
+        raise RuntimeError(
+            "fp32 parity probe infeasible on this GPU: casting the model to fp32 needs "
+            f"~{(fp32_bytes - cur_bytes) / (1 << 30):.1f} GiB extra + "
+            f"{margin_bytes / (1 << 30):.1f} GiB activation margin, but only "
+            f"{free / (1 << 30):.1f} GiB of {total / (1 << 30):.1f} GiB is free. "
+            "Refusing to run the probe in bf16 or retune the registered fp32 bars "
+            "(plan §4.2 / round-3a M4) — run this shard on a larger-memory GPU, or "
+            "lower EPM_LADDER_FP32_PROBE_MARGIN_GIB only with a measured activation "
+            "footprint."
+        )
+
+
 def _batched_capture_parity_gate(
     hf, tok, prompts, responses, cis, layers, h_dim, batch_size
 ) -> tuple[bool, str]:
@@ -511,6 +557,18 @@ def _batched_capture_parity_gate(
     capture must agree per-field cosine > 0.9999 and max relative L2 error
     < 1e-3 in fp32. On failure: return (False, reason) — caller falls back
     to per-row and logs a fail-loud WARN.
+
+    Round-3a M4: the PROBE FORWARDS run in fp32 — the model is temporarily
+    cast to fp32 for the 32 probe rows (both legs, SAME batched/per-row
+    code paths as production; only the dtype differs), then restored
+    bit-exactly (bf16 -> fp32 -> bf16 round-trips exactly). PRODUCTION
+    capture remains bf16: the gate exists to catch BATCHING bugs (masking,
+    pooling, the last-prompt-token gather — plan §10 risk row), not to
+    measure bf16 kernel reproducibility, which is expected padded-batch
+    noise (#779: block-26 cos 0.996907 with a bug-free path) and sits below
+    the registered bars by design. An infeasible fp32 cast (or an OOM
+    during the fp32 probe) FAILS LOUD instead of silently reverting to
+    bf16 / falling back to per-row — see _assert_fp32_probe_feasible.
 
     32 rows chosen per plan; we accept fewer if the caller passed fewer.
     """
@@ -520,11 +578,33 @@ def _batched_capture_parity_gate(
     p = prompts[:n]
     r = responses[:n]
     ci = cis[:n]
+    orig_dtype = next(hf.parameters()).dtype
+    cast = orig_dtype != torch.float32
+    if cast:
+        _assert_fp32_probe_feasible(hf)  # raises — never a bf16 fallback (M4)
     try:
-        rows_serial, drop_serial = _capture_perrow(hf, tok, p, r, ci, layers, h_dim)
-        rows_batched, drop_batched = _capture_batched(hf, tok, p, r, ci, layers, h_dim, batch_size)
-    except Exception as e:  # noqa: BLE001
-        return False, f"probe crashed: {type(e).__name__}: {e}"
+        if cast:
+            hf.to(torch.float32)
+        try:
+            rows_serial, drop_serial = _capture_perrow(hf, tok, p, r, ci, layers, h_dim)
+            rows_batched, drop_batched = _capture_batched(
+                hf, tok, p, r, ci, layers, h_dim, batch_size
+            )
+        except torch.cuda.OutOfMemoryError as e:
+            # Never swallow an fp32-probe OOM into the per-row fallback:
+            # that would silently forfeit batched capture (M4 constraint).
+            raise RuntimeError(
+                "fp32 parity probe OOM despite passing the feasibility check — raise "
+                "EPM_LADDER_FP32_PROBE_MARGIN_GIB or use a larger-memory GPU; do NOT "
+                f"revert the probe to bf16 (plan §4.2 / round-3a M4). Original: {e}"
+            ) from e
+        except Exception as e:  # noqa: BLE001
+            return False, f"probe crashed: {type(e).__name__}: {e}"
+    finally:
+        if cast:
+            hf.to(orig_dtype)
+            if next(hf.parameters()).is_cuda:
+                torch.cuda.empty_cache()
 
     if set(drop_serial) != set(drop_batched):
         # By construction (shared _is_empty_response) this cannot differ;
@@ -552,15 +632,20 @@ def _batched_capture_parity_gate(
             max_cos_dev = max(max_cos_dev, 1.0 - cos)
             max_rel_l2 = max(max_rel_l2, rel)
         matched += 1
+    # probe_dtype in the verdict string is the observable that the fp32 leg
+    # actually ran (round-3a M4 smoke evidence); cast=False means the model
+    # was already fp32 (CPU smokes).
+    dtype_note = f"probe_dtype=float32 (cast={cast}, restored={orig_dtype})"
     if matched == 0:
-        return False, "no matching rows between serial + batched probes"
+        return False, f"no matching rows between serial + batched probes [{dtype_note}]"
     if 1.0 - max_cos_dev < 0.9999:
-        return False, f"cosine gate FAIL: min cos={1.0 - max_cos_dev:.6f} < 0.9999"
+        return False, f"cosine gate FAIL: min cos={1.0 - max_cos_dev:.6f} < 0.9999 [{dtype_note}]"
     if max_rel_l2 >= 1e-3:
-        return False, f"rel-L2 gate FAIL: max rel-L2={max_rel_l2:.3e} >= 1e-3"
+        return False, f"rel-L2 gate FAIL: max rel-L2={max_rel_l2:.3e} >= 1e-3 [{dtype_note}]"
     return (
         True,
-        f"PASS: {matched} rows, min cos={1.0 - max_cos_dev:.6f}, max rel-L2={max_rel_l2:.3e}",
+        f"PASS: {matched} rows, min cos={1.0 - max_cos_dev:.6f}, "
+        f"max rel-L2={max_rel_l2:.3e} [{dtype_note}]",
     )
 
 
@@ -685,61 +770,20 @@ def _remote_index(hf_prefix: str, subdir: str) -> set[str]:
     return {e.path.split("/")[-1] for e in entries if not e.path.endswith("/")}
 
 
-def _load_persisted_gen_chunk(
-    scratch: Path,
-    stage_prefix: str,
+def _assert_raw_payload_matches(
+    payload: dict,
     raw_name: str,
-    cache_dir: Path,
-    done_raw: set[str],
     *,
     expect_split: str,
     expect_seed: int,
     expect_shard_index: int,
     expect_chunk: int,
-) -> dict[int, dict]:
-    """Load ONE gen-wave raw-completions chunk for ``phase_split_capture``.
-
-    Local-first, then HF fetch, then FAIL LOUD: the gen wave writes each
-    chunk JSON atomically to the SAME scratch dir before uploading, and
-    purges the local copy only after the verified Hub commit — so a local
-    file is always a complete atomic write with content identical to (or
-    pending upload as) the Hub copy, and reading it avoids a re-download on
-    same-pod gen->capture chaining and on ``--no-upload`` smokes. A chunk
-    that is neither local nor on the Hub means the gen wave is incomplete
-    (or the prefix/shard config is wrong) — the capture wave must crash,
-    never silently skip rows.
-
-    The wave-alignment asserts pin the join contract: the capture wave must
-    iterate the SAME manifest slice under the SAME
-    --num-shards/--shard-index/--shard-size arithmetic as the gen wave that
-    wrote this chunk, and the SAME split seed — a mismatch would silently
-    mispair responses with contexts through the ci join.
-
-    Returns ``{ci: row}`` (row = {"ci", "prompt", "response",
-    "finish_reason"}) keyed by the manifest context id."""
-    local = scratch / raw_name
-    if not local.exists():
-        if raw_name not in done_raw:
-            raise RuntimeError(
-                f"phase_split_capture: gen-wave raw completions missing for {raw_name} — "
-                f"neither local ({local}) nor on Hub under {stage_prefix}/raw_completions. "
-                "Run the phase_split_gen wave to completion first (launcher wave sequencing)."
-            )
-        from huggingface_hub import hf_hub_download  # type: ignore
-
-        local = Path(
-            hub.retry_transient(
-                lambda: hf_hub_download(
-                    repo_id=LADDER_HF_REPO,
-                    filename=f"{stage_prefix}/raw_completions/{raw_name}",
-                    repo_type="dataset",
-                    cache_dir=str(cache_dir),
-                ),
-                what=f"hf_hub_download {stage_prefix}/raw_completions/{raw_name}",
-            )
-        )
-    with open(local, encoding="utf-8") as fh:
-        payload = json.load(fh)
+) -> None:
+    """Wave-alignment asserts shared by the capture-side join and the
+    gen-resume salvage path: the consumer must iterate the SAME manifest
+    slice under the SAME --num-shards/--shard-index/--shard-size arithmetic
+    as the gen run that wrote this chunk, and the SAME split seed — a
+    mismatch would silently mispair responses with contexts."""
     assert int(payload["shard_index"]) == expect_shard_index, (
         "gen/capture shard mismatch",
         raw_name,
@@ -764,6 +808,127 @@ def _load_persisted_gen_chunk(
         payload["seed"],
         expect_seed,
     )
+
+
+def _load_local_raw_salvage(
+    scratch: Path,
+    raw_name: str,
+    *,
+    expect_split: str,
+    expect_seed: int,
+    expect_shard_index: int,
+    expect_chunk: int,
+) -> dict | None:
+    """Return the LOCAL gen raw-chunk payload for salvage, or None if absent.
+
+    Round-3a M3 (gen side): a raw chunk that exists locally but never
+    reached the Hub (gen wave SIGKILLed with up to UPLOAD_BATCH unflushed
+    chunks) is re-UPLOADED verbatim on gen resume — NEVER regenerated. A
+    temperature-1.0 regeneration would publish raw text silently diverging
+    from any ``.pt`` already captured from the local text (invisible to the
+    per-row prompt assert, which checks prompts, not responses). The local
+    file is a complete atomic write (``C.write_json_atomic``: tmp + rename),
+    so existence implies integrity; the wave-alignment asserts pin the
+    config so a foreign / stale scratch file fails loud instead of being
+    silently reused."""
+    local = scratch / raw_name
+    if not local.exists():
+        return None
+    with open(local, encoding="utf-8") as fh:
+        payload = json.load(fh)
+    _assert_raw_payload_matches(
+        payload,
+        raw_name,
+        expect_split=expect_split,
+        expect_seed=expect_seed,
+        expect_shard_index=expect_shard_index,
+        expect_chunk=expect_chunk,
+    )
+    return payload
+
+
+def _load_persisted_gen_chunk(
+    scratch: Path,
+    stage_prefix: str,
+    raw_name: str,
+    cache_dir: Path,
+    done_raw: set[str],
+    *,
+    expect_split: str,
+    expect_seed: int,
+    expect_shard_index: int,
+    expect_chunk: int,
+    allow_local_only: bool = False,
+) -> dict[int, dict]:
+    """Load ONE gen-wave raw-completions chunk for ``phase_split_capture``.
+
+    HUB-REQUIRED (round-3a M3, capture side): unless ``allow_local_only``
+    (the explicit ``--no-upload`` local mode), the chunk MUST already be on
+    the Hub before any copy is consumed — a local file whose chunk is not
+    in ``done_raw`` is a gen wave that died before flushing (up to
+    UPLOAD_BATCH chunks can be local-only after a SIGKILL). Capturing from
+    such text would ship ``.pt`` tensors whose published source text a later
+    gen resume could silently replace, so it FAILS LOUD here instead. When
+    the chunk IS on the Hub, a surviving local copy is byte-identical by the
+    upload contract (``_flush_upload_batch`` uploads the local file itself
+    and purges only after verify), so local-first reading stays safe and
+    avoids a re-download. A chunk that is neither local nor on the Hub means
+    the gen wave is incomplete (or the prefix/shard config is wrong) — the
+    capture wave must crash, never silently skip rows.
+
+    The wave-alignment asserts (``_assert_raw_payload_matches``) pin the
+    join contract; see that helper.
+
+    Returns ``{ci: row}`` (row = {"ci", "prompt", "response",
+    "finish_reason"}) keyed by the manifest context id."""
+    local = scratch / raw_name
+    on_hub = raw_name in done_raw
+    if not on_hub and not allow_local_only:
+        if local.exists():
+            raise RuntimeError(
+                f"phase_split_capture: {raw_name} exists locally ({local}) but is NOT on the "
+                f"Hub under {stage_prefix}/raw_completions — the gen wave died before flushing "
+                "this chunk. Refusing to capture from local-only text (round-3a M3 divergence "
+                "guard): a later gen resume would otherwise re-upload/regenerate the published "
+                "raw text out from under the shipped .pt. Re-run the phase_split_gen wave — its "
+                "resume re-uploads existing local raw chunks verbatim (never regenerates) — "
+                "then re-run this capture wave."
+            )
+        raise RuntimeError(
+            f"phase_split_capture: gen-wave raw completions missing for {raw_name} — "
+            f"neither local ({local}) nor on Hub under {stage_prefix}/raw_completions. "
+            "Run the phase_split_gen wave to completion first (launcher wave sequencing)."
+        )
+    if not local.exists():
+        if not on_hub:
+            # allow_local_only mode with no local file AND nothing on the Hub.
+            raise RuntimeError(
+                f"phase_split_capture (--no-upload): {raw_name} not in local scratch "
+                f"{scratch} and not on the Hub — run the --no-upload gen wave first."
+            )
+        from huggingface_hub import hf_hub_download  # type: ignore
+
+        local = Path(
+            hub.retry_transient(
+                lambda: hf_hub_download(
+                    repo_id=LADDER_HF_REPO,
+                    filename=f"{stage_prefix}/raw_completions/{raw_name}",
+                    repo_type="dataset",
+                    cache_dir=str(cache_dir),
+                ),
+                what=f"hf_hub_download {stage_prefix}/raw_completions/{raw_name}",
+            )
+        )
+    with open(local, encoding="utf-8") as fh:
+        payload = json.load(fh)
+    _assert_raw_payload_matches(
+        payload,
+        raw_name,
+        expect_split=expect_split,
+        expect_seed=expect_seed,
+        expect_shard_index=expect_shard_index,
+        expect_chunk=expect_chunk,
+    )
     rows = {int(r["ci"]): r for r in payload["rows"]}
     assert len(rows) == len(payload["rows"]), f"{raw_name}: duplicate ci in gen rows"
     return rows
@@ -774,10 +939,11 @@ def run_capture(args) -> int:
     across ``args.num_shards`` shards; process shard ``args.shard_index``.
 
     Emits per-chunk .pt (trimmed) + per-chunk raw completions JSON into
-    ``args.out_dir/shards/``, uploads in K=20 batches to
-    ``{args.hf_prefix}/final_token_capture/`` and
-    ``{args.hf_prefix}/raw_completions/`` (plus ``…/<stage>/`` when
-    ``args.stage`` names one, e.g. ``ceiling_draws`` — plan §4.2).
+    ``args.out_dir/shards/``, uploads in K=20 batches under the stage
+    prefix derived from ``args.split``: ``{args.hf_prefix}/{split}/...``
+    for regular splits, ``{args.hf_prefix}/ceiling_draws/seed{S}/...``
+    for the ``ceiling_draw_*`` splits (plan §4.2; there is no ``--stage``
+    flag — round-3a MINOR docstring fix).
     """
     layers = _resolve_layers_arg(args.layers)
     h_dim = _resolve_h_dim(args.model, args.h_dim)
@@ -900,6 +1066,7 @@ def run_capture(args) -> int:
                 expect_seed=gen_seed,
                 expect_shard_index=args.shard_index,
                 expect_chunk=0,
+                allow_local_only=args.no_upload,
             )
             probe_missing = [c for c in probe_cis if c not in probe_map]
             assert not probe_missing, (
@@ -979,6 +1146,54 @@ def run_capture(args) -> int:
     self_gate_rows: list[dict] = []
     self_gate_fired = False
 
+    def _eval_first_chunk_self_gate(trigger: str) -> None:
+        # Plan §7 Decision Gate 1 — ONE shared evaluation + abort path for
+        # the mid-shard (>=2000 rows) trigger and the end-of-shard fallback
+        # (round-3a M2; no forked logic between the two arming points).
+        nonlocal self_gate_fired
+        self_gate_fired = True
+        primary_layer_index = len(layers) // 2  # f=0.679 primary is middle entry
+        passed, diag = _first_chunk_self_gate(self_gate_rows, primary_layer_index)
+        logger.info(
+            "[ladder-gate] first-chunk self-gate (%s, n=%d rows): %s (%s)",
+            trigger,
+            len(self_gate_rows),
+            "PASS" if passed else "FAIL",
+            diag,
+        )
+        if passed:
+            return
+        # Abort THIS scale's job (other scales unaffected) via a sentinel the
+        # poller drains into an epm:failure marker. Round-3a M1: the sentinel
+        # MUST conform to poll_pipeline._SENTINEL_REQUIRED_KEYS
+        # (sentinel_schema_version / kind / version) or _parse_sentinel SKIPS
+        # it (the #899 fallback rescues only bare Step-7 results payloads on
+        # *-results.json filenames) and plan §7's abort routing is dead code
+        # — so route through the shared conforming writer C.write_sentinel
+        # (which also falls back to PROJECT_ROOT/logs when /workspace/logs is
+        # absent, instead of silently skipping the write).
+        C.write_sentinel(
+            "epm:failure",
+            "failure_class: code\n"
+            "reason: first_chunk_self_gate_fail\n"
+            f"split: {args.split}\n"
+            f"shard_index: {args.shard_index}\n"
+            f"trigger: {trigger}\n"
+            f"detail: {diag}",
+            task_id=1491,
+            extra={
+                "failure_class": "code",
+                "reason": "first_chunk_self_gate_fail",
+                "detail": diag,
+                "split": args.split,
+                "shard_index": args.shard_index,
+                "trigger": trigger,
+                "by": "issue1491_ladder_generate_capture",
+            },
+        )
+        _flush_pending()  # keep what we have
+        raise SystemExit(1)
+
     try:
         for ci_idx, s in enumerate(range(0, len(shard_rows), args.shard_size)):
             name = f"shard{args.shard_index:02d}_chunk{ci_idx:04d}.pt"
@@ -1034,6 +1249,7 @@ def run_capture(args) -> int:
                     expect_seed=gen_seed,
                     expect_shard_index=args.shard_index,
                     expect_chunk=ci_idx,
+                    allow_local_only=args.no_upload,
                 )
                 missing = [c for c in kept_cis if c not in raw_map]
                 if missing:
@@ -1041,6 +1257,21 @@ def run_capture(args) -> int:
                         f"phase_split_capture: {len(missing)} kept cis absent from gen-wave "
                         f"{raw_name} (first: {missing[:10]}) — the gen wave ran under a "
                         "different shard config / manifest; refusing a partial join."
+                    )
+                # Converse join direction (round-3a MINOR): gen-wave rows NOT
+                # in this run's kept set ship raw-only and are never captured
+                # — under admission/config drift that is a silent coverage
+                # hole, so at minimum count + log it loudly.
+                extra_cis = sorted(set(raw_map) - set(kept_cis))
+                if extra_cis:
+                    logger.warning(
+                        "[shard %d] chunk %d: %d gen-wave rows absent from this capture "
+                        "run's kept set (first: %s) — over-length/admission drift between "
+                        "waves; these rows remain raw-only (uncaptured)",
+                        args.shard_index,
+                        ci_idx,
+                        len(extra_cis),
+                        extra_cis[:10],
                     )
                 for c, p in zip(kept_cis, kept_prompts, strict=True):
                     assert raw_map[c]["prompt"] == p, (
@@ -1052,36 +1283,96 @@ def run_capture(args) -> int:
                 # reported there); do not double-count here.
                 n_cap_hit = 0
             else:
-                # Generate responses (split-seeded; llm None on the CPU smoke
-                # path returns stub responses through the same capture code).
-                responses, finish_reasons = _generate_seeded(llm, tok, kept_prompts, gen_seed)
-                n_cap_hit = sum(1 for f in finish_reasons if f == "length")
-                cap_hit_total += n_cap_hit
-                gen_total += len(responses)
+                # SALVAGE-FIRST (round-3a M3, gen side): if this chunk's raw
+                # JSON already exists locally (atomic write from a prior run
+                # that died before its upload flushed), reuse its text
+                # verbatim and re-upload the ORIGINAL bytes — NEVER
+                # regenerate: a fresh temperature-1.0 draw would publish raw
+                # text silently diverging from any .pt already captured from
+                # the local text (same-pod gen->capture chaining). Together
+                # with the capture-side Hub-required guard in
+                # _load_persisted_gen_chunk this makes raw/.pt divergence
+                # structurally impossible whenever the atomic local record
+                # exists; with no local record and nothing published, the
+                # full redo below regenerates + recaptures BOTH artifacts as
+                # a consistent pair (upload overwrites are pair-atomic per
+                # flush batch).
+                salvaged = None
+                if raw_name not in done_raw:
+                    salvaged = _load_local_raw_salvage(
+                        scratch,
+                        raw_name,
+                        expect_split=args.split,
+                        expect_seed=gen_seed,
+                        expect_shard_index=args.shard_index,
+                        expect_chunk=ci_idx,
+                    )
+                if salvaged is not None:
+                    sal_rows = {int(r["ci"]): r for r in salvaged["rows"]}
+                    if set(sal_rows) != set(kept_cis):
+                        raise RuntimeError(
+                            f"gen salvage: local {raw_name} row set diverges from this run's "
+                            f"kept set (local-only: {sorted(set(sal_rows) - set(kept_cis))[:10]}, "
+                            f"kept-only: {sorted(set(kept_cis) - set(sal_rows))[:10]}) — "
+                            "manifest/admission drift; refusing to reuse OR regenerate "
+                            "(delete the stale scratch file only if the drift is understood)."
+                        )
+                    for c, p in zip(kept_cis, kept_prompts, strict=True):
+                        assert sal_rows[c]["prompt"] == p, (
+                            "prompt drift between manifest row and salvaged gen row",
+                            c,
+                        )
+                    responses = [sal_rows[c]["response"] for c in kept_cis]
+                    finish_reasons = [str(sal_rows[c]["finish_reason"]) for c in kept_cis]
+                    n_cap_hit = int(
+                        salvaged.get("n_cap_hit", sum(1 for f in finish_reasons if f == "length"))
+                    )
+                    # This run publishes these rows, so they enter its cap-hit
+                    # digest (the killed run never reported them).
+                    cap_hit_total += n_cap_hit
+                    gen_total += len(responses)
+                    logger.warning(
+                        "[shard %d] chunk %d: SALVAGED %d rows from local %s (prior run died "
+                        "before upload) — text reused verbatim, NOT regenerated (round-3a M3)",
+                        args.shard_index,
+                        ci_idx,
+                        len(responses),
+                        raw_name,
+                    )
+                    # Do NOT rewrite the file: the original atomic bytes
+                    # upload as-is (byte-identity with any prior local read).
+                else:
+                    # Generate responses (split-seeded; llm None on the CPU
+                    # smoke path returns stub responses through the same
+                    # capture code).
+                    responses, finish_reasons = _generate_seeded(llm, tok, kept_prompts, gen_seed)
+                    n_cap_hit = sum(1 for f in finish_reasons if f == "length")
+                    cap_hit_total += n_cap_hit
+                    gen_total += len(responses)
 
-                # Persist raw completions FIRST (persist-by-default; text
-                # path, non-LFS, quota-immune — upload-policy §v2).
-                # finish_reason per row + n_cap_hit make cap-hit rows
-                # re-generable post-hoc (CLAUDE.md cap-hit accounting).
-                C.write_json_atomic(
-                    scratch / raw_name,
-                    {
-                        "shard_index": args.shard_index,
-                        "chunk": ci_idx,
-                        "split": args.split,
-                        "seed": gen_seed,
-                        "sampling_seed": gen_seed,
-                        "engine_seed": gen_seed,
-                        "gen_max_tokens": GEN_MAX_TOKENS,
-                        "n_cap_hit": n_cap_hit,
-                        "rows": [
-                            {"ci": int(c), "prompt": p, "response": r, "finish_reason": f}
-                            for c, p, r, f in zip(
-                                kept_cis, kept_prompts, responses, finish_reasons, strict=True
-                            )
-                        ],
-                    },
-                )
+                    # Persist raw completions FIRST (persist-by-default; text
+                    # path, non-LFS, quota-immune — upload-policy §v2).
+                    # finish_reason per row + n_cap_hit make cap-hit rows
+                    # re-generable post-hoc (CLAUDE.md cap-hit accounting).
+                    C.write_json_atomic(
+                        scratch / raw_name,
+                        {
+                            "shard_index": args.shard_index,
+                            "chunk": ci_idx,
+                            "split": args.split,
+                            "seed": gen_seed,
+                            "sampling_seed": gen_seed,
+                            "engine_seed": gen_seed,
+                            "gen_max_tokens": GEN_MAX_TOKENS,
+                            "n_cap_hit": n_cap_hit,
+                            "rows": [
+                                {"ci": int(c), "prompt": p, "response": r, "finish_reason": f}
+                                for c, p, r, f in zip(
+                                    kept_cis, kept_prompts, responses, finish_reasons, strict=True
+                                )
+                            ],
+                        },
+                    )
 
             # Trimmed capture (skipped in phase_split_gen mode — gen only).
             if args.capture_mode == "phase_split_gen":
@@ -1150,41 +1441,28 @@ def run_capture(args) -> int:
                 capture_fn_choice if args.capture_mode != "phase_split_gen" else "gen-only",
             )
 
-            # First-chunk self-gate — plan §7 Decision Gate 1.
+            # First-chunk self-gate — plan §7 Decision Gate 1 (mid-shard arm).
             if (
                 args.first_chunk_self_gate
                 and args.capture_mode != "phase_split_gen"
                 and not self_gate_fired
                 and len(self_gate_rows) >= 2000
             ):
-                primary_layer_index = len(layers) // 2  # f=0.679 primary is middle entry
-                passed, diag = _first_chunk_self_gate(self_gate_rows, primary_layer_index)
-                self_gate_fired = True
-                logger.info(
-                    "[ladder-gate] first-chunk self-gate: %s (%s)",
-                    "PASS" if passed else "FAIL",
-                    diag,
-                )
-                if not passed:
-                    # Write a sentinel the poller will drain into an epm:failure
-                    # marker; abort THIS scale's job (other scales unaffected).
-                    sentinel_path = Path("/workspace/logs") / (
-                        f"issue-1491-first-chunk-self-gate-fail-{args.split}-shard{args.shard_index}.json"
-                    )
-                    if sentinel_path.parent.exists():
-                        C.write_json_atomic(
-                            sentinel_path,
-                            {
-                                "epm_marker": "epm:failure",
-                                "failure_class": "code",
-                                "reason": "first_chunk_self_gate_fail",
-                                "detail": diag,
-                                "split": args.split,
-                                "shard_index": args.shard_index,
-                            },
-                        )
-                    _flush_pending()  # keep what we have
-                    raise SystemExit(1)
+                _eval_first_chunk_self_gate("mid-shard >=2000 rows")
+
+        # End-of-shard fallback (round-3a M2): at the launcher's own 32B
+        # example (16 shards, train_25k) a shard holds ~1,563 rows < 2000,
+        # so the mid-shard arm above NEVER fires on the most expensive rung.
+        # Evaluate on whatever this shard actually captured; below 500 rows
+        # _first_chunk_self_gate returns skipped=True (tiny splits). A fully
+        # resumed shard (nothing captured this run) has no rows to evaluate.
+        if (
+            args.first_chunk_self_gate
+            and args.capture_mode != "phase_split_gen"
+            and not self_gate_fired
+            and self_gate_rows
+        ):
+            _eval_first_chunk_self_gate("end-of-shard fallback")
 
         _flush_pending()
     except BaseException:
