@@ -1006,7 +1006,15 @@ from spawn_session import (  # noqa: E402
     stagger_delay_s,
     takeover_sentinel_fresh,
 )
-from tick_triage import plan_pending_over_cap, proc_start_epoch  # noqa: E402
+from tick_triage import (  # noqa: E402
+    compute_head_sha,
+    compute_progress_fingerprint,
+    no_progress_state_path,
+    no_progress_threshold,
+    plan_pending_over_cap,
+    proc_start_epoch,
+    read_no_progress_state,
+)
 from worktree_audit import ORPHAN_HOLDER_PATTERNS  # noqa: E402  (codex-companion cmdline patterns)
 
 # Active-drive statuses: a dead session here SHOULD be resurrected.
@@ -3495,6 +3503,132 @@ def decide_boot_death(
     if stops_today >= stops_per_day:
         return "cap-alert"
     return "stop"
+
+
+def decide_no_progress_respawn(
+    *,
+    kill_switch: bool,
+    status_class: str,
+    tick_streak: int,
+    tick_threshold: int,
+    respawns_today: int,
+    respawns_per_day: int,
+    episode_respawn_count: int,
+    episode_belt_max: int,
+    worktree_activity_fresh: bool,
+    park_exemption_fires: bool,
+    daemon_reachable: bool | None,
+    transcript_resolvable: bool | None,
+    live_pod_present: bool | None,
+    prev_fingerprint: str | None,
+    curr_fingerprint: str | None,
+) -> tuple[str, str]:
+    """Pure per-entry decision for the #2058 no-progress-respawn lane.
+    Returns ``(action, reason)`` where action is one of:
+
+    * ``"respawn"`` — fire (all inputs positive; the caller stops the sid
+      and dispatches ``spawn-issue --auto``).
+    * ``"hold"`` — freeze the streak (fresh worktree activity, daemon /
+      transcript unreachable, live-pod veto, park-exemption fire); don't
+      fire, don't reset.
+    * ``"clear"`` — end the episode (kill switch, park/terminal status,
+      tick streak below threshold, or the fingerprint has ADVANCED since
+      the tick's read); streak resets in the caller's state file.
+    * ``"cap-exhausted"`` — the fire conditions ALL hold but
+      ``respawns_today >= respawns_per_day`` OR
+      ``episode_respawn_count >= episode_belt_max``; the caller emits a
+      one-time louder cap marker per (issue, UTC day) and stops firing
+      until the day rolls or the episode ends.
+
+    Every unresolvable input fails toward ``"hold"`` (freeze the streak)
+    or ``"clear"`` (kill switch / park) per the plan §4 posture — the
+    lane must NEVER respawn against uncertain evidence.
+
+    Parameters
+    ----------
+    kill_switch
+        Truthy value of ``EPM_DISABLE_NO_PROGRESS_RESPAWN`` (== "1"). A
+        set kill switch returns ``("clear", "kill switch")`` unconditionally.
+    status_class
+        ``"active"`` iff the task's live status is in the ACTIVE set
+        (respawn-eligible); anything else (``"park"`` / ``"terminal"`` /
+        ``"unknown"``) is a park-status act guard — ``("clear",
+        "park-status act guard")`` (#1247).
+    tick_streak, tick_threshold
+        The tick's persisted no-progress streak + threshold (from the
+        tick's ``compute_issue_verdict``). ``tick_streak < tick_threshold``
+        means the tick has NOT declared NO-PROGRESS-RESPAWN yet — the
+        watcher has nothing to act on: ``("clear", "tick streak below
+        threshold")``.
+    respawns_today, respawns_per_day
+        The lane's own per-UTC-day cap. At/above the cap the fire
+        conditions still gate ``"cap-exhausted"`` vs a lower verdict.
+    episode_respawn_count, episode_belt_max
+        The stalled-lane episode belt (``STALLED_MAX_RESPAWNS`` = 3).
+        Belt exhaustion returns ``"cap-exhausted"`` when the fire
+        conditions otherwise hold.
+    worktree_activity_fresh
+        True iff ``decide_worktree_hold``-style probe reports recent
+        activity — ``("hold", "worktree activity fresh")``.
+    park_exemption_fires
+        True iff ANY park-exemption applies (user-pause / spend-approval
+        / provision-in-flight / long-phase heartbeat / round-complete
+        re-park / awaiting-child) — ``("hold", "park exemption fires")``.
+    daemon_reachable
+        None on a daemon probe failure — freeze the streak
+        (``("hold", "daemon unreachable")``); True/False evaluated normally.
+    transcript_resolvable
+        None when the resume-transcript resolver could not resolve the
+        session's transcript — same freeze posture.
+    live_pod_present
+        None (unresolvable pod probe) OR True (live pod for the issue) —
+        both freeze: a live workload's orchestrator is a healthy monitor
+        and a ``progress: none`` heartbeat is expected there.
+    prev_fingerprint, curr_fingerprint
+        The watcher's OWN independently-computed fingerprint pair. A
+        strict-string mismatch means the fingerprint ADVANCED between
+        the tick's read and the pass's read — ``("clear", "fingerprint
+        advanced since tick read")``.
+    """
+    if kill_switch:
+        return ("clear", "kill switch")
+    if status_class != "active":
+        return ("clear", "park-status act guard")
+    if tick_streak < tick_threshold:
+        return ("clear", "tick streak below threshold")
+    # Fingerprint advance BEFORE the freeze checks: an advanced fingerprint
+    # ENDS the episode (streak resets) — an unreachable-daemon tick that
+    # nonetheless shows real progress upstream still counts.
+    if (
+        prev_fingerprint is not None
+        and curr_fingerprint is not None
+        and prev_fingerprint != curr_fingerprint
+    ):
+        return ("clear", "fingerprint advanced since tick read")
+    # Freeze arms (unresolvable inputs) — fail-safe: don't fire, don't reset.
+    if daemon_reachable is None:
+        return ("hold", "daemon unreachable")
+    if transcript_resolvable is None:
+        return ("hold", "unresolvable transcript")
+    if live_pod_present is None:
+        return ("hold", "live-pod probe unresolvable")
+    # Behavioral vetoes.
+    if worktree_activity_fresh:
+        return ("hold", "worktree activity fresh")
+    if park_exemption_fires:
+        return ("hold", "park exemption fires")
+    if live_pod_present:
+        return ("hold", "live-pod veto")
+    if daemon_reachable is False:
+        return ("hold", "daemon down")
+    if transcript_resolvable is False:
+        return ("hold", "transcript unresolvable")
+    # Fire conditions all satisfied — cap-gate before the fire.
+    if episode_respawn_count >= episode_belt_max:
+        return ("cap-exhausted", f"episode belt {episode_belt_max} reached")
+    if respawns_today >= respawns_per_day:
+        return ("cap-exhausted", f"respawns_today {respawns_today} >= {respawns_per_day}")
+    return ("respawn", f"tick streak {tick_streak} >= threshold {tick_threshold}")
 
 
 def decide_pod_safety(
@@ -28138,6 +28272,394 @@ def boot_death_pass(
         _process_boot_death(path, pids_by_sid, now, dry_run)
 
 
+# ─── no-progress-respawn pass (#2058) ─────────────────────────────────────────
+#
+# Detect a session that wakes, performs no durable work, posts a heartbeat,
+# and sleeps — repeatedly — and force-RESPAWN it (fresh context) instead of
+# re-driving it into the same exhausted context. Motivating incident #2054
+# (2026-08-04): an autonomous /issue session burned 2h16m emitting four
+# consecutive heartbeats whose own text said "no state change"; the tick's
+# age-only HEALTHY predicate reset the clock on each beat and no watcher
+# lane escalated. #1491 hit the same class the same day.
+#
+# The tick side (Unit A / B partial):
+# * ``tick_triage.compute_progress_fingerprint`` computes a stable
+#   fingerprint over the newest non-watcher-non-heartbeat marker ts, the
+#   ``origin/issue-<N>`` HEAD sha, and the task status; a heartbeat carrying
+#   an explicit ``progress: <not-none>`` line short-circuits as durable
+#   evidence.
+# * ``tick_triage.compute_issue_verdict`` returns ``NO-PROGRESS-RESPAWN``
+#   with a ``streak`` when the fingerprint is unchanged across
+#   ``no_progress_threshold()`` (default 3) consecutive fresh-age ticks.
+# * ``tick_triage.write_no_progress_state`` persists ``fingerprint`` +
+#   ``streak`` atomically at ``~/.eps-autonomous/no-progress-<N>.json``,
+#   round-tripping this watcher pass's fields.
+#
+# The watcher pass (this section):
+# * Reads the tick's ``streak`` from the state file and re-computes ITS
+#   OWN fingerprint independently (per plan §4 "Fingerprint duplication
+#   note" — the tick's write + the watcher's read are on independent
+#   crons, so a duplicate cheap computation avoids a data race). An
+#   ADVANCED fingerprint short-circuits the fire.
+# * ``decide_no_progress_respawn`` gates on the tick streak, the
+#   per-issue per-UTC-day cap
+#   (:data:`NO_PROGRESS_RESPAWNS_PER_DAY_DEFAULT`), the stalled-lane
+#   episode belt (:data:`STALLED_MAX_RESPAWNS`), and vetoes (worktree
+#   activity, park-exemption fire, live-pod signal — a live workload's
+#   orchestrator is a healthy monitor and ``progress: none`` is expected
+#   there). Every unresolvable input FREEZES the streak (fail-safe).
+# * On ``"respawn"``: same-instant ``_task_status`` re-read (#1247 act
+#   guard); post the fire marker (``_NO_PROGRESS_RESPAWN_NOTE_SENTINEL``,
+#   member of :data:`_WATCHER_NOTE_SENTINELS`, so it never resets the
+#   progress clock it measures) BEFORE the stop; call ``_stop_session``;
+#   bump ``respawns_today`` latch-first in the state file; one sidecar row
+#   + one fail-soft Telegram push. The next-tick crash-recovery arm
+#   completes the spawn once the stopped wrapper is verifiably dead
+#   (STAGED semantics — never stop + spawn in the same tick).
+# * On ``"cap-exhausted"``: one-time cap marker + push per (issue, UTC
+#   day); dedup on the ``cap_exhausted_day`` field.
+# * ``dry_run=True`` performs ZERO writes and ZERO subprocess.run.
+#
+# State file: ``~/.eps-autonomous/no-progress-<N>.json`` (shared with the
+# tick; the tick's ``write_no_progress_state`` round-trips this pass's
+# fields, and this pass reads via ``read_no_progress_state`` and writes
+# the merged payload atomically). GC: ``(NO_PROGRESS_STATE_PREFIX, "")``
+# is already registered in :data:`_GC_TARGETS`; reap at
+# ``TERMINAL_FOR_GC`` (``completed`` / ``archived``) only (never
+# mid-episode).
+#
+# Kill switch: ``EPM_DISABLE_NO_PROGRESS_RESPAWN=1``; CLI arm
+# ``--no-progress-only`` pair-runs just this pass (dry-run smoke).
+
+#: Per-issue per-UTC-day cap on no-progress respawns. Malformed / <1 env
+#: falls back to the default — never a kill switch (byte-parallel to
+#: :func:`_tick_wedge_respawns_per_day` (#1241) and
+#: :func:`_boot_death_stops_per_day`). INDEPENDENT counter from every
+#: other lane's daily cap — a busy dispatch-loop day for the tick-wedge
+#: lanes doesn't disarm this one.
+NO_PROGRESS_RESPAWNS_PER_DAY_DEFAULT = 3
+
+
+def _no_progress_respawn_disabled() -> bool:
+    """Kill switch: True when ``EPM_DISABLE_NO_PROGRESS_RESPAWN`` is set
+    truthy (``"1"`` / ``"true"`` / ``"yes"``, case-insensitive). Default
+    enabled. Mirrors :func:`_boot_death_pass_enabled` (inverted polarity
+    — this returns the DISABLED value, so the pass short-circuits when
+    True)."""
+    raw = os.environ.get("EPM_DISABLE_NO_PROGRESS_RESPAWN", "").strip().lower()
+    return raw in {"1", "true", "yes"}
+
+
+def _no_progress_respawns_per_day() -> int:
+    """Daily per-issue cap on no-progress respawns (env
+    ``EPM_NO_PROGRESS_RESPAWNS_PER_DAY``; default
+    :data:`NO_PROGRESS_RESPAWNS_PER_DAY_DEFAULT`). Malformed OR ``< 1``
+    env falls back — never a kill switch."""
+    raw = os.environ.get("EPM_NO_PROGRESS_RESPAWNS_PER_DAY")
+    if not raw:
+        return NO_PROGRESS_RESPAWNS_PER_DAY_DEFAULT
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return NO_PROGRESS_RESPAWNS_PER_DAY_DEFAULT
+    if parsed < 1:
+        return NO_PROGRESS_RESPAWNS_PER_DAY_DEFAULT
+    return parsed
+
+
+def _write_no_progress_state_watcher(issue: int, watcher_fields: dict, dry_run: bool) -> None:
+    """Atomic tmp+rename write of the #2058 per-issue no-progress state
+    from the WATCHER's side, preserving the TICK-owned fields.
+
+    Reads the current state via the tick's :func:`read_no_progress_state`
+    (so the tick's ``fingerprint`` / ``streak`` / ``ts`` / ``issue`` are
+    ROUND-TRIPPED verbatim), merges in this pass's own fields
+    (``respawns_today`` / ``respawn_day`` / ``stop_pending_sid`` /
+    ``stop_pending_ts`` / ``cap_exhausted_day`` / ``episode_id``), and
+    writes atomically. Fail-soft: an OSError is logged and swallowed
+    (main() has no per-pass exception wrapping — a raise here would kill
+    every later pass); dry-run never writes."""
+    if dry_run:
+        print(f"  [dry-run] would save no-progress state for #{issue}: {watcher_fields}")
+        return
+    prev = read_no_progress_state(issue)
+    payload = dict(prev)
+    payload["issue"] = issue
+    for k, v in watcher_fields.items():
+        payload[k] = v
+    dest = no_progress_state_path(issue)
+    tmp = dest.with_suffix(".json.tmp")
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        tmp.write_text(json.dumps(payload, indent=2))
+        tmp.replace(dest)
+    except OSError as e:
+        print(
+            f"  WARNING: saving no-progress state for #{issue} failed: {e}",
+            file=sys.stderr,
+        )
+
+
+def _append_no_progress_event(note: str, dry_run: bool) -> None:
+    """Durable trace for no-progress respawns / cap alerts — one JSON
+    line per action in ``~/.eps-autonomous/no-progress-respawn-events.jsonl``.
+    The ``.jsonl`` suffix keeps it OUT of the ``no-progress-*.json`` GC
+    glob (which reaps per-issue state files only). Fail-soft, mirrors
+    :func:`_append_boot_death_event`."""
+    dest = AUTONOMOUS_REGISTRY_DIR / "no-progress-respawn-events.jsonl"
+    line = json.dumps(
+        {
+            "ts": datetime.now().astimezone().isoformat(),
+            "kind": "no-progress-respawn",
+            "note": note,
+        }
+    )
+    if dry_run:
+        print(f"  [dry-run] would append no-progress-respawn event to {dest}")
+        return
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as e:
+        print(
+            f"  WARNING: appending no-progress-respawn event failed: {e}",
+            file=sys.stderr,
+        )
+
+
+def _process_no_progress_respawn(
+    path: Path,
+    pids_by_sid: dict[str, int],
+    pod_active_issues: set[int],
+    now: float,
+    dry_run: bool,
+) -> None:
+    """Evaluate ONE auto registration against the no-progress-respawn
+    predicate and STOP its session when the predicate verdicts
+    ``"respawn"`` (cap permitting). Every unresolvable input fails
+    toward keep/hold; every IO goes through a fail-soft helper —
+    main() has no per-pass exception wrapping, so nothing here may
+    raise (the ``_process_boot_death`` containment style)."""
+    try:
+        entry = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return  # garbled entries are the crash-recovery / GC passes' property
+    if not isinstance(entry, dict):
+        return
+    issue = entry.get("issue")
+    if not isinstance(issue, int) or isinstance(issue, bool):
+        issue = _gc_parse_issue_from_path(path, "issue-", "")
+    if issue is None:
+        return
+    sid = entry.get("happy_session_id")
+    if not isinstance(sid, str) or not sid:
+        return
+    # The tick and the watcher share the same no-progress-<N>.json file
+    # by design (plan §4 "Fingerprint duplication note"): the tick writes
+    # streak + fingerprint; the watcher writes its own day-cap fields.
+    state = read_no_progress_state(issue)
+    tick_streak_raw = state.get("streak")
+    tick_streak = tick_streak_raw if isinstance(tick_streak_raw, int) else 0
+    prev_fingerprint = state.get("fingerprint")
+    if not isinstance(prev_fingerprint, str):
+        prev_fingerprint = None
+    # Live task-side reads — every failure returns None/False (fail toward
+    # freeze). ``_task_status`` returns None on a raise; treat that as
+    # non-active (park-status act guard).
+    live_status = _task_status(issue)
+    if live_status is None:
+        return  # bounded task.py failure — a later tick will re-evaluate
+    status_class = "active" if live_status in ACTIVE else "park"
+    events = _task_events(issue)
+    # Watcher's own fingerprint compute — independent of the tick's
+    # persisted one (plan §4 duplication note). ``compute_head_sha``
+    # bounded fetch + rev-parse; ``compute_progress_fingerprint`` reads
+    # the events and the head sha.
+    head_sha = compute_head_sha(issue)
+    curr_fingerprint = compute_progress_fingerprint(events, head_sha, live_status)
+    # Vetoes (each fail-toward-freeze / fail-toward-hold).
+    worktree_fresh = _worktree_recent_activity(issue, now, _wt_activity_fresh_s())
+    has_pod = issue in pod_active_issues
+    park_exemption_fires = (
+        _provision_in_flight_reason(issue, now) is not None
+        or _followup_round_complete_reason(events, issue=issue) is not None
+        or _followups_awaiting_child_reason(
+            issue, status=live_status, has_pod=has_pod, events=events
+        )
+        is not None
+    )
+    live_pod_present = _task_session_followup_active(issue, events=events)
+    daemon_reachable = _daemon_reachable()
+    # Transcript resolvable: we only need to know if the sid maps to a
+    # live pid in the shared reaper snapshot. A dead sid is the
+    # crash-recovery pass's property.
+    pid = pids_by_sid.get(sid)
+    transcript_resolvable: bool | None = pid is not None
+    # Episode + cap state (watcher-owned fields on the shared state file).
+    day_key = time.strftime("%Y-%m-%d", time.gmtime(now))
+    respawns_today = _day_scoped_count(state, "respawn_day", "respawns_today", day_key)
+    episode_respawn_count_raw = state.get("episode_respawn_count")
+    episode_respawn_count = (
+        episode_respawn_count_raw if isinstance(episode_respawn_count_raw, int) else 0
+    )
+    cap = _no_progress_respawns_per_day()
+    action, reason = decide_no_progress_respawn(
+        kill_switch=_no_progress_respawn_disabled(),
+        status_class=status_class,
+        tick_streak=tick_streak,
+        tick_threshold=no_progress_threshold(),
+        respawns_today=respawns_today,
+        respawns_per_day=cap,
+        episode_respawn_count=episode_respawn_count,
+        episode_belt_max=STALLED_MAX_RESPAWNS,
+        worktree_activity_fresh=worktree_fresh,
+        park_exemption_fires=park_exemption_fires,
+        daemon_reachable=daemon_reachable,
+        transcript_resolvable=transcript_resolvable,
+        live_pod_present=live_pod_present,
+        prev_fingerprint=prev_fingerprint,
+        curr_fingerprint=curr_fingerprint,
+    )
+    if action == "hold":
+        print(f"  no-progress: issue #{issue} — hold: {reason}")
+        return
+    if action == "clear":
+        # End the episode: reset the watcher-owned day-cap belt IF this
+        # is a genuine advance / kill-switch clear; do NOT reset for a
+        # park-status act guard (that says "the task moved on", so the
+        # state file will be GC'd by the terminal-status sweep anyway).
+        if reason == "fingerprint advanced since tick read":
+            _write_no_progress_state_watcher(
+                issue,
+                {
+                    "episode_respawn_count": 0,
+                    "stop_pending_sid": None,
+                    "stop_pending_ts": None,
+                },
+                dry_run,
+            )
+        print(f"  no-progress: issue #{issue} — clear: {reason}")
+        return
+    # Same-instant task_status re-read (#1247 act guard) BEFORE the
+    # cap / respawn action fires — a stale pass-start snapshot can never
+    # produce a respawn / marker / cap-consume on a terminal task.
+    live_status_re = _task_status(issue)
+    if live_status_re not in ACTIVE:
+        print(
+            f"  no-progress: issue #{issue} — NO-PROGRESS-ACT-GUARD: "
+            f"snapshot=active, live={live_status_re!r} — aborted"
+        )
+        return
+    if action == "cap-exhausted":
+        if state.get("cap_exhausted_day") == day_key:
+            return  # once per (issue, UTC day)
+        _write_no_progress_state_watcher(issue, {"cap_exhausted_day": day_key}, dry_run)
+        note = (
+            f"{_NO_PROGRESS_RESPAWN_CAP_NOTE_SENTINEL} {reason}; leaving the "
+            f"session running (the stale-registration / stalled lanes remain "
+            f"the backstops). task status={live_status_re}. sid={sid}. "
+            f"{_source_stamp()}"
+        )
+        print(f"  no-progress: issue #{issue} — cap-exhausted: {note}")
+        _post_progress_marker(issue, note, dry_run, label="no-progress-respawn-cap-exhausted")
+        _telegram_push(
+            f"no-progress cap: #{issue} hit {respawns_today} respawns today; "
+            f"session context likely exhausted — investigate.",
+            dry_run,
+        )
+        _append_no_progress_event(note, dry_run)
+        return
+    # action == "respawn": count at STOP-INITIATION (#1241 — a stop
+    # failure still consumes a budget unit); THEN act.
+    watcher_fields = {
+        "respawn_day": day_key,
+        "respawns_today": respawns_today + 1,
+        "episode_respawn_count": episode_respawn_count + 1,
+        "stop_pending_sid": sid,
+        "stop_pending_ts": now,
+    }
+    _write_no_progress_state_watcher(issue, watcher_fields, dry_run)
+    # Post the fire marker BEFORE the stop, so the marker records the
+    # reason regardless of stop outcome. The sentinel is a member of
+    # _WATCHER_NOTE_SENTINELS: the fire marker itself would otherwise
+    # RESET the very progress clock it measures (test 17 pins this).
+    note = (
+        f"{_NO_PROGRESS_RESPAWN_NOTE_SENTINEL} stopping context-exhausted "
+        f"session sid={sid}: {reason} (fingerprint unchanged since tick "
+        f"read); respawn {respawns_today + 1}/{cap} today; episode "
+        f"{episode_respawn_count + 1}/{STALLED_MAX_RESPAWNS}. "
+        f"task status={live_status_re}. Next tick, the crash-recovery arm "
+        f"spawns a fresh --auto session (STAGED — never stop+spawn in the "
+        f"same tick). {_source_stamp()}"
+    )
+    print(f"  no-progress: issue #{issue} — respawn: {note}")
+    _post_progress_marker(issue, note, dry_run, label="no-progress-respawn")
+    stop_ok = _stop_session(sid, dry_run)
+    _telegram_push(
+        f"no-progress: stopped context-exhausted session for #{issue} "
+        f"(respawn {respawns_today + 1}/{cap} today; stop_ok={stop_ok})",
+        dry_run,
+    )
+    _append_no_progress_event(
+        f"{note} stop_ok={stop_ok}",
+        dry_run,
+    )
+
+
+def no_progress_respawn_pass(
+    dry_run: bool, *, children: list[dict] | None, now: float | None = None
+) -> None:
+    """Stop LIVE sessions burning heartbeats in a no-progress loop (#2058 —
+    see the section comment above for the incident + predicate).
+    Consumes the shared reaper ``children`` snapshot (``_live_children``)
+    IN PLACE; daemon-gated (``children is None`` => no-op: liveness
+    cannot be established, and a false "live" read must not stop
+    anything). Iterates ``issue-*.json`` ONLY —
+    ``manual-issue-*.json`` is EXCLUDED (a user-driven session is
+    never auto-stopped, the #505 posture; the same rule the boot-death
+    pass follows). Runs AFTER ``boot_death_pass`` and BEFORE
+    ``stale_registration_pass``, consuming the shared reaper snapshot
+    IN PLACE. Never mutates task STATUS — respawn is a stop + a
+    next-tick fresh spawn; status transitions belong to /issue."""
+    now = now if now is not None else time.time()
+    if _no_progress_respawn_disabled():
+        print("no-progress-respawn: disabled via EPM_DISABLE_NO_PROGRESS_RESPAWN; skipping")
+        return
+    if children is None:
+        print("no-progress-respawn: Happy daemon unreachable; skipping")
+        return
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        print("no-progress-respawn: no autonomous registry dir; skipping")
+        return
+    entries = sorted(AUTONOMOUS_REGISTRY_DIR.glob("issue-*.json"))
+    if not entries:
+        print("no-progress-respawn: no auto issue registrations")
+        return
+    pids_by_sid: dict[str, int] = {}
+    for c in children:
+        if not isinstance(c, dict):
+            continue
+        sid = c.get("happySessionId")
+        pid = c.get("pid")
+        if isinstance(sid, str) and sid and isinstance(pid, int) and not isinstance(pid, bool):
+            pids_by_sid[sid] = pid
+    # Running-pod snapshot for the awaiting-child predicate (parity with
+    # the stalled + orphan passes at L18388 / L19388). A FAILED snapshot
+    # (None — the helper already logs) degrades to the empty set so
+    # ``has_pod`` reads False everywhere this tick — fail-safe (fires the
+    # awaiting-child exemption more readily → treats as parked → freezes
+    # the streak, never a false respawn).
+    running_pods = _running_managed_issue_pods(caller="no-progress-respawn") or []
+    pod_active_issues: set[int] = {issue for issue, _pid, _name, _info in running_pods}
+    print(
+        f"no-progress-respawn: {len(entries)} auto registration(s), "
+        f"{len(pids_by_sid)} live session(s)"
+    )
+    for path in entries:
+        _process_no_progress_respawn(path, pids_by_sid, pod_active_issues, now, dry_run)
+
+
 # ─── stale-registration pass (#845 d) ─────────────────────────────────────────
 #
 # The fourth registration hygiene arm: a LIVE-but-abandoned session whose
@@ -29807,6 +30329,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "live smoke against the real registration set.",
     )
     parser.add_argument(
+        "--no-progress-only",
+        action="store_true",
+        help="run ONLY the no-progress-respawn pass (#2058 — stop a session "
+        "whose fingerprint has been unchanged across N consecutive tick "
+        "heartbeats) and exit; skip every other pass. Pair with --dry-run "
+        "for a live smoke against the real registration set.",
+    )
+    parser.add_argument(
         "--pod-safety-only",
         action="store_true",
         help="run ONLY the pod-safety pass (RUNNING managed pods vs task "
@@ -29976,6 +30506,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # daemon-gated) and exit. Pair with --dry-run for a live smoke.
     if args.boot_death_only:
         boot_death_pass(
+            args.dry_run,
+            children=_live_children() if _daemon_reachable() else None,
+        )
+        return 0
+
+    # --no-progress-only mirrors the other --*-only flags: run the single
+    # pass under the lock (it needs its own /list snapshot — the pass is
+    # daemon-gated) and exit. Pair with --dry-run for a live smoke against
+    # the real autonomous registration set.
+    if args.no_progress_only:
+        no_progress_respawn_pass(
             args.dry_run,
             children=_live_children() if _daemon_reachable() else None,
         )
@@ -30378,6 +30919,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # >=12h-old boot-dead entry is benign (our stop + its unregister compose
     # to the desired end state).
     boot_death_pass(args.dry_run, children=reaper_children)
+
+    # No-progress respawn (#2058): force-RESPAWN (fresh context) an auto
+    # session that keeps posting `progress: none` heartbeats — its
+    # fingerprint (issue-branch HEAD sha, non-heartbeat marker ts, status)
+    # has stayed unchanged across `no_progress_threshold()` consecutive
+    # tick heartbeats (default 3) while the age-only HEALTHY predicate
+    # keeps reading the chain alive. Force-respawn (fresh context)
+    # instead of STALE-REDRIVE (into the same exhausted context). Runs
+    # AFTER `boot_death_pass` and BEFORE `stale_registration_pass`,
+    # consuming the shared reaper snapshot IN PLACE. Daemon-gated
+    # (`children is None` => no-op); NEVER mutates task status.
+    no_progress_respawn_pass(args.dry_run, children=reaper_children)
 
     # Stale-registration (#845 d): unregister LIVE-but-abandoned session
     # registrations (transcript idle >= 12h, self-report equally stale, no
