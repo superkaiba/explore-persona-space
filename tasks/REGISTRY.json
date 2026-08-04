@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2074,
+  "highest_id": 2075,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8315,6 +8315,13 @@
       "path": "tasks/proposed/2074",
       "status": "proposed",
       "title": "workflow-fix: split code-review into per-commit sub-verdicts for large rounds"
+    },
+    "2075": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2075",
+      "status": "proposed",
+      "title": "workflow-fix: pod audit terminates teammate pods (substring ownership + wrong stale clock)"
     },
     "208": {
       "has_clean_result": false,
