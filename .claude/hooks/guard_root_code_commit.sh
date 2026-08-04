@@ -884,7 +884,15 @@ EOF_RAWTAIL
       set -f
       # shellcheck disable=SC2086
       for tok in $masked; do
-        case "$tok" in -A | --all | .) a_saw_blanket=1 ;; esac
+        # #1991: recognize blanket-equivalent spellings symmetric with the L910 post-`--` rejection arm.
+        # Backslash-escaped star spellings (`\*`, `\*\*`) mask via L304 to `\`+$FILL(+`\`+$FILL),
+        # so pattern-match them by that masked shape (a literal `*`/`**` token never survives the
+        # unquoted shell as-is — the shell would glob it — so this masked shape is the only
+        # reachable form of an author-intended blanket-star spelling here).
+        case "$tok" in
+          -A | --all | . | ./ | .// | :/) a_saw_blanket=1 ;;
+          "\\"$FILL | "\\"$FILL"\\"$FILL) a_saw_blanket=1 ;;
+        esac
         if [ "$a_saw_verb" = 0 ]; then
           # Pre-verb cwd-changing wrapper (env --chdir=DIR git add ...)
           # moves the pathspec-resolution base — exemption-INELIGIBLE
