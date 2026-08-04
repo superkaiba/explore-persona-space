@@ -28,16 +28,15 @@ any specific suggestion to change a workflow-surface file — triggers the
 SAME default action: the orchestrator AUTO-FILES a `kind: infra` task +
 spawns a background `/issue <N> --auto` session, treating the surfaced
 prose as if it were a candidate block, under the same bar (in-scope per
-the workflow surface list, non-architectural / not a public-contract
-change) — REGARDLESS of confidence (standing user directive 2026-06-11:
+the workflow surface list — INCLUDING architectural / public-contract
+changes) — REGARDLESS of confidence (standing user directive 2026-06-11:
 deferred/low-confidence follow-ups are RUN, not parked; the spawned
 `/issue` session's planner + critic ensemble + code-reviewer are the
 check on whether the fix is actually right). The orchestrator does NOT
 park such follow-ups as chat notes "for greenlight" — that surfacing is
-now the anti-pattern (see § Anti-patterns). Greenlight stays reserved for
-the ONE exception that applies to formal candidate blocks and prose
-alike: genuinely architectural / public-contract changes (now expressed
-as the `/issue` plan-approval gate; see § Architectural greenlight).
+now the anti-pattern (see § Anti-patterns). There is NO greenlight
+exception: the architectural carve-out was REMOVED 2026-08-04 (see
+§ Architectural greenlight — REMOVED).
 
 Purpose: collapse the lag between "agent hits a workflow bug" and
 "workflow file gets fixed", while routing the fix through full review.
@@ -265,7 +264,7 @@ Hard rules:
    follow-ups are NOT capped — list as many as you genuinely found, one
    per file/concern with a one-line proposed change. The orchestrator
    files + spawns a `/issue --auto` session for each in-scope,
-   non-architectural prose follow-up on the same default as the formal
+   in-scope prose follow-up on the same default as the formal
    block; do NOT hold them back hoping they'll surface "on the next
    pass."
 2. **Never file a task or spawn a session yourself**, even if your tool
@@ -282,8 +281,8 @@ Hard rules:
 ## What the orchestrator does on seeing a candidate
 
 **Default: AUTO-FILE a task + spawn a `/issue --auto` session, do not
-park.** For any workflow-fix candidate that is (a) in-scope per the
-workflow surface list above and (b) non-architectural / not a
+park.** For any workflow-fix candidate that is in-scope per the
+workflow surface list above — INCLUDING an architectural /
 public-contract change — at ANY confidence level (2026-06-11 directive:
 low confidence no longer defers; the spawned `/issue` session's planner +
 critic ensemble + code-reviewer are the check) — the orchestrator's
@@ -297,13 +296,12 @@ workflow-surface file. Both come in via the same channel (agent return
 text) and trigger the same default. This applies whether the candidate
 came from a subagent's return text OR from the orchestrator's own
 observation during its work (see the "orchestrator is itself the agent"
-clause below). Parking the candidate for Thomas's greenlight is the
-EXCEPTION, reserved for the single case enumerated in "When the
-orchestrator does not file a task" — genuinely architectural /
-public-contract changes (now routed through the `/issue` plan-approval
-gate; see § Architectural greenlight). Do NOT park an in-scope,
-non-architectural gap as a chat note at any confidence — auto-file +
-spawn it, regardless of whether it arrived as a formal block or as prose.
+clause below). Parking a candidate for Thomas's greenlight is NO LONGER
+an exception at all — the architectural / public-contract carve-out was
+REMOVED 2026-08-04 (§ Architectural greenlight — REMOVED). Do NOT park an
+in-scope gap as a chat note at any confidence, architectural or not —
+auto-file + spawn it, regardless of whether it arrived as a formal block
+or as prose.
 
 When any subagent returns text containing EITHER a `<!-- workflow-fix-
 candidate v1 -->` block OR a prose follow-up that names a specific
@@ -334,7 +332,8 @@ top-level loop), UNLESS running under the recursion guard
    `source: prose-followup` field; for formal blocks it records the
    verbatim block plus `source: candidate-block`. The note also records
    the routing decision: `routed: filed #<N>` | `deduped against #<M>` |
-   `parked: EPM_WORKFLOW_FIX_SESSION` | `parked: architectural`.
+   `parked: EPM_WORKFLOW_FIX_SESSION`. (`parked: architectural` is RETIRED
+   2026-08-04 — never emit it.)
 5. **Files + dispatches** the `kind: infra` task in ONE call via the
    file-time wrapper `scripts/file_infra_task.py` (#690), which files via
    `task.py new` (returning id N), applies the dedup-key tags AT creation
@@ -383,7 +382,7 @@ Step 10d merged to `main`), the orchestrator posts
 If the orchestrator is *itself* the agent that found the bug (no
 subagent involved — the bug surfaced during the orchestrator's own
 work), it files + spawns directly with the same protocol and the same
-default: an in-scope, non-architectural gap is AUTO-ROUTED in the
+default: an in-scope gap — architectural or not — is AUTO-ROUTED in the
 background at any confidence, not parked for greenlight. The
 orchestrator does not get a stricter bar just because it noticed the
 gap itself rather than receiving a candidate block.
@@ -873,38 +872,53 @@ covers such filings via the `daily-fix:` title prefix
 because the CHILD workflow-fix task's body DOES carry the
 `workflow_fix_target:` line, putting the child session under the guard.
 
-## Architectural greenlight
+## Architectural greenlight — REMOVED (2026-08-04)
 
-Non-architectural workflow fixes (the vast majority) are 0 GPU-h, so the
-spawned `/issue --auto` session AUTO-APPROVES the plan under
-`EPM_PLAN_AUTOAPPROVE_GPU_HOURS` (default 100) and self-merges at Step 10d
-— preserving the "workflow-surface edits are committed + merged + pushed
-automatically, no approval gate" default.
+**The architectural-greenlight gate no longer exists.** User directive
+2026-08-04: *"remove the architectural-greenlight gate and get all these 65
+proposed infra tasks done."*
 
-**Architectural / public-contract changes still need the user's
-greenlight**, now expressed as the `/issue` plan-approval gate (park at
-`plan_pending`). A change is architectural when it would rename a status
-enum, change a marker schema or `task.py` subcommand / CLI contract,
-relocate an agent or skill file, or remove/restructure a subsystem
-(e.g. "remove the Codex ensemble"). A change is NOT architectural just
-because it touches more than one line or one file — adding a guardrail
-step, tightening an instruction, fixing a contradiction between CLAUDE.md
-and an implementing file, or adding a missing field/note is in-scope
-auto-fix work.
+Every workflow fix — architectural or not — is 0 GPU-h, so the spawned
+`/issue --auto` session AUTO-APPROVES its plan under
+`EPM_PLAN_AUTOAPPROVE_GPU_HOURS` (default 100) and self-merges at Step 10d.
+There is no `architectural: true` park, no "spawn WITHOUT `--auto`"
+fallback, and no user-greenlight step. This extends the standing
+"workflow-surface edits are committed + merged + pushed automatically, no
+approval gate" default to the FULL surface, INCLUDING public-contract
+changes (renaming a status enum, changing a marker schema or `task.py`
+subcommand / CLI contract, relocating an agent or skill file,
+removing/restructuring a subsystem).
 
-Because a 0-GPU-h plan would otherwise auto-approve EVERYTHING (including
-architectural changes), the architectural subset is gated by a SECOND,
-orthogonal signal: the planner sets `architectural: true` in the
-workflow-fix task's plan frontmatter (and states a one-line "ARCHITECTURAL
-— needs user greenlight" banner in the Plan Summary) whenever the change
-meets the test above. The `/issue` Step 2c autonomous-approval logic gates
-on BOTH the GPU-h cap AND `architectural != true`: a plan flagged
-`architectural: true` PARKS at `plan_pending` for the user regardless of
-GPU-h. **Fallback** (if the Step-2c `architectural:` wiring is deferred):
-the orchestrator files the architectural candidate's task but spawns it
-WITHOUT `--auto` — a bare session that parks at `plan_pending` until a
-human types `/issue <N>` — and logs the candidate for the user. Either
-way the architectural-greenlight invariant holds.
+**What still reviews these changes.** Removing the gate removes the HUMAN
+veto, not review: every spawned `/issue` session still runs the full
+code-change pipeline — planner → adversarial critic ensemble → implementer
+→ Claude+Codex `code-reviewer` → Step 9c test-verdict → Step 10d merge. A
+change that breaks tests or fails review still bounces.
+
+**Planners: do NOT set `architectural: true`** in plan frontmatter, and do
+NOT emit an "ARCHITECTURAL — needs user greenlight" banner. The flag is
+INERT — nothing reads it. It was never mechanized: `architectural` appears
+in zero lines of `scripts/task.py` / `task_workflow.py`, and the park was
+always a prose convention applied by hand. A plan that sets the flag will
+NOT park, so the banner would promise a review that never happens.
+
+**Why it was removed.** The gate was load-bearing on a human who was not
+reading it. Parked tasks hold an infra concurrency slot indefinitely, so on
+2026-08-04 two architectural parks (#1217 at 17 days, #1771 at 6 days) held
+2 of 5 slots while 65 ripe infra fixes queued behind them, `dispatched=0`.
+#1771's own plan — 3/3 critic APPROVE, 0 GPU-h — was a fix for the adjacent
+Step-2c gate, blocked by the gate it was fixing.
+
+**Rollback.** Restore this section from git history
+(`git log -p --follow -- .claude/rules/workflow-fix-on-bug.md`) and re-add
+the Step 2c prose in `.claude/skills/issue/SKILL.md`. Because the gate was
+never mechanized, there is no code to revert.
+
+**Unrelated, still in force:** the `smoke_architecture` gate (inline gates
+id=10 — smoke/sweep code-path *parity*, #397) is a DIFFERENT gate that
+merely shares the word "architectural". It is untouched, as is halt
+criterion 3 (public-API contract change), which governs a different moment
+(mid-run STATE-TO-`blocked`, not plan approval).
 
 ## When the orchestrator does not file a task
 
@@ -914,12 +928,13 @@ prose follow-ups — a surfaced prose follow-up does NOT get a stricter bar
 (or a looser one) than a formal block. The orchestrator logs the
 candidate but skips the file/spawn ONLY in these cases:
 
-- **Genuinely architectural / public-contract change.** Routed through
-  the `/issue` plan-approval gate (§ Architectural greenlight) — the task
-  is filed but parks at `plan_pending` for the user (spawn WITHOUT
-  `--auto`, or `architectural: true` in the plan). Log the candidate;
-  surface it to Thomas in the next chat turn. A change is NOT
-  architectural just because it touches more than one line or one file.
+- ~~**Genuinely architectural / public-contract change.**~~ **REMOVED
+  2026-08-04** (§ Architectural greenlight — REMOVED). An architectural /
+  public-contract change is now filed + spawned `--auto` exactly like any
+  other in-scope candidate; it does NOT park at `plan_pending` and does
+  NOT get surfaced to Thomas for greenlight. The full `/issue` pipeline
+  (critic ensemble + Claude+Codex code review + test verdict) is the
+  review.
 - **Nothing concrete to dispatch.** The prose names NO specific
   workflow-surface file AND no specific change ("we might want to
   consider rethinking X someday") — there is literally nothing to file.
@@ -1009,11 +1024,12 @@ homepage rendering of the fallback is unimplemented.)
 | Emit `confidence: high` without a concrete diff_sketch | Sketch the actual lines; if you can't, drop to `medium` or skip |
 | Wait for the workflow-fix `/issue` session before continuing | Background-file + spawn; current task continues immediately |
 | Emit a candidate against `src/`, `configs/`, `tasks/` | Out of scope — fix belongs elsewhere |
-| Park an in-scope, non-architectural gap for greenlight (any confidence) | Auto-file a task + spawn `/issue --auto`; greenlight only for architectural / public-contract changes (the plan-approval gate) |
+| Park an in-scope gap for greenlight (any confidence, architectural or not) | Auto-file a task + spawn `/issue --auto`. There is NO greenlight exception — the architectural carve-out was removed 2026-08-04 |
+| Set `architectural: true` / emit an "ARCHITECTURAL — needs user greenlight" banner in a plan | The flag is inert (nothing reads it) and the banner promises a review that never happens — omit both |
 | Defer a `confidence: low` candidate "for a future deliberate pass" | File it now; the spawned session's planner makes the deliberate call with the file open and may deflect with a reasoned no-change report |
 | Double-file a SECOND distinct bug on the same hot file (target_file-only dedup) | Dedup on `(target_file, fingerprint)`: a distinct bug files its own task + gets its own plan review |
 | A workflow-fix `/issue` session auto-files MORE workflow-fix tasks for its own findings | Recursion guard: a workflow-fix session logs + notifies its candidates, never auto-routes them |
-| Orchestrator surfaces an agent's "Follow-ups (orchestrator should consider)" section to Thomas as a chat note asking "should I apply these?" | Treat each in-scope, non-architectural follow-up as a synthesized candidate and auto-file + spawn a `/issue --auto` session for it; do NOT ask |
+| Orchestrator surfaces an agent's "Follow-ups (orchestrator should consider)" section to Thomas as a chat note asking "should I apply these?" | Treat each in-scope follow-up as a synthesized candidate and auto-file + spawn a `/issue --auto` session for it; do NOT ask |
 | Drop a prose follow-up because it lacked the formal block tags | Prose follow-ups trigger the same file-a-task default as formal blocks; synthesize a candidate from the prose and file |
 | Hold prose follow-ups back hoping they'll surface "on the next pass" | List every concrete in-scope follow-up the agent found; the orchestrator files each |
 | Name a single `target_file` when a literal-string bug pattern hits N sibling workflow files (#622: a stale model pin lived in 25 agent files; one was named) | `grep -rln '<pattern>' .claude/ CLAUDE.md scripts/` first; list every hit in `target_file` as a comma-separated path list or a glob |
@@ -1038,7 +1054,8 @@ homepage rendering of the fallback is unimplemented.)
   the same as raising `AskUserQuestion`. The candidate is a non-blocking
   side channel; it does not pause the current work, does not flip
   status, does not consume a gate. The spawned `/issue --auto` session
-  has its own plan-approval gate (the architectural-greenlight surface).
+  auto-approves its 0-GPU-h plan (no architectural-greenlight gate as of
+  2026-08-04).
 - **`/issue` pipeline** (`.claude/skills/issue/SKILL.md`): the spawned
   workflow-fix task runs the standard code-change path — `kind: infra`
   routes to the `implementer` at Step 4b, the Claude+Codex `code-reviewer`

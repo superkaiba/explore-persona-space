@@ -1912,29 +1912,28 @@ Never auto-approve on a missing/ambiguous estimate — the gate parks a blank
 estimate (fail safe). `awaiting_promotion` remains a human gate regardless of
 this cap.
 
-**Workflow-fix tasks — architectural greenlight (#678).**
-<!-- gate: gates.plan_approval -->
-A `kind: infra`
-workflow-fix task (filed by the workflow-fix-on-bug protocol,
-`.claude/rules/workflow-fix-on-bug.md`) is 0 GPU-h, so the GPU-h cap alone
-auto-approves EVERYTHING — including architectural / public-contract changes,
-which must still surface to the user. The planner flags such a change with an
-`architectural: true` line in the plan frontmatter (+ an "ARCHITECTURAL — needs
-user greenlight" banner in the Plan Summary). When the autonomous gate
-(`EPM_AUTONOMOUS_SESSION=1`) sees
-`architectural: true` it PARKS at `plan_pending` regardless of GPU-h — the
-existing architectural-greenlight semantics, riding this SAME plan-approval gate
-(it introduces NO new ask site; the architectural park reuses the gate the
-`--auto-approve-if-autonomous` decision already owns). **Fallback** if the
-`--auto-approve-if-autonomous`
-gate does not yet read `architectural:` from the plan frontmatter: the
-workflow-fix-on-bug protocol files the architectural task but spawns it WITHOUT
-`--auto` — a bare session that parks at `plan_pending` until a human types
-`/issue <N>` — so the architectural-greenlight invariant holds regardless. The
-non-architectural majority (0 GPU-h, `architectural` absent/false) auto-approve
-and self-merge at Step 10d, preserving the no-greenlight default. Interactive
-mode is unaffected: the existing Step 2c plan-approval ask still governs a
-human-present session.
+**Workflow-fix tasks — architectural greenlight REMOVED (2026-08-04).**
+A `kind: infra` workflow-fix task (filed by the workflow-fix-on-bug protocol,
+`.claude/rules/workflow-fix-on-bug.md`) is 0 GPU-h, so the GPU-h cap
+auto-approves it — and as of 2026-08-04 that is the INTENDED behavior for
+EVERY workflow fix, architectural / public-contract changes included. There is
+no `architectural: true` park and no "spawn WITHOUT `--auto`" fallback.
+
+Planners MUST NOT set `architectural: true` or emit an "ARCHITECTURAL — needs
+user greenlight" banner: the flag is INERT (the
+`--auto-approve-if-autonomous` gate never read it — `architectural` appears in
+zero lines of `scripts/task.py`), so a plan carrying it will NOT park and the
+banner would promise a review that never happens.
+
+Review is unchanged and still binding: critic ensemble → implementer →
+Claude+Codex `code-reviewer` → Step 9c test-verdict → Step 10d merge. What was
+removed is the human veto, not the pipeline. Interactive mode is also
+unaffected: the Step 2c plan-approval ask still governs a human-present
+session.
+
+Rationale: parked plans hold an infra concurrency slot indefinitely — on
+2026-08-04, #1217 (17 days) and #1771 (6 days) held 2 of 5 slots while 65 ripe
+infra fixes queued behind them with `dispatched=0`.
 
 - **Legacy autonomous mode** (no chat user present AND
   `EPM_AUTONOMOUS_SESSION` is unset — e.g. invoked from

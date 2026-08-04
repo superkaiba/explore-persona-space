@@ -389,9 +389,12 @@ for c in sweep["candidates"]:
        (c["open_wf_fix_on_file"] advisory, the wf-fix-fp tag, or content match):
         post the routed-record below with note `deduped against #<M>`; continue
     route through the THREE-ROUTE classifier (the "Triage each problem"
-    section BELOW this pass), with two overrides:
-      - c["park_form"] == "architectural" → ALWAYS route 3 (needs-human);
-        never route 2 (architectural greenlight is user-only)
+    section BELOW this pass), with one override:
+      # NOTE (2026-08-04): the `park_form == "architectural" → route 3`
+      # override is REMOVED. The architectural-greenlight gate no longer
+      # exists (.claude/rules/workflow-fix-on-bug.md § Architectural
+      # greenlight — REMOVED), so an architectural park routes like any
+      # other parked candidate — normally route 2, auto-filed + spawned.
       - DEFAULT route 2: a parked candidate is by construction a
         behavior-change proposal; route 1 only for a pure prose/doc change
         with no behavior effect (the route-1 litmus verbatim)
@@ -419,7 +422,7 @@ for c in sweep["candidates"]:
 
 Routes 1 and 3 post the routed-record too — a route-3 needs-human filing DOES
 have a real `filed_task: #<M>`; route 1 records the commit sha in place of a
-task id. Without a record for every disposition, a route-3 architectural park
+task id. Without a record for every disposition, a route-3 park
 would re-enumerate nightly; the record makes each disposition
 sweep-idempotent. For a formal-block candidate the record's `fingerprint:`
 field MUST carry the sweep-reported `c["fingerprint"]` copied VERBATIM —
