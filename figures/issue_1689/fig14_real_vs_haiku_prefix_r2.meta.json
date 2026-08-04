@@ -1,0 +1,139 @@
+{
+  "commit": "376200beb7",
+  "created": "2026-08-04T01:34:09Z",
+  "figsize": [
+    7.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "prefix-arm held-out R\u00b2\n(second-user-turn map)": 0.2204464520921532,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "prefix-arm held-out R\u00b2\n(second-user-turn map)": 0.07108512928712263,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "prefix-arm held-out R\u00b2\n(second-user-turn map)": 0.3508042971266727,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "prefix-arm held-out R\u00b2\n(second-user-turn map)": 0.3299457063077358,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "prefix-arm held-out R\u00b2\n(second-user-turn map)": 0.2397629654771315,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "prefix-arm held-out R\u00b2\n(second-user-turn map)": 0.5149046542253708,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.18,
+      "y": 0.34064092708708604,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.82,
+      "y": 0.059852137725174615,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.82,
+      "y": 0.3290582742867446,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.18,
+      "y": 0.47455159791864276,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.18,
+      "y": 0.22499876881528003,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.18,
+      "y": 0.4783456209318877,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 12,
+  "text": {
+    "suptitle": "Prefix-arm second-user-turn R\u00b2 per framing: real vs Haiku-simulated u2",
+    "fig_texts": [
+      "Same 3,800 LMSYS+WildChat conversations, both provenances; L19 prefix\u2192u2 ridge."
+    ],
+    "axes": [
+      {
+        "title_left": "Qwen 2.5-7B (base)",
+        "ylabel": "prefix-arm held-out R\u00b2\n(second-user-turn map)",
+        "annotations": [
+          "0.22",
+          "0.33",
+          "0.07",
+          "0.24",
+          "0.35",
+          "0.51"
+        ],
+        "xticklabels": [
+          "chat template",
+          "plain text",
+          "narrative story"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "Qwen 2.5-7B (instruct)",
+        "annotations": [
+          "0.34",
+          "0.47",
+          "0.06",
+          "0.22",
+          "0.33",
+          "0.48"
+        ],
+        "xticklabels": [
+          "chat template",
+          "plain text",
+          "narrative story"
+        ]
+      }
+    ],
+    "series": [
+      "real LMSYS/WildChat u2",
+      "Haiku-simulated u2"
+    ]
+  }
+}
