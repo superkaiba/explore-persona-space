@@ -293,6 +293,33 @@ Critic enforcement: Methodology lens item 16 MOUNT-BINDING EXTENSION
 disk row; no verify_plan.py backstop in v1 of this block.
 
 
+**Fan-out over the same HF prefix — pre-stage once and fan from the staged
+snapshot, or serialize/jitter concurrent same-prefix pulls.** A plan
+fanning N > 1 boxes / legs / GCE instances over the SAME multi-GB HF
+prefix (a shared model repo, a shared dataset prefix on the data repo)
+names its staging shape in §9. DEFAULT: pre-stage the prefix ONCE (from
+one box, or from the VM's data disk) and fan from that snapshot — via a
+shared read path (a persisted GCE disk / a mounted network volume), an
+`rsync` to each box AFTER the stage completes, or a persisted-image
+bake. ALTERNATIVE when pre-stage is genuinely infeasible: serialize the
+per-box pulls (each box waits for the previous to `snapshot_download` /
+`hf_hub_download` complete), OR jitter their start times so the requests
+land staggered rather than in one thundering herd. N concurrent
+same-prefix multi-GB pulls are a rate-limit kill risk: an HF rate-limit
+storm returns 429 (or a TCP/RST that reads as rc=137 to the workload)
+and any one box's shard fetch can die mid-stream, forcing a relaunch
+that re-books the same collision on the next attempt. Incident #1739
+(2026-08-01): three OOD boxes (oodw / oodsyc / oodhall) each staged
+~144 GB from the same HF prefix simultaneously; oodhall died rc=137
+on an inferred HF 429 storm, its FLEX_START replacement was preempted
+mid-transfer, and a third replacement launched into the same
+still-simultaneous fan-out. 5 total attempts to land one OOD leg. A §9
+plan with `N > 1` same-prefix concurrent stages and NO named staging
+shape is a REVISE. Critic enforcement: Methodology lens item 16
+FAN-OUT STAGING EXTENSION (`.claude/rules/critic-lens-reference.md`);
+no verify_plan.py backstop in v1.
+
+
 **Sentinel-signaling workloads need a /workspace-contract lane — never
 rely on auto's DRAC/Mila SLURM fallback.** If the plan's dispatch script
 posts markers via pod-side sentinel files

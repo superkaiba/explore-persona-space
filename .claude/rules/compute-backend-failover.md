@@ -1195,6 +1195,77 @@ per rung, bounded only by the daily cap 8.
 guest-attribute probe (perf-only; the probe-failure fallback keeps
 `terminal_terminated`, never manufacturing a setup classification).
 
+### Workload-phase FLEX preemption on checkpoint-less legs → escalate to STANDARD (#1999)
+
+A DISTINCT sibling of the pre-workload boot-loop breaker above: when a
+GCP FLEX_START workload has ALREADY STARTED (positive workload signal:
+`workload` / `relaunched_workload` phase observed) and is PREEMPTED
+mid-run past ~2h wall AND the leg has NO mid-run checkpoints from which
+to resume, the per-issue-session's crash-fix/relaunch loop escalates the
+next attempt to STANDARD (on-demand) provisioning rather than re-booking
+FLEX_START on the same rung. Trigger conjuncts, all three required:
+
+- **Workload-STARTED preemption** — a `terminal_terminated` /
+  `terminal_workload_failed` observation preceded by a positive workload
+  signal (RESET of the #1029 boot-loop streak is the same signal); the
+  pre-workload boot-loop clause above owns the setup-phase case.
+- **Wall time ≥ ~2h** at kill (env `EPS_FLEX_ESCALATE_MIN_WALL_H`,
+  default 2.0) — a short preempted leg is cheap to re-book on FLEX and
+  the length-aware ladder already prices this in.
+- **No mid-run checkpoint the leg can resume from** — declared at PLAN
+  TIME (§9 phase row: `resume_from_checkpoint: no` / `yes`) OR inferred
+  from the phase's own kill-recovery contract (a per-batch checkpoint
+  wired into the driver counts as `yes`; a from-scratch train/eval fits
+  `no`). The clause covers the `no` case; a `yes` leg re-books FLEX as
+  today.
+
+**Disposition:** the RELAUNCH for a matching leg is dispatched with
+`dispatch_issue.py launch ... --provisioning-model STANDARD` (or the
+equivalent auto-router override that skips the FLEX rung for this leg —
+mechanism opt-in per below). The FLEX rung is NOT permanently blocklisted
+for this rung/issue — the escalation binds to the RE-LAUNCH after the
+matching workload-phase preemption; a subsequent leg with a different
+checkpoint contract re-enters the ladder normally.
+
+**Distinctions:**
+
+- **vs. § Pre-workload boot-loop (#1029):** the boot-loop clause covers
+  ≥N=2 pre-workload deaths on the SAME rung (setup-phase failures) and
+  fails OVER to RunPod. This clause covers ONE workload-phase preemption
+  on a checkpoint-less long leg and escalates provisioning IN-LADDER to
+  STANDARD — no RunPod pivot, no daily-cap changes.
+- **vs. length-aware ladder short-vs-long branch (#680):** the ladder
+  already bars spot for long jobs. FLEX_START is deliberately KEPT for
+  long jobs because it is non-preemptible ONCE RUNNING (per the current
+  ladder prose, line 611-613). This clause adds a further length +
+  no-checkpoint refinement: FLEX's queue-time preemption absorption
+  becomes a liability when the WORKLOAD-STARTED preemption then costs a
+  full 2h+ replay.
+- **vs. #659 workload-crash (`gcp_workload_failover_runpod`):** #659
+  fails OVER to RunPod on a workload crash of ANY class. This clause
+  triggers on a preemption specifically (`terminal_terminated` +
+  workload-started signal + FLEX_START provenance), escalates
+  in-provisioning without leaving GCP, and only for legs meeting the
+  ≥2h + checkpoint-less conjunction.
+
+**Rule-text-only for v1; mechanization is a follow-up.** The clause
+above binds PLAN-TIME (§9 row `resume_from_checkpoint:` declaration,
+critic-enforced) and PER-SESSION relaunch decisions (the crash-fix loop
+reads the declaration + the preemption evidence). A future `kind: infra`
+follow-up MAY mechanize the escalation in
+`backends/router._flex_start_rung` / `dispatch_issue.py` (a
+`--flex-escalate-after-workload-preemption` flag, or a durable-lease
+record analogous to `Lease.gcp_boot_death_streaks`) — deferred to keep
+this task's diff to rule-text only. Incident #1739 (2026-08-01): oodhall2
+(FLEX_START replacement) was preempted rc=137 at transfer unit 30/45
+(~2h in, 16:37Z on a checkpoint-less serial leg); a third FLEX attempt
+(oodhall3) launched anyway; the switch to STANDARD came only at
+20:37-20:41Z ("no FLEX_START preemption — the fix"), five total attempts
+to land the hallucination OOD leg. Critic enforcement: Methodology lens
+item 16 FLEX ESCALATION EXTENSION
+(`.claude/rules/critic-lens-reference.md`); no verify_plan.py backstop
+in v1.
+
 ### Remaining gap — the hung-but-RUNNING / frozen non-terminal phase (#667)
 
 Neither failover path fires for a GCP VM that HANGS without ever publishing
