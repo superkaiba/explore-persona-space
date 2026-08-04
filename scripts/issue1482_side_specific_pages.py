@@ -298,6 +298,11 @@ def build_rows(inp: dict, key: str) -> list[dict]:
     act = inp["ctx_activity"] if key == "context_only" else inp["activity"]
     # each page reads ONLY the description map whose evidence side matches its own span
     desc_map = inp["desc_context"] if ev == "context" else inp["desc_answer"]
+    undescribed = (
+        ((inp["ctx_meta"].get("population") or {}).get("undescribed_reason") or {})
+        if ev == "context"
+        else {}
+    )
     ids = np.nonzero(inp["side"] == spec["code"])[0]
     ids = ids[np.argsort(-act[ids], kind="stable")]
     rows = []
@@ -320,6 +325,13 @@ def build_rows(inp: dict, key: str) -> list[dict]:
                 # feature with no non-activating examples (it fires in every context row)
                 "n_ex_pos": d.get("n_ex_pos"),
                 "n_ex_neg": d.get("n_ex_neg"),
+                # an undescribed feature carries its REASON inline; "see header" would be a
+                # dangling pointer now that the no-descriptions header block is gone
+                "undescribed_reason": (None if text else undescribed.get(str(fid))),
+                # fires on every single fit row of its own side (template-prefix shape)
+                "all_rows": bool(
+                    int(inp["psi"][fid] if key == "context_only" else inp["cnt"][fid]) == N_FIT
+                ),
             }
         )
     n_desc = sum(1 for r in rows if r["description"])
@@ -409,6 +421,25 @@ def render(key: str, rows: list[dict], sha_note: str) -> str:
     n_scored = sum(r["scored"] for r in rows)
     ev = EVIDENCE[spec["evidence_side"]]
     n_undesc = len(rows) - n_desc
+    # features firing on EVERY fit row of their own side: the template-prefix shape, and
+    # the most concrete thing on the page. Derived, never hardcoded, so it cannot go stale.
+    allrows = [r for r in rows if r["all_rows"]]
+    allrows_note = ""
+    if allrows:
+        parts = []
+        for r in allrows:
+            conf = "" if r["confidence"] is None else f" (confidence {r['confidence']})"
+            body = _esc((r["description"] or "").rstrip("."))
+            parts.append(f"<b>{r['feat_id']}</b> &mdash; {body}{conf}")
+        items = "; ".join(parts)
+        allrows_note = (
+            f"<p><b>{len(allrows)} feature{'s' if len(allrows) > 1 else ''} fire"
+            f"{'' if len(allrows) > 1 else 's'} on ALL {N_FIT:,} rows of this side and never "
+            f"once on the other</b> &mdash; the template-prefix shape, sitting at the top of "
+            f"this activation-sorted page: {items}. Having no non-activating examples is why "
+            f"{'they carry' if len(allrows) > 1 else 'it carries'} the "
+            f'<span class="flag">no negative examples</span> flag.</p>'
+        )
     gap = ""
     if n_desc == 0:
         gap = """<div class="warn gap">
@@ -449,7 +480,12 @@ a way that makes it safer.</p></div>"""
                 )
             desc = f"{badge}{extra} {_esc(r['description'])}"
         else:
-            desc = '<span class="nodesc">no description &mdash; see header</span>'
+            why = r.get("undescribed_reason")
+            desc = (
+                f'<span class="nodesc">no description &mdash; {_esc(why)}</span>'
+                if why
+                else '<span class="nodesc">no description available for this feature</span>'
+            )
         conf = "" if r["confidence"] is None else f"{r['confidence']}"
         body_rows.append(
             f'<tr><td class="n">{i}</td>'
@@ -490,6 +526,7 @@ by {spec["act_label"]} descending. {n_desc:,} of {len(rows):,} carry a
 {ev["label"]} description{f" ({n_undesc} without one)" if n_undesc else ""};
 {n_scored:,} of {len(rows):,} have a scored R&sup2;.</p>
 <p><b>Sort key.</b> {spec["act_note"]}</p>
+{allrows_note}
 <p><b>R&sup2;</b> is the full-width dense-context &rarr; SAE-answer ridge read
 ({SCORED_EXPECTED:,} of {DICT_SIZE:,} dictionary columns are scored; the rest have zero
 holdout answer variance). Unscored is shown as <span class="unscored">unscored</span>,
