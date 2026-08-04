@@ -262,6 +262,7 @@ def battery() -> dict:
     return {
         "rows": rows,
         "vecs": vecs,
+        "ok": ok,  # the finite-row mask, so callers can align other per-feature vectors
         "y": y,
         "ctrl": ft,
         "n": n,
