@@ -42,3 +42,33 @@ analogue — do not wave it through.
 
 Related: [[feedback_companion_stat_drop_class_semantics]] (zero split-half
 floors from degenerate positions).
+
+**Do NOT disattenuate by the ceiling without first asking whether the ties are
+REAL.** The ceiling diagnoses the gradient; it does not license dividing by it.
+Dividing claims "what the contribution would be if the variable weren't tied",
+which is only meaningful if an untied version of the variable could exist.
+
+Two tests that settle it, both cheap:
+- **Exposure test** (for a RATE): compare the observed zero-rate against
+  `P(observe 0)` under Binomial(n = median denominator, p = pooled rate). If
+  observed >> expected, the zeros are real, not small-sample censoring.
+- **Granularity test:** recompute the ceiling on the NONZERO subset. If it is
+  1.0 everywhere, the entire gradient comes from the point mass, and none from
+  measurement resolution.
+
+#1482 ran both on `template_token_frac`: exposure explained 59% of d1's zeros
+but ~0% from d2 on (776 firings and still zero = a real zero), and the
+nonzero-only ceiling was exactly 1.0000 at every decile. So 100% of its
+gradient came from a REAL zero mass — no untied counterfactual exists, and
+normalizing would have been an overcorrection. Same verdict as the 4-level
+categorical it sat beside, for the same reason.
+
+**What to do instead:** report the ceiling as a diagnostic beside the profile
+(never as a divisor); answer the question on the subset where the ceiling is
+1.0 (here, nonzero features only — apples-to-apples by construction); and treat
+the point mass as a RESULT rather than a nuisance.
+
+**Cardinality is not the diagnostic — tie MASS is.** A zero-inflated continuous
+variable with 46,167 distinct values was capped at 0.9203 pooled, right beside a
+4-level categorical at 0.4537. A rank-based R2 decomposition under-credits any
+low-rank-information block, not just categoricals.
