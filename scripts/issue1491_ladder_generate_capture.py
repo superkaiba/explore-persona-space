@@ -71,6 +71,7 @@ import torch  # noqa: E402
 import issue779_collect as COL  # noqa: E402
 import issue779_common as C  # noqa: E402
 import issue779_ffc_n10k_generate_capture as N10  # noqa: E402
+import issue779_ffc_n50k_generate_capture as N50  # noqa: E402
 
 # Import ladder-local helpers from the Unit 1 manifest builder.
 from issue1491_ladder_manifest import (  # noqa: E402
@@ -491,8 +492,8 @@ def _resolve_layers_arg(layers_arg: str) -> list[int]:
 
 def _split_shard_range(n_total: int, num_shards: int, shard_index: int) -> tuple[int, int]:
     # Even split; last shard picks up any remainder — parent parity via
-    # N50._shard_range's semantics.
-    return N10._shard_range(n_total, num_shards, shard_index)  # noqa: SLF001
+    # N50._shard_range's semantics (defined on N50, not N10).
+    return N50._shard_range(n_total, num_shards, shard_index)  # noqa: SLF001
 
 
 def _remote_index(hf_prefix: str, subdir: str) -> set[str]:
