@@ -192,6 +192,7 @@ def _iter_parent_rows(cache_dir: Path) -> Iterable[dict]:
     # retry covers iteration, not just the call (the #1482 429-storm class).
     files = hub.retry_transient(
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: whole listing wrapped in hub.retry_transient here
             api.list_repo_tree(
                 repo_id=PARENT_MANIFEST_HF_REPO,
                 path_in_repo=PARENT_MANIFEST_HF_PATH,
@@ -280,6 +281,7 @@ def _verify_ladder_manifest_present() -> bool:
         # covers iteration too (#1482).
         entries = hub.retry_transient(
             lambda: list(
+                # HUB_VERIFY_RETRY_EXEMPT: whole listing wrapped in hub.retry_transient here
                 api.list_repo_tree(
                     repo_id=LADDER_HF_REPO,
                     path_in_repo=LADDER_HF_PREFIX,
@@ -832,6 +834,18 @@ def upload_manifest(local_dir: Path) -> None:
         LADDER_HF_PREFIX,
     )
     from explore_persona_space.orchestrate import hub  # type: ignore
+
+    # Dir-filecount guard BEFORE the upload and deliberately OUTSIDE the retry
+    # wrapper: the Hub rejects >10k files in one repo dir with a NON-retriable
+    # BadRequestError fired after all bytes are staged (#658), and a guard raise
+    # is deterministic — retrying it would burn the retry budget for nothing.
+    # This manifest commits only the split files + meta, far under the limit, so
+    # the guard is a cheap invariant rather than an expected trigger.
+    hub.assert_hub_dir_filecounts(
+        local_dir,
+        LADDER_HF_PREFIX,
+        allow_patterns=list(SPLIT_FILES.values()) + [MANIFEST_META_NAME],
+    )
 
     # The manifest upload is the single durability point for the pinned
     # contexts every scale is captured against — a transient 429/5xx here

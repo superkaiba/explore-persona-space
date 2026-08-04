@@ -662,6 +662,7 @@ def _remote_index(hf_prefix: str, subdir: str) -> set[str]:
         # Materialize INSIDE the retry: list_repo_tree is a LAZY generator —
         # the HTTP error raises at iteration time (gotchas.md, #779 n50k).
         return list(
+            # HUB_VERIFY_RETRY_EXEMPT: _list is passed to hub.retry_transient below
             api.list_repo_tree(
                 repo_id=LADDER_HF_REPO,
                 path_in_repo=prefix,
