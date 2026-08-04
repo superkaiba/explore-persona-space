@@ -1,0 +1,5007 @@
+{
+  "aggregates": {
+    "n_scanned": 3495,
+    "n_plans_with_new_prefix_hits": 3480,
+    "stratified_pool": 3480,
+    "n_sample": 100,
+    "per_prefix": {
+      "tests": {
+        "n_plans_with_hits": 2468,
+        "n_hits_total": 7678,
+        "skip_reason_counts": {
+          "classify": 7003,
+          "glob-or-template": 583,
+          "no-ext": 72,
+          "dir": 20
+        }
+      },
+      "scripts": {
+        "n_plans_with_hits": 3425,
+        "n_hits_total": 14794,
+        "skip_reason_counts": {
+          "classify": 13761,
+          "glob-or-template": 858,
+          "dir": 66,
+          "no-ext": 109
+        }
+      },
+      "configs": {
+        "n_plans_with_hits": 104,
+        "n_hits_total": 234,
+        "skip_reason_counts": {
+          "classify": 208,
+          "glob-or-template": 18,
+          "no-ext": 3,
+          "dir": 5
+        }
+      }
+    },
+    "verdicts_by_class": {
+      "in-ref": 535,
+      "on-main-not-on-branch": 19,
+      "glob-or-template": 31,
+      "no-ext": 7,
+      "dir": 1,
+      "planned-output": 4,
+      "unresolved-citation": 11
+    }
+  },
+  "sample": [
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/awaiting_promotion/1482/plans/v14.md",
+      "issue": 1482,
+      "check_ref": "origin/issue-1482",
+      "candidates": [
+        {
+          "path": "scripts/issue1482_sae.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1482_error_analysis.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue779_ffc_n1m_fits.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1482_feature_extremes.py",
+          "prefix": "scripts",
+          "verdict": "fail",
+          "reason": "on-main-not-on-branch",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1482_early_layer.py",
+          "prefix": "scripts",
+          "verdict": "fail",
+          "reason": "on-main-not-on-branch",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1482_early_layer_launch.sh",
+          "prefix": "scripts",
+          "verdict": "fail",
+          "reason": "on-main-not-on-branch",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/verify_reused_artifact_keys.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1482_*.py",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/dispatch_issue.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/awaiting_promotion/931/plans/v10.md",
+      "issue": 931,
+      "check_ref": "origin/issue-931",
+      "candidates": [
+        {
+          "path": "scripts/issue931_author_blocked_folds.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue931_power_curve_multi_seed.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue931_distance_covariate.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/890/plans/v1.md",
+      "issue": 890,
+      "check_ref": "origin/issue-890",
+      "candidates": [
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue779_*.py",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1509/plans/v3.md",
+      "issue": 1509,
+      "check_ref": "origin/issue-1509",
+      "candidates": [
+        {
+          "path": "scripts/verify_task_body.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_verify_task_body.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1335_fit.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1061/plans/v2.md",
+      "issue": 1061,
+      "check_ref": "origin/issue-1061",
+      "candidates": [
+        {
+          "path": "scripts/daily_drive_filings.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_daily_drive_filings.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/file_infra_task.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_daily_three_route_classifier_doc.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1427/plans/v1.md",
+      "issue": 1427,
+      "check_ref": "origin/issue-1427",
+      "candidates": [
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_workflow_lint.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/awaiting_promotion/600/plans/v1.md",
+      "issue": 600,
+      "check_ref": "origin/issue-600",
+      "candidates": [
+        {
+          "path": "tests/test_issue600_panel_disjointness.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue600_eval_guard.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue600_collator_post_response_slot.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/i600_dispatch.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/i600_run_cell.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "configs/issues",
+          "prefix": "configs",
+          "verdict": "skip",
+          "reason": "no-ext",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/awaiting_promotion/480/plans/v2.md",
+      "issue": 480,
+      "check_ref": "origin/issue-480",
+      "candidates": [
+        {
+          "path": "scripts/issue_480/dispatch_marker_480.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue480_emission_rate_concordance.py",
+          "prefix": "scripts",
+          "verdict": "fail",
+          "reason": "on-main-not-on-branch",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue_480/",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "dir",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue_480/i480_phase2b_logprob.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue_480/i480_analyze.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1143/plans/v2.md",
+      "issue": 1143,
+      "check_ref": "origin/issue-1143",
+      "candidates": [
+        {
+          "path": "tests/test_verify_task_body.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/verify_task_body.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/conftest.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/awaiting_promotion/545/plans/v1.md",
+      "issue": 545,
+      "check_ref": "origin/issue-545",
+      "candidates": [
+        {
+          "path": "configs/training/turner_em.yaml",
+          "prefix": "configs",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue458_prep_datasets.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "configs/lora/turner_em.yaml",
+          "prefix": "configs",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "configs/condition/issue404_pair_*.yaml",
+          "prefix": "configs",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/run_issue458_sweep.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/fetch_or_generate_issue404_medical.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue404_outcome_eval.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/run_experiment_444.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue503_benign_data_select.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue493_extraction_metric_bakeoff.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue458_predictor_jsdiv.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue404_predictor_cossim.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue545_sweep.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue503_*.py>",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue503_*.py",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/train.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "configs/training/betley_open_model.yaml",
+          "prefix": "configs",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/awaiting_promotion/1776/plans/v2.md",
+      "issue": 1776,
+      "check_ref": "origin/issue-1776",
+      "candidates": [
+        {
+          "path": "scripts/issue779_common.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1345_operator_comparison.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1776_*.py",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue779_n1m_readout.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue779_ffc_n1m_generate_capture.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1776_dispatch.py",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "planned-output",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1776_dispatch.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/dispatch_issue.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/verify_reused_artifact_keys.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue779_ffc_n1m_*.py",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1032/plans/v3.md",
+      "issue": 1032,
+      "check_ref": "origin/issue-1032",
+      "candidates": [
+        {
+          "path": "scripts/verify_plan.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_verify_plan.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/task.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1575/plans/v1.md",
+      "issue": 1575,
+      "check_ref": "origin/issue-1575",
+      "candidates": [
+        {
+          "path": "tests/test_issue_skill_followup_cap_park_note_pin.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/select_step9c_tests.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_select_step9c_tests.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/task.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1840/plans/v1.md",
+      "issue": 1840,
+      "check_ref": "origin/issue-1840",
+      "candidates": [
+        {
+          "path": "scripts/poll_pipeline.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/failure_classifier.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_poll_pipeline_zombie_gpu.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_failure_classifier.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/backend_poll.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1563/plans/v1.md",
+      "issue": 1563,
+      "check_ref": "origin/issue-1563",
+      "candidates": [
+        {
+          "path": "tests/test_issue_skill_orchestrator_turn_discipline_pointer.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/select_step9c_tests.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_select_step9c_tests.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue_skill_forensics_ingest_pointer.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_workflow_lint.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/verify_plan.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1905/plans/v1.md",
+      "issue": 1905,
+      "check_ref": "origin/issue-1905",
+      "candidates": [
+        {
+          "path": "scripts/verify_plan.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_verify_plan.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/awaiting_promotion/1074/plans/v1.md",
+      "issue": 1074,
+      "check_ref": "origin/issue-1074",
+      "candidates": [
+        {
+          "path": "tests/test_issue906_tiny_real_e2e.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1074_dispatch.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1074_aggregate.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue906_phase1_pilot.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1484/plans/v1.md",
+      "issue": 1484,
+      "check_ref": "origin/issue-1484",
+      "candidates": [
+        {
+          "path": "tests/test_daily_problem_sweep_counting_pin.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_daily_three_route_classifier_doc.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_<file>.py",
+          "prefix": "tests",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/verify_plan.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/826/plans/v2.md",
+      "issue": 826,
+      "check_ref": "origin/issue-826",
+      "candidates": [
+        {
+          "path": "tests/test_poll_pipeline_zombie_gpu.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/failure_classifier.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/backend_poll.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/poll_pipeline.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/611/plans/v2.md",
+      "issue": 611,
+      "check_ref": "origin/issue-611",
+      "candidates": [
+        {
+          "path": "scripts/issue611_split_analysis.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/i533_bw_analyze.py",
+          "prefix": "scripts",
+          "verdict": "warn",
+          "reason": "unresolved-citation",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue611_split_figures.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/i464_min_capture_logits.py",
+          "prefix": "scripts",
+          "verdict": "warn",
+          "reason": "unresolved-citation",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1936/plans/v2.md",
+      "issue": 1936,
+      "check_ref": "origin/issue-1936",
+      "candidates": [
+        {
+          "path": "scripts/verify_task_body.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_verify_task_body.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1557/plans/v2.md",
+      "issue": 1557,
+      "check_ref": "origin/issue-1557",
+      "candidates": [
+        {
+          "path": "scripts/verify_plan.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_verify_plan.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_<f>.py",
+          "prefix": "tests",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/select_step9c_tests.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue_skill_forensics_ingest_pointer.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue_skill_detach_convention.py",
+          "prefix": "tests",
+          "verdict": "warn",
+          "reason": "unresolved-citation",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue_skill_marker_contract.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_<name>.py",
+          "prefix": "tests",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue_skill_exit_breadcrumb.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue_skill_merge_resnapshot_pin.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_step10d_guard3.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/awaiting_promotion/722/plans/v7.md",
+      "issue": 722,
+      "check_ref": "origin/issue-722",
+      "candidates": [
+        {
+          "path": "scripts/issue722_vectorized_skill.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue722_skill_over_mean.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue722_skill_over_mean.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1362/plans/v1.md",
+      "issue": 1362,
+      "check_ref": "origin/issue-1362",
+      "candidates": [
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/new_worktree.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/934/plans/v2.md",
+      "issue": 934,
+      "check_ref": "origin/issue-934",
+      "candidates": [
+        {
+          "path": "scripts/dispatch_issue.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/backend_poll.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_gcp_backend.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue_dispatch.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_dispatch_issue_cli.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_backend_poll.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_router.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_gcp_audit.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_dispatch_lease.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/new_worktree.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/gcp_audit.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/poll_pipeline.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/autonomous_session_watch.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/router_acceptance",
+          "prefix": "tests",
+          "verdict": "skip",
+          "reason": "no-ext",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/800/plans/v4.md",
+      "issue": 800,
+      "check_ref": "origin/issue-800",
+      "candidates": [
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/select_step9c_tests.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/862/plans/v2.md",
+      "issue": 862,
+      "check_ref": "origin/issue-862",
+      "candidates": [
+        {
+          "path": "scripts/train_stage_sft.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "configs/deepspeed/zero3_no_offloading.json",
+          "prefix": "configs",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_artifacts_recipe.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_artifacts_behavior.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_artifacts_context.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_marker_band_stop.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_eval_margin.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_no_dollar_budget_caps.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1073/plans/v4.md",
+      "issue": 1073,
+      "check_ref": "origin/issue-1073",
+      "candidates": [
+        {
+          "path": "scripts/issue1073_gen.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1073_capture.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1073_fits.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1073_figures.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1073_driver.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/dispatch_issue.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue779_collect.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1073_*.py",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_no_pod_side_task_py_shellout.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/842/plans/v2.md",
+      "issue": 842,
+      "check_ref": "origin/issue-842",
+      "candidates": [
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_workflow_lint.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue722_vectorized_skill.py",
+          "prefix": "scripts",
+          "verdict": "warn",
+          "reason": "unresolved-citation",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue722_input_rep.py",
+          "prefix": "tests",
+          "verdict": "warn",
+          "reason": "unresolved-citation",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue722_*.py",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue722_*.py",
+          "prefix": "tests",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1216/plans/v1.md",
+      "issue": 1216,
+      "check_ref": "origin/issue-1216",
+      "candidates": [
+        {
+          "path": "scripts/poll_pipeline.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_poll_pipeline_zombie_gpu.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_poll_*.py",
+          "prefix": "tests",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_backend_poll_gpu_idle.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_backend_poll.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_failure_classifier.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/pod.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1392/plans/v2.md",
+      "issue": 1392,
+      "check_ref": "origin/issue-1392",
+      "candidates": [
+        {
+          "path": "scripts/autonomous_session_watch.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/vm_disk_guard.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_vm_disk_subfloor_sentinel.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_vm_disk_guard.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_vm_disk_guard_data_disk.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_vm_disk_guard_active_escalation.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_watcher_guard_coverage.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_autonomous_session_watch.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/smokes",
+          "prefix": "tests",
+          "verdict": "skip",
+          "reason": "no-ext",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/cron_autonomous_session_watch.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1827/plans/v2.md",
+      "issue": 1827,
+      "check_ref": "origin/issue-1827",
+      "candidates": [
+        {
+          "path": "scripts/verify_task_body.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_verify_task_body.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/970/plans/v2.md",
+      "issue": 970,
+      "check_ref": "origin/issue-970",
+      "candidates": [
+        {
+          "path": "scripts/audit_clean_results_body_discipline.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_audit_clean_results_body_discipline.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1958/plans/v1.md",
+      "issue": 1958,
+      "check_ref": "origin/issue-1958",
+      "candidates": [
+        {
+          "path": "scripts/audit_clean_results_body_discipline.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/design/conditions/cells",
+          "prefix": "tests",
+          "verdict": "skip",
+          "reason": "no-ext",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_audit_clean_results_body_discipline.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/awaiting_promotion/654/plans/v5.md",
+      "issue": 654,
+      "check_ref": "origin/issue-654",
+      "candidates": [
+        {
+          "path": "scripts/issue654_extract.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue654_build_battery.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue654_analyze.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue654_dispatch.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/365/plans/v1.md",
+      "issue": 365,
+      "check_ref": "origin/main",
+      "candidates": [
+        {
+          "path": "scripts/eval_i181_panel.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/run_single_token_multi_source.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "configs/issue_365/source_lexicons.yaml",
+          "prefix": "configs",
+          "verdict": "skip",
+          "reason": "planned-output",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/dispatch_factor_screen_365.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/pod.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/awaiting_promotion/667/plans/v2.md",
+      "issue": 667,
+      "check_ref": "origin/issue-667",
+      "candidates": [
+        {
+          "path": "scripts/issue667_extract.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue667_dispatch.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue667_analysis.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue667_gate_chain.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue594_extract_context_vectors.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/dispatch_issue.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/blocked/1491/plans/v1.md",
+      "issue": 1491,
+      "check_ref": "origin/issue-1491",
+      "candidates": [
+        {
+          "path": "scripts/issue779_ffc_n1m_{fits",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue779_ffc_n1m_*.py",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1491_ladder_generate_capture.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue779_ffc_n1m_generate_capture.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1491_ladder_fits.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue779_ffc_n1m_fits.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/verify_reused_artifact_keys.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/dispatch_issue.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1491_ladder_launch.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1519/plans/v1.md",
+      "issue": 1519,
+      "check_ref": "origin/issue-1519",
+      "candidates": [
+        {
+          "path": "scripts/autonomous_session_watch.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/pod.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_autonomous_session_watch_unlaunched_orphan.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_autonomous_session_watch_orphan_pod.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_autonomous_session_watch.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/736/plans/v2.md",
+      "issue": 736,
+      "check_ref": "origin/issue-736",
+      "candidates": [
+        {
+          "path": "scripts/dispatch_issue.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_gcp_backend.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_dispatch_issue_cli.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_router.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_router*.py",
+          "prefix": "tests",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/866/plans/v1.md",
+      "issue": 866,
+      "check_ref": "origin/main",
+      "candidates": [
+        {
+          "path": "scripts/issue664_common.train_row",
+          "prefix": "scripts",
+          "verdict": "warn",
+          "reason": "unresolved-citation",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_artifacts_datagen.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_artifacts_banks.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_artifacts_behavior.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_artifacts_negatives.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_artifacts_recipe.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_artifacts_context.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/488/plans/v6.md",
+      "issue": 488,
+      "check_ref": "origin/issue-488",
+      "candidates": [
+        {
+          "path": "scripts/i488_diagnostic_train.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/i488_diagnostic_measure.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/i488_phase2_ladder.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/i488_make_figures.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/pod.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/i488_phase0_generate_data.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/i488_phase1_predictors.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/awaiting_promotion/1482/plans/v15.md",
+      "issue": 1482,
+      "check_ref": "origin/issue-1482",
+      "candidates": [
+        {
+          "path": "scripts/issue1482_sae.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1482_error_analysis.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue779_ffc_n1m_fits.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1482_feature_extremes.py",
+          "prefix": "scripts",
+          "verdict": "fail",
+          "reason": "on-main-not-on-branch",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1482_early_layer.py",
+          "prefix": "scripts",
+          "verdict": "fail",
+          "reason": "on-main-not-on-branch",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1482_early_layer_launch.sh",
+          "prefix": "scripts",
+          "verdict": "fail",
+          "reason": "on-main-not-on-branch",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/verify_reused_artifact_keys.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/dispatch_issue.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1690/plans/v1.md",
+      "issue": 1690,
+      "check_ref": "origin/issue-1690",
+      "candidates": [
+        {
+          "path": "tests/test_daily_three_route_classifier_doc.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/autonomous_session_watch.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/backend_poll.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/task.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1887/plans/v2.md",
+      "issue": 1887,
+      "check_ref": "origin/issue-1887",
+      "candidates": [
+        {
+          "path": "scripts/issue825_fit_cells.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue825_map_alignment.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue825_crossmodel_map_transfer.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue1887_lambda_defaults.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1345_boundary_ablation_fits.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue1417_refit_selector.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue1335_lambda_selection.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue1310_vectorized_fit.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue1689_lambda_recheck.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue825_*",
+          "prefix": "tests",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue825_selector_audit.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue825_trackm_settle_battery.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1887_lambda_audit.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue825_{fit_cells",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/verify_reused_artifact_keys.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue825_mlp_batched_parity.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue825_deferred_gate_sweep.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/verify_task_body.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/663/plans/v3.md",
+      "issue": 663,
+      "check_ref": "origin/issue-663",
+      "candidates": [
+        {
+          "path": "scripts/run_experiment_389.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/rejudge_issue_389_c_strict.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue_389",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "no-ext",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_judge_dispatch.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue663_batch_hardening.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue545_judge_retry.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue545_corpora_batch_retry.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_exp444_parallel_judge.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue404_judge_dispatch.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_i545_hf_teacher_force_max_batch.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/backend_poll.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/dispatch_issue.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue_642/i642_dispatch.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/dispatch_neg_setpoint_601.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue626_smoke_judge.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/dispatch_neg_geometry_504.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/dispatch_factor_screen_365.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/run_dose_response_orchestrator.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/run_leakage_v3_onpolicy.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/reeval_capability_per_persona.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/router_acceptance.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1566/plans/v1.md",
+      "issue": 1566,
+      "check_ref": "origin/issue-1566",
+      "candidates": [
+        {
+          "path": "tests/test_guard_repo_root_branch.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/guard_repo_root_branch.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/task.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1815/plans/v2.md",
+      "issue": 1815,
+      "check_ref": "origin/issue-1815",
+      "candidates": [
+        {
+          "path": "scripts/backend_poll.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_backend_poll.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_gcp_backend.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_router.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1189/plans/v1.md",
+      "issue": 1189,
+      "check_ref": "origin/issue-1189",
+      "candidates": [
+        {
+          "path": "scripts/cron_daily_healthcheck.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_cron_daily_healthcheck.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_daily_stub_first_doc.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_daily_three_route_classifier_doc.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/awaiting_promotion/1482/plans/v3.md",
+      "issue": 1482,
+      "check_ref": "origin/issue-1482",
+      "candidates": [
+        {
+          "path": "scripts/issue779_ffc_n1m_fits.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue779_percontext_recon.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1482_error_analysis.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1482_sae.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1482_analysis.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/dispatch_issue.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/awaiting_promotion/559/plans/v6.md",
+      "issue": 559,
+      "check_ref": "origin/issue-559",
+      "candidates": [
+        {
+          "path": "scripts/issue559_base_prior_persona_panel.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue559_cross_behavior_self_scoring.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue559_panel_analysis.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1806/plans/v1.md",
+      "issue": 1806,
+      "check_ref": "origin/issue-1806",
+      "candidates": [
+        {
+          "path": "scripts/autonomous_session_watch.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_autonomous_session_watch.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1201/plans/v2.md",
+      "issue": 1201,
+      "check_ref": "origin/issue-1201",
+      "candidates": [
+        {
+          "path": "scripts/guard_repo_root_pull.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/sync_repo_root.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_guard_piped_git_push.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_guard_repo_root_pull.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_guard_repo_root_branch.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/guard_repo_root_branch.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/sync_env.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_guard_harmful_bank_read.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1007/plans/v1.md",
+      "issue": 1007,
+      "check_ref": "origin/issue-1007",
+      "candidates": [
+        {
+          "path": "tests/test_issue906_tiny_real_e2e.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_workflow*.py",
+          "prefix": "tests",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1856/plans/v2.md",
+      "issue": 1856,
+      "check_ref": "origin/issue-1856",
+      "candidates": [
+        {
+          "path": "tests/test_workflow_lint.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue_skill_width_reeval_pointer.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue_skill_marker_contract.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/select_step9c_tests.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/964/plans/v3.md",
+      "issue": 964,
+      "check_ref": "origin/issue-964",
+      "candidates": [
+        {
+          "path": "scripts/verify_task_body.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_verify_task_body.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/conftest.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/new_worktree.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1018/plans/v2.md",
+      "issue": 1018,
+      "check_ref": "origin/issue-1018",
+      "candidates": [
+        {
+          "path": "tests/test_api_dispatch.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue810_batch_rejudge_highm.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue810_contamination_audit.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue906_phase1_pilot.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_subprocess_env_explicit.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/run_experiment_389.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/rejudge_issue_389_c_strict.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue_188_evolutionary_trigger.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_judge_dispatch.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue779_stage1.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_graded_judge.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue545_claude_betley_aggregation.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_batch_judge_agg_non_dict_parse.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_artifacts_datagen.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue906_call_contracts.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_judge_cache_rubric_key.py",
+          "prefix": "tests",
+          "verdict": "warn",
+          "reason": "unresolved-citation",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue779_common.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/921/plans/v2.md",
+      "issue": 921,
+      "check_ref": "origin/issue-921",
+      "candidates": [
+        {
+          "path": "scripts/verify_task_body.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_verify_task_body.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/awaiting_promotion/1074/plans/v6.md",
+      "issue": 1074,
+      "check_ref": "origin/issue-1074",
+      "candidates": [
+        {
+          "path": "scripts/issue1074_dispatch.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1074_aggregate.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/358/plans/v1.md",
+      "issue": 358,
+      "check_ref": "origin/main",
+      "candidates": [
+        {
+          "path": "scripts/run_issue_276_pre_poison_similarity.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/analyze_manifold_axes.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/run_issue_358_extract.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/analyze_issue_358_pca.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/analyze_issue_358_probe.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/plot_issue_358.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/run_issue_358_extract.py]",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/analyze_issue_358_pca.py]",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/analyze_issue_358_umap.py]",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/analyze_issue_358_probe.py]",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/plot_issue_358.py]",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/run_issue_358.sh",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "planned-output",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/analyze_issue_358_umap.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1782/plans/v1.md",
+      "issue": 1782,
+      "check_ref": "origin/issue-1782",
+      "candidates": [
+        {
+          "path": "tests/test_verify_plan.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/verify_plan.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/awaiting_promotion/666/plans/v3.md",
+      "issue": 666,
+      "check_ref": "origin/issue-666",
+      "candidates": [
+        {
+          "path": "scripts/issue664_aggregate_gate.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue664_common.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue664_gate_summary.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue594_common.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue532_predictor_stress.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue666_load_store.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue666_predictor.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue666_extract_corpus.py",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "planned-output",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/project_corpus_v2.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue617_upload_corpus.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue664_extract_store.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_whitened_gate_reduction.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue666_lobo_loco.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue666_noise_floor.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue666_figures.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_leakage_predictor.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/820/plans/v3.md",
+      "issue": 820,
+      "check_ref": "origin/issue-820",
+      "candidates": [
+        {
+          "path": "tests/test_stage_dispatch_dedup.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/select_step9c_tests.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/task.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_workflow_fix_dedup.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/896/plans/v4.md",
+      "issue": 896,
+      "check_ref": "origin/issue-896",
+      "candidates": [
+        {
+          "path": "tests/test_step10d_guard3.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/sync_repo_root.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/task.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/pods.conf",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/pods_ephemeral.json",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/lint/format",
+          "prefix": "tests",
+          "verdict": "skip",
+          "reason": "no-ext",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/awaiting_promotion/603/plans/v1.md",
+      "issue": 603,
+      "check_ref": "origin/issue-603",
+      "candidates": [
+        {
+          "path": "scripts/run_issue551_extract.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue_519_dispatch.py",
+          "prefix": "scripts",
+          "verdict": "warn",
+          "reason": "unresolved-citation",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue541_personas.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue444_persona_distance_topic.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue603_inputs.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue603_validate_on_551.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue603_extract_dispatch.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue603_extract_worker.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue603_source_prior.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue603_decompose.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue603_expression_strata.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue603_figures.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue603_{inputs",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1080/plans/v2.md",
+      "issue": 1080,
+      "check_ref": "origin/issue-1080",
+      "candidates": [
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/autonomous_session_watch.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/task.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_autonomous_session_watch.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_workflow*.py",
+          "prefix": "tests",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/874/plans/v2.md",
+      "issue": 874,
+      "check_ref": "origin/issue-874",
+      "candidates": [
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/task.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_workflow_lint.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue_skill_marker_contract.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1749/plans/v1.md",
+      "issue": 1749,
+      "check_ref": "origin/issue-1749",
+      "candidates": [
+        {
+          "path": "tests/test_issue_skill_width_reeval_pointer.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_workflow_lint.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue_skill_marker_contract.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/awaiting_promotion/1092/plans/v8.md",
+      "issue": 1092,
+      "check_ref": "origin/issue-1092",
+      "candidates": [
+        {
+          "path": "scripts/issue1482_sae.py",
+          "prefix": "scripts",
+          "verdict": "fail",
+          "reason": "on-main-not-on-branch",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1482_feature_extremes.py",
+          "prefix": "scripts",
+          "verdict": "fail",
+          "reason": "on-main-not-on-branch",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1092_crossed_core_sae.py",
+          "prefix": "scripts",
+          "verdict": "fail",
+          "reason": "on-main-not-on-branch",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1092_crossed_core_sae_figs.py",
+          "prefix": "scripts",
+          "verdict": "fail",
+          "reason": "on-main-not-on-branch",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1482_feature_correlates.py",
+          "prefix": "scripts",
+          "verdict": "fail",
+          "reason": "on-main-not-on-branch",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1092_gpu_phase.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/dispatch_issue.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1877/plans/v1.md",
+      "issue": 1877,
+      "check_ref": "origin/issue-1877",
+      "candidates": [
+        {
+          "path": "scripts/issue1739_restore_partial.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/390/plans/v1.md",
+      "issue": 390,
+      "check_ref": "origin/issue-390",
+      "candidates": [
+        {
+          "path": "scripts/run_experiment_381.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_exp381_*.py",
+          "prefix": "tests",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "configs/condition/exp381",
+          "prefix": "configs",
+          "verdict": "skip",
+          "reason": "no-ext",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/run_experiment_390.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_exp381_contrastive_balance.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_exp381_framing_11_rubric.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_exp381_phase_train_fail_loud.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_exp381_success_criteria.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_exp390_refusal_pool.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/pod.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/run_experiment_369.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/awaiting_promotion/1092/plans/v11.md",
+      "issue": 1092,
+      "check_ref": "origin/issue-1092",
+      "candidates": [
+        {
+          "path": "scripts/issue1482_sae.py",
+          "prefix": "scripts",
+          "verdict": "fail",
+          "reason": "on-main-not-on-branch",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1482_feature_extremes.py",
+          "prefix": "scripts",
+          "verdict": "fail",
+          "reason": "on-main-not-on-branch",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1092_crossed_core_sae.py",
+          "prefix": "scripts",
+          "verdict": "fail",
+          "reason": "on-main-not-on-branch",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1092_crossed_core_sae_figs.py",
+          "prefix": "scripts",
+          "verdict": "fail",
+          "reason": "on-main-not-on-branch",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1482_feature_correlates.py",
+          "prefix": "scripts",
+          "verdict": "fail",
+          "reason": "on-main-not-on-branch",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1092_gpu_phase.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/dispatch_issue.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1691/plans/v4.md",
+      "issue": 1691,
+      "check_ref": "origin/issue-1691",
+      "candidates": [
+        {
+          "path": "scripts/autonomous_session_watch.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_autonomous_session_watch.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/codex_task.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/select_step9c_tests.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1781/plans/v1.md",
+      "issue": 1781,
+      "check_ref": "origin/issue-1781",
+      "candidates": [
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/804/plans/v1.md",
+      "issue": 804,
+      "check_ref": "origin/issue-804",
+      "candidates": [
+        {
+          "path": "scripts/guard_repo_root_branch.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_guard_repo_root_branch.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue744_dump_and_stream.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1691/plans/v6.md",
+      "issue": 1691,
+      "check_ref": "origin/issue-1691",
+      "candidates": [
+        {
+          "path": "scripts/autonomous_session_watch.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_autonomous_session_watch.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/codex_task.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/select_step9c_tests.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/864/plans/v3.md",
+      "issue": 864,
+      "check_ref": "origin/issue-864",
+      "candidates": [
+        {
+          "path": "scripts/poll_pipeline.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_poll_pipeline_zombie_gpu.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/backend_poll.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/failure_classifier.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_poll_*.py",
+          "prefix": "tests",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_backend_poll_gpu_idle.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_failure_classifier.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_poll_next_interval.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/849/plans/v1.md",
+      "issue": 849,
+      "check_ref": "origin/issue-849",
+      "candidates": [
+        {
+          "path": "scripts/autonomous_session_watch.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_cpu_guard_pass.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_autonomous_session_watch.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_stalled_detector_and_gc.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_vm_disk_subfloor_sentinel.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/cron_autonomous_session_watch.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/new_worktree.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_happy_patch_check.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1727/plans/v1.md",
+      "issue": 1727,
+      "check_ref": "origin/issue-1727",
+      "candidates": [
+        {
+          "path": "tests/test_workflow_lint.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/verify_plan.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1343/plans/v1.md",
+      "issue": 1343,
+      "check_ref": "origin/issue-1343",
+      "candidates": [
+        {
+          "path": "tests/test_gcp_backend.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/fixtures/issue588_gcp_startup_hydra_only.json",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1243/plans/v1.md",
+      "issue": 1243,
+      "check_ref": "origin/issue-1243",
+      "candidates": [
+        {
+          "path": "tests/test_issue_skill_merge_resnapshot_pin.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_step10d_guard3.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/new_worktree.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1797/plans/v3.md",
+      "issue": 1797,
+      "check_ref": "origin/issue-1797",
+      "candidates": [
+        {
+          "path": "tests/test_refusal_ladder_pins.py",
+          "prefix": "tests",
+          "verdict": "warn",
+          "reason": "unresolved-citation",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/awaiting_promotion/667/plans/v4.md",
+      "issue": 667,
+      "check_ref": "origin/issue-667",
+      "candidates": [
+        {
+          "path": "scripts/issue667_dispatch.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue667_analysis.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue667_extract.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue658_extract_base_store.py",
+          "prefix": "scripts",
+          "verdict": "fail",
+          "reason": "on-main-not-on-branch",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/dispatch_issue.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/668/plans/v2.md",
+      "issue": 668,
+      "check_ref": "origin/issue-668",
+      "candidates": [
+        {
+          "path": "scripts/i528_phase4_judge.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/analyze_axis_tails.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_batch_judge_sharded_submit.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_i528_phase4_judge_batch_shard.py",
+          "prefix": "tests",
+          "verdict": "warn",
+          "reason": "unresolved-citation",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_workflow_lint.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/805/plans/v2.md",
+      "issue": 805,
+      "check_ref": "origin/issue-805",
+      "candidates": [
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1033/plans/v1.md",
+      "issue": 1033,
+      "check_ref": "origin/issue-1033",
+      "candidates": [
+        {
+          "path": "scripts/poll_pipeline.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/backend_poll.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_poll_pipeline_zombie_gpu.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_poll_eta_tripwire.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_backend_poll_gpu_idle.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_poll_pipeline_output_mtime.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_poll_gpu_idle_escalation.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_poll_gpu_width_advisory.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_backend_poll.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/714/plans/v1.md",
+      "issue": 714,
+      "check_ref": "origin/issue-714",
+      "candidates": [
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_workflow_lint.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1095/plans/v2.md",
+      "issue": 1095,
+      "check_ref": "origin/issue-1095",
+      "candidates": [
+        {
+          "path": "tests/test_poll_pipeline_sentinels.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_gcp_backend.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/poll_pipeline.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/i650_write_results_sentinel.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/dispatch_neg_setpoint_601.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue778_lib.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/task.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_no_pod_side_task_py_shellout.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1021/plans/v1.md",
+      "issue": 1021,
+      "check_ref": "origin/issue-1021",
+      "candidates": [
+        {
+          "path": "scripts/autonomous_session_watch.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/task.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_autonomous_session_watch.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/759/plans/v2.md",
+      "issue": 759,
+      "check_ref": "origin/main",
+      "candidates": [
+        {
+          "path": "scripts/autonomous_session_watch.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_autonomous_session_watch.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_autonomous_plan_gate.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_autonomous_session_watch_wedge.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1294/plans/v2.md",
+      "issue": 1294,
+      "check_ref": "origin/issue-1294",
+      "candidates": [
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_workflow_lint.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue*.py",
+          "prefix": "scripts",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/task.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1143/plans/v3.md",
+      "issue": 1143,
+      "check_ref": "origin/issue-1143",
+      "candidates": [
+        {
+          "path": "tests/test_verify_task_body.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/verify_task_body.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/conftest.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1378/plans/v1.md",
+      "issue": 1378,
+      "check_ref": "origin/issue-1378",
+      "candidates": [
+        {
+          "path": "scripts/issue1073_fig_linear_nonlinear.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1092_inline_operator_figure.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_shared_vm_thread_caps.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1315_lr1e5_plots.py",
+          "prefix": "scripts",
+          "verdict": "fail",
+          "reason": "on-main-not-on-branch",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue778_null_battery.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/planning/1990/plans/v1.md",
+      "issue": 1990,
+      "check_ref": "origin/main",
+      "candidates": [
+        {
+          "path": "tests/test_guard_repo_root_branch.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/guard_repo_root_branch.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1196/plans/v1.md",
+      "issue": 1196,
+      "check_ref": "origin/issue-1196",
+      "candidates": [
+        {
+          "path": "scripts/audit_clean_results_body_discipline.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/verify_task_body.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_audit_clean_results_body_discipline.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_verify_task_body.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/backfill_artifact_registry.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/autonomous_session_watch.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/build_canonical_persona_pool.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/audit_...py",
+          "prefix": "scripts",
+          "verdict": "warn",
+          "reason": "unresolved-citation",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/awaiting_promotion/1775/plans/v1.md",
+      "issue": 1775,
+      "check_ref": "origin/issue-1775",
+      "candidates": [
+        {
+          "path": "scripts/issue1092_fit_grid.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1775_fold_check.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/verify_reused_artifact_keys.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1775_ladder.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1092_inline_compose_chain.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1775_detection.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1775_bilinear.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1775_figures.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1775_noise_relative.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue1775_run.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/dispatch_issue.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/819/plans/v1.md",
+      "issue": 819,
+      "check_ref": "origin/main",
+      "candidates": [
+        {
+          "path": "scripts/dispatch_issue.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/cron_codex_reaper.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/pod_audit.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue_653/i653_dispatch.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/issue623_dispatch.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_gcp_backend.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_dispatch_issue_cli.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/736/plans/v3.md",
+      "issue": 736,
+      "check_ref": "origin/issue-736",
+      "candidates": [
+        {
+          "path": "scripts/dispatch_issue.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_gcp_backend.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_dispatch_issue_cli.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_router.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_router*.py",
+          "prefix": "tests",
+          "verdict": "skip",
+          "reason": "glob-or-template",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/695/plans/v1.md",
+      "issue": 695,
+      "check_ref": "origin/issue-695",
+      "candidates": [
+        {
+          "path": "scripts/autonomous_session_watch.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/cron_autonomous_session_watch.sh",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/spawn_session.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/train.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/eval.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/run_sweep.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/dispatch_issue.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_autonomous_session_watch.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    },
+    {
+      "plan": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1995/tasks/completed/1976/plans/v1.md",
+      "issue": 1976,
+      "check_ref": "origin/issue-1976",
+      "candidates": [
+        {
+          "path": "scripts/workflow_lint.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "tests/test_issue_skill_pre_split_composition.py",
+          "prefix": "tests",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        },
+        {
+          "path": "scripts/select_step9c_tests.py",
+          "prefix": "scripts",
+          "verdict": "pass",
+          "reason": "in-ref",
+          "history_noise": false
+        }
+      ]
+    }
+  ]
+}
