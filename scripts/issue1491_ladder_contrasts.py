@@ -709,7 +709,10 @@ def main() -> int:
     if len(ridge_by_slug) >= 3:
         xs_b = np.array([SCALE_PARAMS_B[s] for s in ridge_by_slug])
         ys_r = np.array([ridge_by_slug[s] for s in ridge_by_slug])
-        # Rank correlation without scipy — compute by hand.
+        # Rank correlation via scipy. (The comment here previously claimed the
+        # opposite — "without scipy, compute by hand" — directly above a scipy
+        # import.) Descriptive only, never a registered verdict: with at most
+        # 6 scales the p-value is not meaningful and is reported for context.
         from scipy.stats import spearmanr  # type: ignore
 
         rho, p = spearmanr(xs_b, ys_r)
