@@ -7771,8 +7771,8 @@
     "2002": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2002",
-      "status": "running",
+      "path": "tasks/reviewing/2002",
+      "status": "reviewing",
       "title": "daily-fix: smoke contract: resume/salvage-leg matrix + real-"
     },
     "2003": {
