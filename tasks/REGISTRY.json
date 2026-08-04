@@ -7757,8 +7757,8 @@
     "2000": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2000",
-      "status": "running",
+      "path": "tasks/reviewing/2000",
+      "status": "reviewing",
       "title": "daily-fix: sizing duty binds teammate-dispatched box sweeps"
     },
     "2001": {
