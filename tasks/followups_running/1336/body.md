@@ -27,7 +27,7 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
-**Methodology:** [docs/methodology/issue_1336.md](https://github.com/superkaiba/explore-persona-space/blob/2249cf495d8c2d355b2f37f7b84eb7bf396f005d/docs/methodology/issue_1336.md) · [gist mirror](https://gist.github.com/superkaiba/5575c7b1da67014bf781a56e30ca6b88) *(rounds 1–2; the round-3 metric-ladder recipe is added inline under Methodology below and will be re-exported on promotion.)*
+**Methodology:** [docs/methodology/issue_1336.md](https://github.com/superkaiba/explore-persona-space/blob/4d732d2a03cfec9c7b4815219cb89905546230af/docs/methodology/issue_1336.md) · [gist mirror](https://gist.github.com/superkaiba/5575c7b1da67014bf781a56e30ca6b88)
 
 ## Takeaways
 
