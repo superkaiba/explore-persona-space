@@ -107,6 +107,20 @@ def _dry_run() -> int:
     return 1
 
 
+def _load_jsonl(path: Path) -> list[dict]:
+    rows: list[dict] = []
+    with path.open() as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    return rows
+
+
 def run_audit(args: argparse.Namespace) -> int:
     from huggingface_hub import HfApi
 
@@ -135,14 +149,29 @@ def run_audit(args: argparse.Namespace) -> int:
     )
     parent_reject_paths_scanned: list[str] = []
 
-    # For each variant, list files matching an inserted-reject-ish pattern.
-    # Parent's convention (grep-anchored to worktree issue1345_common.py) uses
-    # slugs like `_ins_` or `inserted` for the inserted arm — we accept either
-    # naming plus a `reject` marker in the filename.
-    reject_pat = re.compile(r"(reject|rej_|_rej|discard)", re.IGNORECASE)
-    inserted_pat = re.compile(r"(insert|_ins_|_ins$)", re.IGNORECASE)
+    # Parent #1345 schema (probed 2026-08-04):
+    #   judge_results_paired_<arm>.jsonl  -> {conv_id, mode, mech_reason, verdict, judge_exchanges}
+    #   raw_stories_paired_<arm>.jsonl    -> {conv_id, story_id, question, mode, tier, story, finish_reason, answer}
+    # Rejects = judge rows with verdict != "PASS"/"OK" (verdict == "FAIL" observed; treat
+    # anything not-PASS as reject-adjacent). Join by conv_id to raw_stories (union of
+    # the primary + retry files). Then re-run span matchers over (story, answer).
+    #
+    # Inserted arm slugs per variant (NOT the _op arm):
+    #   variant *_op / *_op_base  -> SKIP (op arm)
+    #   variant char_*            -> arm slug "instruct" (in `char_*`) or "pretrained" (in `char_*_base`)
+    # We enumerate the judge_results files present and derive the arm slug from the
+    # filename, then match retry raw_stories by the same slug.
+    judge_pat = re.compile(r"^judge_results_paired_(?P<arm>[a-z0-9_]+)\.jsonl$", re.IGNORECASE)
+    op_arm_pat = re.compile(r"(^|_)op(_|$)", re.IGNORECASE)
 
     for variant_path in variant_dirs:
+        variant = variant_path.rstrip("/").split("/")[-1]
+        # Skip op arm variants — brief: "inserted arm (instruct + base slugs; NOT _op)".
+        if variant.endswith("_op") or variant.endswith("_op_base"):
+            continue
+        # Also skip non-variant dirs like analysis_tensors.
+        if variant in {"analysis_tensors", "assistant_named_story"}:
+            continue
         try:
             files = list(
                 api.list_repo_tree(
@@ -152,56 +181,73 @@ def run_audit(args: argparse.Namespace) -> int:
         except Exception as exc:
             print(f"WARN listing {variant_path}: {exc}", file=sys.stderr)
             continue
-        variant = variant_path.rstrip("/").split("/")[-1]
+
+        # Index files by basename → path.
+        by_base: dict[str, str] = {}
         for entry in files:
             if type(entry).__name__ != "RepoFile":
                 continue
-            path = entry.path
-            base = path.rsplit("/", 1)[-1].lower()
-            if not (reject_pat.search(base) and inserted_pat.search(base)):
+            base_name = entry.path.rsplit("/", 1)[-1]
+            by_base[base_name] = entry.path
+
+        # Find judge_results files for inserted arms (skip op arms).
+        for base_name, path in list(by_base.items()):
+            m = judge_pat.match(base_name)
+            if not m:
                 continue
-            if not path.endswith((".json", ".jsonl")):
+            arm = m.group("arm")
+            if op_arm_pat.search(arm):
                 continue
-            parent_reject_paths_scanned.append(path)
+            # Download judge_results and enumerate FAIL rows.
             try:
-                local = api.hf_hub_download(repo_id=repo_id, repo_type="dataset", filename=path)
+                jr_local = api.hf_hub_download(repo_id=repo_id, repo_type="dataset", filename=path)
             except Exception as exc:
                 print(f"WARN downloading {path}: {exc}", file=sys.stderr)
                 continue
-            local_p = Path(local)
-            rows = []
-            if path.endswith(".jsonl"):
-                with local_p.open() as f:
-                    for line in f:
-                        line = line.strip()
-                        if not line:
-                            continue
-                        try:
-                            rows.append(json.loads(line))
-                        except json.JSONDecodeError:
-                            continue
-            else:
-                try:
-                    with local_p.open() as f:
-                        obj = json.load(f)
-                    if isinstance(obj, list):
-                        rows = obj
-                    elif isinstance(obj, dict) and "rows" in obj:
-                        rows = obj["rows"]
-                    else:
-                        rows = [obj]
-                except json.JSONDecodeError:
-                    continue
+            judge_rows = _load_jsonl(Path(jr_local))
+            # Collect rejected conv_ids (verdict != PASS; observed vocab: FAIL).
+            reject_ids = {
+                r.get("conv_id")
+                for r in judge_rows
+                if r.get("conv_id") is not None
+                and str(r.get("verdict", "")).upper() not in {"PASS", "OK"}
+            }
+            if not reject_ids:
+                continue
 
-            for row in rows:
-                text = (
-                    row.get("story")
-                    or row.get("text")
-                    or row.get("completion")
-                    or row.get("response")
-                    or ""
-                )
-                answer = row.get("answer") or row.get("target") or row.get("gold") or ""
+            # Load the raw_stories file (primary + all retry siblings).
+            rs_names = [f"raw_stories_paired_{arm}.jsonl"]
+            for suffix in ("_retry", "_retry2", "_retry3", "_retry4", "_retry5"):
+                rs_names.append(f"raw_stories_paired_{arm}{suffix}.jsonl")
+            raw_by_conv: dict[str, dict] = {}
+            for rs_name in rs_names:
+                rs_path = by_base.get(rs_name)
+                if not rs_path:
+                    continue
+                try:
+                    rs_local = api.hf_hub_download(
+                        repo_id=repo_id, repo_type="dataset", filename=rs_path
+                    )
+                except Exception as exc:
+                    print(f"WARN downloading {rs_path}: {exc}", file=sys.stderr)
+                    continue
+                for row in _load_jsonl(Path(rs_local)):
+                    cid = row.get("conv_id")
+                    if cid is None:
+                        continue
+                    # Last-write-wins is fine — retries overwrite the primary
+                    # with the rewritten attempt for the same conv_id.
+                    raw_by_conv[cid] = row
+
+            parent_reject_paths_scanned.append(path)
+
+            # Iterate rejects; run matchers on the joined (story, answer).
+            for cid in reject_ids:
+                row = raw_by_conv.get(cid)
+                if row is None:
+                    continue
+                text = row.get("story") or row.get("text") or ""
+                answer = row.get("answer") or row.get("target") or ""
                 if not text or not answer:
                     continue
                 n_rejects_scanned += 1
@@ -215,7 +261,7 @@ def run_audit(args: argparse.Namespace) -> int:
 
     if n_rejects_scanned == 0:
         print(
-            "WARN: no matching inserted-reject files found — check parent-prefix + filename patterns",
+            "WARN: no matching inserted-reject rows found — check parent-prefix + arm-slug patterns",
             file=sys.stderr,
         )
 
