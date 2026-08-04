@@ -45,8 +45,6 @@ import os
 import sys
 from pathlib import Path
 
-import numpy as np
-
 _SCRIPTS = Path(__file__).resolve().parent
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
@@ -55,6 +53,12 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
 
+# Heavy imports (numpy/torch) MUST come AFTER load_dotenv() so the shared-VM
+# thread caps (#847) bind in-process — torch freezes its intra-op pool from
+# OMP_NUM_THREADS at IMPORT, so an import above the loader silently runs
+# uncapped on the shared box. Pinned by tests/test_shared_vm_thread_caps.py
+# (test_no_new_torch_before_dotenv_vm_entrypoints).
+import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
 # Import parent-branch fit functions + streaming helpers from origin/main

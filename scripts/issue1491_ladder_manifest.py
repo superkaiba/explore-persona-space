@@ -55,7 +55,9 @@ import sys
 from pathlib import Path
 from typing import Iterable
 
-import numpy as np
+# NOTE: numpy is deliberately NOT imported at module top — see _sample_positions.
+# This module loads .env inside _load_env() rather than at module scope, so a
+# module-top heavy import would run before the shared-VM thread caps (#847) bind.
 
 # The port-source decision (epm:progress v6) mandates imports from origin/main
 # copies — no vendoring. Signature-smoke recorded there.
@@ -383,6 +385,13 @@ def _make_token_len_fn():
 
 def _sample_positions(pool_size: int, k: int, seed: int) -> list[int]:
     """Deterministic sample of ``k`` positions from ``range(pool_size)``."""
+    # Deferred import: this module loads .env inside _load_env() rather than at
+    # module top, so a module-top numpy would import BEFORE the shared-VM thread
+    # caps (#847) bind. numpy is used only here, so deferring keeps the module
+    # heavy-import-free. Pinned by tests/test_shared_vm_thread_caps.py
+    # (test_no_new_torch_before_dotenv_vm_entrypoints).
+    import numpy as np
+
     rng = np.random.default_rng(seed)
     picks = rng.choice(pool_size, size=k, replace=False)
     return sorted(int(p) for p in picks)
