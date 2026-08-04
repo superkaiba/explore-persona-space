@@ -21710,7 +21710,15 @@ def proposed_infra_sweep_pass(
         _proposed_infra_sweep_prune_save(state, candidates, dry_run)
         return
     occupied_active = len(occupying)
-    cap = INFRA_DRAIN_CAP_DEFAULT
+    # Cap: honor the PM queue file's `cap` key, same source the drain pass
+    # (pass 11) already uses, so the two passes sharing this cap agree and an
+    # operator can retune concurrency without a code change. Fails SOFT to
+    # INFRA_DRAIN_CAP_DEFAULT on a missing / corrupt / torn-write queue file —
+    # the same fail-soft direction as the `holds` read above. Before 2026-08-04
+    # this was hardcoded to the constant, so the documented `cap` key was
+    # silently ignored HERE while the drain pass honored it: editing the queue
+    # file appeared to do nothing to the sweep that holds the whole backlog.
+    cap = queue["cap"] if queue is not None else INFRA_DRAIN_CAP_DEFAULT
     statuses = {i: status_kind.get(i, (None, None))[0] for i in candidates}
     kinds = {i: status_kind.get(i, (None, None))[1] for i in candidates}
 
