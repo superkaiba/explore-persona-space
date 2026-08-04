@@ -2247,8 +2247,16 @@ def test_tmproot_subcommand(tmp_path: Path, monkeypatch, capsys):
 
 def test_skill_step9c_blocks_pin_tmpdir_routing():
     """Durability pin (#1408): the SKILL.md Step 9c 1b AND 1c gate pytest blocks
-    each carry the tmproot routing snippet, the --basetemp argv addition, and
-    the post-run basetemp cleanup line."""
+    each carry the tmproot routing snippet + the --basetemp argv addition;
+    the basetemp cleanup line lives in the SIBLING completion-read block
+    (moved off the launcher block as of #2005's detached-launcher rewrite —
+    the launcher bg-Bash no longer runs to pytest completion, so the cleanup
+    fires when the completion-read reaps the persisted BASETEMP path).
+
+    The `--basetemp` argv addition accepts either the plain-shell form
+    (`$S9C_BASETEMP`) or the double-quoted-outer escape form (`\\$S9C_BASETEMP`)
+    per the #2005 detached shape: the outer `bash -c "..."` wrapper defers
+    the variable to the inner shell via the backslash escape."""
     skill = (
         Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
     ).read_text()
@@ -2256,13 +2264,25 @@ def test_skill_step9c_blocks_pin_tmpdir_routing():
         b
         for b in skill.split("```")
         if "--junitxml=/tmp/step9c-junit-issue-<N>.xml" in b
-        and "echo $? > /tmp/step9c-rc-issue-<N>" in b
+        and (
+            "echo $? > /tmp/step9c-rc-issue-<N>" in b or "echo \\$? > /tmp/step9c-rc-issue-<N>" in b
+        )
     ]
     assert len(blocks) == 2, "expected exactly the 1b + 1c gate pytest blocks"
     for block in blocks:
         assert "step9c_baseline.py tmproot" in block
-        assert "${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p}" in block
-        assert 'rm -rf "$S9C_BASETEMP"' in block
+        assert (
+            "${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p}" in block
+            or "${S9C_BASETEMP:+--basetemp=\\$S9C_BASETEMP/p}" in block
+        ), "each launcher block must thread --basetemp"
+    # The basetemp cleanup landed in the completion-read block (#2005): a
+    # separate block that reads the persisted path and reaps the dir.
+    assert "step9c-basetemp-issue-<N>.path" in skill, (
+        "the launcher persists BASETEMP via /tmp/step9c-basetemp-issue-<N>.path"
+    )
+    assert 'rm -rf "$BT"' in skill, (
+        "the completion-read reaps the BASETEMP dir via the persisted-path helper"
+    )
 
 
 def test_skill_tg_blocks_pin_tmpdir_routing():
