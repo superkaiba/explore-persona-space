@@ -7722,8 +7722,8 @@
     "1998": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1998",
-      "status": "planning",
+      "path": "tasks/approved/1998",
+      "status": "approved",
       "title": "daily-fix: fail loud when --min-ram-gb is inert on a GPU dis"
     },
     "1999": {
