@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2069,
+  "highest_id": 2070,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8280,6 +8280,13 @@
       "path": "tasks/completed/207",
       "status": "completed",
       "title": "Persona-geometry distance predicts where a marker leaks across personas and triggers \u2014 six experiments, |rho| 0.48 to 0.79 (MODERATE confidence)"
+    },
+    "2070": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2070",
+      "status": "proposed",
+      "title": "daily-held: 61-deep auto-dispatchable infra queue is now the"
     },
     "208": {
       "has_clean_result": false,
