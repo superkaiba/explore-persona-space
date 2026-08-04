@@ -866,4 +866,4 @@ if __name__ == "__main__":
     rc = main()
     sys.stdout.flush()
     sys.stderr.flush()
-    sys.exit(rc if isinstance(rc, int) else 0)
+    os._exit(rc if isinstance(rc, int) else 0)
