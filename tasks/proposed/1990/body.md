@@ -5,6 +5,7 @@ tags:
 - wf-fix
 - wf-fix-fp:253371f2c59b
 - daily-auto-filed
+- trigger-dense
 created_at: '2026-08-02T07:03:33Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-08-01 problem sweep (route 2): test_zz_production_sidecar_untouched_by_suite
