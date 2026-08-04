@@ -1,0 +1,467 @@
+{
+  "what_is_plotted": "Somers' D of per-feature R^2 on each predictor, on the AUROC / Harrell c-index scale: the probability that, in a random pair of features the predictor separates, the one with the higher predictor value is the better-predicted one. Two values per predictor: pooled over all pairs, and matched (pairs formed only within per-token firing-rate deciles).",
+  "statistic": "D_{y|x} = (C - Dis) / (n_pairs - T_x);  c = (D + 1) / 2",
+  "equivalence_check": "For binary predictors this is bit-identical to sklearn.metrics.roc_auc_score(indicator, r2) \u2014 verified to 1e-16 on speaker_property:identity_disposition, speaker_property:language, abstraction:abstract_contextual.",
+  "n_rows": 120716,
+  "covariates": "eval_results/issue_1482/predictor_battery/fullwidth_covariates_v2.npz",
+  "r2_target": "data/issue_1482/densesae_target/ridge__mean_r2_fullwidth.npy",
+  "control": "firing_freq_per_token",
+  "control_2": "activity",
+  "matched_scheme": "nested: 10 deciles of firing_freq_per_token x 3 within-decile terciles of activity (30 cells). Nested rather than crossed because rho(activity, firing_freq_per_token) = 0.96 empties a crossed grid's off-diagonal.",
+  "n_bins": 10,
+  "bin_n": [
+    12072,
+    12071,
+    12072,
+    12071,
+    12072,
+    12071,
+    12072,
+    12071,
+    12072,
+    12072
+  ],
+  "bin_median_firing": [
+    2.1174398879791602e-07,
+    1.424406961091949e-06,
+    5.735766653123839e-06,
+    1.6977043307146162e-05,
+    3.935280079895486e-05,
+    7.980106465487239e-05,
+    0.00015104890687465885,
+    0.00028995126478172193,
+    0.0006173711463329211,
+    0.001899493730785318
+  ],
+  "both_cell_n": [
+    3620,
+    4397,
+    4055,
+    4014,
+    4015,
+    4042,
+    3966,
+    4043,
+    4063,
+    4022,
+    4010,
+    4039,
+    4013,
+    4032,
+    4027,
+    4024,
+    4022,
+    4025,
+    4024,
+    4024,
+    4024,
+    4024,
+    4022,
+    4025,
+    4024,
+    4023,
+    4025,
+    4024,
+    4024,
+    4024
+  ],
+  "control_pooled_concordance": 0.7657726677939043,
+  "control_2_pooled_concordance": 0.7574644378998036,
+  "values": [
+    {
+      "predictor": "interpretable:no",
+      "kind": "binary",
+      "n_pos": 16951,
+      "pooled": 0.5494978668777424,
+      "m_token": 0.37456547064661855,
+      "m_answer": 0.43339580958657414,
+      "matched": 0.37609604817635334
+    },
+    {
+      "predictor": "content_type:topic",
+      "kind": "binary",
+      "n_pos": 20676,
+      "pooled": 0.47770733938964555,
+      "m_token": 0.38011249915806533,
+      "m_answer": 0.4135082544401584,
+      "matched": 0.384041995613715
+    },
+    {
+      "predictor": "enc_dec_cos",
+      "kind": "continuous",
+      "n_pos": 120716,
+      "pooled": 0.5935087901846833,
+      "m_token": 0.4390120702054453,
+      "m_answer": 0.4549324783738581,
+      "matched": 0.436660581067316
+    },
+    {
+      "predictor": "template_token_frac",
+      "kind": "continuous",
+      "n_pos": 120716,
+      "pooled": 0.6006335682303997,
+      "m_token": 0.4396226757872838,
+      "m_answer": 0.49730544677551386,
+      "matched": 0.44195413979220466
+    },
+    {
+      "predictor": "act_var_across_answers",
+      "kind": "continuous",
+      "n_pos": 120716,
+      "pooled": 0.7170513248158275,
+      "m_token": 0.45257452334231996,
+      "m_answer": 0.522108319678606,
+      "matched": 0.4560624771465865
+    },
+    {
+      "predictor": "footprint_kurt",
+      "kind": "continuous",
+      "n_pos": 120716,
+      "pooled": 0.5781839915594975,
+      "m_token": 0.4619298442089816,
+      "m_answer": 0.458211971857302,
+      "matched": 0.4570629418320667
+    },
+    {
+      "predictor": "mean_run_length",
+      "kind": "continuous",
+      "n_pos": 120716,
+      "pooled": 0.5758752961556148,
+      "m_token": 0.45134020872847364,
+      "m_answer": 0.5177614861307699,
+      "matched": 0.46083156536964276
+    },
+    {
+      "predictor": "abstraction:lexical_semantic",
+      "kind": "binary",
+      "n_pos": 29863,
+      "pooled": 0.5099769496533002,
+      "m_token": 0.47249373637037356,
+      "m_answer": 0.422140764965227,
+      "matched": 0.4647533776835986
+    },
+    {
+      "predictor": "write_norm",
+      "kind": "continuous",
+      "n_pos": 120716,
+      "pooled": 0.5181591902994656,
+      "m_token": 0.46905407336769317,
+      "m_answer": 0.4783077718595426,
+      "matched": 0.4723343422309452
+    },
+    {
+      "predictor": "logit_footprint_concentration",
+      "kind": "continuous",
+      "n_pos": 120716,
+      "pooled": 0.5232956808436311,
+      "m_token": 0.48332700440934884,
+      "m_answer": 0.4807555372922069,
+      "matched": 0.48106962134488956
+    },
+    {
+      "predictor": "footprint_var",
+      "kind": "continuous",
+      "n_pos": 120716,
+      "pooled": 0.49312946160806165,
+      "m_token": 0.48015092501800777,
+      "m_answer": 0.48732236583605554,
+      "matched": 0.48148637492091007
+    },
+    {
+      "predictor": "speaker_property:none",
+      "kind": "binary",
+      "n_pos": 94910,
+      "pooled": 0.550380171467035,
+      "m_token": 0.47875970115637834,
+      "m_answer": 0.4708343800833146,
+      "matched": 0.4827709898134275
+    },
+    {
+      "predictor": "speaker_property:language",
+      "kind": "binary",
+      "n_pos": 6438,
+      "pooled": 0.5705868618289237,
+      "m_token": 0.4909926366861035,
+      "m_answer": 0.4714377214196756,
+      "matched": 0.48415529818918995
+    },
+    {
+      "predictor": "interpretable:unresolved",
+      "kind": "binary",
+      "n_pos": 897,
+      "pooled": 0.49372026143148673,
+      "m_token": 0.47725414033849045,
+      "m_answer": 0.49128896584998116,
+      "matched": 0.48432266091656
+    },
+    {
+      "predictor": "consistency",
+      "kind": "continuous",
+      "n_pos": 120716,
+      "pooled": 0.6234953514109771,
+      "m_token": 0.47745655936249326,
+      "m_answer": 0.5526008302272741,
+      "matched": 0.4858930461780073
+    },
+    {
+      "predictor": "abstraction:abstract_contextual",
+      "kind": "binary",
+      "n_pos": 39489,
+      "pooled": 0.6042324784774353,
+      "m_token": 0.48522567682766343,
+      "m_answer": 0.5248939697186621,
+      "matched": 0.48995560352328277
+    },
+    {
+      "predictor": "functional_role:mixed",
+      "kind": "binary",
+      "n_pos": 5400,
+      "pooled": 0.6157298294991026,
+      "m_token": 0.4980206802658999,
+      "m_answer": 0.4975954261586125,
+      "matched": 0.4944547244202198
+    },
+    {
+      "predictor": "footprint_skew",
+      "kind": "continuous",
+      "n_pos": 120716,
+      "pooled": 0.5268751702973512,
+      "m_token": 0.49444778587318644,
+      "m_answer": 0.5041354988118658,
+      "matched": 0.49574523135916837
+    },
+    {
+      "predictor": "content_type:unresolved",
+      "kind": "binary",
+      "n_pos": 3306,
+      "pooled": 0.4952770545747079,
+      "m_token": 0.49534727581852595,
+      "m_answer": 0.4988626652782226,
+      "matched": 0.49828868920482094
+    },
+    {
+      "predictor": "functional_role:input_side",
+      "kind": "binary",
+      "n_pos": 96759,
+      "pooled": 0.5226861290025194,
+      "m_token": 0.49392545097192014,
+      "m_answer": 0.4824227120346215,
+      "matched": 0.4991628645013757
+    },
+    {
+      "predictor": "redundancy_max_cos",
+      "kind": "continuous",
+      "n_pos": 120716,
+      "pooled": 0.5760772075929281,
+      "m_token": 0.5001780347392345,
+      "m_answer": 0.49822786784404527,
+      "matched": 0.49917861196137064
+    },
+    {
+      "predictor": "side_class=2",
+      "kind": "binary",
+      "n_pos": 782,
+      "pooled": 0.2316988644692347,
+      "m_token": 0.5420517457924017,
+      "m_answer": 0.5499503864953265,
+      "matched": 0.49928632071044915
+    },
+    {
+      "predictor": "side_class=1",
+      "kind": "binary",
+      "n_pos": 119934,
+      "pooled": 0.7683011355307653,
+      "m_token": 0.4579482542075983,
+      "m_answer": 0.45004961350467343,
+      "matched": 0.5007136792895508
+    },
+    {
+      "predictor": "content_type:operation",
+      "kind": "binary",
+      "n_pos": 10762,
+      "pooled": 0.5225723636141912,
+      "m_token": 0.5054559972240857,
+      "m_answer": 0.4892752960079026,
+      "matched": 0.5012233289609439
+    },
+    {
+      "predictor": "functional_role:unresolved",
+      "kind": "binary",
+      "n_pos": 7602,
+      "pooled": 0.5813670262096956,
+      "m_token": 0.5011734604809497,
+      "m_answer": 0.5142357391146443,
+      "matched": 0.501556174083726
+    },
+    {
+      "predictor": "enc_norm",
+      "kind": "continuous",
+      "n_pos": 120716,
+      "pooled": 0.42310578026896745,
+      "m_token": 0.49868685517323413,
+      "m_answer": 0.49854268067031726,
+      "matched": 0.502050245633167
+    },
+    {
+      "predictor": "speaker_property:unresolved",
+      "kind": "binary",
+      "n_pos": 1355,
+      "pooled": 0.544296416548502,
+      "m_token": 0.5071544820680403,
+      "m_answer": 0.5058628996952802,
+      "matched": 0.5084925136850257
+    },
+    {
+      "predictor": "abstraction:unresolved",
+      "kind": "binary",
+      "n_pos": 2804,
+      "pooled": 0.4936287684841298,
+      "m_token": 0.5047521849262734,
+      "m_answer": 0.5108073784226999,
+      "matched": 0.5088625844504255
+    },
+    {
+      "predictor": "mean_act_cond",
+      "kind": "continuous",
+      "n_pos": 120716,
+      "pooled": 0.6164951982352151,
+      "m_token": 0.49651648611827054,
+      "m_answer": 0.5599925737420621,
+      "matched": 0.5101498820109994
+    },
+    {
+      "predictor": "speaker_property:register_style",
+      "kind": "binary",
+      "n_pos": 9136,
+      "pooled": 0.5349140727487272,
+      "m_token": 0.5078933699927226,
+      "m_answer": 0.5361860736034191,
+      "matched": 0.5137217978303332
+    },
+    {
+      "predictor": "activity",
+      "kind": "continuous",
+      "n_pos": 120716,
+      "pooled": 0.7574644378998036,
+      "m_token": 0.5235485423610358,
+      "m_answer": 0.5301267457389195,
+      "matched": 0.5187785582507273
+    },
+    {
+      "predictor": "content_type:entity",
+      "kind": "binary",
+      "n_pos": 5544,
+      "pooled": 0.4305953620706773,
+      "m_token": 0.5255061688867846,
+      "m_answer": 0.5182446143206592,
+      "matched": 0.5274970076299652
+    },
+    {
+      "predictor": "scaffold_frac",
+      "kind": "continuous",
+      "n_pos": 120716,
+      "pooled": 0.5579914373089507,
+      "m_token": 0.5292937929563687,
+      "m_answer": 0.5427495195325572,
+      "matched": 0.5332132861812567
+    },
+    {
+      "predictor": "massive_dim_mass",
+      "kind": "continuous",
+      "n_pos": 120716,
+      "pooled": 0.5090998854247168,
+      "m_token": 0.5339449536977791,
+      "m_answer": 0.5247492919874451,
+      "matched": 0.5332296134994119
+    },
+    {
+      "predictor": "functional_role:output_promoting",
+      "kind": "binary",
+      "n_pos": 3499,
+      "pooled": 0.6357938057315587,
+      "m_token": 0.5345819839437014,
+      "m_answer": 0.5462817341605095,
+      "matched": 0.5339889646190041
+    },
+    {
+      "predictor": "proj_var",
+      "kind": "continuous",
+      "n_pos": 120716,
+      "pooled": 0.5996595734256478,
+      "m_token": 0.5271779387184379,
+      "m_answer": 0.5611432128453359,
+      "matched": 0.5356377262380003
+    },
+    {
+      "predictor": "abstraction:token_surface",
+      "kind": "binary",
+      "n_pos": 41104,
+      "pooled": 0.4666967562909285,
+      "m_token": 0.536714294128562,
+      "m_answer": 0.5371825181826294,
+      "matched": 0.5399164399965758
+    },
+    {
+      "predictor": "side_ratio",
+      "kind": "continuous",
+      "n_pos": 120716,
+      "pooled": 0.6034991269911939,
+      "m_token": 0.5517953933238579,
+      "m_answer": 0.5548237233583573,
+      "matched": 0.5543062887378062
+    },
+    {
+      "predictor": "content_type:syntax",
+      "kind": "binary",
+      "n_pos": 71248,
+      "pooled": 0.5883184588229405,
+      "m_token": 0.5606901143306997,
+      "m_answer": 0.5444005981825982,
+      "matched": 0.5613187515867408
+    },
+    {
+      "predictor": "content_type:task_format",
+      "kind": "binary",
+      "n_pos": 1724,
+      "pooled": 0.5223571055645457,
+      "m_token": 0.5716013810121809,
+      "m_answer": 0.5907011035227796,
+      "matched": 0.5740004479579898
+    },
+    {
+      "predictor": "interpretable:yes",
+      "kind": "binary",
+      "n_pos": 95412,
+      "pooled": 0.567898296678018,
+      "m_token": 0.5987402429434353,
+      "m_answer": 0.5494017885282229,
+      "matched": 0.6028534224810447
+    },
+    {
+      "predictor": "dense_latent_flag",
+      "kind": "binary",
+      "n_pos": 899,
+      "pooled": 0.9308176708449609,
+      "m_token": 0.6828918872934484,
+      "m_answer": 0.7567018337448842,
+      "matched": 0.6992946829810901
+    },
+    {
+      "predictor": "speaker_property:identity_disposition",
+      "kind": "binary",
+      "n_pos": 1399,
+      "pooled": 0.691917706883058,
+      "m_token": 0.7700144038003292,
+      "m_answer": 0.7373321624273834,
+      "matched": 0.7602931394217236
+    }
+  ],
+  "caveats": [
+    "MARGINAL, not incremental: firing rate is matched, the other predictors are NOT. Pairwise block correlations reach 0.85, so a strong value may be a correlated neighbour showing through.",
+    "No confidence intervals. Differences under ~0.02 should not be read; rare indicators (n_pos < ~1,500) are the noisiest rows.",
+    "Both firing-rate senses are matched, but the rest of the activity family is not: mean_act_cond correlates only 0.40 with activity and is NOT well matched by this design.",
+    "dense_latent_flag concentrates in the top firing deciles, so its matched value rests on comparatively few within-bin pairs.",
+    "functional_role and gurnee_promoting_class were EXCLUDED from the 24-block Shapley decomposition (kappa = 0.310 for functional_role; gurnee is a q0.90 slice off footprint_kurt/skew). functional_role levels appear here for completeness and should not carry a headline.",
+    "Population is the v2 (proj_var-corrected) covariate universe, complete-case over the 19 continuous cluster representatives."
+  ]
+}
