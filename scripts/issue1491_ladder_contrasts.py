@@ -4,15 +4,15 @@
 Consumes the per-scale fits + per-context test preds/targets Unit 3
 produces:
   eval_results/issue_1491/scale_ladder/fits_<slug>.json
-  data/issue_1491/preds/<slug>_test_preds_{ridge,val_selected_nonlinear}.npz
+  data/issue_1491/preds/<slug>_test_preds_{ridge,registered_nonlinear}.npz
 
 Computes the plan §3 registered contrasts:
 
 - **PRIMARY:** Δ = ridge R²(32B) − ridge R²(0.5B), context arm, primary
   layer, matched-n 25k, with a paired bootstrap (1,000 draws) over the
   1,000 shared pinned test contexts.
-- **SECONDARY (H3):** ΔΓ = Γ(32B) − Γ(0.5B), where Γ(s) = [val-selected
-  nonlinear test R² among {MLP-w8192, MLP-w32768, KRR-Nyström}] − [ridge
+- **SECONDARY (H3):** ΔΓ = Γ(32B) − Γ(0.5B), where Γ(s) = [registered
+  nonlinear test R² (pre-registered MLP-w8192)] − [ridge
   test R²] at the same layer/n; same paired bootstrap.
 - **Descriptive:** Spearman monotonicity across all 6 scales (paired-
   bootstrap CI) — not a registered verdict, per plan §3.
@@ -109,7 +109,7 @@ def _load_fits_json(fits_dir: Path, slug: str) -> dict | None:
 def _load_preds_npz(preds_dir: Path, slug: str, kind: str) -> dict | None:
     """Load one scale's per-context test preds + targets .npz.
 
-    kind = "ridge" or "val_selected_nonlinear".
+    kind = "ridge" or "registered_nonlinear".
     Returns {"ci": (n,), "target": (n, H), "pred": (n, H)} or None."""
     path = preds_dir / f"{slug}_test_preds_{kind}.npz"
     if not path.exists():
@@ -165,9 +165,27 @@ def _paired_bootstrap_delta_r2(
     prd_a = preds_a["pred"][idx_a]
     tgt_b = preds_b["target"][idx_b]
     prd_b = preds_b["pred"][idx_b]
-    # Sanity: targets should be identical (same test contexts, same
-    # ground-truth v_x). Report the max abs diff as a self-check.
-    tgt_diff = float(np.max(np.abs(tgt_a - tgt_b)))
+    # Target-space comparability self-check.
+    #
+    # NOTE (issue-1491): the two arms of a CROSS-SCALE contrast do NOT share
+    # targets. The target v_x is each model's OWN mean-response activation
+    # profile, so across scales it lives in a different space entirely
+    # (h_dim 896 at 0.5B vs 5120 at 32B) and is a different quantity even
+    # when two scales happen to share a width (14B and 32B are both 5120).
+    # An unguarded `tgt_a - tgt_b` therefore raises a broadcast ValueError on
+    # the registered primary contrast Δ(32B − 0.5B), and silently emits a
+    # meaningless number on the equal-width pairs. Both R² values are
+    # scale-internal (each arm scored against its own target by _pooled_r2),
+    # so the Δ itself is well-posed — only this diagnostic needed guarding.
+    #
+    # We therefore report the diff ONLY when the two target blocks are
+    # actually shape-compatible, and label whether identity was expected.
+    if tgt_a.shape == tgt_b.shape:
+        tgt_diff: float | None = float(np.max(np.abs(tgt_a - tgt_b)))
+        tgt_space = "same_shape"
+    else:
+        tgt_diff = None
+        tgt_space = f"different_shape:{tgt_a.shape[1]}_vs_{tgt_b.shape[1]}"
 
     # Point estimates over the shared contexts (no resample).
     r2_a_point = _pooled_r2(prd_a, tgt_a)
@@ -201,6 +219,7 @@ def _paired_bootstrap_delta_r2(
         "delta_ci_low": float(np.percentile(delta_boot, CI_LOW)),
         "delta_ci_high": float(np.percentile(delta_boot, CI_HIGH)),
         "target_max_abs_diff_a_vs_b": tgt_diff,
+        "target_space_relation": tgt_space,
     }
 
 
@@ -220,6 +239,62 @@ def _verdict_delta_gamma(delta_point: float, ci_low: float, ci_high: float) -> s
     if delta_point > 0 and ci_low > 0:
         return "gap-grows"
     return "gap-inconclusive"
+
+
+# Plan §4 registers THREE protections against the fixed-n / growing-d confound.
+# Hidden dim grows 896 -> 5120 across the ladder while train-n is fixed at 25k,
+# so the larger models are relatively MORE data-starved — which can depress the
+# high-params end and MIMIC a negative scale trend (or, symmetrically, mask a
+# positive one). Plan §4: "Any Δ(32B − 0.5B) whose sign is not stable under
+# (a)–(c) is reported as sample-efficiency-confounded, not as a scale effect."
+_CONFOUND_CONTROLS = {
+    # (a) per-scale R²-vs-n sub-ladder — separates sample efficiency from asymptote.
+    "n_sub_ladder": ("n_ladder", "r2_vs_n"),
+    # (b) random-projection d=896 control — equalizes raw dimensionality.
+    "rp896_dim_control": ("rp896",),
+}
+
+
+def _confound_status(fits: dict) -> dict:
+    """Which plan §4 d-confound protections actually ran in THIS cut.
+
+    Returns a REQUIRED companion to every registered verdict. The registered
+    verdict vocabulary (plan §3) is emitted unchanged — this does not rewrite
+    it — but a verdict produced without the protections is not readable as a
+    scale effect, so the qualifier travels with it into the JSON and the figure.
+
+    NOTE (issue-1491): `issue1491_ladder_fits.py`'s own module docstring defers
+    BOTH (a) the full n-ladder and (b) the random-projection d=896 control from
+    the Unit-3 cut, and its result dict emits neither key — so on this cut the
+    status is `sample-efficiency-confounded` by construction. Detection is by
+    PRESENCE (fail toward confounded), so it flips to `controls-present`
+    automatically once a later round emits them; it never silently upgrades.
+    """
+    present: dict[str, bool] = {}
+    for control, keys in _CONFOUND_CONTROLS.items():
+        present[control] = any(
+            any(k in fj for k in keys)
+            or any(k in fj.get(section, {}) for k in keys for section in ("predictors", "floors"))
+            for fj in fits.values()
+        )
+    # (c) the 7B truncation-cost read is available whenever the 7B refit cell
+    # ran — its n=25k value against the committed 963k anchor quantifies, in R²
+    # units, exactly what the 25k truncation costs.
+    present["truncation_cost_7b"] = "scale7_refit" in fits
+
+    all_present = all(present.values())
+    return {
+        "status": "controls-present" if all_present else "sample-efficiency-confounded",
+        "controls_present": present,
+        "note": (
+            "Plan §4: train-n is fixed at 25k while hidden dim grows 896→5120, so at "
+            "fixed n the larger models are relatively more data-starved. Absent the "
+            "registered protections, a registered Δ/ΔΓ verdict is NOT readable as a "
+            "scale effect — report it as sample-efficiency-confounded."
+        )
+        if not all_present
+        else "All plan §4 d-confound protections present in this cut.",
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -246,15 +321,27 @@ def _per_scale_summary(fits: dict[str, dict], preds_ridge: dict[str, dict]) -> l
         floors = fits_j.get("floors", {})
         ceiling = fits_j.get("ceiling_two_draw", {})
         ridge_r2 = preds.get("ridge", {}).get("test_r2")
-        # val-selected nonlinear = max test R² across the actually-run
-        # nonlinear arms (matches the parent's val-selected policy).
-        nl_arms = [k for k in ("mlp_w8192", "mlp_w32768", "krr_nystrom") if k in preds]
-        nl_r2 = None
-        nl_kind = None
-        if nl_arms:
-            best = max(nl_arms, key=lambda k: preds[k]["test_r2"])
-            nl_r2 = preds[best]["test_r2"]
-            nl_kind = best
+        # The nonlinear arm is PRE-REGISTERED upstream, not selected here.
+        #
+        # NOTE (issue-1491): this previously re-selected `max(..., test_r2)`
+        # under a comment claiming it "matches the parent's val-selected
+        # policy" — it did not; it was selection-on-outcome (picking the arm on
+        # the same test split whose R² is then reported), and it duplicated the
+        # identical defect in the fits driver. `issue1491_ladder_fits.py` now
+        # pre-registers MLP-w8192 (the arm the Goal's own 0.754-vs-0.810 figure
+        # is defined against) and records the choice in `preds_paths`, so the
+        # only correct thing to do here is READ that choice.
+        nl_kind = fits_j.get("preds_paths", {}).get("registered_nonlinear_kind")
+        nl_r2 = preds.get(nl_kind, {}).get("test_r2") if nl_kind else None
+        if nl_kind is None and any(k in preds for k in ("mlp_w8192", "mlp_w32768", "krr_nystrom")):
+            # Nonlinear arms ran but the fits driver recorded no registered
+            # choice — a provenance gap, not something to paper over by
+            # re-selecting. Report the scale with no Γ rather than inventing one.
+            logger.warning(
+                "[contrasts] %s: nonlinear arms present but no "
+                "registered_nonlinear_kind recorded — Γ omitted for this scale",
+                slug,
+            )
         gamma = (nl_r2 - ridge_r2) if (ridge_r2 is not None and nl_r2 is not None) else None
         rows.append(
             {
@@ -265,8 +352,8 @@ def _per_scale_summary(fits: dict[str, dict], preds_ridge: dict[str, dict]) -> l
                 "primary_layer_index": fits_j.get("primary_layer_index"),
                 "n_realized_test": fits_j.get("n_realized", {}).get("test_1000"),
                 "ridge_test_r2": ridge_r2,
-                "val_selected_nonlinear_test_r2": nl_r2,
-                "val_selected_nonlinear_kind": nl_kind,
+                "registered_nonlinear_test_r2": nl_r2,
+                "registered_nonlinear_kind": nl_kind,
                 "gap_gamma": gamma,
                 "floors": {name: f["test_r2"] for name, f in floors.items()},
                 "ceiling": ceiling,
@@ -276,12 +363,12 @@ def _per_scale_summary(fits: dict[str, dict], preds_ridge: dict[str, dict]) -> l
 
 
 # ---------------------------------------------------------------------------
-# Hero figure — R² vs log-params, one panel, ridge + val-selected nonlinear
+# Hero figure — R² vs log-params, one panel, ridge + registered nonlinear
 # ---------------------------------------------------------------------------
 
 
 def _write_hero_figure(rows: list[dict], contrasts: dict, out_path: Path) -> Path | None:
-    """R² vs log-params ladder — one panel. Ridge + val-selected nonlinear
+    """R² vs log-params ladder — one panel. Ridge + registered nonlinear
     lines; per-scale bootstrap CIs shaded; floors as light lower bands;
     ceiling as a dashed upper band; annotated 7B anchor point.
 
@@ -304,7 +391,7 @@ def _write_hero_figure(rows: list[dict], contrasts: dict, out_path: Path) -> Pat
             continue
         xs.append(r["params_b"])
         ridge_ys.append(r["ridge_test_r2"])
-        nl_ys.append(r["val_selected_nonlinear_test_r2"])
+        nl_ys.append(r["registered_nonlinear_test_r2"])
         c = r.get("ceiling")
         ceilings.append(
             c.get("ceiling_var_weighted_r") if isinstance(c, dict) and c.get("available") else None
@@ -323,7 +410,7 @@ def _write_hero_figure(rows: list[dict], contrasts: dict, out_path: Path) -> Pat
     nl_arr = np.array([y if y is not None else np.nan for y in nl_ys], dtype=float)
     ax.plot(xs, ridge_arr, "o-", label="ridge", color="#1f77b4", lw=2)
     if not np.all(np.isnan(nl_arr)):
-        ax.plot(xs, nl_arr, "s-", label="val-selected nonlinear", color="#d62728", lw=2)
+        ax.plot(xs, nl_arr, "s-", label="registered nonlinear (MLP-w8192)", color="#d62728", lw=2)
     # Floors + ceiling as light bands.
     fs = np.array([y if y is not None else np.nan for y in floor_shuffled], dtype=float)
     fm = np.array([y if y is not None else np.nan for y in floor_mean], dtype=float)
@@ -383,9 +470,13 @@ def _write_hero_figure(rows: list[dict], contrasts: dict, out_path: Path) -> Pat
                 "figure": str(out_path),
                 "x_axis": "params (B, log scale)",
                 "y_axis": "held-out variance-weighted test R²",
+                # Travels with the figure so a caption cannot present the trend
+                # without the plan §4 qualifier (no on-plot annotation — the
+                # project figure convention keeps overlays off the axes).
+                "confound_controls": contrasts.get("confound_controls", {}),
                 "series": {
                     "ridge": ridge_arr.tolist(),
-                    "val_selected_nonlinear": nl_arr.tolist(),
+                    "registered_nonlinear": nl_arr.tolist(),
                     "shuffled_pairing_floor": fs.tolist(),
                     "train_mean_floor": fm.tolist(),
                     "two_draw_ceiling": cs.tolist(),
@@ -419,7 +510,7 @@ def _parse_args() -> argparse.Namespace:
         "--preds-dir",
         type=Path,
         default=Path("data/issue_1491/preds"),
-        help="dir holding <slug>_test_preds_{ridge,val_selected_nonlinear}.npz (Unit 3 output)",
+        help="dir holding <slug>_test_preds_{ridge,registered_nonlinear}.npz (Unit 3 output)",
     )
     ap.add_argument(
         "--out-json",
@@ -455,7 +546,7 @@ def main() -> int:
         pr = _load_preds_npz(args.preds_dir, slug, "ridge")
         if pr is not None:
             preds_ridge[slug] = pr
-        pn = _load_preds_npz(args.preds_dir, slug, "val_selected_nonlinear")
+        pn = _load_preds_npz(args.preds_dir, slug, "registered_nonlinear")
         if pn is not None:
             preds_nl[slug] = pn
 
@@ -486,51 +577,97 @@ def main() -> int:
             b["verdict"] = _verdict_delta(b["delta_point"], b["delta_ci_low"], b["delta_ci_high"])
         delta_primary = b
 
-    # 3. Secondary contrast — ΔΓ = Γ(32B) − Γ(0.5B), where Γ = val-selected
+    # 3. Secondary contrast — ΔΓ = Γ(32B) − Γ(0.5B), where Γ = registered
     # nonlinear − ridge. Requires BOTH ridge and nl preds for BOTH scales.
     delta_gamma = {"available": False, "reason": "missing ridge or nl preds for 0.5B or 32B"}
     if all(k in preds_ridge for k in ("scale05", "scale32")) and all(
         k in preds_nl for k in ("scale05", "scale32")
     ):
         # Per-draw gap = nl_R2 − ridge_R2 on the SAME resampled contexts.
-        # Both arms MUST share ci with the ridge arm — plan §3 pair-anchoring
-        # (same resampled context ids across both arms of every registered pair).
-        rng = np.random.default_rng(args.seed + 1)
-        # Compute per-scale gap draws over shared ci.
-        gap_draws: dict[str, np.ndarray] = {}
+        #
+        # PAIR-ANCHORING (plan §3: "both arms of every registered pair row come
+        # from the same resampled context ids") binds along BOTH axes:
+        #   (a) WITHIN a scale, the ridge and nonlinear arms share the resample;
+        #   (b) ACROSS scales, draw b of Γ(32B) and draw b of Γ(0.5B) must use
+        #       the SAME resampled context ids.
+        #
+        # NOTE (issue-1491): (a) held, but (b) was VIOLATED — a single `rng` was
+        # advanced sequentially through the per-scale loop, so scale32 draw b and
+        # scale05 draw b resampled different rows. ΔΓ then differenced two
+        # INDEPENDENT bootstrap distributions, whose variances ADD rather than
+        # partially cancelling, inflating the registered CI (biasing the verdict
+        # toward "Gap-inconclusive"). Fixed by drawing ONE resample matrix over
+        # the context ids common to all four pred sets and mapping it into each
+        # scale's own row ordering.
+        #
+        # The two scales' targets live in DIFFERENT spaces (h_dim 896 vs 5120),
+        # which is fine here: each _pooled_r2 is scale-internal and only the ROW
+        # SELECTION is shared across scales.
+        ci_sets = []
         for slug in ("scale05", "scale32"):
-            pr = preds_ridge[slug]
-            pn = preds_nl[slug]
-            by_ci_r = {int(c): i for i, c in enumerate(pr["ci"])}
-            by_ci_n = {int(c): i for i, c in enumerate(pn["ci"])}
-            shared = sorted(set(by_ci_r.keys()) & set(by_ci_n.keys()))
-            idx_r = np.array([by_ci_r[c] for c in shared])
-            idx_n = np.array([by_ci_n[c] for c in shared])
-            tgt = pr["target"][idx_r]
-            prd_r = pr["pred"][idx_r]
-            prd_n = pn["pred"][idx_n]
-            n = len(shared)
-            gaps = np.empty(args.n_bootstrap, dtype=np.float64)
-            for b_i in range(args.n_bootstrap):
-                sample = rng.integers(0, n, size=n)
-                gaps[b_i] = _pooled_r2(prd_n[sample], tgt[sample]) - _pooled_r2(
-                    prd_r[sample], tgt[sample]
+            ci_sets.append({int(c) for c in preds_ridge[slug]["ci"]})
+            ci_sets.append({int(c) for c in preds_nl[slug]["ci"]})
+        shared_all = sorted(set.intersection(*ci_sets))
+        n = len(shared_all)
+
+        if n == 0:
+            delta_gamma = {
+                "available": False,
+                "reason": "no context ids shared across all four (scale, arm) pred sets",
+            }
+        else:
+            # ONE resample matrix — shared by both scales AND both arms.
+            rng = np.random.default_rng(args.seed + 1)
+            samples = rng.integers(0, n, size=(args.n_bootstrap, n))
+
+            gap_draws: dict[str, np.ndarray] = {}
+            gap_points: dict[str, float] = {}
+            for slug in ("scale05", "scale32"):
+                pr = preds_ridge[slug]
+                pn = preds_nl[slug]
+                by_ci_r = {int(c): i for i, c in enumerate(pr["ci"])}
+                by_ci_n = {int(c): i for i, c in enumerate(pn["ci"])}
+                idx_r = np.array([by_ci_r[c] for c in shared_all], dtype=np.int64)
+                idx_n = np.array([by_ci_n[c] for c in shared_all], dtype=np.int64)
+                tgt = pr["target"][idx_r]
+                prd_r = pr["pred"][idx_r]
+                prd_n = pn["pred"][idx_n]
+                # WITHIN a scale the two arms share targets by construction (same
+                # model, same test contexts) — unlike the cross-scale case, this
+                # identity IS expected, so assert it.
+                tgt_n = pn["target"][idx_n]
+                assert tgt.shape == tgt_n.shape and np.allclose(tgt, tgt_n, atol=1e-5), (
+                    f"{slug}: ridge and nonlinear arms disagree on targets for shared ci"
                 )
-            gap_draws[slug] = gaps
-        delta_gamma_draws = gap_draws["scale32"] - gap_draws["scale05"]
-        gap_point = float(gap_draws["scale32"].mean() - gap_draws["scale05"].mean())
-        lo = float(np.percentile(delta_gamma_draws, CI_LOW))
-        hi = float(np.percentile(delta_gamma_draws, CI_HIGH))
-        delta_gamma = {
-            "available": True,
-            "arm": "val_selected_nonlinear_gap",
-            "definition": "ΔΓ = Γ(32B) − Γ(0.5B), Γ(s) = val-selected nonlinear R²(s) − ridge R²(s)",
-            "n_bootstrap": int(args.n_bootstrap),
-            "delta_gamma_point": gap_point,
-            "delta_gamma_ci_low": lo,
-            "delta_gamma_ci_high": hi,
-            "verdict": _verdict_delta_gamma(gap_point, lo, hi),
-        }
+                # Point estimate on the UNRESAMPLED shared set — never the mean of
+                # bootstrap draws (that is a bootstrap-biased estimator, and it is
+                # how the primary Δ is already computed).
+                gap_points[slug] = _pooled_r2(prd_n, tgt) - _pooled_r2(prd_r, tgt)
+                gaps = np.empty(args.n_bootstrap, dtype=np.float64)
+                for b_i in range(args.n_bootstrap):
+                    s = samples[b_i]
+                    gaps[b_i] = _pooled_r2(prd_n[s], tgt[s]) - _pooled_r2(prd_r[s], tgt[s])
+                gap_draws[slug] = gaps
+
+            delta_gamma_draws = gap_draws["scale32"] - gap_draws["scale05"]
+            gap_point = float(gap_points["scale32"] - gap_points["scale05"])
+            lo = float(np.percentile(delta_gamma_draws, CI_LOW))
+            hi = float(np.percentile(delta_gamma_draws, CI_HIGH))
+            delta_gamma = {
+                "available": True,
+                "arm": "registered_nonlinear_gap",
+                "definition": (
+                    "ΔΓ = Γ(32B) − Γ(0.5B), Γ(s) = registered nonlinear R²(s) − ridge R²(s); "
+                    "pair-anchored across scales AND arms (one shared resample matrix)"
+                ),
+                "n_bootstrap": int(args.n_bootstrap),
+                "n_shared_contexts": int(n),
+                "gamma_point_by_scale": {k: float(v) for k, v in gap_points.items()},
+                "delta_gamma_point": gap_point,
+                "delta_gamma_ci_low": lo,
+                "delta_gamma_ci_high": hi,
+                "verdict": _verdict_delta_gamma(gap_point, lo, hi),
+            }
 
     # 4. Descriptive Spearman monotonicity (all 6 scales, ridge).
     spearman = {"available": False}
@@ -577,12 +714,27 @@ def main() -> int:
     per_scale_rows = _per_scale_summary(fits, preds_ridge)
 
     # 7. Assemble the contrasts JSON.
+    # Plan §4 d-confound qualifier — a REQUIRED companion to every registered
+    # verdict (see _confound_status). Attached to both contrasts AND surfaced
+    # top-level so no consumer can read a verdict without it.
+    confound = _confound_status(fits)
+    if confound["status"] != "controls-present":
+        logger.warning(
+            "[contrasts] d-confound protections INCOMPLETE %s — registered verdicts "
+            "are reported as sample-efficiency-confounded, NOT as a scale effect",
+            confound["controls_present"],
+        )
+    for _c in (delta_primary, delta_gamma):
+        if isinstance(_c, dict) and _c.get("available"):
+            _c["confound_status"] = confound["status"]
+
     contrasts = {
         "scale_order": SCALE_ORDER,
         "scale_params_b": SCALE_PARAMS_B,
         "n_bootstrap": int(args.n_bootstrap),
         "bootstrap_seed": int(args.seed),
         "ci_level_percent": [CI_LOW, CI_HIGH],
+        "confound_controls": confound,
         "delta_r2_ridge_32B_vs_05B": delta_primary,
         "delta_gamma_32B_vs_05B": delta_gamma,
         "spearman_monotonicity": spearman,

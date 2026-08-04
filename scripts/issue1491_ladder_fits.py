@@ -62,6 +62,8 @@ import torch  # noqa: E402
 import issue779_common as C  # noqa: E402
 import issue779_ffc_n1m_fits as F  # noqa: E402
 
+from explore_persona_space.analysis import mapping_baselines as MB  # noqa: E402
+
 logger = logging.getLogger("issue1491_ladder_fits")
 
 
@@ -283,7 +285,68 @@ def _fit_floors(
         "test_r2": _pooled_r2(pred_scaled, Y[te]),
         "meta": {"family": "per-dim scaled identity ŷ_d = α_d · X_d"},
     }
+
+    # 5. Identity + LEARNED BIAS: ŷ = x + b, b = train-fold mean of (y − x).
+    #
+    # REQUIRED by the standing project rule (CLAUDE.md § "Identity+learned-bias
+    # baseline AND kNN-retrieval metric — report BOTH for every representation
+    # mapping"): whenever input and output spaces share a dimension, the
+    # learned-bias identity form is reported alongside held-out R². Here
+    # c(x) and v(x) are both (n, H) at the same scale, so it always applies —
+    # a dimension mismatch would have to be stated as inapplicable, never
+    # silently skipped. The canonical helper is the single source of truth for
+    # the bias definition; do not re-derive it inline.
+    pred_idb = MB.identity_bias_predict(X[tr], Y[tr], X[te]).astype(np.float32)
+    floors["identity_bias"] = {
+        "pred_te": pred_idb,
+        "test_r2": _pooled_r2(pred_idb, Y[te]),
+        "meta": {
+            "family": "identity + learned bias: ŷ = x + mean_train(y − x)",
+            "helper": "analysis.mapping_baselines.identity_bias_predict",
+        },
+    }
     return floors
+
+
+# ---------------------------------------------------------------------------
+# kNN retrieval read (standing rule: reported alongside held-out R²)
+# ---------------------------------------------------------------------------
+
+
+def _knn_reads(preds_by_arm: dict[str, np.ndarray], y_true: np.ndarray) -> dict:
+    """P(true target within the k nearest neighbours of the prediction).
+
+    REQUIRED by the standing project rule (CLAUDE.md § "Identity+learned-bias
+    baseline AND kNN-retrieval metric"): held-out R² alone both OVERSTATES a
+    map (variance a constant shift already explains) and UNDERSTATES one
+    (discriminative but mis-scaled predictions), and the two reads have been
+    measured to dissociate in BOTH directions (#722 vs #779). So every fitted
+    map here also gets the retrieval read, in euclidean AND cosine, over the
+    held-out candidate pool (the test targets are their own pool).
+
+    ``chance_at_k = k / n_pool`` is reported by the helper and is exactly what
+    a constant (predict-the-mean) predictor scores — so `train_mean` doubles
+    as the in-band sanity check that the pool wiring is right.
+    """
+    out: dict[str, dict] = {}
+    n_pool = int(y_true.shape[0])
+    # k scaled to the pool, per the rule; keep k << n_pool so acc@k stays
+    # informative rather than saturating.
+    ks = tuple(k for k in (1, 5, 10, 50) if k < n_pool)
+    for arm, pred in preds_by_arm.items():
+        if pred is None:
+            continue
+        out[arm] = {
+            metric: MB.knn_retrieval(pred, y_true, ks=ks, metric=metric)
+            for metric in ("euclidean", "cosine")
+        }
+    out["_meta"] = {
+        "n_pool": n_pool,
+        "ks": list(ks),
+        "pool": "held-out test targets (pool == true)",
+        "helper": "analysis.mapping_baselines.knn_retrieval",
+    }
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -435,7 +498,18 @@ def run_primary_cell(scale_key: str, hf_prefix: str, args) -> dict:
         f"h_dim mismatch: Y.shape={Y.shape} vs scale.h_dim={scale['h_dim']}"
     )
 
-    dev = torch.device("cuda" if args.device == "cuda" and torch.cuda.is_available() else "cpu")
+    # Fail fast on an unavailable requested device (project rule: the crash IS
+    # the signal). The previous silent cuda->cpu fallback would run the full
+    # MLP/KRR battery on CPU for hours while an 8-GPU pod billed idle — the
+    # exact failure this rule exists to prevent.
+    if args.device == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError(
+            "--device cuda was requested but torch.cuda.is_available() is False. "
+            "Refusing to silently fall back to CPU: the fits battery would run "
+            "for hours on CPU while a GPU pod bills idle. Fix the driver/pod, or "
+            "pass --device cpu explicitly if a CPU run is genuinely intended."
+        )
+    dev = torch.device(args.device)
 
     # 2. Predictors — 5-way battery per plan §11.
     preds_meta: dict[str, dict] = {}
@@ -561,7 +635,7 @@ def run_primary_cell(scale_key: str, hf_prefix: str, args) -> dict:
     wc_transfer = _wc_transfer(X, Y, tr, val, wc_te, dev, RIDGE_BLOCK)
 
     # 6. Persist per-context test preds + targets for the paired bootstrap
-    # (§6.5 primary_deliverable row 2). Emit ridge + val-selected nonlinear
+    # (§6.5 primary_deliverable row 2). Emit ridge + registered nonlinear
     # (defined as the best of MLP-w8192, MLP-w32768, KRR-Nyström by val R²).
     preds_dir = args.preds_dir
     preds_dir.mkdir(parents=True, exist_ok=True)
@@ -578,19 +652,69 @@ def run_primary_cell(scale_key: str, hf_prefix: str, args) -> dict:
 
     saved: dict[str, str] = {}
     saved["ridge"] = str(_save_preds("ridge", pred_ridge))
-    # val-selected nonlinear: pick by val-R² among the nonlinear arms
-    # actually run. For n=25k the parent battery selects on VAL; here we
-    # use the training run's meta if it recorded val R² (parent MLP meta
-    # doesn't always expose this — fall back to test R² as the proxy).
+
+    # PRE-REGISTERED nonlinear arm — NO selection.
+    #
+    # The registered ΔΓ contrast (plan §3) is the linear-vs-nonlinear gap, and
+    # the Goal quotes it at 7B as "0.754 vs 0.810" — i.e. ridge vs MLP-w8192
+    # (#779 n1m: ridge 0.7542, MLP-8k 0.8104, MLP-32k 0.8134). So MLP-w8192 is
+    # the arm the registered contrast is DEFINED against, and pre-registering
+    # it removes selection from the headline entirely.
+    #
+    # NOTE (issue-1491): this previously SELECTED the best nonlinear arm by
+    # TEST R² while naming the output "val_selected_nonlinear". That is
+    # selection-on-outcome — picking the arm on the same test split whose R²
+    # is then reported — and it biased the registered ΔΓ upward. A true
+    # val-selection is not available at matched cost: the parent fitters
+    # return only test predictions (`pred_te`), ridge/KRR expose val R²
+    # (`val_r2_at_selected` / `selected.val_r2`) but `fit_mlp` exposes only
+    # `best_val_mse` on an INTERNAL 10% carve-out of train — a different
+    # split AND a different metric — so the arms share no common val metric,
+    # and obtaining one would mean refitting every nonlinear arm against the
+    # pinned val split (roughly doubling the nonlinear fit cost).
+    #
+    # Pre-registration is also descope-safe: plan §9's descope ladder drops
+    # MLP-w32768 first and KRR second, keeping "ridge + MLP-8k — the Goal's
+    # named pair", so the registered arm survives every planned descope.
+    REGISTERED_NONLINEAR = "mlp_w8192"
     nonlinear_arms = [
         name for name in ("mlp_w8192", "mlp_w32768", "krr_nystrom") if name in preds_meta
     ]
-    if nonlinear_arms:
-        best_nl = max(nonlinear_arms, key=lambda k: preds_meta[k]["test_r2"])
-        saved["val_selected_nonlinear"] = str(
-            _save_preds("val_selected_nonlinear", preds_meta[best_nl]["pred_te"])
+    if REGISTERED_NONLINEAR in preds_meta:
+        chosen_nl = REGISTERED_NONLINEAR
+        nl_provenance = "pre-registered"
+    elif nonlinear_arms:
+        # The registered arm did not run (descope / failure). Fall back in a
+        # FIXED, outcome-independent order — never by test R².
+        chosen_nl = next(name for name in ("mlp_w32768", "krr_nystrom") if name in preds_meta)
+        nl_provenance = f"fallback-fixed-order (registered arm {REGISTERED_NONLINEAR} absent)"
+    else:
+        chosen_nl = None
+        nl_provenance = "none-available"
+
+    if chosen_nl is not None:
+        saved["registered_nonlinear"] = str(
+            _save_preds("registered_nonlinear", preds_meta[chosen_nl]["pred_te"])
         )
-        saved["val_selected_nonlinear_kind"] = best_nl
+        saved["registered_nonlinear_kind"] = chosen_nl
+        saved["registered_nonlinear_provenance"] = nl_provenance
+        # Descriptive ONLY — the best-by-test arm is recorded so the choice is
+        # auditable, but it never feeds the registered ΔΓ headline.
+        best_by_test = max(nonlinear_arms, key=lambda k: preds_meta[k]["test_r2"])
+        saved["best_by_test_r2_kind_DESCRIPTIVE"] = best_by_test
+
+    # 6b. kNN-retrieval read over every fitted map + the identity-family
+    # floors (standing rule — see _knn_reads). Reported ALONGSIDE held-out R²,
+    # never instead of it.
+    knn_arms: dict[str, np.ndarray] = {"ridge": pred_ridge}
+    for _name in ("mlp_w8192", "mlp_w32768", "krr_nystrom"):
+        if _name in preds_meta:
+            knn_arms[_name] = preds_meta[_name]["pred_te"]
+    for _name in ("identity_bias", "identity_copy", "scaled_identity", "train_mean"):
+        if _name in floors:
+            knn_arms[_name] = floors[_name]["pred_te"]
+    logger.info("[ladder-fits] kNN retrieval over %d arms...", len(knn_arms))
+    knn = _knn_reads(knn_arms, Y[te])
 
     # 7. Assemble the results JSON.
     result = {
@@ -607,6 +731,7 @@ def run_primary_cell(scale_key: str, hf_prefix: str, args) -> dict:
         "floors": {
             name: {"test_r2": f["test_r2"], "meta": f["meta"]} for name, f in floors.items()
         },
+        "knn_retrieval": knn,
         "ceiling_two_draw": ceiling,
         "wc_transfer": {
             "available": wc_transfer.get("available", False),
