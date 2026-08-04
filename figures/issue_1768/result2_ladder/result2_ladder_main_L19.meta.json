@@ -1,6 +1,6 @@
 {
-  "commit": "9fc6d4ea0e",
-  "created": "2026-08-04T01:36:28Z",
+  "commit": "e922607784",
+  "created": "2026-08-04T04:55:47Z",
   "figsize": [
     15.5,
     8.2
@@ -5074,11 +5074,11 @@
   "n_series": 42,
   "total_points": 840,
   "text": {
-    "suptitle": "Ablation ladder: held-out $R^2$ of four predictions of the fine-tuned answer vectors, layer 19 (bars: mean over arms \u00b1 s.e.m.; points: per-arm; dashed lines: floor + ceiling means)",
+    "suptitle": "Ablation ladder: held-out $R^2$ of four predictions of the fine-tuned answer vectors, layer 19 (bars: mean over arms \u00b1 s.e.m.; points: per-arm; dashed lines: floor + ceiling means).\nDefault map convention (top-left): generic real-user contexts (LMSYS+WildChat, n=15,000 train), on-policy text in both models, span-mean pooling; other panels are variations against it",
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "on-policy text (conflated: text + representation shift)\ngeneric contexts (n=15,000 train)",
+        "title_left": "DEFAULT map convention\non-policy text (conflated: text + representation shift)\ngeneric contexts (n=15,000 train)",
         "ylabel": "held-out $R^2$ toward the\nfine-tuned answer vectors",
         "xticklabels": [
           "base map,\nbase contexts\n(floor)",

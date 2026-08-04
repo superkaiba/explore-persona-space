@@ -91,9 +91,9 @@
    "mrr": 0.06299813952253577
   }
  },
- "elapsed_s": 8.3,
- "ts": "2026-08-04T00:29:19Z",
- "git_commit": "b858d3c8ef20bb9c3de989f149e023d7aff26542",
+ "elapsed_s": 8.6,
+ "ts": "2026-08-04T03:54:40Z",
+ "git_commit": "77c4097856e7781ccd0cae376e22c806f1f61234",
  "torch": "2.8.0+cu128",
  "numpy": "2.2.6",
  "issue": 1768

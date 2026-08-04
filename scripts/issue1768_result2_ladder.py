@@ -448,8 +448,120 @@ def get_m0(stage: Path, out: Path, ctxset: str, unit: str, layer: int) -> dict:
 # ── per-cell driver ───────────────────────────────────────────────────────────
 
 
-def percell_path(out: Path, ctxset: str, arm: str, layer: int) -> Path:
-    return out / "percell" / f"{ctxset}__{arm}__L{layer}.json"
+def percell_path(out: Path, ctxset: str, arm: str, layer: int, mode: str = "ladder") -> Path:
+    sub = "percell" if mode == "ladder" else "spectra"
+    return out / sub / f"{ctxset}__{arm}__L{layer}.json"
+
+
+# ── data-space spectrum of the map update (scope-extension addendum) ─────────
+
+DEFAULT_CONVENTION = {
+    "map_pair": "M0 (base contexts -> base answers) vs Mplus (trained contexts -> trained "
+    "answers), each model's OWN on-policy greedy text",
+    "context_set": "generic real-user corpus (LMSYS + WildChat bare prompts, 16,400 rows, "
+    "n_train=15,000)",
+    "tree": "onpolicy",
+    "pooling": "span-mean (round-1 convention)",
+    "headline_panel": "generic__onpolicy",
+    "limitation": "Under the on-policy default, Mplus is fit on data where BOTH the contexts "
+    "AND the answer text differ from base, so a 'the map changed' reading is a change in the "
+    "model's DEPLOYED input->output relation, not a weights-isolated claim. The matched-text "
+    "tree (trained model teacher-forced on the BASE model's responses) is the control that "
+    "separates weights-carried change from text-mediated change.",
+}
+
+
+def _delta_spectrum(a: np.ndarray, q: int = 64) -> dict:
+    """Singular spectrum of the realized predicted-answer shift Delta_pred (n_test x d).
+
+    Exact-trace pattern reused from `issue1768_operator_kv._spectrum`:
+    sum(s^2) == ||A||_F^2 and sum(s^4) == ||A^T A||_F^2 are exact traces, so the
+    participation ratio PR = (sum s^2)^2 / sum s^4 and all mass FRACTIONS are exact;
+    only the top-q values ride a thin `svd_lowrank`. Direction counts to 90/95/99%
+    Frobenius mass are exact when reached within q, else reported as None + gt_q flag.
+    """
+    at = torch.as_tensor(np.asarray(a), dtype=torch.float64)
+    fro2 = float((at * at).sum())
+    g = at.T @ at
+    sum_s4 = float((g * g).sum())
+    del g
+    _, s_top, _ = torch.svd_lowrank(at, q=min(q, min(at.shape) - 1), niter=8)
+    s2 = s_top.numpy().astype(np.float64) ** 2
+    pr = (fro2**2) / sum_s4 if sum_s4 > 0 else float("nan")
+    cum = np.cumsum(s2) / fro2 if fro2 > 0 else np.zeros_like(s2)
+
+    def _n_to(frac: float) -> int | None:
+        hit = np.nonzero(cum >= frac)[0]
+        return int(hit[0]) + 1 if hit.size else None
+
+    return {
+        "participation_ratio_exact": pr,
+        "top1_share": float(s2[0] / fro2) if fro2 > 0 else float("nan"),
+        "top5_share": float(s2[:5].sum() / fro2) if fro2 > 0 else float("nan"),
+        "n_dirs_90pct": _n_to(0.90),
+        "n_dirs_95pct": _n_to(0.95),
+        "n_dirs_99pct": _n_to(0.99),
+        "counts_gt_q": bool(cum[-1] < 0.99) if cum.size else True,
+        "fro2_exact": fro2,
+        "sum_s4_exact": sum_s4,
+        "svals_top": [float(v) for v in np.sqrt(s2)],
+        "svd_q": int(s2.size),
+    }
+
+
+def run_spectra_cell(
+    out: Path,
+    ctxset: str,
+    arm: str,
+    layer: int,
+    cell: dict,
+    m0_payload: dict,
+    m0_key: str,
+    *,
+    allow_ud: bool,
+) -> dict:
+    """Data-space spectrum of Delta_pred = M+(c) - M0(c) on held-out test contexts.
+
+    Both trees (Mplus / Mplus_tf vs the shared M0) x both input choices:
+    `inputs_c0` (both maps on base contexts — the pure map-update read, the
+    rung3-vs-rung1 contrast) and `inputs_cplus` (both maps on fine-tuned
+    contexts — the rung4-vs-rung2 contrast).
+    """
+    dest = percell_path(out, ctxset, arm, layer, mode="spectra")
+    if dest.exists():
+        return json.loads(dest.read_text())
+    t0 = time.time()
+    tr, val, te = F._split_idx(cell["split"])
+    ymap = {"Mplus": cell["Vplus"], "Mplus_tf": cell["Vplus_tf"]}
+    fits = fit_maps_shared_x(cell["Cplus"], ymap, tr, val, te, allow_underdetermined=allow_ud)
+    pred_m0 = {
+        "c0": n1m.apply_map(m0_payload, cell["C0"][te], DEV),
+        "cplus": n1m.apply_map(m0_payload, cell["Cplus"][te], DEV),
+    }
+    trees = {}
+    for tree, (_target_key, map_name) in TREES.items():
+        _, meta, payload = fits[map_name]
+        block = {"map": map_name, "selected_lambda": meta["selected_lambda"]}
+        for inp, x_key in (("inputs_c0", "C0"), ("inputs_cplus", "Cplus")):
+            pred_mp = n1m.apply_map(payload, cell[x_key][te], DEV)
+            block[inp] = _delta_spectrum(pred_mp - pred_m0[inp.removeprefix("inputs_")])
+        trees[tree] = block
+    rec = {
+        "arm_id": arm,
+        "layer": layer,
+        "context_set": ctxset,
+        "pooling": "span-mean (round-1 convention)",
+        "n_test": int(len(te)),
+        "n_train": int(len(tr)),
+        "d": int(cell["Cplus"].shape[1]),
+        "underdetermined_n_lt_d": bool(len(tr) < cell["Cplus"].shape[1]),
+        "m0_key": m0_key,
+        "trees": trees,
+        "elapsed_s": round(time.time() - t0, 1),
+        **F._meta(),
+    }
+    F._atomic_json(dest, rec)
+    return rec
 
 
 def run_cell(
@@ -532,10 +644,19 @@ def _pfx_own_base_units() -> list[str]:
 
 
 def phase_battery(
-    stage: Path, out: Path, layers: tuple[int, ...], arms_filter: list[str] | None
+    stage: Path,
+    out: Path,
+    layers: tuple[int, ...],
+    arms_filter: list[str] | None,
+    mode: str = "ladder",
 ) -> None:
+    """mode="ladder": the four-rung reads; mode="spectra": the Delta_pred data-space
+    spectra (scope-extension addendum) — same staging/iteration/resume machinery,
+    separate per-cell checkpoint dir."""
+    assert mode in ("ladder", "spectra"), mode
+    cell_fn = run_cell if mode == "ladder" else run_spectra_cell
     setup_stage(stage)
-    (out / "percell").mkdir(parents=True, exist_ok=True)
+    (out / ("percell" if mode == "ladder" else "spectra")).mkdir(parents=True, exist_ok=True)
     (out / "m0_fits").mkdir(parents=True, exist_ok=True)
 
     # ---- trained-in (on_target, own-prefix; n=3,000 < d) ----
@@ -548,9 +669,9 @@ def phase_battery(
             base_dl += ensure_pfx_unit(stage, unit, tf=False)
     for arm in pfx_arms:
         unit_i += 1
-        if all(percell_path(out, "on_target", arm, ly).exists() for ly in layers):
+        if all(percell_path(out, "on_target", arm, ly, mode=mode).exists() for ly in layers):
             logger.info(
-                "[ladder] unit %d/%d on_target %s already complete", unit_i, total_units, arm
+                "[%s] unit %d/%d on_target %s already complete", mode, unit_i, total_units, arm
             )
             continue
         t0 = time.time()
@@ -559,11 +680,11 @@ def phase_battery(
         _record_store_spans(stage, out, arm, "on_target")
         base_unit = X.pfx_base_unit(arm, "own")
         for layer in layers:
-            if percell_path(out, "on_target", arm, layer).exists():
+            if percell_path(out, "on_target", arm, layer, mode=mode).exists():
                 continue
             m0p = get_m0(stage, out, "on_target", base_unit, layer)
             cell = F.load_pfx_cell(arm, "own", layer, stage)
-            run_cell(
+            cell_fn(
                 out,
                 "on_target",
                 arm,
@@ -577,7 +698,8 @@ def phase_battery(
             gc.collect()
         reap(dl)
         logger.info(
-            "[ladder] unit %d/%d on_target %s elapsed=%.0fs",
+            "[%s] unit %d/%d on_target %s elapsed=%.0fs",
+            mode,
             unit_i,
             total_units,
             arm,
@@ -591,9 +713,9 @@ def phase_battery(
     pool = ThreadPoolExecutor(max_workers=1)
 
     def _needs(arm: str) -> bool:
-        need = [percell_path(out, "generic", arm, ly) for ly in layers]
+        need = [percell_path(out, "generic", arm, ly, mode=mode) for ly in layers]
         if arm in X.PFX_ARMS:
-            need += [percell_path(out, "bare_n", arm, ly) for ly in layers]
+            need += [percell_path(out, "bare_n", arm, ly, mode=mode) for ly in layers]
         return not all(p.exists() for p in need)
 
     fut = None
@@ -602,7 +724,9 @@ def phase_battery(
     for i, arm in enumerate(arms):
         unit_i += 1
         if not _needs(arm):
-            logger.info("[ladder] unit %d/%d generic %s already complete", unit_i, total_units, arm)
+            logger.info(
+                "[%s] unit %d/%d generic %s already complete", mode, unit_i, total_units, arm
+            )
             if fut is not None and i + 1 < len(arms) and _needs(arms[i + 1]):
                 pass  # keep the pending prefetch
             continue
@@ -615,10 +739,10 @@ def phase_battery(
         _record_store_spans(stage, out, arm, "generic")
         base_unit = X.base_unit_for(arm)
         for layer in layers:
-            if not percell_path(out, "generic", arm, layer).exists():
+            if not percell_path(out, "generic", arm, layer, mode=mode).exists():
                 m0p = get_m0(stage, out, "generic", base_unit, layer)
                 cell = F.load_corpus_cell(arm, layer, stage)
-                run_cell(
+                cell_fn(
                     out,
                     "generic",
                     arm,
@@ -630,10 +754,13 @@ def phase_battery(
                 )
                 del cell
                 gc.collect()
-            if arm in X.PFX_ARMS and not percell_path(out, "bare_n", arm, layer).exists():
+            if (
+                arm in X.PFX_ARMS
+                and not percell_path(out, "bare_n", arm, layer, mode=mode).exists()
+            ):
                 m0p = get_m0(stage, out, "bare_n", base_unit, layer)
                 cell = F.load_bare_n_cell(arm, layer, stage)
-                run_cell(
+                cell_fn(
                     out,
                     "bare_n",
                     arm,
@@ -778,6 +905,7 @@ def phase_summary(stage: Path, out: Path, layers: tuple[int, ...]) -> None:
     summary: dict = {
         "issue": 1768,
         "round": "result2_ladder",
+        "default_convention": DEFAULT_CONVENTION,
         "pooling": "span-mean (round-1 convention)",
         "lasttoken_second_pooling": (
             "skipped — not cheap: the lasttoken_ctx tree adds ~26 GB of downloads and ~300 "
@@ -834,6 +962,76 @@ def phase_summary(stage: Path, out: Path, layers: tuple[int, ...]) -> None:
                 }
                 grid[f"{ctxset}__{tree}__L{layer}"] = block
     summary["grid"] = grid
+
+    # data-space spectrum of the map update (scope-extension addendum): why — the raw
+    # 3584x3584 operator-update SVD (map_augmentation/operator_kv) de-standardizes
+    # A = W / xsd, AMPLIFYING input dims the data varies along least, so its Frobenius
+    # mass tilts toward directions the context distribution rarely excites (raw operator
+    # PR ~80 at L19). Delta_pred = M+(c) - M0(c) on held-out test contexts measures how
+    # many directions the update actually moves predicted answers along, over the real
+    # context distribution — no basis tilt.
+    spec_cells = [json.loads(p.read_text()) for p in sorted((out / "spectra").glob("*.json"))]
+    if spec_cells:
+        ds: dict = {
+            "what": "singular spectrum of Delta_pred = M+(c) - M0(c) on held-out test "
+            "contexts (n_test x d), per tree x input-choice (inputs_c0 = both maps on "
+            "base contexts, the pure map-update read; inputs_cplus = both maps on "
+            "fine-tuned contexts)",
+            "why": "the raw 3584x3584 operator-update SVD (map_augmentation/operator_kv) "
+            "de-standardizes A = W / xsd, amplifying input dimensions the context "
+            "distribution varies along LEAST, so its Frobenius mass — and the measured "
+            "rank (raw operator PR ~80 at layer 19) — is tilted toward directions the "
+            "data rarely excites. Delta_pred measures how many directions the update "
+            "actually moves predicted answers along, over the real context distribution, "
+            "with no basis tilt — the functional (data-space) rank of the map update.",
+            "per_cell": {},
+            "aggregates": {},
+        }
+        for c in spec_cells:
+            key = f"{c['context_set']}__{c['arm_id']}__L{c['layer']}"
+            ds["per_cell"][key] = {
+                tree: {
+                    inp: {
+                        k: c["trees"][tree][inp][k]
+                        for k in (
+                            "participation_ratio_exact",
+                            "top1_share",
+                            "top5_share",
+                            "n_dirs_90pct",
+                            "n_dirs_95pct",
+                            "n_dirs_99pct",
+                            "counts_gt_q",
+                        )
+                    }
+                    for inp in ("inputs_c0", "inputs_cplus")
+                }
+                for tree in TREES
+            }
+        for ctxset in CTX_SETS:
+            for tree in TREES:
+                for layer in layers:
+                    sub = [
+                        c for c in spec_cells if c["context_set"] == ctxset and c["layer"] == layer
+                    ]
+                    if not sub:
+                        continue
+                    blk = {}
+                    for inp in ("inputs_c0", "inputs_cplus"):
+                        blk[inp] = {
+                            "participation_ratio": _agg(
+                                [c["trees"][tree][inp]["participation_ratio_exact"] for c in sub]
+                            ),
+                            "top1_share": _agg([c["trees"][tree][inp]["top1_share"] for c in sub]),
+                            "top5_share": _agg([c["trees"][tree][inp]["top5_share"] for c in sub]),
+                            "n_dirs_90pct": _agg(
+                                [c["trees"][tree][inp]["n_dirs_90pct"] for c in sub]
+                            ),
+                            "n_dirs_95pct": _agg(
+                                [c["trees"][tree][inp]["n_dirs_95pct"] for c in sub]
+                            ),
+                        }
+                    ds["aggregates"][f"{ctxset}__{tree}__L{layer}"] = blk
+        summary["data_space_update_rank"] = ds
 
     # committed round-1 rung-4 cross-check (estimator identity, both trees)
     diffs = {"onpolicy": [], "matched": []}
@@ -973,14 +1171,18 @@ def _fig_main(summary: dict, layer: int) -> None:
             ax.axhline(means[3], color=colors[3], lw=1.0, ls="--", alpha=0.8, zorder=1)
             ax.set_xticks(xs)
             ax.set_xticklabels([RUNG_LABEL[r] for r in RUNGS], fontsize=7.2)
-            ax.set_title(f"{TREE_LABEL[tree]}\n{CTX_LABEL[ctxset]}", fontsize=9.5)
+            is_default = tree == "onpolicy" and ctxset == "generic"
+            prefix = "DEFAULT map convention\n" if is_default else ""
+            ax.set_title(f"{prefix}{TREE_LABEL[tree]}\n{CTX_LABEL[ctxset]}", fontsize=9.5)
             if col == 0:
                 ax.set_ylabel("held-out $R^2$ toward the\nfine-tuned answer vectors")
     fig.suptitle(
         f"Ablation ladder: held-out $R^2$ of four predictions of the fine-tuned answer "
         f"vectors, layer {layer} (bars: mean over arms ± s.e.m.; points: per-arm; dashed "
-        "lines: floor + ceiling means)",
-        fontsize=11.5,
+        "lines: floor + ceiling means).\nDefault map convention (top-left): generic "
+        "real-user contexts (LMSYS+WildChat, n=15,000 train), on-policy text in both "
+        "models, span-mean pooling; other panels are variations against it",
+        fontsize=11.0,
     )
     fig.tight_layout(rect=(0, 0, 1, 0.955))
     savefig_paper(fig, f"result2_ladder_main_L{layer}", dir=FIG_DIR)
@@ -1142,7 +1344,9 @@ def phase_figs(out: Path, layers: tuple[int, ...]) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument(
-        "--phase", required=True, choices=["pilot", "battery", "summary", "figs", "all"]
+        "--phase",
+        required=True,
+        choices=["pilot", "battery", "spectra", "summary", "figs", "all"],
     )
     ap.add_argument("--stage-dir", type=Path, default=None)
     ap.add_argument("--out", type=Path, default=OUT_DIR)
@@ -1159,6 +1363,8 @@ def main() -> None:
         phase_pilot(stage, args.out)
     if args.phase in ("battery", "all"):
         phase_battery(stage, args.out, layers, arms_filter)
+    if args.phase in ("spectra", "all"):
+        phase_battery(stage, args.out, layers, arms_filter, mode="spectra")
     if args.phase in ("summary", "all"):
         phase_summary(stage, args.out, layers)
     if args.phase in ("figs", "all"):
