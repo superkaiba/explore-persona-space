@@ -125,7 +125,7 @@ def run_audit(args: argparse.Namespace) -> int:
         print(f"ERROR enumerating {repo_id}:{prefix}: {exc}", file=sys.stderr)
         return 2
 
-    variant_dirs = [entry.path for entry in top if getattr(entry, "type", None) == "directory"]
+    variant_dirs = [entry.path for entry in top if type(entry).__name__ == "RepoFolder"]
 
     n_rejects_scanned = 0
     n_recoverable_exact = 0
@@ -154,7 +154,7 @@ def run_audit(args: argparse.Namespace) -> int:
             continue
         variant = variant_path.rstrip("/").split("/")[-1]
         for entry in files:
-            if getattr(entry, "type", None) != "file":
+            if type(entry).__name__ != "RepoFile":
                 continue
             path = entry.path
             base = path.rsplit("/", 1)[-1].lower()
