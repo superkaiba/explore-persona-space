@@ -8221,8 +8221,8 @@
     "2062": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2062",
-      "status": "reviewing",
+      "path": "tasks/completed/2062",
+      "status": "completed",
       "title": "workflow-fix: lean-context subagent twins \u2014 thrash ladder ha"
     },
     "2063": {
