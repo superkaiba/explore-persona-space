@@ -437,7 +437,27 @@ def test_b12_compound_add_commit_untracked_no_cert_blocks(code_repo: Path, cert:
 
 
 @pytest.mark.parametrize(
-    "stage_form", ["git add -A", "git add .", "git add --all"], ids=["dash-A", "dot", "all"]
+    "stage_form",
+    [
+        "git add -A",
+        "git add .",
+        "git add --all",
+        "git add ./",
+        "git add .//",
+        "git add :/",
+        "git add \\*",
+        "git add \\*\\*",
+    ],
+    ids=[
+        "dash-A",
+        "dot",
+        "all",
+        "dotslash",
+        "dotslash-double",
+        "pathspec-root",
+        "star",
+        "star-double",
+    ],
 )
 def test_b13_blanket_add_chained_fails_closed(stage_form: str, art_repo: Path, cert: Path) -> None:
     _assert_blocked(_run(f"{stage_form} && git commit -m x", art_repo, cert))
