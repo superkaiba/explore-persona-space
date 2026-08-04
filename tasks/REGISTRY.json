@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2063,
+  "highest_id": 2064,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8231,6 +8231,13 @@
       "path": "tasks/proposed/2063",
       "status": "proposed",
       "title": "daily-fix: judge max_tokens pins sit below the raised rule-2"
+    },
+    "2064": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2064",
+      "status": "proposed",
+      "title": "workflow-fix: registry drift at an allocated id breaks task."
     },
     "207": {
       "has_clean_result": true,
