@@ -20,7 +20,72 @@ Dashboard: https://eps.superkaiba.com/sae-features-1482.html
 
 Claude Fable 5 said this:
 
-<!-- FABLE_EXTREMES_READ -->
+> **Setup.** Fully unprimed: it was told only that two groups of 150 descriptions
+> were drawn from one pool by an unknown criterion, and told not to open the key
+> or search the repo. It was *not* told a map, a prediction target, an R², or SAE
+> features were involved. Group assignment was randomized and the key frozen
+> before the read. **Verdict: correct** — it picked A, and A is the best-predicted
+> group. Full verbatim report:
+> [`eval_results/issue_1482/feature_extremes/fable_read_extremes.md`](https://github.com/superkaiba/explore-persona-space/blob/main/eval_results/issue_1482/feature_extremes/fable_read_extremes.md)
+
+**Group A — global properties of whole texts.** Language/script identity 59/150
+(50 naming a specific language: Chinese 21, Russian/Cyrillic 14, Romance 12,
+German 3); chemical-industry / corporate boilerplate 28; formal/academic register
+17; genre and domain labels ~16. Only 4 items are "unclear / no pattern", and only
+3 are keyed to a specific lexical unit. Representative: *"Chinese language
+mathematical explanations"*, *"chemical company corporate profiles"*, *"formal
+expository informational writing style"*, *"creative fiction and roleplay
+narratives"*.
+
+**Group B — local, token-level properties.** 72/150 name a specific lexical unit
+(token / word / substring / letter / digit / affix), ~52 naming exactly one;
+21 are "no coherent pattern"; 16 are brief/minimal-response features; 10 are
+numeric content. Only 1 item names a specific language, and that one is itself a
+single token. Zero chemical, zero corporate, zero formal-register items.
+Representative: *"token 'not'"*, *"letter F"*, *"substring 'hin' in tokens"*,
+*"no coherent shared property detected"*.
+
+| discriminator | A | B |
+|---|---|---|
+| names a specific language / family | **50** | **1** (a one-token feature) |
+| chemical / corporate / business boilerplate | **28** | **0** |
+| formal / academic / professional register | **17** | **0** |
+| names a specific lexical unit | 3 real | **72** |
+| "unclear / no coherent pattern" | **4** | **21** |
+| brief / minimal-response | 3 | 16 |
+| code · list-formatting | 8 · ~18 | 5 · ~15 — **shared, non-discriminating** |
+
+**Its hypothesis**, unprompted: *"the two extremes of how predictable a feature's
+activation is from the surrounding context — A = most context-determined."*
+Confidence ~92% on the descriptive axis, ~45% on that specific mechanism. Three
+arguments it gave:
+
+- Document language, topic domain and register are fixed by the context and
+  constant over many tokens, so maximally predictable; whether an exact token
+  appears is not — and a feature with *no coherent pattern at all* (21 in B) is
+  unpredictable by definition. One criterion explains B's odd mix of hyper-crisp
+  token features *and* uninterpretable ones.
+- **The 'de' pair is diagnostic.** A#33 *"Romance language preposition 'de'"* vs
+  B#54 *"token 'de' or 'De'"* — the same surface token at both extremes,
+  separated only by whether it is context-tied.
+- **Chinese as a locality test.** Chinese script is detectable from the current
+  token alone, so a "local vs global mechanism" or "layer depth" criterion should
+  scatter it across both groups. A has 21, B has 0.
+
+It ruled out activation timescale (~20%), firing frequency (~10%), layer depth
+(~10%) and interpretability score (~5%, refuted because B contains maximally
+interpretable features like *"token 'not'"* that no interpretability ranking would
+put at the bottom).
+
+**Confounds it flagged itself**, which should temper the above: group A is more
+duplicated (121/150 unique labels vs 142/150 in B; *"Chinese language text"* ×12
+verbatim), so whatever selected A oversamples a few dense clusters; and — the
+important one — these are one-line auto-generated labels, so description *style*
+is itself a proxy for activation shape (dense foreign-language activation →
+"X language text"; single-token alignment → "token 'x'"). It is reading the
+labeller's summary of each feature, not the feature, which may amplify the
+apparent separation. It also noted ~10 clearly global items sitting in B
+(including 6 assistant-behavior items) that a clean split should not produce.
 
 **Takeaways:**
 -
@@ -78,20 +143,21 @@ them):
 - Context-only features: https://eps.superkaiba.com/context-only-1482.html
 - Answer-only features: https://eps.superkaiba.com/answer-only-1482.html
 
-> **The blinded Fable categorization was NOT run for this pair, and cannot be run
-> from banked data.** 0 of the 1,654 context-only features carry a description:
-> #1773 built its activating-example windows from **answer-side** activation and
-> dropped features with zero windows before dispatch, and context-only features
-> have zero by construction. The artifact records this itself, under
-> `no_evidence_exclusion`: *"the one population that would most directly test
-> whether context-specific KINDS exist is exactly the population the
-> interpretability labels cannot speak to."* The `ctx_tokens_active_subsample` /
-> `ans_tokens_active_subsample` fields are activation **counts**, not token text,
-> so there is no fallback evidence either. Running this read requires a fresh
-> **context-side** activating-window extraction first — new compute, not a re-run.
-> Until then the two dashboards above show the populations but no blinded
-> comparison, and the answer-only side is the only one with descriptions at all
-> (2,132 / 2,164 = 98.5%).
+Claude Fable 5 said this:
+
+<!-- FABLE_SIDE_READ -->
+
+> **Evidence-side caveat — load-bearing for reading the above.** The two
+> description sets are **not same-instrument**. Answer-only descriptions come from
+> #1773's **answer-side** activating windows; context-only descriptions come from
+> a dedicated **context-side** pass built for this question
+> (`eval_results/issue_1482/context_side_labels/`, 1,653 of 1,654 described, 0
+> content or transport drops, same system prompt and user template as #1773).
+> The split is forced — a context-only feature has no answer-side windows by
+> construction — but it means a discriminator the blinded reader finds could be an
+> artifact of which side the labeller looked at, rather than a difference in
+> feature *kind*. The read's brief asked it to look for exactly that asymmetry;
+> its answer is in the report. Do not pool the two description sets.
 
 **Takeaways:**
 - Around 1-2% of all features are context-only and answer-only
