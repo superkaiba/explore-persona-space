@@ -73,6 +73,7 @@
 - [TrainerCallback subclass + real-path smoke](feedback_trainer_callback_must_subclass_trainercallback.md) — hand-rolled HF callbacks must subclass (#816)
 - [script-mode sys.path scripts.* imports](feedback_script_mode_syspath_scripts_imports.md) — deferred scripts.* imports crash pod-side in (#823)
 - [Memory cap: calibrate from measured real-shape peak](feedback_memory_cap_calibrate_measured_peak.md) — explicit-temporary counting under-estimates (#811)
+- [GB/GiB unit discipline in memory-feasibility verdicts](feedback_gb_gib_unit_discipline_memory_feasibility.md) — device "141 GB" = 131.3 GiB; a 7% unit error flips margin-adjacent conclusions (#1491 r3a)
 - [Upload pipeline-INPUT artifacts before teardown](feedback_upload_pipeline_input_artifacts_before_teardown.md) — tiny pod-generated inputs upload before (#779)
 - [Capture-forward OOM family](feedback_device_map_auto_silent_cpu_offload.md) — device_map=auto silently CPU-offloads 7B; logits_to_keep=1 + persist text first (#825 #779)
 - [GCE workload scripts must source ./.env conditionally](feedback_gce_no_dotenv_conditional_sourcing.md) — GCE exports tokens with no .env; &&-chained (#923)
