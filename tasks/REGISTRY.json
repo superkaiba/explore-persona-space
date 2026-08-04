@@ -2624,7 +2624,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1336",
       "status": "followups_running",
-      "title": "RLVR post-training adds no detectable new linear context\u2192answer map structure beyond the DPO stage, even on its own training distribution (MODERATE confidence)"
+      "title": "The Llama T\u00fclu ladder's DPO\u2192RLVR step needs at most a rotation of the linear context\u2192answer map on seven of eight corpora, and no coordinate change on four of eight (raw) / six of eight (recal companion) (MODERATE confidence)"
     },
     "1337": {
       "has_clean_result": false,

@@ -1,6 +1,7 @@
 ---
-title: RLVR post-training adds no detectable new linear context→answer map structure
-  beyond the DPO stage, even on its own training distribution (MODERATE confidence)
+title: The Llama Tülu ladder's DPO→RLVR step needs at most a rotation of the linear
+  context→answer map on seven of eight corpora, and no coordinate change on four of
+  eight (raw) / six of eight (recal companion) (MODERATE confidence)
 kind: experiment
 tags:
 - followup-manual
