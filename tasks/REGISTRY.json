@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2056,
+  "highest_id": 2057,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8181,6 +8181,13 @@
       "path": "tasks/proposed/2056",
       "status": "proposed",
       "title": "workflow-fix: document PostToolUse formatter race (edit-then-run yields stale artifact, exits 0)"
+    },
+    "2057": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2057",
+      "status": "proposed",
+      "title": "workflow-fix: re-arm bg poll chain first on every wake (message consumes tick wake)"
     },
     "207": {
       "has_clean_result": true,
