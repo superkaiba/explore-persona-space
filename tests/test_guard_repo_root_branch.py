@@ -116,6 +116,37 @@ _PROD_SIDECAR = REPO / ".claude" / "cache" / "guard-deny-events.jsonl"
 _PROD_SIDECAR_SIZE_AT_IMPORT = _PROD_SIDECAR.stat().st_size if _PROD_SIDECAR.exists() else None
 
 
+def _read_sidecar_rows(path: Path) -> list[bytes]:
+    """Snapshot the raw newline-terminated rows of a deny-event sidecar file.
+
+    Returns an empty list when the file is absent. Reads the file bytes and
+    splitkeep-splits on `\\n` (drops the trailing empty element from a
+    final newline), so each element is a complete row including its `\\n`.
+    The bytes-in-bytes-out shape makes membership comparison exact under
+    concurrent appenders: rows a snapshot observed at time T remain a
+    subset of the file's rows at any later time (an append-only sidecar
+    cannot rewrite or reorder existing rows).
+
+    Used by the end-of-module production-sidecar canary to make the
+    membership predicate (`snapshot rows ⊆ current rows`) tolerant of
+    foreign appends from concurrent REAL denies in other sessions,
+    while still refusing a suite-attributed write.
+    """
+    if not path.exists():
+        return []
+    data = path.read_bytes()
+    if not data:
+        return []
+    rows = data.split(b"\n")
+    # split() leaves a trailing empty when the file ends with `\n`; drop it.
+    if rows and rows[-1] == b"":
+        rows.pop()
+    return [row + b"\n" for row in rows]
+
+
+_PROD_SIDECAR_ROWS_AT_IMPORT = _read_sidecar_rows(_PROD_SIDECAR)
+
+
 def _scrubbed_env() -> dict[str, str]:
     """``os.environ`` minus every ``GIT_*`` var (the #1545 scrub).
 
@@ -4053,3 +4084,66 @@ def test_zz_production_sidecar_untouched_by_suite():
     """
     current = _PROD_SIDECAR.stat().st_size if _PROD_SIDECAR.exists() else None
     assert current == _PROD_SIDECAR_SIZE_AT_IMPORT
+
+
+def test_zz_production_sidecar_positive_control_catches_suite_write(tmp_path):
+    """Positive control: a synthetic append MUST be observable to the canary shape.
+
+    The end-of-module production-sidecar canary observes rows on an
+    append-only forensic file. A future refactor that made the canary a
+    silent no-op would tolerate suite writes just as tolerantly as a
+    foreign concurrent-session append — the very defect this file exists
+    to prevent. This test exercises the canary's snapshot-then-compare
+    logic against a SYNTHETIC scenario (its own ``tmp_path`` file, never
+    the real production sidecar) so its correctness is independent of
+    whether a concurrent session appended a real row this second.
+
+    Two orthogonal assertions:
+
+    1. Snapshot rows are a SUBSET of the current rows after a foreign
+       append (the tolerance direction: an append-only file never
+       rewrites or reorders earlier rows, so a snapshot's rows survive
+       any later append; equally, a suite that WROTE nothing sees its
+       snapshot survive unchanged).
+    2. The single new row is OBSERVABLE via the current-rows minus
+       snapshot-rows set difference. If the canary shape ever collapsed
+       to a shape that returned early or short-circuited past its
+       comparison, ``len(new_rows) == 0`` would silently satisfy the
+       weaker predicate and this test would FAIL — the guard against
+       future silent-no-op refactors.
+
+    Bounds: the test uses only ``tmp_path``. It never reads or writes the
+    real ``_PROD_SIDECAR`` path (which lives under the canonical checkout's
+    ``.claude/cache/`` and is protected by the sibling canary above).
+    """
+    fake_sidecar = tmp_path / "guard-deny-events.jsonl"
+    fake_sidecar.write_bytes(
+        b'{"ts":"2026-01-01T00:00:00Z","guard":"x","arm":"a","len":1,'
+        b'"head":"h","clause_head":"c"}\n'
+    )
+    snapshot = _read_sidecar_rows(fake_sidecar)
+    assert len(snapshot) == 1, "snapshot precondition: exactly one row before the append"
+
+    with fake_sidecar.open("ab") as f:
+        f.write(
+            b'{"ts":"2026-01-01T00:00:01Z","guard":"x","arm":"a","len":1,'
+            b'"head":"h","clause_head":"c"}\n'
+        )
+    current_rows = _read_sidecar_rows(fake_sidecar)
+
+    # Tolerance: snapshot rows survive the foreign append (append-only invariant).
+    for row in snapshot:
+        assert row in current_rows, (
+            "snapshot row must survive a later append (append-only invariant)"
+        )
+
+    # Positive control: the append IS observable — the canary shape cannot
+    # silently no-op past a real suite-attributable write. A future
+    # refactor that made ``_read_sidecar_rows`` return early would leave
+    # ``new_rows`` empty and this assertion would FAIL — the guard against
+    # tolerant-to-everything regressions.
+    new_rows = [row for row in current_rows if row not in snapshot]
+    assert len(new_rows) == 1, (
+        "positive control: canary must observe exactly one new row after "
+        f"a synthetic append (got {len(new_rows)})"
+    )
