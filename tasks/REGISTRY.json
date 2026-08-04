@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2057,
+  "highest_id": 2058,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8188,6 +8188,13 @@
       "path": "tasks/reviewing/2057",
       "status": "reviewing",
       "title": "workflow-fix: re-arm bg poll chain first on every wake (message consumes tick wake)"
+    },
+    "2058": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2058",
+      "status": "proposed",
+      "title": "workflow-fix: no-progress tick wedge \u2014 heartbeats read HEALTHY, stale-redrive reuses exhausted context"
     },
     "207": {
       "has_clean_result": true,
