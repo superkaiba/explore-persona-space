@@ -35,7 +35,7 @@
 - [--resume pins every output-affecting regime key](feedback_resume_metadata_pin_every_regime_key.md) — cross-regime resume silently reuses wrong rows; rehearse offline (#722 #600)
 - [Long loops: per-unit atomic writes + --resume](feedback_long_running_analysis_needs_resume.md) — ≥1h loops persist each unit atomically + fail-loud substrate match (#722 #399)
 - [Seed smuggled into data-mix path AND model-init seed](feedback_seed_smuggled_into_data_and_init.md) — when a per-cell `seed` field feeds BOTH a (#734)
-- [Reused script may carry uncommitted sibling edits](feedback_reused_script_may_have_uncommitted_sibling_edits.md) — a reused helper's WORKING-TREE copy can have (#667)
+- [Reused script may carry uncommitted sibling edits](feedback_reused_script_may_have_uncommitted_sibling_edits.md) — WT copy ≠ HEAD; verify hunks are yours before path-scoped add in a shared worktree (#667 #1491)
 - [Dispatcher wave size must equal visible GPU count](feedback_dispatcher_wave_size_must_match_visible_gpus.md) — a per-cell subprocess dispatcher fanning out (#667)
 - [vLLM generate traps: chunk batches, use_tqdm=False](feedback_vllm_large_batch_deadlock_chunk_it.md) — one huge generate() wedges EngineCore (chunk ~500); bank length-validate sibling in entry (#664 #613 #952)
 - [vLLM teardown + HF coexistence](feedback_vllm_orphan_worker_after_destroy.md) — destroy_* leaves workers (psutil child-kill); gpu_mem_util≤0.5 (#399 #685)
