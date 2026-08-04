@@ -5,6 +5,7 @@ tags:
 - wf-fix
 - wf-fix-fp:fb9407e72b64
 - daily-auto-filed
+- trigger-dense
 created_at: '2026-08-02T07:04:12Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-08-01 problem sweep (route 2): Pre-existing (outside #1977''s
