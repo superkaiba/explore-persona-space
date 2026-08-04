@@ -698,17 +698,29 @@ def main() -> int:
             fj = fits[slug]
             ceil = fj.get("ceiling_two_draw", {})
             ridge_r2 = fj.get("predictors", {}).get("ridge", {}).get("test_r2")
-            if (
-                isinstance(ceil, dict)
-                and ceil.get("available")
-                and ridge_r2 is not None
-                and abs(ceil.get("ceiling_var_weighted_r", 0)) > 1e-6
-            ):
-                ceiling_normalized[slug] = {
-                    "ridge_r2": ridge_r2,
-                    "ceiling": ceil["ceiling_var_weighted_r"],
-                    "normalized": ridge_r2 / ceil["ceiling_var_weighted_r"],
-                }
+            if isinstance(ceil, dict) and ceil.get("available") and ridge_r2 is not None:
+                c_val = ceil.get("ceiling_var_weighted_r")
+                # The normalizer must be STRICTLY POSITIVE. The prior guard was
+                # abs(c_val) > 1e-6, which admitted a NEGATIVE ceiling: the two
+                # draws anti-correlating is a broken measurement, not a valid
+                # denominator, and dividing by it emits a sign-flipped number
+                # presented as a fraction-of-ceiling. Near-zero is excluded for
+                # the same reason it always was (the ratio explodes).
+                if isinstance(c_val, (int, float)) and c_val > 1e-6:
+                    ceiling_normalized[slug] = {
+                        "ridge_r2": ridge_r2,
+                        "ceiling": c_val,
+                        "normalized": ridge_r2 / c_val,
+                    }
+                else:
+                    # Record the skip rather than silently omitting the scale —
+                    # an absent row and a non-positive ceiling are different facts.
+                    ceiling_normalized[slug] = {
+                        "ridge_r2": ridge_r2,
+                        "ceiling": c_val,
+                        "normalized": None,
+                        "skipped": "ceiling not strictly positive — unusable as a normalizer",
+                    }
 
     # 6. Per-scale summary rows (for the hero figure + downstream analyses).
     per_scale_rows = _per_scale_summary(fits, preds_ridge)

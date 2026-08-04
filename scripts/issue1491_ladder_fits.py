@@ -365,6 +365,18 @@ def _reliability_ceiling(hf_prefix: str, layer: int, cache_dir: Path) -> dict:
     the primary layer, per dimension d, and Var_d is the variance of the
     two-draw MEAN as the pooling weight.
     """
+    from huggingface_hub.errors import (
+        EntryNotFoundError,
+        HfHubHTTPError,
+        RepositoryNotFoundError,
+    )
+
+    def _absent(exc: BaseException) -> dict:
+        # ceiling draws not yet uploaded — expected until Unit 2 has run the
+        # ceiling_draw_43/44 splits for this scale.
+        logger.warning("[ladder-fits] ceiling draws missing for layer %d: %s", layer, exc)
+        return {"available": False, "reason": f"ceiling captures not on HF: {exc}"}
+
     try:
         prefix_a = f"{hf_prefix}/ceiling_draws/seed43/final_token_capture"
         prefix_b = f"{hf_prefix}/ceiling_draws/seed44/final_token_capture"
@@ -374,11 +386,26 @@ def _reliability_ceiling(hf_prefix: str, layer: int, cache_dir: Path) -> dict:
         _cx_b, vx_b, ci_b = F._stream_hf_chunks(
             prefix_b, layer, cache_dir, ckpt_dir=None, ckpt_every=0, fresh=True
         )
-    except Exception as e:  # noqa: BLE001
-        # ceiling draws not yet uploaded — this is expected until Unit 2 has run
-        # the ceiling_draw_43/44 splits for this scale.
-        logger.warning("[ladder-fits] ceiling draws missing for layer %d: %s", layer, e)
-        return {"available": False, "reason": f"ceiling captures not on HF: {e}"}
+    # ABSENCE ONLY below. A broad `except Exception` here silently downgrades a
+    # transient Hub fault, an auth failure, or a genuine streaming/parse bug to
+    # "not yet uploaded" — which deletes plan §4's registered H4 reliability-
+    # ceiling protection without anyone noticing (fail-fast rule; same fail-open
+    # shape fixed in the manifest builder's presence probe). The chunk listing
+    # inside _stream_hf_chunks already rides hub.retry_transient, so 429/5xx are
+    # retried there and never reach us as absence.
+    except FileNotFoundError as e:
+        # Prefix exists, no .pt chunks yet (issue779_ffc_n1m_fits._stream_hf_chunks).
+        return _absent(e)
+    except RepositoryNotFoundError:
+        # Deliberately NOT absence: a missing/inaccessible data repo is a config
+        # or token-scope fault, and must stay loud rather than mute the ceiling.
+        raise
+    except EntryNotFoundError as e:
+        return _absent(e)
+    except HfHubHTTPError as e:
+        if getattr(getattr(e, "response", None), "status_code", None) == 404:
+            return _absent(e)
+        raise
 
     # Align by ci (they're the SAME 1,000 test contexts).
     by_ci_b = {int(c): i for i, c in enumerate(ci_b)}
