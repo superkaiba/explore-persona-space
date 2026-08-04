@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2055,
+  "highest_id": 2056,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8174,6 +8174,13 @@
       "path": "tasks/proposed/2055",
       "status": "proposed",
       "title": "workflow-fix: thread lane_suffix into slurm.job_name (concurrent lanes silently reconnect)"
+    },
+    "2056": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2056",
+      "status": "proposed",
+      "title": "workflow-fix: document PostToolUse formatter race (edit-then-run yields stale artifact, exits 0)"
     },
     "207": {
       "has_clean_result": true,
