@@ -1,0 +1,1428 @@
+{
+  "commit": "11ba097801",
+  "created": "2026-08-01T09:17:12Z",
+  "figsize": [
+    15.0,
+    7.2
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "cos(attributed, measured)": 0.09156400809802206,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "cos(attributed, measured)": 0.07693203695496835,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "cos(attributed, measured)": 0.09973673680179689,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "cos(attributed, measured)": 0.028105076617181843,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "cos(attributed, measured)": 0.13683341947398547,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "cos(attributed, measured)": 0.12330449031643764,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.81,
+      "cos(attributed, measured)": 0.15441253084753348,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.81,
+      "cos(attributed, measured)": 0.10903697242524446,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.81,
+      "cos(attributed, measured)": 0.04356968243639862,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 8.81,
+      "cos(attributed, measured)": -0.0425980861359089,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 9.81,
+      "cos(attributed, measured)": -0.050745941833065675,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 10.81,
+      "cos(attributed, measured)": -0.03372139517191404,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 11.81,
+      "cos(attributed, measured)": -0.04642157147384005,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 12.81,
+      "cos(attributed, measured)": 0.3015772685911828,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 13.81,
+      "cos(attributed, measured)": 0.2745180078428045,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 14.81,
+      "cos(attributed, measured)": 0.2856282134798767,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 15.81,
+      "cos(attributed, measured)": 0.29070615340663236,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 16.81,
+      "cos(attributed, measured)": 0.18335479618914372,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 17.81,
+      "cos(attributed, measured)": 0.2001349162496828,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 18.81,
+      "cos(attributed, measured)": 0.3307517610863077,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 19.81,
+      "cos(attributed, measured)": 0.27099542967587126,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 20.81,
+      "cos(attributed, measured)": 0.3450267841320875,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 21.81,
+      "cos(attributed, measured)": 0.2985373636076356,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 22.81,
+      "cos(attributed, measured)": 0.3244903984178514,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 23.81,
+      "cos(attributed, measured)": 0.15046587340349965,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 24.81,
+      "cos(attributed, measured)": 0.15740486343528828,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 25.81,
+      "cos(attributed, measured)": 0.025350991953896285,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 26.81,
+      "cos(attributed, measured)": 0.029961615308765947,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 27.81,
+      "cos(attributed, measured)": 0.018127083918158916,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 28.81,
+      "cos(attributed, measured)": 0.005926324245258406,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 29.81,
+      "cos(attributed, measured)": 0.46814814047395686,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 30.81,
+      "cos(attributed, measured)": 0.39570472094830433,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 31.81,
+      "cos(attributed, measured)": 0.17404792944371617,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 32.81,
+      "cos(attributed, measured)": 0.18918802966979378,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 33.81,
+      "cos(attributed, measured)": 0.22166513267388435,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 34.81,
+      "cos(attributed, measured)": 0.2644710706350494,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 35.81,
+      "cos(attributed, measured)": 0.3289864724803532,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 36.81,
+      "cos(attributed, measured)": 0.2915079359979904,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 37.81,
+      "cos(attributed, measured)": 0.23500525496688193,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 38.81,
+      "cos(attributed, measured)": 0.25116217522150225,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 39.81,
+      "cos(attributed, measured)": 0.21234908485702866,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 40.81,
+      "cos(attributed, measured)": 0.22160602626946949,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 41.81,
+      "cos(attributed, measured)": 0.1090297964782596,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 42.81,
+      "cos(attributed, measured)": 0.2530974721343316,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 43.81,
+      "cos(attributed, measured)": 0.1222894585862434,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 44.81,
+      "cos(attributed, measured)": -0.003987999807971318,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 45.81,
+      "cos(attributed, measured)": 0.10182879336205657,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 46.81,
+      "cos(attributed, measured)": 0.026208634380658173,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 47.81,
+      "cos(attributed, measured)": 0.0567629239332851,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 48.81,
+      "cos(attributed, measured)": 0.021566219538489736,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 49.81,
+      "cos(attributed, measured)": 0.07652057281250552,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 50.81,
+      "cos(attributed, measured)": 0.06199328883219258,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 51.81,
+      "cos(attributed, measured)": 0.3182304609829318,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 52.81,
+      "cos(attributed, measured)": 0.25578644685638346,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 53.81,
+      "cos(attributed, measured)": 0.3463396532001607,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 54.81,
+      "cos(attributed, measured)": 0.3423298075912611,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 55.81,
+      "cos(attributed, measured)": 0.11437593415041511,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 56.81,
+      "cos(attributed, measured)": -0.001286195581967442,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 57.81,
+      "cos(attributed, measured)": 0.10540535692647189,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 58.81,
+      "cos(attributed, measured)": 0.2355566727167895,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 59.81,
+      "cos(attributed, measured)": 0.08496422995650957,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 60.81,
+      "cos(attributed, measured)": 0.13423572108158077,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 61.81,
+      "cos(attributed, measured)": 0.11666151843177922,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 62.81,
+      "cos(attributed, measured)": 0.15747059794196713,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 63.81,
+      "cos(attributed, measured)": 0.07289739124516253,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 64.81,
+      "cos(attributed, measured)": 0.11437127511902023,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 65.81,
+      "cos(attributed, measured)": -0.04415776951037935,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 66.81,
+      "cos(attributed, measured)": -0.053616377040766085,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 67.81,
+      "cos(attributed, measured)": -0.03920050364281485,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 68.81,
+      "cos(attributed, measured)": -0.026798544431843856,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 69.81,
+      "cos(attributed, measured)": 0.09263683463523145,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 70.81,
+      "cos(attributed, measured)": 0.12754895556277523,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "cos(attributed, measured)": 0.017175705217679152,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "cos(attributed, measured)": 0.016895770955461686,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "cos(attributed, measured)": 0.02015847359940459,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "cos(attributed, measured)": 0.006701053870637496,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "cos(attributed, measured)": 0.008288547397997427,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "cos(attributed, measured)": 0.005856167938487971,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.19,
+      "cos(attributed, measured)": 0.009432194693083235,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.19,
+      "cos(attributed, measured)": 0.017115686783604374,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.19,
+      "cos(attributed, measured)": 0.005114076590856425,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 9.19,
+      "cos(attributed, measured)": 0.00048790093119549765,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 10.19,
+      "cos(attributed, measured)": -0.01863636716656248,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 11.19,
+      "cos(attributed, measured)": 0.0017536295169619986,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 12.19,
+      "cos(attributed, measured)": -0.0007783702306654617,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 13.19,
+      "cos(attributed, measured)": 0.04003378440499733,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 14.19,
+      "cos(attributed, measured)": 0.038802582260577714,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 15.19,
+      "cos(attributed, measured)": 0.07562748249231092,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 16.19,
+      "cos(attributed, measured)": 0.06247309324728822,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 17.19,
+      "cos(attributed, measured)": 0.04559573824935098,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 18.19,
+      "cos(attributed, measured)": 0.04802061829385675,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 19.19,
+      "cos(attributed, measured)": 0.044596196122652476,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 20.19,
+      "cos(attributed, measured)": 0.033361399998667586,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 21.19,
+      "cos(attributed, measured)": 0.04157630950721831,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 22.19,
+      "cos(attributed, measured)": 0.03670354612294162,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 23.19,
+      "cos(attributed, measured)": 0.06797169545847535,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 24.19,
+      "cos(attributed, measured)": 0.0375607693235497,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 25.19,
+      "cos(attributed, measured)": 0.033315606375470694,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 26.19,
+      "cos(attributed, measured)": 0.00964144543899916,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 27.19,
+      "cos(attributed, measured)": 0.007918664874287266,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 28.19,
+      "cos(attributed, measured)": 0.01026521424450902,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 29.19,
+      "cos(attributed, measured)": 0.006046157870041764,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 30.19,
+      "cos(attributed, measured)": 0.06677658134430256,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 31.19,
+      "cos(attributed, measured)": 0.053450257615705175,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 32.19,
+      "cos(attributed, measured)": 0.020104253827713213,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 33.19,
+      "cos(attributed, measured)": 0.019108208227755386,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 34.19,
+      "cos(attributed, measured)": 0.02429156088349011,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 35.19,
+      "cos(attributed, measured)": 0.02528808851022967,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 36.19,
+      "cos(attributed, measured)": 0.017250921382963854,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 37.19,
+      "cos(attributed, measured)": 0.015383856786028898,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 38.19,
+      "cos(attributed, measured)": 0.013841780547804992,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 39.19,
+      "cos(attributed, measured)": 0.014438786147582148,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 40.19,
+      "cos(attributed, measured)": 0.013639975581957552,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 41.19,
+      "cos(attributed, measured)": 0.007022099976379719,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 42.19,
+      "cos(attributed, measured)": 0.00397225980294599,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 43.19,
+      "cos(attributed, measured)": 0.01108965778422142,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 44.19,
+      "cos(attributed, measured)": 0.010630291988279073,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 45.19,
+      "cos(attributed, measured)": 0.00395390939489009,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 46.19,
+      "cos(attributed, measured)": 0.006100741716576923,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 47.19,
+      "cos(attributed, measured)": 0.004311872964972015,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 48.19,
+      "cos(attributed, measured)": -0.0004332089354265017,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 49.19,
+      "cos(attributed, measured)": 0.003168236045765779,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 50.19,
+      "cos(attributed, measured)": 0.008605743394234085,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 51.19,
+      "cos(attributed, measured)": 0.008736294604109159,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 52.19,
+      "cos(attributed, measured)": 0.04052921897958358,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 53.19,
+      "cos(attributed, measured)": 0.03430504922319783,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 54.19,
+      "cos(attributed, measured)": 0.034747784358506235,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 55.19,
+      "cos(attributed, measured)": 0.03429872899829552,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 56.19,
+      "cos(attributed, measured)": 0.007395453085348009,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 57.19,
+      "cos(attributed, measured)": 0.004948719448528975,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 58.19,
+      "cos(attributed, measured)": 0.006929223566484081,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 59.19,
+      "cos(attributed, measured)": 0.013571967977581775,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 60.19,
+      "cos(attributed, measured)": 0.004337143513598422,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 61.19,
+      "cos(attributed, measured)": 0.006034860969546989,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 62.19,
+      "cos(attributed, measured)": 0.011289334313402791,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 63.19,
+      "cos(attributed, measured)": 0.009848617241940446,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 64.19,
+      "cos(attributed, measured)": 0.002840128030630406,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 65.19,
+      "cos(attributed, measured)": 0.0067643868600662386,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 66.19,
+      "cos(attributed, measured)": -0.006685978287912843,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 67.19,
+      "cos(attributed, measured)": -0.006276512980416283,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 68.19,
+      "cos(attributed, measured)": -0.00437035995667852,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 69.19,
+      "cos(attributed, measured)": -0.005093263516386535,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 70.19,
+      "cos(attributed, measured)": 0.0058783827053942765,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 71.19,
+      "cos(attributed, measured)": 0.010761428667868387,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "cas-bare-con-lr1e5-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.437506244235785,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-bare-con-lr1e5-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.489739272274931,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-bare-po-lr1e5-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.095097335284815,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-bare-po-lr1e5-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.4935862451870947,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-conv-con-lr1e5-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.628968559244288,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-conv-con-lr1e5-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.6611846357746916,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-conv-po-lr3e5-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.698014943763915,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-pers-con-lr1e5-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.046100645598507,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-pers-con-lr1e5-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.1277697323894436,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-pers-ft-con-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 4.539270357810275,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-pers-ft-con-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 4.400576838563241,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-pers-ft-po-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.645974423579037,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-pers-ft-po-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.6356042534536503,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-pers-po-lr1e5-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.0873338225652343,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "cas-pers-po-lr1e5-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.040280103385176,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-bare-con-lr3e5-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.247693478294703,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-bare-con-lr3e5-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.8246685989370643,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-bare-po-lr1e5-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.833447075584128,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-bare-po-lr1e5-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.7796557474724333,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-conv-con-lr1e5-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.1414533677579013,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-conv-con-lr1e5-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.188058717240357,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-conv-po-lr1e5-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 1.9691746699437083,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-conv-po-lr1e5-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.05500032083053,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-icl-po-lr1e4-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.5722558290975464,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-pers-con-lr3e5-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.516698428004376,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-pers-con-lr3e5-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.7826827646062573,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-pers-ft-con-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 4.062878210964235,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-pers-ft-con-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 4.39028825055499,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-pers-ft-po-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.672665361947829,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-pers-ft-po-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.6368895886867554,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-pers-po-lr1e5-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.0982418361382877,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "imp-pers-po-lr1e5-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.329980089649707,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-bare-con-lr5e6-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.8417687707184394,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-bare-con-lr5e6-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.8091215105019804,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-bare-po-lr5e6-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.2968988730038142,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-bare-po-lr5e6-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.4980220696136635,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-conv-con-lr5e6-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.241207024651183,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-conv-con-lr5e6-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.55159293763294,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-conv-po-lr5e6-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.1665002887753713,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-conv-po-lr5e6-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.946939908970716,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-icl-con-lr5e6-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 1.4200522643059559,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-icl-con-lr5e6-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 1.405368423377424,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-icl-po-lr5e6-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 1.410304818353616,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-icl-po-lr5e6-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 1.6788433757707495,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-pers-con-lr5e6-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 1.8583007059819867,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-pers-con-lr5e6-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.293500768820204,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-pers-ft-con-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.0576230539525664,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-pers-ft-con-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.3330601765301937,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-pers-ft-po-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.556711061935908,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-pers-ft-po-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.5795913632221215,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-pers-po-lr5e6-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.5557265780092098,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mk-pers-po-lr5e6-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.293993894035828,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-bare-con-lr1e5-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.1089877397914902,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-bare-con-lr1e5-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.0863383935698763,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-bare-po-lr1e5-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.033524948679653,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-bare-po-lr1e5-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.0459040332705176,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-conv-con-lr1e5-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.8551880052480247,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-conv-con-lr1e5-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.743930013959694,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-conv-po-lr1e5-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.0314557189800366,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-conv-po-lr1e5-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.5585026710848,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-icl-con-lr1e5-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.609953679637561,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-icl-con-lr1e5-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.498149423834226,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-icl-po-lr1e5-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.8872387212989334,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-icl-po-lr3e5-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 4.077287649431469,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-pers-con-lr1e5-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.919003781078532,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-pers-con-lr1e5-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.755208991581022,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-pers-ft-con-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 4.039139299307589,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-pers-ft-con-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 3.5231555466926245,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-pers-ft-po-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.43359471607558,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-pers-ft-po-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.4257662460682656,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-pers-po-lr1e5-s137",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.3147588760634186,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-pers-po-lr1e5-s42",
+      "relative error $\\|a-m\\|/\\|m\\|$": 2.3366708939535137,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 216,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Does round 1's map stand-in reproduce the measured text effect?",
+        "ylabel": "cos(attributed, measured)",
+        "legend_labels": [
+          "mean-shift cosine",
+          "per-row cosine (median)"
+        ],
+        "annotations": [
+          "writing style",
+          "impoliteness",
+          "marker",
+          "sycophancy",
+          "attributed $= M_0(c^+)-M_0(c^0)$ (base map refit on the same cell/split) vs measured $= v^0(t^+)-v^0(t^0)$; held-out test rows, layer 19."
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "ylabel": "relative error $\\|a-m\\|/\\|m\\|$",
+        "xticklabels": [
+          "cas-bare-con-lr1e5-s137",
+          "cas-bare-con-lr1e5-s42",
+          "cas-bare-po-lr1e5-s137",
+          "cas-bare-po-lr1e5-s42",
+          "cas-conv-con-lr1e5-s137",
+          "cas-conv-con-lr1e5-s42",
+          "cas-conv-po-lr3e5-s42",
+          "cas-pers-con-lr1e5-s137",
+          "cas-pers-con-lr1e5-s42",
+          "cas-pers-ft-con-s137",
+          "cas-pers-ft-con-s42",
+          "cas-pers-ft-po-s137",
+          "cas-pers-ft-po-s42",
+          "cas-pers-po-lr1e5-s137",
+          "cas-pers-po-lr1e5-s42",
+          "imp-bare-con-lr3e5-s137",
+          "imp-bare-con-lr3e5-s42",
+          "imp-bare-po-lr1e5-s137",
+          "imp-bare-po-lr1e5-s42",
+          "imp-conv-con-lr1e5-s137",
+          "imp-conv-con-lr1e5-s42",
+          "imp-conv-po-lr1e5-s137",
+          "imp-conv-po-lr1e5-s42",
+          "imp-icl-po-lr1e4-s42",
+          "imp-pers-con-lr3e5-s137",
+          "imp-pers-con-lr3e5-s42",
+          "imp-pers-ft-con-s137",
+          "imp-pers-ft-con-s42",
+          "imp-pers-ft-po-s137",
+          "imp-pers-ft-po-s42",
+          "imp-pers-po-lr1e5-s137",
+          "imp-pers-po-lr1e5-s42",
+          "mk-bare-con-lr5e6-s137",
+          "mk-bare-con-lr5e6-s42",
+          "mk-bare-po-lr5e6-s137",
+          "mk-bare-po-lr5e6-s42",
+          "mk-conv-con-lr5e6-s137",
+          "mk-conv-con-lr5e6-s42",
+          "mk-conv-po-lr5e6-s137",
+          "mk-conv-po-lr5e6-s42",
+          "mk-icl-con-lr5e6-s137",
+          "mk-icl-con-lr5e6-s42",
+          "mk-icl-po-lr5e6-s137",
+          "mk-icl-po-lr5e6-s42",
+          "mk-pers-con-lr5e6-s137",
+          "mk-pers-con-lr5e6-s42",
+          "mk-pers-ft-con-s137",
+          "mk-pers-ft-con-s42",
+          "mk-pers-ft-po-s137",
+          "mk-pers-ft-po-s42",
+          "mk-pers-po-lr5e6-s137",
+          "mk-pers-po-lr5e6-s42",
+          "syc-bare-con-lr1e5-s137",
+          "syc-bare-con-lr1e5-s42",
+          "syc-bare-po-lr1e5-s137",
+          "syc-bare-po-lr1e5-s42",
+          "syc-conv-con-lr1e5-s137",
+          "syc-conv-con-lr1e5-s42",
+          "syc-conv-po-lr1e5-s137",
+          "syc-conv-po-lr1e5-s42",
+          "syc-icl-con-lr1e5-s137",
+          "syc-icl-con-lr1e5-s42",
+          "syc-icl-po-lr1e5-s137",
+          "syc-icl-po-lr3e5-s42",
+          "syc-pers-con-lr1e5-s137",
+          "syc-pers-con-lr1e5-s42",
+          "syc-pers-ft-con-s137",
+          "syc-pers-ft-con-s42",
+          "syc-pers-ft-po-s137",
+          "syc-pers-ft-po-s42",
+          "syc-pers-po-lr1e5-s137",
+          "syc-pers-po-lr1e5-s42"
+        ],
+        "yticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      }
+    ],
+    "series": [
+      "mean-shift cosine",
+      "per-row cosine (median)"
+    ]
+  }
+}

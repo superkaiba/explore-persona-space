@@ -21,3 +21,9 @@ with an explicit `timeout` (up to 600000 ms). If a phase genuinely
 exceeds 10 min on the VM, shrink the slice (fewer probes/samples,
 smaller tiny-model hidden size) until it fits a foreground call —
 do not background it.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Subagent one turn, no watchers](feedback_subagent_one_turn_no_watchers.md) — watchers die at turn end; run minutes-scale smokes foreground with timeouts.

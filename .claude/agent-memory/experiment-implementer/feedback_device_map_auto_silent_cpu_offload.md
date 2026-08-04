@@ -18,3 +18,11 @@ assert + a pre-extract EngineCore reaper guard in the dispatch script.
 
 **How to apply:** any script that loads a HF model after a vLLM phase in the same boot,
 or writes per-example tensor stores on eval-lane (16 GB) hosts.
+
+## Merged sibling index rows (#1891 curation, 2026-07-30)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the ~25 KB loader truncation limit (task #1891). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [device_map auto silent CPU offload — pin + assert; block-wise store flush](feedback_device_map_auto_silent_cpu_offload.md) — #825 rc=137: held GPU -> auto offloads 7B to 16GB host; write-at-end perpos store ~16GB
+- [logits_to_keep on capture-only forwards + persist text before capture](feedback_logits_to_keep_capture_oom.md) — transformers>=4.49 materializes full-vocab logits by default; pass logits_to_keep=1 when unread; persist rollout text before reduce (#779 OOM)
+- [exit-137 kill-source verification](feedback_exit137_kill_source_verification.md) — shared-scope cgroup counters don't attribute; check oom_kill DELTA + MemAvailable floor + oomd journals + PM stop directives before diagnosing OOM (#779 r9; supersedes_unresolved: epm:failure v5 is a marker, not a memory entry)

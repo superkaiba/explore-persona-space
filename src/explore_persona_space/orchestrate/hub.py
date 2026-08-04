@@ -21,7 +21,7 @@ import uuid
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 logger = logging.getLogger(__name__)
 
@@ -1462,6 +1462,10 @@ def _upload(
         repo_type: 'model' or 'dataset'.
         path_in_repo: Sub-path in the repo. For single files, this is the
             destination path; empty string falls back to the local filename.
+            A single-file destination shaped like a DIRECTORY PREFIX (trailing
+            "/", or an extension-less basename while the local filename carries
+            an extension) fails loud with ValueError before any network I/O
+            (#1738) — pass the full destination ``f"{prefix}/{name}"``.
         delete_after: Delete local path after verified upload.
         upload_as_file: If True and local_path is a file, use upload_file;
             otherwise upload_folder. Directories always use upload_folder.
@@ -1509,6 +1513,29 @@ def _upload(
             "upload_folder silently no-ops on a file path. Pass upload_as_file=True for "
             "single-file uploads (see upload_raw_completions_to_data_repo)."
         )
+
+    # Fail loud on the directory-prefix-shaped single-file destination (#1738):
+    # on the upload_as_file branch, path_in_repo is the FULL file destination —
+    # a bare directory prefix lands the file AT the prefix, shadowing the
+    # directory and 400-blocking every later upload under it. Placed before
+    # assert_hub_dir_filecounts / HfApi construction and OUTSIDE the swallowing
+    # try below (the #595 / #1190 pre-try precedent), so it propagates to the
+    # caller regardless of raise_on_error.
+    # Deliberate residual FALSE NEGATIVES — do NOT widen the heuristic into the
+    # false-positive regime: an extension-less LOCAL file (LICENSE-class) sent
+    # to a bare prefix, and a dotted destination basename that is really a
+    # directory (v1.0-style dirs), are NOT caught by design.
+    if upload_as_file and local_path.is_file() and path_in_repo:
+        dest_name = PurePosixPath(path_in_repo).name
+        if path_in_repo.endswith("/") or ("." in local_path.name and "." not in dest_name):
+            raise ValueError(
+                f"_upload single-file destination {path_in_repo!r} looks like a "
+                f"directory prefix (uploading {local_path.name!r}): path_in_repo is "
+                "the FULL file destination for upload_as_file=True. Pass "
+                "f'{prefix}/{local_path.name}' to place the file under a directory "
+                "prefix (see #1738: a file landed AT the prefix, shadowing the "
+                "directory and 400-blocking later uploads under it)."
+            )
 
     # #1190: pre-count staged files per TARGET repo dir before any network
     # I/O — the Hub rejects a commit staging >10k siblings into one dir with

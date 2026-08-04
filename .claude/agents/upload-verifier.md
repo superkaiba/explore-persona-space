@@ -17,6 +17,7 @@ tools:
   - Grep
   - Glob
   - mcp__ssh__ssh_execute
+model: "claude-fable-5"
 ---
 
 # Upload Verifier

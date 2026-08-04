@@ -166,6 +166,25 @@ requires a zombie candidate holding >= ``ZOMBIE_GPU_MEM_MIN_MIB``
 (1024 MiB), structurally coupling candidacy to live allocations (the
 sub-floor freed-worker sticky holder drops out of scope).
 
+Persistent-wedge yield (#1840): the namespace veto is unbounded by
+construction — an ALIVE-but-WEDGED workload (workers futex-waiting with
+>= 1 GiB allocations held, host-unresolvable PIDs, frozen logs+outputs,
+every GPU idle) satisfies it on every tick, so #1768 stayed ``running``
+for ~16 h (~$375 idle burn). After ``WEDGE_VETO_YIELD_TICKS`` (env
+``EPM_POLL_WEDGE_VETO_YIELD_TICKS``, default 10; <= 0 disables)
+CONSECUTIVE namespace-vetoed ticks in the wedge regime — all logs AND
+issue-keyed outputs stale past the effective veto window, the current
+tick's GPU read all-idle, and no material CPU under the #951/#1477
+evidence classes — AND with the GPU-idle escalation already posted for
+this run (``gpu_idle_escalated_phases`` non-empty), the veto YIELDS:
+``status=stalled`` with the distinct
+``stall_reason=persistent_wedge_veto_yield`` (routes ``infra`` via
+``failure_classifier.STALL_REASON_INFRA``). Any non-qualifying tick —
+fresh log/output, a busy or unknown GPU read, material CPU, no
+candidate, a non-``running`` verdict — resets the ``wedge_veto_streak``
+sidecar counter, and every degraded read fails toward the veto holding
+(pre-#1840 behavior).
+
 Staleness folds in cell-log mtimes (incident #405 smoke-first): when the
 dispatcher is blocked in ``proc.wait()`` on a sequential smoke cell, the
 main sweep log goes silent for ~15-18 min while the smoke cell actively
@@ -484,7 +503,11 @@ _READER_COMMS = frozenset({"tail", "grep", "less", "more", "cat", "vi", "vim", "
 # quiet ``running`` tick far from any phase boundary recommends the long
 # QUIET interval; anything gate-adjacent, anomalous, recently-changed, or
 # early-run stays on the short DEFAULT — the long interval must never delay
-# a gate or mask a fresh failure.
+# a gate or mask a fresh failure. A 1800 recommendation is honored
+# orchestrator-side via the SKILL.md Step 6d.2 Monitor QUIET-WAIT branch —
+# ONE wait-then-poll wake per quiet cycle, ~2/3 fewer full-context turns on
+# quiet stretches (#1924); per-call bg-Bash sleeps stay clamped at 540s
+# (#1818).
 #
 # Risk bound: with the quiet interval an in-session stall can be noticed up
 # to 30 min later than the fixed 540s chain. Acceptable because
@@ -748,6 +771,16 @@ ZOMBIE_OVERRIDE_CPU_CORES_MIN = float(os.environ.get("EPM_ZOMBIE_OVERRIDE_CPU_CO
 # session processes). Production intervals are 540s/1800s so the floor
 # never binds there; it guards manual rapid re-polls and fast-smoke ticks.
 ZOMBIE_CPU_RATE_MIN_DT_SEC = int(os.environ.get("EPM_ZOMBIE_CPU_RATE_MIN_DT_SEC", "120"))
+
+# #1840: persistent-wedge yield on the namespace veto. After this many
+# CONSECUTIVE namespace-veto-suppressed ticks in the wedge regime (all
+# logs + outputs stale past the veto window, every GPU idle, no
+# material CPU) with the GPU-idle escalation already posted this run,
+# the veto yields -> stalled / persistent_wedge_veto_yield. <= 0
+# disables (veto holds forever — pre-#1840 behavior). Default 10
+# ticks is ~90 min at the 540 s orchestrator tick, ~3x the #813 29-min
+# quiet stretch.
+WEDGE_VETO_YIELD_TICKS = int(os.environ.get("EPM_POLL_WEDGE_VETO_YIELD_TICKS", "10"))
 
 # #1033: output-artifact mtime fold. Kill switch, default ON (unlike the #864
 # default-OFF namespace veto): the fold can only SUPPRESS false `stalled`
@@ -1460,9 +1493,10 @@ class PollResult:
     # interval, anti-stall redesign §7 — see ``recommend_next_interval``).
     # ``POLL_INTERVAL_QUIET_SEC`` only on a healthy, quiet, post-early-run
     # ``running`` tick far from any phase boundary; the short
-    # ``POLL_INTERVAL_DEFAULT_SEC`` otherwise. The orchestrator's
-    # sleep-chain reads this from the tick JSON (540s fallback when
-    # absent/unparseable — SKILL.md Step 6d.2).
+    # ``POLL_INTERVAL_DEFAULT_SEC`` otherwise. The orchestrator BRANCHES
+    # on this from the tick JSON: a Monitor wait-then-poll quiet cycle at
+    # 1800 (#1924), the fixed 540s bg-Bash chain otherwise (540s fallback
+    # when absent/unparseable — SKILL.md Step 6d.2).
     next_interval: int = POLL_INTERVAL_DEFAULT_SEC
     # Machine-readable reason a non-``running`` verdict landed, surfaced in
     # the JSON line so the orchestrator can route differently per cause.
@@ -2258,10 +2292,12 @@ def sentinel_drain_shell(issue: int, extra_globs: tuple[str, ...] = ()) -> str:
     and the GCP gcloud-ssh transport (``backends.gcp`` — which wraps it in
     ``sudo -n bash -c`` because the GCE startup script writes the sentinel
     tree as root, mode 600; incident #608) so the two lanes can never drift
-    on the loop shape. The SLURM lane deliberately has NO drain transport:
-    compute nodes have no ``/workspace`` and the robot forced-command
-    wrapper cannot execute this shell — see ``backends/slurm_monitor.py``
-    § "No sentinel drain on this lane" (#608 follow-up).
+    on the loop shape. The DRAC/Mila SLURM lanes have NO drain transport
+    (robot forced-command wrapper; compute nodes lack ``/workspace`` —
+    #608); the FELLOWS lane drains via
+    ``backends/slurm_monitor.drain_cluster_sentinels`` (#1898), which
+    shares this loop shape — see ``backends/slurm_monitor.py``
+    § "Sentinel drain: fellows only".
 
     ``extra_globs`` appends transport-specific fallback patterns to the
     canonical glob (incident #610: the issue-610 GCP dispatcher found
@@ -4755,10 +4791,12 @@ def _apply_zombie_override(
     session_cpu_rate_cores: float | None = None,
     output_mtime_ago: float = float("inf"),
     session_pcpu_cores: float | None = None,
-) -> tuple[str, str | None, bool, int]:
-    """The #664/#826/#864/#951/#1033/#1477 zombie-GPU-allocation override —
-    returns the possibly overridden
-    ``(status, stall_reason, cpu_override_active, zombie_streak)``.
+    gpu_idle: bool = False,
+) -> tuple[str, str | None, bool, int, int]:
+    """The #664/#826/#864/#951/#1033/#1477/#1840 zombie-GPU-allocation
+    override — returns the possibly overridden
+    ``(status, stall_reason, cpu_override_active, zombie_streak,
+    wedge_veto_streak)``.
 
     A hung vLLM whose CUDA worker died leaves its model-shard VRAM orphaned
     (a compute-apps PID with no ``/proc`` entry) while the EngineCore main
@@ -4953,9 +4991,54 @@ def _apply_zombie_override(
     structurally couples candidacy to live allocations — the sticky
     sub-floor freed-worker state (S3=1 at 518 MiB in the gate's sticky
     probe) drops out of scope.
+
+    Persistent-wedge yield (#1840, inside the namespace-veto branch
+    ONLY): the namespace veto keys on mere EXISTENCE (alive
+    allocation-evidenced holders), which an ALIVE-but-WEDGED workload
+    satisfies indefinitely — #1768's HF-download wedge (workers
+    futex-waiting, host-unresolvable PIDs, >= 1 GiB allocations held,
+    all 8 GPUs at 0%, main log frozen) kept the verdict ``running`` for
+    ~16 h. A ``wedge_veto_streak`` sidecar counter (recomputed each
+    tick, exactly like ``zombie_streak``) INCREMENTS on a
+    namespace-vetoed tick iff ALL of: every workload log stale past the
+    effective veto window ``max(ZOMBIE_VETO_FRESH_SEC, stall_sec)`` AND
+    ``output_mtime_ago`` stale past the same window (the wedge regime —
+    a fresh log/output resets), AND the current tick's ``gpu_idle`` is
+    ``True`` (every GPU idle — the #1768 defining observable; the
+    keyword-only param defaults ``False`` so pre-#1840 callers are
+    byte-unchanged and fail-safe: unknown/absent resets the streak),
+    AND no material compute (neither the #951 both-ticks rate shape nor
+    the #1477 negative-rate+pcpu confirm shape — the same evidence
+    classes as the downstream vetoes, applied WITHIN the vetoed
+    regime). When the incremented streak reaches
+    ``WEDGE_VETO_YIELD_TICKS`` (env ``EPM_POLL_WEDGE_VETO_YIELD_TICKS``,
+    default 10; <= 0 disables the yield entirely) AND the GPU-idle
+    escalation has been posted for this run
+    (``prev_state["gpu_idle_escalated_phases"]`` non-empty —
+    absent/empty holds the veto), the veto YIELDS: ``status=stalled``,
+    ``stall_reason=persistent_wedge_veto_yield``,
+    ``cpu_override_active=False``, with a distinct ``log.error``
+    carrying the forensic counts. Below the conjunction the branch
+    behaves exactly as today (suppress + WARNING + ``zombie_streak``
+    0) while the incremented/reset ``wedge_veto_streak`` persists via
+    ``_save_state``. Every degraded read (missing/garbage
+    ``wedge_veto_streak`` key, absent escalation state, unknown
+    ``gpu_idle``) fails toward today's behavior — the veto holds.
+    Residual (ACCEPTED, run-scope): when ``run_age_sec`` is unreadable,
+    ``_tripwire_run_scope`` never clears the run-scoped keys, so a
+    PRIOR run's ``gpu_idle_escalated_phases`` can satisfy the
+    escalation conjunct — the fail direction is
+    fire-on-current-wedge-shape-only (the streak's own N-tick
+    frozen-logs + all-GPUs-idle + no-material-CPU conjunction must
+    independently hold on the CURRENT run for N consecutive ticks),
+    the same accepted-exposure register as the #951 residual above.
     """
     stall_reason: str | None = None
     zombie_streak = 0
+    # #1840: recomputed each tick like zombie_streak — only the
+    # namespace-veto branch below can set it non-zero, so any veto-free /
+    # candidate-free / non-running tick that reaches _save_state resets it.
+    wedge_veto_streak = 0
     if status == "running" and zombie_gpu_pids:
         if (
             ZOMBIE_NAMESPACE_VETO_ENABLED
@@ -4982,6 +5065,86 @@ def _apply_zombie_override(
             # has zero allocation-evidenced holders — allocation-free
             # coordinator/debug survivors included — and falls through to
             # the #826 stale-log + 2-tick logic below.
+            #
+            # #1840: persistent-wedge yield. An ALIVE-but-WEDGED workload
+            # (#1768: futex-waiting workers holding allocations, frozen
+            # logs+outputs, every GPU idle) satisfies this veto on every
+            # tick forever. Count CONSECUTIVE vetoed ticks in the wedge
+            # regime; after WEDGE_VETO_YIELD_TICKS of them with the
+            # GPU-idle escalation already posted for this run, yield the
+            # veto (see the docstring's "Persistent-wedge yield" section).
+            wedge_veto_sec = max(ZOMBIE_VETO_FRESH_SEC, stall_sec)
+            wedge_freshest_log_ago = min(last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago)
+            try:  # defensive parse, mirrors the prev_zombie_streak guard below
+                prev_wedge_streak = int(prev_state.get("wedge_veto_streak", "0") or 0)
+            except (TypeError, ValueError):
+                prev_wedge_streak = 0
+            # Same evidence classes as the downstream #951 / #1477 vetoes,
+            # applied WITHIN the namespace-vetoed regime: material compute
+            # on both ticks — or the negative-rate + material-pcpu confirm
+            # shape — refutes a wedge and resets the streak.
+            wedge_prev_cpu_rate = _parse_session_cpu(
+                prev_state.get("session_cpu_rate_cores", "unknown")
+            )
+            material_cpu_both_ticks = (
+                session_cpu_rate_cores is not None
+                and wedge_prev_cpu_rate is not None
+                and session_cpu_rate_cores >= ZOMBIE_OVERRIDE_CPU_CORES_MIN
+                and wedge_prev_cpu_rate >= ZOMBIE_OVERRIDE_CPU_CORES_MIN
+            )
+            negative_rate_pcpu_confirm = (
+                (
+                    (session_cpu_rate_cores is not None and session_cpu_rate_cores < 0)
+                    or (wedge_prev_cpu_rate is not None and wedge_prev_cpu_rate < 0)
+                )
+                and session_pcpu_cores is not None
+                and session_pcpu_cores >= ZOMBIE_OVERRIDE_CPU_CORES_MIN
+            )
+            if (
+                gpu_idle
+                and wedge_freshest_log_ago > wedge_veto_sec
+                and output_mtime_ago > wedge_veto_sec
+                and not material_cpu_both_ticks
+                and not negative_rate_pcpu_confirm
+            ):
+                wedge_veto_streak = prev_wedge_streak + 1
+            escalation_raw = prev_state.get("gpu_idle_escalated_phases", "") or ""
+            escalation_posted = any(p for p in escalation_raw.split(",") if p)
+            if (
+                WEDGE_VETO_YIELD_TICKS > 0
+                and wedge_veto_streak >= WEDGE_VETO_YIELD_TICKS
+                and escalation_posted
+            ):
+                rate_now_s = (
+                    "unknown" if session_cpu_rate_cores is None else f"{session_cpu_rate_cores:.2f}"
+                )
+                rate_prev_s = (
+                    "unknown" if wedge_prev_cpu_rate is None else f"{wedge_prev_cpu_rate:.2f}"
+                )
+                log.error(
+                    "persistent-wedge veto yield on pod %s (PID(s) %s): the namespace "
+                    "veto suppressed %d consecutive wedge-regime ticks (>= %d) with "
+                    "the GPU-idle escalation already posted — alive-but-wedged "
+                    "workers (%d/%d compute PIDs resolvable, %d allocation-evidenced "
+                    "holders), all logs stale %.0fs and outputs stale %.0fs (> %ds), "
+                    "every GPU idle, no material CPU (rate now=%s prev=%s cores, "
+                    "threshold %.2f) — yielding status=running -> stalled "
+                    "(#1840/#1768)",
+                    pod,
+                    ",".join(zombie_gpu_pids),
+                    wedge_veto_streak,
+                    WEDGE_VETO_YIELD_TICKS,
+                    gpu_pids_resolvable,
+                    gpu_pids_total,
+                    uvm_alloc_holders,
+                    wedge_freshest_log_ago,
+                    output_mtime_ago,
+                    wedge_veto_sec,
+                    rate_now_s,
+                    rate_prev_s,
+                    ZOMBIE_OVERRIDE_CPU_CORES_MIN,
+                )
+                return "stalled", "persistent_wedge_veto_yield", False, 0, wedge_veto_streak
             log.warning(
                 "zombie-GPU signature on pod %s (PID(s) %s) is a PID-namespace "
                 "artifact: 0/%d compute PIDs resolve in the container /proc while "
@@ -4993,7 +5156,7 @@ def _apply_zombie_override(
                 "?" if uvm_live_holders is None else uvm_live_holders,
                 uvm_alloc_holders,
             )
-            return status, stall_reason, cpu_override_active, 0
+            return status, stall_reason, cpu_override_active, 0, wedge_veto_streak
         zombie_veto_sec = max(ZOMBIE_VETO_FRESH_SEC, stall_sec)
         freshest_log_ago = min(last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago)
         try:  # defensive parse, mirrors _update_ssh_fail_tracking's ssh_fail_count guard
@@ -5122,7 +5285,7 @@ def _apply_zombie_override(
             stall_reason = "vllm_worker_dead_zombie_gpu"
             cpu_override_active = False
             zombie_streak = prev_zombie_streak + 1
-    return status, stall_reason, cpu_override_active, zombie_streak
+    return status, stall_reason, cpu_override_active, zombie_streak, wedge_veto_streak
 
 
 def _parse_output_mtime_epoch(raw: str | None) -> int:
@@ -5637,23 +5800,26 @@ def poll_once(
     # ── #664/#826 zombie-GPU-allocation override ─────────────────────────
     # Extracted to `_apply_zombie_override` (both for C901 headroom and so
     # the firing predicate is documented in one place — see its docstring).
-    status, stall_reason, cpu_override_active, zombie_streak = _apply_zombie_override(
-        status=status,
-        zombie_gpu_pids=zombie_gpu_pids,
-        stall_sec=stall_sec,
-        last_mtime_ago=last_mtime_ago,
-        phase_log_mtime_ago=phase_log_mtime_ago,
-        shard_log_mtime_ago=shard_log_mtime_ago,
-        prev_state=prev_state,
-        pod=pod,
-        cpu_override_active=cpu_override_active,
-        gpu_pids_total=_parse_probe_count(probe.get("gpu_pids_total")),
-        gpu_pids_resolvable=_parse_probe_count(probe.get("gpu_pids_resolvable")),
-        uvm_live_holders=_parse_probe_count(probe.get("nvidia_uvm_live_holders")),
-        uvm_alloc_holders=_parse_probe_count(probe.get("nvidia_uvm_alloc_holders")),
-        session_cpu_rate_cores=session_cpu_rate,
-        output_mtime_ago=output_mtime_ago,
-        session_pcpu_cores=session_pcpu_cores,
+    status, stall_reason, cpu_override_active, zombie_streak, wedge_veto_streak = (
+        _apply_zombie_override(
+            status=status,
+            zombie_gpu_pids=zombie_gpu_pids,
+            stall_sec=stall_sec,
+            last_mtime_ago=last_mtime_ago,
+            phase_log_mtime_ago=phase_log_mtime_ago,
+            shard_log_mtime_ago=shard_log_mtime_ago,
+            prev_state=prev_state,
+            pod=pod,
+            cpu_override_active=cpu_override_active,
+            gpu_pids_total=_parse_probe_count(probe.get("gpu_pids_total")),
+            gpu_pids_resolvable=_parse_probe_count(probe.get("gpu_pids_resolvable")),
+            uvm_live_holders=_parse_probe_count(probe.get("nvidia_uvm_live_holders")),
+            uvm_alloc_holders=_parse_probe_count(probe.get("nvidia_uvm_alloc_holders")),
+            session_cpu_rate_cores=session_cpu_rate,
+            output_mtime_ago=output_mtime_ago,
+            session_pcpu_cores=session_pcpu_cores,
+            gpu_idle=gpu_idle,
+        )
     )
 
     # ── #873/#1033 run-scoped state anchor (AC #6) ───────────────────────
@@ -5945,6 +6111,13 @@ def poll_once(
             # verdict all write "0" — a one-tick transient never
             # accumulates across a healthy gap.
             "zombie_streak": str(zombie_streak),
+            # #1840 persistent-wedge streak on the namespace veto. Same
+            # recompute-each-tick contract as zombie_streak (only the
+            # namespace-veto branch can set it non-zero); deliberately NOT
+            # in _RUN_SCOPED_STATE_KEYS — a relaunch freshens logs, which
+            # resets the streak naturally on the next tick, and the kill
+            # tick itself resets it via the non-running verdict.
+            "wedge_veto_streak": str(wedge_veto_streak),
             # #873 m-of-N GPU-width advisory span + stable idle set +
             # per-phase de-dup (same comma-join contract as the idle sets).
             "gpu_width_since_epoch": str(gpu_width_since_epoch),

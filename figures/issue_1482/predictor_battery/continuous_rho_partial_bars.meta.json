@@ -1,0 +1,118 @@
+{
+  "source": "eval_results/issue_1482/predictor_battery/continuous_predictors.json",
+  "renders": "bar variant of continuous_rho_vs_activity_partial (dot/forest form)",
+  "computes_nothing": "every number is read verbatim from the source JSON; this script only redraws, so the two renderings cannot disagree",
+  "n_predictors": 19,
+  "r2_source": "eval_results/issue_1738/sae_twoway/perfeature/sae_context_r2.npy",
+  "scope": "FULL DICTIONARY (131,072); panel-width figures dropped per directive",
+  "sort": "descending |partial rho|; rows without a partial rho last",
+  "colors": {
+    "raw": "#A9BCD8",
+    "partial": "#274472"
+  },
+  "color_rationale": "raw and partialled are one quantity under two conditions -> light/dark of one hue, not two hues; keeps orange/blue free for context-vs-answer elsewhere",
+  "rows": [
+    {
+      "label": "write norm (gamma-scaled)",
+      "raw": -0.009752457283889262,
+      "partial_on_activity": -0.15143982520970528
+    },
+    {
+      "label": "footprint kurtosis",
+      "raw": 0.23471508820035655,
+      "partial_on_activity": -0.13486889769247334
+    },
+    {
+      "label": "answer-side share of firings",
+      "raw": 0.2767183780361561,
+      "partial_on_activity": 0.11970126689943295
+    },
+    {
+      "label": "encoder-decoder cosine",
+      "raw": 0.30153691306658964,
+      "partial_on_activity": -0.1139459491892053
+    },
+    {
+      "label": "dense variance along decoder direction",
+      "raw": 0.22737201798619472,
+      "partial_on_activity": 0.09606549024866183
+    },
+    {
+      "label": "footprint variance",
+      "raw": -0.053884585808077326,
+      "partial_on_activity": -0.08855305328937554
+    },
+    {
+      "label": "mean activation over all answers",
+      "raw": 0.7206468889397647,
+      "partial_on_activity": 0.08160299499759294
+    },
+    {
+      "label": "decoder mass in prefix-covariance top-48 subspace (geometric)",
+      "raw": 0.13279029649452884,
+      "partial_on_activity": 0.07703902851202904
+    },
+    {
+      "label": "firing frequency (per token)",
+      "raw": 0.7234052936574789,
+      "partial_on_activity": 0.07210188256666682
+    },
+    {
+      "label": "decoder mass on massive-activation dims",
+      "raw": 0.023424880642095858,
+      "partial_on_activity": 0.06447324137197057
+    },
+    {
+      "label": "encoder-vector norm",
+      "raw": -0.26067297252007277,
+      "partial_on_activity": -0.06108248038572171
+    },
+    {
+      "label": "activation variance across answers",
+      "raw": 0.5640446922393171,
+      "partial_on_activity": -0.05152225336477567
+    },
+    {
+      "label": "positive-logit mass on top-10 tokens",
+      "raw": 0.08066917971948315,
+      "partial_on_activity": -0.046141023363290526
+    },
+    {
+      "label": "holdout answers active (count)",
+      "raw": 0.7425834248078778,
+      "partial_on_activity": 0.04600991168598471
+    },
+    {
+      "label": "max cosine to another decoder column",
+      "raw": 0.21403568879837404,
+      "partial_on_activity": -0.03807055877068255
+    },
+    {
+      "label": "mean activation when active",
+      "raw": 0.2203771134351253,
+      "partial_on_activity": 0.03395839646223384
+    },
+    {
+      "label": "within-answer consistency",
+      "raw": 0.257191171351525,
+      "partial_on_activity": 0.024475305182691278
+    },
+    {
+      "label": "footprint skew",
+      "raw": 0.06475917028688308,
+      "partial_on_activity": -0.0008442820561235855
+    },
+    {
+      "label": "firing frequency (per answer)",
+      "raw": 0.7420723109803815,
+      "partial_on_activity": NaN
+    }
+  ],
+  "caveats": [
+    "PROVISIONAL target: #1738 SAE->SAE context arm, not the full-width dense->SAE map. Arms rank at rho=0.933 at panel width \u2014 shape survives, levels do not.",
+    "A single partial rho is not a valid summary for predictors showing effect modification across activity deciles; read rho_by_activity_decile for those.",
+    "`activity` has no partialled bar \u2014 partialling a variable on itself is undefined.",
+    "mean_run_length and template_token_frac are absent pending the pod capture leg."
+  ],
+  "what_is_plotted": "Per continuous predictor, two horizontal bars: raw Spearman rho against per-feature held-out R^2 over the full dictionary, and the same rho partialling out per-answer firing frequency. Whiskers are percentile 95% bootstrap CIs carried verbatim from the source JSON."
+}

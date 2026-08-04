@@ -12,3 +12,9 @@ HF Hub enforces **128 commits/hour per repo**, shared across ALL concurrent writ
 - `CommitOperationAdd(path_or_fileobj=str(path))` does **eager sha256** in `__post_init__` — constructing thousands single-threaded takes hours at TB scale; parallelize op construction with a ThreadPoolExecutor (~16 workers) and preupload LFS in parallel (~8 workers).
 - On a 429, sleep ≥65 min (rolling-hour window) and parse any `Retry after N seconds` hint; cap retries.
 - Verify each commit via `list_repo_tree(path_in_repo=..., recursive=True)`, tolerating ~±5% size mismatch for LFS metadata. Keep an append-only JSONL manifest for resumability.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [HF bulk-upload mechanics](feedback_hf_rate_limit.md) — 128 commits/hr shared; batch via create_commit; NEVER upload_large_folder (0-file bug); parallelize eager-sha256 op construction

@@ -1,0 +1,9 @@
+{
+  "revision": "05cb982b0d3f9a21b5735d196a0afdc8175590e5",
+  "git_commit": "86977e774b07d8f25d64817eb3b4d77e59a88898",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "ts": "2026-08-01T01:47:08Z",
+  "data_revision": "05cb982b0d3f9a21b5735d196a0afdc8175590e5",
+  "smoke": false
+}

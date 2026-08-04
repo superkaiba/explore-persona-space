@@ -115,20 +115,34 @@ def load_manifest(rendered_dir: Path) -> dict:
         return json.load(fh)
 
 
-def visible_gpu_count() -> int:
-    """Physical GPU count via an `nvidia-smi` SUBPROCESS, never
-    `torch.cuda.device_count()` — the latter reads a possibly-clobbered
-    CUDA_VISIBLE_DEVICES and caches it (gotchas.md, #1112 shape (b))."""
+def visible_devices() -> list[str]:
+    """The physical device IDs this process may use, in allocation order.
+
+    Indexes INTO a pre-set ``CUDA_VISIBLE_DEVICES`` when present, and only falls
+    back to an `nvidia-smi` enumeration when it is unset. Both halves are
+    load-bearing:
+
+      * `nvidia-smi` (never `torch.cuda.device_count()`, which reads a
+        possibly-clobbered CVD and caches it — gotchas.md, #1112 shape (b));
+      * but `nvidia-smi` lists EVERY host GPU regardless of CVD, so on a shared
+        SLURM node (the `fellows` lane — FIRST in the default auto chain) an
+        absolute `0..n-1` fan-out clobbers the scheduler's allocation onto other
+        users' occupied devices (the #1345 crash-fix 15771 shape: vLLM died at
+        19 GiB free). The pre-set allocation wins whenever it exists.
+    """
+    pre = os.environ.get("CUDA_VISIBLE_DEVICES", "").strip()
+    if pre:
+        return [d.strip() for d in pre.split(",") if d.strip()]
     try:
         out = subprocess.run(
-            ["nvidia-smi", "--query-gpu=index", "--format=csv,noheader"],
+            ["nvidia-smi", "--query-gpu=index", "--format=csv,noheader,nounits"],
             capture_output=True,
             text=True,
             check=True,
         )
     except (subprocess.CalledProcessError, FileNotFoundError, OSError):
-        return 0
-    return len([ln for ln in out.stdout.split("\n") if ln.strip()])
+        return []
+    return [ln.strip() for ln in out.stdout.split("\n") if ln.strip()]
 
 
 def assign_units_to_gpus(entries: list[dict], n_gpus: int) -> dict[int, list[str]]:
@@ -301,6 +315,16 @@ def capture_unit(
     # Addendum E: 5 grid slots per read group (X_clean, X_straddle, Y_mean,
     # Y_end, Y_boundary). Group names + membership are row-independent.
     group_names: list[str] = [g["name"] for g in rows[0].get("read_groups", [])]
+    if not group_names:
+        # A rendered set produced BEFORE addendum E carries no read_groups, so the
+        # grid degrades to empty everywhere (self-consistent, and the fits'
+        # projection then charges 0 grid hours) — but say so loudly rather than
+        # leaving the missing X x Y grid to be discovered downstream.
+        print(
+            "[capture] WARN no read_groups on the rendered rows — this render "
+            "predates the addendum-E X x Y grid; re-run the render to capture it",
+            flush=True,
+        )
     grid_slot_names = [f"{gn}__{k}" for gn in group_names for k in GRID_SLOT_KINDS]
     gacc = {s: np.zeros((n, d_model), dtype=np.float32) for s in grid_slot_names}
     gpos = {
@@ -579,6 +603,14 @@ def run_render_if_missing(args) -> None:
         "--stage-root",
         str(args.stage_root),
     ]
+    # Same-job path (16177 crash): the a1 generator's output exists LOCALLY but
+    # is absent from the Hub at the render's pinned PARENT_REVISION (uploaded
+    # this job, after the pin), so the render's gen_a1 prefix stages empty and
+    # the addendum-C loader fail-louds. Thread the local dir exactly as the
+    # render's --gen-a1-dir contract designs; skip when empty/absent so a
+    # fresh-instance replay keeps the Hub path + fail-loud behavior.
+    if args.gen_a1_dir is not None and any(args.gen_a1_dir.glob("user_slot_a1_onpolicy_*.jsonl")):
+        cmd += ["--gen-a1-dir", str(args.gen_a1_dir)]
     if args.smoke:
         cmd.append("--smoke")
     print(f"[capture] rendering: {' '.join(cmd)}", flush=True)
@@ -655,16 +687,23 @@ def run_dispatch(args) -> int:
     if not entries:
         raise RuntimeError("no units selected")
 
-    n_gpus = args.num_gpus or visible_gpu_count()
+    # `devices` are PHYSICAL ids in allocation order; the plan is keyed on the
+    # LANE index 0..n-1 and mapped through `devices` at launch, so a pre-set
+    # CVD allocation is honored instead of clobbered (see `visible_devices`).
+    devices = visible_devices()
+    if args.num_gpus:
+        devices = devices[: args.num_gpus]
+    n_gpus = len(devices)
     plan = assign_units_to_gpus(entries, n_gpus)
     print(
-        f"[capture] dispatch: {len(entries)} units over {n_gpus} GPUs -> "
-        + json.dumps({str(g): len(v) for g, v in plan.items()}),
+        f"[capture] dispatch: {len(entries)} units over {n_gpus} GPUs "
+        f"(devices {devices}) -> " + json.dumps({devices[g]: len(v) for g, v in plan.items()}),
         flush=True,
     )
 
     procs = []
-    for gpu, unit_ids in plan.items():
+    for lane, unit_ids in plan.items():
+        gpu = devices[lane]
         env = {**os.environ, **_thread_cap_env()}
         # BOTH the launcher-env CVD pin AND the matching --gpu-id: the
         # in-process clobber alone is defeated by any import-time cuInit.
@@ -710,6 +749,7 @@ def run_dispatch(args) -> int:
         fh.close()
         if rc != 0:
             failures.append((gpu, rc))
+            # JSONL_SPLITLINES_EXEMPT: worker LOG tail for crash diagnostics, not JSONL content
             tail = log.read_text(encoding="utf-8", errors="replace").splitlines()[-120:]
             print(f"[capture] gpu{gpu} FAILED rc={rc}; tail of {log}:", flush=True)
             for ln in tail:
@@ -763,6 +803,13 @@ def main() -> int:
         "--rendered-dir",
         type=Path,
         default=REPO_ROOT / "data" / "issue_1689" / ROUND_LABEL / "rendered",
+    )
+    ap.add_argument(
+        "--gen-a1-dir",
+        type=Path,
+        default=REPO_ROOT / "data" / "issue_1689" / ROUND_LABEL / "gen_a1",
+        help="local a1-generator output dir threaded to the render when non-empty "
+        "(the same-job path; the render otherwise reads the gen_a1 Hub prefix)",
     )
     ap.add_argument(
         "--stage-root",

@@ -549,12 +549,18 @@ def check_detailed_writeup_link(
     read (same no-network philosophy as ``htmlpreview-sha``).
     """
     name = "detailed-writeup-link"
-    match = None
-    for ln in blanked_lines:
-        m = _DETAILED_LINE_RE.match(ln)
-        if m is not None:
-            match = m
-            break
+    matches = [m for ln in blanked_lines if (m := _DETAILED_LINE_RE.match(ln)) is not None]
+    if len(matches) > 1:
+        # A follow-up round's re-pin must REPLACE the old line, not stack a
+        # fresh one on top (first-match-wins would silently keep the stale
+        # link in the body).
+        return CheckResult(
+            name,
+            False,
+            f"{len(matches)} '**Detailed writeup:**' lines — exactly one is allowed "
+            "(a follow-up re-pin replaces the old line)",
+        )
+    match = matches[0] if matches else None
     if match is None:
         if mode == "generation":
             return CheckResult(

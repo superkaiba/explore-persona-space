@@ -6,8 +6,9 @@ eigh(Gram) per (source, fold), the lambda grid applied as diagonal filter
 rescalings of that ONE factorization, and nulls as Y-permutations against the
 SAME cached factorization — never a re-solve per lambda / per draw):
 
-  1. cells      per ablation arm x the 4 store slots (prefix / ctx_qend /
-                context / ctx_preans) on the arm's OWN store, with the
+  1. cells      per ablation arm x the 5 store slots (prefix / ctx_qend /
+                context / ctx_preans / ctx_straddle) x both Y targets (answer
+                mean / y_boundary) on the arm's OWN store, with the
                 registered conversation-grouped folds, shuffle nulls, the
                 random-projection + mean baselines, and conversation-level
                 bootstrap CIs.
@@ -30,8 +31,18 @@ Both mapping arms are fit per cell by construction: the `prefix` slot IS the
 prefix-arm map (everything before the query) and the three ctx_* slots are
 context-arm maps (prefix + query) at different read positions.
 
+The X x Y grid (addendum) runs on every captured store that carries the 5-slot x
+2-target shape: each ablation arm, both round-own comparators, AND the
+re-captured V1 boundary-PRESENT anchor (`capture --arm v1`) — the row that makes
+the grid an ablation rather than a description.
+
+`--stage-v1` stages the PARENT V1 turnstore (`instruct_stories_paired_s`, ~5.3
+GB) that the paired arm-vs-V1 bootstrap needs; it is NOT one of
+issue1345_prefetch_reuse's reuse stems, so without the flag that read records
+`skipped`.
+
 CLI:
-  uv run python scripts/issue1345_boundary_ablation_fits.py --phase all
+  uv run python scripts/issue1345_boundary_ablation_fits.py --phase all --stage-v1
   uv run python scripts/issue1345_boundary_ablation_fits.py --phase all --smoke
   uv run python scripts/issue1345_boundary_ablation_fits.py --import-check
 """
@@ -41,6 +52,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -74,7 +86,57 @@ KNN_KS = (1, 5, 10)
 SLIM_KEYS = ("slots", "profiles", "nll")
 # Arms whose story<->chat reparam ladder runs by default (brief: V2 + V4 at
 # minimum — V3 rides along because the ladder is cheap once the stores are open).
+# V5 is deliberately OUT: its pre-registered contrasts (below) are grid/comparator
+# reads, not ladder reads, so the default stays byte-identical in compute for the
+# already-planned run. Opt in per run with `--reparam-arms v5`.
 DEFAULT_REPARAM_ARMS = (bg.ARM_V2, bg.ARM_V3, bg.ARM_V4)
+
+# Pre-registered per-arm contrasts: which ALREADY-COMPUTED verdict fields decide
+# the arm's question, named at BUILD time so the analyzer cannot pick a different
+# pair post hoc. Reads only — no new compute.
+PRE_REGISTERED_CONTRASTS: dict[str, dict] = {
+    bg.ARM_V5: {
+        "boundary_form": {
+            "question": (
+                "is V1's anchor effect carried by the PROSE ATTRIBUTION or by the "
+                "pretraining-familiar turn syntax? V5 holds the story constant and "
+                "swaps the attribution for a bare turn label."
+            ),
+            "decided_by": "CI overlap, V5 vs the boundary-present V1 anchor",
+            "read_fields": [
+                "headline.r2_reduced_basis_primary + headline.ci",
+                "xy_grid.v1_anchor (same X x Y grid on the re-captured V1 store)",
+                "paired_deltas (matched-row V5-vs-V1 bootstrap)",
+            ],
+            "interpretation": (
+                "V5 ~ V1 (CIs overlap) => the boundary FORM does not matter, the "
+                "boundary's presence does; V5 ~ V2 (boundary-absent) => V1's effect "
+                "needs the prose attribution specifically."
+            ),
+        },
+        "residual_story_cost": {
+            "question": (
+                "at MATCHED boundary syntax (both read at a 'User: '-style ':'), how "
+                "much of the story-vs-chat gap survives?"
+            ),
+            "decided_by": "CI overlap, V5 vs the no_template comparator",
+            "read_fields": [
+                "vs_matched_chat.no_template_same_rows (matched-row parent r2 read)",
+                "xy_grid.comparators.no_template (round-own X x Y comparator grid)",
+            ],
+            "interpretation": (
+                "CIs overlap => the residual story cost at matched boundary syntax is "
+                "not resolvable at this n; V5 below no_template => a story-frame cost "
+                "remains after the boundary syntax is matched."
+            ),
+        },
+        "note": (
+            "both contrasts read the SAME fields every other arm already emits — V5 "
+            "adds no new statistic, only the pre-registration of which comparison "
+            "answers which question."
+        ),
+    },
+}
 
 # V1 anchor: the landed conversation_paired_stories_assistant reads. Literals are
 # documentation cross-checks; the values are read LIVE from the committed JSONs.
@@ -92,6 +154,11 @@ V1_MATCHED_CHAT_DOC = {"context": 0.2426, "prefix": 0.1313}
 # The V1 store's own stem + slot order (2 slots: prefix, context).
 V1_STEM_FORMAT = "stories_paired"
 V1_SLOT_INDEX = {"prefix": 0, "context": 1}
+# The parent V1 turnstore is NOT one of issue1345_prefetch_reuse's four r1/r2
+# reuse stems, so `--stage-v1` stages it explicitly; without it `v1_available`
+# reads False and every paired arm-vs-V1 bootstrap silently records `skipped`.
+V1_TURNSTORE_HF_PREFIX = f"issue1345_framing/{bc.V1_PARENT_VARIANT}/analysis_tensors/turnstore"
+V1_TURNSTORE_SHARDS = 5  # instruct_stories_paired_s_shard000..004 (+ sidecars)
 
 # PARENT comparator stores staged by issue1345_prefetch_reuse.py (2 slots,
 # Y_MEAN only) — retained for the V1-PARITY comparator read whose committed
@@ -111,7 +178,7 @@ SLOT_MAP_ARM = {
     "ctx_qend": "context",
     "context": "context",
     "ctx_preans": "context",
-    "x_straddle": "context",
+    "ctx_straddle": "context",
 }
 # Short tags for the two Y targets in cell ids.
 Y_TAG = {bc.Y_MEAN: "ymean", bc.Y_BOUNDARY: "ybnd"}
@@ -120,29 +187,59 @@ Y_TAG = {bc.Y_MEAN: "ymean", bc.Y_BOUNDARY: "ybnd"}
 # ---------------------------------------------------------------------------
 # Cell registry
 # ---------------------------------------------------------------------------
-def grid_cell_id(store_key: str, slot: str, y: str) -> str:
-    """Cell id for one (store, X slot, Y target) grid point."""
-    tag = bg.ARM_SLUG.get(store_key, store_key)
-    return f"R_{bg.MODEL_KEY}_bnd_{tag}_{slot}__{Y_TAG[y]}"
+# Short cell-id tag per grid store (V1's full arm name would bloat every id).
+GRID_TAG = {**bg.ARM_SLUG, bc.V1_ARM: bc.V1_SLUG}
 
 
-def grid_cells(store_key: str) -> list[dict]:
+def grid_cell_id(
+    store_key: str,
+    slot: str,
+    y: str,
+    provenance: str = c.PROV_INJECTED,
+    model_key: str = bg.MODEL_KEY,
+) -> str:
+    """Cell id for one (store, X slot, Y target, provenance, model) grid point.
+
+    The `injected` + round-default-model call appends nothing, so every
+    pre-existing grid cell id is byte-unchanged; the on-policy twin reads
+    ..._bnd_chat_op_context__ymean, and a PRETRAINED-measured store carries the
+    model slug (3 of the 4 on-policy bundles are base-written).
+    """
+    tag = GRID_TAG.get(store_key, store_key) + c.prov_suffix(provenance)
+    return f"R_{c.MODEL_SLUG[model_key]}_bnd_{tag}_{slot}__{Y_TAG[y]}"
+
+
+def grid_cells(
+    store_key: str,
+    provenance: str = c.PROV_INJECTED,
+    model_key: str = bg.MODEL_KEY,
+) -> list[dict]:
     """The store's full X x Y grid: every BND slot crossed with both Y targets.
 
-    ``store_key`` is an ablation arm (V2/V3/V4) or a round-own comparator
-    (``chat`` / ``no_template``) — both carry the identical 5-slot x 2-target
-    store shape, which is what makes the grid comparable across them.
+    ``store_key`` is an ablation arm (V2/V3/V4/V5), the re-captured V1 anchor, or
+    a round-own comparator (``chat`` / ``no_template``) — all carry the identical
+    5-slot x 2-target store shape, which is what makes the grid comparable
+    across them (the V1 row is the boundary-PRESENT anchor the ablation arms are
+    read against at matched (read position x target)).
+
+    ``provenance`` selects WHO WROTE the answers the store reads. An `onpolicy`
+    grid is the matched PAIRED ARM of the identical lattice — same slots, same Y
+    targets, same conv_id space, same store shape — differing only in authorship,
+    which is exactly the contrast the on-policy-vs-injected program measures.
     """
+    fmt = bc.format_key(store_key, provenance)
     return [
         {
-            "cell_id": grid_cell_id(store_key, slot, y),
-            "model_key": bg.MODEL_KEY,
-            "format_key": bc.format_key(store_key),
+            "cell_id": grid_cell_id(store_key, slot, y, provenance, model_key),
+            "model_key": model_key,
+            "format_key": fmt,
             "track": bc.TRACK,
             "slot_index": idx,
             "target_turn_index": bc.Y_TARGET_INDEX[y],
-            "regime": bc.format_key(store_key),
+            "regime": fmt,
             "bnd_arm": store_key,
+            "provenance": provenance,
+            "measured_model": model_key,
             "slot": slot,
             "y_target": y,
             "arm": SLOT_MAP_ARM[slot],
@@ -155,6 +252,80 @@ def grid_cells(store_key: str) -> list[dict]:
 def arm_cells(arm: str) -> list[dict]:
     """The ablation arm's own X x Y grid cells."""
     return grid_cells(arm)
+
+
+CELL_SHARD_ENV = "EPM_I1345_CELL_SHARD"
+# Phases that consume EVERY cell's output. A sharded process holds only its own
+# slice, so running these under a shard would compute the grid/verdict over a
+# fraction of the lattice and report it as complete.
+WHOLE_LATTICE_PHASES = ("all", "grid", "reparam", "verdict")
+
+
+def parse_cell_shard(spec: str | None) -> tuple[int, int] | None:
+    """``"i/N"`` -> (i, N); None/empty -> None (the unsharded default path)."""
+    if spec is None or not str(spec).strip():
+        return None
+    raw = str(spec).strip()
+    assert raw.count("/") == 1, f"--cell-shard must look like i/N, got {raw!r}"
+    i_s, n_s = raw.split("/")
+    assert i_s.strip().isdigit() and n_s.strip().isdigit(), f"non-integer shard spec {raw!r}"
+    i, n = int(i_s), int(n_s)
+    assert n >= 1, f"shard count must be >= 1, got {n}"
+    assert 0 <= i < n, f"shard index {i} out of range for {n} shards"
+    return i, n
+
+
+def shard_of_cell(cell_id: str, n: int) -> int:
+    """Which shard owns ``cell_id`` — a CONTENT hash, stable across processes.
+
+    Deliberately NOT the enumeration index: the op paired rows are
+    presence-gated, so two instances can enumerate different-sized cell lists and
+    an index-modulo partition would then assign the SAME cell to different shards
+    (some cells fit twice, others never). A sha256 of the cell_id is immune to
+    that, and to PYTHONHASHSEED — `hash()` is salted per process and would
+    silently repartition on every run.
+    """
+    return int(hashlib.sha256(cell_id.encode()).hexdigest()[:8], 16) % n
+
+
+def apply_cell_shard(cells: list[dict], shard: tuple[int, int] | None) -> list[dict]:
+    """The subset of ``cells`` this shard owns (identity when unsharded)."""
+    if shard is None:
+        return cells
+    i, n = shard
+    return [cl for cl in cells if shard_of_cell(cl["cell_id"], n) == i]
+
+
+def onpolicy_paired_cells(
+    turnstore_dir: Path,
+    store_keys: list[str],
+    models: tuple[str, ...] = c.MODELS,
+) -> tuple[list[dict], dict[str, bool]]:
+    """The on-policy PAIRED grid rows for every store whose twin is on disk.
+
+    Presence-gated exactly like the injected comparator stores: a registered
+    on-policy twin joins the lattice when ITS store is present, and is reported
+    as absent otherwise — so the fits run unchanged before the on-policy captures
+    land, and pick the paired arm up automatically once they do (no ad-hoc run).
+    Unregistered keys (the ablation arms, which are injection-BY-CONSTRUCTION)
+    are skipped silently — they have no meaningful on-policy twin.
+    """
+    cells: list[dict] = []
+    present: dict[str, bool] = {}
+    fmt_cache: dict[str, str] = {}
+    for key in store_keys:
+        if not bc.has_onpolicy_twin(key):
+            continue
+        fmt = fmt_cache.setdefault(key, bc.format_key(key, c.PROV_ONPOLICY))
+        # Per MEASURED model: the bare-text arm exists for BOTH, chat and
+        # story-slot are base-written this round, and a store that was never
+        # captured simply does not join (the presence gate, unchanged).
+        for mk in models:
+            ok = store_present(turnstore_dir, mk, fmt)
+            present[f"{key}/{mk}"] = ok
+            if ok:
+                cells += grid_cells(key, c.PROV_ONPOLICY, mk)
+    return cells, present
 
 
 def comparator_cells(arm: str, label: str) -> list[dict]:
@@ -236,6 +407,76 @@ def load_bundle(turnstore_dir: Path, model_key: str, format_key: str, expect_slo
     )
     c.assert_pt_bundle(bundle, expect_slots=expect_slots, expect_layers=fc.EXPECTED_LAYERS)
     return bundle
+
+
+def stage_v1_turnstore(turnstore_dir: Path) -> int:
+    """Stage the PARENT's `instruct_stories_paired_s` turnstore into the flat dir.
+
+    Item (d) of the addendum: without this the V1 store is absent, `v1_available`
+    reads False, and the paired arm-vs-V1 bootstrap records `skipped` SILENTLY —
+    the read the ablation is compared against just disappears from the verdict.
+
+    Per-file `hf_hub_download` through the shared retried helper (never
+    `snapshot_download` on the ~1M-file data repo — gotchas.md), staged into a
+    scratch MIRROR dir under `turnstore_dir` and published per file with
+    `os.replace` (same filesystem, atomic, no EXDEV — gotchas.md), because the
+    hub layout nests the repo path while the fit loader expects flat stems
+    (the #1774 mirror-root trap). Idempotent: an already-flat file is skipped.
+    """
+    import os
+    import shutil
+
+    stem = f"{bg.MODEL_KEY}_{V1_STEM_FORMAT}_{bc.TRACK}"
+    names = [
+        f"{stem}_shard{i:03d}{ext}" for i in range(V1_TURNSTORE_SHARDS) for ext in (".pt", ".json")
+    ]
+    turnstore_dir.mkdir(parents=True, exist_ok=True)
+    missing = [n for n in names if not (turnstore_dir / n).exists()]
+    if not missing:
+        print(f"[fits][stage-v1] all {len(names)} V1 store files already present", flush=True)
+        return 0
+    # Headroom check BEFORE any byte lands (the ~5 GB staging discipline): ONE
+    # server-side-SCOPED tree listing for the sizes, retried like every Hub call.
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate.hub import retry_transient
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    entries = retry_transient(
+        lambda: list(
+            api.list_repo_tree(  # HUB_VERIFY_RETRY_EXEMPT: wrapped in retry_transient
+                c.HF_DATA_REPO,
+                path_in_repo=V1_TURNSTORE_HF_PREFIX,
+                repo_type="dataset",
+                recursive=True,
+            )
+        ),
+        what=f"list_repo_tree({V1_TURNSTORE_HF_PREFIX})",
+    )
+    sizes = {e.path.rsplit("/", 1)[-1]: int(getattr(e, "size", 0) or 0) for e in entries}
+    absent = [n for n in missing if n not in sizes]
+    assert not absent, (
+        f"V1 store files absent on the Hub under {V1_TURNSTORE_HF_PREFIX}: {absent} "
+        "— the parent bundle layout changed; re-verify the anchor before staging"
+    )
+    need = sum(sizes[n] for n in missing)
+    free = shutil.disk_usage(turnstore_dir).free
+    print(
+        f"[fits][stage-v1] staging {len(missing)}/{len(names)} files "
+        f"(~{need / 1e9:.2f} GB declared) into {turnstore_dir} (free {free / 1e9:.1f} GB)",
+        flush=True,
+    )
+    assert free >= 1.5 * need, (
+        f"insufficient headroom staging the V1 store: need ~{need / 1e9:.2f} GB x1.5, "
+        f"free {free / 1e9:.2f} GB at {turnstore_dir}"
+    )
+    scratch = turnstore_dir / ".v1_stage"
+    for n in missing:
+        src = c.stage_pinned_file(f"{V1_TURNSTORE_HF_PREFIX}/{n}", scratch, revision="main")
+        os.replace(src, turnstore_dir / n)
+    shutil.rmtree(scratch, ignore_errors=True)
+    print(f"[fits][stage-v1] staged {len(missing)} V1 store files", flush=True)
+    return len(missing)
 
 
 def store_present(turnstore_dir: Path, model_key: str, format_key: str) -> bool:
@@ -395,11 +636,17 @@ def run_cells(
         baselines = mapping_baseline_reads(
             xy, n_folds=n_folds, seed=seed, n_boot=n_boot, ridge_pred=pred if li == LAYER else None
         )
+        # Well-posedness companions on the SAME rows/folds as the ambient fit:
+        # the ambient GCV read above is n<d artifact-bearing on this line.
+        companions = wellposed_companions(
+            xy["X"][fitted, li, :], true, conv, n_folds=n_folds, seed=seed
+        )
         cell_json = out_dir / f"cells_{cid}.json"
         payload = json.loads(cell_json.read_text())
         payload["r2_bootstrap_ci_frozen_layers_conv"] = boot
         payload["n_groups"] = len(np.unique(conv))
         payload["mapping_baselines_headline_layer"] = baselines
+        payload["wellposed_companions"] = companions
         payload["bnd_arm"] = cell.get("bnd_arm")
         payload["slot"] = cell.get("slot")
         payload["y_target"] = cell.get("y_target")
@@ -414,6 +661,10 @@ def run_cells(
             "mean_baseline_r2": payload["mean_baseline_r2"].get(str(li)),
             "skill_over_mean": payload["skill_over_mean"].get(str(li)),
             "baselines": baselines,
+            # PRIMARY within-R2 read for the verdict (the ambient `r2` above is
+            # the artifact-bearing continuity companion).
+            "r2_reduced_basis": companions["reduced_basis"]["r2_heldout"],
+            "companions": companions,
         }
         print(
             f"[fits] {cid} done (n={len(conv)}, groups={payload['n_groups']}, "
@@ -448,6 +699,11 @@ def _fit_regime(
             else None
         ),
         "layer": LAYER,
+        # Companion regime (well-posedness reads): a change to the reduced-basis
+        # k rule or the forced-lambda set changes the persisted output, so it is
+        # part of the resume identity — never a silently-reused stale companion.
+        "reduced_k_cap": int(REDUCED_K_CAP),
+        "forced_lambdas": [float(v) for v in FORCED_LAMBDAS],
     }
 
 
@@ -472,6 +728,8 @@ def _resume_cell(out_dir: Path, preds_dir: Path, cid: str, regime: dict) -> dict
         return None
     if "mapping_baselines_headline_layer" not in payload:
         return None
+    if "wellposed_companions" not in payload:
+        return None  # pre-companion cell JSON — refit rather than resume half a cell
     boot = payload.get("r2_bootstrap_ci_frozen_layers_conv", {})
     return {
         "cell": payload.get("cell", {}),
@@ -482,6 +740,8 @@ def _resume_cell(out_dir: Path, preds_dir: Path, cid: str, regime: dict) -> dict
         "mean_baseline_r2": payload.get("mean_baseline_r2", {}).get(str(LAYER)),
         "skill_over_mean": payload.get("skill_over_mean", {}).get(str(LAYER)),
         "baselines": payload.get("mapping_baselines_headline_layer"),
+        "r2_reduced_basis": (payload["wellposed_companions"]["reduced_basis"]["r2_heldout"]),
+        "companions": payload["wellposed_companions"],
         "resumed": True,
     }
 
@@ -496,6 +756,171 @@ def _null_p975(out_dir: Path, cell_id: str, layer: int) -> float | None:
         return None
     col = [row[layer] for row in m if layer < len(row) and row[layer] == row[layer]]
     return float(np.quantile(col, 0.975)) if col else None
+
+
+# ---------------------------------------------------------------------------
+# Well-posedness companions — reduced PCA basis + forced lambda
+#
+# The sibling story-context-info-probe round showed this line's AMBIENT GCV
+# ridge reads are an n<d ESTIMATION ARTIFACT, not an information result: at
+# n_train 1730 < d 3584 GCV selects the lambda-grid FLOOR (0.01) in 5/5 folds on
+# every full-basis story-input leg, and that floor is what produces the negative
+# within-R2. Same rows, same basis, lambda FORCED to 1e3 moves story context ->
+# story answer from -0.306 to +0.408; a per-fold train-only PCA basis moves it to
+# +0.262. Retrieval and R2 DISSOCIATE across lambda (knn@1 falls as R2 rises), so
+# both companions report kNN per lambda.
+#
+# Recipe copied from that round's `ridge_leg_reduced` + forced-single-value-grid
+# legs (scripts/issue1345_story_info_probe.py @ 3ffc51d581) so these numbers are
+# directly comparable to its published values. Cheap by construction: ONE
+# `fc._prep_fold` per (X, fold) serves the GCV read AND every forced lambda
+# (diagonal rescalings of the same cached eigh), and the reduced leg adds one
+# train-only SVD per fold.
+# ---------------------------------------------------------------------------
+REDUCED_K_CAP = 1024
+FORCED_LAMBDAS = (1e2, 1e3, 1e4)
+# Published reference values these companions must be read against (source of
+# record; NOT asserted — different rows/arms, so they are documentation).
+PROBE_REFERENCE = {
+    "source": (
+        "eval_results/issue_1345/story_context_info_probe/"
+        "{summary.json,forced_lambda_probe.json} @ 3ffc51d581 / 9f0fb74d4a"
+    ),
+    "story_vC_to_story_vA": {
+        "ambient_gcv_r2": -0.306,
+        "reduced_basis_r2_on_policy": 0.262,
+        "reduced_basis_r2_teacher_forced": 0.367,
+        "forced_lambda_1e2_r2": 0.1605,
+        "forced_lambda_1e3_r2": 0.4075,
+        "forced_lambda_1e4_r2": 0.4180,  # the PEAK of the swept grid, not 1e3
+    },
+    # Guard against a known mislabel: +0.4359 / +0.4403 at lambda 1e3 / 1e4 are
+    # story context -> CHAT context, NOT story -> story answer (+0.4075 / +0.4180).
+    "story_vC_to_chat_vC": {"forced_lambda_1e3_r2": 0.4359, "forced_lambda_1e4_r2": 0.4403},
+    "note": (
+        "ambient GCV picks the lambda-grid floor 0.01 in 5/5 folds at n_train<d; "
+        "the committed V1 anchor -0.3056 is the ARTIFACT-BEARING read"
+    ),
+    "citation_guidance": (
+        "for a single UNSELECTED headline figure cite the reduced-basis leg (per-fold "
+        "GCV in a train-fold-only basis, no post-hoc selection); the forced-lambda "
+        "sweep is a best-of-grid HELD-OUT estimate and carries selection"
+    ),
+}
+
+
+def reduced_basis_k(n_train: int, d_in: int) -> int:
+    """k for the well-posed companion basis: min(1024, floor(n_train/2), d_in)."""
+    return int(max(1, min(REDUCED_K_CAP, n_train // 2, d_in)))
+
+
+def _pooled_heldout_r2(y_true: np.ndarray, y_pred: np.ndarray, folds: np.ndarray) -> float:
+    """Parent/probe convention: pooled 1 - SSE/SST with the HELD-OUT fold mean as SST."""
+    ss_res = 0.0
+    ss_tot = 0.0
+    for f in np.unique(folds):
+        te = folds == f
+        t = y_true[te].astype(np.float64)
+        ss_res += float(((t - y_pred[te].astype(np.float64)) ** 2).sum())
+        ss_tot += float(((t - t.mean(0)) ** 2).sum())
+    return float(1.0 - ss_res / ss_tot)
+
+
+def _knn_reads(pred: np.ndarray, y: np.ndarray) -> dict:
+    """kNN-through-the-map retrieval, both metrics (the standing mapping read)."""
+    return {
+        m: mb.knn_retrieval(pred, y, ks=list(KNN_KS), metric=m) for m in ("euclidean", "cosine")
+    }
+
+
+def companions_shared_x(
+    x: np.ndarray, ys: dict[str, np.ndarray], conv_ids, *, n_folds: int, seed: int
+) -> dict[str, dict]:
+    """Companion reads for ONE X against MULTIPLE Y targets, X work SHARED.
+
+    The ambient `_prep_fold` (the expensive eigh) and the train-only PCA basis
+    depend ONLY on X, so both are computed once per fold and reused across every
+    Y target — the same "X-side factorizations shared across Y" contract the
+    ambient grid honors. Returns one block per Y name.
+    """
+    x = np.asarray(x)
+    conv = np.asarray([str(v) for v in conv_ids])
+    folds = fc._cv_folds(conv, n_folds, seed)
+    uniq = np.unique(folds)
+    n_tr_min = min(int((folds != f).sum()) for f in uniq)
+    k = reduced_basis_k(n_tr_min, x.shape[1])
+    forced = {
+        name: {lam: np.zeros_like(np.asarray(y), dtype=np.float32) for lam in FORCED_LAMBDAS}
+        for name, y in ys.items()
+    }
+    reduced = {name: np.zeros_like(np.asarray(y), dtype=np.float32) for name, y in ys.items()}
+    reduced_lams: dict[str, list[float]] = {name: [] for name in ys}
+    for f in uniq:
+        te = folds == f
+        tr = ~te
+        # ONE ambient prep per fold — reused across every forced lambda AND every
+        # Y target (lambda enters only as a diagonal rescaling of this eigh).
+        cache = fc._prep_fold(x[tr], x[te])
+        # Reduced basis: per-fold TRAIN-only PCA, centering only (the probe's
+        # recipe; `_prep_fold` then standardizes the PCA coordinates, which is
+        # what the published +0.262 reference measured). X-only => shared.
+        mu = x[tr].mean(0)
+        _, _, vt = np.linalg.svd(x[tr] - mu, full_matrices=False)
+        basis = vt[: min(k, vt.shape[0])]
+        cache_red = fc._prep_fold((x[tr] - mu) @ basis.T, (x[te] - mu) @ basis.T)
+        for name, y_any in ys.items():
+            y = np.asarray(y_any)
+            for lam in FORCED_LAMBDAS:
+                forced[name][lam][te] = np.asarray(
+                    fc._ridge_predict_cached(cache, y[tr], lambdas=[lam]), dtype=np.float32
+                )
+            p_red, lam_red = fc._ridge_predict_cached(cache_red, y[tr], return_lam=True)
+            reduced[name][te] = np.asarray(p_red, dtype=np.float32)
+            reduced_lams[name].append(float(lam_red))
+    out: dict[str, dict] = {}
+    for name, y_any in ys.items():
+        y = np.asarray(y_any)
+        out[name] = {
+            "folds": {"n_folds": int(len(uniq)), "seed": int(seed), "n_train_min": int(n_tr_min)},
+            "d_in": int(x.shape[1]),
+            "underdetermined_ambient": bool(n_tr_min < x.shape[1]),
+            "reduced_basis": {
+                "k": int(k),
+                "k_rule": "min(1024, floor(n_train_min/2), d_in)",
+                "pca_fit": "per-fold TRAIN rows only, centering only (no held-out leakage)",
+                "pca_coords_standardized_by_prep_fold": True,
+                "r2_heldout": _pooled_heldout_r2(y, reduced[name], folds),
+                "gcv_lambda_per_fold": reduced_lams[name],
+                "knn": _knn_reads(reduced[name], y),
+            },
+            "forced_lambda": {
+                f"lambda_{lam:.0e}": {
+                    "lambda": float(lam),
+                    "r2_heldout": _pooled_heldout_r2(y, forced[name][lam], folds),
+                    "knn": _knn_reads(forced[name][lam], y),
+                }
+                for lam in FORCED_LAMBDAS
+            },
+            # The forced sweep is DIAGNOSTIC: reading max-over-lambda as the map's
+            # skill is post-hoc selection on the held-out estimate itself, so it
+            # must never carry a headline. The reduced-basis leg above selects
+            # lambda per fold by GCV inside a train-fold-only basis and is the
+            # clean unselected citation (hence the verdict's PRIMARY read).
+            "forced_lambda_selection_bearing": True,
+            "forced_lambda_note": (
+                "best-of-grid held-out estimate; diagnostic only — cite the "
+                "reduced-basis read for any headline"
+            ),
+            "probe_reference": PROBE_REFERENCE,
+        }
+    return out
+
+
+def wellposed_companions(
+    x: np.ndarray, y: np.ndarray, conv_ids, *, n_folds: int, seed: int
+) -> dict:
+    """Single-Y wrapper over `companions_shared_x` (ONE companion recipe)."""
+    return companions_shared_x(x, {"y": y}, conv_ids, n_folds=n_folds, seed=seed)["y"]
 
 
 # ---------------------------------------------------------------------------
@@ -567,7 +992,10 @@ def _load_preds(preds_dir: Path, cell_id: str) -> tuple[np.ndarray, np.ndarray, 
 def _t(a: np.ndarray):
     import torch
 
-    return torch.as_tensor(np.asarray(a), dtype=torch.float64)
+    # On the fit device: keeps the grid/ladder ridge batteries on GPU when one
+    # is visible (the 17912 crash class is separately closed source-side —
+    # ma._ridge_prep now pins its inner caches to the caller's device).
+    return torch.as_tensor(np.asarray(a), dtype=torch.float64, device=fc._fit_device())
 
 
 def xy_grid(
@@ -639,6 +1067,15 @@ def xy_grid(
             for y in bc.Y_SPAN_ORDER:
                 out[f"{slot}|{y}"] = {"skipped": "no usable folds"}
             continue
+        # Well-posedness companions for this slot, X-side work shared across BOTH
+        # Y targets (the ambient reads above are n<d artifact-bearing).
+        comp = companions_shared_x(
+            X.cpu().numpy()[fitted],
+            {y: Y.cpu().numpy()[fitted] for y, Y in Ys.items()},
+            conv[fitted],
+            n_folds=n_folds,
+            seed=seed,
+        )
         for y, Y in Ys.items():
             true = Y.cpu().numpy()[fitted]
             pred = preds[y][fitted]
@@ -680,6 +1117,10 @@ def xy_grid(
                         n_boot=n_boot,
                         seed=seed + 700 + si,
                     )
+            rec["companions"] = comp[y]
+            # PRIMARY within-R2 read for this grid point (`r2` above stays as the
+            # artifact-bearing ambient-GCV continuity companion).
+            rec["r2_reduced_basis"] = comp[y]["reduced_basis"]["r2_heldout"]
             out[f"{slot}|{y}"] = rec
     return {
         "store": store_key,
@@ -859,6 +1300,7 @@ def build_verdict(
     *,
     n_kept: int,
     n_intersection: int | None,
+    v1_grid: dict | None = None,
 ) -> dict:
     """Per-arm verdict record: the headline read against every reference."""
     slug = bg.ARM_SLUG[arm]
@@ -874,19 +1316,44 @@ def build_verdict(
         "layer": LAYER,
         "n_kept_stories": n_kept,
         "n_intersection_with_v1": n_intersection,
+        # PRIMARY within-R2 read = the REDUCED-BASIS companion. The ambient GCV
+        # value is retained under `*_ambient_gcv_continuity` for continuity with
+        # the published anchor and is ARTIFACT-BEARING at n_train < d (GCV picks
+        # the lambda-grid floor; see PROBE_REFERENCE) — never read it as the
+        # information content of the map.
+        "primary_read": "reduced_basis",
+        "primary_read_note": (
+            "reduced-basis within-R2 is the primary read; ambient GCV is the "
+            "artifact-bearing continuity companion (n_train<d floor-lambda selection)"
+        ),
         "slots": {
             cell_summary[cid]["cell"]["slot"]: {
-                k: cell_summary[cid].get(k) for k in ("r2", "ci", "null_p975", "skill_over_mean")
+                "r2_reduced_basis_primary": cell_summary[cid].get("r2_reduced_basis"),
+                "r2_ambient_gcv_continuity": cell_summary[cid].get("r2"),
+                **{k: cell_summary[cid].get(k) for k in ("ci", "null_p975", "skill_over_mean")},
+                "companions": cell_summary[cid].get("companions"),
             }
             for cid in (grid_cell_id(arm, s, bc.Y_MEAN) for s in bc.BND_SLOT_ORDER)
             if cid in cell_summary and "cell" in cell_summary[cid]
         },
-        "headline": {k: own.get(k) for k in ("r2", "ci", "null_p975", "skill_over_mean")},
+        "headline": {
+            "r2_reduced_basis_primary": own.get("r2_reduced_basis"),
+            "r2_ambient_gcv_continuity": own.get("r2"),
+            **{k: own.get(k) for k in ("ci", "null_p975", "skill_over_mean")},
+            "companions": own.get("companions"),
+        },
         "baselines_headline_slot": own.get("baselines"),
         "vs_v1_anchor_committed": {
             "anchor": anchor,
             "anchor_doc_crosscheck": V1_ANCHOR_DOC["context"],
-            "delta_point": (
+            "anchor_is_artifact_bearing": True,
+            "anchor_note": (
+                "the committed V1 anchor is an AMBIENT-GCV read at n_train<d — an "
+                "estimation artifact, not the map's information content; kept as a "
+                "parity check that this round reproduces the published pipeline, "
+                "NOT as a science reference (PROBE_REFERENCE)"
+            ),
+            "delta_point_ambient_gcv": (
                 (own.get("r2") - anchor["r2"]) if (own.get("r2") is not None and anchor) else None
             ),
             "independent_cis_disjoint": _cis_disjoint(own.get("ci"), anchor),
@@ -900,13 +1367,25 @@ def build_verdict(
             "no_template_same_rows": {k: nt_cell.get(k) for k in ("r2", "ci")},
         },
         "paired_deltas": paired,
+        # Pre-registered contrast map (arms that have one; reads only — see
+        # PRE_REGISTERED_CONTRASTS). Absent-by-default keeps every other arm's
+        # verdict shape unchanged.
+        **(
+            {"pre_registered_contrasts": PRE_REGISTERED_CONTRASTS[arm]}
+            if arm in PRE_REGISTERED_CONTRASTS
+            else {}
+        ),
         "reparam_story_vs_chat": reparam,
-        # The consolidated X x Y measurement grid (addendum): the arm's own grid
-        # plus the same grid on each round-own comparator store, so every
-        # (read position x target) pair is comparable arm-vs-comparator.
+        # The consolidated X x Y measurement grid (addendum): the arm's own grid,
+        # the same grid on each round-own comparator store, AND the same grid on
+        # the re-captured V1 anchor — so every (read position x target) pair is
+        # comparable arm-vs-comparator AND arm-vs-boundary-present-anchor. The
+        # V1 row is what makes the grid an ABLATION rather than a description:
+        # a collapse that disappears at (x_clean, y_boundary) for V1 too was a
+        # read-position artifact, not the boundary.
         "xy_grid": {
             "x_clean_slot": bc.X_CLEAN_SLOT,
-            "x_straddle_slot": bc.X_STRADDLE_SLOT,
+            "ctx_straddle_slot": bc.X_STRADDLE_SLOT,
             "y_targets": list(bc.Y_SPAN_ORDER),
             "transition_appended_verbatim": (
                 bc.TRANSITION[arm]["closer"] + bc.TRANSITION[arm]["suffix"]
@@ -914,6 +1393,11 @@ def build_verdict(
             "transition_read_anchor": bc.TRANSITION[arm]["read_anchor"],
             "arm": grid,
             "comparators": comparator_grids,
+            "v1_anchor": (
+                v1_grid
+                if v1_grid is not None
+                else {"skipped": "V1 X x Y store not captured (capture --arm v1)"}
+            ),
         },
     }
     return verdict
@@ -942,6 +1426,13 @@ def main() -> None:
     )
     ap.add_argument("--arms", default=",".join(bg.ARM_SLUG[a] for a in bg.GEN_ARMS))
     ap.add_argument(
+        "--no-arms",
+        action="store_true",
+        help="COMPANION lattice: run the comparator / V1-grid / on-policy paired cells "
+        "with ZERO ablation arms. Required when the turnstore has no v2-v5 stores — the "
+        "default --arms would demand their sidecars. Ignores --arms entirely.",
+    )
+    ap.add_argument(
         "--reparam-arms",
         default=None,
         help="arms whose story<->chat reparam ladder runs (default: every --arms "
@@ -949,6 +1440,13 @@ def main() -> None:
         "fails loud rather than silently doing nothing)",
     )
     ap.add_argument("--turnstore-dir", type=Path, default=c.TURNSTORE_DIR)
+    ap.add_argument(
+        "--stage-v1",
+        action="store_true",
+        help="stage the PARENT V1 turnstore (instruct_stories_paired_s, ~5.3 GB) from "
+        "the parent HF prefix BEFORE fitting, so the paired arm-vs-V1 bootstrap "
+        "cannot silently record `skipped` (it is NOT one of prefetch_reuse's stems)",
+    )
     ap.add_argument("--stories-dir", type=Path, default=c.STORIES_DIR)
     ap.add_argument("--out-dir", type=Path, default=c.EVAL_DIR / "story_boundary_ablation")
     ap.add_argument("--preds-dir", type=Path, default=c.PREDS_CACHE_DIR / "boundary_ablation")
@@ -964,6 +1462,17 @@ def main() -> None:
         "(default: resume, so a mid-phase kill never forfeits completed cells)",
     )
     ap.add_argument(
+        "--cell-shard",
+        default=os.environ.get(CELL_SHARD_ENV, ""),
+        help=(
+            f"'i/N' — fit only this shard's cells (env {CELL_SHARD_ENV}). Cells are "
+            "embarrassingly parallel ACROSS instances; the partition is a sha256 of "
+            "cell_id, so every process agrees on ownership even when presence-gating "
+            "makes their enumerated lists differ. --phase cells ONLY: the whole-lattice "
+            "phases need every cell's output. Unset = the unsharded default path."
+        ),
+    )
+    ap.add_argument(
         "--import-check",
         action="store_true",
         help="resolve every deferred import on the real code path and exit 0",
@@ -974,9 +1483,36 @@ def main() -> None:
         _import_check()
         return
 
+    # Validate the shard/phase pairing BEFORE any store access: a sharded process
+    # holds one slice, so a whole-lattice phase would compute the grid/verdict over
+    # a fraction and report it complete. Checked here rather than after enumeration
+    # so it costs nothing and fails on a box with no stores staged.
+    shard = parse_cell_shard(args.cell_shard)
+    assert not (shard is not None and args.phase in WHOLE_LATTICE_PHASES), (
+        f"--phase {args.phase} consumes EVERY cell's output, but --cell-shard "
+        f"{args.cell_shard} holds only this shard's slice — it would compute the lattice "
+        "over a fraction and report it complete. Run the sharded instances with "
+        "--phase cells, then ONE UNSHARDED --phase all over the staged union."
+    )
+
     bg.assert_round_env()
-    arms = [bg.SLUG_ARM.get(a, a) for a in args.arms.split(",") if a]
-    assert arms and set(arms) <= set(bg.GEN_ARMS), arms
+    # --no-arms runs a COMPANION lattice: comparator + V1-grid + on-policy paired
+    # cells only, with ZERO ablation arms. Those cells come from the comparator /
+    # op stores and never touch `arms`, so every arms-keyed consumer below
+    # (arm_convs, the per-arm cell loop, paired_by_arm, reparam_by_arm, verdicts)
+    # is a comprehension or loop that yields empty — but the non-empty assert
+    # fired first, and with the DEFAULT --arms the enumeration also demanded
+    # v2/v3/v4/v5 sidecars a companion turnstore deliberately does not have.
+    #
+    # Kept as an EXPLICIT flag rather than just relaxing the assert to accept an
+    # empty --arms: an empty string from a typo or an unset env var would then
+    # silently produce an arms-free lattice instead of failing loudly.
+    arms = [] if args.no_arms else [bg.SLUG_ARM.get(a, a) for a in args.arms.split(",") if a]
+    assert args.no_arms or arms, (
+        "--arms parsed empty; pass --no-arms to run the companion (comparator + "
+        "on-policy paired) lattice deliberately"
+    )
+    assert set(arms) <= set(bg.GEN_ARMS), arms
     if args.reparam_arms is None:
         # Default INTERSECTS --arms, so narrowing --arms never trips the guard.
         reparam_arms = [a for a in arms if a in DEFAULT_REPARAM_ARMS]
@@ -995,7 +1531,13 @@ def main() -> None:
     arm_convs = {
         arm: store_conv_ids(args.turnstore_dir, bg.MODEL_KEY, bc.format_key(arm)) for arm in arms
     }
+    if args.stage_v1:
+        stage_v1_turnstore(args.turnstore_dir)
     v1_available = store_present(args.turnstore_dir, bg.MODEL_KEY, V1_STEM_FORMAT)
+    assert v1_available or not args.stage_v1, (
+        "--stage-v1 ran but the V1 store is still absent — staging is fail-loud, so "
+        "this means the stem/track convention drifted"
+    )
     v1_convs = (
         store_conv_ids(args.turnstore_dir, bg.MODEL_KEY, V1_STEM_FORMAT) if v1_available else []
     )
@@ -1008,10 +1550,16 @@ def main() -> None:
         key: store_present(args.turnstore_dir, bg.MODEL_KEY, bc.format_key(key))
         for key in BND_COMPARATORS
     }
+    # The round's OWN re-capture of the V1 anchor at the X x Y shape (capture
+    # --arm v1). DISTINCT from `v1_available` above, which is the PARENT 2-slot
+    # store used for the paired arm-vs-V1 bootstrap: this one carries the same
+    # 5 slots x 2 Y targets as every arm, so the grid gets a boundary-PRESENT row.
+    v1_grid_available = store_present(args.turnstore_dir, bg.MODEL_KEY, bc.format_key(bc.V1_ARM))
     print(
         f"[fits] arms={[bg.ARM_SLUG[a] for a in arms]} "
         f"kept={{{', '.join(f'{bg.ARM_SLUG[a]}:{len(v)}' for a, v in arm_convs.items())}}} "
-        f"v1_store={v1_available} parent_comparators={comparators_available} "
+        f"v1_store={v1_available} v1_xy_store={v1_grid_available} "
+        f"parent_comparators={comparators_available} "
         f"xy_comparators={bnd_comparators_available}",
         flush=True,
     )
@@ -1050,6 +1598,63 @@ def main() -> None:
             print(f"[fits] X x Y comparator store {key} absent — grid cells skipped", flush=True)
             continue
         cells += grid_cells(key)
+    # The V1 anchor's own X x Y row (capture --arm v1), same treatment.
+    if v1_grid_available:
+        cells += grid_cells(bc.V1_ARM)
+    else:
+        print(
+            f"[fits] X x Y V1 store {bc.format_key(bc.V1_ARM)} absent — the grid has NO "
+            "boundary-present anchor row (run capture --arm v1)",
+            flush=True,
+        )
+
+    # ON-POLICY paired arm of the SAME lattice (the on-policy-vs-injected
+    # program): every registered on-policy twin whose store is on disk joins here
+    # with identical slots / Y targets / conv_id space, so injected-vs-onpolicy is
+    # reported as a matched pair rather than a separate ad-hoc run. Presence-gated,
+    # so this is a no-op until the on-policy captures land.
+    op_cells, op_present = onpolicy_paired_cells(
+        args.turnstore_dir, [*bnd_comparators_available, bc.V1_ARM]
+    )
+    cells += op_cells
+    if op_present:
+        landed = sorted(k for k, ok in op_present.items() if ok)
+        missing = sorted(k for k, ok in op_present.items() if not ok)
+        print(
+            f"[fits] on-policy paired arm: {len(op_cells)} cells from {landed or 'none'}"
+            + (f"; absent (skipped): {missing}" if missing else ""),
+            flush=True,
+        )
+
+    # An EMPTY lattice is a configuration error, not a valid run. Without this the
+    # driver writes an empty cell_summary.json / xy_grid.json and prints its normal
+    # done line having fit nothing — observed with --no-arms against a turnstore
+    # path that had no stores. The companion run is exactly where that is
+    # plausible (fresh _fulln dirs, stores staged separately), and the arms-free
+    # lattice removed the incidental non-emptiness the arm cells used to provide.
+    assert cells, (
+        f"enumeration produced ZERO cells from turnstore {args.turnstore_dir} — nothing "
+        "to fit. With --no-arms the lattice is comparator + V1-grid + on-policy paired "
+        "cells only, so an unstaged or mis-pointed turnstore yields an empty run that "
+        "would otherwise report success."
+    )
+
+    # Shard AFTER full enumeration (so every process partitions the same registry)
+    # and BEFORE bundle loading (so a shard pays only for the stores its own cells
+    # read — loading all bundles per shard would spend the wall-clock the shard
+    # exists to save).
+    if shard is not None:
+        before = len(cells)
+        cells = apply_cell_shard(cells, shard)
+        print(
+            f"[fits] cell shard {shard[0]}/{shard[1]}: {len(cells)}/{before} cells "
+            f"-> {sorted(cl['cell_id'] for cl in cells)}",
+            flush=True,
+        )
+        assert cells, (
+            f"shard {shard[0]}/{shard[1]} selected 0 of {before} cells — more shards than "
+            "cells, or an enumeration that produced nothing"
+        )
 
     bundles: dict[tuple[str, str], dict] = {}
     for cell in cells:
@@ -1074,8 +1679,17 @@ def main() -> None:
             smoke=args.smoke,
             resume=not args.no_resume,
         )
+        # A shard holds a SLICE, so it must not write the filename the whole-lattice
+        # phases read: a partial cell_summary.json staged onto the union box would
+        # satisfy `--phase grid`'s existence assert and silently supply a quarter
+        # of the lattice. Shard-scoped name => that path fails loud instead.
+        summary_name = (
+            "cell_summary.json"
+            if shard is None
+            else f"cell_summary.shard{shard[0]}of{shard[1]}.json"
+        )
         c.write_json(
-            args.out_dir / "cell_summary.json",
+            args.out_dir / summary_name,
             {
                 "metadata": c.metadata(
                     args.seed, len(cell_summary), "scripts/issue1345_boundary_ablation_fits.py"
@@ -1132,7 +1746,11 @@ def main() -> None:
     # X x Y grid with the X-side factorization SHARED across Y (addendum).
     grid_by_store: dict[str, dict] = {}
     if args.phase in ("all", "cells", "grid", "verdict"):
-        grid_stores = list(arms) + [k for k, ok in bnd_comparators_available.items() if ok]
+        grid_stores = (
+            list(arms)
+            + [k for k, ok in bnd_comparators_available.items() if ok]
+            + ([bc.V1_ARM] if v1_grid_available else [])
+        )
         for key in grid_stores:
             bkey = (bg.MODEL_KEY, bc.format_key(key))
             if bkey not in bundles:
@@ -1173,7 +1791,7 @@ def main() -> None:
                 "layer": LAYER,
                 "x_slots": list(bc.BND_SLOT_ORDER),
                 "x_clean_slot": bc.X_CLEAN_SLOT,
-                "x_straddle_slot": bc.X_STRADDLE_SLOT,
+                "ctx_straddle_slot": bc.X_STRADDLE_SLOT,
                 "y_targets": list(bc.Y_SPAN_ORDER),
                 "transition_suffixes_verbatim": {
                     k: {
@@ -1258,11 +1876,21 @@ def main() -> None:
                 arm,
                 cell_summary,
                 paired_by_arm.get(arm, {}),
-                reparam_by_arm.get(arm, {"skipped": "reparam phase not run"}),
+                reparam_by_arm.get(
+                    arm,
+                    {
+                        "skipped": (
+                            "arm outside --reparam-arms scope"
+                            if arm not in reparam_arms
+                            else "reparam phase not run"
+                        )
+                    },
+                ),
                 grid_by_store.get(arm, {"skipped": "grid phase not run"}),
                 {k: grid_by_store[k] for k in BND_COMPARATORS if k in grid_by_store},
                 n_kept=len(arm_convs[arm]),
                 n_intersection=(len(inter[arm]) if arm in inter else None),
+                v1_grid=grid_by_store.get(bc.V1_ARM),
             )
             for arm in arms
         }
@@ -1289,10 +1917,15 @@ def main() -> None:
             },
         )
         for arm, v in verdicts.items():
+            # The headline carries the two NAMED reads (`r2_reduced_basis_primary`
+            # / `r2_ambient_gcv_continuity`) — a bare `r2` key was renamed away
+            # when the well-posedness companions landed, so print both names.
+            anchor = v["vs_v1_anchor_committed"]["anchor"]
             print(
                 f"[verdict] {bg.ARM_SLUG[arm]} L{LAYER} {bc.HEADLINE_SLOT} "
-                f"R2={v['headline'].get('r2')} vs V1 anchor "
-                f"{v['vs_v1_anchor_committed']['anchor'] and v['vs_v1_anchor_committed']['anchor']['r2']}",
+                f"R2_reduced={v['headline'].get('r2_reduced_basis_primary')} "
+                f"R2_ambient_gcv={v['headline'].get('r2_ambient_gcv_continuity')} "
+                f"vs V1 anchor(ambient) {anchor and anchor['r2']}",
                 flush=True,
             )
     print(f"[done] boundary-ablation fits -> {args.out_dir}", flush=True)

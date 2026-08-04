@@ -1,0 +1,2243 @@
+{
+ "adapter_configs": {
+  "cas-bare-con-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 50
+  },
+  "cas-bare-con-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 50
+  },
+  "cas-bare-po-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 35
+  },
+  "cas-bare-po-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 35
+  },
+  "cas-conv-con-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 15
+  },
+  "cas-conv-con-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 10
+  },
+  "cas-conv-po-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 5
+  },
+  "cas-conv-po-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 5
+  },
+  "cas-icl-con-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 30
+  },
+  "cas-icl-con-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 10
+  },
+  "cas-icl-po-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 15
+  },
+  "cas-icl-po-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 25
+  },
+  "cas-pers-con-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 30
+  },
+  "cas-pers-con-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 30
+  },
+  "cas-pers-po-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 25
+  },
+  "cas-pers-po-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 25
+  },
+  "imp-bare-con-rep-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 45
+  },
+  "imp-bare-con-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 35
+  },
+  "imp-bare-con-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 45
+  },
+  "imp-bare-po-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 70
+  },
+  "imp-bare-po-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 65
+  },
+  "imp-conv-con-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 20
+  },
+  "imp-conv-con-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 25
+  },
+  "imp-conv-po-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 20
+  },
+  "imp-conv-po-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 25
+  },
+  "imp-icl-con-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 35
+  },
+  "imp-icl-con-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 10
+  },
+  "imp-icl-po-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 35
+  },
+  "imp-icl-po-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 55
+  },
+  "imp-pers-con-rep-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 60
+  },
+  "imp-pers-con-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 30
+  },
+  "imp-pers-con-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 20
+  },
+  "imp-pers-po-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 50
+  },
+  "imp-pers-po-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 40
+  },
+  "syc-bare-con-rep-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 20
+  },
+  "syc-bare-con-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 20
+  },
+  "syc-bare-con-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 25
+  },
+  "syc-bare-po-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 20
+  },
+  "syc-bare-po-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 20
+  },
+  "syc-conv-con-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 5
+  },
+  "syc-conv-con-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 5
+  },
+  "syc-conv-po-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 5
+  },
+  "syc-conv-po-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 5
+  },
+  "syc-icl-con-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 10
+  },
+  "syc-icl-con-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 10
+  },
+  "syc-icl-po-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 10
+  },
+  "syc-icl-po-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 5
+  },
+  "syc-pers-con-rep-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 15
+  },
+  "syc-pers-con-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 15
+  },
+  "syc-pers-con-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 15
+  },
+  "syc-pers-po-sv-s137": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 15
+  },
+  "syc-pers-po-sv-s42": {
+   "lora_alpha": 64,
+   "r": 32,
+   "step": 15
+  }
+ },
+ "adapter_repo": "superkaiba1/explore-persona-space-overflow",
+ "adapter_revision": "11e9d8695ff8b03a60607677a3e7a2adf878434d",
+ "arm_meta": {
+  "cas-bare-con-sv-s137": {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "bare",
+   "instrument": "pv_trait_score",
+   "regime": "con",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "cas-bare-con-sv-s42": {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "bare",
+   "instrument": "pv_trait_score",
+   "regime": "con",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "cas-bare-po-sv-s137": {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "bare",
+   "instrument": "pv_trait_score",
+   "regime": "po",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "cas-bare-po-sv-s42": {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "bare",
+   "instrument": "pv_trait_score",
+   "regime": "po",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "cas-conv-con-sv-s137": {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "conv",
+   "instrument": "pv_trait_score",
+   "regime": "con",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "cas-conv-con-sv-s42": {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "conv",
+   "instrument": "pv_trait_score",
+   "regime": "con",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "cas-conv-po-sv-s137": {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "conv",
+   "instrument": "pv_trait_score",
+   "regime": "po",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "cas-conv-po-sv-s42": {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "conv",
+   "instrument": "pv_trait_score",
+   "regime": "po",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "cas-icl-con-sv-s137": {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "icl",
+   "instrument": "pv_trait_score",
+   "regime": "con",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "cas-icl-con-sv-s42": {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "icl",
+   "instrument": "pv_trait_score",
+   "regime": "con",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "cas-icl-po-sv-s137": {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "icl",
+   "instrument": "pv_trait_score",
+   "regime": "po",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "cas-icl-po-sv-s42": {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "icl",
+   "instrument": "pv_trait_score",
+   "regime": "po",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "cas-pers-con-sv-s137": {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "pers",
+   "instrument": "pv_trait_score",
+   "regime": "con",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "cas-pers-con-sv-s42": {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "pers",
+   "instrument": "pv_trait_score",
+   "regime": "con",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "cas-pers-po-sv-s137": {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "pers",
+   "instrument": "pv_trait_score",
+   "regime": "po",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "cas-pers-po-sv-s42": {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "pers",
+   "instrument": "pv_trait_score",
+   "regime": "po",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "imp-bare-con-rep-s42": {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "bare",
+   "instrument": "registered_graded_r23",
+   "regime": "con",
+   "seed": 42,
+   "visit": "rep"
+  },
+  "imp-bare-con-sv-s137": {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "bare",
+   "instrument": "registered_graded_r23",
+   "regime": "con",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "imp-bare-con-sv-s42": {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "bare",
+   "instrument": "registered_graded_r23",
+   "regime": "con",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "imp-bare-po-sv-s137": {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "bare",
+   "instrument": "registered_graded_r23",
+   "regime": "po",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "imp-bare-po-sv-s42": {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "bare",
+   "instrument": "registered_graded_r23",
+   "regime": "po",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "imp-conv-con-sv-s137": {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "conv",
+   "instrument": "registered_graded_r23",
+   "regime": "con",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "imp-conv-con-sv-s42": {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "conv",
+   "instrument": "registered_graded_r23",
+   "regime": "con",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "imp-conv-po-sv-s137": {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "conv",
+   "instrument": "registered_graded_r23",
+   "regime": "po",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "imp-conv-po-sv-s42": {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "conv",
+   "instrument": "registered_graded_r23",
+   "regime": "po",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "imp-icl-con-sv-s137": {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "icl",
+   "instrument": "registered_graded_r23",
+   "regime": "con",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "imp-icl-con-sv-s42": {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "icl",
+   "instrument": "registered_graded_r23",
+   "regime": "con",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "imp-icl-po-sv-s137": {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "icl",
+   "instrument": "registered_graded_r23",
+   "regime": "po",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "imp-icl-po-sv-s42": {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "icl",
+   "instrument": "registered_graded_r23",
+   "regime": "po",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "imp-pers-con-rep-s42": {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "pers",
+   "instrument": "registered_graded_r23",
+   "regime": "con",
+   "seed": 42,
+   "visit": "rep"
+  },
+  "imp-pers-con-sv-s137": {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "pers",
+   "instrument": "registered_graded_r23",
+   "regime": "con",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "imp-pers-con-sv-s42": {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "pers",
+   "instrument": "registered_graded_r23",
+   "regime": "con",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "imp-pers-po-sv-s137": {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "pers",
+   "instrument": "registered_graded_r23",
+   "regime": "po",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "imp-pers-po-sv-s42": {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "pers",
+   "instrument": "registered_graded_r23",
+   "regime": "po",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "syc-bare-con-rep-s42": {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "bare",
+   "instrument": "registered_graded_r23",
+   "regime": "con",
+   "seed": 42,
+   "visit": "rep"
+  },
+  "syc-bare-con-sv-s137": {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "bare",
+   "instrument": "registered_graded_r23",
+   "regime": "con",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "syc-bare-con-sv-s42": {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "bare",
+   "instrument": "registered_graded_r23",
+   "regime": "con",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "syc-bare-po-sv-s137": {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "bare",
+   "instrument": "registered_graded_r23",
+   "regime": "po",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "syc-bare-po-sv-s42": {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "bare",
+   "instrument": "registered_graded_r23",
+   "regime": "po",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "syc-conv-con-sv-s137": {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "conv",
+   "instrument": "registered_graded_r23",
+   "regime": "con",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "syc-conv-con-sv-s42": {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "conv",
+   "instrument": "registered_graded_r23",
+   "regime": "con",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "syc-conv-po-sv-s137": {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "conv",
+   "instrument": "registered_graded_r23",
+   "regime": "po",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "syc-conv-po-sv-s42": {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "conv",
+   "instrument": "registered_graded_r23",
+   "regime": "po",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "syc-icl-con-sv-s137": {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "icl",
+   "instrument": "registered_graded_r23",
+   "regime": "con",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "syc-icl-con-sv-s42": {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "icl",
+   "instrument": "registered_graded_r23",
+   "regime": "con",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "syc-icl-po-sv-s137": {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "icl",
+   "instrument": "registered_graded_r23",
+   "regime": "po",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "syc-icl-po-sv-s42": {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "icl",
+   "instrument": "registered_graded_r23",
+   "regime": "po",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "syc-pers-con-rep-s42": {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "pers",
+   "instrument": "registered_graded_r23",
+   "regime": "con",
+   "seed": 42,
+   "visit": "rep"
+  },
+  "syc-pers-con-sv-s137": {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "pers",
+   "instrument": "registered_graded_r23",
+   "regime": "con",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "syc-pers-con-sv-s42": {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "pers",
+   "instrument": "registered_graded_r23",
+   "regime": "con",
+   "seed": 42,
+   "visit": "sv"
+  },
+  "syc-pers-po-sv-s137": {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "pers",
+   "instrument": "registered_graded_r23",
+   "regime": "po",
+   "seed": 137,
+   "visit": "sv"
+  },
+  "syc-pers-po-sv-s42": {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "pers",
+   "instrument": "registered_graded_r23",
+   "regime": "po",
+   "seed": 42,
+   "visit": "sv"
+  }
+ },
+ "git_commit": "12b8b19e70b99cefd495632dd9a97eb6ed5f1f01",
+ "issue": 1947,
+ "label_counts": {
+  "held_out": 184,
+  "own": 52,
+  "trained_negative": 76
+ },
+ "labels": {
+  "cas-bare-con-sv-s137": {
+   "default": "own",
+   "icl_prefix_writing_style": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "cas-bare-con-sv-s42": {
+   "default": "own",
+   "icl_prefix_writing_style": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "cas-bare-po-sv-s137": {
+   "default": "own",
+   "icl_prefix_writing_style": "held_out",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "cas-bare-po-sv-s42": {
+   "default": "own",
+   "icl_prefix_writing_style": "held_out",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "cas-conv-con-sv-s137": {
+   "default": "trained_negative",
+   "icl_prefix_writing_style": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "own"
+  },
+  "cas-conv-con-sv-s42": {
+   "default": "trained_negative",
+   "icl_prefix_writing_style": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "own"
+  },
+  "cas-conv-po-sv-s137": {
+   "default": "held_out",
+   "icl_prefix_writing_style": "held_out",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "own"
+  },
+  "cas-conv-po-sv-s42": {
+   "default": "held_out",
+   "icl_prefix_writing_style": "held_out",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "own"
+  },
+  "cas-icl-con-sv-s137": {
+   "default": "trained_negative",
+   "icl_prefix_writing_style": "own",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "cas-icl-con-sv-s42": {
+   "default": "trained_negative",
+   "icl_prefix_writing_style": "own",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "cas-icl-po-sv-s137": {
+   "default": "held_out",
+   "icl_prefix_writing_style": "own",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "cas-icl-po-sv-s42": {
+   "default": "held_out",
+   "icl_prefix_writing_style": "own",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "cas-pers-con-sv-s137": {
+   "default": "trained_negative",
+   "icl_prefix_writing_style": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "own",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "cas-pers-con-sv-s42": {
+   "default": "trained_negative",
+   "icl_prefix_writing_style": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "own",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "cas-pers-po-sv-s137": {
+   "default": "held_out",
+   "icl_prefix_writing_style": "held_out",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "own",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "cas-pers-po-sv-s42": {
+   "default": "held_out",
+   "icl_prefix_writing_style": "held_out",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "own",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "imp-bare-con-rep-s42": {
+   "default": "own",
+   "icl_prefix_impolite": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "imp-bare-con-sv-s137": {
+   "default": "own",
+   "icl_prefix_impolite": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "imp-bare-con-sv-s42": {
+   "default": "own",
+   "icl_prefix_impolite": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "imp-bare-po-sv-s137": {
+   "default": "own",
+   "icl_prefix_impolite": "held_out",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "imp-bare-po-sv-s42": {
+   "default": "own",
+   "icl_prefix_impolite": "held_out",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "imp-conv-con-sv-s137": {
+   "default": "trained_negative",
+   "icl_prefix_impolite": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "own"
+  },
+  "imp-conv-con-sv-s42": {
+   "default": "trained_negative",
+   "icl_prefix_impolite": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "own"
+  },
+  "imp-conv-po-sv-s137": {
+   "default": "held_out",
+   "icl_prefix_impolite": "held_out",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "own"
+  },
+  "imp-conv-po-sv-s42": {
+   "default": "held_out",
+   "icl_prefix_impolite": "held_out",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "own"
+  },
+  "imp-icl-con-sv-s137": {
+   "default": "trained_negative",
+   "icl_prefix_impolite": "own",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "imp-icl-con-sv-s42": {
+   "default": "trained_negative",
+   "icl_prefix_impolite": "own",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "imp-icl-po-sv-s137": {
+   "default": "held_out",
+   "icl_prefix_impolite": "own",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "imp-icl-po-sv-s42": {
+   "default": "held_out",
+   "icl_prefix_impolite": "own",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "imp-pers-con-rep-s42": {
+   "default": "trained_negative",
+   "icl_prefix_impolite": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "own",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "imp-pers-con-sv-s137": {
+   "default": "trained_negative",
+   "icl_prefix_impolite": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "own",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "imp-pers-con-sv-s42": {
+   "default": "trained_negative",
+   "icl_prefix_impolite": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "own",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "imp-pers-po-sv-s137": {
+   "default": "held_out",
+   "icl_prefix_impolite": "held_out",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "own",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "imp-pers-po-sv-s42": {
+   "default": "held_out",
+   "icl_prefix_impolite": "held_out",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "own",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "syc-bare-con-rep-s42": {
+   "default": "own",
+   "icl_prefix_sycophancy": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "syc-bare-con-sv-s137": {
+   "default": "own",
+   "icl_prefix_sycophancy": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "syc-bare-con-sv-s42": {
+   "default": "own",
+   "icl_prefix_sycophancy": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "syc-bare-po-sv-s137": {
+   "default": "own",
+   "icl_prefix_sycophancy": "held_out",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "syc-bare-po-sv-s42": {
+   "default": "own",
+   "icl_prefix_sycophancy": "held_out",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "syc-conv-con-sv-s137": {
+   "default": "trained_negative",
+   "icl_prefix_sycophancy": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "own"
+  },
+  "syc-conv-con-sv-s42": {
+   "default": "trained_negative",
+   "icl_prefix_sycophancy": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "own"
+  },
+  "syc-conv-po-sv-s137": {
+   "default": "held_out",
+   "icl_prefix_sycophancy": "held_out",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "own"
+  },
+  "syc-conv-po-sv-s42": {
+   "default": "held_out",
+   "icl_prefix_sycophancy": "held_out",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "own"
+  },
+  "syc-icl-con-sv-s137": {
+   "default": "trained_negative",
+   "icl_prefix_sycophancy": "own",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "syc-icl-con-sv-s42": {
+   "default": "trained_negative",
+   "icl_prefix_sycophancy": "own",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "syc-icl-po-sv-s137": {
+   "default": "held_out",
+   "icl_prefix_sycophancy": "own",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "syc-icl-po-sv-s42": {
+   "default": "held_out",
+   "icl_prefix_sycophancy": "own",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "held_out",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "syc-pers-con-rep-s42": {
+   "default": "trained_negative",
+   "icl_prefix_sycophancy": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "own",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "syc-pers-con-sv-s137": {
+   "default": "trained_negative",
+   "icl_prefix_sycophancy": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "own",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "syc-pers-con-sv-s42": {
+   "default": "trained_negative",
+   "icl_prefix_sycophancy": "held_out",
+   "neg_sp_ph4": "trained_negative",
+   "neg_sp_police": "trained_negative",
+   "persona_software_engineer": "own",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "syc-pers-po-sv-s137": {
+   "default": "held_out",
+   "icl_prefix_sycophancy": "held_out",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "own",
+   "wildchat_prefix_real545": "held_out"
+  },
+  "syc-pers-po-sv-s42": {
+   "default": "held_out",
+   "icl_prefix_sycophancy": "held_out",
+   "neg_sp_ph4": "held_out",
+   "neg_sp_police": "held_out",
+   "persona_software_engineer": "own",
+   "wildchat_prefix_real545": "held_out"
+  }
+ },
+ "manifest_git_commit": "6cab56beb6",
+ "mix_data_revision": "b0fea754c7e97a3a63becad39736e7778202500c",
+ "n_arms": 52,
+ "n_judge_draws": 3,
+ "n_per_question": 5,
+ "questions_sha256": {
+  "impolite": "446b35d8bbe7bd5cc197cf14246ecccbc9e8ec4cfdd9c4bade797531009cf8e7",
+  "sycophancy": "0d45e8d5900e162d1eb2b8f67f19a8e2b134054dc0ff217db0b0041ba28f7243",
+  "writing_style": "8863647e277e96caf711301dfb7827b3d5aaddb3167751aa1265e261997487b1"
+ },
+ "read_panel": {
+  "impolite": [
+   "persona_software_engineer",
+   "default",
+   "wildchat_prefix_real545",
+   "icl_prefix_impolite",
+   "neg_sp_police",
+   "neg_sp_ph4"
+  ],
+  "sycophancy": [
+   "persona_software_engineer",
+   "default",
+   "wildchat_prefix_real545",
+   "icl_prefix_sycophancy",
+   "neg_sp_police",
+   "neg_sp_ph4"
+  ],
+  "writing_style": [
+   "persona_software_engineer",
+   "default",
+   "wildchat_prefix_real545",
+   "icl_prefix_writing_style",
+   "neg_sp_police",
+   "neg_sp_ph4"
+  ]
+ },
+ "round": "localization-panel",
+ "selection": {
+  "cas-bare-con-sv-s137": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.63,
+   "step": 50
+  },
+  "cas-bare-con-sv-s42": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.79,
+   "step": 50
+  },
+  "cas-bare-po-sv-s137": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.75,
+   "step": 35
+  },
+  "cas-bare-po-sv-s42": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.61,
+   "step": 35
+  },
+  "cas-conv-con-sv-s137": {
+   "fallback": "closest_approach",
+   "in_band": false,
+   "rate": 0.94,
+   "step": 15
+  },
+  "cas-conv-con-sv-s42": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.73,
+   "step": 10
+  },
+  "cas-conv-po-sv-s137": {
+   "fallback": "closest_approach",
+   "in_band": false,
+   "rate": 0.96,
+   "step": 5
+  },
+  "cas-conv-po-sv-s42": {
+   "fallback": "closest_approach",
+   "in_band": false,
+   "rate": 0.46,
+   "step": 5
+  },
+  "cas-icl-con-sv-s137": {
+   "fallback": "closest_approach",
+   "in_band": false,
+   "rate": 0.99,
+   "step": 30
+  },
+  "cas-icl-con-sv-s42": {
+   "fallback": "closest_approach",
+   "in_band": false,
+   "rate": 1.0,
+   "step": 10
+  },
+  "cas-icl-po-sv-s137": {
+   "fallback": "closest_approach",
+   "in_band": false,
+   "rate": 0.99,
+   "step": 15
+  },
+  "cas-icl-po-sv-s42": {
+   "fallback": "closest_approach",
+   "in_band": false,
+   "rate": 0.99,
+   "step": 25
+  },
+  "cas-pers-con-sv-s137": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.75,
+   "step": 30
+  },
+  "cas-pers-con-sv-s42": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.62,
+   "step": 30
+  },
+  "cas-pers-po-sv-s137": {
+   "fallback": "closest_approach",
+   "in_band": false,
+   "rate": 0.91,
+   "step": 25
+  },
+  "cas-pers-po-sv-s42": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.84,
+   "step": 25
+  },
+  "imp-bare-con-rep-s42": {
+   "fallback": "closest_approach",
+   "in_band": false,
+   "rate": 0.31,
+   "step": 45
+  },
+  "imp-bare-con-sv-s137": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.71,
+   "step": 35
+  },
+  "imp-bare-con-sv-s42": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.61,
+   "step": 45
+  },
+  "imp-bare-po-sv-s137": {
+   "fallback": "closest_approach",
+   "in_band": false,
+   "rate": 0.4,
+   "step": 70
+  },
+  "imp-bare-po-sv-s42": {
+   "fallback": "closest_approach",
+   "in_band": false,
+   "rate": 0.36,
+   "step": 65
+  },
+  "imp-conv-con-sv-s137": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.77,
+   "step": 20
+  },
+  "imp-conv-con-sv-s42": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.7,
+   "step": 25
+  },
+  "imp-conv-po-sv-s137": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.73,
+   "step": 20
+  },
+  "imp-conv-po-sv-s42": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.7,
+   "step": 25
+  },
+  "imp-icl-con-sv-s137": {
+   "fallback": "closest_approach",
+   "in_band": false,
+   "rate": 0.91,
+   "step": 35
+  },
+  "imp-icl-con-sv-s42": {
+   "fallback": "closest_approach",
+   "in_band": false,
+   "rate": 0.9,
+   "step": 10
+  },
+  "imp-icl-po-sv-s137": {
+   "fallback": "closest_approach",
+   "in_band": false,
+   "rate": 0.93,
+   "step": 35
+  },
+  "imp-icl-po-sv-s42": {
+   "fallback": "closest_approach",
+   "in_band": false,
+   "rate": 0.92,
+   "step": 55
+  },
+  "imp-pers-con-rep-s42": {
+   "fallback": "closest_approach",
+   "in_band": false,
+   "rate": 0.52,
+   "step": 60
+  },
+  "imp-pers-con-sv-s137": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.62,
+   "step": 30
+  },
+  "imp-pers-con-sv-s42": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.62,
+   "step": 20
+  },
+  "imp-pers-po-sv-s137": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.65,
+   "step": 50
+  },
+  "imp-pers-po-sv-s42": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.7,
+   "step": 40
+  },
+  "syc-bare-con-rep-s42": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.7,
+   "step": 20
+  },
+  "syc-bare-con-sv-s137": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.73,
+   "step": 20
+  },
+  "syc-bare-con-sv-s42": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.74,
+   "step": 25
+  },
+  "syc-bare-po-sv-s137": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.76,
+   "step": 20
+  },
+  "syc-bare-po-sv-s42": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.65,
+   "step": 20
+  },
+  "syc-conv-con-sv-s137": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.76,
+   "step": 5
+  },
+  "syc-conv-con-sv-s42": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.78,
+   "step": 5
+  },
+  "syc-conv-po-sv-s137": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.74,
+   "step": 5
+  },
+  "syc-conv-po-sv-s42": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.7878787878787878,
+   "step": 5
+  },
+  "syc-icl-con-sv-s137": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.69,
+   "step": 10
+  },
+  "syc-icl-con-sv-s42": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.68,
+   "step": 10
+  },
+  "syc-icl-po-sv-s137": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.76,
+   "step": 10
+  },
+  "syc-icl-po-sv-s42": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.69,
+   "step": 5
+  },
+  "syc-pers-con-rep-s42": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.62,
+   "step": 15
+  },
+  "syc-pers-con-sv-s137": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.78,
+   "step": 15
+  },
+  "syc-pers-con-sv-s42": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.62,
+   "step": 15
+  },
+  "syc-pers-po-sv-s137": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.78,
+   "step": 15
+  },
+  "syc-pers-po-sv-s42": {
+   "fallback": null,
+   "in_band": true,
+   "rate": 0.72,
+   "step": 15
+  }
+ },
+ "trained_negatives_unread": {
+  "cas-bare-con-sv-s137": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "cas-bare-con-sv-s42": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "cas-bare-po-sv-s137": [],
+  "cas-bare-po-sv-s42": [],
+  "cas-conv-con-sv-s137": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "cas-conv-con-sv-s42": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "cas-conv-po-sv-s137": [],
+  "cas-conv-po-sv-s42": [],
+  "cas-icl-con-sv-s137": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "cas-icl-con-sv-s42": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "cas-icl-po-sv-s137": [],
+  "cas-icl-po-sv-s42": [],
+  "cas-pers-con-sv-s137": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "cas-pers-con-sv-s42": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "cas-pers-po-sv-s137": [],
+  "cas-pers-po-sv-s42": [],
+  "imp-bare-con-rep-s42": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "imp-bare-con-sv-s137": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "imp-bare-con-sv-s42": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "imp-bare-po-sv-s137": [],
+  "imp-bare-po-sv-s42": [],
+  "imp-conv-con-sv-s137": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "imp-conv-con-sv-s42": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "imp-conv-po-sv-s137": [],
+  "imp-conv-po-sv-s42": [],
+  "imp-icl-con-sv-s137": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "imp-icl-con-sv-s42": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "imp-icl-po-sv-s137": [],
+  "imp-icl-po-sv-s42": [],
+  "imp-pers-con-rep-s42": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "imp-pers-con-sv-s137": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "imp-pers-con-sv-s42": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "imp-pers-po-sv-s137": [],
+  "imp-pers-po-sv-s42": [],
+  "syc-bare-con-rep-s42": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "syc-bare-con-sv-s137": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "syc-bare-con-sv-s42": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "syc-bare-po-sv-s137": [],
+  "syc-bare-po-sv-s42": [],
+  "syc-conv-con-sv-s137": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "syc-conv-con-sv-s42": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "syc-conv-po-sv-s137": [],
+  "syc-conv-po-sv-s42": [],
+  "syc-icl-con-sv-s137": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "syc-icl-con-sv-s42": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "syc-icl-po-sv-s137": [],
+  "syc-icl-po-sv-s42": [],
+  "syc-pers-con-rep-s42": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "syc-pers-con-sv-s137": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "syc-pers-con-sv-s42": [
+   "neg_reph_curious",
+   "neg_wc_short"
+  ],
+  "syc-pers-po-sv-s137": [],
+  "syc-pers-po-sv-s42": []
+ },
+ "ts": "2026-08-03T22:44:00Z",
+ "units": [
+  {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "bare",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 137,
+   "slug": "cas-bare-con-sv-s137",
+   "step": 50,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "bare",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 42,
+   "slug": "cas-bare-con-sv-s42",
+   "step": 50,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "bare",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 137,
+   "slug": "cas-bare-po-sv-s137",
+   "step": 35,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "bare",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 42,
+   "slug": "cas-bare-po-sv-s42",
+   "step": 35,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "conv",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 137,
+   "slug": "cas-conv-con-sv-s137",
+   "step": 15,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "conv",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 42,
+   "slug": "cas-conv-con-sv-s42",
+   "step": 10,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "conv",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 137,
+   "slug": "cas-conv-po-sv-s137",
+   "step": 5,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "conv",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 42,
+   "slug": "cas-conv-po-sv-s42",
+   "step": 5,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "icl",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 137,
+   "slug": "cas-icl-con-sv-s137",
+   "step": 30,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "icl",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 42,
+   "slug": "cas-icl-con-sv-s42",
+   "step": 10,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "icl",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 137,
+   "slug": "cas-icl-po-sv-s137",
+   "step": 15,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "icl",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 42,
+   "slug": "cas-icl-po-sv-s42",
+   "step": 25,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "pers",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 137,
+   "slug": "cas-pers-con-sv-s137",
+   "step": 30,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "pers",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 42,
+   "slug": "cas-pers-con-sv-s42",
+   "step": 30,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "pers",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 137,
+   "slug": "cas-pers-po-sv-s137",
+   "step": 25,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "ctx_key": "pers",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 42,
+   "slug": "cas-pers-po-sv-s42",
+   "step": 25,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "bare",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 42,
+   "slug": "imp-bare-con-rep-s42",
+   "step": 45,
+   "visit": "rep"
+  },
+  {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "bare",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 137,
+   "slug": "imp-bare-con-sv-s137",
+   "step": 35,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "bare",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 42,
+   "slug": "imp-bare-con-sv-s42",
+   "step": 45,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "bare",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 137,
+   "slug": "imp-bare-po-sv-s137",
+   "step": 70,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "bare",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 42,
+   "slug": "imp-bare-po-sv-s42",
+   "step": 65,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "conv",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 137,
+   "slug": "imp-conv-con-sv-s137",
+   "step": 20,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "conv",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 42,
+   "slug": "imp-conv-con-sv-s42",
+   "step": 25,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "conv",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 137,
+   "slug": "imp-conv-po-sv-s137",
+   "step": 20,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "conv",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 42,
+   "slug": "imp-conv-po-sv-s42",
+   "step": 25,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "icl",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 137,
+   "slug": "imp-icl-con-sv-s137",
+   "step": 35,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "icl",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 42,
+   "slug": "imp-icl-con-sv-s42",
+   "step": 10,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "icl",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 137,
+   "slug": "imp-icl-po-sv-s137",
+   "step": 35,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "icl",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 42,
+   "slug": "imp-icl-po-sv-s42",
+   "step": 55,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "pers",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 42,
+   "slug": "imp-pers-con-rep-s42",
+   "step": 60,
+   "visit": "rep"
+  },
+  {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "pers",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 137,
+   "slug": "imp-pers-con-sv-s137",
+   "step": 30,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "pers",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 42,
+   "slug": "imp-pers-con-sv-s42",
+   "step": 20,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "pers",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 137,
+   "slug": "imp-pers-po-sv-s137",
+   "step": 50,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "ctx_key": "pers",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 42,
+   "slug": "imp-pers-po-sv-s42",
+   "step": 40,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "bare",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 42,
+   "slug": "syc-bare-con-rep-s42",
+   "step": 20,
+   "visit": "rep"
+  },
+  {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "bare",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 137,
+   "slug": "syc-bare-con-sv-s137",
+   "step": 20,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "bare",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 42,
+   "slug": "syc-bare-con-sv-s42",
+   "step": 25,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "bare",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 137,
+   "slug": "syc-bare-po-sv-s137",
+   "step": 20,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "bare",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 42,
+   "slug": "syc-bare-po-sv-s42",
+   "step": 20,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "conv",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 137,
+   "slug": "syc-conv-con-sv-s137",
+   "step": 5,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "conv",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 42,
+   "slug": "syc-conv-con-sv-s42",
+   "step": 5,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "conv",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 137,
+   "slug": "syc-conv-po-sv-s137",
+   "step": 5,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "conv",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 42,
+   "slug": "syc-conv-po-sv-s42",
+   "step": 5,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "icl",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 137,
+   "slug": "syc-icl-con-sv-s137",
+   "step": 10,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "icl",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 42,
+   "slug": "syc-icl-con-sv-s42",
+   "step": 10,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "icl",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 137,
+   "slug": "syc-icl-po-sv-s137",
+   "step": 10,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "icl",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 42,
+   "slug": "syc-icl-po-sv-s42",
+   "step": 5,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "pers",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 42,
+   "slug": "syc-pers-con-rep-s42",
+   "step": 15,
+   "visit": "rep"
+  },
+  {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "pers",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 137,
+   "slug": "syc-pers-con-sv-s137",
+   "step": 15,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "pers",
+   "kind": "arm",
+   "regime": "con",
+   "seed": 42,
+   "slug": "syc-pers-con-sv-s42",
+   "step": 15,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "pers",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 137,
+   "slug": "syc-pers-po-sv-s137",
+   "step": 15,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "ctx_key": "pers",
+   "kind": "arm",
+   "regime": "po",
+   "seed": 42,
+   "slug": "syc-pers-po-sv-s42",
+   "step": 15,
+   "visit": "sv"
+  },
+  {
+   "beh_key": "cas",
+   "behavior": "writing_style",
+   "kind": "base",
+   "slug": "base-cas"
+  },
+  {
+   "beh_key": "imp",
+   "behavior": "impolite",
+   "kind": "base",
+   "slug": "base-imp"
+  },
+  {
+   "beh_key": "syc",
+   "behavior": "sycophancy",
+   "kind": "base",
+   "slug": "base-syc"
+  }
+ ]
+}

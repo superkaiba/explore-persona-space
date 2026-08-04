@@ -1,0 +1,34 @@
+{
+ "arm_id": "imp-pers-ft-con-s42",
+ "method": "ft",
+ "delta_arm": "imp-pers-con-lr3e5-s42",
+ "layers": {
+  "14": {
+   "norm_delta_v_train": 7.896303958306093,
+   "norm_v0_train": 36.813444116703536,
+   "n_rows": 20,
+   "split_half_cos": 0.9538036158373487,
+   "cos_delta_v_train_delta": -0.03197384245131108,
+   "delta_arm": "imp-pers-con-lr3e5-s42",
+   "cos_delta_v_train_corpus_matched_write": 0.7222068167236173
+  },
+  "19": {
+   "norm_delta_v_train": 24.98588371295095,
+   "norm_v0_train": 58.87057374600657,
+   "n_rows": 20,
+   "split_half_cos": 0.9583817935289054,
+   "cos_delta_v_train_delta": 0.06869184221011394,
+   "delta_arm": "imp-pers-con-lr3e5-s42",
+   "cos_delta_v_train_corpus_matched_write": 0.709935148675357
+  },
+  "25": {
+   "norm_delta_v_train": 65.74685684784916,
+   "norm_v0_train": 233.23537203702074,
+   "n_rows": 20,
+   "split_half_cos": 0.9453983543928087,
+   "cos_delta_v_train_delta": 0.14551871585853088,
+   "delta_arm": "imp-pers-con-lr3e5-s42",
+   "cos_delta_v_train_corpus_matched_write": 0.5945010304968055
+  }
+ }
+}

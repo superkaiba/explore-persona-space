@@ -41,6 +41,15 @@ import numpy as np  # noqa: E402
 MODEL_ID = "Qwen/Qwen2.5-7B-Instruct"
 FOOTPRINT_CHUNK = 1024  # feature block for the W_U GEMM (plan §4 table)
 NEIGHBOR_CHUNK = 1024
+# Full-dictionary blocks. MEASURED on an H100 at production shape (2026-07-30):
+# neighbours 0.078 s/block x 32 blocks = 2.5 s (123 TFLOP); footprint
+# 0.076 s/block x 64 blocks = 4.9 s (143 TFLOP); peak GPU alloc 4.6 GiB. The
+# same 266 TFLOP is ~4.3 h of pure GEMM at the shared-VM 8-thread numpy rate
+# (~17 GFLOPS effective, from the 16,384-feature run's ~22 TFLOP in ~21 min) —
+# so GPU is the cheap default, but BLOCKING is required independently of speed:
+# a dense 131,072^2 fp32 cosine matrix is ~68 TB and can never be materialized.
+FULLDICT_FOOTPRINT_CHUNK = 2048
+FULLDICT_NEIGHBOR_CHUNK = 4096
 TOP_TOKENS = 10
 SCAFFOLD_RANK = 48  # parity with #1092 v14 SCAFFOLD_CONTROL (self-contained v1)
 MASSIVE_DIM_PCTL = 99.9  # dims flagged by mean|h_prefix| percentile (recorded constant)
@@ -305,6 +314,304 @@ def neighbor_table(w_dec: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return nb_idx, nb_cos
 
 
+def neighbor_table_blocked(
+    w_dec32: np.ndarray, device: str, chunk: int = FULLDICT_NEIGHBOR_CHUNK
+) -> tuple[np.ndarray, np.ndarray]:
+    """Blocked top-k decoder-cosine neighbours over the FULL dictionary.
+
+    Same statistic as `neighbor_table` (fp32 cosine, self excluded, descending)
+    but the (n x n) Gram is NEVER materialized: only a (chunk, n) query block
+    lives at a time and only the top-k per row is kept. At n=131,072 a dense
+    fp32 cosine matrix would be ~68 TB, so blocking is the difference between
+    feasible and impossible regardless of device. On GPU the 123 TFLOP of GEMM
+    measured 2.5 s total at production shape (H100, 2026-07-30).
+    """
+    import torch
+
+    k = CM.N_NEIGHBORS
+    xn = torch.as_tensor(np.ascontiguousarray(w_dec32), dtype=torch.float32, device=device)
+    xn = xn / xn.norm(dim=0, keepdim=True).clamp_min(1e-12)
+    n = xn.shape[1]
+    nb_idx = np.zeros((n, k), np.int64)
+    nb_cos = np.zeros((n, k), np.float32)
+    t0 = time.time()
+    for s in range(0, n, chunk):
+        q = xn[:, s : s + chunk]
+        g = q.T @ xn  # (B, n)
+        b = g.shape[0]
+        rows = torch.arange(b, device=g.device)
+        g[rows, torch.arange(s, s + b, device=g.device)] = float("-inf")  # exclude self
+        vals, idx = torch.topk(g, k, dim=1)
+        nb_idx[s : s + b] = idx.cpu().numpy()
+        nb_cos[s : s + b] = vals.cpu().numpy()
+        del g, vals, idx
+        _log(
+            f"[phase0] neighbours block {s // chunk + 1}/{(n + chunk - 1) // chunk} "
+            f"elapsed={time.time() - t0:.0f}s"
+        )
+    del xn
+    if device.startswith("cuda"):
+        torch.cuda.empty_cache()
+    return nb_idx, nb_cos
+
+
+def _vocab_token_strings(tok, vocab_size: int) -> list[str]:
+    """Decode every single-token id ONCE (list lookup thereafter).
+
+    The per-feature footprint needs 20 token strings; at 131,072 features that
+    is 2.6M `tok.decode` calls if done inline. Decoding the vocabulary once
+    (~152k calls) turns the inner loop into list indexing.
+    """
+    t0 = time.time()
+    out = tok.batch_decode([[i] for i in range(vocab_size)])
+    _log(f"[phase0] vocab token strings decoded: {len(out)} in {time.time() - t0:.0f}s")
+    return out
+
+
+def footprint_blocks(
+    w_u: np.ndarray,
+    gamma: np.ndarray,
+    w_dec32: np.ndarray,
+    vocab_str: list[str],
+    device: str,
+    chunk: int = FULLDICT_FOOTPRINT_CHUNK,
+):
+    """Yield (start, list[dict]) per feature block for the FULL dictionary.
+
+    Same statistic as `logit_footprint` (E = W_U @ (gamma * W_dec), top-10
+    promoted/suppressed + positive-mass concentration) but streamed a block at
+    a time so the caller can write rows straight to JSONL instead of holding
+    131,072 footprint dicts in memory.
+    """
+    import torch
+
+    wu_t = torch.as_tensor(np.ascontiguousarray(w_u), dtype=torch.float32, device=device)
+    gam = torch.as_tensor(np.ascontiguousarray(gamma), dtype=torch.float32, device=device)
+    n_feat = w_dec32.shape[1]
+    t0 = time.time()
+    for s in range(0, n_feat, chunk):
+        blk = torch.as_tensor(
+            np.ascontiguousarray(w_dec32[:, s : s + chunk]), dtype=torch.float32, device=device
+        )
+        logits = wu_t @ (blk * gam[:, None])  # (V, B)
+        pos_mass = torch.clamp(logits, min=0.0).sum(0)
+        top_v, top_i = torch.topk(logits, TOP_TOKENS, dim=0)
+        bot_v, bot_i = torch.topk(-logits, TOP_TOKENS, dim=0)
+        conc = torch.clamp(top_v, min=0.0).sum(0) / pos_mass.clamp_min(1e-12)
+        top_v_c, top_i_c = top_v.cpu().numpy(), top_i.cpu().numpy()
+        bot_v_c, bot_i_c = (-bot_v).cpu().numpy(), bot_i.cpu().numpy()
+        conc_c = conc.cpu().numpy()
+        out = []
+        for j in range(top_i_c.shape[1]):
+            ti = top_i_c[:, j]
+            bi = bot_i_c[:, j]
+            out.append(
+                {
+                    "top_promoted_ids": [int(t) for t in ti],
+                    "top_promoted_tokens": [vocab_str[int(t)] for t in ti],
+                    "top_promoted_vals": [round(float(v), 4) for v in top_v_c[:, j]],
+                    "top_suppressed_ids": [int(t) for t in bi],
+                    "top_suppressed_tokens": [vocab_str[int(t)] for t in bi],
+                    "top_suppressed_vals": [round(float(v), 4) for v in bot_v_c[:, j]],
+                    "concentration": float(conc_c[j]),
+                }
+            )
+        del blk, logits, pos_mass, top_v, top_i, bot_v, bot_i, conc
+        _log(
+            f"[phase0] footprint block {s // chunk + 1}/{(n_feat + chunk - 1) // chunk} "
+            f"elapsed={time.time() - t0:.0f}s"
+        )
+        yield s, out
+    del wu_t, gam
+    if device.startswith("cuda"):
+        torch.cuda.empty_cache()
+
+
+def run_full_dictionary(args, st: dict, com) -> int:
+    """Full-dictionary (131,072-feature) phase 0.
+
+    Same per-feature axes as the restricted path, three differences forced by
+    the 8x feature count:
+      * `fid` is every dictionary index; `r2`/`activity` from the committed
+        #1482 npz cover only the 16,384 restricted ids and are NaN elsewhere
+        (`activity_recomputed` from the streamed pass is the density read that
+        exists for every feature).
+      * The decoder-side GEMMs (neighbours 131,072^2, footprint V x 131,072)
+        run BLOCKED on GPU in fp32 — ~266 TFLOP total, thousands of hours at
+        the shared-VM CPU rate.
+      * Rows STREAM to JSONL per footprint block instead of accumulating
+        131,072 dicts (each carrying 6 x 10-element token lists) in memory.
+    """
+    import issue1482_sae as S
+    import torch
+    from issue1482_feature_extremes import _load_rb_layer
+    from transformers import AutoTokenizer
+
+    out_dir = args.out_root / "phase0"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    dev = args.device
+    if dev.startswith("cuda"):
+        assert torch.cuda.is_available(), "--device cuda requested but no CUDA device is visible"
+
+    n_feat = args.feature_limit if args.feature_limit > 0 else CM.DICT_SIZE
+    fid = np.arange(n_feat, dtype=np.int64)
+
+    # committed restricted r2/activity scattered onto the full index (NaN elsewhere)
+    fid_res = np.asarray(com["feat_ids"], dtype=np.int64)
+    r2_full = np.full(CM.DICT_SIZE, np.nan, np.float64)
+    act_full = np.full(CM.DICT_SIZE, np.nan, np.float64)
+    r2_full[fid_res] = np.asarray(com["r2"], dtype=np.float64)
+    act_full[fid_res] = np.asarray(com["activity"], dtype=np.float64)
+    in_restricted = np.zeros(CM.DICT_SIZE, bool)
+    in_restricted[fid_res] = True
+
+    sae = S.BatchTopKSAE.load(k=64, device="cpu", cache_dir=args.work / "sae")
+    w_dec = sae.w_dec.numpy().astype(np.float32)[:, :n_feat]  # (3584, n_feat) fp32
+    assert w_dec.shape[0] == CM.ACT_DIM, w_dec.shape
+    _log(
+        f"[phase0] w_dec fp32 {w_dec.shape} ({w_dec.nbytes / 1024**3:.2f} GiB) rss={_rss_gb():.1f}"
+    )
+
+    # nuisance / scaffold / rb_align — chunked so no full fp64 copy is made
+    mean_abs = st["h_abs_sum"] / max(st["n_rows"], 1)
+    thr = np.percentile(mean_abs, MASSIVE_DIM_PCTL)
+    massive_dims = np.where(mean_abs >= thr)[0]
+    col_mass = np.einsum("ij,ij->j", w_dec, w_dec).astype(np.float64)
+    nuisance = (w_dec[massive_dims] ** 2).sum(0).astype(np.float64) / np.maximum(col_mass, 1e-12)
+    mu = st["h_sum"] / max(st["n_rows"], 1)
+    cov = st["h_outer"] / max(st["n_rows"], 1) - np.outer(mu, mu)
+    evals, evecs = np.linalg.eigh(cov)
+    basis = evecs[:, -SCAFFOLD_RANK:]
+    proj = (basis.T.astype(np.float32) @ w_dec).astype(np.float64)  # (48, n_feat)
+    scaffold_frac = (proj**2).sum(0) / np.maximum(col_mass, 1e-12)
+
+    rb, rb_names = _load_rb_layer()
+    rb_n = rb / np.linalg.norm(rb, axis=1, keepdims=True)
+    col_norm = np.sqrt(np.maximum(col_mass, 1e-24))
+    rb_cos = np.abs((rb_n.astype(np.float32) @ w_dec).astype(np.float64) / col_norm)
+    rb_p = basis.T @ rb_n.T
+    dec_p = proj / np.maximum(np.linalg.norm(proj, axis=0, keepdims=True), 1e-12)
+    rb_p_n = rb_p / np.maximum(np.linalg.norm(rb_p, axis=0, keepdims=True), 1e-12)
+    rb_cos_scaffold = np.abs(rb_p_n.T @ dec_p)
+    _log(f"[phase0] decoder scalar axes done rss={_rss_gb():.1f}GiB")
+
+    nb_idx, nb_cos = neighbor_table_blocked(w_dec, dev)
+
+    cnt = st["cnt_fit"][:n_feat].astype(np.float64)
+    psi_cnt = st["psi_cnt_fit"][:n_feat].astype(np.float64)
+    persist = np.where(cnt > 0, st["sum_frac"][:n_feat] / np.maximum(cnt, 1), np.nan)
+    ex2 = st["sum_frac_sq"][:n_feat] / np.maximum(cnt, 1)
+    persist_sd = np.sqrt(np.maximum(ex2 - persist**2, 0))
+    side_ratio = np.where(cnt + psi_cnt > 0, cnt / np.maximum(cnt + psi_cnt, 1), np.nan)
+    act_re = st["cnt_fit"][:n_feat] / max(st["n_fit"], 1)
+
+    tok = AutoTokenizer.from_pretrained(MODEL_ID)
+    w_u, gamma = _load_lm_head_and_gamma(args.work / "hf_dl")
+    vocab_str = _vocab_token_strings(tok, w_u.shape[0])
+
+    table_path = out_dir / "feature_table.jsonl"
+    tmp = table_path.parent / f".tmp_{table_path.name}"
+    n_written = 0
+    with tmp.open("w", encoding="utf-8") as fh:
+        for start, foot in footprint_blocks(w_u, gamma, w_dec, vocab_str, dev):
+            for j, fp in enumerate(foot):
+                i = start + j
+                fh.write(
+                    json.dumps(
+                        {
+                            "feat_id": int(fid[i]),
+                            "restricted_idx": None,
+                            "in_restricted_16k": bool(in_restricted[i]),
+                            "r2": None if np.isnan(r2_full[i]) else float(r2_full[i]),
+                            "density": {
+                                "activity_committed": (
+                                    None if np.isnan(act_full[i]) else float(act_full[i])
+                                ),
+                                "activity_recomputed": float(act_re[i]),
+                            },
+                            "persist_answer": {
+                                "mean": None if np.isnan(persist[i]) else float(persist[i]),
+                                "sd": None if np.isnan(persist_sd[i]) else float(persist_sd[i]),
+                            },
+                            "side_ratio": (
+                                None if np.isnan(side_ratio[i]) else float(side_ratio[i])
+                            ),
+                            "nuisance_load": {
+                                "massive_dim_mass": float(nuisance[i]),
+                                "scaffold_frac": float(scaffold_frac[i]),
+                            },
+                            "rb_align": {
+                                t: {
+                                    "raw": float(rb_cos[k, i]),
+                                    "scaffold": float(rb_cos_scaffold[k, i]),
+                                }
+                                for k, t in enumerate(rb_names)
+                            },
+                            "neighbors": {
+                                "feat_ids": [int(fid[p]) for p in nb_idx[i]],
+                                "cos": [round(float(c), 5) for c in nb_cos[i]],
+                            },
+                            "logit_footprint": fp,
+                            "tier": None,
+                            "persist_query": None,
+                            "arm_shares": None,
+                        },
+                        ensure_ascii=False,
+                    )
+                    + "\n"
+                )
+                n_written += 1
+            fh.flush()
+    tmp.replace(table_path)
+    assert n_written == n_feat, (n_written, n_feat)
+
+    np.savez(
+        out_dir / "phase0_arrays.npz",
+        feat_ids=fid,
+        r2=r2_full[:n_feat],
+        activity=act_full[:n_feat],
+        activity_recomputed=act_re,
+        in_restricted_16k=in_restricted[:n_feat],
+        persist_answer=persist,
+        persist_answer_sd=persist_sd,
+        side_ratio=side_ratio,
+        nuisance_massive=nuisance,
+        scaffold_frac=scaffold_frac,
+        rb_cos=rb_cos,
+        rb_cos_scaffold=rb_cos_scaffold,
+        rb_traits=np.array(rb_names, dtype=object),
+        neighbor_idx=nb_idx,
+        neighbor_cos=nb_cos,
+        massive_dims=massive_dims,
+        scaffold_basis=basis,
+        pca_evals=evals[-SCAFFOLD_RANK:],
+    )
+    n_live = int((st["cnt_fit"][:n_feat] > 0).sum())
+    meta = {
+        **CM.repro_meta(),
+        "full_dictionary": True,
+        "device": dev,
+        "wiring_gate_max_delta": st["wiring_gate"],
+        "n_fit": int(st["n_fit"]),
+        "n_rows": int(st["n_rows"]),
+        "n_features": n_feat,
+        "n_features_active_in_fit": n_live,
+        "n_features_dead_in_fit": n_feat - n_live,
+        "max_shards": args.max_shards,
+        "massive_dim_pctl": MASSIVE_DIM_PCTL,
+        "massive_dims": [int(d) for d in massive_dims],
+        "scaffold_rank": SCAFFOLD_RANK,
+        "sae_revision": S.SAE_REVISION,
+        "neighbor_scope": "full-dictionary (131072) blocked top-k, fp32",
+    }
+    (out_dir / "phase0_meta.json").write_text(json.dumps(meta, indent=1))
+    _log(
+        f"[phase0] FULL-DICT done: {n_written} rows -> {table_path} "
+        f"(active_in_fit={n_live}, gate={st['wiring_gate']:.2e}, rss={_rss_gb():.1f}GiB)"
+    )
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--store", type=Path, default=CM.STORE_DEFAULT)
@@ -312,6 +619,12 @@ def main() -> int:
     ap.add_argument("--out-root", type=Path, default=CM.OUT_EVAL, help="eval_results root")
     ap.add_argument("--max-shards", type=int, default=0, help=">0 = smoke slice (gate demoted)")
     ap.add_argument("--feature-limit", type=int, default=0, help=">0 = smoke feature subset")
+    ap.add_argument(
+        "--full-dictionary",
+        action="store_true",
+        help="all 131,072 features (GPU-blocked GEMMs) instead of the #1482 restricted 16,384",
+    )
+    ap.add_argument("--device", default="cpu", choices=("cpu", "cuda"))
     ap.add_argument("--no-resume", action="store_true")
     ap.add_argument("--skip-preflight", action="store_true")
     ap.add_argument("--preflight-only", action="store_true")
@@ -338,8 +651,17 @@ def main() -> int:
     n_keep = args.feature_limit if args.feature_limit > 0 else len(fid_all)
     fid = fid_all[:n_keep]
 
-    # 1) streamed store pass (gate + persist_answer + side_ratio + h stats)
+    # 1) streamed store pass (gate + persist_answer + side_ratio + h stats).
+    # The accumulators are already full-dictionary sized (D = CM.DICT_SIZE), so
+    # this pass is IDENTICAL in both modes; the wiring gate always compares the
+    # recomputed activity of the committed 16,384 against the npz.
     st = stream_store(args, fid_all, activity)
+
+    if args.full_dictionary:
+        rc = run_full_dictionary(args, st, com)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        return rc
 
     # 2) SAE decoder
     sae = S.BatchTopKSAE.load(k=64, device="cpu", cache_dir=args.work / "sae")

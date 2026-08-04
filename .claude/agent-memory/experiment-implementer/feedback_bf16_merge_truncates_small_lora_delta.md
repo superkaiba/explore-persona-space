@@ -30,3 +30,9 @@ fp32 merge math + bf16 save does NOT help.
 - Expect this whenever an adapter is deliberately under-trained (band-stop
   in-band anchors); fully-trained adapters have larger deltas and are less
   affected, which is why earlier merged evals never tripped a gate.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [bf16 merge truncates small LoRA deltas](feedback_bf16_merge_truncates_small_lora_delta.md) — merge_and_unload attenuates early/low-lr adapters; parity-faithful read = unmerged PeftModel. #480.

@@ -1,0 +1,61 @@
+{
+ "meta": {
+  "ts": "2026-07-31T21:22:11Z",
+  "git_commit": "cd3112d001222e90fc7c6539a9663b55c88f2552",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "issue": 1900,
+  "seed": 1900,
+  "corpus_pin": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+  "script": "scripts/issue1900_followup_free.py"
+ },
+ "arm_id": "syc-pers-ft-con-s42",
+ "kind": "content",
+ "beh_key": "syc",
+ "regime": {
+  "b_draws": 2000,
+  "layer": 19,
+  "raced": [
+   "p1",
+   "p2",
+   "p3a",
+   "p3b",
+   "p4",
+   "p5",
+   "p6",
+   "p7",
+   "p8a",
+   "p8b",
+   "p9"
+  ],
+  "dv_names": [
+   "dv_resid"
+  ],
+  "n": 3984,
+  "n_shared": 210,
+  "shared_sha_hash": "9ede0aca82499d6d"
+ },
+ "observed_rho": {
+  "dv_resid": {
+   "p1": -0.19845160841941833,
+   "p2": 0.06744850426912308,
+   "p3a": 0.04905853793025017,
+   "p3b": 0.04900910705327988,
+   "p4": 0.015504120849072933,
+   "p5": 0.15676656365394592,
+   "p6": 0.14348746836185455,
+   "p7": 0.054753731936216354,
+   "p8a": -0.053887493908405304,
+   "p8b": -0.055684421211481094,
+   "p9": -0.19760143756866455
+  }
+ },
+ "ols_residualization": {
+  "alpha": 9.514906190844203,
+  "beta": 0.6762763214326717,
+  "r2_1d_fit": 0.41692109464899463
+ },
+ "n_degenerate_series_draws": 0,
+ "n_realized": 3984,
+ "elapsed_s": 0.2
+}

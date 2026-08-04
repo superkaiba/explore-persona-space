@@ -1,0 +1,1135 @@
+{
+  "commit": "d34267ace1",
+  "created": "2026-08-01T03:28:37Z",
+  "figsize": [
+    13.0,
+    4.2
+  ],
+  "points": [
+    {
+      "rank of the low-rank fit": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "held-out interaction R-squared": 6.343528964038601e-05,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "held-out interaction R-squared": -0.0005863707158197541,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "held-out interaction R-squared": -0.0021576033562089782,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "held-out interaction R-squared": -0.005454185177504947,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "held-out interaction R-squared": -0.01260003373604898,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "held-out interaction R-squared": -0.03096751636860307,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "held-out interaction R-squared": -0.07947416569618107,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "held-out interaction R-squared": -0.0006210565312984479,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "held-out interaction R-squared": -0.0013658173632723394,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "held-out interaction R-squared": -0.0033750538272577105,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "held-out interaction R-squared": -0.007909378233612034,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "held-out interaction R-squared": -0.01772056663190759,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "held-out interaction R-squared": -0.04189979628929684,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "held-out interaction R-squared": -0.11108072820138591,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "held-out interaction R-squared": -0.0009116022296916573,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "held-out interaction R-squared": -0.0024143154078841416,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "held-out interaction R-squared": -0.005568762970718679,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "held-out interaction R-squared": -0.011546585108215528,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "held-out interaction R-squared": -0.02583951089092936,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "held-out interaction R-squared": -0.06028140673914588,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "held-out interaction R-squared": -0.16788449651620513,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "held-out interaction R-squared": -0.0007017922726638901,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "held-out interaction R-squared": -0.0013176161232168655,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "held-out interaction R-squared": -0.00332785948455939,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "held-out interaction R-squared": -0.006896772303295801,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "held-out interaction R-squared": -0.015513195110449938,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "held-out interaction R-squared": -0.03670879699397741,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "held-out interaction R-squared": -0.09578440657402101,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "held-out interaction R-squared": -0.0006020258336883863,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "held-out interaction R-squared": -0.0015876124146298473,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "held-out interaction R-squared": -0.0036602954898288156,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "held-out interaction R-squared": -0.007843547561745249,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "held-out interaction R-squared": -0.017152239424363513,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "held-out interaction R-squared": -0.041417827183515346,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "held-out interaction R-squared": -0.10931968468838035,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "held-out interaction R-squared": -0.0009995193783139229,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "held-out interaction R-squared": -0.002088088077836994,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "held-out interaction R-squared": -0.00470635653929591,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "held-out interaction R-squared": -0.009834982535947792,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "held-out interaction R-squared": -0.02089588242147994,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "held-out interaction R-squared": -0.04712350669696433,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "held-out interaction R-squared": -0.12934230193875157,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "held-out interaction R-squared": -0.0005391212850649449,
+      "series": "permuted-pairing reference (max over strata)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "held-out interaction R-squared": -0.0005391212850649449,
+      "series": "permuted-pairing reference (max over strata)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "y": 0.0,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "y": 0.0005524696905597591,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "y": -0.00013373976751524595,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "y": -0.0017563197908208846,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "y": -0.005098841011945562,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "y": -0.012712760464018213,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "y": -0.03103564562823596,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "y": -0.08355726659928084,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "y": 0.0,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "y": 9.854078238927673e-05,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "y": -0.0007578305589606428,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "y": -0.002773098688400269,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "y": -0.00752243453446343,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "y": -0.0180888311209036,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "y": -0.0428971539461422,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "y": -0.11035826807675281,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "y": 0.0,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "y": -0.0007089165289267728,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "y": -0.001782890234961605,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "y": -0.004108584538701303,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "y": -0.010212333023801486,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "y": -0.023182480430589757,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "y": -0.05632907227539899,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "y": -0.16313495289155172,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "y": 0.0,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "y": -6.436980330058959e-05,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "y": -0.0006885055866826672,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "y": -0.0027605498077226285,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "y": -0.006886851387127083,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "y": -0.016374046093805696,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "y": -0.03781238209332762,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "y": -0.09768065126316156,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "y": 0.0,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "y": -0.0006570998764467199,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "y": -0.0016360858204825203,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "y": -0.00321123878725995,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "y": -0.007282137783877054,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "y": -0.017293192813595627,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "y": -0.04114416793035973,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "y": -0.11084716684874443,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "y": 0.0,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "y": -0.0013146312668894258,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "y": -0.002170255805643875,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "y": -0.004401209959385099,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "y": -0.009350626680325267,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "y": -0.020920853954607126,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "y": -0.04937301104060882,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "y": -0.13110065010943633,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "y": -0.0005498304400838958,
+      "series": "permuted-pairing reference (max over strata)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "y": -0.0005498304400838958,
+      "series": "permuted-pairing reference (max over strata)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "y": 0.0,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "y": 0.0009018937669783645,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "y": 0.00027408825658501725,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "y": -0.0013993357302139122,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "y": -0.004874480130970282,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "y": -0.012412012156851757,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "y": -0.03144319032568267,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "y": -0.08250765124766693,
+      "series": "lmsys, 2-2 user turns (n=1107)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "y": 0.0,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "y": -0.0002751148841035551,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "y": -0.0010690019323899458,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "y": -0.002935333262811212,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "y": -0.007664357279244648,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "y": -0.01767208458356296,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "y": -0.04139042343616084,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "y": -0.10923949455937025,
+      "series": "lmsys, 3-4 user turns (n=799)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "y": 0.0,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "y": -0.0005555166225380236,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "y": -0.0015978895867451205,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "y": -0.0042756542006612995,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "y": -0.010412170638863846,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "y": -0.023956236669461606,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "y": -0.058552038176980944,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "y": -0.16435259646225497,
+      "series": "lmsys, >=5 user turns (n=551)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "y": 0.0,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "y": -0.0007926716819905939,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "y": -0.0017724046127700816,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "y": -0.0037573834460949375,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "y": -0.007743144167559614,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "y": -0.016013699863528495,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "y": -0.03829018069963061,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "y": -0.09893889425728031,
+      "series": "wildchat, 2-2 user turns (n=952)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "y": 0.0,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "y": -0.00036123679224495906,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "y": -0.0012309482447409085,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "y": -0.0029588871595908443,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "y": -0.00756417480803244,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "y": -0.01844421708772029,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "y": -0.043628420801269954,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "y": -0.11383482768960118,
+      "series": "wildchat, 3-4 user turns (n=784)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "y": 0.0,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "y": -0.0009415654645112787,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "rank of the low-rank fit": 2.0,
+      "y": -0.002052662363403288,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "rank of the low-rank fit": 4.0,
+      "y": -0.004358718660094737,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "rank of the low-rank fit": 8.0,
+      "y": -0.009293359134436217,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "rank of the low-rank fit": 16.0,
+      "y": -0.02024691674013749,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "rank of the low-rank fit": 32.0,
+      "y": -0.04839523106678948,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "rank of the low-rank fit": 64.0,
+      "y": -0.13009648763795317,
+      "series": "wildchat, >=5 user turns (n=693)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "rank of the low-rank fit": 0.0,
+      "y": -0.0006333608124443475,
+      "series": "permuted-pairing reference (max over strata)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "rank of the low-rank fit": 1.0,
+      "y": -0.0006333608124443475,
+      "series": "permuted-pairing reference (max over strata)",
+      "_kind": "line",
+      "_group": 20
+    }
+  ],
+  "n_series": 21,
+  "total_points": 150,
+  "text": {
+    "suptitle": "BCV curves by corpus x conversation-depth stratum (log space, 256 directions, fold-pooled; descriptive)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "full context, layer 19, ridge",
+        "xlabel": "rank of the low-rank fit",
+        "ylabel": "held-out interaction R-squared",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70"
+        ],
+        "yticklabels": [
+          "\u22120.200",
+          "\u22120.175",
+          "\u22120.150",
+          "\u22120.125",
+          "\u22120.100",
+          "\u22120.075",
+          "\u22120.050",
+          "\u22120.025",
+          "0.000",
+          "0.025"
+        ]
+      },
+      {
+        "title_left": "prefix only, layer 19, ridge",
+        "xlabel": "rank of the low-rank fit",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70"
+        ]
+      },
+      {
+        "title_left": "bare query, layer 19, ridge",
+        "xlabel": "rank of the low-rank fit",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70"
+        ]
+      }
+    ],
+    "series": [
+      "lmsys, 2-2 user turns (n=1107)",
+      "lmsys, 3-4 user turns (n=799)",
+      "lmsys, >=5 user turns (n=551)",
+      "wildchat, 2-2 user turns (n=952)",
+      "wildchat, 3-4 user turns (n=784)",
+      "wildchat, >=5 user turns (n=693)",
+      "permuted-pairing reference (max over strata)"
+    ]
+  }
+}

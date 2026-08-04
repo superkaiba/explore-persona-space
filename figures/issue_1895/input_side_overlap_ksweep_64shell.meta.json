@@ -1,0 +1,18 @@
+{
+  "source": "eval_results/issue_1895/input_side/input_side_summary.json",
+  "k": [
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "observed_O": [
+    0.8267974853515625,
+    0.8145534992218018,
+    0.7841129302978516,
+    0.7268880605697632,
+    0.6517595052719116
+  ],
+  "what_is_plotted": "Per k: observed mean cos^2 principal angle between the dense map's top-k read-energy input eigendirections and the SAE reconstruction-PCA top-k subspace of the context states, vs the finest (64-shell) variance-matched rotation null (median + central-95% band)."
+}

@@ -1,0 +1,306 @@
+{
+  "commit": "82fa479c29",
+  "created": "2026-07-31T13:35:21Z",
+  "figsize": [
+    10.4,
+    3.9
+  ],
+  "points": [
+    {
+      "labeled examples L, within each arm": 0.0,
+      "Spearman $\\rho$": 0.35294877226828564,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "labeled examples L, within each arm": 0.86,
+      "Spearman $\\rho$": 0.27070949953521983,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "labeled examples L, within each arm": 2.6,
+      "Spearman $\\rho$": 0.305762618366879,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "labeled examples L, within each arm": 3.46,
+      "Spearman $\\rho$": 0.28764607069327486,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "labeled examples L, within each arm": 5.2,
+      "Spearman $\\rho$": 0.3086914709477256,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "labeled examples L, within each arm": 6.06,
+      "Spearman $\\rho$": 0.2823020724799761,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "labeled examples L, within each arm": 8.7,
+      "Spearman $\\rho$": 0.451422051043975,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "labeled examples L, within each arm": 9.56,
+      "Spearman $\\rho$": 0.5307653785761396,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "labeled examples L, within each arm": 11.3,
+      "Spearman $\\rho$": 0.6519896169953316,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "labeled examples L, within each arm": 12.16,
+      "Spearman $\\rho$": 0.5173540694771473,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "labeled examples L, within each arm": 13.9,
+      "Spearman $\\rho$": 0.7357135170299268,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "labeled examples L, within each arm": 14.76,
+      "Spearman $\\rho$": 0.7258425964402954,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "labeled examples L, within each arm": 17.4,
+      "Spearman $\\rho$": 0.2817325331387294,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "labeled examples L, within each arm": 18.26,
+      "Spearman $\\rho$": 0.5932369197627294,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "labeled examples L, within each arm": 20.0,
+      "Spearman $\\rho$": 0.13566963783225547,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "labeled examples L, within each arm": 20.86,
+      "Spearman $\\rho$": 0.3513286665120885,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "labeled examples L, within each arm": 22.6,
+      "Spearman $\\rho$": 0.2940376901152685,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "labeled examples L, within each arm": 23.46,
+      "Spearman $\\rho$": 0.6520631948798564,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "labeled examples L, within each arm": 0.0,
+      "y": 0.23002867020460063,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "labeled examples L, within each arm": 0.86,
+      "y": 0.055762435661321524,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "labeled examples L, within each arm": 2.6,
+      "y": 0.14112610923168012,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "labeled examples L, within each arm": 3.46,
+      "y": 0.06166655837373039,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "labeled examples L, within each arm": 5.2,
+      "y": 0.12349486250419503,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "labeled examples L, within each arm": 6.06,
+      "y": 0.027673945718987538,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "labeled examples L, within each arm": 8.7,
+      "y": 0.30768178199528295,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "labeled examples L, within each arm": 9.56,
+      "y": 0.36630070793086655,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "labeled examples L, within each arm": 11.3,
+      "y": 0.5446562004807827,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "labeled examples L, within each arm": 12.16,
+      "y": 0.5052739495164322,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "labeled examples L, within each arm": 13.9,
+      "y": 0.6012970575586201,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "labeled examples L, within each arm": 14.76,
+      "y": 0.5929669823257482,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "labeled examples L, within each arm": 17.4,
+      "y": 0.2572692375365483,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "labeled examples L, within each arm": 18.26,
+      "y": 0.4215720322731746,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "labeled examples L, within each arm": 20.0,
+      "y": 0.1419844596714365,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "labeled examples L, within each arm": 20.86,
+      "y": 0.3394380021658626,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "labeled examples L, within each arm": 22.6,
+      "y": 0.1961129784844044,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "labeled examples L, within each arm": 23.46,
+      "y": 0.5543770365287708,
+      "_kind": "bar",
+      "_group": 35
+    }
+  ],
+  "n_series": 36,
+  "total_points": 36,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "sycophancy",
+        "xlabel": "labeled examples L, within each arm",
+        "ylabel": "Spearman $\\rho$",
+        "legend_labels": [
+          "all-generic pool",
+          "half behavior-eliciting"
+        ],
+        "annotations": [
+          "map-pool composition at a fixed 5,000-pair budget, context end state"
+        ],
+        "xticklabels": [
+          "250",
+          "2500",
+          "16000",
+          "map -> PV proj.",
+          "250",
+          "2500",
+          "16000",
+          "map -> ridge\n(pred. answers)",
+          "250",
+          "2500",
+          "16000",
+          "map -> ridge\n(real answers)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "hallucination",
+        "xlabel": "labeled examples L, within each arm",
+        "annotations": [
+          "map-pool composition at a fixed 5,000-pair budget, context end state"
+        ],
+        "xticklabels": [
+          "250",
+          "2500",
+          "16000",
+          "map -> PV proj.",
+          "250",
+          "2500",
+          "16000",
+          "map -> ridge\n(pred. answers)",
+          "250",
+          "2500",
+          "16000",
+          "map -> ridge\n(real answers)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "all-generic pool",
+      "half behavior-eliciting"
+    ]
+  }
+}

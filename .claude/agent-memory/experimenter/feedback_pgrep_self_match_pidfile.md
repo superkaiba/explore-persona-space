@@ -28,3 +28,9 @@ Verify `ps -o sess` equals the pid (setsid leader) before posting.
 
 Also retained: a transient single-file HF upload failure at a skip-if-exists
 dispatcher's upload gate needs only a resume relaunch — zero GPU re-work.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [pid acquisition: launch-expression capture, pgrep recovery-only](feedback_pgrep_self_match_pidfile.md) — pid file pid comes from $$/$! in the launch chain (1d, #1634); pgrep only as bracketed identity-verified recovery/monitor probe — self-match + wrapper-subshell hygiene (#601, #602)

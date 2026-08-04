@@ -1,0 +1,140 @@
+{
+  "commit": "36af9cdf60",
+  "created": "2026-07-30T23:55:20Z",
+  "figsize": [
+    7.6,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.10500000000000001,
+      "rho difference: map-then-project minus context-native": -0.08204629063668883,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.035,
+      "rho difference: map-then-project minus context-native": -0.3080863985167332,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.035,
+      "rho difference: map-then-project minus context-native": -0.29887795288796504,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.825,
+      "rho difference: map-then-project minus context-native": 0.2908039663970384,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.895,
+      "rho difference: map-then-project minus context-native": 0.34960644726340306,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.965,
+      "rho difference: map-then-project minus context-native": 0.11274737589853917,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.035,
+      "rho difference: map-then-project minus context-native": 0.1932849427095394,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.105,
+      "rho difference: map-then-project minus context-native": 0.13404737768482622,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.295,
+      "rho difference: map-then-project minus context-native": -0.17228025547667392,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.3649999999999998,
+      "rho difference: map-then-project minus context-native": -0.257554505029252,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.435,
+      "rho difference: map-then-project minus context-native": -0.292127754720507,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.225,
+      "rho difference: map-then-project minus context-native": 0.2670199946821117,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.295,
+      "rho difference: map-then-project minus context-native": 0.3238056571400969,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.3649999999999998,
+      "rho difference: map-then-project minus context-native": 0.051503932233350924,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.435,
+      "rho difference: map-then-project minus context-native": 0.354131102612843,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.505,
+      "rho difference: map-then-project minus context-native": 0.2787552239934119,
+      "_kind": "scatter",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Evil composition cells: fitting the map on half in-domain contexts flips its sign\n(each dot = one cell, single draw and seed \u2014 preliminary)",
+        "ylabel": "rho difference: map-then-project minus context-native",
+        "legend_labels": [
+          "L=250",
+          "L=2500",
+          "L=8000"
+        ],
+        "xticklabels": [
+          "generic map\n(context)",
+          "half in-domain map\n(context)",
+          "generic map\n(prefix)",
+          "half in-domain map\n(prefix)"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      }
+    ]
+  }
+}

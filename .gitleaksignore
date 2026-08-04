@@ -52,3 +52,10 @@ scripts/issue1738_sae_arm.py:generic-api-key:1614
 scripts/issue1738_sae_arm.py:generic-api-key:1636
 tasks/followups_running/1738/events.jsonl:generic-api-key:249
 tasks/followups_running/1738/events.jsonl:generic-api-key:253
+scripts/issue1689_user_slot_gen_a1.py:generic-api-key:362
+# issue-1739 hallu DV labeling.json: gitleaks generic-api-key false positives on
+# high-entropy group_key TOPIC tokens (e.g. "3-phosphoglycerate", "12.9-kilometre")
+eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:41185
+eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:50236
+eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:123715
+eval_results/issue_1739/dv_dataset/hallucination/labeling.json:generic-api-key:399403

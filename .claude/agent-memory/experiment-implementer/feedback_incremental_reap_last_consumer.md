@@ -35,3 +35,9 @@ is the same consumer-side, prefix-threaded Hub re-stage fallback — scoped
 listing (never full-tree on a ~1M-file repo) + atomic idempotent per-file
 stage + sha256 verify (#1776 crash-fix c8, commit f3413617bc,
 tests in the phase5 staging probe).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Purge/reap only after the LAST consumer](feedback_incremental_reap_last_consumer.md) — enumerate every reader (incl. later provisions AND reused upload helpers' own upload-then-purge) before any mid-run reap; consumers need a prefix-threaded re-stage-on-demand guard (#1489 r6, #1776 c8)

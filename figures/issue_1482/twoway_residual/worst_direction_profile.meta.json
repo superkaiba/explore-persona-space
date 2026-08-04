@@ -1,0 +1,1819 @@
+{
+  "commit": "697239cc65",
+  "created": "2026-07-31T00:32:23Z",
+  "figsize": [
+    16.5,
+    4.6
+  ],
+  "points": [
+    {
+      "Answer direction (target principal component, by variance)": 235.0,
+      "Held-out $R^2$": 0.2719482767148669,
+      "series": "20 worst-predicted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Answer direction (target principal component, by variance)": 238.0,
+      "Held-out $R^2$": 0.2799431051767427,
+      "series": "20 worst-predicted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Answer direction (target principal component, by variance)": 246.0,
+      "Held-out $R^2$": 0.28284131052669514,
+      "series": "20 worst-predicted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Answer direction (target principal component, by variance)": 251.0,
+      "Held-out $R^2$": 0.2835196674564999,
+      "series": "20 worst-predicted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Answer direction (target principal component, by variance)": 252.0,
+      "Held-out $R^2$": 0.2843828671215495,
+      "series": "20 worst-predicted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Answer direction (target principal component, by variance)": 242.0,
+      "Held-out $R^2$": 0.28507762833650696,
+      "series": "20 worst-predicted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Answer direction (target principal component, by variance)": 249.0,
+      "Held-out $R^2$": 0.28698891959847994,
+      "series": "20 worst-predicted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Answer direction (target principal component, by variance)": 244.0,
+      "Held-out $R^2$": 0.2909667443767019,
+      "series": "20 worst-predicted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Answer direction (target principal component, by variance)": 240.0,
+      "Held-out $R^2$": 0.2920388430109889,
+      "series": "20 worst-predicted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Answer direction (target principal component, by variance)": 222.0,
+      "Held-out $R^2$": 0.2922707540749192,
+      "series": "20 worst-predicted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Answer direction (target principal component, by variance)": 247.0,
+      "Held-out $R^2$": 0.2926446475003167,
+      "series": "20 worst-predicted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Answer direction (target principal component, by variance)": 243.0,
+      "Held-out $R^2$": 0.292972879575057,
+      "series": "20 worst-predicted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Answer direction (target principal component, by variance)": 255.0,
+      "Held-out $R^2$": 0.29315522950493267,
+      "series": "20 worst-predicted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Answer direction (target principal component, by variance)": 253.0,
+      "Held-out $R^2$": 0.29417226399824836,
+      "series": "20 worst-predicted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Answer direction (target principal component, by variance)": 245.0,
+      "Held-out $R^2$": 0.297881448711931,
+      "series": "20 worst-predicted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Answer direction (target principal component, by variance)": 239.0,
+      "Held-out $R^2$": 0.29892959107914574,
+      "series": "20 worst-predicted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Answer direction (target principal component, by variance)": 248.0,
+      "Held-out $R^2$": 0.29987499044976773,
+      "series": "20 worst-predicted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Answer direction (target principal component, by variance)": 228.0,
+      "Held-out $R^2$": 0.30089121649761186,
+      "series": "20 worst-predicted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Answer direction (target principal component, by variance)": 234.0,
+      "Held-out $R^2$": 0.30386956473313287,
+      "series": "20 worst-predicted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Answer direction (target principal component, by variance)": 241.0,
+      "Held-out $R^2$": 0.3042847572061622,
+      "series": "20 worst-predicted",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Answer direction (target principal component, by variance)": 0.0,
+      "Held-out $R^2$": 0.8729903074143788,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 1.0,
+      "Held-out $R^2$": 0.8972428789386087,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 2.0,
+      "Held-out $R^2$": 0.8693889490850002,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 3.0,
+      "Held-out $R^2$": 0.9018345172929152,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 4.0,
+      "Held-out $R^2$": 0.890639871522667,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 5.0,
+      "Held-out $R^2$": 0.8661185575965226,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 6.0,
+      "Held-out $R^2$": 0.8524295886444054,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 7.0,
+      "Held-out $R^2$": 0.8241582775385246,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 8.0,
+      "Held-out $R^2$": 0.8195019565905626,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 9.0,
+      "Held-out $R^2$": 0.7236982509885113,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 10.0,
+      "Held-out $R^2$": 0.7979800564596167,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 11.0,
+      "Held-out $R^2$": 0.7990250250188184,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 12.0,
+      "Held-out $R^2$": 0.7578426753214391,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 13.0,
+      "Held-out $R^2$": 0.7474729586421454,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 14.0,
+      "Held-out $R^2$": 0.8122333932347463,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 15.0,
+      "Held-out $R^2$": 0.8478312503147984,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 16.0,
+      "Held-out $R^2$": 0.7771684573548865,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 17.0,
+      "Held-out $R^2$": 0.7681276942759845,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 18.0,
+      "Held-out $R^2$": 0.7452349933278598,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 19.0,
+      "Held-out $R^2$": 0.7443680356366948,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 20.0,
+      "Held-out $R^2$": 0.7511537332739534,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 21.0,
+      "Held-out $R^2$": 0.7568828321423057,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 22.0,
+      "Held-out $R^2$": 0.7234767264513778,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 23.0,
+      "Held-out $R^2$": 0.6802513052737875,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 24.0,
+      "Held-out $R^2$": 0.7084589426429319,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 25.0,
+      "Held-out $R^2$": 0.7277942701959762,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 26.0,
+      "Held-out $R^2$": 0.6512579761463148,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 27.0,
+      "Held-out $R^2$": 0.6742393982573245,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 28.0,
+      "Held-out $R^2$": 0.7003513299960249,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 29.0,
+      "Held-out $R^2$": 0.6680764738806426,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 30.0,
+      "Held-out $R^2$": 0.684355805813846,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 31.0,
+      "Held-out $R^2$": 0.618599980794168,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 32.0,
+      "Held-out $R^2$": 0.6954534110484194,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 33.0,
+      "Held-out $R^2$": 0.6452159733919276,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 34.0,
+      "Held-out $R^2$": 0.7071161412839853,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 35.0,
+      "Held-out $R^2$": 0.658248743812681,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 36.0,
+      "Held-out $R^2$": 0.6732837099968052,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 37.0,
+      "Held-out $R^2$": 0.662867824248914,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 38.0,
+      "Held-out $R^2$": 0.6503250161996061,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 39.0,
+      "Held-out $R^2$": 0.6695737372469193,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 40.0,
+      "Held-out $R^2$": 0.6910029138351275,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 41.0,
+      "Held-out $R^2$": 0.6959592023135273,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 42.0,
+      "Held-out $R^2$": 0.6227731665342613,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 43.0,
+      "Held-out $R^2$": 0.6567317430156634,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 44.0,
+      "Held-out $R^2$": 0.6338487283303493,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 45.0,
+      "Held-out $R^2$": 0.6521147101195104,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 46.0,
+      "Held-out $R^2$": 0.6272847951453878,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 47.0,
+      "Held-out $R^2$": 0.6106202868283468,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 48.0,
+      "Held-out $R^2$": 0.5933192686729034,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 49.0,
+      "Held-out $R^2$": 0.6037541766595287,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 50.0,
+      "Held-out $R^2$": 0.6176744697413338,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 51.0,
+      "Held-out $R^2$": 0.6349934670335237,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 52.0,
+      "Held-out $R^2$": 0.6175182544053788,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 53.0,
+      "Held-out $R^2$": 0.5904705386405632,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 54.0,
+      "Held-out $R^2$": 0.6785992510235686,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 55.0,
+      "Held-out $R^2$": 0.5943048140219165,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 56.0,
+      "Held-out $R^2$": 0.6026323388989168,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 57.0,
+      "Held-out $R^2$": 0.6124983866572042,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 58.0,
+      "Held-out $R^2$": 0.5865607536629358,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 59.0,
+      "Held-out $R^2$": 0.5951687589136956,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 60.0,
+      "Held-out $R^2$": 0.5579502006831116,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 61.0,
+      "Held-out $R^2$": 0.563319760227436,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 62.0,
+      "Held-out $R^2$": 0.6140386805014395,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 63.0,
+      "Held-out $R^2$": 0.569314839493195,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 64.0,
+      "Held-out $R^2$": 0.5867661008722174,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 65.0,
+      "Held-out $R^2$": 0.5727205543061364,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 66.0,
+      "Held-out $R^2$": 0.6160344520563248,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 67.0,
+      "Held-out $R^2$": 0.5939206535993526,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 68.0,
+      "Held-out $R^2$": 0.5455950241472411,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 69.0,
+      "Held-out $R^2$": 0.5729941954225288,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 70.0,
+      "Held-out $R^2$": 0.5827635452493138,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 71.0,
+      "Held-out $R^2$": 0.5754577516253349,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 72.0,
+      "Held-out $R^2$": 0.5566648748353418,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 73.0,
+      "Held-out $R^2$": 0.5556793620576126,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 74.0,
+      "Held-out $R^2$": 0.5574196601095598,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 75.0,
+      "Held-out $R^2$": 0.5583355884104229,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 76.0,
+      "Held-out $R^2$": 0.5596403220827844,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 77.0,
+      "Held-out $R^2$": 0.5335434473880527,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 78.0,
+      "Held-out $R^2$": 0.5208204515940644,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 79.0,
+      "Held-out $R^2$": 0.5397735947446558,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 80.0,
+      "Held-out $R^2$": 0.49175091353827527,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 81.0,
+      "Held-out $R^2$": 0.5281100951272082,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 82.0,
+      "Held-out $R^2$": 0.5879930023682498,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 83.0,
+      "Held-out $R^2$": 0.5301802064553257,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 84.0,
+      "Held-out $R^2$": 0.5625779723118647,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 85.0,
+      "Held-out $R^2$": 0.5497123626573537,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 86.0,
+      "Held-out $R^2$": 0.5326450832880825,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 87.0,
+      "Held-out $R^2$": 0.5413578516114514,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 88.0,
+      "Held-out $R^2$": 0.5372695645510721,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 89.0,
+      "Held-out $R^2$": 0.5106636835270015,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 90.0,
+      "Held-out $R^2$": 0.514386239168209,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 91.0,
+      "Held-out $R^2$": 0.4653926174954345,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 92.0,
+      "Held-out $R^2$": 0.5544899485879029,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 93.0,
+      "Held-out $R^2$": 0.5290074327099221,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 94.0,
+      "Held-out $R^2$": 0.5170001833338354,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 95.0,
+      "Held-out $R^2$": 0.5166410919133961,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 96.0,
+      "Held-out $R^2$": 0.56241003326937,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 97.0,
+      "Held-out $R^2$": 0.49907080907247414,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 98.0,
+      "Held-out $R^2$": 0.507093238408,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 99.0,
+      "Held-out $R^2$": 0.5046890386509428,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 100.0,
+      "Held-out $R^2$": 0.4821393751568772,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 101.0,
+      "Held-out $R^2$": 0.5127392247887677,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 102.0,
+      "Held-out $R^2$": 0.47687514550176013,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 103.0,
+      "Held-out $R^2$": 0.5067874358837543,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 104.0,
+      "Held-out $R^2$": 0.4748189371437418,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 105.0,
+      "Held-out $R^2$": 0.49167938960575386,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 106.0,
+      "Held-out $R^2$": 0.46229579928742814,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 107.0,
+      "Held-out $R^2$": 0.46923496843092116,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 108.0,
+      "Held-out $R^2$": 0.5139722953474744,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 109.0,
+      "Held-out $R^2$": 0.4281873097794977,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 110.0,
+      "Held-out $R^2$": 0.4575504270266404,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 111.0,
+      "Held-out $R^2$": 0.42922770890422923,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 112.0,
+      "Held-out $R^2$": 0.4721561548433514,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 113.0,
+      "Held-out $R^2$": 0.45331778501630127,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 114.0,
+      "Held-out $R^2$": 0.449550731055571,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 115.0,
+      "Held-out $R^2$": 0.4863891672411844,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 116.0,
+      "Held-out $R^2$": 0.47203537433680365,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 117.0,
+      "Held-out $R^2$": 0.46734729658167007,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 118.0,
+      "Held-out $R^2$": 0.45180863884452926,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 119.0,
+      "Held-out $R^2$": 0.47557717760012697,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 120.0,
+      "Held-out $R^2$": 0.4274756522153802,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 121.0,
+      "Held-out $R^2$": 0.4743313393829185,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 122.0,
+      "Held-out $R^2$": 0.46794894873957393,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 123.0,
+      "Held-out $R^2$": 0.4527515302500432,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 124.0,
+      "Held-out $R^2$": 0.45436690006676084,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 125.0,
+      "Held-out $R^2$": 0.45720569048007154,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 126.0,
+      "Held-out $R^2$": 0.4436107164086537,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 127.0,
+      "Held-out $R^2$": 0.46185535472527717,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 128.0,
+      "Held-out $R^2$": 0.4450202579597675,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 129.0,
+      "Held-out $R^2$": 0.463522953352712,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 130.0,
+      "Held-out $R^2$": 0.42613469343211086,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 131.0,
+      "Held-out $R^2$": 0.4294926619777656,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 132.0,
+      "Held-out $R^2$": 0.4403165035507024,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 133.0,
+      "Held-out $R^2$": 0.42653340864057354,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 134.0,
+      "Held-out $R^2$": 0.44508159653186086,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 135.0,
+      "Held-out $R^2$": 0.4317196298677288,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 136.0,
+      "Held-out $R^2$": 0.4397290347143882,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 137.0,
+      "Held-out $R^2$": 0.41007370267586374,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 138.0,
+      "Held-out $R^2$": 0.4471654854341447,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 139.0,
+      "Held-out $R^2$": 0.4229053796427765,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 140.0,
+      "Held-out $R^2$": 0.41710131370782344,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 141.0,
+      "Held-out $R^2$": 0.40739885649254903,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 142.0,
+      "Held-out $R^2$": 0.433770401451113,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 143.0,
+      "Held-out $R^2$": 0.41039353718211713,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 144.0,
+      "Held-out $R^2$": 0.4085658933381444,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 145.0,
+      "Held-out $R^2$": 0.41021249986415487,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 146.0,
+      "Held-out $R^2$": 0.4308883082544084,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 147.0,
+      "Held-out $R^2$": 0.42142350138418694,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 148.0,
+      "Held-out $R^2$": 0.4273033521938926,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 149.0,
+      "Held-out $R^2$": 0.3824203901005636,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 150.0,
+      "Held-out $R^2$": 0.4297622135713618,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 151.0,
+      "Held-out $R^2$": 0.4192326855773658,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 152.0,
+      "Held-out $R^2$": 0.4037530535526742,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 153.0,
+      "Held-out $R^2$": 0.4046048694248269,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 154.0,
+      "Held-out $R^2$": 0.3845660350905571,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 155.0,
+      "Held-out $R^2$": 0.413020310730568,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 156.0,
+      "Held-out $R^2$": 0.4007395050729584,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 157.0,
+      "Held-out $R^2$": 0.4097094152180589,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 158.0,
+      "Held-out $R^2$": 0.3761792224146624,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 159.0,
+      "Held-out $R^2$": 0.37939946803618196,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 160.0,
+      "Held-out $R^2$": 0.40809485766035825,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 161.0,
+      "Held-out $R^2$": 0.40034076749582526,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 162.0,
+      "Held-out $R^2$": 0.35410807902626473,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 163.0,
+      "Held-out $R^2$": 0.38749904769742083,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 164.0,
+      "Held-out $R^2$": 0.3783720700180576,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 165.0,
+      "Held-out $R^2$": 0.37270051532051374,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 166.0,
+      "Held-out $R^2$": 0.34517189967849016,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 167.0,
+      "Held-out $R^2$": 0.36973478991391084,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 168.0,
+      "Held-out $R^2$": 0.37081228410987,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 169.0,
+      "Held-out $R^2$": 0.3899170006649395,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 170.0,
+      "Held-out $R^2$": 0.37215061752114176,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 171.0,
+      "Held-out $R^2$": 0.38345102156193767,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 172.0,
+      "Held-out $R^2$": 0.3718778249229189,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 173.0,
+      "Held-out $R^2$": 0.40025758537822365,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 174.0,
+      "Held-out $R^2$": 0.3771883905057787,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 175.0,
+      "Held-out $R^2$": 0.3525796366416054,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 176.0,
+      "Held-out $R^2$": 0.3558987850821066,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 177.0,
+      "Held-out $R^2$": 0.35763488077130745,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 178.0,
+      "Held-out $R^2$": 0.3605918115860153,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 179.0,
+      "Held-out $R^2$": 0.3493310183596995,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 180.0,
+      "Held-out $R^2$": 0.35697712561359796,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 181.0,
+      "Held-out $R^2$": 0.40494439965562157,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 182.0,
+      "Held-out $R^2$": 0.36774829914521223,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 183.0,
+      "Held-out $R^2$": 0.3839900704782836,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 184.0,
+      "Held-out $R^2$": 0.3345756907051516,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 185.0,
+      "Held-out $R^2$": 0.35073008033790365,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 186.0,
+      "Held-out $R^2$": 0.3324645853032959,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 187.0,
+      "Held-out $R^2$": 0.3473191281242677,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 188.0,
+      "Held-out $R^2$": 0.3827856197638234,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 189.0,
+      "Held-out $R^2$": 0.34213515850823684,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 190.0,
+      "Held-out $R^2$": 0.3516252021708123,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 191.0,
+      "Held-out $R^2$": 0.33832229973249994,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 192.0,
+      "Held-out $R^2$": 0.32940762536280777,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 193.0,
+      "Held-out $R^2$": 0.34869371462109866,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 194.0,
+      "Held-out $R^2$": 0.3688392044105253,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 195.0,
+      "Held-out $R^2$": 0.3643092498677871,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 196.0,
+      "Held-out $R^2$": 0.347028832347686,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 197.0,
+      "Held-out $R^2$": 0.3578603204684455,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 198.0,
+      "Held-out $R^2$": 0.34006588772497637,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 199.0,
+      "Held-out $R^2$": 0.33723780485654076,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 200.0,
+      "Held-out $R^2$": 0.33481306866283367,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 201.0,
+      "Held-out $R^2$": 0.3569599925677803,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 202.0,
+      "Held-out $R^2$": 0.33536194386334994,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 203.0,
+      "Held-out $R^2$": 0.3499821189203369,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 204.0,
+      "Held-out $R^2$": 0.33931652870526596,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 205.0,
+      "Held-out $R^2$": 0.35241631650649696,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 206.0,
+      "Held-out $R^2$": 0.32906448572143476,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 207.0,
+      "Held-out $R^2$": 0.33818642280941114,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 208.0,
+      "Held-out $R^2$": 0.3447030122292366,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 209.0,
+      "Held-out $R^2$": 0.33716341840159514,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 210.0,
+      "Held-out $R^2$": 0.31133712561117377,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 211.0,
+      "Held-out $R^2$": 0.32243964988847706,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 212.0,
+      "Held-out $R^2$": 0.34418840469023426,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 213.0,
+      "Held-out $R^2$": 0.3328834491632965,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 214.0,
+      "Held-out $R^2$": 0.32133154997368607,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 215.0,
+      "Held-out $R^2$": 0.33081394305845013,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 216.0,
+      "Held-out $R^2$": 0.318245694976773,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 217.0,
+      "Held-out $R^2$": 0.31445780951404867,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 218.0,
+      "Held-out $R^2$": 0.3246144633960938,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 219.0,
+      "Held-out $R^2$": 0.32922747212511483,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 220.0,
+      "Held-out $R^2$": 0.3044376436563989,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 221.0,
+      "Held-out $R^2$": 0.3407611368311022,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 222.0,
+      "Held-out $R^2$": 0.2922707540749192,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 223.0,
+      "Held-out $R^2$": 0.3158646223861379,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 224.0,
+      "Held-out $R^2$": 0.33380970106687025,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 225.0,
+      "Held-out $R^2$": 0.3082300502084485,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 226.0,
+      "Held-out $R^2$": 0.32254608038404775,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 227.0,
+      "Held-out $R^2$": 0.3334181477306586,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 228.0,
+      "Held-out $R^2$": 0.30089121649761186,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 229.0,
+      "Held-out $R^2$": 0.30953190587774193,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 230.0,
+      "Held-out $R^2$": 0.30864824795119306,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 231.0,
+      "Held-out $R^2$": 0.3453161801824325,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 232.0,
+      "Held-out $R^2$": 0.31537163407302704,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 233.0,
+      "Held-out $R^2$": 0.30823316594617256,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 234.0,
+      "Held-out $R^2$": 0.30386956473313287,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 235.0,
+      "Held-out $R^2$": 0.2719482767148669,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 236.0,
+      "Held-out $R^2$": 0.3085232489472026,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 237.0,
+      "Held-out $R^2$": 0.309116316911918,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 238.0,
+      "Held-out $R^2$": 0.2799431051767427,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 239.0,
+      "Held-out $R^2$": 0.29892959107914574,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 240.0,
+      "Held-out $R^2$": 0.2920388430109889,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 241.0,
+      "Held-out $R^2$": 0.3042847572061622,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 242.0,
+      "Held-out $R^2$": 0.28507762833650696,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 243.0,
+      "Held-out $R^2$": 0.292972879575057,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 244.0,
+      "Held-out $R^2$": 0.2909667443767019,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 245.0,
+      "Held-out $R^2$": 0.297881448711931,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 246.0,
+      "Held-out $R^2$": 0.28284131052669514,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 247.0,
+      "Held-out $R^2$": 0.2926446475003167,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 248.0,
+      "Held-out $R^2$": 0.29987499044976773,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 249.0,
+      "Held-out $R^2$": 0.28698891959847994,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 250.0,
+      "Held-out $R^2$": 0.31456588520027196,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 251.0,
+      "Held-out $R^2$": 0.2835196674564999,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 252.0,
+      "Held-out $R^2$": 0.2843828671215495,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 253.0,
+      "Held-out $R^2$": 0.29417226399824836,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 254.0,
+      "Held-out $R^2$": 0.31140636288515233,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer direction (target principal component, by variance)": 255.0,
+      "Held-out $R^2$": 0.29315522950493267,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": -0.2,
+      "Max |cosine|": 0.04404796966988153,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.8,
+      "Max |cosine|": 0.14124150574207306,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.2,
+      "Max |cosine|": 0.05683256045965791,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.2,
+      "Max |cosine|": 0.09505383670330048,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Map's strongest\n256 directions",
+      "Fraction of squared mass": 0.4693772279399969,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Map's weakest\n256 directions",
+      "Fraction of squared mass": 0.0030553668763343192,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Fraction of squared mass": 0.07142857142857142,
+      "series": "If spread evenly over all 3,584 directions",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Fraction of squared mass": 0.07142857142857142,
+      "series": "If spread evenly over all 3,584 directions",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 284,
+  "text": {
+    "suptitle": "The worst-predicted answer directions \u2014 Context layer 19 ridge",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-direction predictability",
+        "xlabel": "Answer direction (target principal component, by variance)",
+        "ylabel": "Held-out $R^2$",
+        "legend_labels": [
+          "20 worst-predicted"
+        ],
+        "xticklabels": [
+          "\u221250",
+          "0",
+          "50",
+          "100",
+          "150",
+          "200",
+          "250",
+          "300"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Alignment with known bases",
+        "ylabel": "Max |cosine|",
+        "legend_labels": [
+          "Worst-predicted directions",
+          "Random-direction null (max)"
+        ],
+        "xticklabels": [
+          "Trait directions\n(max over 3 traits)",
+          "SAE dictionary\n(max over 131k features)"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14",
+          "0.16"
+        ]
+      },
+      {
+        "title_left": "Where they sit in the map's own gain spectrum",
+        "ylabel": "Fraction of squared mass",
+        "legend_labels": [
+          "If spread evenly over all 3,584 directions"
+        ],
+        "xticklabels": [
+          "Map's strongest\n256 directions",
+          "Map's weakest\n256 directions"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      }
+    ],
+    "series": [
+      "20 worst-predicted",
+      "Worst-predicted directions",
+      "Random-direction null (max)",
+      "If spread evenly over all 3,584 directions"
+    ]
+  }
+}

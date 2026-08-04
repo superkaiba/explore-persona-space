@@ -118,3 +118,9 @@ Companion tests:
 - `tests/test_batch_judge_agg_non_dict_parse.py::test_aggregate_persona_scores_non_dict_skip` (r2 aggregator guard).
 - `tests/test_batch_judge_agg_non_dict_parse.py::test_judge_graded_carries_bare_int_score` (r3 production-path bare-int).
 - `tests/test_issue778_null_battery.py::test_score_from_parsed_accepts_bare_int_in_range` (+ bare-float, out-of-range, bool-disguised).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [batch_judge aggregator crashes on bare-int parse from a scalar-shaped judge rubric](feedback_batch_judge_aggregator_bare_int_parse.md) — `eval.utils.parse_judge_json` returns `json.loads(text)` verbatim; a persona-vectors rubric answered as `"85"` yields a bare `int`, and the Betley legacy aggregator in `_aggregate_persona_scores` crashes on `s.get("aligned")` — BEFORE `save_raw` is written, so a scalar-rubric caller that reduces `all_scores` itself never even gets its data back. Any NON-Betley `judge_completions_batch` caller must reduce from `save_raw`'s `all_scores` itself AND the aggregator needs an `isinstance(s, dict)` guard (fix landed at fb3da7045e). #778 r2.

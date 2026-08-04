@@ -1,0 +1,221 @@
+{
+ "commit": "df7701d338",
+ "created": "2026-08-03T19:50:59Z",
+ "figsize": [
+  13.2,
+  3.9
+ ],
+ "text": {
+  "suptitle": null,
+  "fig_texts": [
+   "R^2 target: #1482 dense-context -> SAE MLP, mean pooling (full width)  |  single corpus: R^2 and the activity / judged-label covariates are both the #1482 SINGLE-TURN read (verified against the banked #1482 panel)"
+  ],
+  "axes": [
+   {
+    "title_left": "(a) Median R-squared: labelled (open circle) vs judge-unresolved (filled square)",
+    "xlabel": "median R-squared",
+    "annotations": [
+     "D +0.0919   n unresolved = 934",
+     "D -0.6381   n unresolved = 2,968",
+     "D -0.2223   n unresolved = 3,544",
+     "D +0.2870   n unresolved = 1,436",
+     "D +0.5733   n unresolved = 7,953"
+    ],
+    "xticklabels": [
+     "\u22121.75",
+     "\u22121.50",
+     "\u22121.25",
+     "\u22121.00",
+     "\u22120.75",
+     "\u22120.50",
+     "\u22120.25",
+     "0.00",
+     "0.25",
+     "0.50",
+     "0.75"
+    ],
+    "yticklabels": [
+     "interpretable",
+     "abstraction",
+     "content type",
+     "speaker property",
+     "functional role"
+    ]
+   },
+   {
+    "title_left": "(b) Same contrast vs its activity-stratified null (tick = null mean, grey = null 95%)",
+    "xlabel": "AUROC that an unresolved feature outranks a labelled one",
+    "annotations": [
+     "excess +0.015",
+     "excess -0.000",
+     "excess +0.014",
+     "excess +0.010",
+     "excess +0.004"
+    ],
+    "xticklabels": [
+     "0.44",
+     "0.46",
+     "0.48",
+     "0.50",
+     "0.52",
+     "0.54",
+     "0.56",
+     "0.58"
+    ]
+   }
+  ]
+ },
+ "issue1482_label_agreement": {
+  "what_is_plotted": "(a) per axis, median R-squared of the LABELLED features (open circle; resolved, drop-labels excluded) against the judge-UNRESOLVED features (filled square), with the ratio and the unresolved count annotated. (b) the same contrast as an AUROC \u2014 P(unresolved feature outranks a labelled one) \u2014 against its within-activity-decile permutation null.",
+  "definitions": {
+   "unresolved": "no unique modal label with >= 3 of the surviving judge draws",
+   "excess": "AUROC minus the mean of the activity-stratified permutation null; excess near 0 means the raw median gap is ACTIVITY COMPOSITION, not a labelability effect"
+  },
+  "caveats": [
+   "single corpus: R^2 and the activity / judged-label covariates are both the #1482 SINGLE-TURN read (verified against the banked #1482 panel)",
+   "unresolved features are also MORE ACTIVE on every axis, and activity predicts R-squared, so panel (a) alone cannot separate labelability from activity \u2014 panel (b) is the control that does",
+   "the labelled group excludes each axis's drop labels (unresolved everywhere, plus 'unclear' on speaker property), so it is exactly the set every labelled read uses"
+  ],
+  "per_axis": {
+   "interpretable": {
+    "status": "ok",
+    "n_unresolved": 934,
+    "n_resolved": 119763,
+    "n_resolved_but_dropped_label": 0,
+    "median_r2_unresolved": -0.771134078502655,
+    "median_r2_resolved": -0.8630026578903198,
+    "median_r2_difference": 0.0918685793876648,
+    "median_r2_difference_ci95": [
+     -0.13564014285802842,
+     0.30683449208736413
+    ],
+    "median_r2_ratio": 0.893547744554756,
+    "median_activity_unresolved": 0.00565,
+    "median_activity_resolved": 0.007566666666666667,
+    "auroc_unresolved_gt_resolved": 0.5096161501763985,
+    "auroc_ci95": [
+     0.4922792778049281,
+     0.5275993148119928
+    ],
+    "auroc_perm_null_mean": 0.49481561612602093,
+    "auroc_perm_band": [
+     0.4844829063363741,
+     0.5051662926052687
+    ],
+    "excess_over_stratified_null": 0.014800534050377567
+   },
+   "abstraction": {
+    "status": "ok",
+    "n_unresolved": 2968,
+    "n_resolved": 117729,
+    "n_resolved_but_dropped_label": 0,
+    "median_r2_unresolved": -1.4906275868415833,
+    "median_r2_resolved": -0.8524808287620544,
+    "median_r2_difference": -0.6381467580795288,
+    "median_r2_difference_ci95": [
+     -0.910174410045147,
+     -0.3628191560506821
+    ],
+    "median_r2_ratio": 1.7485760811844007,
+    "median_activity_unresolved": 0.004658333333333333,
+    "median_activity_resolved": 0.007658333333333333,
+    "auroc_unresolved_gt_resolved": 0.47151038193407724,
+    "auroc_ci95": [
+     0.4617097097068994,
+     0.4813215816166183
+    ],
+    "auroc_perm_null_mean": 0.4716080636982568,
+    "auroc_perm_band": [
+     0.46594899639050663,
+     0.47722535170401054
+    ],
+    "excess_over_stratified_null": -9.768176417956909e-05
+   },
+   "content_type": {
+    "status": "ok",
+    "n_unresolved": 3544,
+    "n_resolved": 117153,
+    "n_resolved_but_dropped_label": 0,
+    "median_r2_unresolved": -1.079017460346222,
+    "median_r2_resolved": -0.8566678166389465,
+    "median_r2_difference": -0.2223496437072754,
+    "median_r2_difference_ci95": [
+     -0.4306304082274437,
+     -0.05001123249530795
+    ],
+    "median_r2_ratio": 1.2595517648598529,
+    "median_activity_unresolved": 0.005395833333333334,
+    "median_activity_resolved": 0.007625,
+    "auroc_unresolved_gt_resolved": 0.48709842480109217,
+    "auroc_ci95": [
+     0.4774186898501023,
+     0.4963563460592204
+    ],
+    "auroc_perm_null_mean": 0.47348194769006513,
+    "auroc_perm_band": [
+     0.4685831401917471,
+     0.4785787161172905
+    ],
+    "excess_over_stratified_null": 0.013616477111027037
+   },
+   "speaker_property": {
+    "status": "ok",
+    "n_unresolved": 1436,
+    "n_resolved": 119238,
+    "n_resolved_but_dropped_label": 23,
+    "median_r2_unresolved": -0.5799322426319122,
+    "median_r2_resolved": -0.8669232130050659,
+    "median_r2_difference": 0.2869909703731537,
+    "median_r2_difference_ci95": [
+     0.11406905800104142,
+     0.44204160794615743
+    ],
+    "median_r2_ratio": 0.6689545670621273,
+    "median_activity_unresolved": 0.009525,
+    "median_activity_resolved": 0.007525,
+    "auroc_unresolved_gt_resolved": 0.5364165427484022,
+    "auroc_ci95": [
+     0.5213025562250654,
+     0.5517323979092913
+    ],
+    "auroc_perm_null_mean": 0.5260318248083431,
+    "auroc_perm_band": [
+     0.5175620723453259,
+     0.534396331558577
+    ],
+    "excess_over_stratified_null": 0.01038471794005913
+   },
+   "functional_role": {
+    "status": "ok",
+    "n_unresolved": 7953,
+    "n_resolved": 112744,
+    "n_resolved_but_dropped_label": 0,
+    "median_r2_unresolved": -0.34549129009246826,
+    "median_r2_resolved": -0.9187894761562347,
+    "median_r2_difference": 0.5732981860637665,
+    "median_r2_difference_ci95": [
+     0.5281593777239323,
+     0.6166107349097728
+    ],
+    "median_r2_ratio": 0.37602878467637074,
+    "median_activity_unresolved": 0.015441666666666666,
+    "median_activity_resolved": 0.007175,
+    "auroc_unresolved_gt_resolved": 0.5649398679555238,
+    "auroc_ci95": [
+     0.5584635247042804,
+     0.5716771046813345
+    ],
+    "auroc_perm_null_mean": 0.5610494213510338,
+    "auroc_perm_band": [
+     0.5575637420863592,
+     0.5644865654538934
+    ],
+    "excess_over_stratified_null": 0.0038904466044900055
+   }
+  },
+  "source_paths": {
+   "r2": "/home/thomasjiralerspong/explore-persona-space/data/issue_1482/densesae_dl/mlp__mean_perfeature.npz",
+   "labels": "/mnt/eps-data/thomasjiralerspong/issue1773_fulldict/labels_upload"
+  }
+ }
+}

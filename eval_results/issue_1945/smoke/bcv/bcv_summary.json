@@ -1,0 +1,141 @@
+{
+  "metadata": {
+    "git_commit": "6ea044af6dc04467541186ec147d39fa1e788787",
+    "generated_utc": "2026-07-31T23:54:30.913390+00:00",
+    "python": "3.11.15",
+    "numpy": "2.2.6",
+    "scipy": "1.17.1",
+    "torch": "2.8.0+cu128",
+    "host": "cia-benchmark-vm",
+    "seed": 1945,
+    "parent_seed": 1482,
+    "b_draws": 8,
+    "stage_dir": "/home/thomasjiralerspong/explore-persona-space/data/issue_1482/twoway_stage",
+    "smoke": true,
+    "ru_maxrss_mb": 1333.96875
+  },
+  "design": {
+    "r_grid": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32,
+      64
+    ],
+    "b_draws_per_family": 8,
+    "null_families": [
+      "perm (within-column permutation of F)",
+      "gauss2m (rows N(0, Sigma_E), row-norm matched)"
+    ],
+    "spaces": [
+      "log",
+      "raw",
+      "normalized"
+    ],
+    "k_list": [
+      64,
+      256
+    ],
+    "fold_pooling": "curves averaged over 4 blocks x 2 parent folds"
+  },
+  "n_units": 2,
+  "primary": {
+    "unit": "context_L19_ridge|k256|log",
+    "X_obs_max_over_r": 0.001269279152182993,
+    "G_gauss2m_p975_per_draw_max": -0.00025432942807078907,
+    "perm_p975_per_draw_max": -0.0002503013498054545,
+    "delta_g": 0.0015236085802537822,
+    "delta_m": -0.09873072084781702,
+    "magnitude_floor": 0.1,
+    "verdict": "H1-weak-structured",
+    "selection": "per-draw max-over-r (Option 1, selection-symmetric)",
+    "band_to_ceiling_margin": 1.0002543294280708,
+    "ceiling_note": "DV bounded at 1.0; a band >= ceiling would force failure-to-reject narration (selection-symmetric-nulls rule)"
+  },
+  "units": [
+    {
+      "unit": "bare_L14_ridge|k64|normalized",
+      "obs_max": -0.00267776012645303,
+      "obs_curve": [
+        0.0,
+        -0.003843444104717062,
+        -0.0033099339271130458,
+        -0.0027739028380564627,
+        -0.00267776012645303,
+        -0.0032935932524904045
+      ],
+      "r_grid": [
+        0,
+        1,
+        2,
+        4,
+        8,
+        16
+      ],
+      "perm_p975_max": -0.000252582117630775,
+      "gauss2m_p975_max": -0.0011627194307212672,
+      "delta_g": -0.0015150406957317626,
+      "delta_m": -0.10267776012645304,
+      "verdict": "H2-idiosyncratic",
+      "band_to_ceiling_margin": 1.0011627194307213,
+      "dv_ceiling": 1.0,
+      "vc_shares_per_fold": [
+        {
+          "vc_share_interaction": 0.8878254352923486,
+          "vc_share_context": 0.09839915048343385,
+          "vc_share_direction": 0.013775414224217627
+        },
+        {
+          "vc_share_interaction": 0.8854698890886576,
+          "vc_share_context": 0.10094896323258412,
+          "vc_share_direction": 0.013581147678758237
+        }
+      ]
+    },
+    {
+      "unit": "context_L19_ridge|k256|log",
+      "obs_max": 0.001269279152182993,
+      "obs_curve": [
+        0.0,
+        0.001269279152182993,
+        0.001001677635976815,
+        0.0005598521304206976,
+        -0.0006075860488702174,
+        -0.0029795799729381055,
+        -0.007963751118179107,
+        -0.01975425836393323
+      ],
+      "r_grid": [
+        0,
+        1,
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ],
+      "perm_p975_max": -0.0002503013498054545,
+      "gauss2m_p975_max": -0.00025432942807078907,
+      "delta_g": 0.0015236085802537822,
+      "delta_m": -0.09873072084781702,
+      "verdict": "H1-weak-structured",
+      "band_to_ceiling_margin": 1.0002543294280708,
+      "dv_ceiling": 1.0,
+      "vc_shares_per_fold": [
+        {
+          "vc_share_interaction": 0.8593026861521125,
+          "vc_share_context": 0.026967261502827286,
+          "vc_share_direction": 0.11373005234506024
+        },
+        {
+          "vc_share_interaction": 0.8587714894460997,
+          "vc_share_context": 0.027079724582905237,
+          "vc_share_direction": 0.1141487859709951
+        }
+      ]
+    }
+  ]
+}

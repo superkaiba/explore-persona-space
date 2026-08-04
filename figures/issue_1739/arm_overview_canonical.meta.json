@@ -1,0 +1,6360 @@
+{
+  "commit": "36af9cdf60",
+  "created": "2026-07-30T23:54:37Z",
+  "figsize": [
+    13.2,
+    9.2
+  ],
+  "points": [
+    {
+      "category": "Oracle: regress true answer",
+      "Spearman rho (frozen layer)": 0.823968766120253,
+      "error": 0.0009426125659466322,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Oracle: project true answer",
+      "Spearman rho (frozen layer)": 0.7081787805987103,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Direct ridge (context)",
+      "Spearman rho (frozen layer)": 0.7058011107858361,
+      "error": 0.0011520168443269752,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Direct MLP (context)",
+      "Spearman rho (frozen layer)": 0.632923215332643,
+      "error": 0.0032194864038669335,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Context-native direction",
+      "Spearman rho (frozen layer)": 0.6650148859213463,
+      "error": 0.0009745166740096067,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "PV project (context)",
+      "Spearman rho (frozen layer)": 0.5358166595723252,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Identity+bias project",
+      "Spearman rho (frozen layer)": 0.5343372067419542,
+      "error": 0.0006967772601138567,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Map-then-project (headline)",
+      "Spearman rho (frozen layer)": 0.5248838063710559,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "Ridge on mapped answer",
+      "Spearman rho (frozen layer)": 0.7139268799965806,
+      "error": 0.0016634872639929021,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "Pretrain-then-finetune",
+      "Spearman rho (frozen layer)": 0.7139791129551034,
+      "error": 0.001639404599526495,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "Stacked combiner",
+      "Spearman rho (frozen layer)": 0.7014603409111911,
+      "error": 0.0010744975411950408,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "Ridge on true answer act.",
+      "Spearman rho (frozen layer)": 0.5136565635817272,
+      "error": 0.0031341709368157833,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "Shuffled-pretrain control",
+      "Spearman rho (frozen layer)": 0.7138162031356999,
+      "error": 0.001671769589246197,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "Shuffled-map control",
+      "Spearman rho (frozen layer)": 0.260845544008386,
+      "error": 0.03308763376549305,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "Text embedding only",
+      "Spearman rho (frozen layer)": 0.4353240529896576,
+      "error": 0.004201850044098787,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "Surface features",
+      "Spearman rho (frozen layer)": 0.2095769308513681,
+      "error": 0.002877229651875146,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 0.08766593553790827,
+      "Spearman rho (frozen layer)": 0.8246288402122128,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.01955889927934326,
+      "Spearman rho (frozen layer)": 0.8231239787968972,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.1147513343716424,
+      "Spearman rho (frozen layer)": 0.824612658625802,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.06315776929899644,
+      "Spearman rho (frozen layer)": 0.8261374020323139,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.12986324867595214,
+      "Spearman rho (frozen layer)": 0.8247075190117897,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.1521991525237619,
+      "Spearman rho (frozen layer)": 0.8209246934079413,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.08356470463691296,
+      "Spearman rho (frozen layer)": 0.826653838970728,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.0915405776886252,
+      "Spearman rho (frozen layer)": 0.8223091324271086,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.11900363754382531,
+      "Spearman rho (frozen layer)": 0.8218434173039398,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.01587649987341852,
+      "Spearman rho (frozen layer)": 0.8221582300422922,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.04134463224557401,
+      "Spearman rho (frozen layer)": 0.8225949927058533,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.1365647964315526,
+      "Spearman rho (frozen layer)": 0.8247150605104764,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.04603683842581266,
+      "Spearman rho (frozen layer)": 0.8228162511973559,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.10328371624666557,
+      "Spearman rho (frozen layer)": 0.8253099984327293,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.018107456375254044,
+      "Spearman rho (frozen layer)": 0.8269954781263548,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.9127163909711286,
+      "Spearman rho (frozen layer)": 0.7081787805987103,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.0174671318450672,
+      "Spearman rho (frozen layer)": 0.7081787805987103,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.8604215219533361,
+      "Spearman rho (frozen layer)": 0.7081787805987103,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.1048419750376262,
+      "Spearman rho (frozen layer)": 0.7081787805987103,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.0421326077190607,
+      "Spearman rho (frozen layer)": 0.7081787805987103,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.0825880768273197,
+      "Spearman rho (frozen layer)": 0.7081787805987103,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.9534483098015578,
+      "Spearman rho (frozen layer)": 0.7081787805987103,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.150623367806369,
+      "Spearman rho (frozen layer)": 0.7081787805987103,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.1257987588231033,
+      "Spearman rho (frozen layer)": 0.7081787805987103,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.0890827190636039,
+      "Spearman rho (frozen layer)": 0.7081787805987103,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.9022843865126297,
+      "Spearman rho (frozen layer)": 0.7081787805987103,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.9893507211926509,
+      "Spearman rho (frozen layer)": 0.7081787805987103,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.8540172050519133,
+      "Spearman rho (frozen layer)": 0.7081787805987103,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.8893726374616153,
+      "Spearman rho (frozen layer)": 0.7081787805987103,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.0585756650375855,
+      "Spearman rho (frozen layer)": 0.7081787805987103,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 2.0783238898905014,
+      "Spearman rho (frozen layer)": 0.7077381835722196,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.149603114378947,
+      "Spearman rho (frozen layer)": 0.7018177131642602,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.9442641146042086,
+      "Spearman rho (frozen layer)": 0.708942079534637,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.958547105931158,
+      "Spearman rho (frozen layer)": 0.7089924399793675,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.9902578596082585,
+      "Spearman rho (frozen layer)": 0.7027151029977363,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.9006308349069714,
+      "Spearman rho (frozen layer)": 0.7064629997949398,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.881574881707351,
+      "Spearman rho (frozen layer)": 0.704927908074577,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.9922255763922987,
+      "Spearman rho (frozen layer)": 0.7060254569527246,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.912610991696283,
+      "Spearman rho (frozen layer)": 0.707028956326216,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.0543404782984034,
+      "Spearman rho (frozen layer)": 0.7063661880884715,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.9798886140391458,
+      "Spearman rho (frozen layer)": 0.7015744891270104,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.1064570227385078,
+      "Spearman rho (frozen layer)": 0.7063382889196436,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.0640848326407197,
+      "Spearman rho (frozen layer)": 0.7070763846180055,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.939957325242253,
+      "Spearman rho (frozen layer)": 0.7059067004838601,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.1063231364464645,
+      "Spearman rho (frozen layer)": 0.7051037701538727,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 3.0975245943989766,
+      "Spearman rho (frozen layer)": 0.6307929403976765,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.9639930812896558,
+      "Spearman rho (frozen layer)": 0.6285407949409234,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.9322649932576783,
+      "Spearman rho (frozen layer)": 0.6264928536774614,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 3.058398561271992,
+      "Spearman rho (frozen layer)": 0.6361845227978381,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.8847207947549793,
+      "Spearman rho (frozen layer)": 0.628043634773079,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.9039706247920347,
+      "Spearman rho (frozen layer)": 0.6467525776012475,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.8423559263203217,
+      "Spearman rho (frozen layer)": 0.6283791562784993,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 3.0918158008006844,
+      "Spearman rho (frozen layer)": 0.628459679671326,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 3.05275227410945,
+      "Spearman rho (frozen layer)": 0.6429127288590832,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 3.065652921160427,
+      "Spearman rho (frozen layer)": 0.6313060440408587,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 3.0898332899270295,
+      "Spearman rho (frozen layer)": 0.6251832617400954,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.986853048172269,
+      "Spearman rho (frozen layer)": 0.6408695216178552,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 3.021997182704926,
+      "Spearman rho (frozen layer)": 0.6308589415184918,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.88473503940085,
+      "Spearman rho (frozen layer)": 0.6349383345583841,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.8766496235315113,
+      "Spearman rho (frozen layer)": 0.6341332375168245,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 4.0538889477729505,
+      "Spearman rho (frozen layer)": 0.6597709808857296,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.9907507859658025,
+      "Spearman rho (frozen layer)": 0.6651229227046448,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.020875554073981,
+      "Spearman rho (frozen layer)": 0.6645983907218853,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.0847996343731285,
+      "Spearman rho (frozen layer)": 0.6668150449225582,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.043109862400189,
+      "Spearman rho (frozen layer)": 0.6662764730540865,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.017145408210559,
+      "Spearman rho (frozen layer)": 0.6643501425220987,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.0189462914385325,
+      "Spearman rho (frozen layer)": 0.6649913253604788,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.937264031380036,
+      "Spearman rho (frozen layer)": 0.662046600310778,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.8498617070617405,
+      "Spearman rho (frozen layer)": 0.6667354688962734,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.979749564554356,
+      "Spearman rho (frozen layer)": 0.6655024716134974,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.9086670953022495,
+      "Spearman rho (frozen layer)": 0.6645439272657968,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.9707291659918837,
+      "Spearman rho (frozen layer)": 0.6654375453461883,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.113088983445813,
+      "Spearman rho (frozen layer)": 0.6671866548983719,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.914860635476909,
+      "Spearman rho (frozen layer)": 0.6662241811275288,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.858656877340501,
+      "Spearman rho (frozen layer)": 0.6656211591902769,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.930042845447039,
+      "Spearman rho (frozen layer)": 0.5358166595723252,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.933950002485338,
+      "Spearman rho (frozen layer)": 0.5358166595723252,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 5.0518132847126065,
+      "Spearman rho (frozen layer)": 0.5358166595723252,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 5.018250288749209,
+      "Spearman rho (frozen layer)": 0.5358166595723252,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 5.090847426914053,
+      "Spearman rho (frozen layer)": 0.5358166595723252,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 5.052580332904764,
+      "Spearman rho (frozen layer)": 0.5358166595723252,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.970043795660823,
+      "Spearman rho (frozen layer)": 0.5358166595723252,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 5.100486523093131,
+      "Spearman rho (frozen layer)": 0.5358166595723252,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.893431334370465,
+      "Spearman rho (frozen layer)": 0.5358166595723252,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.847267863402835,
+      "Spearman rho (frozen layer)": 0.5358166595723252,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.868815315448205,
+      "Spearman rho (frozen layer)": 0.5358166595723252,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 5.0711549921908645,
+      "Spearman rho (frozen layer)": 0.5358166595723252,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.987800713680444,
+      "Spearman rho (frozen layer)": 0.5358166595723252,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.891606969290753,
+      "Spearman rho (frozen layer)": 0.5358166595723252,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 5.000334328033077,
+      "Spearman rho (frozen layer)": 0.5358166595723252,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 5.888739872868214,
+      "Spearman rho (frozen layer)": 0.5328884130039271,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 6.062822520024875,
+      "Spearman rho (frozen layer)": 0.5355904996345262,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.98277000818369,
+      "Spearman rho (frozen layer)": 0.5330415397741145,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.961926792350875,
+      "Spearman rho (frozen layer)": 0.5347688338694093,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.93648386852732,
+      "Spearman rho (frozen layer)": 0.5357054174420863,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 6.041690429798044,
+      "Spearman rho (frozen layer)": 0.5351367552963947,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.955780035377085,
+      "Spearman rho (frozen layer)": 0.5347617710018483,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.868047974181152,
+      "Spearman rho (frozen layer)": 0.5338741176959466,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.877761888678565,
+      "Spearman rho (frozen layer)": 0.5337880569571366,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 6.147807252655845,
+      "Spearman rho (frozen layer)": 0.5352309938586922,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 6.1307458210264345,
+      "Spearman rho (frozen layer)": 0.5355970250162906,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 6.06390628281944,
+      "Spearman rho (frozen layer)": 0.5313589604207326,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.925078387667046,
+      "Spearman rho (frozen layer)": 0.5323561969675875,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 6.150136440751272,
+      "Spearman rho (frozen layer)": 0.5354245891432524,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 6.089200289269054,
+      "Spearman rho (frozen layer)": 0.5355349310473679,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.069404860530879,
+      "Spearman rho (frozen layer)": 0.5248838063710559,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.983795680686012,
+      "Spearman rho (frozen layer)": 0.5248838063710559,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.927117299790451,
+      "Spearman rho (frozen layer)": 0.5248838063710559,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.87084510788912,
+      "Spearman rho (frozen layer)": 0.5248838063710559,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.128832766894029,
+      "Spearman rho (frozen layer)": 0.5248838063710559,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.985848412746756,
+      "Spearman rho (frozen layer)": 0.5248838063710559,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.9047562767344735,
+      "Spearman rho (frozen layer)": 0.5248838063710559,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.937906119728209,
+      "Spearman rho (frozen layer)": 0.5248838063710559,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.025350262061407,
+      "Spearman rho (frozen layer)": 0.5248838063710559,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.896567290540554,
+      "Spearman rho (frozen layer)": 0.5248838063710559,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.11411657090956,
+      "Spearman rho (frozen layer)": 0.5248838063710559,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.082726249547267,
+      "Spearman rho (frozen layer)": 0.5248838063710559,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0702281459042995,
+      "Spearman rho (frozen layer)": 0.5248838063710559,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.978269772728034,
+      "Spearman rho (frozen layer)": 0.5248838063710559,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.040738829024781,
+      "Spearman rho (frozen layer)": 0.5248838063710559,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 8.026911350052075,
+      "Spearman rho (frozen layer)": 0.709629249032391,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 8.047950912497543,
+      "Spearman rho (frozen layer)": 0.709855082459023,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 7.867022182764765,
+      "Spearman rho (frozen layer)": 0.711387386636056,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 7.973058368694595,
+      "Spearman rho (frozen layer)": 0.7191100402601623,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 7.8533165356358055,
+      "Spearman rho (frozen layer)": 0.7107376976680956,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 7.998077062158246,
+      "Spearman rho (frozen layer)": 0.7140152571721123,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 7.945555587946491,
+      "Spearman rho (frozen layer)": 0.7151351020512875,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 7.886247740437135,
+      "Spearman rho (frozen layer)": 0.7131873748469324,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 7.873088949671216,
+      "Spearman rho (frozen layer)": 0.7124082688972609,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 8.028046263096869,
+      "Spearman rho (frozen layer)": 0.7115575340732142,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 7.894589749931804,
+      "Spearman rho (frozen layer)": 0.7122018879077491,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 8.136038437880575,
+      "Spearman rho (frozen layer)": 0.7202637001945456,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 8.025939564704126,
+      "Spearman rho (frozen layer)": 0.716088579701434,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 7.950998337451148,
+      "Spearman rho (frozen layer)": 0.7167684450794338,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 8.029092957274054,
+      "Spearman rho (frozen layer)": 0.7165575939690102,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 8.847297238729503,
+      "Spearman rho (frozen layer)": 0.7098290312135043,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 9.146738948237262,
+      "Spearman rho (frozen layer)": 0.7100571764809034,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.994337099821728,
+      "Spearman rho (frozen layer)": 0.7114144203436388,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 9.090475272720091,
+      "Spearman rho (frozen layer)": 0.7190034335493277,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.86647359997518,
+      "Spearman rho (frozen layer)": 0.7107169032641748,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.995730665868212,
+      "Spearman rho (frozen layer)": 0.7141823686576622,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.997026238193447,
+      "Spearman rho (frozen layer)": 0.7152578991578397,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 9.140104465591994,
+      "Spearman rho (frozen layer)": 0.713286653844186,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 9.022952976760344,
+      "Spearman rho (frozen layer)": 0.7125384941151498,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.991516608338225,
+      "Spearman rho (frozen layer)": 0.7115896493337235,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.925432212189406,
+      "Spearman rho (frozen layer)": 0.7122077167166122,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.946102079149616,
+      "Spearman rho (frozen layer)": 0.7203506641825116,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 9.006615168790892,
+      "Spearman rho (frozen layer)": 0.7159696332538479,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.980451667297615,
+      "Spearman rho (frozen layer)": 0.7167806585100934,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.846915865561705,
+      "Spearman rho (frozen layer)": 0.7165019917033765,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 10.104413415742194,
+      "Spearman rho (frozen layer)": 0.7021030120799722,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 10.126771446988725,
+      "Spearman rho (frozen layer)": 0.6987239216553909,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 9.884879708479556,
+      "Spearman rho (frozen layer)": 0.7048822255842677,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 10.017291565932496,
+      "Spearman rho (frozen layer)": 0.7048226748834487,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 9.874744237163341,
+      "Spearman rho (frozen layer)": 0.6985127728470822,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 10.05511682977274,
+      "Spearman rho (frozen layer)": 0.7008293495495125,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 9.929994810828482,
+      "Spearman rho (frozen layer)": 0.70056150203572,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 10.051015243101409,
+      "Spearman rho (frozen layer)": 0.7016843227601078,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 10.072638276571803,
+      "Spearman rho (frozen layer)": 0.7029271850729727,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 10.08596719741365,
+      "Spearman rho (frozen layer)": 0.7022334799671008,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 9.874477102705887,
+      "Spearman rho (frozen layer)": 0.6973189425449426,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 10.133123790444035,
+      "Spearman rho (frozen layer)": 0.7020029235475814,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 9.913668477086361,
+      "Spearman rho (frozen layer)": 0.7027159070063915,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 9.851972017976378,
+      "Spearman rho (frozen layer)": 0.7017548511796674,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 10.017552790205274,
+      "Spearman rho (frozen layer)": 0.7008320429537093,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 10.95869513083598,
+      "Spearman rho (frozen layer)": 0.5190959137854613,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 11.105532717802372,
+      "Spearman rho (frozen layer)": 0.51640113826538,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 11.098640471060577,
+      "Spearman rho (frozen layer)": 0.5079724436246763,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 10.941484445703269,
+      "Spearman rho (frozen layer)": 0.5176381931904037,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 11.144927806422318,
+      "Spearman rho (frozen layer)": 0.5090646021281963,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 10.933093708204838,
+      "Spearman rho (frozen layer)": 0.5048424805120096,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 11.004818281354149,
+      "Spearman rho (frozen layer)": 0.5079645587047327,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 10.921908828981634,
+      "Spearman rho (frozen layer)": 0.5157457730572464,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 11.139533942415667,
+      "Spearman rho (frozen layer)": 0.5165766841307144,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 10.892674501626246,
+      "Spearman rho (frozen layer)": 0.517917413306605,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 10.854371398205545,
+      "Spearman rho (frozen layer)": 0.5080393656368786,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 10.979231059200972,
+      "Spearman rho (frozen layer)": 0.5193050996535069,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 11.157560180497867,
+      "Spearman rho (frozen layer)": 0.5227174381256944,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 11.125336725201572,
+      "Spearman rho (frozen layer)": 0.5187650947966043,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 11.079554566226223,
+      "Spearman rho (frozen layer)": 0.5028022548077985,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 12.125053597081129,
+      "Spearman rho (frozen layer)": 0.7095941336951712,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 12.125902924703317,
+      "Spearman rho (frozen layer)": 0.7097980818989837,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 12.006034675323663,
+      "Spearman rho (frozen layer)": 0.7114317858016785,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 11.941097296585854,
+      "Spearman rho (frozen layer)": 0.7190412134774623,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 12.087043978275517,
+      "Spearman rho (frozen layer)": 0.7103028244709283,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 12.051731604213684,
+      "Spearman rho (frozen layer)": 0.7137456120401667,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 11.959570473239587,
+      "Spearman rho (frozen layer)": 0.7150952010168655,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 11.870229333779685,
+      "Spearman rho (frozen layer)": 0.7129504162814728,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 12.078972675631688,
+      "Spearman rho (frozen layer)": 0.7123827030846919,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 11.923987365095316,
+      "Spearman rho (frozen layer)": 0.7113773298323198,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 12.139780208170809,
+      "Spearman rho (frozen layer)": 0.7121147385228455,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 11.917110584001819,
+      "Spearman rho (frozen layer)": 0.720090097643378,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 11.879282538371676,
+      "Spearman rho (frozen layer)": 0.7161143002791155,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 12.10595605507997,
+      "Spearman rho (frozen layer)": 0.7167032863456207,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 11.889050981319839,
+      "Spearman rho (frozen layer)": 0.7165013226447977,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 12.897365858610476,
+      "Spearman rho (frozen layer)": 0.3340667933334063,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 13.03180249328667,
+      "Spearman rho (frozen layer)": 0.17992200990832455,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 13.11985985306799,
+      "Spearman rho (frozen layer)": 0.26854782878342726,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 12.902859093028663,
+      "Spearman rho (frozen layer)": 0.3340667933334063,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 12.93930357532803,
+      "Spearman rho (frozen layer)": 0.17992200990832455,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 13.088769548237178,
+      "Spearman rho (frozen layer)": 0.26854782878342726,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 13.15098445633951,
+      "Spearman rho (frozen layer)": 0.3340667933334063,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 13.00023717958475,
+      "Spearman rho (frozen layer)": 0.17992200990832455,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 12.8860472008164,
+      "Spearman rho (frozen layer)": 0.26854782878342726,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 12.844459612066624,
+      "Spearman rho (frozen layer)": 0.3340667933334063,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 12.913489929599633,
+      "Spearman rho (frozen layer)": 0.17992200990832455,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 12.882183109691686,
+      "Spearman rho (frozen layer)": 0.26854782878342726,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 13.056850775556114,
+      "Spearman rho (frozen layer)": 0.3340667933334063,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 12.87898640148113,
+      "Spearman rho (frozen layer)": 0.17992200990832455,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 13.002025578118603,
+      "Spearman rho (frozen layer)": 0.26854782878342726,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 14.062163979405724,
+      "Spearman rho (frozen layer)": 0.4195503499574774,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 14.02595731495069,
+      "Spearman rho (frozen layer)": 0.4468526752425336,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 13.903928208531218,
+      "Spearman rho (frozen layer)": 0.43719306628316856,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 14.097319848378325,
+      "Spearman rho (frozen layer)": 0.4340262975327957,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 14.068930281477057,
+      "Spearman rho (frozen layer)": 0.44053902811717693,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 14.076474881252974,
+      "Spearman rho (frozen layer)": 0.43986280570633823,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 13.88193848049834,
+      "Spearman rho (frozen layer)": 0.4291079019413242,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 13.87960121716811,
+      "Spearman rho (frozen layer)": 0.4340028618247601,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 14.136820016322082,
+      "Spearman rho (frozen layer)": 0.4360774323706893,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 13.967225022023982,
+      "Spearman rho (frozen layer)": 0.426818773668798,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 13.9363035813699,
+      "Spearman rho (frozen layer)": 0.4323757128256351,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 13.99634689451249,
+      "Spearman rho (frozen layer)": 0.4362927349206262,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 14.052116548084346,
+      "Spearman rho (frozen layer)": 0.4534924164508467,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 14.145799442255031,
+      "Spearman rho (frozen layer)": 0.4266829982806536,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 13.931662792602257,
+      "Spearman rho (frozen layer)": 0.43698573972204047,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 15.13593869737985,
+      "Spearman rho (frozen layer)": 0.20773639586890963,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 14.847955037243603,
+      "Spearman rho (frozen layer)": 0.21106685700746233,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 15.017663373544584,
+      "Spearman rho (frozen layer)": 0.21405985198022984,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 15.042872035737947,
+      "Spearman rho (frozen layer)": 0.20228308847509682,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 14.873887169200241,
+      "Spearman rho (frozen layer)": 0.21394872177305824,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 14.884908671060453,
+      "Spearman rho (frozen layer)": 0.2149331145632944,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 14.974116582181217,
+      "Spearman rho (frozen layer)": 0.21445687852998688,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 15.149194211885819,
+      "Spearman rho (frozen layer)": 0.1986287489477356,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 15.030733617034999,
+      "Spearman rho (frozen layer)": 0.2057037834367757,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 15.138567430912067,
+      "Spearman rho (frozen layer)": 0.20935573436667582,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 15.097395492996151,
+      "Spearman rho (frozen layer)": 0.20169892034359854,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 14.989562112497694,
+      "Spearman rho (frozen layer)": 0.20643842449348535,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 15.0911243037607,
+      "Spearman rho (frozen layer)": 0.21196181098498132,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 14.845707770872636,
+      "Spearman rho (frozen layer)": 0.21297540705208348,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 14.874926078965036,
+      "Spearman rho (frozen layer)": 0.21840622494714768,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "category": "Oracle: regress true answer",
+      "Spearman rho (frozen layer)": 0.6524820336342535,
+      "error": 0.000935471382755293,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "category": "Oracle: project true answer",
+      "Spearman rho (frozen layer)": 0.03785169029788441,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "category": "Direct ridge (context)",
+      "Spearman rho (frozen layer)": 0.584406385930022,
+      "error": 0.0010747473756099746,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "category": "Direct MLP (context)",
+      "Spearman rho (frozen layer)": 0.5297127556987286,
+      "error": 0.001874713462860167,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "category": "Context-native direction",
+      "Spearman rho (frozen layer)": 0.5207472304224442,
+      "error": 0.00010915071790273956,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "category": "PV project (context)",
+      "Spearman rho (frozen layer)": 0.07981750125924202,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "category": "Identity+bias project",
+      "Spearman rho (frozen layer)": 0.07984155667920467,
+      "error": 7.455332696403028e-05,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "category": "Map-then-project (headline)",
+      "Spearman rho (frozen layer)": 0.14540151973961546,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "category": "Ridge on mapped answer",
+      "Spearman rho (frozen layer)": 0.6015078932734527,
+      "error": 0.0007709340687657162,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "category": "Pretrain-then-finetune",
+      "Spearman rho (frozen layer)": 0.6015072210591165,
+      "error": 0.0007703775983085581,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "category": "Stacked combiner",
+      "Spearman rho (frozen layer)": 0.5840018677855806,
+      "error": 0.0010538907182192636,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "category": "Ridge on true answer act.",
+      "Spearman rho (frozen layer)": 0.3745650555860464,
+      "error": 0.003319929414776601,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "category": "Shuffled-pretrain control",
+      "Spearman rho (frozen layer)": 0.6014263472104026,
+      "error": 0.0008014457577852907,
+      "_kind": "bar",
+      "_group": 44
+    },
+    {
+      "category": "Shuffled-map control",
+      "Spearman rho (frozen layer)": 0.13556308240607884,
+      "error": 0.020874599504326026,
+      "_kind": "bar",
+      "_group": 45
+    },
+    {
+      "category": "Text embedding only",
+      "Spearman rho (frozen layer)": 0.26406325485552795,
+      "error": 0.0014589801886621956,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "category": "Surface features",
+      "Spearman rho (frozen layer)": 0.16991018792764093,
+      "error": 0.00038062356942195064,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "x": 0.10541715676247562,
+      "Spearman rho (frozen layer)": 0.652825000107951,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.09498146826405177,
+      "Spearman rho (frozen layer)": 0.6514181965030522,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": -0.08555496257074122,
+      "Spearman rho (frozen layer)": 0.6526732775722129,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.009846268991697105,
+      "Spearman rho (frozen layer)": 0.6554856284364308,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.033925062624003494,
+      "Spearman rho (frozen layer)": 0.6505136638396875,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.11767646520832356,
+      "Spearman rho (frozen layer)": 0.6512212702093501,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.03299429034839221,
+      "Spearman rho (frozen layer)": 0.6522102584370001,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": -0.027977097832422304,
+      "Spearman rho (frozen layer)": 0.6523237486385055,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": -0.040261106109701544,
+      "Spearman rho (frozen layer)": 0.6535782724632286,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": -0.023717732360476834,
+      "Spearman rho (frozen layer)": 0.6550237445120187,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.04861792818559174,
+      "Spearman rho (frozen layer)": 0.6493572919612864,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.11759700216074395,
+      "Spearman rho (frozen layer)": 0.6531677070474659,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": -0.014752997735584084,
+      "Spearman rho (frozen layer)": 0.6541808178795946,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": -0.08069133985556541,
+      "Spearman rho (frozen layer)": 0.6494214169128348,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": -0.08426804384077403,
+      "Spearman rho (frozen layer)": 0.6538302099931841,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 1.0787245696779029,
+      "Spearman rho (frozen layer)": 0.03785169029788441,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.1013020042956514,
+      "Spearman rho (frozen layer)": 0.03785169029788441,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.87368898555332,
+      "Spearman rho (frozen layer)": 0.03785169029788441,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.861298834225657,
+      "Spearman rho (frozen layer)": 0.03785169029788441,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.0302187724020646,
+      "Spearman rho (frozen layer)": 0.03785169029788441,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.8867754381416635,
+      "Spearman rho (frozen layer)": 0.03785169029788441,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.1038925409460292,
+      "Spearman rho (frozen layer)": 0.03785169029788441,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.9393070956557038,
+      "Spearman rho (frozen layer)": 0.03785169029788441,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.8860390185507656,
+      "Spearman rho (frozen layer)": 0.03785169029788441,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.134710551195984,
+      "Spearman rho (frozen layer)": 0.03785169029788441,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.892970151275289,
+      "Spearman rho (frozen layer)": 0.03785169029788441,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.9311104263481393,
+      "Spearman rho (frozen layer)": 0.03785169029788441,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.8891562864614587,
+      "Spearman rho (frozen layer)": 0.03785169029788441,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.8769568203729136,
+      "Spearman rho (frozen layer)": 0.03785169029788441,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.8467673652276608,
+      "Spearman rho (frozen layer)": 0.03785169029788441,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.8577265309325632,
+      "Spearman rho (frozen layer)": 0.5831453428979112,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 1.8958852706994729,
+      "Spearman rho (frozen layer)": 0.5815562571230739,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 1.857082218440696,
+      "Spearman rho (frozen layer)": 0.5846036795944006,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.0291660211555107,
+      "Spearman rho (frozen layer)": 0.5872576957944952,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.057828648575842,
+      "Spearman rho (frozen layer)": 0.5810192985273703,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 1.965961746186249,
+      "Spearman rho (frozen layer)": 0.5844027513916663,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 1.9417571510246558,
+      "Spearman rho (frozen layer)": 0.5843735955006129,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.0014483958471136,
+      "Spearman rho (frozen layer)": 0.5838891074866653,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.1200015815150746,
+      "Spearman rho (frozen layer)": 0.5879791965081567,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.112362120583106,
+      "Spearman rho (frozen layer)": 0.5859637925530701,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 1.8539120198440935,
+      "Spearman rho (frozen layer)": 0.5849499494936773,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 1.8980794910708878,
+      "Spearman rho (frozen layer)": 0.5869911491122434,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 1.9157583587534068,
+      "Spearman rho (frozen layer)": 0.5842785132598225,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 1.9198040242663077,
+      "Spearman rho (frozen layer)": 0.5810475271621224,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.022794448557687,
+      "Spearman rho (frozen layer)": 0.5846379325450423,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.9732039762250215,
+      "Spearman rho (frozen layer)": 0.5281568890574183,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 2.85576131837683,
+      "Spearman rho (frozen layer)": 0.5258930550804555,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 2.9595565243070627,
+      "Spearman rho (frozen layer)": 0.5280505098541404,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 3.007600943589644,
+      "Spearman rho (frozen layer)": 0.5309446134839416,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 2.872535008929189,
+      "Spearman rho (frozen layer)": 0.5196767490223247,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 3.106706737212339,
+      "Spearman rho (frozen layer)": 0.5300931467406161,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 2.856627797268833,
+      "Spearman rho (frozen layer)": 0.5334175336448302,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 3.13594939808578,
+      "Spearman rho (frozen layer)": 0.5324601357986913,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 2.8717162053055603,
+      "Spearman rho (frozen layer)": 0.5295655109143806,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 3.109943984511281,
+      "Spearman rho (frozen layer)": 0.5312513207721448,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 3.1288490060568375,
+      "Spearman rho (frozen layer)": 0.5328164859627569,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 3.1534626177877096,
+      "Spearman rho (frozen layer)": 0.5314596908011677,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 3.09664828168755,
+      "Spearman rho (frozen layer)": 0.5350556903539315,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 3.0894328130468254,
+      "Spearman rho (frozen layer)": 0.5274886251850647,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 3.045594648318575,
+      "Spearman rho (frozen layer)": 0.5293613788090636,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 4.089278833465001,
+      "Spearman rho (frozen layer)": 0.5210613308628916,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 3.8830567066922073,
+      "Spearman rho (frozen layer)": 0.5208168930788957,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 4.011541771503244,
+      "Spearman rho (frozen layer)": 0.5209208520874832,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 4.0045513184609325,
+      "Spearman rho (frozen layer)": 0.5208930309716022,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 4.114423086119219,
+      "Spearman rho (frozen layer)": 0.5207790276096257,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 3.988095796989925,
+      "Spearman rho (frozen layer)": 0.5208319912316355,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 3.963228638752113,
+      "Spearman rho (frozen layer)": 0.520675506538345,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 4.044660246795876,
+      "Spearman rho (frozen layer)": 0.5206076067244294,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 3.9252682616002708,
+      "Spearman rho (frozen layer)": 0.5209763263381126,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 3.884725891505266,
+      "Spearman rho (frozen layer)": 0.5204468581795904,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 3.992920727687599,
+      "Spearman rho (frozen layer)": 0.5210794795067255,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 3.9734045979503634,
+      "Spearman rho (frozen layer)": 0.5205362326206443,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 3.91442238096924,
+      "Spearman rho (frozen layer)": 0.5204085317697456,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 3.957603779236841,
+      "Spearman rho (frozen layer)": 0.5205941128477333,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 3.957245583944399,
+      "Spearman rho (frozen layer)": 0.5205806759692037,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 4.944798580612015,
+      "Spearman rho (frozen layer)": 0.07981750125924202,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 4.961428505512617,
+      "Spearman rho (frozen layer)": 0.07981750125924202,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.059437870545903,
+      "Spearman rho (frozen layer)": 0.07981750125924202,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 4.9350004718628115,
+      "Spearman rho (frozen layer)": 0.07981750125924202,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.143634536548909,
+      "Spearman rho (frozen layer)": 0.07981750125924202,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.133231366252217,
+      "Spearman rho (frozen layer)": 0.07981750125924202,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 4.993891337056025,
+      "Spearman rho (frozen layer)": 0.07981750125924202,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 4.945075585601501,
+      "Spearman rho (frozen layer)": 0.07981750125924202,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.011339132745601,
+      "Spearman rho (frozen layer)": 0.07981750125924202,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.11153935640756,
+      "Spearman rho (frozen layer)": 0.07981750125924202,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.048827948979232,
+      "Spearman rho (frozen layer)": 0.07981750125924202,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.097405384943065,
+      "Spearman rho (frozen layer)": 0.07981750125924202,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.010471128341037,
+      "Spearman rho (frozen layer)": 0.07981750125924202,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 5.0425336413656385,
+      "Spearman rho (frozen layer)": 0.07981750125924202,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 4.9322097965383875,
+      "Spearman rho (frozen layer)": 0.07981750125924202,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 6.075165811939293,
+      "Spearman rho (frozen layer)": 0.07983805769431272,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 5.90476946980023,
+      "Spearman rho (frozen layer)": 0.07963260272737961,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 6.06233540122192,
+      "Spearman rho (frozen layer)": 0.07967168776885532,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 6.115430101864286,
+      "Spearman rho (frozen layer)": 0.08003186535589273,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 5.882272907936494,
+      "Spearman rho (frozen layer)": 0.0797923337725744,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 6.036601516973414,
+      "Spearman rho (frozen layer)": 0.0797867060627592,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 5.870430639433579,
+      "Spearman rho (frozen layer)": 0.08001314401305477,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 6.072229001046857,
+      "Spearman rho (frozen layer)": 0.07989260445535827,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 5.867037830023526,
+      "Spearman rho (frozen layer)": 0.07973939005358822,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 6.1395007432642,
+      "Spearman rho (frozen layer)": 0.08018025925051395,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 5.883970537612097,
+      "Spearman rho (frozen layer)": 0.07992767673453235,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 6.1468416786909055,
+      "Spearman rho (frozen layer)": 0.07982880052151198,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 6.096282936347231,
+      "Spearman rho (frozen layer)": 0.07970756149263895,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 6.029978241429233,
+      "Spearman rho (frozen layer)": 0.07976142413249969,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 6.090439713481455,
+      "Spearman rho (frozen layer)": 0.07981923615259796,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 7.094436748474587,
+      "Spearman rho (frozen layer)": 0.14540151973961546,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 7.142728660101546,
+      "Spearman rho (frozen layer)": 0.14540151973961546,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 6.92108267322854,
+      "Spearman rho (frozen layer)": 0.14540151973961546,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 7.028824286514659,
+      "Spearman rho (frozen layer)": 0.14540151973961546,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 6.870415743220608,
+      "Spearman rho (frozen layer)": 0.14540151973961546,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 7.037173024007719,
+      "Spearman rho (frozen layer)": 0.14540151973961546,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 6.894813217309692,
+      "Spearman rho (frozen layer)": 0.14540151973961546,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 7.020784195671181,
+      "Spearman rho (frozen layer)": 0.14540151973961546,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 7.023177764490832,
+      "Spearman rho (frozen layer)": 0.14540151973961546,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 6.9891152489539925,
+      "Spearman rho (frozen layer)": 0.14540151973961546,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 7.0072421681642,
+      "Spearman rho (frozen layer)": 0.14540151973961546,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 7.084455484802108,
+      "Spearman rho (frozen layer)": 0.14540151973961546,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 7.095758309283862,
+      "Spearman rho (frozen layer)": 0.14540151973961546,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 6.997489028984138,
+      "Spearman rho (frozen layer)": 0.14540151973961546,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 7.031869901287236,
+      "Spearman rho (frozen layer)": 0.14540151973961546,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 8.137995595420833,
+      "Spearman rho (frozen layer)": 0.6005501734673584,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 7.878314748320359,
+      "Spearman rho (frozen layer)": 0.6011628981806103,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 7.877473141088036,
+      "Spearman rho (frozen layer)": 0.6009477870810616,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 7.868066883811446,
+      "Spearman rho (frozen layer)": 0.6025555375609516,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 8.050516251212969,
+      "Spearman rho (frozen layer)": 0.6007855059615813,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 7.973954656252921,
+      "Spearman rho (frozen layer)": 0.6001789340948591,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 8.08778285316539,
+      "Spearman rho (frozen layer)": 0.6029207584850196,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 8.05479405225875,
+      "Spearman rho (frozen layer)": 0.6011279423464315,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 7.9467640826650365,
+      "Spearman rho (frozen layer)": 0.6047053807961029,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 8.12747729515569,
+      "Spearman rho (frozen layer)": 0.6027989063075573,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 8.08401028706261,
+      "Spearman rho (frozen layer)": 0.602020528206654,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 7.926571181091256,
+      "Spearman rho (frozen layer)": 0.603302743640049,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 7.956541445687058,
+      "Spearman rho (frozen layer)": 0.5994383620727066,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 7.9406207936653646,
+      "Spearman rho (frozen layer)": 0.5991204121744989,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 7.89043572756,
+      "Spearman rho (frozen layer)": 0.6010025287263484,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 8.887290679213502,
+      "Spearman rho (frozen layer)": 0.6005472847424278,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 9.139560788280239,
+      "Spearman rho (frozen layer)": 0.6011628662659488,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 8.980129291903602,
+      "Spearman rho (frozen layer)": 0.6009526300525154,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 8.962662343288772,
+      "Spearman rho (frozen layer)": 0.6025435090928288,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 9.073499426776761,
+      "Spearman rho (frozen layer)": 0.6007820770507986,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 9.016957780880928,
+      "Spearman rho (frozen layer)": 0.6001745489444293,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 9.139564795788308,
+      "Spearman rho (frozen layer)": 0.6029250998185512,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 9.089696478051005,
+      "Spearman rho (frozen layer)": 0.6011344831321868,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 8.993398260519854,
+      "Spearman rho (frozen layer)": 0.6047038212507815,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 8.960435031513864,
+      "Spearman rho (frozen layer)": 0.602794420768407,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 9.155722094375783,
+      "Spearman rho (frozen layer)": 0.6020151842086392,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 9.069683275521166,
+      "Spearman rho (frozen layer)": 0.6033072752838752,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 9.144382291201229,
+      "Spearman rho (frozen layer)": 0.5994499890760425,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 8.877913144709453,
+      "Spearman rho (frozen layer)": 0.599119147507972,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 9.112170777341051,
+      "Spearman rho (frozen layer)": 0.6009959786913422,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 10.043863642877186,
+      "Spearman rho (frozen layer)": 0.5826617653841427,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 9.879014937067236,
+      "Spearman rho (frozen layer)": 0.5810440747766799,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 10.02824255999015,
+      "Spearman rho (frozen layer)": 0.584135132993297,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 10.059550836833743,
+      "Spearman rho (frozen layer)": 0.586769314211149,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 9.843936859484353,
+      "Spearman rho (frozen layer)": 0.5805232864327385,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 9.98538174778936,
+      "Spearman rho (frozen layer)": 0.5839148940215575,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 10.104127843582823,
+      "Spearman rho (frozen layer)": 0.5839153580736388,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 9.934514888110108,
+      "Spearman rho (frozen layer)": 0.583919369677572,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 9.986735386175535,
+      "Spearman rho (frozen layer)": 0.5874691019713937,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 9.981540520661726,
+      "Spearman rho (frozen layer)": 0.5854411690847192,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 9.936616765261597,
+      "Spearman rho (frozen layer)": 0.5844721900354131,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 10.133901406564977,
+      "Spearman rho (frozen layer)": 0.5865046944041377,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 10.090014091338086,
+      "Spearman rho (frozen layer)": 0.5838277152085021,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 9.875388291518755,
+      "Spearman rho (frozen layer)": 0.5809190286667063,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 10.159051090508024,
+      "Spearman rho (frozen layer)": 0.5845109218420623,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 11.121344007778479,
+      "Spearman rho (frozen layer)": 0.380307222665956,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 10.930850700116492,
+      "Spearman rho (frozen layer)": 0.3789517703563621,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 11.1078069054915,
+      "Spearman rho (frozen layer)": 0.3813598124829961,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 10.874054250198842,
+      "Spearman rho (frozen layer)": 0.37989719440015457,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 11.159713513751756,
+      "Spearman rho (frozen layer)": 0.3794455416530585,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 11.053019115554092,
+      "Spearman rho (frozen layer)": 0.3705453988560659,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 11.048040004978816,
+      "Spearman rho (frozen layer)": 0.3754945237269846,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 10.868941032634922,
+      "Spearman rho (frozen layer)": 0.37423151573934077,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 11.12705068764692,
+      "Spearman rho (frozen layer)": 0.37656163307881896,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 10.84927984102543,
+      "Spearman rho (frozen layer)": 0.365148545988478,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 10.917064978573167,
+      "Spearman rho (frozen layer)": 0.3564040435692692,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 10.885767000053324,
+      "Spearman rho (frozen layer)": 0.3752832575984488,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 11.08856574102151,
+      "Spearman rho (frozen layer)": 0.37767268746516464,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 10.903425352708128,
+      "Spearman rho (frozen layer)": 0.3732910253045122,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 11.131404232681883,
+      "Spearman rho (frozen layer)": 0.3738816609050861,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 12.050006092584796,
+      "Spearman rho (frozen layer)": 0.6004924149622768,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 11.851572067358303,
+      "Spearman rho (frozen layer)": 0.601172256506333,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 11.841737546921184,
+      "Spearman rho (frozen layer)": 0.6007280711143167,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 11.856530533444607,
+      "Spearman rho (frozen layer)": 0.6024960420501003,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 12.033896056847272,
+      "Spearman rho (frozen layer)": 0.6005951608147331,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 12.096474179475013,
+      "Spearman rho (frozen layer)": 0.5999353470392267,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 11.916336902600765,
+      "Spearman rho (frozen layer)": 0.6028432821055347,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 12.111810829735383,
+      "Spearman rho (frozen layer)": 0.6010942009635042,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 11.858314220849044,
+      "Spearman rho (frozen layer)": 0.6047451008375029,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 12.096308433165337,
+      "Spearman rho (frozen layer)": 0.6026822841172972,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 12.13689453765513,
+      "Spearman rho (frozen layer)": 0.6020215549748552,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 12.087074687713402,
+      "Spearman rho (frozen layer)": 0.6033387285173362,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 12.063398650873165,
+      "Spearman rho (frozen layer)": 0.5993170781264854,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 12.108153669969722,
+      "Spearman rho (frozen layer)": 0.5989182526968191,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 11.85284841585506,
+      "Spearman rho (frozen layer)": 0.6010154333297174,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 12.904570275430098,
+      "Spearman rho (frozen layer)": 0.08943709439165659,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 12.879975577377806,
+      "Spearman rho (frozen layer)": 0.13058495946538184,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 13.001449916861755,
+      "Spearman rho (frozen layer)": 0.18666719336119808,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 13.07846020106523,
+      "Spearman rho (frozen layer)": 0.08943709439165659,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 13.041603790264448,
+      "Spearman rho (frozen layer)": 0.13058495946538184,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 13.11236195192382,
+      "Spearman rho (frozen layer)": 0.18666719336119808,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 12.889668157581148,
+      "Spearman rho (frozen layer)": 0.08943709439165659,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 13.075078749419252,
+      "Spearman rho (frozen layer)": 0.13058495946538184,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 12.90177327707805,
+      "Spearman rho (frozen layer)": 0.18666719336119808,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 12.926642800421696,
+      "Spearman rho (frozen layer)": 0.08943709439165659,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 13.067169503130017,
+      "Spearman rho (frozen layer)": 0.13058495946538184,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 13.153665531167578,
+      "Spearman rho (frozen layer)": 0.18666719336119808,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 13.035693953912663,
+      "Spearman rho (frozen layer)": 0.08943709439165659,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 12.857440100797215,
+      "Spearman rho (frozen layer)": 0.13058495946538184,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 13.03721887037681,
+      "Spearman rho (frozen layer)": 0.18666719336119808,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 13.853552176505653,
+      "Spearman rho (frozen layer)": 0.2578078242610549,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 14.122926627637382,
+      "Spearman rho (frozen layer)": 0.2673039335849789,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 14.067065051232198,
+      "Spearman rho (frozen layer)": 0.26084798202119874,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 13.895400910855201,
+      "Spearman rho (frozen layer)": 0.26388596313189716,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 13.869350721863743,
+      "Spearman rho (frozen layer)": 0.26508269949937413,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 13.898730633241701,
+      "Spearman rho (frozen layer)": 0.26217526186224493,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 14.153608697457342,
+      "Spearman rho (frozen layer)": 0.26763242869723036,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 13.986739405586716,
+      "Spearman rho (frozen layer)": 0.2666029954278472,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 14.09090590346925,
+      "Spearman rho (frozen layer)": 0.2647908607350495,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 14.043650669474488,
+      "Spearman rho (frozen layer)": 0.262674238429456,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 14.023172207986764,
+      "Spearman rho (frozen layer)": 0.262184431500998,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 13.886441681492816,
+      "Spearman rho (frozen layer)": 0.26088055918262937,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 14.142727825138591,
+      "Spearman rho (frozen layer)": 0.2669384283321176,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 13.93642964240471,
+      "Spearman rho (frozen layer)": 0.26582378478657387,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 14.024965509058413,
+      "Spearman rho (frozen layer)": 0.2663174313802685,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 15.0639283022685,
+      "Spearman rho (frozen layer)": 0.17023432335230326,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 15.047754609678499,
+      "Spearman rho (frozen layer)": 0.17053514595282226,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 15.140990211102565,
+      "Spearman rho (frozen layer)": 0.1699040605208575,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 14.887500476774418,
+      "Spearman rho (frozen layer)": 0.17064044336150624,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 15.002672876303022,
+      "Spearman rho (frozen layer)": 0.1697935174212291,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 14.969291005037045,
+      "Spearman rho (frozen layer)": 0.17011485784479496,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 14.991733993434437,
+      "Spearman rho (frozen layer)": 0.17070555686430267,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 14.878149608383278,
+      "Spearman rho (frozen layer)": 0.17111109076359754,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 14.882910275159285,
+      "Spearman rho (frozen layer)": 0.16887936093432135,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 14.928984174650003,
+      "Spearman rho (frozen layer)": 0.16819210509062685,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 14.937505473203466,
+      "Spearman rho (frozen layer)": 0.16936946134738745,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 14.976929028378033,
+      "Spearman rho (frozen layer)": 0.16985194766093878,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 15.035516015051721,
+      "Spearman rho (frozen layer)": 0.16945215412484005,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 15.043081317573844,
+      "Spearman rho (frozen layer)": 0.1702801773868565,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 14.971779486907382,
+      "Spearman rho (frozen layer)": 0.1695886162882294,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "category": "Oracle: regress true answer",
+      "Spearman rho (frozen layer)": 0.7711501931809633,
+      "error": 0.0003169638105562367,
+      "_kind": "bar",
+      "_group": 64
+    },
+    {
+      "category": "Oracle: project true answer",
+      "Spearman rho (frozen layer)": 0.31155575482225395,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 65
+    },
+    {
+      "category": "Direct ridge (context)",
+      "Spearman rho (frozen layer)": 0.7381864672558881,
+      "error": 0.000613768099617884,
+      "_kind": "bar",
+      "_group": 66
+    },
+    {
+      "category": "Direct MLP (context)",
+      "Spearman rho (frozen layer)": 0.6929808165638958,
+      "error": 0.0011308356359804872,
+      "_kind": "bar",
+      "_group": 67
+    },
+    {
+      "category": "Context-native direction",
+      "Spearman rho (frozen layer)": 0.42205533607451357,
+      "error": 0.00033728666125909523,
+      "_kind": "bar",
+      "_group": 68
+    },
+    {
+      "category": "PV project (context)",
+      "Spearman rho (frozen layer)": 0.1427625540743026,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 69
+    },
+    {
+      "category": "Identity+bias project",
+      "Spearman rho (frozen layer)": 0.14255473760526416,
+      "error": 0.0001546116817913723,
+      "_kind": "bar",
+      "_group": 70
+    },
+    {
+      "category": "Map-then-project (headline)",
+      "Spearman rho (frozen layer)": 0.3593140076559399,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 71
+    },
+    {
+      "category": "Ridge on mapped answer",
+      "Spearman rho (frozen layer)": 0.7469684019332813,
+      "error": 0.00040118080091344765,
+      "_kind": "bar",
+      "_group": 72
+    },
+    {
+      "category": "Pretrain-then-finetune",
+      "Spearman rho (frozen layer)": 0.7469616165884785,
+      "error": 0.0004003726482619818,
+      "_kind": "bar",
+      "_group": 73
+    },
+    {
+      "category": "Stacked combiner",
+      "Spearman rho (frozen layer)": 0.7380052246520262,
+      "error": 0.0006065224830427152,
+      "_kind": "bar",
+      "_group": 74
+    },
+    {
+      "category": "Ridge on true answer act.",
+      "Spearman rho (frozen layer)": 0.47859163998143184,
+      "error": 0.001501348237746447,
+      "_kind": "bar",
+      "_group": 75
+    },
+    {
+      "category": "Shuffled-pretrain control",
+      "Spearman rho (frozen layer)": 0.7469294697992662,
+      "error": 0.00039817217121129733,
+      "_kind": "bar",
+      "_group": 76
+    },
+    {
+      "category": "Shuffled-map control",
+      "Spearman rho (frozen layer)": 0.2065818358108561,
+      "error": 0.04595543964887218,
+      "_kind": "bar",
+      "_group": 77
+    },
+    {
+      "category": "Text embedding only",
+      "Spearman rho (frozen layer)": 0.41468438616315273,
+      "error": 0.0008406857235601084,
+      "_kind": "bar",
+      "_group": 78
+    },
+    {
+      "category": "Surface features",
+      "Spearman rho (frozen layer)": 0.3470226787279018,
+      "error": 0.00032622146847505196,
+      "_kind": "bar",
+      "_group": 79
+    },
+    {
+      "x": -0.029189404982816913,
+      "Spearman rho (frozen layer)": 0.7707547561661148,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": -0.09035887145697218,
+      "Spearman rho (frozen layer)": 0.7719337937375998,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 0.028257999490882646,
+      "Spearman rho (frozen layer)": 0.7707861739691981,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": -0.05854690837848388,
+      "Spearman rho (frozen layer)": 0.7707344305754839,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": -0.14846085303124362,
+      "Spearman rho (frozen layer)": 0.7717938540626627,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": -0.026111985869804677,
+      "Spearman rho (frozen layer)": 0.7709968987448333,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": -0.008277543971145496,
+      "Spearman rho (frozen layer)": 0.7719372047324061,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": -0.08781028217465249,
+      "Spearman rho (frozen layer)": 0.7708708680379867,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 0.023186538599077017,
+      "Spearman rho (frozen layer)": 0.7713945230923908,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 0.021047008138214696,
+      "Spearman rho (frozen layer)": 0.7705629616330206,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 0.06464069795531885,
+      "Spearman rho (frozen layer)": 0.7711819368743377,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 0.04734351430438721,
+      "Spearman rho (frozen layer)": 0.771666952200653,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 0.04877857808673011,
+      "Spearman rho (frozen layer)": 0.7701734854531431,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": -0.0588114714163062,
+      "Spearman rho (frozen layer)": 0.7721383079399081,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 0.09197831103550522,
+      "Spearman rho (frozen layer)": 0.7703267504947122,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 1.0157262027518974,
+      "Spearman rho (frozen layer)": 0.31155575482225395,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 0.9780538224575648,
+      "Spearman rho (frozen layer)": 0.31155575482225395,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 1.0403239939011382,
+      "Spearman rho (frozen layer)": 0.31155575482225395,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 0.9554103470240813,
+      "Spearman rho (frozen layer)": 0.31155575482225395,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 1.0040765582741626,
+      "Spearman rho (frozen layer)": 0.31155575482225395,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 1.0757458203143104,
+      "Spearman rho (frozen layer)": 0.31155575482225395,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 1.1236489237515865,
+      "Spearman rho (frozen layer)": 0.31155575482225395,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 1.1347383031344613,
+      "Spearman rho (frozen layer)": 0.31155575482225395,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 1.0011625360585916,
+      "Spearman rho (frozen layer)": 0.31155575482225395,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 1.0064880367169822,
+      "Spearman rho (frozen layer)": 0.31155575482225395,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 1.0959585314444276,
+      "Spearman rho (frozen layer)": 0.31155575482225395,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 0.9406242213581444,
+      "Spearman rho (frozen layer)": 0.31155575482225395,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 1.107962355950422,
+      "Spearman rho (frozen layer)": 0.31155575482225395,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 0.9981253268855755,
+      "Spearman rho (frozen layer)": 0.31155575482225395,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 0.8770741517872859,
+      "Spearman rho (frozen layer)": 0.31155575482225395,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 1.863058927063342,
+      "Spearman rho (frozen layer)": 0.7372744465953861,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 2.109437827532628,
+      "Spearman rho (frozen layer)": 0.739007291134553,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 1.857781733410201,
+      "Spearman rho (frozen layer)": 0.7390541814001534,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 1.9297956595627699,
+      "Spearman rho (frozen layer)": 0.7363431773894844,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 1.9469216129604947,
+      "Spearman rho (frozen layer)": 0.7391688283097515,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 1.89535822246131,
+      "Spearman rho (frozen layer)": 0.7381642493683642,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 1.9404458783366365,
+      "Spearman rho (frozen layer)": 0.7374195035182541,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 2.0776616213520276,
+      "Spearman rho (frozen layer)": 0.7367653144698008,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 1.8446985099392226,
+      "Spearman rho (frozen layer)": 0.7399573889095427,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 2.1046954958466197,
+      "Spearman rho (frozen layer)": 0.7397672722993253,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 2.1140953675438587,
+      "Spearman rho (frozen layer)": 0.7373635278657682,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 1.9591237034212954,
+      "Spearman rho (frozen layer)": 0.7395005906064208,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 1.889156127699403,
+      "Spearman rho (frozen layer)": 0.7373386233563186,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 2.032268930542426,
+      "Spearman rho (frozen layer)": 0.7389225576857249,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 1.8782952178767662,
+      "Spearman rho (frozen layer)": 0.736750055929473,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 2.956774195545041,
+      "Spearman rho (frozen layer)": 0.6904169277721582,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 3.146697337888311,
+      "Spearman rho (frozen layer)": 0.6958980522351029,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 3.158548631226764,
+      "Spearman rho (frozen layer)": 0.6944051707837618,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 3.0870735652334673,
+      "Spearman rho (frozen layer)": 0.6941076457735269,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 2.939507683174645,
+      "Spearman rho (frozen layer)": 0.6941794989065301,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 3.0600528157331497,
+      "Spearman rho (frozen layer)": 0.6903549925748038,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 3.065730036954884,
+      "Spearman rho (frozen layer)": 0.6893108315736336,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 2.964109342452368,
+      "Spearman rho (frozen layer)": 0.6942418712895252,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 3.045084363067571,
+      "Spearman rho (frozen layer)": 0.6936934091229529,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 2.8434328463922163,
+      "Spearman rho (frozen layer)": 0.6960577485176548,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 2.9068984507527174,
+      "Spearman rho (frozen layer)": 0.6915009813754347,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 3.0080282569495234,
+      "Spearman rho (frozen layer)": 0.6938047937768554,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 2.8924004173626545,
+      "Spearman rho (frozen layer)": 0.6949307176695717,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 2.8930901977204906,
+      "Spearman rho (frozen layer)": 0.6921017950559297,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 3.107617372976076,
+      "Spearman rho (frozen layer)": 0.6897078120309938,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 4.156522560858754,
+      "Spearman rho (frozen layer)": 0.42275483230598215,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 4.017910216969104,
+      "Spearman rho (frozen layer)": 0.42087942388063254,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 4.108502313882148,
+      "Spearman rho (frozen layer)": 0.42138569533971937,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 4.156902932584408,
+      "Spearman rho (frozen layer)": 0.4214740265636914,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 3.885310684342008,
+      "Spearman rho (frozen layer)": 0.42295371168835105,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 3.9834385962413923,
+      "Spearman rho (frozen layer)": 0.4214531468644478,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 3.965623269069414,
+      "Spearman rho (frozen layer)": 0.42270765418660594,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 3.8656157707667793,
+      "Spearman rho (frozen layer)": 0.42201253820036927,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 4.081705655294318,
+      "Spearman rho (frozen layer)": 0.42200933623864234,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 3.97880928874323,
+      "Spearman rho (frozen layer)": 0.4215711682591187,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 3.9901846189409285,
+      "Spearman rho (frozen layer)": 0.4219792449583834,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 3.8882153516202367,
+      "Spearman rho (frozen layer)": 0.42196926391289663,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 3.897896528713878,
+      "Spearman rho (frozen layer)": 0.4219565128507168,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 4.130273159089989,
+      "Spearman rho (frozen layer)": 0.42331076201760426,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 3.854287708471769,
+      "Spearman rho (frozen layer)": 0.42241272385054157,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 4.914512731181986,
+      "Spearman rho (frozen layer)": 0.1427625540743026,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 4.933458985700649,
+      "Spearman rho (frozen layer)": 0.1427625540743026,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 4.996863213568508,
+      "Spearman rho (frozen layer)": 0.1427625540743026,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 5.027662455364735,
+      "Spearman rho (frozen layer)": 0.1427625540743026,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 4.997852792272213,
+      "Spearman rho (frozen layer)": 0.1427625540743026,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 4.866916907058203,
+      "Spearman rho (frozen layer)": 0.1427625540743026,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 4.917973585297828,
+      "Spearman rho (frozen layer)": 0.1427625540743026,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 5.109948283124013,
+      "Spearman rho (frozen layer)": 0.1427625540743026,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 5.044028384153107,
+      "Spearman rho (frozen layer)": 0.1427625540743026,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 5.047727696042968,
+      "Spearman rho (frozen layer)": 0.1427625540743026,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 5.054465041712434,
+      "Spearman rho (frozen layer)": 0.1427625540743026,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 5.084128966092649,
+      "Spearman rho (frozen layer)": 0.1427625540743026,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 4.858594714150863,
+      "Spearman rho (frozen layer)": 0.1427625540743026,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 4.957314683178436,
+      "Spearman rho (frozen layer)": 0.1427625540743026,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 5.0126487792837375,
+      "Spearman rho (frozen layer)": 0.1427625540743026,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 5.948306074655144,
+      "Spearman rho (frozen layer)": 0.14204248615663403,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 6.1102332394519,
+      "Spearman rho (frozen layer)": 0.14271661371942646,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 5.994423202747934,
+      "Spearman rho (frozen layer)": 0.142644658899141,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 6.085960828627002,
+      "Spearman rho (frozen layer)": 0.14263172733604282,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 6.112644965401974,
+      "Spearman rho (frozen layer)": 0.14254219805517995,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 6.00153327452912,
+      "Spearman rho (frozen layer)": 0.14250245279452659,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 6.131056718038832,
+      "Spearman rho (frozen layer)": 0.14248594799438538,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 6.027879660971834,
+      "Spearman rho (frozen layer)": 0.1424628895839797,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 6.112087775626791,
+      "Spearman rho (frozen layer)": 0.1430329115301503,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 5.948989054589288,
+      "Spearman rho (frozen layer)": 0.14254708826245507,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 5.999621426730076,
+      "Spearman rho (frozen layer)": 0.14176922862029775,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 6.010051533121465,
+      "Spearman rho (frozen layer)": 0.14274476336250513,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 5.873593509086742,
+      "Spearman rho (frozen layer)": 0.1426496264533666,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 5.967536802144493,
+      "Spearman rho (frozen layer)": 0.14275344616071056,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 6.1335480552165365,
+      "Spearman rho (frozen layer)": 0.14279502515016124,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 7.0418663169167175,
+      "Spearman rho (frozen layer)": 0.3593140076559399,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 6.8968021063798295,
+      "Spearman rho (frozen layer)": 0.3593140076559399,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 6.948433803395074,
+      "Spearman rho (frozen layer)": 0.3593140076559399,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 6.901312963092064,
+      "Spearman rho (frozen layer)": 0.3593140076559399,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 6.847943402175543,
+      "Spearman rho (frozen layer)": 0.3593140076559399,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 7.136787346721288,
+      "Spearman rho (frozen layer)": 0.3593140076559399,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 6.983426345042199,
+      "Spearman rho (frozen layer)": 0.3593140076559399,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 6.9384112231746515,
+      "Spearman rho (frozen layer)": 0.3593140076559399,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 7.0315127012984755,
+      "Spearman rho (frozen layer)": 0.3593140076559399,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 6.842340626013765,
+      "Spearman rho (frozen layer)": 0.3593140076559399,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 6.92896707411226,
+      "Spearman rho (frozen layer)": 0.3593140076559399,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 7.064970709023646,
+      "Spearman rho (frozen layer)": 0.3593140076559399,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 7.042806327382164,
+      "Spearman rho (frozen layer)": 0.3593140076559399,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 7.154177903213611,
+      "Spearman rho (frozen layer)": 0.3593140076559399,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 7.038514467090574,
+      "Spearman rho (frozen layer)": 0.3593140076559399,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 7.992801879560875,
+      "Spearman rho (frozen layer)": 0.7467268311148837,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 8.083658420218882,
+      "Spearman rho (frozen layer)": 0.7476930452801831,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 8.129064919028497,
+      "Spearman rho (frozen layer)": 0.7474985443849813,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 8.070622702949873,
+      "Spearman rho (frozen layer)": 0.7451045859653856,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 8.148227591535802,
+      "Spearman rho (frozen layer)": 0.7477662037154583,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 8.090241654636216,
+      "Spearman rho (frozen layer)": 0.7474763859493798,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 8.117376460243817,
+      "Spearman rho (frozen layer)": 0.746615345677845,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 7.876513302778764,
+      "Spearman rho (frozen layer)": 0.7480231339123655,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 8.074372320958012,
+      "Spearman rho (frozen layer)": 0.7463453398493786,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 7.980828383848758,
+      "Spearman rho (frozen layer)": 0.7463783971887387,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 8.016993216771608,
+      "Spearman rho (frozen layer)": 0.7473549006798508,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 8.049312771034355,
+      "Spearman rho (frozen layer)": 0.7467988801927239,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 8.150340837345782,
+      "Spearman rho (frozen layer)": 0.7464511886874999,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 8.15506498605812,
+      "Spearman rho (frozen layer)": 0.7464108802926995,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 7.93223303855613,
+      "Spearman rho (frozen layer)": 0.7478823661078449,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 9.074801119180133,
+      "Spearman rho (frozen layer)": 0.7467110760074387,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 9.079994732139285,
+      "Spearman rho (frozen layer)": 0.7476940388627836,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 8.950877715620175,
+      "Spearman rho (frozen layer)": 0.7475082291683638,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 8.87963832795655,
+      "Spearman rho (frozen layer)": 0.7451109208856268,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 8.85310302729143,
+      "Spearman rho (frozen layer)": 0.7477431102762797,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 9.088749800809337,
+      "Spearman rho (frozen layer)": 0.7474889823881997,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 8.99670391738141,
+      "Spearman rho (frozen layer)": 0.7466068561158763,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 9.155372854238376,
+      "Spearman rho (frozen layer)": 0.748014084072776,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 8.988791505981968,
+      "Spearman rho (frozen layer)": 0.7463251097065504,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 9.152933433303629,
+      "Spearman rho (frozen layer)": 0.7463740810742915,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 8.971704320702099,
+      "Spearman rho (frozen layer)": 0.7473470530978021,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 9.09397828817919,
+      "Spearman rho (frozen layer)": 0.7467870090493628,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 8.867142167139786,
+      "Spearman rho (frozen layer)": 0.7464310867964753,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 9.017747747244085,
+      "Spearman rho (frozen layer)": 0.7464195817414349,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 9.096659131835432,
+      "Spearman rho (frozen layer)": 0.7478630295839163,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 10.135904533510365,
+      "Spearman rho (frozen layer)": 0.7370730325982561,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 10.103226588997579,
+      "Spearman rho (frozen layer)": 0.7388119482468594,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 9.851830632704376,
+      "Spearman rho (frozen layer)": 0.7388505521219553,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 9.959264749218155,
+      "Spearman rho (frozen layer)": 0.7361600490834633,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 9.855583511140432,
+      "Spearman rho (frozen layer)": 0.7389745612798703,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 9.874970333156659,
+      "Spearman rho (frozen layer)": 0.7379701294421833,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 10.056097801173594,
+      "Spearman rho (frozen layer)": 0.7372381591693389,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 10.068242622819744,
+      "Spearman rho (frozen layer)": 0.7365689533701317,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 10.08759061848052,
+      "Spearman rho (frozen layer)": 0.7397542818564413,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 10.116946095377813,
+      "Spearman rho (frozen layer)": 0.7395549643218516,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 10.076618069912483,
+      "Spearman rho (frozen layer)": 0.7373897645532884,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 10.096278909474123,
+      "Spearman rho (frozen layer)": 0.7393147734888629,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 9.85566838714345,
+      "Spearman rho (frozen layer)": 0.7371542190570175,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 9.915051248141216,
+      "Spearman rho (frozen layer)": 0.7387085632693456,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 10.039007287480079,
+      "Spearman rho (frozen layer)": 0.736554417921528,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 11.114600097479943,
+      "Spearman rho (frozen layer)": 0.48129632436412556,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 10.841440039980691,
+      "Spearman rho (frozen layer)": 0.47643233108864597,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 11.004681389477232,
+      "Spearman rho (frozen layer)": 0.4767448331062069,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 11.056731967796606,
+      "Spearman rho (frozen layer)": 0.48127523479914563,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 10.849474332521156,
+      "Spearman rho (frozen layer)": 0.47742848765595336,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 10.968433778417085,
+      "Spearman rho (frozen layer)": 0.4836667885439315,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 11.126603162042784,
+      "Spearman rho (frozen layer)": 0.4748984217501757,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 11.054916098833875,
+      "Spearman rho (frozen layer)": 0.47931004114205494,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 10.916050676275391,
+      "Spearman rho (frozen layer)": 0.4780654676264496,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 11.112889961482212,
+      "Spearman rho (frozen layer)": 0.4820419471873903,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 10.951370055491045,
+      "Spearman rho (frozen layer)": 0.47926306586689726,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 11.113070294766098,
+      "Spearman rho (frozen layer)": 0.48156367877864,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 10.93566196835805,
+      "Spearman rho (frozen layer)": 0.47615023646611015,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 11.028902480282607,
+      "Spearman rho (frozen layer)": 0.47300642882313626,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 10.967020821679307,
+      "Spearman rho (frozen layer)": 0.4777313125226145,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 11.927944016241621,
+      "Spearman rho (frozen layer)": 0.746723034741936,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 12.123698419894998,
+      "Spearman rho (frozen layer)": 0.7477421280464305,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 11.900029978220637,
+      "Spearman rho (frozen layer)": 0.7473412933422996,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 11.867139709195444,
+      "Spearman rho (frozen layer)": 0.7450836188827626,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 11.949416620334611,
+      "Spearman rho (frozen layer)": 0.7478071143952967,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 12.069644527245302,
+      "Spearman rho (frozen layer)": 0.7473132583325465,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 12.09837811391241,
+      "Spearman rho (frozen layer)": 0.7466084484227732,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 12.159597878421366,
+      "Spearman rho (frozen layer)": 0.7480129293757614,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 11.934835858243574,
+      "Spearman rho (frozen layer)": 0.7462348899527146,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 11.970541424362011,
+      "Spearman rho (frozen layer)": 0.7463699272845542,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 11.88378280896948,
+      "Spearman rho (frozen layer)": 0.7473802569606242,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 12.02395901747937,
+      "Spearman rho (frozen layer)": 0.7466668741671119,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 12.159225611924134,
+      "Spearman rho (frozen layer)": 0.7464476719559106,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 12.06428192323861,
+      "Spearman rho (frozen layer)": 0.7464608390186622,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 12.03046810893228,
+      "Spearman rho (frozen layer)": 0.7477497621096096,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 12.965558109734975,
+      "Spearman rho (frozen layer)": 0.3151488314518478,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 13.132895603291377,
+      "Spearman rho (frozen layer)": 0.2043037391708348,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 12.999013310761711,
+      "Spearman rho (frozen layer)": 0.10029293680988564,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 12.88299741226018,
+      "Spearman rho (frozen layer)": 0.3151488314518478,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 12.956921108223723,
+      "Spearman rho (frozen layer)": 0.2043037391708348,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 12.861493334031286,
+      "Spearman rho (frozen layer)": 0.10029293680988564,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 12.90463329206041,
+      "Spearman rho (frozen layer)": 0.3151488314518478,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 12.845654009919972,
+      "Spearman rho (frozen layer)": 0.2043037391708348,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 12.985049573280053,
+      "Spearman rho (frozen layer)": 0.10029293680988564,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 13.043052884784576,
+      "Spearman rho (frozen layer)": 0.3151488314518478,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 12.94985358796125,
+      "Spearman rho (frozen layer)": 0.2043037391708348,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 12.97452216688169,
+      "Spearman rho (frozen layer)": 0.10029293680988564,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 13.146946967310264,
+      "Spearman rho (frozen layer)": 0.3151488314518478,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 13.080628198903973,
+      "Spearman rho (frozen layer)": 0.2043037391708348,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 13.013074123822385,
+      "Spearman rho (frozen layer)": 0.10029293680988564,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 13.931053080035785,
+      "Spearman rho (frozen layer)": 0.4167154089231201,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 14.127038975607359,
+      "Spearman rho (frozen layer)": 0.41543358573415007,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 13.915231077401812,
+      "Spearman rho (frozen layer)": 0.4165763280969613,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 13.944109673765336,
+      "Spearman rho (frozen layer)": 0.413671882532383,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 14.130900740615344,
+      "Spearman rho (frozen layer)": 0.4125640175423676,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 14.009453457691222,
+      "Spearman rho (frozen layer)": 0.4120102027115739,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 14.077541743813752,
+      "Spearman rho (frozen layer)": 0.41564459893751127,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 14.029038334132405,
+      "Spearman rho (frozen layer)": 0.41483857026296495,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 14.049100546883038,
+      "Spearman rho (frozen layer)": 0.4130102085616791,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 13.935802653284744,
+      "Spearman rho (frozen layer)": 0.4138659574768763,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 13.917239059720533,
+      "Spearman rho (frozen layer)": 0.41377692259393345,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 13.943197551093974,
+      "Spearman rho (frozen layer)": 0.4132455561299907,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 13.889741300506696,
+      "Spearman rho (frozen layer)": 0.41525240850717093,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 14.119780596893058,
+      "Spearman rho (frozen layer)": 0.4174833184198366,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 13.930639018640036,
+      "Spearman rho (frozen layer)": 0.4161768260167719,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 15.019676606212602,
+      "Spearman rho (frozen layer)": 0.3473502440053845,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 15.09343181604524,
+      "Spearman rho (frozen layer)": 0.34725518238808,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 15.090823715000228,
+      "Spearman rho (frozen layer)": 0.3474844974083501,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 14.980283602746942,
+      "Spearman rho (frozen layer)": 0.3456166785524344,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 14.992402338747752,
+      "Spearman rho (frozen layer)": 0.3470855777775062,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 15.158304559659207,
+      "Spearman rho (frozen layer)": 0.34617030866248344,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 15.055871192633287,
+      "Spearman rho (frozen layer)": 0.3478100616011543,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 15.100684301797722,
+      "Spearman rho (frozen layer)": 0.34697676479871864,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 15.128817270150154,
+      "Spearman rho (frozen layer)": 0.3469140862365035,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 15.092028747593389,
+      "Spearman rho (frozen layer)": 0.3472756858013625,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 14.899257390385142,
+      "Spearman rho (frozen layer)": 0.34597957221665854,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 15.019894634796023,
+      "Spearman rho (frozen layer)": 0.34711842750716226,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 14.872606130340655,
+      "Spearman rho (frozen layer)": 0.34783602992533996,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 15.04893508050048,
+      "Spearman rho (frozen layer)": 0.3475416724606006,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 15.1457118170201,
+      "Spearman rho (frozen layer)": 0.3469253915767888,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "category": "Oracle: regress true answer",
+      "Spearman rho (frozen layer)": 0.7711501931809633,
+      "error": 0.0003169638105562367,
+      "_kind": "bar",
+      "_group": 96
+    },
+    {
+      "category": "Oracle: project true answer",
+      "Spearman rho (frozen layer)": 0.4910478276740732,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 97
+    },
+    {
+      "category": "Direct ridge (context)",
+      "Spearman rho (frozen layer)": 0.7381864672558881,
+      "error": 0.000613768099617884,
+      "_kind": "bar",
+      "_group": 98
+    },
+    {
+      "category": "Direct MLP (context)",
+      "Spearman rho (frozen layer)": 0.6929808165638958,
+      "error": 0.0011308356359804872,
+      "_kind": "bar",
+      "_group": 99
+    },
+    {
+      "category": "Context-native direction",
+      "Spearman rho (frozen layer)": 0.42205533607451357,
+      "error": 0.00033728666125909523,
+      "_kind": "bar",
+      "_group": 100
+    },
+    {
+      "category": "PV project (context)",
+      "Spearman rho (frozen layer)": 0.4123207339738281,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 101
+    },
+    {
+      "category": "Identity+bias project",
+      "Spearman rho (frozen layer)": 0.4119927607361952,
+      "error": 0.00012510489786776713,
+      "_kind": "bar",
+      "_group": 102
+    },
+    {
+      "category": "Map-then-project (headline)",
+      "Spearman rho (frozen layer)": 0.4731772245698117,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 103
+    },
+    {
+      "category": "Ridge on mapped answer",
+      "Spearman rho (frozen layer)": 0.7469684019332813,
+      "error": 0.00040118080091344765,
+      "_kind": "bar",
+      "_group": 104
+    },
+    {
+      "category": "Pretrain-then-finetune",
+      "Spearman rho (frozen layer)": 0.7469805988712035,
+      "error": 0.00039900134236958706,
+      "_kind": "bar",
+      "_group": 105
+    },
+    {
+      "category": "Stacked combiner",
+      "Spearman rho (frozen layer)": 0.7364013568750851,
+      "error": 0.0006231762622886938,
+      "_kind": "bar",
+      "_group": 106
+    },
+    {
+      "category": "Ridge on true answer act.",
+      "Spearman rho (frozen layer)": 0.47859163998143184,
+      "error": 0.001501348237746447,
+      "_kind": "bar",
+      "_group": 107
+    },
+    {
+      "category": "Shuffled-pretrain control",
+      "Spearman rho (frozen layer)": 0.7469034089229034,
+      "error": 0.00041497180732186223,
+      "_kind": "bar",
+      "_group": 108
+    },
+    {
+      "category": "Shuffled-map control",
+      "Spearman rho (frozen layer)": 0.17115678014457306,
+      "error": 0.017170810024284083,
+      "_kind": "bar",
+      "_group": 109
+    },
+    {
+      "category": "Text embedding only",
+      "Spearman rho (frozen layer)": 0.41468438616315273,
+      "error": 0.0008406857235601084,
+      "_kind": "bar",
+      "_group": 110
+    },
+    {
+      "category": "Surface features",
+      "Spearman rho (frozen layer)": 0.3470226787279018,
+      "error": 0.00032622146847505196,
+      "_kind": "bar",
+      "_group": 111
+    },
+    {
+      "x": 0.004074260576035632,
+      "Spearman rho (frozen layer)": 0.7707547561661148,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": -0.021448802282314494,
+      "Spearman rho (frozen layer)": 0.7719337937375998,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": -0.14853031954618778,
+      "Spearman rho (frozen layer)": 0.7707861739691981,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": 0.14712784714535052,
+      "Spearman rho (frozen layer)": 0.7707344305754839,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": -0.12703914107834918,
+      "Spearman rho (frozen layer)": 0.7717938540626627,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": -0.14685469014244898,
+      "Spearman rho (frozen layer)": 0.7709968987448333,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": -0.08125868431841969,
+      "Spearman rho (frozen layer)": 0.7719372047324061,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": -0.13903026114611763,
+      "Spearman rho (frozen layer)": 0.7708708680379867,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": -0.014362290428236058,
+      "Spearman rho (frozen layer)": 0.7713945230923908,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": 0.005148096402275981,
+      "Spearman rho (frozen layer)": 0.7705629616330206,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": -0.059977616310853146,
+      "Spearman rho (frozen layer)": 0.7711819368743377,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": -0.14369264557603648,
+      "Spearman rho (frozen layer)": 0.771666952200653,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": -0.12428788216024746,
+      "Spearman rho (frozen layer)": 0.7701734854531431,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": -0.03695859904322302,
+      "Spearman rho (frozen layer)": 0.7721383079399081,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": -0.14063089573550844,
+      "Spearman rho (frozen layer)": 0.7703267504947122,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": 1.0634207121951724,
+      "Spearman rho (frozen layer)": 0.4910478276740732,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 0.9062465732879398,
+      "Spearman rho (frozen layer)": 0.4910478276740732,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 0.9366629020107643,
+      "Spearman rho (frozen layer)": 0.4910478276740732,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 0.9661202486969912,
+      "Spearman rho (frozen layer)": 0.4910478276740732,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 0.9733150825821273,
+      "Spearman rho (frozen layer)": 0.4910478276740732,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 0.8405314264559361,
+      "Spearman rho (frozen layer)": 0.4910478276740732,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 0.8758625187195832,
+      "Spearman rho (frozen layer)": 0.4910478276740732,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 1.1160846603970809,
+      "Spearman rho (frozen layer)": 0.4910478276740732,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 0.8403945800038106,
+      "Spearman rho (frozen layer)": 0.4910478276740732,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 1.00261355386012,
+      "Spearman rho (frozen layer)": 0.4910478276740732,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 0.9966406420823066,
+      "Spearman rho (frozen layer)": 0.4910478276740732,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 0.9465901315234041,
+      "Spearman rho (frozen layer)": 0.4910478276740732,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 0.9780246464468638,
+      "Spearman rho (frozen layer)": 0.4910478276740732,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 1.089785964008507,
+      "Spearman rho (frozen layer)": 0.4910478276740732,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 1.109185185988786,
+      "Spearman rho (frozen layer)": 0.4910478276740732,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 1.9233115338928801,
+      "Spearman rho (frozen layer)": 0.7372744465953861,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 1.9431969411096734,
+      "Spearman rho (frozen layer)": 0.739007291134553,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 1.9175945129690666,
+      "Spearman rho (frozen layer)": 0.7390541814001534,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 1.993556288176341,
+      "Spearman rho (frozen layer)": 0.7363431773894844,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 2.05864267445082,
+      "Spearman rho (frozen layer)": 0.7391688283097515,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 1.9130409201482945,
+      "Spearman rho (frozen layer)": 0.7381642493683642,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 1.9458354374575573,
+      "Spearman rho (frozen layer)": 0.7374195035182541,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 2.1377230776285283,
+      "Spearman rho (frozen layer)": 0.7367653144698008,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 1.8555421727510266,
+      "Spearman rho (frozen layer)": 0.7399573889095427,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 1.9874462736766612,
+      "Spearman rho (frozen layer)": 0.7397672722993253,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 2.067698573310969,
+      "Spearman rho (frozen layer)": 0.7373635278657682,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 1.8881452836983916,
+      "Spearman rho (frozen layer)": 0.7395005906064208,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 1.855159686401754,
+      "Spearman rho (frozen layer)": 0.7373386233563186,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 1.8842257189243299,
+      "Spearman rho (frozen layer)": 0.7389225576857249,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 2.1340234219298186,
+      "Spearman rho (frozen layer)": 0.736750055929473,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 2.8429631301827594,
+      "Spearman rho (frozen layer)": 0.6904169277721582,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 2.9002630319396325,
+      "Spearman rho (frozen layer)": 0.6958980522351029,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 2.850010724128526,
+      "Spearman rho (frozen layer)": 0.6944051707837618,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 2.875401429619905,
+      "Spearman rho (frozen layer)": 0.6941076457735269,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 3.0384477717210547,
+      "Spearman rho (frozen layer)": 0.6941794989065301,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 2.9173244507965075,
+      "Spearman rho (frozen layer)": 0.6903549925748038,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 3.0221478561378166,
+      "Spearman rho (frozen layer)": 0.6893108315736336,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 3.02886252248516,
+      "Spearman rho (frozen layer)": 0.6942418712895252,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 3.111819306588729,
+      "Spearman rho (frozen layer)": 0.6936934091229529,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 2.8415172457318,
+      "Spearman rho (frozen layer)": 0.6960577485176548,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 3.113078226989557,
+      "Spearman rho (frozen layer)": 0.6915009813754347,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 3.0381181076566315,
+      "Spearman rho (frozen layer)": 0.6938047937768554,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 2.8920779155535863,
+      "Spearman rho (frozen layer)": 0.6949307176695717,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 3.087339964203291,
+      "Spearman rho (frozen layer)": 0.6921017950559297,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 3.1137572933729873,
+      "Spearman rho (frozen layer)": 0.6897078120309938,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 3.9213643148013304,
+      "Spearman rho (frozen layer)": 0.42275483230598215,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 4.134013977888858,
+      "Spearman rho (frozen layer)": 0.42087942388063254,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 3.9854263776955703,
+      "Spearman rho (frozen layer)": 0.42138569533971937,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 4.0330958253866624,
+      "Spearman rho (frozen layer)": 0.4214740265636914,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 4.155087850757646,
+      "Spearman rho (frozen layer)": 0.42295371168835105,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 3.9556915451645436,
+      "Spearman rho (frozen layer)": 0.4214531468644478,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 4.100210990662436,
+      "Spearman rho (frozen layer)": 0.42270765418660594,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 3.9418877177051073,
+      "Spearman rho (frozen layer)": 0.42201253820036927,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 4.095748327117277,
+      "Spearman rho (frozen layer)": 0.42200933623864234,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 4.032234854036045,
+      "Spearman rho (frozen layer)": 0.4215711682591187,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 3.9092338224721286,
+      "Spearman rho (frozen layer)": 0.4219792449583834,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 3.9724883500125556,
+      "Spearman rho (frozen layer)": 0.42196926391289663,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 3.94164340299634,
+      "Spearman rho (frozen layer)": 0.4219565128507168,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 3.8649946857857165,
+      "Spearman rho (frozen layer)": 0.42331076201760426,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 3.849547126431903,
+      "Spearman rho (frozen layer)": 0.42241272385054157,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 4.950873169730298,
+      "Spearman rho (frozen layer)": 0.4123207339738281,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 4.846090927301596,
+      "Spearman rho (frozen layer)": 0.4123207339738281,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 4.892956082426168,
+      "Spearman rho (frozen layer)": 0.4123207339738281,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 5.072058662672278,
+      "Spearman rho (frozen layer)": 0.4123207339738281,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 5.066589195418748,
+      "Spearman rho (frozen layer)": 0.4123207339738281,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 5.076345723666362,
+      "Spearman rho (frozen layer)": 0.4123207339738281,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 4.9414890147615935,
+      "Spearman rho (frozen layer)": 0.4123207339738281,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 5.124806226277663,
+      "Spearman rho (frozen layer)": 0.4123207339738281,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 5.030025775369103,
+      "Spearman rho (frozen layer)": 0.4123207339738281,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 4.88032842935892,
+      "Spearman rho (frozen layer)": 0.4123207339738281,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 4.885989971665771,
+      "Spearman rho (frozen layer)": 0.4123207339738281,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 5.061790536617504,
+      "Spearman rho (frozen layer)": 0.4123207339738281,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 4.895342059661465,
+      "Spearman rho (frozen layer)": 0.4123207339738281,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 5.002333664506254,
+      "Spearman rho (frozen layer)": 0.4123207339738281,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 5.157367832297187,
+      "Spearman rho (frozen layer)": 0.4123207339738281,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 5.841282433514668,
+      "Spearman rho (frozen layer)": 0.4117985477036914,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 5.845305536607218,
+      "Spearman rho (frozen layer)": 0.4121831749325176,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 6.157787066217762,
+      "Spearman rho (frozen layer)": 0.41219648572181516,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 6.027084426922933,
+      "Spearman rho (frozen layer)": 0.41181762885751283,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 5.880611192165924,
+      "Spearman rho (frozen layer)": 0.41198533636046747,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 6.12713670392131,
+      "Spearman rho (frozen layer)": 0.4120132319005165,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 6.121721696040861,
+      "Spearman rho (frozen layer)": 0.41236260801205027,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 6.01158413219564,
+      "Spearman rho (frozen layer)": 0.4114520337506996,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 6.038973449555442,
+      "Spearman rho (frozen layer)": 0.41224227271080616,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 5.92741990128028,
+      "Spearman rho (frozen layer)": 0.41175330434562474,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 5.856166302839042,
+      "Spearman rho (frozen layer)": 0.41189100319330346,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 6.030261634845076,
+      "Spearman rho (frozen layer)": 0.4121779621905834,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 5.934321661824884,
+      "Spearman rho (frozen layer)": 0.4117611916681641,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 6.052358734931313,
+      "Spearman rho (frozen layer)": 0.4122404496700719,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 6.107598456589632,
+      "Spearman rho (frozen layer)": 0.412016180025103,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 6.845811374052596,
+      "Spearman rho (frozen layer)": 0.4731772245698117,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 7.0306284078994326,
+      "Spearman rho (frozen layer)": 0.4731772245698117,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 6.914009772699793,
+      "Spearman rho (frozen layer)": 0.4731772245698117,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 7.1196443193292165,
+      "Spearman rho (frozen layer)": 0.4731772245698117,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 6.921172642099785,
+      "Spearman rho (frozen layer)": 0.4731772245698117,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 7.035446442635334,
+      "Spearman rho (frozen layer)": 0.4731772245698117,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 7.0171330688286755,
+      "Spearman rho (frozen layer)": 0.4731772245698117,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 6.96677328001896,
+      "Spearman rho (frozen layer)": 0.4731772245698117,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 7.056838644351934,
+      "Spearman rho (frozen layer)": 0.4731772245698117,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 7.072246283108939,
+      "Spearman rho (frozen layer)": 0.4731772245698117,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 7.021420094502203,
+      "Spearman rho (frozen layer)": 0.4731772245698117,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 7.082695115899122,
+      "Spearman rho (frozen layer)": 0.4731772245698117,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 7.15469346431774,
+      "Spearman rho (frozen layer)": 0.4731772245698117,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 6.974167164128257,
+      "Spearman rho (frozen layer)": 0.4731772245698117,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 7.00466657660337,
+      "Spearman rho (frozen layer)": 0.4731772245698117,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 7.843990360941188,
+      "Spearman rho (frozen layer)": 0.7467268311148837,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 8.094729138019321,
+      "Spearman rho (frozen layer)": 0.7476930452801831,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 8.006473621454719,
+      "Spearman rho (frozen layer)": 0.7474985443849813,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 7.970547657715381,
+      "Spearman rho (frozen layer)": 0.7451045859653856,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 7.870103028188606,
+      "Spearman rho (frozen layer)": 0.7477662037154583,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 8.124690054936128,
+      "Spearman rho (frozen layer)": 0.7474763859493798,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 7.966402316812978,
+      "Spearman rho (frozen layer)": 0.746615345677845,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 8.05842611142695,
+      "Spearman rho (frozen layer)": 0.7480231339123655,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 7.887799730037808,
+      "Spearman rho (frozen layer)": 0.7463453398493786,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 8.14769588145313,
+      "Spearman rho (frozen layer)": 0.7463783971887387,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 7.897101363782986,
+      "Spearman rho (frozen layer)": 0.7473549006798508,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 7.903853437727837,
+      "Spearman rho (frozen layer)": 0.7467988801927239,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 8.11487451537847,
+      "Spearman rho (frozen layer)": 0.7464511886874999,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 8.132026478125418,
+      "Spearman rho (frozen layer)": 0.7464108802926995,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 7.907887170407457,
+      "Spearman rho (frozen layer)": 0.7478823661078449,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 8.990336284215944,
+      "Spearman rho (frozen layer)": 0.7467468685847589,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 9.074718369460106,
+      "Spearman rho (frozen layer)": 0.7476936254910549,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 9.121077034819457,
+      "Spearman rho (frozen layer)": 0.7475370240873362,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 8.961296862411938,
+      "Spearman rho (frozen layer)": 0.745132502445441,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 9.005446235791817,
+      "Spearman rho (frozen layer)": 0.7477584141484894,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 9.077349251366314,
+      "Spearman rho (frozen layer)": 0.7474871568546458,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 9.073963512528895,
+      "Spearman rho (frozen layer)": 0.7466214846488358,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 9.090547241608347,
+      "Spearman rho (frozen layer)": 0.748047112003118,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 9.022378821965289,
+      "Spearman rho (frozen layer)": 0.7463599692439046,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 8.873476830977529,
+      "Spearman rho (frozen layer)": 0.7463752664272514,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 9.129271453080973,
+      "Spearman rho (frozen layer)": 0.7473483757387578,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 9.11698321258273,
+      "Spearman rho (frozen layer)": 0.7468257265690008,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 9.095391179461867,
+      "Spearman rho (frozen layer)": 0.7464835428713177,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 8.871955992691433,
+      "Spearman rho (frozen layer)": 0.7464131490245963,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 8.905407157466056,
+      "Spearman rho (frozen layer)": 0.7478787649295442,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 10.07795211683445,
+      "Spearman rho (frozen layer)": 0.7353625958603545,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 9.847404830266223,
+      "Spearman rho (frozen layer)": 0.7372529638027421,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 10.15335188278633,
+      "Spearman rho (frozen layer)": 0.7372268779598964,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 9.960686297713817,
+      "Spearman rho (frozen layer)": 0.7344799250664387,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 10.070180010781064,
+      "Spearman rho (frozen layer)": 0.7374090924161286,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 10.124022748316174,
+      "Spearman rho (frozen layer)": 0.7363687861566908,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 9.966281564208026,
+      "Spearman rho (frozen layer)": 0.7355696425757157,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 9.942122396351893,
+      "Spearman rho (frozen layer)": 0.7349931709171449,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 10.03479716124744,
+      "Spearman rho (frozen layer)": 0.7381864892260391,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 10.025916599599377,
+      "Spearman rho (frozen layer)": 0.7380323292878729,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 9.970924792839934,
+      "Spearman rho (frozen layer)": 0.7359199603257934,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 10.032567921877666,
+      "Spearman rho (frozen layer)": 0.7377131146091919,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 10.139322038261279,
+      "Spearman rho (frozen layer)": 0.7355040720458846,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 9.98964488212051,
+      "Spearman rho (frozen layer)": 0.7371039692462925,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 9.902957497840202,
+      "Spearman rho (frozen layer)": 0.7348973636300903,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 10.960705914522562,
+      "Spearman rho (frozen layer)": 0.48129632436412556,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 10.966114234429797,
+      "Spearman rho (frozen layer)": 0.47643233108864597,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 10.88195478176839,
+      "Spearman rho (frozen layer)": 0.4767448331062069,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 10.892118880177458,
+      "Spearman rho (frozen layer)": 0.48127523479914563,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 11.059059863485977,
+      "Spearman rho (frozen layer)": 0.47742848765595336,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 10.94863288134685,
+      "Spearman rho (frozen layer)": 0.4836667885439315,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 11.145567485393858,
+      "Spearman rho (frozen layer)": 0.4748984217501757,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 10.917950958514755,
+      "Spearman rho (frozen layer)": 0.47931004114205494,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 10.871655841633544,
+      "Spearman rho (frozen layer)": 0.4780654676264496,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 11.081121460160082,
+      "Spearman rho (frozen layer)": 0.4820419471873903,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 11.121931536613719,
+      "Spearman rho (frozen layer)": 0.47926306586689726,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 10.928996274198877,
+      "Spearman rho (frozen layer)": 0.48156367877864,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 10.904668192526554,
+      "Spearman rho (frozen layer)": 0.47615023646611015,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 10.899445163158749,
+      "Spearman rho (frozen layer)": 0.47300642882313626,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 11.007043936437285,
+      "Spearman rho (frozen layer)": 0.4777313125226145,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 11.989893325198967,
+      "Spearman rho (frozen layer)": 0.746681550818486,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 11.923020748753451,
+      "Spearman rho (frozen layer)": 0.7475648325153295,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 11.854455397436617,
+      "Spearman rho (frozen layer)": 0.7475133698664911,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 11.994077228904409,
+      "Spearman rho (frozen layer)": 0.7449724872334523,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 12.146986351243395,
+      "Spearman rho (frozen layer)": 0.7477233427522083,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 12.048806144240853,
+      "Spearman rho (frozen layer)": 0.74747380081009,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 11.998562098121157,
+      "Spearman rho (frozen layer)": 0.7466033339218376,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 11.875421463689477,
+      "Spearman rho (frozen layer)": 0.7479677971955517,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 11.920779612975869,
+      "Spearman rho (frozen layer)": 0.7463270114316012,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 11.934327663863854,
+      "Spearman rho (frozen layer)": 0.7462639666918709,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 12.084737136834315,
+      "Spearman rho (frozen layer)": 0.7472523794755741,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 12.120547455124678,
+      "Spearman rho (frozen layer)": 0.7467740507760267,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 12.12852539314126,
+      "Spearman rho (frozen layer)": 0.7462898911098622,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 12.15506195464024,
+      "Spearman rho (frozen layer)": 0.746267645069946,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 12.154357338593451,
+      "Spearman rho (frozen layer)": 0.747875674175223,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 13.144959722485755,
+      "Spearman rho (frozen layer)": 0.18569090694461282,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 12.862983084960923,
+      "Spearman rho (frozen layer)": 0.20201170666465365,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 12.884093931496897,
+      "Spearman rho (frozen layer)": 0.12576772682445267,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 12.93742928847233,
+      "Spearman rho (frozen layer)": 0.18569090694461282,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 13.016927441300627,
+      "Spearman rho (frozen layer)": 0.20201170666465365,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 12.871032924385753,
+      "Spearman rho (frozen layer)": 0.12576772682445267,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 13.110655026496685,
+      "Spearman rho (frozen layer)": 0.18569090694461282,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 13.03736197730474,
+      "Spearman rho (frozen layer)": 0.20201170666465365,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 13.013556608736705,
+      "Spearman rho (frozen layer)": 0.12576772682445267,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 12.892899623477533,
+      "Spearman rho (frozen layer)": 0.18569090694461282,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 12.921041751808064,
+      "Spearman rho (frozen layer)": 0.20201170666465365,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 12.891299847994322,
+      "Spearman rho (frozen layer)": 0.12576772682445267,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 13.112618610494335,
+      "Spearman rho (frozen layer)": 0.18569090694461282,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 13.02695291521959,
+      "Spearman rho (frozen layer)": 0.20201170666465365,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 13.075241416806282,
+      "Spearman rho (frozen layer)": 0.12576772682445267,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 13.934730516131209,
+      "Spearman rho (frozen layer)": 0.4167154089231201,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 13.958800843868248,
+      "Spearman rho (frozen layer)": 0.41543358573415007,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 13.96955358861649,
+      "Spearman rho (frozen layer)": 0.4165763280969613,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 14.08320479095809,
+      "Spearman rho (frozen layer)": 0.413671882532383,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 14.087152956055862,
+      "Spearman rho (frozen layer)": 0.4125640175423676,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 13.90618032880449,
+      "Spearman rho (frozen layer)": 0.4120102027115739,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 14.141292434156192,
+      "Spearman rho (frozen layer)": 0.41564459893751127,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 13.87860970798198,
+      "Spearman rho (frozen layer)": 0.41483857026296495,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 14.126759066375561,
+      "Spearman rho (frozen layer)": 0.4130102085616791,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 13.872126606607939,
+      "Spearman rho (frozen layer)": 0.4138659574768763,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 13.924652739568419,
+      "Spearman rho (frozen layer)": 0.41377692259393345,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 14.110873131541746,
+      "Spearman rho (frozen layer)": 0.4132455561299907,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 13.897437463150748,
+      "Spearman rho (frozen layer)": 0.41525240850717093,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 13.97234173801919,
+      "Spearman rho (frozen layer)": 0.4174833184198366,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 13.98395497598212,
+      "Spearman rho (frozen layer)": 0.4161768260167719,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 14.918482871367427,
+      "Spearman rho (frozen layer)": 0.3473502440053845,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 15.067278464427515,
+      "Spearman rho (frozen layer)": 0.34725518238808,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 15.112427087808705,
+      "Spearman rho (frozen layer)": 0.3474844974083501,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 15.119864044753783,
+      "Spearman rho (frozen layer)": 0.3456166785524344,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 14.948583086635699,
+      "Spearman rho (frozen layer)": 0.3470855777775062,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 15.0098721261721,
+      "Spearman rho (frozen layer)": 0.34617030866248344,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 14.919490049237009,
+      "Spearman rho (frozen layer)": 0.3478100616011543,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 14.918334880496047,
+      "Spearman rho (frozen layer)": 0.34697676479871864,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 14.891601300112615,
+      "Spearman rho (frozen layer)": 0.3469140862365035,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 15.140806083458404,
+      "Spearman rho (frozen layer)": 0.3472756858013625,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 15.124156425153785,
+      "Spearman rho (frozen layer)": 0.34597957221665854,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 15.088754788264861,
+      "Spearman rho (frozen layer)": 0.34711842750716226,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 15.005651686812072,
+      "Spearman rho (frozen layer)": 0.34783602992533996,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 14.996994532963798,
+      "Spearman rho (frozen layer)": 0.3475416724606006,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 15.009518613178399,
+      "Spearman rho (frozen layer)": 0.3469253915767888,
+      "_kind": "scatter",
+      "_group": 127
+    }
+  ],
+  "n_series": 128,
+  "total_points": 1024,
+  "text": {
+    "suptitle": "All 16 arms at the largest budgets (context variant; dots = 15 draw x seed cells)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil (jailbreak prompts), synthetic-pair direction",
+        "ylabel": "Spearman rho (frozen layer)",
+        "xticklabels": [
+          "Oracle: regress true answer",
+          "Oracle: project true answer",
+          "Direct ridge (context)",
+          "Direct MLP (context)",
+          "Context-native direction",
+          "PV project (context)",
+          "Identity+bias project",
+          "Map-then-project (headline)",
+          "Ridge on mapped answer",
+          "Pretrain-then-finetune",
+          "Stacked combiner",
+          "Ridge on true answer act.",
+          "Shuffled-pretrain control",
+          "Shuffled-map control",
+          "Text embedding only",
+          "Surface features"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "title_left": "hallucination (TriviaQA), synthetic-pair direction",
+        "ylabel": "Spearman rho (frozen layer)",
+        "xticklabels": [
+          "Oracle: regress true answer",
+          "Oracle: project true answer",
+          "Direct ridge (context)",
+          "Direct MLP (context)",
+          "Context-native direction",
+          "PV project (context)",
+          "Identity+bias project",
+          "Map-then-project (headline)",
+          "Ridge on mapped answer",
+          "Pretrain-then-finetune",
+          "Stacked combiner",
+          "Ridge on true answer act.",
+          "Shuffled-pretrain control",
+          "Shuffled-map control",
+          "Text embedding only",
+          "Surface features"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "title_left": "sycophancy (Reddit advice), synthetic-pair direction",
+        "ylabel": "Spearman rho (frozen layer)",
+        "xticklabels": [
+          "Oracle: regress true answer",
+          "Oracle: project true answer",
+          "Direct ridge (context)",
+          "Direct MLP (context)",
+          "Context-native direction",
+          "PV project (context)",
+          "Identity+bias project",
+          "Map-then-project (headline)",
+          "Ridge on mapped answer",
+          "Pretrain-then-finetune",
+          "Stacked combiner",
+          "Ridge on true answer act.",
+          "Shuffled-pretrain control",
+          "Shuffled-map control",
+          "Text embedding only",
+          "Surface features"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "title_left": "sycophancy, pooled-natural direction",
+        "ylabel": "Spearman rho (frozen layer)",
+        "xticklabels": [
+          "Oracle: regress true answer",
+          "Oracle: project true answer",
+          "Direct ridge (context)",
+          "Direct MLP (context)",
+          "Context-native direction",
+          "PV project (context)",
+          "Identity+bias project",
+          "Map-then-project (headline)",
+          "Ridge on mapped answer",
+          "Pretrain-then-finetune",
+          "Stacked combiner",
+          "Ridge on true answer act.",
+          "Shuffled-pretrain control",
+          "Shuffled-map control",
+          "Text embedding only",
+          "Surface features"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      }
+    ]
+  }
+}

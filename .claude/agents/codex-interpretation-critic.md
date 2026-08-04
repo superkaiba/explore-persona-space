@@ -20,6 +20,7 @@ tools:
   - Glob
   - Bash
   - Write
+model: "claude-fable-5"
 ---
 
 # Codex Interpretation Critic (thin Claude wrapper, marker mode)

@@ -360,11 +360,13 @@ Every figure saves PNG + PDF + `.meta.json` sidecar (commit-pinned) via `savefig
 **Figure URL in the body MUST be an absolute `raw.githubusercontent.com` permalink — NOT a relative path.** The EPS dashboard serves task-folder HTML artifacts but does NOT serve binary PNG/PDF files under `tasks/<N>/artifacts/`, so a relative reference like `![alt](artifacts/hero.png)` renders as a broken image in the browser (incident: task #365, 2026-05-22). Workflow:
 
 1. Save figures under `figures/issue_<N>/` (e.g. `figures/issue_<N>/hero.png`). Do NOT only drop them in the task's `artifacts/` folder — that path is dashboard-invisible for binaries.
-2. `git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero figure" -- figures/issue_<N>/ && git push origin <branch>` BEFORE writing the body. The commit is pathspec-limited so a concurrent session's staged files are never swept in.
-3. Capture the commit SHA: `git rev-parse HEAD`.
-4. Reference the figure inline inside the relevant `### <result>` under `## Results` with `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)` — pinned to the commit SHA, never `main`/`master`/`HEAD`. **Do NOT emit a `## Figure` H2** — verifier check 2 hard-FAILs any v4 body that carries it.
-5. Alt text may contain `[brackets]` (e.g. literal marker names like `[ZLT]`); the verifier's image regex handles them.
-6. **Repo-root stray guard (#922).** When you worked from a worktree, check
+2. `git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero figure" -- figures/issue_<N>/` — commit only, NO push yet (the push is step 4, after the gate). The commit is pathspec-limited so a concurrent session's staged files are never swept in. On a `guard_root_code_commit.sh` bounce at this commit (code payload not yet certified), run step 3's gate FIRST, then retry this commit — the hook validates the cert at COMMIT time.
+3. **Inline payload lint gate** — when the commit set includes any `scripts/` or `src/` file (a plot/analysis script swept alongside the figures — the #1092 shape) AND the commit lands DIRECTLY on `main` (an inline / free-analysis round; worktree branches are gated at Step 10d instead): build the payload file (the round's to-be-committed non-artifact paths, one per line), run the single-flight probe, then `uv run python scripts/inline_lint_gate.py --issue <N> --payload-file /tmp/issue-<N>-<round-slug>-inline-payload.txt` (round-unique slug REQUIRED, e.g. `r<round>-<label>` — the bare legacy basename `issue-<N>-inline-payload.txt` is refused by the gate, #1948). PASS — or the artifact-only skip (no `scripts/`/`src/` file in the commit set) — is REQUIRED before step 4's push; the helper is the ONLY certifying entrypoint (hand-run component legs write no content-hash cert, so `guard_root_code_commit.sh` still blocks the commit). Incident #1388: two inline-landed lint-red scripts broke the Step 9c gate fleet-wide. Canonical recipe (probe, command shape, verdict semantics): SKILL.md Step 9a-ter § Inline payload lint gate.
+4. `git push origin <branch>` BEFORE writing the body.
+5. Capture the commit SHA: `git rev-parse HEAD`.
+6. Reference the figure inline inside the relevant `### <result>` under `## Results` with `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)` — pinned to the commit SHA, never `main`/`master`/`HEAD`. **Do NOT emit a `## Figure` H2** — verifier check 2 hard-FAILs any v4 body that carries it.
+7. Alt text may contain `[brackets]` (e.g. literal marker names like `[ZLT]`); the verifier's image regex handles them.
+8. **Repo-root stray guard (#922).** When you worked from a worktree, check
    the MAIN checkout for stale duplicates after the push:
    `git -C "$MAIN_ROOT" status --porcelain -uall -- "figures/issue_<N>/"`
    (with `MAIN_ROOT="${TASK_DIR%/tasks/*}"`, the worktree-proof root;
@@ -381,7 +383,7 @@ Every figure saves PNG + PDF + `.meta.json` sidecar (commit-pinned) via `savefig
    `git restore .` at the repo root (hard rule above); tracked files are
    never touched.
 
-`verify_task_body.py` Check 4b (`Figure URL resolvable`) fails any body with a relative figure URL, a `main`/`master`/`HEAD`-pinned raw URL, or a figure URL whose target does NOT exist — same-repo SHA-pinned raw URLs are verified against the git object database via `git cat-file` (incident: task #507, 2026-06-09 — a caption cited a figure that was never generated), with an HTTP HEAD fallback for unknown SHAs / other hosts. The gate blocks promotion to `awaiting_promotion` until the URL is fixed, so commit the figure FIRST (steps 2-3 above) and pin the URL to the commit SHA that actually carries it.
+`verify_task_body.py` Check 4b (`Figure URL resolvable`) fails any body with a relative figure URL, a `main`/`master`/`HEAD`-pinned raw URL, or a figure URL whose target does NOT exist — same-repo SHA-pinned raw URLs are verified against the git object database via `git cat-file` (incident: task #507, 2026-06-09 — a caption cited a figure that was never generated), with an HTTP HEAD fallback for unknown SHAs / other hosts. The gate blocks promotion to `awaiting_promotion` until the URL is fixed, so commit + push the figure FIRST (steps 2-5 above) and pin the URL to the commit SHA that actually carries it.
 
 ## Step 3.5: Plot-verification (MANDATORY, before writing the body)
 

@@ -1,0 +1,170 @@
+{
+  "commit": "550b2af966",
+  "created": "2026-08-02T02:57:03Z",
+  "figsize": [
+    9.6,
+    5.2
+  ],
+  "points": [
+    {
+      "category": "Context vector\nlinear",
+      "Share of the map's held-out error": 0.07315830087356638,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Context vector\nnonlinear",
+      "Share of the map's held-out error": 0.0855022544669741,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Prefix end state\nlinear",
+      "Share of the map's held-out error": 0.07049468319231873,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Prefix end state\nnonlinear",
+      "Share of the map's held-out error": 0.07353957478759235,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Query only\nlinear",
+      "Share of the map's held-out error": 0.0837248556891111,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Query only\nnonlinear",
+      "Share of the map's held-out error": 0.09132637181742831,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Context vector\nlinear",
+      "Share of the map's held-out error": 0.02296475909438432,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Context vector\nnonlinear",
+      "Share of the map's held-out error": 0.024426454989327995,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Prefix end state\nlinear",
+      "Share of the map's held-out error": 0.005419472514473542,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Prefix end state\nnonlinear",
+      "Share of the map's held-out error": 0.0058093061400160545,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Query only\nlinear",
+      "Share of the map's held-out error": 0.009133204243024648,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Query only\nnonlinear",
+      "Share of the map's held-out error": 0.009257126742066121,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Context vector\nlinear",
+      "Share of the map's held-out error": 0.9038769400320493,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Context vector\nnonlinear",
+      "Share of the map's held-out error": 0.8900712905436978,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Prefix end state\nlinear",
+      "Share of the map's held-out error": 0.9240858442932077,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Prefix end state\nnonlinear",
+      "Share of the map's held-out error": 0.9206511190723917,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Query only\nlinear",
+      "Share of the map's held-out error": 0.9071419400678643,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Query only\nnonlinear",
+      "Share of the map's held-out error": 0.8994165014405056,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Where the map's error lives \u2014 linear vs nonlinear",
+        "ylabel": "Share of the map's held-out error",
+        "legend_labels": [
+          "Contexts (rows)",
+          "Directions (columns)",
+          "Interaction (context \u00d7 direction)"
+        ],
+        "annotations": [
+          "0.07",
+          "0.09",
+          "0.07",
+          "0.07",
+          "0.08",
+          "0.09",
+          "0.90",
+          "0.89",
+          "0.92",
+          "0.92",
+          "0.91",
+          "0.90"
+        ],
+        "xticklabels": [
+          "Context vector\nlinear",
+          "Context vector\nnonlinear",
+          "Prefix end state\nlinear",
+          "Prefix end state\nnonlinear",
+          "Query only\nlinear",
+          "Query only\nnonlinear"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Contexts (rows)",
+      "Directions (columns)",
+      "Interaction (context \u00d7 direction)"
+    ]
+  }
+}

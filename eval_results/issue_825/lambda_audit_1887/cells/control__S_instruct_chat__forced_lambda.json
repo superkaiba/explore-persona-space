@@ -1,0 +1,87 @@
+{
+  "arm": "forced_lambda",
+  "cell_id": "control__S_instruct_chat",
+  "committed_r2": 0.6730940896676356,
+  "control": true,
+  "d": 3584,
+  "elapsed_s": 92.33,
+  "forced_lambda": {
+    "1e+02": {
+      "fold_se": 0.006827457425664321,
+      "r2_per_fold": [
+        0.5954928761908118,
+        0.5788062511019996,
+        0.5675744739574212,
+        0.5725695584257566,
+        0.6033328374692981
+      ],
+      "r2_pooled": 0.5838534064994134,
+      "selected_lambda_per_fold": [
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0
+      ]
+    },
+    "1e+03": {
+      "fold_se": 0.004741043932004733,
+      "r2_per_fold": [
+        0.6981846755203033,
+        0.6924989304079979,
+        0.6826405959258575,
+        0.684572531019751,
+        0.7086380838535309
+      ],
+      "r2_pooled": 0.6935026836671148,
+      "selected_lambda_per_fold": [
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0
+      ]
+    },
+    "1e+04": {
+      "fold_se": 0.004496712318684959,
+      "r2_per_fold": [
+        0.6709741900362023,
+        0.6726604641726258,
+        0.6655161811553774,
+        0.6615493709140433,
+        0.6878766942978396
+      ],
+      "r2_pooled": 0.6718666316748714,
+      "selected_lambda_per_fold": [
+        10000.0,
+        10000.0,
+        10000.0,
+        10000.0,
+        10000.0
+      ]
+    }
+  },
+  "issue": 825,
+  "metadata": {
+    "git_commit": "36b53d81de79d5383041ff7b168cb16b85be1092",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T03:24:24Z"
+  },
+  "n_train_min": 4000,
+  "published_claim_ref": "banked S1@5000 unguarded L19 (issue825_trackm_settle_battery docstring / trackm_settle outputs)",
+  "resume_key": {
+    "arm": "forced_lambda",
+    "cell_id": "control__S_instruct_chat",
+    "issue": 825,
+    "selector_regime": "forced_lambda",
+    "store_rev": "issue825 turnstore (battery staging)"
+  },
+  "selection_bearing": true,
+  "selector_config": {
+    "gcv_dof_cap": null,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": false
+  },
+  "variant": "n_gt_d_control"
+}

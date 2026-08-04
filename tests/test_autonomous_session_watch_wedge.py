@@ -687,7 +687,7 @@ def test_wedge_done_task_falls_through_to_status_class_stop(isolated_registry, m
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(asw, "_latest_progress_ts", lambda events: None)
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
-    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None: False)
+    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None, **_kw: False)
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
     monkeypatch.setattr(
         asw,
@@ -723,7 +723,7 @@ def test_wedge_on_hold_task_falls_through_to_status_class_stop(isolated_registry
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(asw, "_latest_progress_ts", lambda events: None)
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
-    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None: False)
+    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None, **_kw: False)
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
     monkeypatch.setattr(
         asw,

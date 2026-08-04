@@ -1,0 +1,59 @@
+{
+ "what": "1-cell pilot for the DEFERRED register steering-transfer validator (#1773)",
+ "gating": "SIZING ONLY - no verdict, no trust-lattice gate, no verdict flip",
+ "feat_id": 8,
+ "feature_description": "Words and contexts conveying excitement, energy, drama, or emotional intensity, typically in creative, narrative, or entertainment-oriented descriptions rather than technical or procedural content.",
+ "layer": 19,
+ "alphas": [
+  0.5,
+  1.0,
+  2.0
+ ],
+ "n_prompts": 8,
+ "n_draws_per_prompt": 4,
+ "arms": {
+  "baseline": {
+   "n_texts": 32,
+   "n_register_scored": 32,
+   "register_mean": 20.0,
+   "n_coherence_scored": 32,
+   "coherent_rate": 1.0,
+   "register_shift_vs_baseline": 0.0
+  },
+  "alpha_0.5": {
+   "n_texts": 32,
+   "n_register_scored": 32,
+   "register_mean": 60.0,
+   "n_coherence_scored": 32,
+   "coherent_rate": 0.0,
+   "register_shift_vs_baseline": 40.0
+  },
+  "alpha_1.0": {
+   "n_texts": 32,
+   "n_register_scored": 32,
+   "register_mean": 61.25,
+   "n_coherence_scored": 32,
+   "coherent_rate": 0.0,
+   "register_shift_vs_baseline": 41.25
+  },
+  "alpha_2.0": {
+   "n_texts": 32,
+   "n_register_scored": 32,
+   "register_mean": 57.03125,
+   "n_coherence_scored": 32,
+   "coherent_rate": 0.0,
+   "register_shift_vs_baseline": 37.03125
+  }
+ },
+ "timing_s": {
+  "generation": 29.3,
+  "judging": 66.6,
+  "total_per_cell": 203.4
+ },
+ "sizing": {
+  "n_register_style_features": 1233,
+  "measured_per_cell_s": 203.4,
+  "projected_full_validator_gpu_h": 69.7,
+  "note": "projection is per-cell wall x n_features at THIS alpha-grid width and draw count; judging is API-bound and parallelisable off-GPU, so the GPU-h figure is an upper bound - split generation from judging before sizing a fence"
+ }
+}

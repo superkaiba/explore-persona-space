@@ -1,0 +1,713 @@
+{
+  "commit": "0a6f324d02",
+  "created": "2026-08-02T00:31:25Z",
+  "figsize": [
+    9.0,
+    7.56
+  ],
+  "points": [
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -13.53125842573331,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -14.540031590491107,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 5.05175626630523,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -5.752679028830116,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 3.2935138245908284,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -5.752679028830116,
+      "y": 0.0,
+      "series": "bare-context placebo",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.39477328396447753,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.7572002663212647,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 0.629439082668493,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.542119604312183,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 0.7227849919528664,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.39477328396447753,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -1.199773600855373,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -1.9749276347328442,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -1.3212854060703956,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.0199362345103129,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 2.5085439587633838,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -1.199773600855373,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -6.54439623339233,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -10.567515576696486,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -1.7251463942337466,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -3.6579289170379248,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -1.4705287326164012,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -3.6579289170379248,
+      "y": 3.0,
+      "series": "contrastive",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -6.819608272294179,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -10.864968338579128,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -1.4662329616632164,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -3.393001564526962,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.777121369218527,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -3.393001564526962,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -1.7954052795340614,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -2.6617027437195855,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -2.302809022078211,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -6.137958012085223,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -5.192024889682538,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -2.6617027437195855,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -4.1140014304768675,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -1.4791155611697855,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -2.578139095576086,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -6.0446265438809395,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -4.687133855613243,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -4.1140014304768675,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 2.2449446707178478,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.920494802148915,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -2.7139448324221154,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -8.594456189720066,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -3.735953596315013,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -2.7139448324221154,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 0.1704220216591179,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.10259786852509878,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.0860179764775737,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.07917267690353635,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 0.156983031789097,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.07917267690353635,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 0.0021698943950130833,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.022446562044888874,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.1255453194828866,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.0643395332592573,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.0776241932376212,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.0643395332592573,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 0.5090732489766232,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.11404611102271645,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.38046546208448806,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.02600824453710704,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 0.16762937683328794,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.02600824453710704,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 0.06609634022736666,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.09801298771441003,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.26963892411574397,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.1292413968470223,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 0.025490350877593437,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.09801298771441003,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 0.6675091932147712,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 2.5231084136736506,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -2.114628696066479,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 5.273842674103164,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.20066533252746055,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 0.6675091932147712,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -4.223056693814772,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 1.0803436171670437,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -5.236761256368672,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -2.8732103171801793,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -1.420004035997521,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -2.8732103171801793,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.36957476784616716,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -5.507663208224429,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -5.023344449294157,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.2384122035231684,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -3.45442235543441,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -3.45442235543441,
+      "y": 14.0,
+      "series": "positive-only placebo",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 6.791029768096799,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 6.402284493245292,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -2.701169529134701,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -6.660373860839898,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -3.9286800740302734,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -2.701169529134701,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 0.8395154585326328,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.29936751581839616,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.5769830722378702,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 0.0042485057392847025,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 0.14063117226118926,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 0.0042485057392847025,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.43702865637756805,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 0.0779199308692391,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.08068056037381588,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -1.8239678925410487,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": 0.4484969181876437,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit": -0.08068056037381588,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 35
+    }
+  ],
+  "n_series": 36,
+  "total_points": 108,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "trained-negative prefix residuals per arm (dots = prefixes, diamonds = medians)",
+        "xlabel": "signed residual of the 5 trained-negative prefixes vs within-arm geometry fit",
+        "legend_labels": [
+          "bare-context placebo",
+          "contrastive",
+          "positive-only placebo"
+        ],
+        "legend_title": "arm group",
+        "xticklabels": [
+          "\u221220",
+          "\u221215",
+          "\u221210",
+          "\u22125",
+          "0",
+          "5",
+          "10"
+        ],
+        "yticklabels": [
+          "casual bare-context contrastive (bare-context placebo)",
+          "marker bare-context contrastive (bare-context placebo)",
+          "sycophancy bare-context contrastive (bare-context placebo)",
+          "casual persona contrastive (contrastive)",
+          "casual persona full fine-tune (contrastive)",
+          "impolite persona contrastive (seed 137) (contrastive)",
+          "impolite persona contrastive (seed 42) (contrastive)",
+          "impolite persona full fine-tune (contrastive)",
+          "marker conversation contrastive (contrastive)",
+          "marker ICL contrastive (contrastive)",
+          "marker persona contrastive (contrastive)",
+          "marker persona full fine-tune (contrastive)",
+          "sycophancy conversation contrastive (contrastive)",
+          "sycophancy persona full fine-tune (contrastive)",
+          "casual persona positive-only (positive-only placebo)",
+          "impolite persona positive-only (positive-only placebo)",
+          "marker persona positive-only (positive-only placebo)",
+          "sycophancy persona positive-only (positive-only placebo)"
+        ]
+      }
+    ],
+    "series": [
+      "bare-context placebo",
+      "contrastive",
+      "positive-only placebo"
+    ]
+  }
+}

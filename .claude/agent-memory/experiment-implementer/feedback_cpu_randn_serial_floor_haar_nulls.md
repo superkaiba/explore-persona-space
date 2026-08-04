@@ -24,3 +24,9 @@ draw-battery, measure BOTH legs at production shape (randn AND the
 factorization) — the RNG fill does not thread-scale and cannot move to GPU
 without changing the stream (a plan-level reproducibility decision). Halving
 draw counts is the only same-stream knob for the randn floor.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [CPU randn serial floor in Haar nulls](feedback_cpu_randn_serial_floor_haar_nulls.md) — torch CPU randn is thread-invariant (~50 ns/val); GPU-routing QR leaves ~0.5 s/matrix stream-pinned floor — measure both legs before projecting (#1417 r2)

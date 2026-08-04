@@ -280,6 +280,12 @@ class DispatchResult:
 BuildRequest = Callable[[DispatchItem], dict]
 # Response parser: model text -> per-item result. May raise on a bad parse.
 ParseResponse = Callable[[str], Any]
+# Metadata-aware response parser (#2021): (model text, stop_reason) -> per-item
+# result. When a caller supplies one, it is PREFERRED over ParseResponse at both
+# parse sites (sync _do_one + batch _harvest_sub_batch) so the parsed result can
+# carry response metadata (e.g. the judge stop_reason persistence, rule 26).
+# ``stop_reason`` is getattr-read from the SDK Message and may be None.
+ParseResponseMeta = Callable[[str, "str | None"], Any]
 
 
 def _assert_no_system_role(params: dict, item_id: str) -> None:
@@ -760,6 +766,7 @@ async def _dispatch_sync(
     *,
     build_request: BuildRequest,
     parse_response: ParseResponse,
+    parse_response_meta: ParseResponseMeta | None = None,
     response_valid: Callable[[Any], bool] | None = None,
     org_states: dict[str, OrgState],
     async_clients: dict[str, Any],
@@ -811,7 +818,15 @@ async def _dispatch_sync(
                 record_headroom_observation(org, params.get("model", "unknown"), raw.headers)
                 msg = raw.parse()
                 text = next((b.text for b in msg.content if b.type == "text"), "")
-                parsed = parse_response(text)
+                if parse_response_meta is not None:
+                    # #2021: the meta parser is PREFERRED — it receives the
+                    # response's stop_reason (getattr-read; None when absent)
+                    # so the parsed result can carry response metadata. The
+                    # response_valid check + the exception paths below operate
+                    # on its return exactly as on parse_response's.
+                    parsed = parse_response_meta(text, getattr(msg, "stop_reason", None))
+                else:
+                    parsed = parse_response(text)
                 state.n_ok += 1
                 # Clean call -> additively recover toward the cap.
                 if not state.low_headroom():
@@ -1048,6 +1063,7 @@ async def _poll_one_sub_batch_step(
     dispatch_dir: Path,
     sync_clients: dict[str, Any],
     parse_response: ParseResponse,
+    parse_response_meta: ParseResponseMeta | None = None,
     response_valid: Callable[[Any], bool] | None = None,
     now_fn: Callable[[], _dt.datetime],
     sleep_fn: Callable[[float], None] | None = None,
@@ -1090,6 +1106,7 @@ async def _poll_one_sub_batch_step(
             dispatch_dir=dispatch_dir,
             client=client,
             parse_response=parse_response,
+            parse_response_meta=parse_response_meta,
             response_valid=response_valid,
         )
         return
@@ -1113,6 +1130,7 @@ async def _poll_one_sub_batch_step(
                 dispatch_dir=dispatch_dir,
                 client=client,
                 parse_response=parse_response,
+                parse_response_meta=parse_response_meta,
                 response_valid=response_valid,
             )
             return
@@ -1127,6 +1145,7 @@ async def _harvest_sub_batch(
     dispatch_dir: Path,
     client: Any,
     parse_response: ParseResponse,
+    parse_response_meta: ParseResponseMeta | None = None,
     response_valid: Callable[[Any], bool] | None = None,
 ) -> None:
     """Collect an ended sub-batch, persist its results json, mark it collected."""
@@ -1140,9 +1159,19 @@ async def _harvest_sub_batch(
         item_id = cid_to_item.get(cid, cid)
         rtype = result.result.type
         if rtype == "succeeded":
-            text = next((b.text for b in result.result.message.content if b.type == "text"), "")
+            msg = result.result.message
+            text = next((b.text for b in msg.content if b.type == "text"), "")
             try:
-                parsed = parse_response(text)
+                if parse_response_meta is not None:
+                    # #2021: preferred over parse_response — receives the row's
+                    # stop_reason (getattr-read; None when absent). The
+                    # response_valid check and the except-parse_error branch
+                    # below operate on its return unchanged; the parse_error
+                    # record itself cannot carry stop_reason here (the
+                    # exception escapes the parser).
+                    parsed = parse_response_meta(text, getattr(msg, "stop_reason", None))
+                else:
+                    parsed = parse_response(text)
                 if response_valid is not None and not response_valid(parsed):
                     # #1470: parse succeeded but the caller's validator rejected
                     # the result (e.g. an empty completion) — transport-class.
@@ -1186,6 +1215,7 @@ async def _dispatch_batch(
     *,
     build_request: BuildRequest,
     parse_response: ParseResponse,
+    parse_response_meta: ParseResponseMeta | None = None,
     response_valid: Callable[[Any], bool] | None = None,
     org_labels: list[str],
     sync_clients: dict[str, Any],
@@ -1264,6 +1294,7 @@ async def _dispatch_batch(
                     dispatch_dir=dispatch_dir,
                     sync_clients=sync_clients,
                     parse_response=parse_response,
+                    parse_response_meta=parse_response_meta,
                     response_valid=response_valid,
                     now_fn=now_fn,
                 )
@@ -1332,6 +1363,7 @@ async def dispatch_calls(
     model: str,
     build_request: BuildRequest,
     parse_response: ParseResponse,
+    parse_response_meta: ParseResponseMeta | None = None,
     response_valid: Callable[[Any], bool] | None = None,
     deadline: _dt.datetime | None = None,
     cost_pref: str = "balanced",
@@ -1367,6 +1399,18 @@ async def dispatch_calls(
             time, before any wire call (gotchas.md, #906 r11; #991).
         parse_response: ``model_text -> result``; may raise on a bad parse
             (caught per item -> ``error=True``).
+        parse_response_meta: optional ``(model_text, stop_reason) -> result``
+            (#2021). When provided it is PREFERRED over ``parse_response`` at
+            BOTH parse sites (sync ``_do_one`` + batch ``_harvest_sub_batch``),
+            receiving the response's ``stop_reason`` (getattr-read from the
+            SDK Message; ``None`` when absent) so the parsed result can carry
+            response metadata (e.g. judge stop_reason persistence, rule 26).
+            ``parse_response`` stays REQUIRED (the fallback; every existing
+            caller unchanged). The ``response_valid`` predicate and the
+            error/exception paths operate on the meta-parsed value exactly as
+            on ``parse_response``'s; a batch-path row whose parse RAISES
+            yields a ``parse_error`` record that cannot carry ``stop_reason``
+            (the exception escapes the parser — accepted residual).
         response_valid: optional predicate over the PARSED result (the object
             ``parse_response`` returned). None (default) = today's behavior,
             byte-identical. When provided: a parse that succeeds but fails the
@@ -1421,6 +1465,7 @@ async def dispatch_calls(
             model=model,
             build_request=build_request,
             parse_response=parse_response,
+            parse_response_meta=parse_response_meta,
             response_valid=response_valid,
             deadline=deadline,
             cost_pref=cost_pref,
@@ -1453,6 +1498,7 @@ async def _dispatch_calls_inner(
     model: str,
     build_request: BuildRequest,
     parse_response: ParseResponse,
+    parse_response_meta: ParseResponseMeta | None,
     response_valid: Callable[[Any], bool] | None,
     deadline: _dt.datetime | None,
     cost_pref: str,
@@ -1506,6 +1552,7 @@ async def _dispatch_calls_inner(
             pending,
             build_request=build_request,
             parse_response=parse_response,
+            parse_response_meta=parse_response_meta,
             response_valid=response_valid,
             async_clients=async_clients,
             org_labels=org_labels,
@@ -1524,6 +1571,7 @@ async def _dispatch_calls_inner(
             pending,
             build_request=build_request,
             parse_response=parse_response,
+            parse_response_meta=parse_response_meta,
             response_valid=response_valid,
             org_labels=org_labels,
             sync_clients=sync_clients,
@@ -1659,6 +1707,7 @@ async def _run_sync_path(
     *,
     build_request: BuildRequest,
     parse_response: ParseResponse,
+    parse_response_meta: ParseResponseMeta | None = None,
     response_valid: Callable[[Any], bool] | None = None,
     async_clients: dict[str, Any],
     org_labels: list[str],
@@ -1679,6 +1728,7 @@ async def _run_sync_path(
         pending,
         build_request=build_request,
         parse_response=parse_response,
+        parse_response_meta=parse_response_meta,
         response_valid=response_valid,
         org_states=org_states,
         async_clients=async_clients,

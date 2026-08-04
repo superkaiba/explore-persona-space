@@ -67,3 +67,9 @@ code change. Hot-fix the workload command and relaunch.
 (another non-code GPU-allocator failure that needs a recovery recipe
 rather than a code patch). The two together cover the dominant
 non-code GPU failure modes on this fleet.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [CUDA OOM on Qwen-7B teacher-forced capture — workload-cmd hot-fix, no code change](feedback_cuda_oom_expandable_segments.md) — multi-layer activation capture on Qwen-2.5-7B OOMs at the lm_head after ~6000 forwards on PyTorch CUDA-allocator fragmentation (39.5 GB live + 26.9 GB reserved-but-unallocated, no contiguous 12.54 GB slot). Fix workload-cmd only: `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` (per the crash message) + `--batch-probes 16→8`; no script edit. Not code-class — never bounce to implementer (#761 r3 relaunch, 2026-06-30)

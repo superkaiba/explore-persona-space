@@ -1,0 +1,86 @@
+{
+  "commit": "5f2b220a42",
+  "created": "2026-07-31T13:39:22Z",
+  "figsize": [
+    9.2,
+    5.779999999999999
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "panel source anchor (across-arm median)",
+        "xticklabels": [
+          "layer 14",
+          "layer 19",
+          "layer 25"
+        ],
+        "yticklabels": [
+          "Context similarity (pre)",
+          "Answer similarity (pre)",
+          "Through-map context sim",
+          "Through-map pred-answer sim",
+          "Whitened gate similarity",
+          "Read-out projection (direct)",
+          "Read-out projection (map)",
+          "Base behavioral propensity",
+          "Write prediction (size)",
+          "Write prediction (alignment)",
+          "Nearest-training-rows sim"
+        ]
+      },
+      {
+        "title_left": "training centroid anchor (across-arm median)",
+        "xticklabels": [
+          "layer 14",
+          "layer 19",
+          "layer 25"
+        ],
+        "yticklabels": [
+          "Context similarity (pre)",
+          "Answer similarity (pre)",
+          "Through-map context sim",
+          "Through-map pred-answer sim",
+          "Whitened gate similarity",
+          "Read-out projection (direct)",
+          "Read-out projection (map)",
+          "Base behavioral propensity",
+          "Write prediction (size)",
+          "Write prediction (alignment)",
+          "Nearest-training-rows sim"
+        ]
+      },
+      {
+        "ylabel": "median Spearman rho",
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.08",
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10"
+        ]
+      },
+      {
+        "ylabel": "median Spearman rho",
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      }
+    ]
+  }
+}

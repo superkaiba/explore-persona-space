@@ -11444,7 +11444,9 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # Cap = measured + <=40.
     # #1640 added the chained smoke-then-full leg out-root residue trigger
     # (row 994 B -> 1040 B). Cap = measured + <=40.
-    "gotchas": 1075,
+    # #1911 added the count-keyed liveness-gate double-print trigger
+    # (row 1048 B -> 1135 B). Cap = measured + <=40.
+    "gotchas": 1175,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
@@ -12136,6 +12138,88 @@ def check_agent_spec_size(  # noqa: C901 -- flat per-entry hygiene ladder (stale
                 f"measured + <=3 KB); lower the cap to <= "
                 f"{gf_size + AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES}, or "
                 f"remove the entry if the file no longer needs grandfathering."
+            )
+
+    return errors
+
+
+# Agent-memory index size budget (#1891): every .claude/agent-memory/*/MEMORY.md
+# is loaded WHOLE on each spawn of the owning agent (`memory: project`), and the
+# harness loader TRUNCATES the index at ~25,000 bytes (measured-by-report,
+# 2026-07-30: a 41,137 B index was truncated to ~24.4 KB — the trailing ~39%,
+# exactly where NEW lessons append, silently dropped on every spawn). FAIL sits
+# 1,000 B BELOW the measured truncation so the check fires BEFORE any silent
+# loss; WARN leaves ~5 KB of append room before FAIL. Thresholds are
+# STRICTLY-GREATER (a file at exactly the threshold passes). No grandfather
+# dict: all live offenders were curated under WARN in the same change that
+# introduced this check, so the ratchet starts clean. Per-entry files
+# (feedback_*.md etc.) load on demand and are deliberately OUT of scope.
+AGENT_MEMORY_INDEX_WARN_BYTES = 20_000
+AGENT_MEMORY_INDEX_FAIL_BYTES = 24_000
+
+_AGENT_MEMORY_CURATION_RECIPE = (
+    "curate it: trim each index hook to ~1 line (<=~150 chars), move the "
+    "detail into the pointed-to per-entry file, and merge duplicate/sibling "
+    "rows (see #1891)"
+)
+
+
+def check_agent_memory_index_size(
+    *, repo_root: Path | None = None, warn_sink: list[str] | None = None
+) -> list[str]:
+    """WARN/FAIL agent-memory indexes (`.claude/agent-memory/*/MEMORY.md`) over
+    the loader-truncation size budget (#1891).
+
+    Every MEMORY.md index is loaded whole on each spawn of its owning agent and
+    the loader truncates at ~25,000 bytes, silently dropping the tail — where
+    new lessons append. Semantics (both thresholds STRICTLY-GREATER): size >
+    ``AGENT_MEMORY_INDEX_FAIL_BYTES`` FAILs with the curation recipe; size >
+    ``AGENT_MEMORY_INDEX_WARN_BYTES`` WARNs. Only the per-agent index files
+    (``MEMORY.md``) are scanned — per-entry files load on demand and are out of
+    scope. Missing ``.claude/agent-memory/`` dir FAILs (parity with
+    ``check_agent_spec_size``'s missing-dir behavior). WARNs go to
+    ``warn_sink`` when provided (unit-test hook), else stderr with a ``WARN: ``
+    prefix; WARNs never enter the returned FAIL list. ``repo_root`` is a
+    unit-test override; production callers pass None. Bundled into the
+    no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    memory_dir = root / ".claude" / "agent-memory"
+    errors: list[str] = []
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
+    if not memory_dir.is_dir():
+        errors.append(
+            f"{memory_dir}: missing — the agent-memory dir must exist for the "
+            f"agent-memory index size-budget check (#1891)."
+        )
+        return errors
+
+    for path in sorted(memory_dir.glob("*/MEMORY.md")):
+        if not path.is_file():
+            continue
+        size = path.stat().st_size
+        rel = f".claude/agent-memory/{path.parent.name}/MEMORY.md"
+        if size > AGENT_MEMORY_INDEX_FAIL_BYTES:
+            errors.append(
+                f"{rel}: {size} bytes exceeds the "
+                f"{AGENT_MEMORY_INDEX_FAIL_BYTES}-byte agent-memory index FAIL "
+                f"threshold (the loader truncates the always-loaded index at "
+                f"~25,000 bytes, silently dropping the newest lessons) — "
+                f"{_AGENT_MEMORY_CURATION_RECIPE}."
+            )
+        elif size > AGENT_MEMORY_INDEX_WARN_BYTES:
+            _warn(
+                f"{rel}: {size} bytes exceeds the "
+                f"{AGENT_MEMORY_INDEX_WARN_BYTES}-byte agent-memory index WARN "
+                f"budget (FAIL above {AGENT_MEMORY_INDEX_FAIL_BYTES}; the "
+                f"loader truncates at ~25,000 bytes) — "
+                f"{_AGENT_MEMORY_CURATION_RECIPE}."
             )
 
     return errors
@@ -13360,6 +13444,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         help="agent-spec size budget: WARN >28 KB, FAIL >40 KB (grandfather-ratchet)",
     )
     parser.add_argument(
+        "--check-agent-memory-index-size",
+        action="store_true",
+        help="agent-memory index size budget over .claude/agent-memory/*/MEMORY.md: "
+        "WARN >20 KB, FAIL >24 KB (the always-loaded index is truncated by the "
+        "loader at ~25 KB, silently dropping the newest lessons — #1891)",
+    )
+    parser.add_argument(
         "--check-api-dispatch-routing",
         action="store_true",
         help="FAIL on a NEW direct-Anthropic call site (anthropic.Anthropic(...) / "
@@ -13613,6 +13704,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_bare_list_repo_files
         or args.check_no_literal_round_marker_versions
         or args.check_agent_spec_size
+        or args.check_agent_memory_index_size
         or args.check_api_dispatch_routing
         or args.check_lens_coverage
         or args.check_section_reference_pointers
@@ -13726,6 +13818,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_rule_frontmatter_parses())
     if args.check_agent_spec_size or no_flags:
         errors.extend(check_agent_spec_size())
+    if args.check_agent_memory_index_size or no_flags:
+        errors.extend(check_agent_memory_index_size())
     if args.check_compute_shape_review_lens or no_flags:
         errors.extend(check_compute_shape_review_lens())
     if args.check_long_loop_restartability_review_lens or no_flags:

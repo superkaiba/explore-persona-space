@@ -123,7 +123,7 @@ def active_task(monkeypatch):
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(asw, "_latest_progress_ts", lambda events: time.time() - 600)
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
-    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None: False)
+    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None, **_kw: False)
 
 
 def _orphan_posts(posts):
@@ -216,7 +216,7 @@ def test_orphan_arm_mirror_survives_status_class_save_on_new_incarnation(
     the stale OLD pod_id and clobbered the flag back to False, costing one
     duplicate alert on the next tick."""
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
-    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None: False)
+    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None, **_kw: False)
     now = time.time()
     prev_state = {
         "pod_id": "p_OLD",
@@ -386,7 +386,7 @@ def test_orphan_arm_negative_control_lazy_shield_recheck(
     if helper == "_task_keep_running":
         monkeypatch.setattr(asw, "_task_keep_running", lambda issue: True)
     else:
-        monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None: True)
+        monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None, **_kw: True)
     assert not _run_helper(
         isolated_registry, info=_healthy_info(), now=now, first_seen=now - GRACE - 600
     )
@@ -423,7 +423,7 @@ def test_orphan_arm_never_blocks_existing_decisions(
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(asw, "_latest_progress_ts", lambda events: None)
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
-    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None: False)
+    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None, **_kw: False)
     # missed=1 -> new_missed=2 == threshold -> the auto-stop fires this tick.
     _seed_state(isolated_registry, 1417, pod_id="p1417", first_seen=now - GRACE - 600, missed=1)
 

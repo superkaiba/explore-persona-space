@@ -50,6 +50,47 @@ PILOT_N = 500  # plan §7 gate 2 (allowed band 300-800)
 PILOT_KAPPA_FLOOR = 0.2
 PILOT_AXES_FLOOR = 3
 
+# ── full-dictionary group sharding (phases 2-3 at 131,072 features) ──────────
+# `dispatch_judge_items` holds the WHOLE item set in memory and writes it to
+# one `items.json` per dispatch dir (its resume contract compares the persisted
+# map byte-for-byte). At the full dictionary the axes stage is 131,072 x 5 axes
+# x 5 draws = 3,276,800 items of ~4 KB of rendered evidence -> ~13 GB in one
+# map: not dispatchable as a single call. So the stages shard by FEATURE
+# GROUP: each group is its own dispatch (own checkpoint dir, own output shard,
+# own done-sentinel) and groups run sequentially with resume-by-sentinel.
+# Sizes are chosen so one group's in-flight request count stays well under the
+# Tier-4 batch queue cap while still saturating the 400k-OTPM ceiling that sets
+# the wall-clock floor: an axes group is 4,096 x 25 = 102,400 requests
+# (52 sub-batches of 2,000) ~ 25M output tokens ~ 64 min at the cap.
+DESCRIBE_GROUP_FEATURES = 32_768  # 4 groups at full dictionary (1 item/feature)
+AXES_GROUP_FEATURES = 4_096  # 32 groups at full dictionary (25 items/feature)
+
+
+def feature_groups(feat_ids: list[int], group_size: int) -> list[list[int]]:
+    """Split a sorted feature-id list into contiguous groups (0 = one group)."""
+    if group_size <= 0 or len(feat_ids) <= group_size:
+        return [list(feat_ids)]
+    return [list(feat_ids[i : i + group_size]) for i in range(0, len(feat_ids), group_size)]
+
+
+def _group_done(path: Path) -> bool:
+    return path.exists()
+
+
+def _write_group_done(path: Path, payload: dict) -> None:
+    tmp = path.parent / f".tmp_{path.name}"
+    tmp.write_text(json.dumps(payload, indent=1))
+    tmp.replace(path)
+
+
+def _write_jsonl(rows: list[dict], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.parent / f".tmp_{path.name}"
+    with tmp.open("w", encoding="utf-8") as fh:
+        for r in rows:
+            fh.write(json.dumps(r, ensure_ascii=False) + "\n")
+    tmp.replace(path)
+
 
 def _log(msg: str) -> None:
     print(msg, flush=True)
@@ -141,6 +182,44 @@ def _upload_dir(local_dir: Path, prefix: str) -> None:
 # ── describe ─────────────────────────────────────────────────────────────────
 
 
+def exclude_zero_evidence(packets: dict[int, dict], out_root: Path) -> dict[int, dict]:
+    """Drop features with NO activating windows from the dispatch set.
+
+    2,560 of the 131,072 dictionary features never fire on the evaluation
+    corpus (phase 0 `n_features_dead_in_fit`), so their packet renders an
+    EMPTY activating-examples block: the prompt has nothing to describe and
+    the call would be paid noise. They are RECORDED here as `no_evidence` at
+    zero API cost and survive as a labelled zero-cost row in the reporting
+    tables. Returns the packets to dispatch.
+    """
+    keep = {f: p for f, p in packets.items() if p.get("ex_pos")}
+    dropped = sorted(f for f, p in packets.items() if not p.get("ex_pos"))
+    if dropped:
+        rec = out_root / "labels" / "no_evidence_features.json"
+        rec.parent.mkdir(parents=True, exist_ok=True)
+        rec.write_text(
+            json.dumps(
+                {
+                    "reason": (
+                        "zero activating windows — the describe/axis prompt would render an "
+                        "empty activating-examples block; excluded from phases 2-3 at zero "
+                        "API cost and reported as its own stratum"
+                    ),
+                    "n_excluded": len(dropped),
+                    "n_dispatched": len(keep),
+                    "feat_ids": dropped,
+                    **CM.repro_meta(),
+                },
+                indent=1,
+            )
+        )
+        _log(
+            f"[scope] excluded {len(dropped)} zero-evidence features "
+            f"(recorded no_evidence, $0); dispatching {len(keep)}"
+        )
+    return keep
+
+
 def build_describe_items(packets: dict[int, dict]) -> list[tuple[str, str, str, str]]:
     """(custom_id, question, completion, user_msg) per feature (JudgeItem)."""
     items = []
@@ -162,6 +241,173 @@ def parse_describe_result(res: object) -> dict | None:
     conf = res.get("confidence")
     conf_ok = conf if isinstance(conf, int | float) and 0 <= float(conf) <= 100 else None
     return {"description": desc.strip(), "confidence": conf_ok}
+
+
+def stage_describe_grouped(args, packets: dict[int, dict]) -> int:
+    """Describe over feature groups: one dispatch + output shard + sentinel per
+    group, resumable by sentinel, merged into `descriptions.jsonl` at the end."""
+    out_dir = args.out_root / "labels"
+    grp_dir = out_dir / "describe_groups"
+    grp_dir.mkdir(parents=True, exist_ok=True)
+    packets = exclude_zero_evidence(packets, args.out_root)
+    groups = feature_groups(sorted(packets), args.describe_group_size)
+    _log(f"[describe] {len(packets)} features -> {len(groups)} groups")
+    totals = {"n_items": 0, "n_ok": 0, "content": 0, "transport": 0}
+    for gi, gfeats in enumerate(groups):
+        shard = grp_dir / f"descriptions.g{gi:04d}.jsonl"
+        done = grp_dir / f"descriptions.g{gi:04d}.done.json"
+        if _group_done(done) and not args.regroup:
+            d = json.loads(done.read_text())
+            for k in totals:
+                totals[k] += int(d.get(k, 0))
+            _log(f"[describe] group {gi + 1}/{len(groups)} SKIP (done, n_ok={d.get('n_ok')})")
+            continue
+        sub = {f: packets[f] for f in gfeats}
+        items = build_describe_items(sub)
+        _log(f"[describe] group {gi + 1}/{len(groups)}: dispatching {len(items)} items")
+        results = _dispatch(
+            items,
+            system=CM.DESCRIBER_SYSTEM,
+            max_tokens=CM.DESCRIBE_MAX_TOKENS,
+            checkpoint_dir=args.work / "judge_checkpoints" / "describe" / f"g{gi:04d}",
+            force_batch=args.force_batch,
+            dry_run=args.dry_run,
+        )
+        if args.dry_run:
+            continue
+        rows, drops = [], {"content": 0, "transport": 0}
+        for cid, _q, _c, user in items:
+            res = results.get(cid)
+            if isinstance(res, dict) and res.get("error"):
+                drops[_classify_error(res)] += 1
+                continue
+            parsed = parse_describe_result(res)
+            if parsed is None:
+                drops["content"] += 1
+                continue
+            feat_id = int(cid[1:].rsplit("-", 1)[0])
+            rows.append({"feat_id": feat_id, **parsed, "prompt_sha16": CM.sha16(user)})
+        _write_jsonl(rows, shard)
+        _write_raw(results, args.work / "judge_raw" / f"describe_raw_g{gi:04d}")
+        payload = {"group": gi, "n_items": len(items), "n_ok": len(rows), **drops}
+        _write_group_done(done, payload)
+        for k in totals:
+            totals[k] += int(payload.get(k, 0))
+        _log(f"[describe] group {gi + 1}/{len(groups)} done: {len(rows)}/{len(items)} ok {drops}")
+    if args.dry_run:
+        return 0
+    merged: list[dict] = []
+    for p in sorted(grp_dir.glob("descriptions.g*.jsonl")):
+        merged.extend(CM.iter_jsonl(p))
+    _write_jsonl(merged, out_dir / "descriptions.jsonl")
+    (out_dir / "describe_meta.json").write_text(
+        json.dumps(
+            {
+                **CM.repro_meta(),
+                "grouped": True,
+                "n_groups": len(groups),
+                "group_size_features": args.describe_group_size,
+                "n_items": totals["n_items"],
+                "n_ok": len(merged),
+                "drops": {"content": totals["content"], "transport": totals["transport"]},
+                "max_tokens": CM.DESCRIBE_MAX_TOKENS,
+                "rubric_sha16": CM.sha16(CM.DESCRIBER_SYSTEM),
+            },
+            indent=1,
+        )
+    )
+    if not args.no_upload:
+        _upload_dir(args.work / "judge_raw", "judge_raw")
+    _log(f"[describe] ALL GROUPS done: {len(merged)} descriptions -> descriptions.jsonl")
+    return 0
+
+
+def stage_axes_grouped(args, packets: dict[int, dict]) -> int:
+    """Axes over feature groups (features x 5 axes x 5 draws per group), one
+    dispatch + shard + sentinel each; kappa is computed ONCE over the merged
+    per-feature vote sets so the varying-n Fleiss statistic is not per-group."""
+    out_dir = args.out_root / "labels"
+    grp_dir = out_dir / "axes_groups"
+    grp_dir.mkdir(parents=True, exist_ok=True)
+    desc_path = out_dir / "descriptions.jsonl"
+    if not desc_path.exists():
+        raise RuntimeError(
+            f"[axes] no descriptions at {desc_path}; run --stage describe first "
+            "(a grouped --full axes dispatch with no DESC blocks is a changed instrument)"
+        )
+    descriptions = {int(r["feat_id"]): r["description"] for r in CM.iter_jsonl(desc_path)}
+    packets = exclude_zero_evidence(packets, args.out_root)
+    real = sorted(f for f in packets if f >= 0)
+    groups = feature_groups(real, args.axes_group_size)
+    _log(
+        f"[axes] {len(real)} features -> {len(groups)} groups x {len(CM.AXES)} axes x {CM.N_DRAWS}"
+    )
+    tally: dict[str, dict[str, int]] = {
+        a: {"launched": 0, "ok": 0, "content_drops": 0, "transport_losses": 0} for a in CM.AXES
+    }
+    for gi, gfeats in enumerate(groups):
+        shard = grp_dir / f"axis_labels.g{gi:04d}.jsonl"
+        done = grp_dir / f"axis_labels.g{gi:04d}.done.json"
+        if _group_done(done) and not args.regroup:
+            d = json.loads(done.read_text())
+            for a, t in (d.get("tally") or {}).items():
+                for k in tally.get(a, {}):
+                    tally[a][k] += int(t.get(k, 0))
+            _log(f"[axes] group {gi + 1}/{len(groups)} SKIP (done)")
+            continue
+        sub = {f: packets[f] for f in gfeats}
+        items = build_axes_items(sub, descriptions)
+        _log(f"[axes] group {gi + 1}/{len(groups)}: dispatching {len(items)} items")
+        results = _dispatch(
+            items,
+            system=CM.AXIS_SYSTEM_PREAMBLE,
+            max_tokens=CM.AXES_MAX_TOKENS,
+            checkpoint_dir=args.work / "judge_checkpoints" / "axes" / f"g{gi:04d}",
+            force_batch=args.force_batch,
+            dry_run=args.dry_run,
+        )
+        if args.dry_run:
+            continue
+        rows, gkappa = aggregate_axes(items, results)
+        _write_jsonl(rows, shard)
+        _write_raw(results, args.work / "judge_raw" / f"axes_raw_g{gi:04d}")
+        gt = {a: gkappa[a]["drop_report"] for a in CM.AXES}
+        _write_group_done(done, {"group": gi, "n_items": len(items), "tally": gt})
+        for a in CM.AXES:
+            for k in tally[a]:
+                tally[a][k] += int(gt[a].get(k, 0))
+        _log(f"[axes] group {gi + 1}/{len(groups)} done: {len(rows)} (feat x axis) rows")
+    if args.dry_run:
+        return 0
+
+    merged_rows: list[dict] = []
+    for p in sorted(grp_dir.glob("axis_labels.g*.jsonl")):
+        merged_rows.extend(CM.iter_jsonl(p))
+    _write_jsonl(merged_rows, out_dir / "axis_labels.jsonl")
+    votes: dict[str, list[list[str]]] = {a: [] for a in CM.AXES}
+    for r in merged_rows:
+        votes[r["axis"]].append(list(r.get("labels_surviving") or []))
+    kappa = {
+        a: {**CM.fleiss_kappa_varying_n(votes[a], CM.AXES[a]), "drop_report": tally[a]}
+        for a in CM.AXES
+    }
+    (out_dir / "kappa_report.json").write_text(
+        json.dumps(
+            {
+                **CM.repro_meta(),
+                "grouped": True,
+                "n_groups": len(groups),
+                "group_size_features": args.axes_group_size,
+                "max_tokens": CM.AXES_MAX_TOKENS,
+                "axes": kappa,
+            },
+            indent=1,
+        )
+    )
+    if not args.no_upload:
+        _upload_dir(args.work / "judge_raw", "judge_raw")
+    _log("[axes] ALL GROUPS done: " + " ".join(f"{a}:k={kappa[a]['kappa']:.3f}" for a in CM.AXES))
+    return 0
 
 
 def stage_describe(args, packets: dict[int, dict]) -> int:
@@ -420,6 +666,21 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=DEFAULT_SMOKE_LIMIT)
     ap.add_argument("--full", action="store_true", help="production dispatch (no item cap)")
     ap.add_argument("--pilot-n", type=int, default=PILOT_N)
+    ap.add_argument(
+        "--grouped",
+        action="store_true",
+        help=(
+            "shard the dispatch by feature group (REQUIRED at full-dictionary scale — "
+            "one 3.28M-item axes dispatch does not fit in one items.json)"
+        ),
+    )
+    ap.add_argument("--describe-group-size", type=int, default=DESCRIBE_GROUP_FEATURES)
+    ap.add_argument("--axes-group-size", type=int, default=AXES_GROUP_FEATURES)
+    ap.add_argument(
+        "--regroup",
+        action="store_true",
+        help="ignore per-group done-sentinels and re-dispatch every group",
+    )
     ap.add_argument("--render-only", action="store_true", help="golden prompts, zero API calls")
     ap.add_argument("--force-batch", action="store_true", help="Batch path at any N")
     ap.add_argument("--dry-run", action="store_true", help="routing decision only, zero calls")
@@ -429,10 +690,14 @@ def main() -> int:
     if args.import_check:
         sys.exit(_import_check())
     packets = load_packets(args.evidence_dir, include_controls=(args.stage == "describe"))
+    if args.grouped and args.render_only:
+        ap.error("--grouped and --render-only are mutually exclusive")
     if args.stage == "describe":
-        rc = stage_describe(args, packets)
+        rc = (
+            stage_describe_grouped(args, packets) if args.grouped else stage_describe(args, packets)
+        )
     elif args.stage == "axes":
-        rc = stage_axes(args, packets)
+        rc = stage_axes_grouped(args, packets) if args.grouped else stage_axes(args, packets)
     elif args.stage == "pilot":
         rc = stage_pilot(args, packets)
     else:

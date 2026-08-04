@@ -45,3 +45,9 @@ print('present:', slot in files)
 ```
 
 If the upload helper logs a WARNING but reports success, this is the bug.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [PEFT README local-path bug](feedback_peft_readme_local_path.md) — save_pretrained writes base_model=local-path; Hub 400s; rewrite before upload.

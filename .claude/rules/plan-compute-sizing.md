@@ -294,20 +294,24 @@ disk row; no verify_plan.py backstop in v1 of this block.
 
 
 **Sentinel-signaling workloads need a /workspace-contract lane — never
-rely on auto's SLURM fallback.** If the plan's dispatch script posts
-markers via pod-side sentinel files (`/workspace/logs/issue-<N>-*.json` —
-gate sentinels, `epm:results` payloads), the plan MUST pin a lane that
-honors that contract: `backend: gcp` (GCE instances mirror RunPod's
-`/workspace` — `GcpConfig.vm_scratch_dir`) or an explicit
-`backend: runpod` override with its residual gap named. Do NOT leave such
-a workload on `auto`: a GCP capacity failure falls through to the SLURM
-lanes, where compute nodes have no `/workspace` and the robot wrapper
-cannot run the sentinel drain — the dispatcher fails loud at its
-`mkdir -p /workspace/logs` and burns the SLURM submission (#608, commit
-3022ff7bc). If the plan needs a SLURM lane, the dispatcher must use the
-SLURM signaling contract instead — `status.json` heartbeat +
-`[phase=...]` log lines (see `backends/slurm_monitor.py` module
-docstring § "No sentinel drain on this lane"). State the choice in §9:
+rely on auto's DRAC/Mila SLURM fallback.** If the plan's dispatch script
+posts markers via pod-side sentinel files
+(`/workspace/logs/issue-<N>-*.json` — gate sentinels, `epm:results`
+payloads), the plan SHOULD pin a DRAINED lane: `backend: fellows` (the
+charmander cluster-shared `/workspace`, drained by the VM-side poller
+each tick via `slurm_monitor.drain_cluster_sentinels` — #1898) or an
+explicit `backend: runpod` override with its residual gap named
+(`backend: gcp` is REFUSED as of #2028 — GCP provisioning disabled;
+it is no longer a pinnable drained lane). Leaving such a
+workload on `auto` is discouraged: a fellows capacity failure
+falls through to the DRAC/Mila SLURM lanes, where compute nodes have no
+`/workspace` and the robot wrapper cannot run the sentinel drain — the
+dispatcher fails loud at its `mkdir -p /workspace/logs` and burns the
+SLURM submission (#608, commit 3022ff7bc). If the plan needs a DRAC/Mila
+lane, the dispatcher must use the SLURM signaling contract instead —
+`status.json` heartbeat + `[phase=...]` log lines (see
+`backends/slurm_monitor.py` module docstring § "Sentinel drain: fellows
+only"). State the choice in §9:
 either the pinned lane + why, or "no sentinel dependence — auto-safe."
 
 
@@ -405,7 +409,17 @@ OUTPUT growth (produced files, log advance, `/proc/<pid>/io`
 write_bytes), never CPU% alone — a frozen or quadratically-grinding
 serial screen reads ~100% CPU for hours (#1738's live read needed
 positive forward-progress evidence beyond CPU% exactly because the
-screen phase logs sparsely). TRIVIALITY EXEMPTION — never
+screen phase logs sparsely). PER-REGIME BINDING — SHAPE also includes
+the lane's production REGIME (behavior / budget / corpus): a pilot
+wall measured on one lane's regime is a MEASURED basis for THAT lane
+only; proxying it to a lane with a different behavior/budget regime
+makes it a GUESSED basis there — re-pilot per regime, or fence that
+lane at ≥2× the worst-case extrapolation and mark its row
+`pilot-gated` (#1739: per-group walls measured on the evil behavior
+at top budget 8,000 were proxied to the 16,000-budget behaviors; 4 of
+6 lanes halted at their own pilot gates — sycophancy projected 5.2 h
+vs plan_wall 4.5 h — and all 4 needed relaunches with measured
+fences). TRIVIALITY EXEMPTION — never
 self-certified by an asserted cost: a row may skip the pilot ONLY when
 total_calls ≤ ~500 AND its sub-floor (~15–30 min) projection is computed
 from a MEASURED or prior-issue-CITED per-call figure; an ASSERTED
@@ -463,6 +477,21 @@ derived from it) until the pilot lands — booking the naive figure is
 the #1092 failure, not a compliant plan.
 
 
+**GPU-utilization / "GPU-bound" claims in dispatch, checkpoint, and
+monitoring notes require a SAMPLED window — never one instantaneous
+`nvidia-smi` read.** Any claim that a workload is GPU-bound / "pinned
+at N%" / idle states its sampling basis: ≥10 readings over ≥60 s (e.g.
+`nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader -l 7`
+for 10 samples), reported as mean + peak. GPU duty cycles are bursty,
+so a point sample can land on a transient peak and invert the
+conclusion (#1773: a pre-spend checkpoint claimed "GPU pinned at 90%"
+from ONE sample; a 30-reading/60 s re-measure showed mean 12.6% — the
+91% peak appeared exactly once — and an H100 billed ~7 h at ~87% idle
+behind the wrong claim). This is the utilization sibling of the
+per-cell block's output-growth health-read rule (never CPU% alone,
+#1738).
+
+
 **Store-heavy / IO-heavy phase sizing — measure one item's serialization +
 upload wall-time; compression defaults OFF for fp16 → Xet.** Any phase that
 WRITES >~10^3 output files OR >~50 GB total (per-cell activation stores,
@@ -515,8 +544,9 @@ host RAM sized on an anchor behavior's table; a sibling lane's larger
 working set kernel-OOM'd python at anon-rss 163 GiB on a 170 GB-class
 machine, twice — the second lane hit the same kill point hours later;
 the 340 GB relaunch held). Route the phase OFF the
-VM — `cpu-mid` (GCP 32 GB) or `cpu-bigmem` (128 GB) — when projected peak
-RSS ≥ ~16 GB, OR when concurrent VM-resident phases' SUMMED projected RSS
+VM — `cpu-bigmem` (RunPod `cpu5m-16-128`, 128 GB; `cpu-mid`'s RunPod row
+is only 16 GB now that the 32 GB GCP E2 shape is rollback-only, #2028) —
+when projected peak RSS ≥ ~16 GB, OR when concurrent VM-resident phases' SUMMED projected RSS
 crosses the same ~16 GB bar (#833: two ~13-15 GB phases concurrently
 resident lost 5 cells to earlyoom — concurrent residency SUMS; #778: a
 22-GiB-RSS null battery was earlyoom-killed 3× on the starved VM —
@@ -554,10 +584,12 @@ runtime backstop. Plan-time placement, not a mid-run gate.
 then reconcile worst-case wall against the GCP auto-delete fence.**
 Each row's `planned_wall_h` + `basis` MUST name the machine type of the
 lane the backend router will most likely route. Under the standing
-GCP-FIRST `auto` default that is the GCP intent mapping
+fellows-first `auto` default (#2028 — GCP provisioning disabled) that is
+the fellows H200 cluster, then the free SLURM lanes, with RunPod's H100
+intent table as the terminal rung; the GCP intent mapping
 (`INTENT_TO_MACHINE` in `src/explore_persona_space/backends/gcp.py`:
 `lora-7b` → 1× A100-80 `a2-ultragpu-1g`, `ft-7b` → 4× A100-80,
-`eval`/`debug` → 1× L4) — NOT the RunPod H100 intent table. A basis
+`eval`/`debug` → 1× L4) applies only under the rollback flip. A basis
 measured on a different GPU must be scaled with a stated per-step rate
 (e.g. "H100 basis × ~6× A100 step-time" — #599's trainer ran ~6× slower
 per-step on the A100 auto-lane, turning an H100-premised ~6.4h estimate

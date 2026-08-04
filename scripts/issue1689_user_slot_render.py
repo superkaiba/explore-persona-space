@@ -251,6 +251,102 @@ PRIMARY_FIT_BY_FRAMING: dict[str, str] = {
     "story": "primary_openquote_to_u2",
 }
 
+# --- addenda B / C / D: the bridging families ------------------------------
+# Modelled as three ADDITIONAL framings rather than a new `family` axis, so
+# every existing dispatch table (slots / fit pairs / read groups / render) and
+# both downstream consumers (capture, fits) extend mechanically with no change
+# to their dispatch logic.
+#
+#   single_turn  (addendum B, 4 cells) `User: {u2}\n\n<Label>: ` + a2
+#       The prefix turn is ABLATED and the ANSWER is held FIXED at the parent's
+#       own a2 for the same conversation, so the contrast isolates how much of
+#       the context->answer map needs the (u1, a1) turn. (u1, a1) do not exist
+#       in a single-turn render, so context->answer is the only pairing
+#       available; no new generation is required.
+#   onpolicy_a1  (addendum C, 4 cells) two-turn naturalistic with a1 replaced
+#       by the measured model's OWN greedy reply to u1 (the generator
+#       `scripts/issue1689_user_slot_gen_a1.py`). Target stays u2, so this is
+#       the base round's user-slot map with ONE variable changed: whose text
+#       fills the assistant turn.
+#   parent_recap (addendum D, 6 cells) re-render of the PARENT's own
+#       assistant_chat / assistant_naturalistic / wren_naturalistic conditions,
+#       captured with BOTH Y variants. The addendum-E read groups already
+#       provide Y_mean + Y_end + Y_boundary generically, so this family is a
+#       source + slot-table addition only.
+ASSISTANT_LABELS: tuple[str, ...] = ("Assistant", "Wren")
+# variant -> (label text, parent gen-file condition stem)
+SINGLE_TURN_VARIANTS: dict[str, str] = {"assistant": "Assistant", "wren": "Wren"}
+ONPOLICY_A1_VARIANTS: dict[str, str] = {"assistant": "Assistant", "wren": "Wren"}
+# variant -> the parent condition whose rendered rows + a2 this cell re-reads
+PARENT_RECAP_VARIANTS: tuple[str, ...] = (
+    "assistant_chat",
+    "assistant_naturalistic",
+    "wren_naturalistic",
+)
+# u2 provenance per bridging family. `parent` = whatever u2 the parent's own
+# render carried for that conversation (read from the gen row, never re-derived);
+# `haiku` for the on-policy-a1 family so the cell is u2-matched against the base
+# round's naturalistic haiku cells and a1 is the SINGLE changed variable (the
+# lmsys arm is the constant-34-char fallback, a degenerate comparison base).
+BRIDGE_PROVENANCE: dict[str, str] = {
+    "single_turn": "parent",
+    "onpolicy_a1": "haiku",
+    "parent_recap": "parent",
+}
+
+SLOTS_BY_FRAMING.update(
+    {
+        # target = the ANSWER (a2); `answer_header_end` is the context end.
+        "single_turn": (
+            "first_user_header_end",
+            "u2_end",
+            "answer_header_end",
+            "parent_answer_end",
+        ),
+        # target = u2; identical slot layout to `naturalistic`.
+        "onpolicy_a1": (
+            "first_user_header_end",
+            "u1_end",
+            "prev_turn_end",
+            "u2_header_end",
+            "u2_end",
+        ),
+        # target = the ANSWER (a2); the parent's own two arms.
+        "parent_recap": ("prev_turn_end", "answer_header_end", "parent_answer_end"),
+    }
+)
+
+FIT_PAIRS_BY_FRAMING.update(
+    {
+        "single_turn": (
+            ("answer_header_end", "parent_answer_end", "primary_singleturn_to_answer"),
+            ("first_user_header_end", "u2_end", "floor_control"),
+        ),
+        "onpolicy_a1": (
+            ("u2_header_end", "u2_end", "primary_label_to_u2"),
+            ("prev_turn_end", "u2_end", "prevturn_to_u2"),
+            ("first_user_header_end", "u1_end", "floor_control"),
+        ),
+        "parent_recap": (
+            ("answer_header_end", "parent_answer_end", "primary_context_to_answer"),
+            ("prev_turn_end", "parent_answer_end", "prefix_to_answer"),
+        ),
+    }
+)
+
+PRIMARY_FIT_BY_FRAMING.update(
+    {
+        "single_turn": "primary_singleturn_to_answer",
+        "onpolicy_a1": "primary_label_to_u2",
+        "parent_recap": "primary_context_to_answer",
+    }
+)
+
+SLOT_STRADDLER_POLICY.update({"answer_header_end": "exclude"})
+
+# Where this round's own a1 generator publishes (addendum C's input).
+GEN_A1_SUBDIR = "gen_a1"
+
 
 def model_short(model: str) -> str:
     """`Qwen/Qwen2.5-7B-Instruct` -> `Qwen2.5-7B-Instruct` (the parent's
@@ -308,6 +404,51 @@ def build_units() -> list[Unit]:
                 units.append(Unit(model, "story", prov, variant))
     assert len(units) == 24, len(units)
     assert len({u.unit_id for u in units}) == 24
+    units.extend(build_bridge_units())
+    assert len({u.unit_id for u in units}) == len(units)
+    return units
+
+
+def smoke_units() -> list[Unit]:
+    """One cell per FAMILY — the per-arm-class smoke set.
+
+    Each family owns a distinct offset builder, source loader and read-group
+    shape, so a smoke that covers one family is structurally blind to the
+    others' seams. Cheapest representative cell per family; the instruct model
+    throughout so one tokenizer serves the whole set.
+    """
+    m = model_dir(MODEL_INSTRUCT)
+    ids = [
+        f"{m}__chat__onpolicy",
+        f"{m}__naturalistic__onpolicy",
+        f"{m}__story_alex__onpolicy",
+        f"{m}__single_turn_assistant__{BRIDGE_PROVENANCE['single_turn']}",
+        f"{m}__onpolicy_a1_assistant__{BRIDGE_PROVENANCE['onpolicy_a1']}",
+        f"{m}__parent_recap_assistant_chat__{BRIDGE_PROVENANCE['parent_recap']}",
+    ]
+    units = [UNIT_BY_ID[i] for i in ids]
+    covered = {u.framing for u in units}
+    expected = {u.framing for u in UNITS}
+    assert covered == expected, f"smoke set misses families {sorted(expected - covered)}"
+    return units
+
+
+def build_bridge_units() -> list[Unit]:
+    """The addenda-B/C/D bridging cells (4 + 4 + 6 = 14).
+
+    B (`single_turn`) and D (`parent_recap`) read the parent's own a2 from
+    `raw_completions/gen/<condition>_<model_short>*`, so they need NO new
+    generation; C (`onpolicy_a1`) consumes this round's a1-generator output.
+    """
+    units: list[Unit] = []
+    for model in MODELS:
+        for variant in sorted(SINGLE_TURN_VARIANTS):
+            units.append(Unit(model, "single_turn", BRIDGE_PROVENANCE["single_turn"], variant))
+        for variant in sorted(ONPOLICY_A1_VARIANTS):
+            units.append(Unit(model, "onpolicy_a1", BRIDGE_PROVENANCE["onpolicy_a1"], variant))
+        for variant in PARENT_RECAP_VARIANTS:
+            units.append(Unit(model, "parent_recap", BRIDGE_PROVENANCE["parent_recap"], variant))
+    assert len(units) == 14, len(units)
     return units
 
 
@@ -385,12 +526,21 @@ def _assert_stage_headroom(stage_root: Path, need_gb: float) -> None:
     print(f"[render] staging headroom at {probe}: {free_gb:.1f} GB free", flush=True)
 
 
-def stage_source_files(stage_root: Path, *, revision: str = PARENT_REVISION) -> dict[str, Path]:
+def stage_source_files(
+    stage_root: Path,
+    *,
+    revision: str = PARENT_REVISION,
+    gen_a1_dir: Path | None = None,
+) -> dict[str, Path]:
     """Stage exactly the parent files this round reads; return {hub path: local}.
 
     Scoped `list_hf_files_under_path` per sub-prefix (never `snapshot_download`
     against the ~1M-file data repo, never a bare full listing) + retried atomic
     per-file `stage_hub_file`.
+
+    `gen_a1_dir` overrides the a1-generator prefix with a LOCAL directory — the
+    same-pod production path, where the generator's output has not been uploaded
+    (or re-listed) yet.
     """
     from huggingface_hub import HfApi
 
@@ -402,11 +552,31 @@ def stage_source_files(stage_root: Path, *, revision: str = PARENT_REVISION) -> 
 
     api = HfApi(token=os.environ.get("HF_TOKEN"))
     wanted: list[str] = []
+    # Addenda B/D read the parent's own answers from the SAME gen prefix the
+    # base round's on-policy u2 comes from; addendum C reads this round's a1
+    # generator output. Both extend the `keep` predicates, not the prefix logic.
+    bridge_gen_stems = tuple(
+        f"{cond}_{model_short(m)}"
+        for m in MODELS
+        for cond in {
+            parent_gen_condition(u) for u in UNITS if u.framing in ("single_turn", "parent_recap")
+        }
+    )
     prefixes = {
         f"{HF_DATA_PREFIX}/corpus": lambda n: n.startswith("two_turn_lmsys"),
         f"{HF_DATA_PREFIX}/raw_completions/haiku_u2": lambda n: n.startswith("user_haiku_"),
-        f"{HF_DATA_PREFIX}/raw_completions/gen": lambda n: n.startswith("user_onpolicy_"),
+        f"{HF_DATA_PREFIX}/raw_completions/gen": lambda n: (
+            n.startswith("user_onpolicy_") or n.startswith(bridge_gen_stems)
+        ),
+        f"{HF_DATA_PREFIX}/{ROUND_LABEL}/{GEN_A1_SUBDIR}": lambda n: n.startswith(
+            "user_slot_a1_onpolicy_"
+        ),
     }
+    # The a1-generator prefix is THIS round's own output — absent until the
+    # generator has run, so it stages best-effort (the addendum-C loader
+    # fail-louds later, naming the generator, if a cell actually needs it).
+    # Every parent prefix stays REQUIRED and fail-loud.
+    optional_prefixes = {f"{HF_DATA_PREFIX}/{ROUND_LABEL}/{GEN_A1_SUBDIR}"}
     for prefix, keep in prefixes.items():
         files = retry_transient(
             lambda p=prefix: list_hf_files_under_path(
@@ -416,6 +586,9 @@ def stage_source_files(stage_root: Path, *, revision: str = PARENT_REVISION) -> 
         )
         hits = [f for f in files if keep(f.split("/")[-1])]
         if not hits:
+            if prefix in optional_prefixes:
+                print(f"[render] optional prefix empty (not yet produced): {prefix}", flush=True)
+                continue
             raise FileNotFoundError(f"no source files matched under {prefix}")
         wanted.extend(hits)
     _assert_stage_headroom(stage_root, need_gb=0.5)
@@ -423,7 +596,28 @@ def stage_source_files(stage_root: Path, *, revision: str = PARENT_REVISION) -> 
     for f in sorted(wanted):
         out[f] = stage_hub_file(DATA_REPO, f, stage_root / f, revision=revision)
     print(f"[render] staged {len(out)} parent source files under {stage_root}", flush=True)
+    if gen_a1_dir is not None:
+        out.update(_local_gen_a1_entries(gen_a1_dir))
     return out
+
+
+def _local_gen_a1_entries(gen_a1_dir: Path) -> dict[str, Path]:
+    """Map a LOCAL a1-generator output dir into the staged {hub path: local} map.
+
+    Production runs the a1 generator and this render on the SAME pod, so the
+    render must be able to consume the generator's local output directly rather
+    than waiting for the upload to land and re-listing the Hub. The synthetic
+    keys carry the canonical gen_a1 prefix so `_source_paths` resolves them
+    exactly as it resolves staged Hub files.
+    """
+    hits = sorted(gen_a1_dir.glob("user_slot_a1_onpolicy_*.jsonl"))
+    if not hits:
+        raise FileNotFoundError(
+            f"--gen-a1-dir {gen_a1_dir} holds no user_slot_a1_onpolicy_*.jsonl files"
+        )
+    prefix = f"{HF_DATA_PREFIX}/{ROUND_LABEL}/{GEN_A1_SUBDIR}"
+    print(f"[render] local gen_a1 override: {len(hits)} file(s) from {gen_a1_dir}", flush=True)
+    return {f"{prefix}/{p.name}": p for p in hits}
 
 
 def _read_jsonl(path: Path) -> list[dict]:
@@ -450,6 +644,15 @@ class SourceRow:
     u2: str
     u2_provenance: str
     judge_score_mean: float | None
+    # Addenda B/D: the PARENT's own answer for this conversation (held fixed
+    # while the context is ablated / re-rendered). Addendum C: the measured
+    # model's own greedy reply to u1, substituted for a1. Both default to None
+    # so the 24 base-round cells are byte-unchanged.
+    a2: str | None = None
+    a1_onpolicy: str | None = None
+    # Addendum D only: the parent's rendered segments, read back verbatim so the
+    # re-render reproduces the parent's own text rather than re-deriving it.
+    parent_render: dict | None = None
 
 
 def _norm_turn(text: str) -> str:
@@ -469,13 +672,24 @@ def _norm_turn(text: str) -> str:
 
 
 def _source_paths(staged: dict[str, Path], sub: str, stem_prefix: str) -> list[Path]:
+    """Staged files under ``sub`` whose filename stem is exactly ``stem_prefix``.
+
+    The stem must be followed by ``.`` (a shard/extension delimiter) or end the
+    name. A BARE ``startswith`` would make one model's stem match another's:
+    ``user_slot_a1_onpolicy_Qwen2.5-7B`` is a strict prefix of
+    ``...Qwen2.5-7B-Instruct.jsonl``, so the base model's loader would silently
+    ingest the instruct model's rows — destroying the one variable the
+    on-policy-a1 cells isolate. The delimiter is enforced HERE, not left to
+    every caller remembering to append the dot.
+    """
+    stem = stem_prefix[:-1] if stem_prefix.endswith(".") else stem_prefix
     hits = [
         p
         for hub, p in staged.items()
-        if f"/{sub}/" in hub and Path(hub).name.startswith(stem_prefix)
+        if f"/{sub}/" in hub and ((n := Path(hub).name) == stem or n.startswith(f"{stem}."))
     ]
     if not hits:
-        raise FileNotFoundError(f"no staged files for {sub}/{stem_prefix}*")
+        raise FileNotFoundError(f"no staged files for {sub}/{stem}[.]*")
     return sorted(hits)
 
 
@@ -495,6 +709,8 @@ def load_source_rows(unit: Unit, staged: dict[str, Path]) -> tuple[list[SourceRo
     identical to the ``alex`` variant, so the label contrast is u2-matched.
     """
     stats: dict = {}
+    if unit.framing in BRIDGE_PROVENANCE:
+        return load_bridge_source_rows(unit, staged)
     if unit.provenance == "lmsys":
         rows_raw: list[dict] = []
         for p in _source_paths(staged, "corpus", "two_turn_lmsys"):
@@ -564,6 +780,163 @@ def load_source_rows(unit: Unit, staged: dict[str, Path]) -> tuple[list[SourceRo
             )
     stats["n_source_rows"] = len(rows_raw)
     stats["n_usable_rows"] = len(src)
+    if not src:
+        raise RuntimeError(f"{unit.unit_id}: no usable source rows")
+    return src, stats
+
+
+def parent_gen_condition(unit: Unit) -> str:
+    """The parent gen-file condition stem this bridging cell reads a2 from.
+
+    `single_turn` borrows the parent's ASSISTANT-labelled answers so the a2 text
+    is the same model's own reply under the two-turn context (the answer is what
+    is held fixed); `parent_recap` reads its own variant verbatim.
+    """
+    if unit.framing == "parent_recap":
+        return unit.variant
+    if unit.framing == "single_turn":
+        # Assistant-label cell reads assistant_chat; Wren-label reads wren_chat,
+        # so each label's fixed answer is that speaker's own parent text.
+        return "assistant_chat" if unit.variant == "assistant" else "wren_chat"
+    raise ValueError(f"{unit.framing!r} does not read parent gen rows")
+
+
+def load_bridge_source_rows(unit: Unit, staged: dict[str, Path]) -> tuple[list[SourceRow], dict]:
+    """Assemble an addendum-B/C/D cell's rows from persisted parent artifacts.
+
+    Row PRESENCE in the parent's `raw_completions/gen/<condition>_<model>*`
+    files IS the parent's judge-kept allowlist (each row carries
+    `judge_score_mean` / `judge_n_draws`), so these cells inherit the parent's
+    judge decisions with ZERO new judging — the same allowlist convention the
+    base round's on-policy arm uses.
+    """
+    stats: dict = {"u2_source": unit.provenance}
+    if unit.framing == "onpolicy_a1":
+        return _load_onpolicy_a1_rows(unit, staged, stats)
+    cond = parent_gen_condition(unit)
+    paths = _source_paths(staged, "gen", f"{cond}_{model_short(unit.model)}.")
+    rows_raw: list[dict] = []
+    for p in paths:
+        rows_raw.extend(_read_jsonl(p))
+    src: list[SourceRow] = []
+    n_no_a2 = 0
+    for r in rows_raw:
+        a2 = _norm_turn(r.get("a2_text") or "")
+        if not a2:
+            n_no_a2 += 1
+            continue
+        u2 = _norm_turn(r.get("u2_text") or "")
+        if unit.framing == "single_turn" and not u2:
+            # The single-turn render's ONLY user content is u2 — an empty u2
+            # leaves no prompt at all.
+            n_no_a2 += 1
+            continue
+        src.append(
+            SourceRow(
+                r["conv_id"],
+                _norm_turn(r.get("u1") or ""),
+                _norm_turn(r.get("a1") or ""),
+                u2,
+                "parent",
+                r.get("judge_score_mean"),
+                a2=a2,
+                parent_render={
+                    "prefix_text_only": r.get("prefix_text_only"),
+                    "u2_text_marked": r.get("u2_text_marked"),
+                    "context_tail": r.get("context_tail"),
+                    "messages": r.get("messages"),
+                },
+            )
+        )
+    stats.update(
+        {
+            "parent_gen_condition": cond,
+            "n_source_rows": len(rows_raw),
+            "n_dropped_missing_a2": n_no_a2,
+            "n_usable_rows": len(src),
+            "allowlist": "parent judge-kept rows (row presence in the gen file)",
+        }
+    )
+    if rows_raw and n_no_a2 / len(rows_raw) > MAX_DROP_FRACTION:
+        raise RuntimeError(
+            f"{unit.unit_id}: {n_no_a2}/{len(rows_raw)} parent gen rows lack a usable a2 "
+            "— the persisted generation artifact is unusable for this cell"
+        )
+    if not src:
+        raise RuntimeError(f"{unit.unit_id}: no usable source rows")
+    return src, stats
+
+
+def _load_onpolicy_a1_rows(
+    unit: Unit, staged: dict[str, Path], stats: dict
+) -> tuple[list[SourceRow], dict]:
+    """Addendum C: the base round's u2 rows with a1 := the model's own reply.
+
+    u2 comes from the SAME haiku source the base naturalistic cells use, so a1
+    provenance is the single changed variable; a conversation with no generated
+    a1 is DROPPED (never silently back-filled with the LMSYS reply, which would
+    reintroduce the very variable this cell removes).
+    """
+    a1_paths = _source_paths(
+        staged, GEN_A1_SUBDIR, f"user_slot_a1_onpolicy_{model_short(unit.model)}"
+    )
+    a1_by_conv: dict[str, str] = {}
+    for p in a1_paths:
+        for r in _read_jsonl(p):
+            text = _norm_turn(r.get("a1_onpolicy") or "")
+            if text:
+                a1_by_conv[str(r["conv_id"])] = text
+    if not a1_by_conv:
+        raise RuntimeError(
+            f"{unit.unit_id}: no on-policy a1 rows staged — run "
+            "scripts/issue1689_user_slot_gen_a1.py first"
+        )
+    paths = _source_paths(staged, "haiku_u2", "user_haiku_naturalistic.")
+    rows_raw: list[dict] = []
+    for p in paths:
+        rows_raw.extend(_read_jsonl(p))
+    src: list[SourceRow] = []
+    n_sentinel = 0
+    n_no_a1 = 0
+    for r in rows_raw:
+        u2_raw = r.get("u2_text") or ""
+        if not u2_raw or u2_raw == UNFILLED_SENTINEL:
+            n_sentinel += 1
+            continue
+        u2 = _norm_turn(u2_raw)
+        if not u2:
+            n_sentinel += 1
+            continue
+        a1_on = a1_by_conv.get(str(r["conv_id"]))
+        if not a1_on:
+            n_no_a1 += 1
+            continue
+        src.append(
+            SourceRow(
+                r["conv_id"],
+                _norm_turn(r.get("u1") or ""),
+                _norm_turn(r.get("a1") or ""),
+                u2,
+                unit.provenance,
+                r.get("judge_score_mean"),
+                a1_onpolicy=a1_on,
+            )
+        )
+    stats.update(
+        {
+            "n_source_rows": len(rows_raw),
+            "n_dropped_unfilled_sentinel": n_sentinel,
+            "n_dropped_missing_onpolicy_a1": n_no_a1,
+            "n_onpolicy_a1_available": len(a1_by_conv),
+            "n_usable_rows": len(src),
+            "a1_source": "measured model greedy reply to u1 (gen_a1)",
+        }
+    )
+    if rows_raw and (n_sentinel + n_no_a1) / len(rows_raw) > MAX_DROP_FRACTION:
+        raise RuntimeError(
+            f"{unit.unit_id}: {n_sentinel + n_no_a1}/{len(rows_raw)} rows unusable "
+            f"({n_sentinel} unfilled u2, {n_no_a1} missing on-policy a1)"
+        )
     if not src:
         raise RuntimeError(f"{unit.unit_id}: no usable source rows")
     return src, stats
@@ -664,17 +1037,24 @@ def chat_text_and_offsets(u1: str, a1: str, u2: str, tokenizer) -> tuple[str, di
     return t4, offsets
 
 
-def naturalistic_text_and_offsets(u1: str, a1: str, u2: str) -> tuple[str, dict[str, int]]:
+def naturalistic_text_and_offsets(
+    u1: str, a1: str, u2: str, *, assistant_tag: str = NATURALISTIC_ASSISTANT_TAG
+) -> tuple[str, dict[str, int]]:
     """Naturalistic render with CORRECTED, non-degenerate boundaries.
 
     The parent's layout collapsed all three boundaries onto ``len(prefix)``
     (realized-defect (a)); here u2 is a real answer span and the two X slots
     are distinct positions before it.
+
+    ``assistant_tag`` defaults to the parent's ``"Assistant: "``; addendum C's
+    ``onpolicy_a1`` cells pass ``"Wren: "`` for the Wren-label variant, which is
+    the ONLY difference in their text layout (offsets are computed from segment
+    lengths, so a differently-sized tag needs no other change).
     """
     seg = [
         NATURALISTIC_USER_TAG,
         u1,
-        NATURALISTIC_SEP + NATURALISTIC_ASSISTANT_TAG,
+        NATURALISTIC_SEP + assistant_tag,
         a1,
         NATURALISTIC_SEP,
         NATURALISTIC_USER_TAG,
@@ -731,6 +1111,88 @@ def story_text_and_offsets(
     return text, offsets
 
 
+def single_turn_text_and_offsets(u2: str, a2: str, *, label: str) -> tuple[str, dict[str, int]]:
+    """Addendum B: `User: {u2}\\n\\n<Label>: {a2}` — the prefix turn ABLATED.
+
+    The target is the ANSWER, so the context end is the label header
+    (``answer_header_end``) and Y is the answer end. u1/a1 are absent by
+    construction, which is why context->answer is the only available pairing.
+    """
+    seg = [
+        NATURALISTIC_USER_TAG,
+        u2,
+        NATURALISTIC_SEP + f"{label}: ",
+        a2,
+    ]
+    ends: list[int] = []
+    acc = 0
+    for s in seg:
+        acc += len(s)
+        ends.append(acc)
+    text = "".join(seg)
+    offsets = {
+        "first_user_header_end": ends[0],
+        "u2_end": ends[1],
+        "answer_header_end": ends[2],  # end of "\n\n<Label>: " — the context end
+        "parent_answer_end": ends[3],
+    }
+    assert offsets["parent_answer_end"] == len(text)
+    return text, offsets
+
+
+def parent_recap_text_and_offsets(
+    row: SourceRow, tokenizer, *, variant: str
+) -> tuple[str, dict[str, int]]:
+    """Addendum D: re-render the PARENT's own condition, verbatim.
+
+    Reproduces the parent capture's two shapes exactly — chat conditions via
+    ``apply_chat_template`` (its ``_render_chat_offsets`` convention), plain-text
+    conditions by concatenating the renderer's own ``prefix_text_only +
+    u2_text_marked + context_tail`` segments (its ``_resolve_row_offsets``
+    convention) — and appends the parent's a2 as the answer span.
+    """
+    pr = row.parent_render or {}
+    a2 = row.a2 or ""
+    if not a2:
+        raise RuntimeError("parent_recap row has no a2")
+    if variant.endswith("_chat"):
+        messages = list(pr.get("messages") or [])
+        if not messages or messages[-1].get("role") != "user":
+            raise RuntimeError("parent_recap chat row: messages must end with the u2 user turn")
+        prefix_txt = tokenizer.apply_chat_template(
+            messages[:-1], tokenize=False, add_generation_prompt=False
+        )
+        context_txt = tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+        if not context_txt.startswith(prefix_txt):
+            raise RuntimeError(
+                "parent_recap chat row: the through-a1 render is not a prefix of the "
+                "through-u2 render — the template applied differently across message lists"
+            )
+        text = context_txt + a2
+        offsets = {
+            "prev_turn_end": len(prefix_txt),
+            "answer_header_end": len(context_txt),
+            "parent_answer_end": len(text),
+        }
+    else:
+        prefix_only = pr.get("prefix_text_only")
+        if prefix_only is None:
+            raise RuntimeError("parent_recap plain-text row lacks prefix_text_only")
+        u2_marked = pr.get("u2_text_marked") or ""
+        tail = pr.get("context_tail") or ""
+        context_txt = prefix_only + u2_marked + tail
+        text = context_txt + a2
+        offsets = {
+            "prev_turn_end": len(prefix_only),
+            "answer_header_end": len(context_txt),
+            "parent_answer_end": len(text),
+        }
+    assert offsets["parent_answer_end"] == len(text)
+    return text, offsets
+
+
 def render_row(unit: Unit, row: SourceRow, tokenizer) -> tuple[str, dict[str, int]]:
     """Dispatch to the framing's text+offset builder."""
     if unit.framing == "chat":
@@ -739,6 +1201,21 @@ def render_row(unit: Unit, row: SourceRow, tokenizer) -> tuple[str, dict[str, in
         return naturalistic_text_and_offsets(row.u1, row.a1, row.u2)
     if unit.framing == "story":
         return story_text_and_offsets(row.u1, row.a1, row.u2, variant=unit.variant)
+    if unit.framing == "single_turn":
+        return single_turn_text_and_offsets(
+            row.u2, row.a2 or "", label=SINGLE_TURN_VARIANTS[unit.variant]
+        )
+    if unit.framing == "onpolicy_a1":
+        if not row.a1_onpolicy:
+            raise RuntimeError(f"{unit.unit_id}: row {row.conv_id} has no on-policy a1")
+        return naturalistic_text_and_offsets(
+            row.u1,
+            row.a1_onpolicy,
+            row.u2,
+            assistant_tag=f"{ONPOLICY_A1_VARIANTS[unit.variant]}: ",
+        )
+    if unit.framing == "parent_recap":
+        return parent_recap_text_and_offsets(row, tokenizer, variant=unit.variant)
     raise ValueError(f"unknown framing {unit.framing!r}")
 
 
@@ -1038,10 +1515,98 @@ def story_read_groups(off: dict[str, int], text: str) -> tuple[str, list[ReadGro
     return text, [g]
 
 
+def single_turn_read_groups(off: dict[str, int], text: str) -> tuple[str, list[ReadGroup]]:
+    """Addendum B: the ANSWER group (suffix appended) + a u2 floor group."""
+    new_text = text + NATURALISTIC_TRANSITION_SUFFIX
+    g_answer = ReadGroup(
+        name="answer",
+        answer_start=off["answer_header_end"],
+        answer_end=off["parent_answer_end"],
+        # the ':' of the appended "\n\nUser: " (its trailing space straddles)
+        boundary_end=len(new_text) - 1,
+        suffix_appended=NATURALISTIC_TRANSITION_SUFFIX,
+    )
+    g_u2 = ReadGroup(
+        name="u2",
+        answer_start=off["first_user_header_end"],
+        answer_end=off["u2_end"],
+        # the ':' of the EXISTING "\n\n<Label>: " transition
+        boundary_end=off["answer_header_end"] - 1,
+        suffix_appended="",
+    )
+    return new_text, [g_answer, g_u2]
+
+
+def parent_recap_read_groups(
+    off: dict[str, int], text: str, *, variant: str
+) -> tuple[str, list[ReadGroup]]:
+    """Addendum D: the ANSWER group under the PARENT's own transition shape.
+
+    Chat conditions append the ChatML turn transition and read Y_boundary at its
+    final header newline; plain-text conditions append `\\n\\nUser: ` and read
+    straddler-exclusively at its ':' — matching the base round's two shapes.
+    """
+    if variant.endswith("_chat"):
+        new_text = text + CHAT_TRANSITION_SUFFIX
+        boundary = len(new_text)
+        suffix = CHAT_TRANSITION_SUFFIX
+    else:
+        new_text = text + NATURALISTIC_TRANSITION_SUFFIX
+        boundary = len(new_text) - 1
+        suffix = NATURALISTIC_TRANSITION_SUFFIX
+    g = ReadGroup(
+        name="answer",
+        answer_start=off["answer_header_end"],
+        answer_end=off["parent_answer_end"],
+        boundary_end=boundary,
+        suffix_appended=suffix,
+    )
+    return new_text, [g]
+
+
+def _rg_chat(unit: Unit, off: dict[str, int], text: str) -> tuple[str, list[ReadGroup]]:
+    return chat_read_groups(off, text)
+
+
+def _rg_naturalistic(unit: Unit, off: dict[str, int], text: str) -> tuple[str, list[ReadGroup]]:
+    return naturalistic_read_groups(off, text)
+
+
+def _rg_story(unit: Unit, off: dict[str, int], text: str) -> tuple[str, list[ReadGroup]]:
+    return story_read_groups(off, text)
+
+
+def _rg_single_turn(unit: Unit, off: dict[str, int], text: str) -> tuple[str, list[ReadGroup]]:
+    return single_turn_read_groups(off, text)
+
+
+def _rg_parent_recap(unit: Unit, off: dict[str, int], text: str) -> tuple[str, list[ReadGroup]]:
+    return parent_recap_read_groups(off, text, variant=unit.variant)
+
+
 READ_GROUPS_BY_FRAMING = {
-    "chat": chat_read_groups,
-    "naturalistic": naturalistic_read_groups,
-    "story": story_read_groups,
+    "chat": _rg_chat,
+    "naturalistic": _rg_naturalistic,
+    "story": _rg_story,
+    # addendum C shares the naturalistic layout exactly (only the label differs)
+    "onpolicy_a1": _rg_naturalistic,
+    "single_turn": _rg_single_turn,
+    "parent_recap": _rg_parent_recap,
+}
+
+# The read-group names each framing REALIZES, in order. Declared rather than
+# only derived so (a) `_validate_read_groups` fails loud if a builder's realized
+# groups ever drift from the declaration, and (b) consumers that must know the
+# grid's shape WITHOUT rendering real text — the fits' synthetic smoke tree —
+# read it from here instead of re-deriving it (a drifting duplicate would make
+# the smoke's grid shape diverge from production's).
+READ_GROUP_NAMES_BY_FRAMING: dict[str, tuple[str, ...]] = {
+    "chat": ("u2", "u1"),
+    "naturalistic": ("u2", "u1"),
+    "story": ("u2",),
+    "onpolicy_a1": ("u2", "u1"),
+    "single_turn": ("answer", "u2"),
+    "parent_recap": ("answer",),
 }
 
 
@@ -1052,7 +1617,7 @@ def build_read_groups(unit: Unit, off: dict[str, int], text: str) -> tuple[str, 
     render time so the capture forward covers it) plus the groups. Validated by
     :func:`_validate_read_groups`.
     """
-    new_text, groups = READ_GROUPS_BY_FRAMING[unit.framing](off, text)
+    new_text, groups = READ_GROUPS_BY_FRAMING[unit.framing](unit, off, text)
     _validate_read_groups(unit, groups, new_text)
     return new_text, groups
 
@@ -1069,6 +1634,13 @@ def _validate_read_groups(unit: Unit, groups: list[ReadGroup], text: str) -> Non
     names = [g.name for g in groups]
     if len(set(names)) != len(names):
         raise RuntimeError(f"{unit.unit_id}: duplicate read-group names {names}")
+    declared = list(READ_GROUP_NAMES_BY_FRAMING[unit.framing])
+    if names != declared:
+        raise RuntimeError(
+            f"{unit.unit_id}: realized read groups {names} != declared "
+            f"READ_GROUP_NAMES_BY_FRAMING[{unit.framing!r}] {declared} — a consumer sizing the "
+            "grid off the declaration (the fits' synthetic smoke tree) would diverge"
+        )
     for g in groups:
         for label, off in (
             ("answer_start", g.answer_start),
@@ -1105,26 +1677,41 @@ def main() -> int:
     ap.add_argument(
         "--smoke",
         action="store_true",
-        help="2 units x 32 rows through the IDENTICAL code path",
+        help="ONE unit per FAMILY x 32 rows through the IDENTICAL code path "
+        "(an explicit --units list narrows it further)",
+    )
+    ap.add_argument(
+        "--max-rows",
+        type=int,
+        default=None,
+        help="cap rows per unit (independent of --smoke)",
+    )
+    ap.add_argument(
+        "--gen-a1-dir",
+        type=Path,
+        default=None,
+        help="local a1-generator output dir (same-pod path; overrides the gen_a1 Hub prefix)",
     )
     args = ap.parse_args()
 
+    explicit_units = args.units != "all"
     units = (
         list(UNITS)
-        if args.units == "all"
+        if not explicit_units
         else [UNIT_BY_ID[u.strip()] for u in args.units.split(",") if u.strip()]
     )
-    max_rows = None
+    max_rows = args.max_rows
     if args.smoke:
-        # One chat + one naturalistic unit: distinct offset builders, both
-        # floor-control-bearing. Same code path, fewer rows.
-        units = [
-            UNIT_BY_ID[f"{model_dir(MODEL_INSTRUCT)}__chat__onpolicy"],
-            UNIT_BY_ID[f"{model_dir(MODEL_INSTRUCT)}__naturalistic__onpolicy"],
-        ]
-        max_rows = 32
+        # The smoke covers ONE cell per FAMILY, not one overall: every family has
+        # its own offset builder, source loader and read-group shape, so a
+        # single-family smoke is blind to the others' seams (the per-arm-class
+        # smoke duty). An explicit --units list is HONORED under --smoke so a
+        # per-family smoke can be run on its own.
+        if not explicit_units:
+            units = smoke_units()
+        max_rows = max_rows or 32
 
-    staged = stage_source_files(args.stage_root, revision=args.revision)
+    staged = stage_source_files(args.stage_root, revision=args.revision, gen_a1_dir=args.gen_a1_dir)
     args.out_dir.mkdir(parents=True, exist_ok=True)
     tokenizer_cache: dict = {}
     entries = [

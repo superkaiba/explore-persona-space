@@ -1,0 +1,1394 @@
+{
+ "metadata": {
+  "git_commit": "142331937137de5f8b2f7d4e17ec6714aa4f93ba",
+  "generated_utc": "2026-07-30T23:51:46.918218+00:00",
+  "python": "3.11.15",
+  "numpy": "2.2.6",
+  "scipy": "1.17.1",
+  "seed": 1482,
+  "host": "cia-benchmark-vm",
+  "omp_num_threads": "8"
+ },
+ "design": {
+  "question": "Do disjoint halves of the contexts fail in the SAME residual subspace (one shared failure mode) or in different ones (each context errs its own way)?",
+  "method": "Disjoint random context halves; independent Gram eigh per half; principal angles between the top-k subspaces.",
+  "ladder": {
+   "random_floor": "two independent uniformly random k-dim subspaces of R^d",
+   "gaussian_sigma_e": "two halves of an i.i.d. Gaussian sample with the OBSERVED residual covariance -- no structure beyond the second moment",
+   "observed": "the measured half-to-half agreement"
+  },
+  "reading": "at the random floor = no shared object; at the Gaussian reference = exactly as shared as the covariance implies; above it = shared structure beyond the second moment.",
+  "k_grid": [
+   8,
+   16,
+   64,
+   256
+  ]
+ },
+ "cells": {
+  "context_L14_ridge": {
+   "arm": "context",
+   "layer": 14,
+   "fitter": "ridge",
+   "n_half": [
+    4970,
+    4971
+   ],
+   "by_k": {
+    "8": {
+     "observed": {
+      "mean_cos_principal_angle": 0.9733146315126605,
+      "median_cos_principal_angle": 0.9798228711007373,
+      "max_cos_principal_angle": 0.9953151440421302,
+      "subspace_overlap": 0.9478025299779864,
+      "min_angle_deg": 5.548242667641654,
+      "median_angle_deg": 11.519974081547938
+     },
+     "gaussian_sigma_e": {
+      "mean_cos_principal_angle": {
+       "mean": 0.9754203301814092,
+       "min": 0.968394761799833,
+       "max": 0.9799168794782578
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.9849145507078975,
+       "min": 0.9846265737171378,
+       "max": 0.985087182490334
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.9963133581982171,
+       "min": 0.9960744100960995,
+       "max": 0.9965698189495511
+      },
+      "subspace_overlap": {
+       "mean": 0.9523704272524128,
+       "min": 0.9398483932871193,
+       "max": 0.9604748709008359
+      },
+      "min_angle_deg": {
+       "mean": 4.919511444443184,
+       "min": 4.747012468952553,
+       "max": 5.078462716726144
+      },
+      "median_angle_deg": {
+       "mean": 9.953838420320405,
+       "min": 9.905915177155817,
+       "max": 10.029925889540426
+      }
+     },
+     "random_floor": {
+      "mean_cos_principal_angle": {
+       "mean": 0.03794762935449048,
+       "min": 0.035871747152159635,
+       "max": 0.04084484108557329
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.03282494823706103,
+       "min": 0.031250979663048406,
+       "max": 0.03374556392062808
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.07536817024948193,
+       "min": 0.07394705334749456,
+       "max": 0.07637949762162377
+      },
+      "subspace_overlap": {
+       "mean": 0.002003707470652484,
+       "min": 0.001798946004883733,
+       "max": 0.0022590526378857274
+      },
+      "min_angle_deg": {
+       "mean": 85.67762089510684,
+       "min": 85.61951091397499,
+       "max": 85.75927509925381
+      },
+      "median_angle_deg": {
+       "mean": 88.11888864586757,
+       "min": 88.06605055904424,
+       "max": 88.2091521301709
+      }
+     }
+    },
+    "16": {
+     "observed": {
+      "mean_cos_principal_angle": 0.9085329865542354,
+      "median_cos_principal_angle": 0.9758105291765131,
+      "max_cos_principal_angle": 0.996150399345448,
+      "subspace_overlap": 0.8737254525021858,
+      "min_angle_deg": 5.029037686247806,
+      "median_angle_deg": 12.624600428032052
+     },
+     "gaussian_sigma_e": {
+      "mean_cos_principal_angle": {
+       "mean": 0.951867266522829,
+       "min": 0.9396748642622833,
+       "max": 0.9632579405013679
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.9794273802871937,
+       "min": 0.9793667921610676,
+       "max": 0.9795141180549388
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.9969441723533667,
+       "min": 0.9967674456233225,
+       "max": 0.9970703701606816
+      },
+      "subspace_overlap": {
+       "mean": 0.9152493426995342,
+       "min": 0.9026835102389352,
+       "max": 0.9301100332986361
+      },
+      "min_angle_deg": {
+       "mean": 4.479375427115984,
+       "min": 4.386822772591588,
+       "max": 4.60816063052409
+      },
+      "median_angle_deg": {
+       "mean": 11.62239271897279,
+       "min": 11.597913624062057,
+       "max": 11.658239566560521
+      }
+     },
+     "random_floor": {
+      "mean_cos_principal_angle": {
+       "mean": 0.057078635747108475,
+       "min": 0.05430348087066538,
+       "max": 0.06092159776070637
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.05548064741501086,
+       "min": 0.04862424268313453,
+       "max": 0.06135926419725704
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.1246753313537408,
+       "min": 0.11426752731138302,
+       "max": 0.1302123903483843
+      },
+      "subspace_overlap": {
+       "mean": 0.004573517895205818,
+       "min": 0.004008468662944949,
+       "max": 0.00522979406003711
+      },
+      "min_angle_deg": {
+       "mean": 82.83779757516724,
+       "min": 82.51813428993293,
+       "max": 83.43862103966799
+      },
+      "median_angle_deg": {
+       "mean": 86.81950555818871,
+       "min": 86.48215798223258,
+       "max": 87.21292802981402
+      }
+     }
+    },
+    "64": {
+     "observed": {
+      "mean_cos_principal_angle": 0.9044435081283166,
+      "median_cos_principal_angle": 0.9533609377343935,
+      "max_cos_principal_angle": 0.9976202226265055,
+      "subspace_overlap": 0.8409428146305873,
+      "min_angle_deg": 3.953593011300634,
+      "median_angle_deg": 17.56733015547974
+     },
+     "gaussian_sigma_e": {
+      "mean_cos_principal_angle": {
+       "mean": 0.916005203378451,
+       "min": 0.9128130758873523,
+       "max": 0.9191700256260628
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.9618175766079927,
+       "min": 0.96099261920699,
+       "max": 0.9625750337760712
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.9978179653625867,
+       "min": 0.9976189536171408,
+       "max": 0.997948849359233
+      },
+      "subspace_overlap": {
+       "mean": 0.8603418706748043,
+       "min": 0.8577360364432299,
+       "max": 0.8620372869878448
+      },
+      "min_angle_deg": {
+       "mean": 3.7837155186360967,
+       "min": 3.6703769622312032,
+       "max": 3.9546474103724347
+      },
+      "median_angle_deg": {
+       "mean": 15.882808843890674,
+       "min": 15.723676845329612,
+       "max": 16.054876640045553
+      }
+     },
+     "random_floor": {
+      "mean_cos_principal_angle": {
+       "mean": 0.11346128436622745,
+       "min": 0.11209620432914982,
+       "max": 0.1141449710477137
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.10813523503136564,
+       "min": 0.10567883790801985,
+       "max": 0.10985382267542121
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.2588975108205966,
+       "min": 0.2502384749794401,
+       "max": 0.2650093069877944
+      },
+      "subspace_overlap": {
+       "mean": 0.017886594360020585,
+       "min": 0.01754353749773735,
+       "max": 0.018116115019491563
+      },
+      "min_angle_deg": {
+       "mean": 74.99502134091533,
+       "min": 74.63249417893364,
+       "max": 75.50837564962944
+      },
+      "median_angle_deg": {
+       "mean": 83.7921410231689,
+       "min": 83.69310452499154,
+       "max": 83.93370699131722
+      }
+     }
+    },
+    "256": {
+     "observed": {
+      "mean_cos_principal_angle": 0.8100575065120015,
+      "median_cos_principal_angle": 0.908350397488036,
+      "max_cos_principal_angle": 0.9986847607564346,
+      "subspace_overlap": 0.7100462477902362,
+      "min_angle_deg": 2.938919031010287,
+      "median_angle_deg": 24.721531173988687
+     },
+     "gaussian_sigma_e": {
+      "mean_cos_principal_angle": {
+       "mean": 0.8466391874625923,
+       "min": 0.8460361542861772,
+       "max": 0.8475484898968201
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.9313172644282329,
+       "min": 0.9311745549339296,
+       "max": 0.9315916794752659
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.9988278862650665,
+       "min": 0.9987947016039815,
+       "max": 0.9988563408262751
+      },
+      "subspace_overlap": {
+       "mean": 0.759086970990591,
+       "min": 0.7584035445854359,
+       "max": 0.7598300076568612
+      },
+      "min_angle_deg": {
+       "mean": 2.7742114012475185,
+       "min": 2.7404844257760255,
+       "max": 2.813381001573802
+      },
+      "median_angle_deg": {
+       "mean": 21.35863755159579,
+       "min": 21.315438306828298,
+       "max": 21.38126348420448
+      }
+     },
+     "random_floor": {
+      "mean_cos_principal_angle": {
+       "mean": 0.2283809257882914,
+       "min": 0.22789620251470527,
+       "max": 0.2287465578729232
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.22009019892311601,
+       "min": 0.21845181146021542,
+       "max": 0.2217075007395885
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.5106444058718692,
+       "min": 0.5082931356779017,
+       "max": 0.5136989937690161
+      },
+      "subspace_overlap": {
+       "mean": 0.07145813594462148,
+       "min": 0.07117001880864854,
+       "max": 0.071630510645563
+      },
+      "min_angle_deg": {
+       "mean": 59.29311921796343,
+       "min": 59.08946649429647,
+       "max": 59.44979689451453
+      },
+      "median_angle_deg": {
+       "mean": 77.2856538422443,
+       "min": 77.19065499635245,
+       "max": 77.3818789074797
+      }
+     }
+    }
+   },
+   "per_context_energy_in_pooled_topk": {
+    "8": {
+     "mean": 0.15154229590774987,
+     "median": 0.12410907692842667,
+     "p10": 0.05014190072760408,
+     "p90": 0.28946110486396176,
+     "iqr": 0.11496320722581524,
+     "uniform_expectation": 0.002232142857142857
+    },
+    "16": {
+     "mean": 0.21775554032941175,
+     "median": 0.19454099024018548,
+     "p10": 0.09902294514711124,
+     "p90": 0.36843654966917083,
+     "iqr": 0.13603248907178753,
+     "uniform_expectation": 0.004464285714285714
+    },
+    "64": {
+     "mean": 0.40536872929809203,
+     "median": 0.39287184428897154,
+     "p10": 0.26276857744876453,
+     "p90": 0.5662662105603489,
+     "iqr": 0.156939112598597,
+     "uniform_expectation": 0.017857142857142856
+    },
+    "256": {
+     "mean": 0.6417702996689808,
+     "median": 0.6386953746001258,
+     "p10": 0.5251925568910384,
+     "p90": 0.761286094847982,
+     "iqr": 0.12480236836393865,
+     "uniform_expectation": 0.07142857142857142
+    }
+   }
+  },
+  "context_L19_ridge": {
+   "arm": "context",
+   "layer": 19,
+   "fitter": "ridge",
+   "n_half": [
+    4970,
+    4971
+   ],
+   "by_k": {
+    "8": {
+     "observed": {
+      "mean_cos_principal_angle": 0.9773594371897236,
+      "median_cos_principal_angle": 0.9792752558852861,
+      "max_cos_principal_angle": 0.9960351966673375,
+      "subspace_overlap": 0.9555399190680072,
+      "min_angle_deg": 5.103781231919879,
+      "median_angle_deg": 11.677579410591177
+     },
+     "gaussian_sigma_e": {
+      "mean_cos_principal_angle": {
+       "mean": 0.9851482785218416,
+       "min": 0.9849944570303805,
+       "max": 0.9852937232947168
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.9864035143218048,
+       "min": 0.9861061768382755,
+       "max": 0.9869356649716019
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.9972227299130464,
+       "min": 0.9971264344629177,
+       "max": 0.9972741725474854
+      },
+      "subspace_overlap": {
+       "mean": 0.9706195089946306,
+       "min": 0.9703386130411271,
+       "max": 0.970898300632022
+      },
+      "min_angle_deg": {
+       "mean": 4.270855436696543,
+       "min": 4.231413926881421,
+       "max": 4.344624391930933
+      },
+      "median_angle_deg": {
+       "mean": 9.443926056603,
+       "min": 9.263896247600599,
+       "max": 9.540773411955588
+      }
+     },
+     "random_floor": {
+      "mean_cos_principal_angle": {
+       "mean": 0.04118653957111793,
+       "min": 0.04022494579506814,
+       "max": 0.04207374552302705
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.040193229115815944,
+       "min": 0.039646460873600416,
+       "max": 0.04111676216582669
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.08730465819495793,
+       "min": 0.08544277669615126,
+       "max": 0.08954644586107796
+      },
+      "subspace_overlap": {
+       "mean": 0.0023684392141868457,
+       "min": 0.0022924280002309424,
+       "max": 0.0024242785184140983
+      },
+      "min_angle_deg": {
+       "mean": 84.99142782653007,
+       "min": 84.86248500112714,
+       "max": 85.09851326497234
+      },
+      "median_angle_deg": {
+       "mean": 87.69645573523935,
+       "min": 87.64351314714396,
+       "max": 87.72782357260783
+      }
+     }
+    },
+    "16": {
+     "observed": {
+      "mean_cos_principal_angle": 0.9623740723470098,
+      "median_cos_principal_angle": 0.9795267045858564,
+      "max_cos_principal_angle": 0.9966974322660915,
+      "subspace_overlap": 0.9282314725716427,
+      "min_angle_deg": 4.657824204238411,
+      "median_angle_deg": 11.602185393679713
+     },
+     "gaussian_sigma_e": {
+      "mean_cos_principal_angle": {
+       "mean": 0.9706796694957589,
+       "min": 0.9685402002936069,
+       "max": 0.9722380601608891
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.9837127997147134,
+       "min": 0.982559831479454,
+       "max": 0.9844730997896198
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.9975738973694689,
+       "min": 0.9974643376703602,
+       "max": 0.9977452415602458
+      },
+      "subspace_overlap": {
+       "mean": 0.9435797243703631,
+       "min": 0.9397451415024696,
+       "max": 0.9463278398066971
+      },
+      "min_angle_deg": {
+       "mean": 3.990606191266661,
+       "min": 3.8483031568450063,
+       "max": 4.0810804020706
+      },
+      "median_angle_deg": {
+       "mean": 10.33063285848292,
+       "min": 10.096914739939203,
+       "max": 10.682476089558092
+      }
+     },
+     "random_floor": {
+      "mean_cos_principal_angle": {
+       "mean": 0.0590020511527544,
+       "min": 0.05599263944918445,
+       "max": 0.06106935429292193
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.053782870260336735,
+       "min": 0.04868559666206086,
+       "max": 0.06141171268203774
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.12747074852710025,
+       "min": 0.12245391686522265,
+       "max": 0.13482033799701737
+      },
+      "subspace_overlap": {
+       "mean": 0.004834415349503628,
+       "min": 0.004299600201447424,
+       "max": 0.0052801515180893495
+      },
+      "min_angle_deg": {
+       "mean": 82.67643265962484,
+       "min": 82.25176896254415,
+       "max": 82.96625365470254
+      },
+      "median_angle_deg": {
+       "mean": 86.91689780260675,
+       "min": 86.4790736858633,
+       "max": 87.20940665525204
+      }
+     }
+    },
+    "64": {
+     "observed": {
+      "mean_cos_principal_angle": 0.9214233343179787,
+      "median_cos_principal_angle": 0.9596644590028296,
+      "max_cos_principal_angle": 0.9977913839315637,
+      "subspace_overlap": 0.8610849039608991,
+      "min_angle_deg": 3.808708269356791,
+      "median_angle_deg": 16.32700678406531
+     },
+     "gaussian_sigma_e": {
+      "mean_cos_principal_angle": {
+       "mean": 0.926731773464143,
+       "min": 0.9243952858182238,
+       "max": 0.9285797017595305
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.9667395837541474,
+       "min": 0.9654624403661867,
+       "max": 0.9678731940561096
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.9982880094040936,
+       "min": 0.9982770998292679,
+       "max": 0.9983024171931585
+      },
+      "subspace_overlap": {
+       "mean": 0.8759725834381591,
+       "min": 0.8732667878229804,
+       "max": 0.8779407167216351
+      },
+      "min_angle_deg": {
+       "mean": 3.353113098963155,
+       "min": 3.338985791258731,
+       "max": 3.3637991833724046
+      },
+      "median_angle_deg": {
+       "mean": 14.816375481011741,
+       "min": 14.562589489521155,
+       "max": 15.100423533766236
+      }
+     },
+     "random_floor": {
+      "mean_cos_principal_angle": {
+       "mean": 0.11451241711272493,
+       "min": 0.11291455287465867,
+       "max": 0.1173446506981129
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.1077890404556553,
+       "min": 0.10381975900500626,
+       "max": 0.11115297255628315
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.25577707311117265,
+       "min": 0.25451609778434175,
+       "max": 0.25782481484546327
+      },
+      "subspace_overlap": {
+       "mean": 0.01818820230575668,
+       "min": 0.017638431220668695,
+       "max": 0.01902754324925401
+      },
+      "min_angle_deg": {
+       "mean": 75.18034741381399,
+       "min": 75.05896659219157,
+       "max": 75.25508642777918
+      },
+      "median_angle_deg": {
+       "mean": 83.81207887423487,
+       "min": 83.6181910239143,
+       "max": 84.0408173719109
+      }
+     }
+    },
+    "256": {
+     "observed": {
+      "mean_cos_principal_angle": 0.8210009949263783,
+      "median_cos_principal_angle": 0.91409572515701,
+      "max_cos_principal_angle": 0.9988691966209751,
+      "subspace_overlap": 0.723824121619947,
+      "min_angle_deg": 2.7250351755458895,
+      "median_angle_deg": 23.922359590953945
+     },
+     "gaussian_sigma_e": {
+      "mean_cos_principal_angle": {
+       "mean": 0.8532525785732566,
+       "min": 0.8519209770363568,
+       "max": 0.8539439635735373
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.9350327084048248,
+       "min": 0.9348184210094731,
+       "max": 0.9352266214311453
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.9990978140468627,
+       "min": 0.9990845734393046,
+       "max": 0.9991066706062667
+      },
+      "subspace_overlap": {
+       "mean": 0.7687734927642609,
+       "min": 0.7676161002442959,
+       "max": 0.7694294916928986
+      },
+      "min_angle_deg": {
+       "mean": 2.4339534558691467,
+       "min": 2.422009142904156,
+       "max": 2.451785773744091
+      },
+      "median_angle_deg": {
+       "mean": 20.766414620543543,
+       "min": 20.735202806764622,
+       "max": 20.80084924172913
+      }
+     },
+     "random_floor": {
+      "mean_cos_principal_angle": {
+       "mean": 0.22838837518532384,
+       "min": 0.22765284055101942,
+       "max": 0.22882916514194754
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.22173287317766863,
+       "min": 0.22089456606458419,
+       "max": 0.2228725311796984
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.5100190444850724,
+       "min": 0.5057459803019918,
+       "max": 0.5125928727682285
+      },
+      "subspace_overlap": {
+       "mean": 0.07137284963243296,
+       "min": 0.07088436929193771,
+       "max": 0.0716556145942295
+      },
+      "min_angle_deg": {
+       "mean": 59.33468975326853,
+       "min": 59.163305446294224,
+       "max": 59.619115273849914
+      },
+      "median_angle_deg": {
+       "mean": 77.18915867272192,
+       "min": 77.12219031296846,
+       "max": 77.23841423222382
+      }
+     }
+    }
+   },
+   "per_context_energy_in_pooled_topk": {
+    "8": {
+     "mean": 0.174476690562859,
+     "median": 0.1479527497234722,
+     "p10": 0.061353384723097454,
+     "p90": 0.3237084532209516,
+     "iqr": 0.12993189720426956,
+     "uniform_expectation": 0.002232142857142857
+    },
+    "16": {
+     "mean": 0.24785288286051507,
+     "median": 0.22680336989111052,
+     "p10": 0.11881955839612306,
+     "p90": 0.40843198116676593,
+     "iqr": 0.14556244131319104,
+     "uniform_expectation": 0.004464285714285714
+    },
+    "64": {
+     "mean": 0.439275462854945,
+     "median": 0.42836877485243025,
+     "p10": 0.29116896012213467,
+     "p90": 0.6041333712460033,
+     "iqr": 0.16081161250027143,
+     "uniform_expectation": 0.017857142857142856
+    },
+    "256": {
+     "mean": 0.6670959074851894,
+     "median": 0.6663051610604813,
+     "p10": 0.5426841126476969,
+     "p90": 0.7916566559593073,
+     "iqr": 0.1300630978346642,
+     "uniform_expectation": 0.07142857142857142
+    }
+   }
+  },
+  "prefix_L19_ridge": {
+   "arm": "prefix",
+   "layer": 19,
+   "fitter": "ridge",
+   "n_half": [
+    4970,
+    4971
+   ],
+   "by_k": {
+    "8": {
+     "observed": {
+      "mean_cos_principal_angle": 0.9160296670796995,
+      "median_cos_principal_angle": 0.9913206834368786,
+      "max_cos_principal_angle": 0.997414922832308,
+      "subspace_overlap": 0.8790575339656961,
+      "min_angle_deg": 4.120671439788095,
+      "median_angle_deg": 7.531556920641561
+     },
+     "gaussian_sigma_e": {
+      "mean_cos_principal_angle": {
+       "mean": 0.9354019392587211,
+       "min": 0.9014059862313605,
+       "max": 0.9764355638064979
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.9933146258231966,
+       "min": 0.9926765045387684,
+       "max": 0.9939841162478342
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.998696312999245,
+       "min": 0.9986369065299286,
+       "max": 0.998731160756384
+      },
+      "subspace_overlap": {
+       "mean": 0.9042475780811602,
+       "min": 0.867534163777654,
+       "max": 0.9554411164333508
+      },
+      "min_angle_deg": {
+       "mean": 2.9256015821555574,
+       "min": 2.8866016992038634,
+       "max": 2.9919187347316747
+      },
+      "median_angle_deg": {
+       "mean": 6.613158199070835,
+       "min": 6.275391095968433,
+       "max": 6.937229407549909
+      }
+     },
+     "random_floor": {
+      "mean_cos_principal_angle": {
+       "mean": 0.04142673124722968,
+       "min": 0.03909720004887669,
+       "max": 0.044290835058436964
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.038789260178503836,
+       "min": 0.031936700705199064,
+       "max": 0.047601407274443105
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.08384148850393403,
+       "min": 0.07732630128071781,
+       "max": 0.09232717185465947
+      },
+      "subspace_overlap": {
+       "mean": 0.0024077446768716337,
+       "min": 0.002245569994758254,
+       "max": 0.0025859453878688725
+      },
+      "min_angle_deg": {
+       "mean": 85.19049392808084,
+       "min": 84.70249820573456,
+       "max": 85.56510214112434
+      },
+      "median_angle_deg": {
+       "mean": 87.77686534473439,
+       "min": 87.27150706225984,
+       "max": 88.1697976749341
+      }
+     }
+    },
+    "16": {
+     "observed": {
+      "mean_cos_principal_angle": 0.9564421379346323,
+      "median_cos_principal_angle": 0.9901601749797586,
+      "max_cos_principal_angle": 0.9982162653023938,
+      "subspace_overlap": 0.9283706507172819,
+      "min_angle_deg": 3.4226881959165456,
+      "median_angle_deg": 8.027808649846808
+     },
+     "gaussian_sigma_e": {
+      "mean_cos_principal_angle": {
+       "mean": 0.9774407763672864,
+       "min": 0.9700246145330511,
+       "max": 0.9855520876287946
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.9900158130327235,
+       "min": 0.9898111478863572,
+       "max": 0.990395991415469
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.9988923164253559,
+       "min": 0.998882713789092,
+       "max": 0.9989005384147833
+      },
+      "subspace_overlap": {
+       "mean": 0.957721765810701,
+       "min": 0.9458968241846772,
+       "max": 0.9715231272093054
+      },
+      "min_angle_deg": {
+       "mean": 2.6970140110467113,
+       "min": 2.6869987168616376,
+       "max": 2.7086961715779347
+      },
+      "median_angle_deg": {
+       "mean": 8.096212305583013,
+       "min": 7.936369327892767,
+       "max": 8.185684720322854
+      }
+     },
+     "random_floor": {
+      "mean_cos_principal_angle": {
+       "mean": 0.05560592626585629,
+       "min": 0.052810772890228494,
+       "max": 0.05933243978744272
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.05011663521878342,
+       "min": 0.04792257747717553,
+       "max": 0.05188748403244384
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.11291586591856688,
+       "min": 0.107620000940883,
+       "max": 0.12229989659846703
+      },
+      "subspace_overlap": {
+       "mean": 0.004229050657093485,
+       "min": 0.0037385812936686553,
+       "max": 0.004895698604210885
+      },
+      "min_angle_deg": {
+       "mean": 83.51642200269414,
+       "min": 82.97514519746852,
+       "max": 83.82186285363979
+      },
+      "median_angle_deg": {
+       "mean": 87.12728510345183,
+       "min": 87.02566529172675,
+       "max": 87.25317919951154
+      }
+     }
+    },
+    "64": {
+     "observed": {
+      "mean_cos_principal_angle": 0.9406466282136197,
+      "median_cos_principal_angle": 0.9777900091809779,
+      "max_cos_principal_angle": 0.9992684535945029,
+      "subspace_overlap": 0.899452087305711,
+      "min_angle_deg": 2.1917198940316864,
+      "median_angle_deg": 12.096496061874008
+     },
+     "gaussian_sigma_e": {
+      "mean_cos_principal_angle": {
+       "mean": 0.9494859954728603,
+       "min": 0.9450007953626329,
+       "max": 0.954000133765168
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.9818518780265935,
+       "min": 0.9817558581770929,
+       "max": 0.9819327971664418
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.999308916457741,
+       "min": 0.9992627710302056,
+       "max": 0.9993599322159453
+      },
+      "subspace_overlap": {
+       "mean": 0.9129938405180439,
+       "min": 0.9092597036299029,
+       "max": 0.9174540255181793
+      },
+      "min_angle_deg": {
+       "mean": 2.1293473273285883,
+       "min": 2.050094035853388,
+       "max": 2.20021697705336
+      },
+      "median_angle_deg": {
+       "mean": 10.93135618466201,
+       "min": 10.90687202856766,
+       "max": 10.959909428017449
+      }
+     },
+     "random_floor": {
+      "mean_cos_principal_angle": {
+       "mean": 0.11269769023479832,
+       "min": 0.11129204719308139,
+       "max": 0.11426390314747253
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.10597283201475811,
+       "min": 0.10255307313146472,
+       "max": 0.10895082183185001
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.25540574819420053,
+       "min": 0.25247498738664853,
+       "max": 0.25788036622585436
+      },
+      "subspace_overlap": {
+       "mean": 0.01759875153113562,
+       "min": 0.017208094704968133,
+       "max": 0.017949630918908055
+      },
+      "min_angle_deg": {
+       "mean": 75.2023308149047,
+       "min": 75.05567233482745,
+       "max": 75.37598234235496
+      },
+      "median_angle_deg": {
+       "mean": 83.91675281260528,
+       "min": 83.74515604434367,
+       "max": 84.11378334516924
+      }
+     }
+    },
+    "256": {
+     "observed": {
+      "mean_cos_principal_angle": 0.867394994671095,
+      "median_cos_principal_angle": 0.9472491751036278,
+      "max_cos_principal_angle": 0.9996476576450573,
+      "subspace_overlap": 0.7885779596730003,
+      "min_angle_deg": 1.521012590769608,
+      "median_angle_deg": 18.69301240455274
+     },
+     "gaussian_sigma_e": {
+      "mean_cos_principal_angle": {
+       "mean": 0.8890930656665982,
+       "min": 0.8881107617118933,
+       "max": 0.8902488385907328
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.95863856052086,
+       "min": 0.9582089018360493,
+       "max": 0.9590218411192184
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.9997129151050513,
+       "min": 0.9997038585280809,
+       "max": 0.9997214415319748
+      },
+      "subspace_overlap": {
+       "mean": 0.8209281359488467,
+       "min": 0.8200332011094565,
+       "max": 0.8222184285352009
+      },
+      "min_angle_deg": {
+       "mean": 1.3728377051997984,
+       "min": 1.3524022815946082,
+       "max": 1.3944340012124832
+      },
+      "median_angle_deg": {
+       "mean": 16.536100721925298,
+       "min": 16.459038024149248,
+       "max": 16.622420555962318
+      }
+     },
+     "random_floor": {
+      "mean_cos_principal_angle": {
+       "mean": 0.2280986746850103,
+       "min": 0.22750472792019213,
+       "max": 0.22925262962762247
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.22012012195178862,
+       "min": 0.21968724270911205,
+       "max": 0.22093997663035525
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.5116663629679988,
+       "min": 0.509789237142692,
+       "max": 0.5153018265082662
+      },
+      "subspace_overlap": {
+       "mean": 0.0711810130060399,
+       "min": 0.07073821662332747,
+       "max": 0.071872824505814
+      },
+      "min_angle_deg": {
+       "mean": 59.22495762542161,
+       "min": 58.98236837676326,
+       "max": 59.35020804492659
+      },
+      "median_angle_deg": {
+       "mean": 77.28390442217052,
+       "min": 77.23574859473982,
+       "max": 77.30933095479115
+      }
+     }
+    }
+   },
+   "per_context_energy_in_pooled_topk": {
+    "8": {
+     "mean": 0.25587295440967356,
+     "median": 0.2273230656869939,
+     "p10": 0.09935151747005502,
+     "p90": 0.4533851656764532,
+     "iqr": 0.1851560538932735,
+     "uniform_expectation": 0.002232142857142857
+    },
+    "16": {
+     "mean": 0.3540519009144366,
+     "median": 0.3314547972643086,
+     "p10": 0.18038976693049003,
+     "p90": 0.5639846997946582,
+     "iqr": 0.2056753507174292,
+     "uniform_expectation": 0.004464285714285714
+    },
+    "64": {
+     "mean": 0.5790673561878038,
+     "median": 0.57177469303298,
+     "p10": 0.41353534609499276,
+     "p90": 0.7569642520893866,
+     "iqr": 0.18999896913057734,
+     "uniform_expectation": 0.017857142857142856
+    },
+    "256": {
+     "mean": 0.7841684040610997,
+     "median": 0.78718702403985,
+     "p10": 0.6752432823425729,
+     "p90": 0.8891404167125883,
+     "iqr": 0.1168979580698215,
+     "uniform_expectation": 0.07142857142857142
+    }
+   }
+  },
+  "bare_L19_ridge": {
+   "arm": "bare",
+   "layer": 19,
+   "fitter": "ridge",
+   "n_half": [
+    4970,
+    4971
+   ],
+   "by_k": {
+    "8": {
+     "observed": {
+      "mean_cos_principal_angle": 0.9767195839664246,
+      "median_cos_principal_angle": 0.9884966158406239,
+      "max_cos_principal_angle": 0.9972662162243928,
+      "subspace_overlap": 0.9551019061244652,
+      "min_angle_deg": 4.237587703143221,
+      "median_angle_deg": 8.645048442769962
+     },
+     "gaussian_sigma_e": {
+      "mean_cos_principal_angle": {
+       "mean": 0.9883931125403876,
+       "min": 0.987133029128457,
+       "max": 0.9899071601298381
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.9914820124316068,
+       "min": 0.9912355935237989,
+       "max": 0.9916177586900787
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.9981424180619988,
+       "min": 0.9978305141271384,
+       "max": 0.9982984234466956
+      },
+      "subspace_overlap": {
+       "mean": 0.9770416891405542,
+       "min": 0.9746134876308463,
+       "max": 0.9799663821439982
+      },
+      "min_angle_deg": {
+       "mean": 3.4869116976389987,
+       "min": 3.342912259085876,
+       "max": 3.7748056032073127
+      },
+      "median_angle_deg": {
+       "mean": 7.474462847878581,
+       "min": 7.421317146639301,
+       "max": 7.571982089482842
+      }
+     },
+     "random_floor": {
+      "mean_cos_principal_angle": {
+       "mean": 0.03848308996618312,
+       "min": 0.03205431052515016,
+       "max": 0.04264194289983421
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.03507237695421774,
+       "min": 0.029092297066556576,
+       "max": 0.03859540031247645
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.07930906096254137,
+       "min": 0.07166068913631585,
+       "max": 0.08502841276229163
+      },
+      "subspace_overlap": {
+       "mean": 0.0021138079550592054,
+       "min": 0.0015616088646464902,
+       "max": 0.0025037653084534037
+      },
+      "min_angle_deg": {
+       "mean": 85.45107659409967,
+       "min": 85.12234128407363,
+       "max": 85.89062270829315
+      },
+      "median_angle_deg": {
+       "mean": 87.99004943530458,
+       "min": 87.78808214950007,
+       "max": 88.33286945221266
+      }
+     }
+    },
+    "16": {
+     "observed": {
+      "mean_cos_principal_angle": 0.9589721299101748,
+      "median_cos_principal_angle": 0.9877797976938947,
+      "max_cos_principal_angle": 0.9979577545471979,
+      "subspace_overlap": 0.9266854595708698,
+      "min_angle_deg": 3.6623979996995497,
+      "median_angle_deg": 8.95764870105383
+     },
+     "gaussian_sigma_e": {
+      "mean_cos_principal_angle": {
+       "mean": 0.9469241241824514,
+       "min": 0.9357447035286518,
+       "max": 0.9631648221406912
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.9899733299518797,
+       "min": 0.9895675132699375,
+       "max": 0.9904313655215804
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.9984920011696738,
+       "min": 0.9984710184271497,
+       "max": 0.9985212318925917
+      },
+      "subspace_overlap": {
+       "mean": 0.9224946933699593,
+       "min": 0.9145568021662835,
+       "max": 0.9353083635885838
+      },
+      "min_angle_deg": {
+       "mean": 3.1468920435314907,
+       "min": 3.116313929678646,
+       "max": 3.168794730038855
+      },
+      "median_angle_deg": {
+       "mean": 8.115964544815693,
+       "min": 7.927567594458434,
+       "max": 8.279126156607793
+      }
+     },
+     "random_floor": {
+      "mean_cos_principal_angle": {
+       "mean": 0.05596070604672948,
+       "min": 0.053583152527496306,
+       "max": 0.057944604128040894
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.051310179126482836,
+       "min": 0.04793257924186045,
+       "max": 0.05542061911158849
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.12223408696719514,
+       "min": 0.11336556182957461,
+       "max": 0.13006272367393593
+      },
+      "subspace_overlap": {
+       "mean": 0.004508871391027254,
+       "min": 0.00412021380450207,
+       "max": 0.004843153795333708
+      },
+      "min_angle_deg": {
+       "mean": 82.97877667914518,
+       "min": 82.52678310871994,
+       "max": 83.49063787352527
+      },
+      "median_angle_deg": {
+       "mean": 87.05880887528501,
+       "min": 86.82294867555345,
+       "max": 87.25260539806841
+      }
+     }
+    },
+    "64": {
+     "observed": {
+      "mean_cos_principal_angle": 0.9332635008580892,
+      "median_cos_principal_angle": 0.9725889705465178,
+      "max_cos_principal_angle": 0.9988114970081486,
+      "subspace_overlap": 0.888259917280021,
+      "min_angle_deg": 2.793706592524609,
+      "median_angle_deg": 13.443382146013073
+     },
+     "gaussian_sigma_e": {
+      "mean_cos_principal_angle": {
+       "mean": 0.9414618333040101,
+       "min": 0.9402513344238759,
+       "max": 0.9433320966746719
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.9772308504567423,
+       "min": 0.9769042530700296,
+       "max": 0.9775869360344509
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.9989869675021512,
+       "min": 0.998966662374437,
+       "max": 0.999020071341427
+      },
+      "subspace_overlap": {
+       "mean": 0.9018436409645445,
+       "min": 0.9013588544935318,
+       "max": 0.9023891668784452
+      },
+      "min_angle_deg": {
+       "mean": 2.579029344551822,
+       "min": 2.536707137855938,
+       "max": 2.604930595137852
+      },
+      "median_angle_deg": {
+       "mean": 12.248009988581236,
+       "min": 12.152331806485034,
+       "max": 12.333746677443331
+      }
+     },
+     "random_floor": {
+      "mean_cos_principal_angle": {
+       "mean": 0.11415208818100092,
+       "min": 0.1129540677338591,
+       "max": 0.11588189358310542
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.10845317121207514,
+       "min": 0.10638346813285744,
+       "max": 0.11158769550138659
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.2584824396000966,
+       "min": 0.25278869543142507,
+       "max": 0.2679118352528282
+      },
+      "subspace_overlap": {
+       "mean": 0.018007825526438485,
+       "min": 0.01770383506818784,
+       "max": 0.01852978809191498
+      },
+      "min_angle_deg": {
+       "mean": 75.01959244798888,
+       "min": 74.4599534121829,
+       "max": 75.35740561224054
+      },
+      "median_angle_deg": {
+       "mean": 83.77382620268031,
+       "min": 83.59314688884982,
+       "max": 83.89311887698672
+      }
+     }
+    },
+    "256": {
+     "observed": {
+      "mean_cos_principal_angle": 0.8424822251719233,
+      "median_cos_principal_angle": 0.9315083721550075,
+      "max_cos_principal_angle": 0.9994188721173152,
+      "subspace_overlap": 0.7547638417592,
+      "min_angle_deg": 1.9534150120397058,
+      "median_angle_deg": 21.328810153302403
+     },
+     "gaussian_sigma_e": {
+      "mean_cos_principal_angle": {
+       "mean": 0.8711562022629824,
+       "min": 0.8705118529204405,
+       "max": 0.872046240380399
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.9477618200095773,
+       "min": 0.9474095721609294,
+       "max": 0.948201014389113
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.9995238254325742,
+       "min": 0.9995051855089314,
+       "max": 0.9995514562327686
+      },
+      "subspace_overlap": {
+       "mean": 0.795641155924733,
+       "min": 0.7949637611272498,
+       "max": 0.7965490287037942
+      },
+      "min_angle_deg": {
+       "mean": 1.767834534394814,
+       "min": 1.7161540835769635,
+       "max": 1.8025061066063823
+      },
+      "median_angle_deg": {
+       "mean": 18.600941266774115,
+       "min": 18.522095935824094,
+       "max": 18.663988325595305
+      }
+     },
+     "random_floor": {
+      "mean_cos_principal_angle": {
+       "mean": 0.22816358941827394,
+       "min": 0.22751472246055815,
+       "max": 0.22871396783386358
+      },
+      "median_cos_principal_angle": {
+       "mean": 0.22068825237309345,
+       "min": 0.21905963410723006,
+       "max": 0.22172100839002934
+      },
+      "max_cos_principal_angle": {
+       "mean": 0.5073161140954762,
+       "min": 0.5002913421795235,
+       "max": 0.5125453311589178
+      },
+      "subspace_overlap": {
+       "mean": 0.07130965081760175,
+       "min": 0.07081156526566329,
+       "max": 0.07168100985857774
+      },
+      "min_angle_deg": {
+       "mean": 59.514174777625925,
+       "min": 59.16647780560755,
+       "max": 59.980723083951716
+      },
+      "median_angle_deg": {
+       "mean": 77.25052396269788,
+       "min": 77.18985685516415,
+       "max": 77.34618174197028
+      }
+     }
+    }
+   },
+   "per_context_energy_in_pooled_topk": {
+    "8": {
+     "mean": 0.23477681840578787,
+     "median": 0.21196493273156883,
+     "p10": 0.0916496846478288,
+     "p90": 0.4158016534003238,
+     "iqr": 0.16782695186633792,
+     "uniform_expectation": 0.002232142857142857
+    },
+    "16": {
+     "mean": 0.3258524687801229,
+     "median": 0.3080135084011848,
+     "p10": 0.16864710004480593,
+     "p90": 0.5118116059433515,
+     "iqr": 0.18668898415395807,
+     "uniform_expectation": 0.004464285714285714
+    },
+    "64": {
+     "mean": 0.5325569726053515,
+     "median": 0.5273247339548851,
+     "p10": 0.362963383639044,
+     "p90": 0.7125167581969845,
+     "iqr": 0.1853239957804078,
+     "uniform_expectation": 0.017857142857142856
+    },
+    "256": {
+     "mean": 0.7378399857510465,
+     "median": 0.7418974820096522,
+     "p10": 0.6084115747565189,
+     "p90": 0.8612436506756396,
+     "iqr": 0.13339174119718722,
+     "uniform_expectation": 0.07142857142857142
+    }
+   }
+  }
+ }
+}

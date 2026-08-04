@@ -1,0 +1,1418 @@
+{
+  "commit": "b26919e4a6",
+  "created": "2026-08-03T17:20:09Z",
+  "figsize": [
+    11.4,
+    6.8
+  ],
+  "points": [
+    {
+      "activity decile (per-answer firing-frequency range)": 1.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.1751282675437307,
+      "series": "mean activation over all answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 2.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.010043710192997114,
+      "series": "mean activation over all answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 3.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.021487584576547543,
+      "series": "mean activation over all answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 4.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.0008936783700019656,
+      "series": "mean activation over all answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 5.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.031526355274477835,
+      "series": "mean activation over all answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 6.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.06033111140457234,
+      "series": "mean activation over all answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 7.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.13070029480208584,
+      "series": "mean activation over all answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 8.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.2202900464386198,
+      "series": "mean activation over all answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 9.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.3327461850347648,
+      "series": "mean activation over all answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 10.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.5806055720042768,
+      "series": "mean activation over all answers",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 1.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.1761921226260204,
+      "series": "firing frequency (per token)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 2.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.008443199776169707,
+      "series": "firing frequency (per token)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 3.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.006937097271678459,
+      "series": "firing frequency (per token)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 4.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.003407456680312281,
+      "series": "firing frequency (per token)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 5.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.016073358388836785,
+      "series": "firing frequency (per token)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 6.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.08472162209348316,
+      "series": "firing frequency (per token)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 7.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.2014368453648358,
+      "series": "firing frequency (per token)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 8.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.30854871926510125,
+      "series": "firing frequency (per token)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 9.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.3807717295129965,
+      "series": "firing frequency (per token)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 10.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.5514510670805506,
+      "series": "firing frequency (per token)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 1.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.12643272151625853,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 2.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.10355996431311479,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 3.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.12202363178272624,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 4.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.1104395145880218,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 5.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.061505577771141635,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 6.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.048987785835683015,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 7.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.17174004701058138,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 8.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.27873711247898497,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 9.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.37562873611882713,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 10.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.497907715952831,
+      "series": "within-answer consistency",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 1.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.12595786592412872,
+      "series": "mean activation when active",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 2.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.01818998227832585,
+      "series": "mean activation when active",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 3.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.005042176460541673,
+      "series": "mean activation when active",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 4.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.0220359429878095,
+      "series": "mean activation when active",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 5.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.01356944595514373,
+      "series": "mean activation when active",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 6.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.039315325978550114,
+      "series": "mean activation when active",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 7.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.10639641131840115,
+      "series": "mean activation when active",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 8.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.19187166920787307,
+      "series": "mean activation when active",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 9.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.30308272733793296,
+      "series": "mean activation when active",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 10.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.49742320332721757,
+      "series": "mean activation when active",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 1.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.1744732090623087,
+      "series": "activation variance across answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 2.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.05191804189419584,
+      "series": "activation variance across answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 3.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.08225462567520055,
+      "series": "activation variance across answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 4.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.12848977284317917,
+      "series": "activation variance across answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 5.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.11100885683734572,
+      "series": "activation variance across answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 6.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.06563828298068745,
+      "series": "activation variance across answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 7.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.013238759737143191,
+      "series": "activation variance across answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 8.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.10065884749606446,
+      "series": "activation variance across answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 9.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.20875966356714099,
+      "series": "activation variance across answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 10.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.44635687540166175,
+      "series": "activation variance across answers",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 1.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.1397151415054153,
+      "series": "firing frequency (per answer)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 2.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.07913328694621893,
+      "series": "firing frequency (per answer)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 3.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.0951024833025911,
+      "series": "firing frequency (per answer)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 4.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.08739771407287526,
+      "series": "firing frequency (per answer)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 5.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.08144738651790133,
+      "series": "firing frequency (per answer)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 6.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.09301210352494922,
+      "series": "firing frequency (per answer)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 7.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.10799230062893489,
+      "series": "firing frequency (per answer)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 8.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.1311042179247753,
+      "series": "firing frequency (per answer)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 9.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.13589734618901542,
+      "series": "firing frequency (per answer)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 10.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.3554757211634239,
+      "series": "firing frequency (per answer)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 1.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.07523044544990669,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 2.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.045493540061772274,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 3.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.08317515444473676,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 4.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.15902238863239607,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 5.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.20644332899720907,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 6.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.2575567288581516,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 7.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.26676928250840515,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 8.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.20410820844905866,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 9.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.025828502075104537,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 10.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.2275887899558865,
+      "series": "write norm (gamma-scaled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 1.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.0890077275439554,
+      "series": "holdout answers active (count)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 2.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.07295046776577842,
+      "series": "holdout answers active (count)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 3.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.09148672056920444,
+      "series": "holdout answers active (count)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 4.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.09478031348916391,
+      "series": "holdout answers active (count)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 5.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.09210962829751321,
+      "series": "holdout answers active (count)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 6.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.10425801068685953,
+      "series": "holdout answers active (count)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 7.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.11444352836173864,
+      "series": "holdout answers active (count)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 8.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.138592686174585,
+      "series": "holdout answers active (count)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 9.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.13670177224921473,
+      "series": "holdout answers active (count)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 10.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.3540048523650445,
+      "series": "holdout answers active (count)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 1.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.05452061898244939,
+      "series": "dense variance along decoder direction",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 2.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.04312753814795824,
+      "series": "dense variance along decoder direction",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 3.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.0632154118571839,
+      "series": "dense variance along decoder direction",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 4.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.03474727194716196,
+      "series": "dense variance along decoder direction",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 5.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.018943172040537574,
+      "series": "dense variance along decoder direction",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 6.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.11777925288663658,
+      "series": "dense variance along decoder direction",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 7.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.22233789248641658,
+      "series": "dense variance along decoder direction",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 8.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.2779409749573901,
+      "series": "dense variance along decoder direction",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 9.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.3511413999370277,
+      "series": "dense variance along decoder direction",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 10.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.37640863205406705,
+      "series": "dense variance along decoder direction",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 1.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.050145576531476506,
+      "series": "decoder mass in prefix-covariance top-48 subspace (geometric)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 2.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.030854454237289875,
+      "series": "decoder mass in prefix-covariance top-48 subspace (geometric)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 3.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.007971646140371418,
+      "series": "decoder mass in prefix-covariance top-48 subspace (geometric)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 4.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.032211725969419104,
+      "series": "decoder mass in prefix-covariance top-48 subspace (geometric)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 5.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.06380440337978924,
+      "series": "decoder mass in prefix-covariance top-48 subspace (geometric)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 6.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.1133294312802107,
+      "series": "decoder mass in prefix-covariance top-48 subspace (geometric)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 7.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.16089514930464535,
+      "series": "decoder mass in prefix-covariance top-48 subspace (geometric)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 8.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.18783009173538012,
+      "series": "decoder mass in prefix-covariance top-48 subspace (geometric)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 9.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.21885619981276597,
+      "series": "decoder mass in prefix-covariance top-48 subspace (geometric)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 10.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.29339502875613477,
+      "series": "decoder mass in prefix-covariance top-48 subspace (geometric)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 1.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.0399545557631244,
+      "series": "footprint kurtosis",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 2.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.009461098568720289,
+      "series": "footprint kurtosis",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 3.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.001932825147475251,
+      "series": "footprint kurtosis",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 4.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.05640499757674827,
+      "series": "footprint kurtosis",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 5.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.12358525266073556,
+      "series": "footprint kurtosis",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 6.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.20130578693823287,
+      "series": "footprint kurtosis",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 7.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.2764406861565727,
+      "series": "footprint kurtosis",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 8.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.275897010482001,
+      "series": "footprint kurtosis",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 9.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.23979528990791357,
+      "series": "footprint kurtosis",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 10.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.05984465623993821,
+      "series": "footprint kurtosis",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 1.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.0013122394731875453,
+      "series": "decoder mass on massive-activation dims",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 2.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.025987230605639053,
+      "series": "decoder mass on massive-activation dims",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 3.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.042592183377739144,
+      "series": "decoder mass on massive-activation dims",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 4.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.08276381925320471,
+      "series": "decoder mass on massive-activation dims",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 5.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.09742831545891964,
+      "series": "decoder mass on massive-activation dims",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 6.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.056284662642623336,
+      "series": "decoder mass on massive-activation dims",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 7.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.04582614984872001,
+      "series": "decoder mass on massive-activation dims",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 8.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.054333218872577985,
+      "series": "decoder mass on massive-activation dims",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 9.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.12756537763587128,
+      "series": "decoder mass on massive-activation dims",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 10.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.26946036354214514,
+      "series": "decoder mass on massive-activation dims",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 1.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.007341406511727058,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 2.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.010013066392659711,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 3.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.015413722121170653,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 4.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.01508719452375079,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 5.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.04638754732419152,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 6.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.12338042338884199,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 7.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.1501778023119248,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 8.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.1065291000866477,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 9.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.008559381620430255,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 10.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.12033052214369071,
+      "series": "encoder-vector norm",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 1.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.025381260686033896,
+      "series": "footprint variance",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 2.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.022392201574024422,
+      "series": "footprint variance",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 3.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.01201293006681432,
+      "series": "footprint variance",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 4.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.08226086629436995,
+      "series": "footprint variance",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 5.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.12100892042633357,
+      "series": "footprint variance",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 6.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.14866237497819798,
+      "series": "footprint variance",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 7.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.16135865011125955,
+      "series": "footprint variance",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 8.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.1341235287860082,
+      "series": "footprint variance",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 9.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.035584382880627125,
+      "series": "footprint variance",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 10.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.09683481079354488,
+      "series": "footprint variance",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 1.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.0032842655888395684,
+      "series": "max cosine to another decoder column",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 2.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.007864034156264963,
+      "series": "max cosine to another decoder column",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 3.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.012939239384541626,
+      "series": "max cosine to another decoder column",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 4.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.007558384147308971,
+      "series": "max cosine to another decoder column",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 5.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.0011455458026688216,
+      "series": "max cosine to another decoder column",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 6.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.07633521654932451,
+      "series": "max cosine to another decoder column",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 7.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.13706822289742232,
+      "series": "max cosine to another decoder column",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 8.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.13382112626907336,
+      "series": "max cosine to another decoder column",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 9.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.04735638279152777,
+      "series": "max cosine to another decoder column",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 10.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.1159813718013139,
+      "series": "max cosine to another decoder column",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 1.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.027512566304254027,
+      "series": "answer-side share of firings",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 2.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.09786010645774379,
+      "series": "answer-side share of firings",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 3.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.11112674571852349,
+      "series": "answer-side share of firings",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 4.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.11634112790010412,
+      "series": "answer-side share of firings",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 5.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.14795005536854194,
+      "series": "answer-side share of firings",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 6.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.15001212359959024,
+      "series": "answer-side share of firings",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 7.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.17133556155608654,
+      "series": "answer-side share of firings",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 8.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.17577441830272145,
+      "series": "answer-side share of firings",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 9.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.16732547441738002,
+      "series": "answer-side share of firings",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 10.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.2195698825545772,
+      "series": "answer-side share of firings",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 1.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.005826694996586113,
+      "series": "encoder-decoder cosine",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 2.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.07400209189384327,
+      "series": "encoder-decoder cosine",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 3.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.13555201757067742,
+      "series": "encoder-decoder cosine",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 4.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.14264867959006838,
+      "series": "encoder-decoder cosine",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 5.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.1519270393221196,
+      "series": "encoder-decoder cosine",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 6.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.13050355823418344,
+      "series": "encoder-decoder cosine",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 7.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.10605904886689772,
+      "series": "encoder-decoder cosine",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 8.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.12161196115823969,
+      "series": "encoder-decoder cosine",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 9.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.1781063919145753,
+      "series": "encoder-decoder cosine",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 10.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.1782606638444259,
+      "series": "encoder-decoder cosine",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 1.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.008382114831665793,
+      "series": "footprint skew",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 2.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.007515861424163421,
+      "series": "footprint skew",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 3.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.001228127793488061,
+      "series": "footprint skew",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 4.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.001078464827453364,
+      "series": "footprint skew",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 5.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.01570744409348641,
+      "series": "footprint skew",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 6.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.008899673097837976,
+      "series": "footprint skew",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 7.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": 0.019122591849915178,
+      "series": "footprint skew",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 8.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.0030602938066530095,
+      "series": "footprint skew",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 9.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.05324146368000066,
+      "series": "footprint skew",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 10.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.10346400845792418,
+      "series": "footprint skew",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 1.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.014053182068093773,
+      "series": "positive-logit mass on top-10 tokens",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 2.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.006902859653478322,
+      "series": "positive-logit mass on top-10 tokens",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 3.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.017388195675998912,
+      "series": "positive-logit mass on top-10 tokens",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 4.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.015444545761473019,
+      "series": "positive-logit mass on top-10 tokens",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 5.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.05900825990532778,
+      "series": "positive-logit mass on top-10 tokens",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 6.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.06516555139204186,
+      "series": "positive-logit mass on top-10 tokens",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 7.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.085634169415797,
+      "series": "positive-logit mass on top-10 tokens",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 8.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.07967689380686988,
+      "series": "positive-logit mass on top-10 tokens",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 9.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.08385400748900153,
+      "series": "positive-logit mass on top-10 tokens",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "activity decile (per-answer firing-frequency range)": 10.0,
+      "within-decile Spearman $\\rho$ vs $R^2$": -0.07623828601113111,
+      "series": "positive-logit mass on top-10 tokens",
+      "_kind": "line",
+      "_group": 18
+    }
+  ],
+  "n_series": 19,
+  "total_points": 190,
+  "text": {
+    "suptitle": "Effect modification: the same predictor behaves differently at different activity levels",
+    "fig_texts": [
+      "114,980 SAE features, full dictionary (BatchTopK k=64, resid_post layer 19)  |  PROVISIONAL TARGET \u2014 #1738 SAE->SAE context arm. The correct target (full-width dense->SAE, task #7) does not exist yet. The two arms rank features at rho = 0.933 at panel width, so SHAPE conclusions survive the swap; LEVELS do not.   |   CI bands on the 4 most heterogeneous predictors only",
+      "FLAT => the single activity-partialled rho is a valid summary. SLOPED or SIGN-FLIPPING => effect modification; the profile replaces the single number. The RIGHTMOST point answers 'among only high-activating features, what explains predictability' \u2014 that decile is also the estimable slice (100.0% of its features have $R^2$ > 0), so measurement noise is absent there by construction."
+    ],
+    "axes": [
+      {
+        "xlabel": "activity decile (per-answer firing-frequency range)",
+        "ylabel": "within-decile Spearman $\\rho$ vs $R^2$",
+        "legend_labels": [
+          "mean activation over all answers",
+          "firing frequency (per token)",
+          "within-answer consistency",
+          "mean activation when active",
+          "activation variance across answers",
+          "firing frequency (per answer)",
+          "write norm (gamma-scaled)",
+          "holdout answers active (count)",
+          "dense variance along decoder direction",
+          "decoder mass in prefix-covariance top-48 subspace (geometric)",
+          "footprint kurtosis",
+          "decoder mass on massive-activation dims",
+          "encoder-vector norm",
+          "footprint variance",
+          "max cosine to another decoder column",
+          "answer-side share of firings",
+          "encoder-decoder cosine",
+          "footprint skew",
+          "positive-logit mass on top-10 tokens"
+        ],
+        "xticklabels": [
+          "1\n8.3e-06\n2.9e-04",
+          "2\n2.9e-04\n9.1e-04",
+          "3\n9.1e-04\n2.2e-03",
+          "4\n2.2e-03\n4.6e-03",
+          "5\n4.6e-03\n8.8e-03",
+          "6\n8.8e-03\n1.6e-02",
+          "7\n1.6e-02\n3.0e-02",
+          "8\n3.0e-02\n5.5e-02",
+          "9\n5.5e-02\n1.1e-01",
+          "10\n1.1e-01\n1.0e+00"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "mean activation over all answers",
+      "firing frequency (per token)",
+      "within-answer consistency",
+      "mean activation when active",
+      "activation variance across answers",
+      "firing frequency (per answer)",
+      "write norm (gamma-scaled)",
+      "holdout answers active (count)",
+      "dense variance along decoder direction",
+      "decoder mass in prefix-covariance top-48 subspace (geometric)",
+      "footprint kurtosis",
+      "decoder mass on massive-activation dims",
+      "encoder-vector norm",
+      "footprint variance",
+      "max cosine to another decoder column",
+      "answer-side share of firings",
+      "encoder-decoder cosine",
+      "footprint skew",
+      "positive-logit mass on top-10 tokens"
+    ]
+  }
+}

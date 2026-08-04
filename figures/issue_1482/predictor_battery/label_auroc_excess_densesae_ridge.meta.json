@@ -1,0 +1,56 @@
+{
+  "commit": "710d1b09d3",
+  "created": "2026-08-03T21:04:33Z",
+  "figsize": [
+    9.6,
+    7.1
+  ],
+  "text": {
+    "suptitle": "Label AUROCs sorted by excess over the stratified null",
+    "fig_texts": [
+      "113,262 features (label universe)  |  REAL TARGET \u2014 dense context -> SAE feature map, ridge__mean arm (#1482 single-turn corpus, 121,111 scored features; covariates same corpus \u2014 no cross-corpus mismatch)",
+      "band = 2.5..97.5 pct of the activity-decile-stratified label-shuffle null; tick = null mean (NOT 0.5 \u2014 stratification preserves the activity-label association); dot = observed. p is two-sided against the null's own centre."
+    ],
+    "axes": [
+      {
+        "xlabel": "AUROC (labeled vs rest, by $R^2$)",
+        "annotations": [
+          "excess -0.060  p=0.000  prev=0.188",
+          "excess -0.031  p=0.000  prev=0.058",
+          "excess -0.006  p=0.008  prev=0.098",
+          "excess +0.010  p=0.001  prev=0.050",
+          "excess +0.024  p=0.000  prev=0.358",
+          "excess +0.028  p=0.000  prev=0.082",
+          "excess +0.034  p=0.000  prev=0.648",
+          "excess +0.045  p=0.000  prev=0.849",
+          "excess +0.082  p=0.000  prev=0.016",
+          "excess +0.190  p=0.000  prev=0.013"
+        ],
+        "xticklabels": [
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80"
+        ],
+        "yticklabels": [
+          "content_topic",
+          "speaker_language",
+          "content_operation",
+          "content_entity",
+          "abstraction_high",
+          "speaker_register",
+          "content_syntax",
+          "interpretable",
+          "content_task_format",
+          "speaker_identity"
+        ]
+      }
+    ]
+  }
+}

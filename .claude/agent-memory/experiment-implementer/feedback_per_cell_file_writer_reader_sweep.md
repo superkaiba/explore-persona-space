@@ -22,3 +22,10 @@ misclassification). Spawn units with `start_new_session=True` and reap via
 
 **How to apply:** any multi-cell dispatcher with per-cell metadata files +
 a subprocess fan-out. (#1112 fix commit 9b912ba8b8.)
+
+## Merged sibling index rows (#1891 curation, 2026-07-30)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the ~25 KB loader truncation limit (task #1891). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [Fan-out reap = process GROUP + per-cell file contract](feedback_fanout_reap_process_group_and_per_cell_file_contract.md) — killpg a start_new_session group, never terminate() the uv child (orphan EngineCores fake a wedge); per-cell resolver files need a writer per cell CLASS + resume backfill (#1112 r7)
+- [per-cell file resolvers + group-reap fan-outs](feedback_per_cell_file_writer_reader_sweep.md) — sweep writers-vs-readers per cell class before launch; reap fan-out units by process group (#1112)

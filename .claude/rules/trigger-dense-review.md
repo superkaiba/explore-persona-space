@@ -1,5 +1,5 @@
 ---
-description: Reviewing trigger-dense / security-adjacent artifacts (guard hooks, destructive-command test fixtures, refusal/jailbreak corpora) without filter kills — findings by reference, durable verdict first, windowed reads + brief composition for such targets (first-pass #1503, revision-round #1413; findings by reference); orchestrator poll/forensics turns ingest run-failure text as structural digests (#1546); orchestrator ordinary turns on guard-surface rounds keep authored text + own reads digest-only (#1563); real-corpus datagen briefs start from the #1739 content-risk decomposition (#1748). Prevention-side sibling of CLAUDE.md § Spurious usage-policy refusals (recovery). Origin incidents #1058, #1152.
+description: Reviewing trigger-dense / security-adjacent artifacts (guard hooks, destructive-command test fixtures, refusal/jailbreak corpora) without filter kills — findings by reference, durable verdict first, windowed reads + brief composition for such targets (first-pass #1503, revision-round #1413; findings by reference); orchestrator poll/forensics turns ingest run-failure text as structural digests (#1546); orchestrator ordinary turns on guard-surface rounds keep authored text + own reads digest-only (#1563); real-corpus datagen briefs start from the #1739 content-risk decomposition (#1748); judge-run monitoring reads are digest-grain (#1871). Prevention-side sibling of CLAUDE.md § Spurious usage-policy refusals (recovery). Origin incidents #1058, #1152.
 paths:
   - ".claude/hooks/*.sh"
   - "scripts/guard_*.sh"
@@ -19,8 +19,10 @@ run-failure / forensics text on its own turn — a poll tick reporting
 stalled/dead, crash-persist artifacts, a guard hook's BLOCKED runtime
 output (§ Orchestrator poll/forensics turns, #1546), or the ORCHESTRATOR
 runs ANY ordinary turn on a round whose task or diff targets such
-artifacts (§ Orchestrator ordinary turns, #1563). Recognition heuristic
-(any one suffices):
+artifacts (§ Orchestrator ordinary turns, #1563), or ANY context —
+orchestrator or subagent — reads judge OUTPUT files while monitoring or
+spot-checking a judge run (§ Judge-run monitoring reads, #1871).
+Recognition heuristic (any one suffices):
 
 - guard / security hook scripts (`.claude/hooks/*.sh`, `scripts/guard_*.sh`)
   and their tests — a guard's job is to name the attack it blocks, so its
@@ -34,6 +36,11 @@ artifacts (§ Orchestrator ordinary turns, #1563). Recognition heuristic
   code-reviewer.md § Harmful-content corpora digest note; #866, #1073),
   incl. unscreened real-world corpora (LMSYS/WildChat-class) whose rows
   routinely carry in-corpus jailbreak/explicit text (#1073, #1739);
+- judge OUTPUT files — per-row rationale-bearing judge JSONs/JSONL, judge
+  caches, Batch-API result files: a judge rationale QUOTES the judged
+  completion, so a judge run over harmful-content / refusal / real-corpus
+  pools is trigger-dense at OUTPUT grain even when the monitoring turn
+  never touches the input pool (§ Judge-run monitoring reads, #1871);
 - steering / causal-intervention APPLICATION surfaces — steering scripts,
   intervention configs + hyperparameter blocks — and any surface whose text
   carries intervention-control phrasing (#1415 brief precedent; #1769,
@@ -302,6 +309,44 @@ tails; session replaced).
    section changes what enters the orchestrator's CONTEXT and generated
    text, never whether forensic text is persisted.
 
+## Judge-run monitoring reads (ingest-side, #1871)
+
+Fires for ANY context — orchestrator or subagent — reading judge OUTPUT
+files (per-row rationale-bearing judge JSONs/JSONL, judge caches,
+Batch-API result files) while monitoring or spot-checking a judge run —
+HEALTHY runs included (§ Orchestrator poll/forensics turns is
+failure/forensics-keyed and does not fire there).
+
+1. **Digest-grain by default, ALL judge monitoring.** Read judge outputs
+   as counts + structure — row counts, per-verdict / score-class
+   tallies, error / parse-failure / refusal counts, drop tallies — via
+   `grep -c` / `jq` aggregation or the pipeline's own summary JSON;
+   counts are what monitoring needs anyway. The content-drop vs
+   transport-loss split the judged-DV report already requires
+   (`.claude/rules/llm-judging.md` rules 9/24) is exactly this digest
+   grain.
+2. **Single-row cherry-picks by line offset / row id only when genuinely
+   needed** (a parse-failure repro, a scoring sanity check); prefer
+   structured fields (score, verdict token, `stop_reason`) over
+   rationale text; an unavoidable rationale excerpt stays a bounded
+   slice — never the full field, never multiple rows' rationales.
+3. **Hard bound on sensitive-pool runs.** When the judged pool matches
+   the recognition heuristic (harmful-content / refusal / real-corpus),
+   never wholesale-page a judge output file (`cat`, unbounded `tail`,
+   full-file Read) into ANY context — the orchestrator's especially
+   (its loss costs the session; CLAUDE.md refusal rung (f)). CLAUDE.md
+   rung (d)'s digest prescription for harmful-completion ingest is the
+   recovery-side sibling; this section is its prevention-side
+   monitoring twin.
+4. **Ownership split vs § Orchestrator ordinary turns.** On a round that
+   is ALREADY trigger-dense per that section's Step-0 predicate, this
+   section is the judge-output instantiation of its item 2 (counts-first
+   / windowed / delegated). Its OWN coverage is the genuinely uncovered
+   case — a judge-monitoring read (tick turns included) on a round whose
+   task or diff does NOT match that predicate, which is the incident's
+   shape — so the #1563 ownership line never makes this section
+   retirable.
+
 ## Orchestrator ordinary turns (authoring + own-reads, #1563)
 
 Fires for the ORCHESTRATOR itself — an /issue, /issue-v2, /campaign, or
@@ -382,6 +427,10 @@ not commits.
   adds the counts-first / no-repeat / trigger-dense-escalation discipline
   those do not cover — it tightens, never replaces, the existing
   log-read ceiling.
+- Judging methodology. Rubrics, scales, drop rules, and every other
+  judged-DV design choice stay owned by `.claude/rules/llm-judging.md`;
+  § Judge-run monitoring reads governs only what judge OUTPUT enters
+  context.
 
 ## Files of record
 
@@ -401,7 +450,10 @@ replaced, + 3 brief kills from inlined hook-BLOCKED text —
 of a guard-hook grep-pattern round — § Orchestrator ordinary turns,
 #1563), #1739 (repeated refusal + thrash spawn deaths on a real-corpus
 datagen pipeline before converging on the (a)-(d) first-pass
-decomposition — § Real-corpus datagen briefs, #1748).
+decomposition — § Real-corpus datagen briefs, #1748), #1871 (2026-07-29:
+one tick turn refusal-killed after paging raw judge reasoning text into
+context while monitoring a healthy judge run — temporal correlation
+only, content trigger not isolated — § Judge-run monitoring reads).
 Enforcing pointers:
 `.claude/agents/code-reviewer.md` § Context budget (READ FIRST);
 `.claude/agents/reconciler.md` § Rules (Rule 11);

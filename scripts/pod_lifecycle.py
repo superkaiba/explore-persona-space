@@ -741,17 +741,24 @@ def _resolve_spec(
     )
 
 
-def _bootstrap(pod_name: str, intent_label: str = "custom") -> int:
+def _bootstrap(pod_name: str, intent_label: str = "custom", issue: int | None = None) -> int:
     """Run the existing bootstrap_pod.sh against a managed pod entry.
 
     ``intent_label`` is forwarded as ``POD_INTENT`` env var so bootstrap_pod.sh
     can gate intent-specific install steps (e.g. flash-attn is installed for
     training intents but skipped for ``eval`` / ``debug`` to save ~5-10 min of
     build time on pods that don't need FlashAttention2 kernels).
+
+    ``issue`` is forwarded as ``ISSUE`` env var so bootstrap_pod.sh's
+    partial-clone + cone sparse-checkout can open the per-issue
+    ``eval_results/issue_<N>`` / ``figures/issue_<N>`` cones alongside the
+    default code cones (#2051). Absent ⇒ only the default code cones open.
     """
     print(f"\nRunning bootstrap on {pod_name} (intent={intent_label})...")
     env = os.environ.copy()
     env["POD_INTENT"] = intent_label
+    if issue is not None:
+        env["ISSUE"] = str(issue)
     return subprocess.call(
         ["bash", str(BOOTSTRAP_SCRIPT), pod_name],
         cwd=str(PROJECT_ROOT),
@@ -1929,7 +1936,23 @@ def _provision_wait_register_bootstrap(
         print(f"  python scripts/pod.py bootstrap {name}")
         return
 
-    rc = _bootstrap(name, intent_label=intent_label)
+    rc = _bootstrap(name, intent_label=intent_label, issue=args.issue)
+    if rc != 0:
+        # Retry EXACTLY ONCE (#1931): the incident class (pod-1773-regsteer) was a
+        # transient apt/network-class failure whose manual full re-run succeeded
+        # immediately — bootstrap_pod.sh's steps are re-run-safe (the documented
+        # recovery IS a full re-run). Never more than one retry: a second failure
+        # is a persistent fault that must fail loud, not be masked.
+        # Known benign edge: a first-run death between bootstrap_pod.sh's `git init`
+        # and `reset --hard FETCH_HEAD` makes the retry take the existing-repo
+        # branch — correct but slower (full-depth fetch).
+        print(
+            f"\n[bootstrap-retry] bootstrap exited rc={rc} on {name}; retrying once "
+            f"(transient apt/network-class failures recover on re-run — incident "
+            f"pod-1773-regsteer, task #1931)...",
+            file=sys.stderr,
+        )
+        rc = _bootstrap(name, intent_label=intent_label, issue=args.issue)
     if rc != 0:
         # Suffixed pods (#1334) get a --name-suffix-scoped terminate hint so the
         # discard recipe can never suggest an issue-wide destroy that would take
@@ -1943,8 +1966,19 @@ def _provision_wait_register_bootstrap(
             f"`python scripts/pod.py terminate --issue {args.issue}{suffix_hint}` to discard.",
             file=sys.stderr,
         )
+        # Machine-greppable fail-loud provision verdict (#1931): the last stderr
+        # line before exit, so a caller observing only captured output can tell
+        # a degraded pod from a ready one without reading the exit code.
+        print(f"BOOTSTRAP-FAILED pod={name} rc={rc}", file=sys.stderr)
         sys.exit(rc)
 
+    # Machine-greppable success verdict (#1931). Emitted on BOTH streams via one
+    # token literal (grep contract: the token appears exactly once in this file):
+    # stdout for callers reading captured stdout, stderr so a 2>&1-less stderr
+    # capture sees both outcomes stream-consistently with BOOTSTRAP-FAILED.
+    ok_verdict = f"BOOTSTRAP-OK pod={name}"
+    print(ok_verdict)
+    print(ok_verdict, file=sys.stderr)
     print(f"\nDone. SSH with: ssh {name}")
 
 
@@ -2715,7 +2749,12 @@ def _guard_upload_verification_before_terminate(
     the guard exists for *experiment* pods that ran, not as a universal
     block. Origin: task #444 hand-orchestrated completion bypassed the
     Step-8 upload-verifier and silently lost the training-mix datasets;
-    the verifier's checklist would have flagged the gap.
+    the verifier's checklist would have flagged the gap. Inline rounds
+    (the CLAUDE.md user-chat carve-out) satisfy this guard through the
+    same front door: verify the round's uploads, post
+    ``epm:upload-verification`` with a PASS verdict note naming every
+    verified HF prefix (via ``task.py post-marker``), then terminate —
+    ``--skip-upload-verify`` is the last resort for never-ran pods.
 
     Always proceeds in ``dry_run`` mode (the caller wants to preview, not
     block on a precondition).
@@ -2785,7 +2824,12 @@ def _guard_upload_verification_before_terminate(
         f"The Step-8 upload-verifier protects against silent artifact "
         f"loss (training-mix datasets, raw completions, eval JSONs, "
         f"merged checkpoints not yet on HF Hub). Run the verifier first "
-        f"via `/issue {issue}` Step 8, or pass --skip-upload-verify to "
+        f"via `/issue {issue}` Step 8, or — for an inline round that "
+        f"already verified THIS round's uploads — post the verification "
+        f"marker yourself (`uv run python scripts/task.py post-marker "
+        f"{issue} epm:upload-verification --note 'Verdict: PASS — "
+        f"inline-round verification; prefixes: <every HF prefix the run "
+        f"wrote>'`) and re-run terminate, or pass --skip-upload-verify to "
         f"override (logs a warning + still terminates — only safe if "
         f"you've manually confirmed every artifact landed at its "
         f"permanent URL)."

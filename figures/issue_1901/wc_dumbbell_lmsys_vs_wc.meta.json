@@ -1,0 +1,423 @@
+{
+  "commit": "011c7bef3c",
+  "created": "2026-07-31T10:39:21Z",
+  "figsize": [
+    12.0,
+    8.3
+  ],
+  "points": [
+    {
+      "acc@1 (euclid, targets-only pool)": 0.001,
+      "y": 0.0,
+      "series": "LMSYS",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.001,
+      "y": 0.0,
+      "series": "WildChat",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.254,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.215,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.532,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.527,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.805,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.8,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.841,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.825,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.85,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.844,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.838,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.818,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.001,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.001,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.503,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.509,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.079,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.065,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.088,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.09,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.72,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.689,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.065,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.048,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.501,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "acc@1 (euclid, targets-only pool)": 0.5,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "pooled R2 (clipped at -2)": -0.044533745181768225,
+      "y": 0.0,
+      "series": "LMSYS",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "pooled R2 (clipped at -2)": -0.019848276248939367,
+      "y": 0.0,
+      "series": "WildChat",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "pooled R2 (clipped at -2)": -2.0,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "pooled R2 (clipped at -2)": -2.0,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "pooled R2 (clipped at -2)": -0.9195990073009372,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "pooled R2 (clipped at -2)": -0.8760505453472784,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "pooled R2 (clipped at -2)": 0.754170841830715,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "pooled R2 (clipped at -2)": 0.7421080790627124,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "pooled R2 (clipped at -2)": 0.8103576099860699,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "pooled R2 (clipped at -2)": 0.7944393651341211,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "pooled R2 (clipped at -2)": 0.813419461228615,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "pooled R2 (clipped at -2)": 0.7946819619407253,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "pooled R2 (clipped at -2)": 0.8066491443895623,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "pooled R2 (clipped at -2)": 0.7917062713635417,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "pooled R2 (clipped at -2)": -0.0013193173667100933,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "pooled R2 (clipped at -2)": -0.027586465607774224,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "pooled R2 (clipped at -2)": -0.8646901412953396,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "pooled R2 (clipped at -2)": -0.8965188208408144,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "pooled R2 (clipped at -2)": -0.6938729618669541,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "pooled R2 (clipped at -2)": -0.8378438225654898,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "pooled R2 (clipped at -2)": 0.09612982103642276,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "pooled R2 (clipped at -2)": 0.09984134884440632,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "pooled R2 (clipped at -2)": 0.7054149303865582,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "pooled R2 (clipped at -2)": 0.6391288929530597,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "pooled R2 (clipped at -2)": 0.38444638872773484,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "pooled R2 (clipped at -2)": 0.2848993857167389,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "pooled R2 (clipped at -2)": -0.8900205280267146,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "pooled R2 (clipped at -2)": -0.9342675465694519,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 55
+    }
+  ],
+  "n_series": 56,
+  "total_points": 56,
+  "text": {
+    "suptitle": "Arm transfer LMSYS -> WildChat (tau acc@1=1.00, tau R2=0.93)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "acc@1 (euclid, targets-only pool)",
+        "legend_labels": [
+          "LMSYS",
+          "WildChat"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "Constant train-mean (963k)",
+          "Identity copy",
+          "Identity + learned bias (963k)",
+          "Linear map (ridge, 963k)",
+          "Small neural map (w8192)",
+          "Wide neural map (w32768)",
+          "Kernel map (Nystrom RBF)",
+          "Constant train-mean (3600)",
+          "Identity + learned bias (3600)",
+          "Scaled identity (3600)",
+          "Per-dim rescale (3600)",
+          "Linear map (ridge, 3600)",
+          "Linear map (ridge, n=50, fixed lambda)",
+          "Identity + learned bias (n=50)"
+        ]
+      },
+      {
+        "xlabel": "pooled R2 (clipped at -2)",
+        "xticklabels": [
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ],
+        "yticklabels": [
+          "Constant train-mean (963k)",
+          "Identity copy",
+          "Identity + learned bias (963k)",
+          "Linear map (ridge, 963k)",
+          "Small neural map (w8192)",
+          "Wide neural map (w32768)",
+          "Kernel map (Nystrom RBF)",
+          "Constant train-mean (3600)",
+          "Identity + learned bias (3600)",
+          "Scaled identity (3600)",
+          "Per-dim rescale (3600)",
+          "Linear map (ridge, 3600)",
+          "Linear map (ridge, n=50, fixed lambda)",
+          "Identity + learned bias (n=50)"
+        ]
+      }
+    ],
+    "series": [
+      "LMSYS",
+      "WildChat"
+    ]
+  }
+}

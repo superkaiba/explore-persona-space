@@ -88,3 +88,11 @@ per call and the hang dissolved.
 - Killing the wrapper tree doesn't reap the orphaned `VLLM::EngineCore`;
   see `.claude/agent-memory/experimenter/feedback_vllm_zombie_gpu_pkill_reaper.md`
   for the recovery recipe.
+
+## Merged sibling index rows (#1891 curation, 2026-07-30)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the ~25 KB loader truncation limit (task #1891). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [vLLM large-batch deadlock — chunk `llm.generate` calls](feedback_vllm_large_batch_deadlock_chunk_it.md) — a single `llm.generate(N_large_prompts, ...)` can hang the vLLM v1 EngineCore CUDA worker on some pod driver/GPU combos (0% GPU util, zombie PID, no traceback); the same prompts split into sequential 500-prompt chunks (env-overridable via `EPM_VLLM_GREEDY_CHUNK_SIZE`) generate fine. Always chunk + emit per-chunk INFO logs so the poller sees liveness. #664 r9.
+- [vLLM use_tqdm=False on every generate](feedback_vllm_use_tqdm_zerodivision.md) — vLLM 0.11.0 LLM.generate() crashes ZeroDivisionError in tqdm when a batch finishes faster than elapsed-time tick; pass use_tqdm=False everywhere. #613.
+- [vLLM bank length-validate at load](feedback_vllm_bank_length_validate_at_load.md) — filter formatted-prompt overlength rows (#952)

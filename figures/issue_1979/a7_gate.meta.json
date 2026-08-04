@@ -1,0 +1,306 @@
+{
+  "commit": "0a6f324d02",
+  "created": "2026-08-02T00:35:23Z",
+  "figsize": [
+    9.0,
+    9.72
+  ],
+  "points": [
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.06075159126509688,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": -0.07472685850473577,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.048841397878737966,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.35279145409755075,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.47650378540102073,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.425693363615667,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": -0.005090647173201793,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.07251770973145952,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": -0.05167487130533142,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.5299075557463075,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.5762996799851087,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.5418657741059985,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": -0.07304598443811254,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.39975987801633717,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.21390323122113955,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": -0.16827950655565177,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.41887381740250995,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.2180333789276995,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": -0.17154520474223406,
+      "y": 18.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.17548325255546562,
+      "y": 19.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": -0.038900228398994846,
+      "y": 20.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.47770440973432304,
+      "y": 21.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.531732504732927,
+      "y": 22.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.4825549320408644,
+      "y": 23.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.025645335759337338,
+      "y": 24.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.020794813452796008,
+      "y": 25.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.17481090292881632,
+      "y": 26.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.29881138407227886,
+      "y": 27.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.017865290079538375,
+      "y": 28.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": -0.017337015372885355,
+      "y": 29.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": -0.15156681583608358,
+      "y": 30.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.10858446470386092,
+      "y": 31.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.03942850310564786,
+      "y": 32.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.4827470319341928,
+      "y": 33.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.4418297546552501,
+      "y": 34.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.46766719030791576,
+      "y": 35.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.14,
+      "y": 0.0,
+      "series": "per-query anchor 0.14",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Spearman rho(predicted gate, realized matched-text write coefficient)": 0.14,
+      "y": 1.0,
+      "series": "per-query anchor 0.14",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 38,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "whitened-gate prediction vs realized per-prefix write, per (arm, layer)",
+        "xlabel": "Spearman rho(predicted gate, realized matched-text write coefficient)",
+        "legend_labels": [
+          "registered band [0.3, 0.7]",
+          "per-query anchor 0.14"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ],
+        "yticklabels": [
+          "casual bare-context contrastive \u00b7 layer 14",
+          "casual bare-context contrastive \u00b7 layer 19",
+          "casual bare-context contrastive \u00b7 layer 25",
+          "casual persona contrastive \u00b7 layer 14",
+          "casual persona contrastive \u00b7 layer 19",
+          "casual persona contrastive \u00b7 layer 25",
+          "casual persona full fine-tune \u00b7 layer 14",
+          "casual persona full fine-tune \u00b7 layer 19",
+          "casual persona full fine-tune \u00b7 layer 25",
+          "casual persona positive-only \u00b7 layer 14",
+          "casual persona positive-only \u00b7 layer 19",
+          "casual persona positive-only \u00b7 layer 25",
+          "impolite persona contrastive (seed 137) \u00b7 layer 14",
+          "impolite persona contrastive (seed 137) \u00b7 layer 19",
+          "impolite persona contrastive (seed 137) \u00b7 layer 25",
+          "impolite persona contrastive (seed 42) \u00b7 layer 14",
+          "impolite persona contrastive (seed 42) \u00b7 layer 19",
+          "impolite persona contrastive (seed 42) \u00b7 layer 25",
+          "impolite persona full fine-tune \u00b7 layer 14",
+          "impolite persona full fine-tune \u00b7 layer 19",
+          "impolite persona full fine-tune \u00b7 layer 25",
+          "impolite persona positive-only \u00b7 layer 14",
+          "impolite persona positive-only \u00b7 layer 19",
+          "impolite persona positive-only \u00b7 layer 25",
+          "sycophancy bare-context contrastive \u00b7 layer 14",
+          "sycophancy bare-context contrastive \u00b7 layer 19",
+          "sycophancy bare-context contrastive \u00b7 layer 25",
+          "sycophancy conversation contrastive \u00b7 layer 14",
+          "sycophancy conversation contrastive \u00b7 layer 19",
+          "sycophancy conversation contrastive \u00b7 layer 25",
+          "sycophancy persona full fine-tune \u00b7 layer 14",
+          "sycophancy persona full fine-tune \u00b7 layer 19",
+          "sycophancy persona full fine-tune \u00b7 layer 25",
+          "sycophancy persona positive-only \u00b7 layer 14",
+          "sycophancy persona positive-only \u00b7 layer 19",
+          "sycophancy persona positive-only \u00b7 layer 25"
+        ]
+      }
+    ],
+    "series": [
+      "per-query anchor 0.14"
+    ]
+  }
+}

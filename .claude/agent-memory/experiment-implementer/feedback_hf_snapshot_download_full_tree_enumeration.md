@@ -22,3 +22,10 @@ stays under the request quota; 9 concurrent PROCESSES tripped it in #833 round
 but is unavailable while the namespace sits at its public-storage quota (LFS
 uploads 403 — #552/#541 class); small JSON/text uploads still ride the non-LFS
 path. Working recipe: `scripts/issue833_gcp_phase_d.sh` (commit 22388e4b3d).
+
+## Merged sibling index rows (#1891 curation, 2026-07-30)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the ~25 KB loader truncation limit (task #1891). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [SUPERSEDED by hf-snapshot-download-full-tree-enumeration — see #833] [snapshot_download siblings truncation](feedback_snapshot_download_siblings_truncation.md) — allow_patterns silently fetches 0 files past ~8k siblings; use list_repo_files + per-file hf_hub_download. #375/#399.
+- [snapshot_download full-tree enumeration](feedback_hf_snapshot_download_full_tree_enumeration.md) — snapshot_download walks the WHOLE ~1M-file data repo before allow_patterns (40+ min, 0 files, #833 r7a); list_repo_files also times out now — use SCOPED list_repo_tree(path_in_repo=...) + ≤6-thread hf_hub_download.

@@ -906,6 +906,38 @@ reap: the *reconcile* pass cannot see this class (it is already unmapped by
 the time reconcile runs), so the idle-unmapped short window owns it (#720;
 #795 verified — no reconcile-pass change).
 
+**#1971 TTY-attached report lane (ESCALATE-ONLY).** A TTY-attached unmapped
+EPS session is deliberately exempt from every stop/alert arm above
+(`decide_idle_unmapped`'s pinned `has_tty -> ("clear", 0)` — a TTY may be a
+terminal Thomas is sitting at; that contract is untouched), but multi-day
+accumulations of such wrappers previously had ZERO observability (2026-07-31
+incident: ~17 of 26 sessions were TTY-attached unmapped wrappers 72–95 h old,
+invisible to every reaper AND every report until Thomas asked). The lane
+REPORTS — and is guaranteed never to stop, unregister, or otherwise mutate a
+session: a TTY-attached unmapped EPS session whose transcript has been idle
+≥ `EPM_TTY_UNMAPPED_REPORT_HOURS` (default 48 h) is accumulated per pass and
+flushed as ONE deduped fail-soft Telegram push per episode — dedup keyed on
+the reported session-id SET (state singleton
+`~/.eps-autonomous/tty-unmapped-report-state.json`, written ONLY on push as
+the union `prev ∪ cur` so a one-tick resolver flap never fires a spurious
+"growth" re-push; an empty candidate set ends the episode and clears the
+state), re-pushed on set growth or a 168 h TTL
+(`EPM_TTY_UNMAPPED_REPORT_REALERT_HOURS`) — plus one sidecar row per reported
+session (sentinel `[autonomous_session_watch:tty-unmapped-report]`, the
+pass's existing `~/.eps-autonomous/idle-unmapped-events.jsonl` stream,
+written on push ticks) carrying sid / wrapper pid / cwd / wrapper age / idle
+age and a safe-to-kill VERDICT from the zombie-wrapper work-descendant probe
+(`_has_running_work_descendant`, /proc children map computed once per pass;
+a probe failure reads "uncertain", never "safe"). Dry-run writes no state,
+appends no sidecar rows, and pushes nothing. Kill switch:
+`EPM_DISABLE_TTY_UNMAPPED_REPORT=1`. **Residual invisible classes
+(deliberately OUT of scope):** (a) non-EPS-cwd TTY sessions — EPS-ness
+cannot be established, so they never enter the candidate set (the zombie
+pass's strict 7-day non-EPS lane is the only reaper that sees them); and
+(b) TTY sessions whose transcript cannot be resolved (a missing idleness
+signal fails toward silence — no report is fabricated from an absent
+signal).
+
 **Stale-registration pass (#845 d).** The fourth registration hygiene arm —
 UNREGISTERS a LIVE-but-abandoned session registration (`issue-<N>.json` OR
 `manual-issue-<N>.json`) whose resolved Claude transcript has been idle ≥12h

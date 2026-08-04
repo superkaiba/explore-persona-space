@@ -32,3 +32,9 @@ legacy alias, #1195), and `HF_XET_HIGH_PERFORMANCE=0` de-tunes but
 does not disable xet. Canonical entry: `.claude/rules/gotchas.md`
 (hf-xet DOWNLOAD wedge); sibling of the UPLOAD-side wedge ladder in
 `.claude/rules/upload-policy.md` (#931).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [hf-xet download wedge — kill + replay with HF_HUB_DISABLE_XET=1](feedback_hf_xet_download_wedge_kill_replay.md) — du frozen + ss empty + py-spy xet_get frame = native xet hang; retry wrappers cannot fire; HF_HUB_DISABLE_XET=1 inline on replay (HF_XET_DISABLE is a no-op alias) (#1345)

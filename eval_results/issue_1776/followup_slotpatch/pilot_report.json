@@ -1,0 +1,38 @@
+{
+  "round": "patch",
+  "parity": {
+    "n_edits": 1,
+    "max_abs_dev_at_slot": 0.0,
+    "max_abs_dev_other_positions": 0.0,
+    "tolerance": 0.0001,
+    "per_row_deltas": true,
+    "replace": true,
+    "pass": true
+  },
+  "gen_batch": 16,
+  "k_samples": 5,
+  "max_new_tokens": 1024,
+  "wall_s_one_batch": 5.141400575637817,
+  "per_sample_s": 0.06426750719547272,
+  "n_samples_total": 1330,
+  "projected_gpu_h_serial": 0.02374327349166076,
+  "projected_wall_h_at_ngpu": 0.01187163674583038,
+  "budget_gpu_h": 2.6,
+  "ratio": 0.009132028266023369,
+  "verdict": "OK",
+  "null_block": {
+    "n_draws": 200,
+    "wall_s": 0.02005910873413086,
+    "n_redraws": 7,
+    "mean_mrr": 0.0001278265138130292
+  },
+  "repro": {
+    "issue": 1776,
+    "git_commit": "cf2b99ff267df4072d3ab83368ae03538b128135",
+    "jlens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+    "timestamp_utc": "2026-07-31T03:30:42Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "python_version": "3.11.15"
+  }
+}

@@ -1591,9 +1591,21 @@ def render_startup_script(
             'if [ "$_EPS_UNPUSHED" != "0" ]; then',
             '  echo "[push-verify] ${_EPS_UNPUSHED} unpushed commit(s) on'
             ' ${_EPS_PUSH_BRANCH} — retrying push (#1205)"',
-            '  git -C "$WORKLOAD_ROOT" push origin "HEAD:${_EPS_PUSH_BRANCH}"'
-            ' || { sleep 20; git -C "$WORKLOAD_ROOT" push origin "HEAD:${_EPS_PUSH_BRANCH}"; }'
-            " || true",
+            '  git -C "$WORKLOAD_ROOT" push origin "HEAD:${_EPS_PUSH_BRANCH}" || {',
+            '    echo "[push-verify] push rejected: fetch + rebase onto'
+            ' origin/${_EPS_PUSH_BRANCH} before retry (#1880)"',
+            '    git -C "$WORKLOAD_ROOT" fetch origin "${_EPS_PUSH_BRANCH}" || true',
+            "    # Inline committer identity so a missing repo-level identity can never",
+            "    # kill the rebase at the first pick. A DIRTY tracked file makes the",
+            "    # rebase refuse to start -> the abort fires -> the retry push fails",
+            "    # non-fast-forward -> the existing bundle + exit 86 path below takes",
+            "    # over (fail-loud preserved; #1880).",
+            '    git -C "$WORKLOAD_ROOT" -c user.email=eps-workload@localhost'
+            ' -c user.name=eps-workload rebase "origin/${_EPS_PUSH_BRANCH}"'
+            ' || git -C "$WORKLOAD_ROOT" rebase --abort || true',
+            "    sleep 20",
+            '    git -C "$WORKLOAD_ROOT" push origin "HEAD:${_EPS_PUSH_BRANCH}"',
+            "  } || true",
             '  _EPS_UNPUSHED="$(git -C "$WORKLOAD_ROOT" rev-list --count'
             ' "origin/${_EPS_PUSH_BRANCH}..HEAD")"',
             '  if [ "$_EPS_UNPUSHED" != "0" ]; then',
@@ -1936,11 +1948,14 @@ def render_startup_script(
         "# failed upload's response, capped at EPS_PERSIST_RETRY_MAX_BACKOFF_S",
         "# (default 60s). Budget arithmetic vs the bash `timeout 300` (#854):",
         "# worst-case AGGREGATE sleep across ALL retrying units in one persist —",
-        "# 1 first bundle + every per-dir batch retry (typically ~3 partial dirs)",
-        "# — is (1 + n_dirs) x 60s ~= 240s of the 300s budget under a sustained",
-        "# storm; the poweroff bound then fires mid-persist BY DESIGN (the",
-        "# traceback-first ordering already landed the highest-value artifact;",
-        "# recovery is the issue<N>_partial/ regen path). A Retry-After above the",
+        "# 1 first bundle + every per-dir batch retry (typically ~3 named partial",
+        "# dirs; ~5+ once the #1890 analysis-tensors trees match at either root)",
+        "# — is (1 + n_dirs) x 60s ~= 240-360s+, meeting or exceeding the 300s",
+        "# budget under a sustained storm; the poweroff bound then fires",
+        "# mid-persist BY DESIGN (the traceback-first ordering already landed the",
+        "# highest-value artifacts — crash report, logs, eval/data dirs all",
+        "# precede the tensor trees; recovery is the issue<N>_partial/ regen",
+        "# path). A Retry-After above the",
         "# cap implies the storm outlasts the persist window anyway. float(ra)",
         "# deliberately ignores an HTTP-date Retry-After (ValueError -> fail-open",
         "# to the env default) — the persist must never crash on its own",
@@ -2271,6 +2286,34 @@ def render_startup_script(
         '    (root / "data" / f"issue{issue}", f"data_issue{issue}"),',
         "):",
         "    _up_dir(local, name)",
+        "# #1890: analysis-tensors staging trees (the Upload Policy #521 class) at BOTH",
+        "# live staging roots — the workload-root issue-scoped relative convention",
+        "# (analysis_tensors/issue_<N>/..., the #1739 shape; dispatch cwd is",
+        "# $WORKLOAD_ROOT) AND the GCE scratch-root flat convention",
+        "# (/workspace/analysis_tensors*, the resolve_base_dir(None) shape used by",
+        "# issue_823/952/1072; env-overridable following the #1605",
+        "# EPS_PERSIST_WORKSPACE_LOGS_DIR isolation precedent). The glob covers",
+        "# sibling dir names (analysis_tensors_lowdim, run_1072_lowdim.py). LAST in",
+        "# the dir sweep BY DESIGN: tensors are the largest class (412 MB in the",
+        "# #1739 incident), and the #854 traceback-first ordering must land the",
+        "# crash report + logs + eval/data dirs first — a budget timeout",
+        "# mid-tensor-upload is accepted. NOTE: IGNORE's store/** + **/store/**",
+        "# deliberately prune any subdir literally named store/ under these trees",
+        "# (the issue958 analysis_tensors/store/long shape) — store/ is the",
+        "# mirrored-on-HF durable class the workload uploads itself; crash-persist",
+        "# never re-uploads it.",
+        'ws_root = Path(os.environ.get("EPS_PERSIST_WS_TENSORS_ROOT", "/workspace"))',
+        "n_at = 0",
+        'for at_root, at_sfx in ((root, ""), (ws_root, "_ws")):',
+        "    if at_sfx and at_root == root:",
+        '        _say("[crash-persist] SKIP analysis_tensors ws pass: root == ws_root")',
+        "        continue",
+        '    for at_dir in sorted(at_root.glob("analysis_tensors*")):',
+        "        if at_dir.is_dir():",
+        "            n_at += 1",
+        '            _up_dir(at_dir, f"{at_dir.name}{at_sfx}")',
+        "if n_at == 0:",
+        '    _say(f"[crash-persist] SKIP analysis_tensors*: none at {root} or {ws_root}")',
         "# per-crash timestamped log copy — LAST among the artifacts (see the note above),",
         "# staged into the FINAL bundle (#1151: one upload_folder commit, no retry).",
         'final_stage = Path(os.environ.get("EPS_PERSIST_FINAL_STAGE_DIR", "/tmp/eps-crash-final"))',
@@ -6468,6 +6511,15 @@ class GcpBackend(ComputeBackend):
           answered) but a matched sentinel set produced 0 processed markers
           (empty / unparseable body or a transient marker-post failure). NOT a
           reachability problem — the wedge gate must NEVER fire on this class.
+        * ``"control_plane"`` (#1837) — the drain SSH returned non-zero with
+          the gcloud CONTROL-PLANE signature (case-insensitive substring
+          ``could not fetch resource``): the API failed to fetch the instance
+          resource BEFORE any SSH probe ran, so it carries ZERO reachability
+          signal about the guest. Like ``"sentinel_processing"`` it leaves
+          ``PollResult.reachability_alarm`` False (the mapping keys on
+          ``== "transport"``) — the wedge gate must NEVER fire on this class
+          (incident #1739). Unmatched rc != 0 stderr keeps ``"transport"``;
+          the TimeoutExpired branch keeps ``"transport"`` unconditionally.
         * ``""`` — no alarm (clean drain), OR the pre-SSH config skip
           (``issue<=0`` — nothing was probed, so it carries no reachability
           signal).
@@ -6565,14 +6617,27 @@ class GcpBackend(ComputeBackend):
             logger.error("GCP poll: %s", alarm)
             return 0, None, alarm, "", None, "transport"
         if res.returncode != 0:
+            stderr_txt = (res.stderr or "").strip()
+            if "could not fetch resource" in stderr_txt.lower():
+                # CONTROL-PLANE class (#1837): the gcloud API failed to fetch
+                # the instance resource BEFORE any SSH/reachability probe ran —
+                # zero signal about the guest (incident #1739: one transient
+                # "Could not fetch resource: Internal error" on a healthy VM
+                # fired the wedge failover). Never counts toward the wedge
+                # streak: the L6120 mapping (== "transport") leaves
+                # PollResult.reachability_alarm False for this class, the same
+                # doctrinal split as "sentinel_processing".
+                alarm = (
+                    f"gcp sentinel drain SKIPPED by control-plane API error "
+                    f"(rc={res.returncode}): {stderr_txt[:300]}"
+                )
+                logger.error("GCP poll: %s", alarm)
+                return 0, None, alarm, "", None, "control_plane"
             # TRANSPORT class (#669): the drain SSH itself returned non-zero —
             # transport down / permission / timeout. This is the unreachable-VM
             # signature the poller's frozen-phase wedge gate reads (alarm_class
             # "transport" -> PollResult.reachability_alarm=True).
-            alarm = (
-                f"gcp sentinel drain FAILED (rc={res.returncode}): "
-                f"{(res.stderr or '').strip()[:300]}"
-            )
+            alarm = f"gcp sentinel drain FAILED (rc={res.returncode}): {stderr_txt[:300]}"
             logger.error("GCP poll: %s", alarm)
             return 0, None, alarm, "", None, "transport"
 

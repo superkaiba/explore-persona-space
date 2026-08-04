@@ -1,0 +1,61 @@
+{
+ "meta": {
+  "ts": "2026-07-31T21:22:11Z",
+  "git_commit": "cd3112d001222e90fc7c6539a9663b55c88f2552",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "issue": 1900,
+  "seed": 1900,
+  "corpus_pin": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+  "script": "scripts/issue1900_followup_free.py"
+ },
+ "arm_id": "syc-pers-po-lr1e5-s42",
+ "kind": "content",
+ "beh_key": "syc",
+ "regime": {
+  "b_draws": 2000,
+  "layer": 19,
+  "raced": [
+   "p1",
+   "p2",
+   "p3a",
+   "p3b",
+   "p4",
+   "p5",
+   "p6",
+   "p7",
+   "p8a",
+   "p8b",
+   "p9"
+  ],
+  "dv_names": [
+   "dv_resid"
+  ],
+  "n": 3986,
+  "n_shared": 210,
+  "shared_sha_hash": "9ede0aca82499d6d"
+ },
+ "observed_rho": {
+  "dv_resid": {
+   "p1": -0.17777173221111298,
+   "p2": 0.03414760157465935,
+   "p3a": 0.017473265528678894,
+   "p3b": 0.021449090912938118,
+   "p4": -0.022459590807557106,
+   "p5": 0.11765489727258682,
+   "p6": 0.10654818266630173,
+   "p7": 0.07107649743556976,
+   "p8a": -0.04258912429213524,
+   "p8b": -0.0524984747171402,
+   "p9": -0.17743398249149323
+  }
+ },
+ "ols_residualization": {
+  "alpha": 8.12294647078161,
+  "beta": 0.7223852444433614,
+  "r2_1d_fit": 0.4926764037711371
+ },
+ "n_degenerate_series_draws": 0,
+ "n_realized": 3986,
+ "elapsed_s": 0.2
+}

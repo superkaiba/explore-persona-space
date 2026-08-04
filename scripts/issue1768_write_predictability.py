@@ -65,6 +65,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 logger = logging.getLogger("issue1768.writepred")
 
 LAYER = 19  # plan §4.3 / #779 scaling-curve anchor (the round-1 headline layer)
+HIDDEN_DIM = X.HIDDEN  # 3584 — both the input (c0) and output (w) dimension
 HF_REVISION = "c07267285d2cdbf3e0401ddc3e3accae50e496a7"  # pinned (dispatch note)
 RESULTS_DIR = REPO_ROOT / "eval_results" / "issue_1768" / "write_predictability"
 FIGS_DIR = REPO_ROOT / "figures" / "issue_1768" / "write_predictability"
@@ -131,9 +132,14 @@ def _atomic_json(path: Path, obj) -> None:
     os.replace(tmp, path)
 
 
+_DEVICE_OVERRIDE: str | None = None
+
+
 def _device():
     import torch
 
+    if _DEVICE_OVERRIDE:
+        return torch.device(_DEVICE_OVERRIDE)
     return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
@@ -622,62 +628,119 @@ def phase_fits(picks: dict, *, cells_limit: int | None, do_krr: bool) -> None:
         )
 
 
-# ── MLP leg (pilot-gated; batched padded-bmm across cells) ───────────────────
+# ── MLP leg (ONE big net per cell, run SEQUENTIALLY over cells) ──────────────
 
 
-def phase_mlp(picks: dict, *, cell_keys: list[str], max_epochs: int, pilot: bool) -> None:
-    """Batched MLP over the named cells (ONE padded-bmm partition, shared width/lr)."""
+def _mlp_recipe(width: int, max_epochs: int, dev) -> dict:
+    import issue779_fitter_fair_comparison as f779
+
+    return {
+        "shape": (
+            f"Linear({HIDDEN_DIM}, {width}) -> GELU -> Linear({width}, {HIDDEN_DIM}), AdamW, "
+            "internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY"
+        ),
+        "helper": (
+            "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per "
+            "cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly "
+            "the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's "
+            "exactness contract is scalar-output members (Linear(hid, 1) per group x dim x "
+            "fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our "
+            f"{HIDDEN_DIM}-dim output head onto members would mean ~{HIDDEN_DIM} members per "
+            "cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the "
+            "opposite regime: one big net per cell at n=15,000, FLOP-bound."
+        ),
+        "cell_batching": (
+            "none by design — cell-batching buys nothing when FLOP-bound and multiplies "
+            "resident memory; each cell is its own fit"
+        ),
+        "hidden": width,
+        "width_choice": (
+            f"single width {width} >= output dim {HIDDEN_DIM} so the readout is not "
+            "rank-limited; a width SWEEP was not run (recorded deviation, time cap)"
+        ),
+        "lr": MLP_LR,
+        "wd": f779.MLP_WD,
+        "max_epochs": max_epochs,
+        "patience": f779.MLP_PATIENCE,
+        "device": str(dev),
+    }
+
+
+def _mlp_cell_order(cell_keys: list[str]) -> list[str]:
+    """tf before op within an arm (tf is the weights-carried object), arms adjacent
+    so each arm's stores load ONCE."""
+    return sorted(cell_keys, key=lambda k: (k.split("|")[0], k.split("|")[1] != "tf"))
+
+
+def phase_mlp(
+    picks: dict, *, cell_keys: list[str], max_epochs: int, pilot: bool, width: int
+) -> None:
+    """One full-batch MLP per cell, sequential; per-cell JSON the moment it lands."""
     _phase("mlp_pilot" if pilot else "mlp")
     import issue779_fitter_fair_comparison as f779
 
     dev = _device()
-    dest = RESULTS_DIR / ("mlp_pilot.json" if pilot else "mlp.json")
-    if dest.exists():
-        logger.info("[mlp] %s exists — resume-skip", dest.name)
-        return
-    groups, held = [], {}
-    for key in cell_keys:
+    tag = "mlp_pilot_cells" if pilot else "mlp_cells"
+    dest_dir = RESULTS_DIR / tag
+    order = _mlp_cell_order(cell_keys)
+    logger.info(
+        "[mlp] %d cells on %s (width=%d, max_epochs=%d)", len(order), dev, width, max_epochs
+    )
+    cache: dict[str, dict] = {}
+    for k, key in enumerate(order, 1):
+        dest = dest_dir / f"{key.replace('|', '__')}.json"
+        if dest.exists():
+            logger.info("[mlp] unit %d/%d %s resume-skip", k, len(order), key)
+            continue
         arm_id, tree = key.split("|")
-        cell = load_arm_cell(arm_id)
+        if arm_id not in cache:
+            cache.clear()  # one arm's arrays at a time
+            cache[arm_id] = load_arm_cell(arm_id)
+        cell = cache[arm_id]
         W = cell["w_op"] if tree == "op" else cell["w_tf"]
         tr, _val, te = FIT._split_idx(cell["split"])
-        groups.append(f779.MLPGroup((arm_id, tree), cell["C0"][tr], W[tr], MLP_WIDTH, MLP_LR))
-        held[key] = (cell["C0"][te], W[te])
-        logger.info("[mlp] group %s n_tr=%d", key, len(tr))
-    t0 = time.time()
-    res = f779.batched_mlp_fit(groups, hidden=MLP_WIDTH, lr=MLP_LR, max_epochs=max_epochs, dev=dev)
-    wall = time.time() - t0
-    out = {
-        "recipe": {
-            "helper": "issue779_fitter_fair_comparison.batched_mlp_fit (padded-bmm AdamW, "
-            "per-group internal 10% val early stop, full-dim head)",
-            "hidden": MLP_WIDTH,
-            "lr": MLP_LR,
-            "wd": f779.MLP_WD,
-            "max_epochs": max_epochs,
-            "patience": f779.MLP_PATIENCE,
-            "device": str(dev),
-        },
-        "wall_s": round(wall, 1),
-        "n_groups": len(groups),
-        "cells": {},
-    }
-    for key in cell_keys:
-        arm_id, tree = key.split("|")
+        t0 = time.time()
+        res = f779.batched_mlp_fit(
+            [f779.MLPGroup((arm_id, tree), cell["C0"][tr], W[tr], width, MLP_LR)],
+            hidden=width,
+            lr=MLP_LR,
+            max_epochs=max_epochs,
+            dev=dev,
+        )
         r = res[(arm_id, tree)]
-        Xte, Wte = held[key]
-        pred = r.predict(Xte)
-        out["cells"][key] = {
+        wall = time.time() - t0
+        pred = r.predict(cell["C0"][te])
+        row = {
+            "arm_id": arm_id,
+            "tree": tree,
             "epochs_ran": int(r.epochs_ran),
             "best_internal_val": float(r.best_val),
-            **_reads(pred, Wte, seed=X.FLOOR_SEED + 21, with_ci=True),
+            "wall_s": round(wall, 1),
+            "recipe": _mlp_recipe(width, max_epochs, dev),
+            **_reads(pred, W[te], seed=X.FLOOR_SEED + 21, with_ci=True),
+            **_meta(),
         }
+        _atomic_json(dest, row)
         print(
-            f"[mlp] {key} r2={out['cells'][key]['heldout_r2']:.4f} "
-            f"epochs={r.epochs_ran} wall_total={wall:.0f}s",
+            f"[mlp] unit {k}/{len(order)} {key} r2={row['heldout_r2']:.4f} "
+            f"epochs={r.epochs_ran} elapsed={wall:.0f}s",
             flush=True,
         )
-    _atomic_json(dest, {**out, **_meta()})
+    # aggregate (idempotent) — the file figures/summary read
+    cells = {}
+    for p in sorted(dest_dir.glob("*.json")):
+        d = json.loads(p.read_text())
+        cells[f"{d['arm_id']}|{d['tree']}"] = d
+    if cells:
+        _atomic_json(
+            RESULTS_DIR / ("mlp_pilot.json" if pilot else "mlp.json"),
+            {
+                "recipe": _mlp_recipe(width, max_epochs, dev),
+                "n_cells": len(cells),
+                "cells": cells,
+                **_meta(),
+            },
+        )
 
 
 # ── figures ──────────────────────────────────────────────────────────────────
@@ -703,7 +766,6 @@ def _load_cells() -> dict:
             if key in out:
                 out[key]["predictors"]["mlp"] = {
                     **r,
-                    "recipe": mlp["recipe"]["helper"],
                     "source": mlp_path.name,
                 }
     return out
@@ -780,6 +842,10 @@ def phase_figs(picks: dict) -> None:
     for a in (ax, axb):
         a.axhline(0.0, color="#333333", lw=0.9)
     ax.set_ylabel("held-out $R^2$\n(fitted maps)")
+    # symlog(linthresh=0.5) is LINEAR across [-0.5, 0.5] — the whole ridge/KRR range
+    # and all but two MLP cells read linearly; only the two catastrophic MLP cells
+    # (-2.8, -7.5) compress, so nothing is clipped out of view.
+    ax.set_yscale("symlog", linthresh=0.5, linscale=2.5)
     axb.set_ylabel("held-out $R^2$\nidentity+bias (symlog)")
     axb.set_yscale("symlog", linthresh=1.0)
     axb.set_xticks(xt)
@@ -917,41 +983,35 @@ def phase_summary(picks: dict) -> None:
         else {}
     )
     walls = {k: v.get("walls", {}) for k, v in cells.items()}
-    mlp_done = (RESULTS_DIR / "mlp.json").exists()
-    pid_file = REPO_ROOT / "logs" / "issue-1768-write-predictability-mlp.pid"
+    mlp_path = RESULTS_DIR / "mlp.json"
+    mlp_json = json.loads(mlp_path.read_text()) if mlp_path.exists() else {}
+    n_mlp = len([1 for v in cells.values() if "mlp" in v.get("predictors", {})])
     mlp_leg = {
-        "status": "landed" if mlp_done else "detached-running-or-pending",
-        "descope": (
-            "4 of the 16 cells (recorded below), NOT all 16: at the MEASURED 6.29 s/epoch/group "
-            "(2-point pilot, 3 vs 12 epochs on a single group) a batched 16-cell x 300-epoch "
-            "full-dim MLP projects 8.4 h of shared-VM CPU, vs 2.1 h for 4 cells. The linearity "
-            "question is already answered decisively by KRR at FULL fidelity on all 16 cells "
-            "(closed-form, +0.008..+0.056 R2 gain), so the MLP is a robustness companion, not "
-            "the decisive read — same reasoning #1073's analogous inline round recorded."
+        "status": "landed" if n_mlp else "pending",
+        "n_cells_with_mlp": n_mlp,
+        "n_cells_total": len(cells),
+        "device": (mlp_json.get("recipe") or {}).get("device"),
+        "recipe": mlp_json.get("recipe"),
+        "per_cell_wall_s": {
+            k: v["predictors"]["mlp"].get("wall_s")
+            for k, v in sorted(cells.items())
+            if "mlp" in v.get("predictors", {})
+        },
+        "execution": (
+            "USER OVERRIDE 'just run on GPU' — the full 16-cell MLP leg ran on a 1-GPU RunPod "
+            "pod (pod-1768-wp), NOT the CPU-descoped 4-cell contingency the earlier pilot "
+            "gate had sized. No descope."
         ),
-        "cells": [
-            "imp-pers-po-lr1e5-s137|tf (highest tf ridge R2 0.446 + largest imp KRR gain)",
-            "imp-pers-con-lr3e5-s42|op (high-dose on-policy tree: is the op residual nonlinear?)",
-            "syc-conv-po-lr1e5-s137|tf (round-1 Unchanged arm: nonlinear-structure control)",
-            "syc-pers-ft-con-s137|tf (full-FT method axis)",
-        ],
-        "axes_spanned": "tree (op/tf) x behavior (imp/syc) x round-1 verdict x method (LoRA/full-FT)",
-        "pid": pid_file.read_text().strip() if pid_file.exists() else None,
-        "log": "logs/issue-1768-write-predictability-mlp.log",
-        "harvest": "eval_results/issue_1768/write_predictability/mlp.json",
-        "measured_per_epoch_s_per_group": 6.29,
-        "measured_per_epoch_s_at_g4": 24.94,
-        "projected_wall_h_at_300_epochs": 2.08,
-        "harvest_command": (
-            "OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 "
-            "MALLOC_ARENA_MAX=2 uv run python scripts/issue1768_write_predictability.py "
-            "--phases figs,summary   # re-run AFTER mlp.json lands to fold the MLP column in"
+        "cpu_pilot_basis_superseded": (
+            "the shared-VM CPU pilot measured 6.29 s/epoch/group (2-point: 3 vs 12 epochs), "
+            "projecting 8.4 h for a 16-cell x 300-epoch CPU battery — the reason the GPU "
+            "override was taken. Recorded for provenance; not the executed path."
         ),
         "note": (
             "an undertrained MLP R2 is never presented: only the full-fidelity mlp.json feeds "
-            "figures/summary (mlp_pilot.json is a timing measurement and is excluded by "
-            "construction). At 12 epochs the pilot still read R2 -5.73, so the full-dim MLP "
-            "needs many epochs before it is competitive."
+            "figures/summary (mlp_pilot.json is a timing measurement, excluded by construction). "
+            "The CPU pilot still read R2 -5.73 at 12 epochs, so the full-dim MLP needs many "
+            "epochs before it is competitive — read epochs_ran per cell before comparing."
         ),
     }
     summary = {
@@ -1013,6 +1073,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--mlp-cells", default="", help="comma list of '<arm>|<tree>' for the MLP leg")
     ap.add_argument("--mlp-max-epochs", type=int, default=None)
     ap.add_argument("--mlp-pilot", action="store_true")
+    ap.add_argument("--mlp-width", type=int, default=MLP_WIDTH)
+    ap.add_argument("--mlp-all-cells", action="store_true", help="MLP over all 16 arm x tree cells")
+    ap.add_argument("--device", default=None, help="cpu | cuda | cuda:0 (default: auto-detect)")
     ap.add_argument("--threads", type=int, default=8)
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args(argv)
@@ -1041,6 +1104,9 @@ def main(argv: list[str] | None = None) -> int:
         _ = (hub.stage_hub_file, hub.retry_transient, FIT.load_corpus_cell, FIT._fit_map)
         print("[import-check] OK", flush=True)
         return 0
+
+    global _DEVICE_OVERRIDE
+    _DEVICE_OVERRIDE = args.device
 
     import torch
 
@@ -1080,13 +1146,17 @@ def main(argv: list[str] | None = None) -> int:
         elif phase == "fits":
             phase_fits(picks, cells_limit=args.cells_limit, do_krr=not args.no_krr)
         elif phase == "mlp":
-            keys = [k for k in args.mlp_cells.split(",") if k]
-            assert keys, "--mlp-cells required for the mlp phase"
+            if args.mlp_all_cells:
+                keys = [f"{p['arm_id']}|{t}" for p in picks["picks"] for t in TREES]
+            else:
+                keys = [k for k in args.mlp_cells.split(",") if k]
+            assert keys, "--mlp-cells or --mlp-all-cells required for the mlp phase"
             phase_mlp(
                 picks,
                 cell_keys=keys,
                 max_epochs=args.mlp_max_epochs or 300,
                 pilot=args.mlp_pilot,
+                width=args.mlp_width,
             )
         elif phase == "figs":
             phase_figs(picks)

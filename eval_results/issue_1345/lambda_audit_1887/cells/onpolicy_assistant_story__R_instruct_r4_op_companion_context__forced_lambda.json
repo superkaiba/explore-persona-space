@@ -1,0 +1,87 @@
+{
+  "arm": "forced_lambda",
+  "cell_id": "onpolicy_assistant_story__R_instruct_r4_op_companion_context",
+  "committed_r2": -0.5471157828882753,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 8.32,
+  "forced_lambda": {
+    "1e+02": {
+      "fold_se": 0.005417977136811629,
+      "r2_per_fold": [
+        -0.0350605676521063,
+        -0.007112355585041641,
+        -0.016720603809640577,
+        -0.03187162115881881,
+        -0.013240114889276455
+      ],
+      "r2_pooled": -0.02073353973635239,
+      "selected_lambda_per_fold": [
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0
+      ]
+    },
+    "1e+03": {
+      "fold_se": 0.0013753258061398634,
+      "r2_per_fold": [
+        0.28070017718941964,
+        0.2856988693476852,
+        0.28669877773677965,
+        0.2820284345076617,
+        0.27973869783122873
+      ],
+      "r2_pooled": 0.28297565830965443,
+      "selected_lambda_per_fold": [
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0
+      ]
+    },
+    "1e+04": {
+      "fold_se": 0.0014891730728575818,
+      "r2_per_fold": [
+        0.3065261119714582,
+        0.30859354561706975,
+        0.3110291354565733,
+        0.30686143630687746,
+        0.3019665372898448
+      ],
+      "r2_pooled": 0.30698810117969544,
+      "selected_lambda_per_fold": [
+        10000.0,
+        10000.0,
+        10000.0,
+        10000.0,
+        10000.0
+      ]
+    }
+  },
+  "issue": 1345,
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T06:34:14Z"
+  },
+  "n_train_min": 1614,
+  "published_claim_ref": "eval_results/issue_1345/onpolicy_assistant_story/cells_R_instruct_r4_op_companion_context.json @ L19",
+  "resume_key": {
+    "arm": "forced_lambda",
+    "cell_id": "onpolicy_assistant_story__R_instruct_r4_op_companion_context",
+    "issue": 1345,
+    "selector_regime": "forced_lambda",
+    "store_rev": "eca4accbf8eef9d4eebe546dbc8f3131c4031df4"
+  },
+  "selection_bearing": true,
+  "selector_config": {
+    "gcv_dof_cap": null,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": false
+  },
+  "variant": "onpolicy_assistant_story"
+}

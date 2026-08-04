@@ -1,0 +1,158 @@
+{
+  "commit": "d6628781f3",
+  "created": "2026-08-01T02:16:04Z",
+  "figsize": [
+    7.6,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "floor share of interaction variance": 0.0001122367247570417,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "floor share of interaction variance": 1.382146493103082e-05,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "floor share of interaction variance": 4.868331207545521e-05,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "floor share of interaction variance": 0.00012577695205967794,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "floor share of interaction variance": 1.558756740343981e-05,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "floor share of interaction variance": 3.550765988985855e-05,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.81,
+      "floor share of interaction variance": 7.609795767922641e-05,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.81,
+      "floor share of interaction variance": 2.2557351369875945e-05,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.81,
+      "floor share of interaction variance": 3.473673647221131e-05,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "floor share of interaction variance": 0.005848078652699573,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "floor share of interaction variance": 0.003373608720416728,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "floor share of interaction variance": 0.0048342193763779235,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "floor share of interaction variance": 0.0089047634217118,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "floor share of interaction variance": 0.004055511581547362,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "floor share of interaction variance": 0.005709658900427583,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.19,
+      "floor share of interaction variance": 0.005555227462100602,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.19,
+      "floor share of interaction variance": 0.0019066337324680673,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.19,
+      "floor share of interaction variance": 0.0037015084292457996,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Answer-sampling floor share of the interaction, per cell",
+        "ylabel": "floor share of interaction variance",
+        "legend_labels": [
+          "raw space",
+          "per-direction normalized space"
+        ],
+        "xticklabels": [
+          "full context, layer 14",
+          "prefix only, layer 14",
+          "bare query, layer 14",
+          "full context, layer 19",
+          "prefix only, layer 19",
+          "bare query, layer 19",
+          "full context, layer 26",
+          "prefix only, layer 26",
+          "bare query, layer 26"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-6}}$",
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$"
+        ]
+      }
+    ],
+    "series": [
+      "raw space",
+      "per-direction normalized space"
+    ]
+  }
+}

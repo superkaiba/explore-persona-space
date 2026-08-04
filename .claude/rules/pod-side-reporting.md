@@ -1,5 +1,5 @@
 ---
-description: Pod-side dispatcher result-reporting contract (sentinel files, poll_pipeline.py drain, epm:results payload, pod-side sentinel READ-BACK tolerance under the .processed drain-rename (#1311)) + pid-file launch contract (rewrite on EVERY (re)launch, #813) + relaunch-descope record & handle-sidecar currency (#1689) + legacy pod-side preflight gates; relocated verbatim from experiment-implementer.md, #829
+description: Pod-side dispatcher result-reporting contract (sentinel files, poll_pipeline.py drain, epm:results payload, pod-side sentinel READ-BACK tolerance under the .processed drain-rename (#1311)) + pid-file launch contract (rewrite on EVERY (re)launch, #813) + relaunch-descope record & handle-sidecar currency (#1689) + full-stdio-detach on ssh-remote (re)launch (#1768) + legacy pod-side preflight gates; relocated verbatim from experiment-implementer.md, #829
 paths:
   - "scripts/*dispatch*"
   - "scripts/poll_pipeline.py"
@@ -99,8 +99,13 @@ marker will be silently skipped. Three requirements, no exceptions:
    (skipping `*.processed`) on EVERY tick and renames each
    successfully-posted sentinel to `<path>.processed` (`mv -n`;
    `poll_pipeline.py::_ssh_mark_processed`; the GCP lane renames
-   identically via `backends/gcp.py::_mark_sentinel_processed`; SLURM
-   has no sentinel channel). Post each sentinel ONCE, never rewrite it
+   identically via `backends/gcp.py::_mark_sentinel_processed`; on
+   SLURM, DRAC/Mila have no sentinel channel while the FELLOWS lane
+   drains + renames identically via
+   `slurm_monitor.drain_cluster_sentinels` (#1898) — this whole
+   read-back-tolerance item, incl. the drain-rename tolerance (#1311),
+   binds fellows dispatchers exactly as RunPod ones). Post each
+   sentinel ONCE, never rewrite it
    in place — a rewrite whose `.processed` twin already exists is
    un-renameable under `mv -n` and re-attempted/warned every tick. A
    dispatcher that READS its own sentinels (resume predicate, per-cell
@@ -125,7 +130,13 @@ marker will be silently skipped. Three requirements, no exceptions:
    renamed anyway. Incident #1090 fu3/fu4 (code-review r1): per-run
    sentinels doubled as resume/finalize state; the drain renamed them
    mid-run → requeue races + a production reproducibility_card covering
-   only 23-24 of 35 cells.
+   only 23-24 of 35 cells. Fellows trust surface (#1898):
+   `/workspace/logs` on charmander is cluster-shared and PERSISTENT — a
+   prior crashed run's undrained sentinel posts late on the next
+   same-issue launch (correct-by-design), and any file matching
+   `issue-<N>-*.json` is schema-parsed, posted, and `mv -n`-renamed
+   regardless of author (documented trust surface, not defended
+   against).
 
 Rationale: task #448 (2026-05-31) — the pod-side dispatcher completed all
 cells cleanly but (a) never emitted `[phase=done]` and (b) wrote its
@@ -216,9 +227,10 @@ relaunch, a watch-session correction — not just first launches:
    path: relaunch through the launcher script, whose
    `echo $$ > /workspace/logs/issue-<N>.pid` overwrites the file before
    `exec`ing the workload (`.claude/agents/experimenter.md` § During
-   Execution steps 1/1b — the agent-specific recipe). When relaunching
-   WITHOUT the launcher (rare), chain an explicit ATOMIC rewrite into the
-   same command:
+   Execution steps 1/1b — the agent-specific recipe). When no launcher
+   file exists, FIRST materialize one per 1g and relaunch through it —
+   never a hand-typed inline relaunch chain; inside that file the
+   required pid-write form is the explicit ATOMIC rewrite:
    `printf '%s\n' "$CHILD_PID" > /workspace/logs/issue-<N>.pid.tmp && mv /workspace/logs/issue-<N>.pid.tmp /workspace/logs/issue-<N>.pid`
    (tmp+rename — no window where the poller reads a truncated/empty file;
    the launcher-internal `echo $$ >` truncate-write is the accepted
@@ -271,7 +283,7 @@ relaunch, a watch-session correction — not just first launches:
    `.claude/agents/experimenter.md` § During Execution steps 1/1b) and
    (ii) `$!` of the detached child captured in the SAME command chain
    as the launch — the launcher-less pod form
-   (`setsid nohup ... < /dev/null & printf '%s\n' "$!" > <pid>.tmp && mv <pid>.tmp <pid>`,
+   (`setsid nohup ... < /dev/null >> <log> 2>&1 & printf '%s\n' "$!" > <pid>.tmp && mv <pid>.tmp <pid>`,
    experimenter.md § During Execution) and the VM-side analogue
    (SKILL.md § Detached VM-side long compute phases, whose `bash -c`
    wrapper is the load-bearing `$!`-capture shape under job control).
@@ -344,6 +356,67 @@ relaunch, a watch-session correction — not just first launches:
    with NO marker, and the handle kept pointing at the OLD attempt's
    `.completion-sentinel.json` — both found only by a user-requested
    manual audit (#1689 epm:progress v64).
+1f. **Full stdio detach on every ssh-remote (re)launch — the wrapper is
+   never the signal.** The remote launch command MUST redirect ALL THREE
+   stdio fds in the SAME command: `< /dev/null` for stdin AND
+   `> <log> 2>&1` (or `>> <log> 2>&1`) for stdout/stderr. `setsid` +
+   `nohup` alone do NOT release the ssh channel: sshd waits for EOF on
+   the remote stdout/stderr, so a detached child that inherits those fds
+   keeps the channel open and the LOCAL ssh client hangs indefinitely
+   (standard ssh fd semantics; same-run corroboration: #1768
+   `epm:failure-lesson v2` — "it holds the ssh channel open so the local
+   client hangs"). The local wrapper's lifetime is NEVER a signal: bound
+   the local ssh call with a backstop
+   (`timeout --kill-after=10s 60s ssh ...`) and verify the launch via
+   the pid file + log breadcrumbs (items 1/1d), never via the wrapper
+   staying alive. The `&`-precedence trap: in
+   `ssh pod 'cd X && setsid nohup <cmd> > log 2>&1 < /dev/null & echo $! > pidfile'`
+   the trailing `&` backgrounds the ENTIRE `cd && setsid` list, so `$!`
+   is an un-setsid'd wrapper subshell — HUP-vulnerable and (when any fd
+   is attached) the very process holding the channel. Mitigation: make
+   `&` bind to the setsid unit alone via a brace group
+   (`cd X && { setsid nohup <cmd> < /dev/null > log 2>&1 & echo $! ... ; }`),
+   or repoint the pidfile at the setsid session leader (SESS==PID) per
+   the #1768 r3 failure-lesson. Worked example (incident #1768 relaunch
+   #4, 2026-07-30): the pod-side relaunch executed ~01:05Z left the
+   local ssh wrapper hanging (~2.5 h, then killed — mechanism recorded
+   as inferred-not-reproduced in the /daily 2026-07-29 problem sweep);
+   the launching session died with `epm:run-launched` unposted, and the
+   watcher-respawned successor back-posted `epm:run-launched v4` at
+   03:47:35Z after an identity-verified probe — a ~2.7 h window in which
+   the healthy run was invisible to the poller's marker-pid probe.
+1g. **A RELAUNCH re-runs the original launcher FILE — never a
+   hand-re-typed / reconstructed inline chain (#1768).** The launcher
+   script is the carrier of every side duty a launch owes — the pid-file
+   rewrite (item 1), log rotation (1b/1c), stdio detach (1f), and the
+   completion-sentinel write the poller's done-verdict keys on — and a
+   from-memory `bash -c` reconstruction silently drops whichever duty the
+   re-typer forgets (#1768 relaunch, 2026-07-30: the rebuilt chain
+   dropped the completion-sentinel write; the finished run's handoff
+   stranded ~5.8 h until a successor session found it). If the original
+   launch has no launcher file (an ad-hoc first launch), FIRST
+   materialize the chain into a file (pod:
+   `/workspace/logs/launch_issue_<N>_<slug>.sh`; VM: alongside the phase
+   log), then relaunch by executing that file — every later relaunch then
+   has a canonical source. Deliberate launcher EDITS before a relaunch
+   are fine — fix the bug in the FILE, then run the file (a
+   recipe-changing edit also carries 1e's descope record); the ban is on
+   bypassing the file.
+1h. **Pid breadcrumbs + completion watches key on the identity-verified
+   WORKER pid — never the setsid/nohup/ssh wrapper pid (#1769).** A
+   wrapper exits within seconds of a healthy launch, so a watch keyed on
+   it false-fires "EXITED" against a live run (#1769, 2026-07-30: a
+   re-judge completion watch keyed on the setsid launcher pid and
+   false-fired ~1 min in, after a wrong-pid breadcrumb at the same
+   phase's first launch). Before writing any `pid=` breadcrumb or arming
+   any liveness/completion watch, identity-verify the pid:
+   `ps -p <pid> -o args=` must show the WORKLOAD's distinctive
+   invocation — args reading as `setsid` / `nohup` / `ssh` / a bare
+   wrapper shell mean you captured the wrapper. Re-derive the worker pid
+   ONLY via item 1d's sanctioned launch-anchored forms (the launcher's
+   pre-exec `echo $$`; `$!` of the setsid-exec'd unit; the parent-scoped
+   child-walk `pgrep -P <captured wrapper pid>`) — 1d's ban on unanchored
+   post-hoc `pgrep` is unchanged.
 2. **The fresh `epm:run-launched` carries the SAME live pid (`pid=`) AND
    `pid_file=`** (SKILL.md § "Any relaunch must re-post `epm:run-launched`").
    `poll_pipeline.py` computes `pid_alive = pidfile_pid_alive OR
@@ -400,6 +473,41 @@ the file and the marker still reads `dead`.
   piped-push masking class — the pipe mirror stays enforced by
   `workflow_lint.py --check-piped-git-push`, this swallow shape by
   `--check-push-failure-swallow`).
+- **Fetch + rebase before every pod/instance-side results-git push
+  (#1880).** A lane's terminal push races ANY orchestrator branch commit
+  made mid-run (a sibling lane's crash-fix relaunch is the normal
+  multi-lane case): a bare push retry that detects behind>0 but never
+  fetches loses DETERMINISTICALLY — non-fast-forward rejection → workload
+  exit 1 → a HEALTHY run crash-persists and powers off (#1739 hallu lane,
+  2026-07-30: 270 cells rc=0, Hub sidecars verified, then exit 1 at the
+  terminal push — 31h of complete science, ~30 min manual recovery from
+  crash-persist). Push recipe:
+  `git fetch origin <branch> && git rebase origin/<branch>` (result
+  commits are additive per-lane files — a content conflict is
+  near-impossible), then push and re-verify per the rev-list bullet
+  above; bounded 2 attempts. NOTE the rebase rewrites the LOCAL result
+  commits' SHAs pre-push — no standard-contract consumer pins them (the
+  artifact-presence assert below is path-keyed against the pushed tree;
+  fix-sha ancestry probes reference origin ancestors, which
+  rebase-onto-origin preserves) — a future driver that records its own
+  result-commit SHA must record it AFTER the push-verify, never before.
+  On rebase conflict: `git rebase --abort` and proceed to the lane's
+  EXISTING fail-loud path (GCE: bundle + exit 86; crash-persist preserves
+  the results) — the standing "never declare done with an unpushed result
+  commit" contract and the Part A-ter sentinel ordering are UNCHANGED (a
+  push-failure-tolerant exit-0 disposition was considered and REJECTED:
+  it would let a run classify done-like with results only in a bundle).
+- **Orchestrator side (#1880):** avoid pushing to the issue branch while
+  lanes are mid-run when feasible; when a mid-run push is required (a
+  sibling lane's crash-fix relaunch), expect in-flight lanes' terminal
+  pushes to need the fetch+rebase path above — a lane running a pre-#1880
+  driver will deterministically false-crash at its terminal push (the
+  #1739 shape) with its results intact in crash-persist; treat that
+  failure as recoverable-transport, not a science loss. The PULL/SYNC
+  direction — a worker's mid-run sync refusing on locally modified
+  touched paths — is governed by `.claude/rules/crash-fix-rounds.md`
+  § Mid-run pushes to a live-synced branch (enumerate live workers
+  first; detached-SHA pin / defer / worker-local alternatives).
 - **Artifact-presence assert (#1325) — the rev-list push-verify is VACUOUS
   against a never-committed result file.** `rev-list --count
   origin/<branch>..HEAD == 0` proves the COMMITS pushed; it says nothing
@@ -447,12 +555,28 @@ the file and the marker still reads `dead`.
   backstop (below) shares the blindness — it proves commits pushed, NOT
   files committed — so this assert is a driver duty on every lane that
   commits results; no mechanical backstop covers it.
+- **Named expected-path set — an empty-set verify is vacuous (#1482).**
+  The #1325 assert above checks each DECLARED path per-file; this bullet
+  binds the DECLARATION itself. Every push-verify / upload-verify leg
+  NAMES the expected path set it is about to check — print the resolved
+  list (or the manifest path + count) into the phase log BEFORE
+  verifying. An EMPTY resolved set on a round whose plan / output
+  manifest / `primary_deliverable` declares git-destined outputs is a
+  verify FAILURE — exit non-zero naming the empty set — never a pass
+  (#1482, 2026-07-30: a driver's push-verify leg resolved an empty
+  expected set and PASSed while 29 git-bound eval files sat uncommitted;
+  caught one stage later only by the independent upload-verifier). A
+  round with genuinely no git-destined outputs (the #1325 scoping-(b)
+  case) may no-op, but STATES the no-op in the log ("push-verify: no
+  git-destined outputs declared this round"), never silently.
 - **GCE lane:** the startup script configures a `GITHUB_TOKEN` env-reading
   credential helper (workload pushes authenticate; pre-#1205 they failed
   DETERMINISTICALLY — the clone is tokenless) and runs a post-workload
-  push-verify backstop (retry → bundle the unpushed range to
-  `data/issue_<N>/`, crash-persist-swept per #854 item 5 → `exit 86` →
-  EXIT trap → `phase=failed` + crash-persist + poweroff). The backstop
+  push-verify backstop (fetch + rebase onto `origin/<branch>` with inline
+  committer identity, then retry — the #1880 recipe above; a rebase
+  conflict aborts into the same fail-loud tail → bundle the unpushed
+  range to `data/issue_<N>/`, crash-persist-swept per #854 item 5 →
+  `exit 86` → EXIT trap → `phase=failed` + crash-persist + poweroff). The backstop
   covers forgetful dispatch scripts; scripts SHOULD still verify their own
   push so the failure surfaces at the failing phase with its own context.
   The backstop pushes `HEAD` to the CLONED branch (`HEAD:<repo_branch>`)
@@ -492,7 +616,8 @@ the file and the marker still reads `dead`.
   VM-side push via the repo-wide push rules (the piped-push hook,
   `sync_repo_root.py`, Step 10d). Consequence: a dispatch script whose
   deliverable REQUIRES workload-side git-committed results must NOT
-  route to SLURM — pin `backend: gcp` or `runpod`. (`--repo-branch` IS
+  route to SLURM — pin `backend: runpod` (`backend: gcp` is REFUSED as
+  of #2028 — GCP provisioning disabled). (`--repo-branch` IS
   honored on SLURM as of #793 via VM-side branch-tree materialization —
   the workload runs branch code; it just cannot push from the cluster.)
 - **Part A-ter interplay** (`.claude/rules/compute-backend-failover.md`):

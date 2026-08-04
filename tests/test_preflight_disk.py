@@ -15,6 +15,8 @@ Covers:
 """
 
 import errno
+import os
+import threading
 import types
 from pathlib import Path
 
@@ -71,6 +73,45 @@ def test_probe_unsupported_filesystem_falls_back(tmp_path, monkeypatch):
     assert fallback_reason is not None
     assert "errno" in fallback_reason
     assert not (tmp_path / ".preflight_disk_probe.tmp").exists()
+
+
+def test_probe_ebadf_falls_back(tmp_path, monkeypatch):
+    """EBADF (VAST/NFS-class fallocate on a valid fd — #1902 job 16139) degrades to fallback."""
+
+    def fake_fallocate(fd, offset, length):
+        raise OSError(errno.EBADF, "Bad file descriptor")
+
+    monkeypatch.setattr(preflight.os, "posix_fallocate", fake_fallocate)
+    ok, fallback_reason = _probe_writable_bytes(str(tmp_path), probe_bytes=4096)
+    assert ok is True
+    assert fallback_reason is not None
+    assert "errno=9" in fallback_reason
+    assert not (tmp_path / ".preflight_disk_probe.tmp").exists()
+
+
+def test_probe_ebadf_never_masks_edquot(tmp_path, monkeypatch):
+    """EDQUOT stays the real quota signal (ok=False, no fallback) even after the
+    EBADF fallback widened the caught-errno set — the MooseFS quota detection
+    must never be swallowed."""
+
+    def fake_fallocate(fd, offset, length):
+        raise OSError(errno.EDQUOT, "Disk quota exceeded")
+
+    monkeypatch.setattr(preflight.os, "posix_fallocate", fake_fallocate)
+    ok, fallback_reason = _probe_writable_bytes(str(tmp_path), probe_bytes=4096)
+    assert ok is False
+    assert fallback_reason is None
+
+
+def test_probe_unexpected_errno_still_raises(tmp_path, monkeypatch):
+    """An errno outside the caught set (e.g. EIO) still raises — fail fast."""
+
+    def fake_fallocate(fd, offset, length):
+        raise OSError(errno.EIO, "Input/output error")
+
+    monkeypatch.setattr(preflight.os, "posix_fallocate", fake_fallocate)
+    with pytest.raises(OSError):
+        _probe_writable_bytes(str(tmp_path), probe_bytes=4096)
 
 
 def test_probe_zero_bytes_asserts(tmp_path):
@@ -401,3 +442,91 @@ def test_assert_out_root_headroom_rejects_nonpositive_need(tmp_path):
     """need_gb <= 0 raises ValueError (explicit raise — asserts strip under python -O)."""
     with pytest.raises(ValueError):
         assert_out_root_headroom(tmp_path, need_gb=0)
+
+
+# ── #1979 regression: concurrent probes on ONE shared dir must not collide ────
+
+
+def test_probe_concurrent_workers_all_succeed_no_leftovers(tmp_path):
+    """8 concurrent probes on ONE dir all succeed and leave the dir empty.
+
+    The #1979 fellows job 16686 crash: 8 per-unit workers each ran the startup
+    headroom probe against one shared out-root; the fixed probe filename made
+    siblings open/fallocate/unlink one common path. Post-fix each invocation
+    uses a unique per-invocation filename, so concurrent probes never touch
+    each other's files.
+    """
+    n = 8
+    results: list[tuple[bool, str | None] | None] = [None] * n
+    errors: list[BaseException] = []
+    barrier = threading.Barrier(n, timeout=30)
+
+    def worker(i: int) -> None:
+        try:
+            barrier.wait()
+            results[i] = _probe_writable_bytes(str(tmp_path), probe_bytes=4096)
+        except BaseException as e:
+            errors.append(e)
+
+    threads = [threading.Thread(target=worker, args=(i,)) for i in range(n)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=60)
+    assert not errors, f"worker exceptions: {errors!r}"
+    assert all(r == (True, None) for r in results), results
+    # Every probe cleaned up exactly its own file — no leftovers of any kind.
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_probe_survives_sibling_interference_on_legacy_shared_name(tmp_path, monkeypatch):
+    """A sibling unlinking/recreating the LEGACY fixed probe name cannot EBADF us.
+
+    Simulates the cluster-shared-filesystem semantics of the #1979 crash: on the
+    fellows share, a sibling's unlink/recreate of the probe path invalidates a
+    worker's already-open fd mid-``posix_fallocate`` (OSError EBADF — outside the
+    handled errno sets, so the probe raised and the worker died rc=1). The fake
+    fallocate below performs that sibling interference against the OLD fixed name
+    ``.preflight_disk_probe.tmp`` and then applies shared-FS semantics: EBADF iff
+    this fd's path no longer resolves to the same inode. Pre-fix (fixed name) the
+    interference hits our own path and this test fails with OSError EBADF;
+    post-fix (unique per-invocation name) the probe is untouched and succeeds.
+    """
+
+    def shared_fs_fallocate(fd, offset, length):
+        fd_path = os.readlink(f"/proc/self/fd/{fd}")
+        fd_stat = os.fstat(fd)
+        # Sibling running the legacy fixed-name protocol: unlink + recreate + unlink.
+        legacy = Path(fd_path).parent / ".preflight_disk_probe.tmp"
+        legacy.unlink(missing_ok=True)
+        legacy.touch()
+        legacy.unlink()
+        # Cluster-share semantics: fallocate on an fd whose path was replaced fails.
+        try:
+            st = os.stat(fd_path)
+            same = st.st_ino == fd_stat.st_ino and st.st_dev == fd_stat.st_dev
+        except FileNotFoundError:
+            same = False
+        if not same:
+            raise OSError(errno.EBADF, "Bad file descriptor")
+
+    monkeypatch.setattr(preflight.os, "posix_fallocate", shared_fs_fallocate)
+    ok, fallback_reason = _probe_writable_bytes(str(tmp_path), probe_bytes=4096)
+    assert ok is True
+    assert fallback_reason is None
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_probe_paths_unique_per_invocation(tmp_path, monkeypatch):
+    """Two sequential probes use DISTINCT probe filenames (the #1979 invariant)."""
+    seen: list[str] = []
+
+    def recording_fallocate(fd, offset, length):
+        seen.append(os.readlink(f"/proc/self/fd/{fd}"))
+
+    monkeypatch.setattr(preflight.os, "posix_fallocate", recording_fallocate)
+    _probe_writable_bytes(str(tmp_path), probe_bytes=4096)
+    _probe_writable_bytes(str(tmp_path), probe_bytes=4096)
+    assert len(seen) == 2
+    assert seen[0] != seen[1], seen
+    assert list(tmp_path.iterdir()) == []

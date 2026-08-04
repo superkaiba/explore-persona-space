@@ -58,3 +58,15 @@ On #1336 the lock predated the launch (14:55 vs 14:56); the run halted at G1
 as designed, then died at the upload commit; recovery = rm lock + relaunch the
 resumable upload tail (idempotent bulk uploads + commit-if-diff + verified
 push completed clean in seconds).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Pod `git pull` silent on stale `.git/index.lock`](feedback_pod_git_pull_silent_index_lock.md) — A crashed mid-git workload leaves a 0-byte `.git/index.lock`; the next `git pull --ff-only` prints "Updating ..." and exits 0 but HEAD does NOT advance. ALWAYS verify `git rev-parse HEAD == brief commit` after every sync; never trust pull output (#653 r6)
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Pod `git pull` silent on stale `.git/index.lock`](feedback_pod_git_pull_silent_index_lock.md) — A crashed mid-git workload leaves a 0-byte `.git/index.lock`; the next `git pull --ff-only` prints "Updating ..." and exits 0 but HEAD does NOT advance. ALWAYS verify `git rev-parse HEAD == brief commit` after every sync; never trust pull output (#653 r6); write-side variant: the stale lock also kills the workload's own pod-side `git commit` — probe+clear pre-launch (#1336)

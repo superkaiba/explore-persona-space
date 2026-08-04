@@ -1,0 +1,44 @@
+{
+  "source": "eval_results/issue_1482/run_length/run_length_perfeature.npz",
+  "n_rows": 2000,
+  "grains": {
+    "token": {
+      "null": 0.7309006360907319,
+      "live": 109211,
+      "both": 91362,
+      "ctx_only": 5994,
+      "ans_only": 11855,
+      "tails": {
+        "1": 0.5225257765810731,
+        "2": 0.25347518662025786,
+        "3": 0.12831374094262385
+      },
+      "p1": -6.289888311839184,
+      "p50": -0.010901954024979238,
+      "p99": 5.133372527702392
+    },
+    "occupancy": {
+      "null": 0.6829208976823749,
+      "live": 109211,
+      "both": 91362,
+      "ctx_only": 5994,
+      "ans_only": 11855,
+      "tails": {
+        "1": 0.39692651211663493,
+        "2": 0.13981742956590268,
+        "3": 0.05501193056194041
+      },
+      "p1": -4.861763186754989,
+      "p50": 0.0792335794680252,
+      "p99": 3.6119425628644266
+    }
+  },
+  "headline": "On identical rows, per-token grain finds ~2x more strongly side-specialised features than row occupancy: |e|>2 14.0% -> 25.3%, |e|>3 5.5% -> 12.8%. Occupancy saturates by construction \u2014 a feature firing at one token of a span and at every token both count 1.",
+  "caveats": [
+    "Strictly one-sided counts are identical across grains by construction and are SAMPLE-SIZE dependent; do not quote the 2,000-row percentages against the 120,000-row census (1.27% context-only / 1.66% answer-only).",
+    "The two grains have DIFFERENT nulls (occupancy 0.683, token 0.731) because the answer span is longer than the context span; never read either against 0.5.",
+    "Token grain comes from a 2,000-row capture; the banked occupancy census covers 120,000 rows. The comparison here is restricted to the shared 2,000 rows so it is apples-to-apples, at the cost of more sampling noise than the census.",
+    "#1482 single-turn corpus (constant template prefix)."
+  ],
+  "what_is_plotted": "(a) answer-side ratio distribution at both grains over the same rows, each with its own side-indifferent null marked. (b) null-centred log2 side-odds enrichment for both grains, clipped to +-8, with the >=4x and >=8x tail fractions annotated."
+}

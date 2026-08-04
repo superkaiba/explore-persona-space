@@ -1,0 +1,94 @@
+{
+  "inputs": {
+    "script": "issue1776_swap",
+    "round": "patch",
+    "seed": 1776,
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "source_layer": 14,
+    "readout_layer": 19,
+    "limit_pairs": 0,
+    "capture_batch": 8,
+    "eligibility": {
+      "jaccard_max": 0.5,
+      "cos_max": 0.95,
+      "target_floor": 5,
+      "df_max_frac": 0.1,
+      "tfidf_top_k": 30
+    },
+    "pairs_sha": "abd17a24206bb307",
+    "targets_sha": "d3562301071a6933",
+    "pool_sha": "d5f8d2b9f51ff12c",
+    "deltas_sha": "ded68e58f64ab11b"
+  },
+  "round": "patch",
+  "swap_build_inputs": {
+    "script": "issue1776_swap",
+    "seed": 1776,
+    "pairs_per_leg": 75,
+    "strata": 4,
+    "n_pcs": 256,
+    "rcond": 1e-06,
+    "rcond_sensitivity": 0.0001,
+    "eligibility": {
+      "jaccard_max": 0.5,
+      "cos_max": 0.95,
+      "target_floor": 5,
+      "df_max_frac": 0.1,
+      "tfidf_top_k": 30
+    },
+    "norm_cap_plan": 47.360563,
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "source_layer": 14,
+    "readout_layer": 19,
+    "m_ridge_sha": "6174269d6c7cd96c",
+    "jlast_sha": "a171c4c2716aba52"
+  },
+  "swap_build_report_sha": "dee4bf5cd0f4372f",
+  "n_pairs_rows": 150,
+  "n_pairs_included": 133,
+  "per_leg_included": {
+    "lmsys": 71,
+    "wildchat": 62
+  },
+  "n_unique_contexts_captured": 216,
+  "consistency_gate": {
+    "status": "computed",
+    "n_contexts": 122,
+    "cos_median": 0.9999280235825312,
+    "cos_q10_q90": [
+      0.9999022232464597,
+      0.9999481278186771
+    ],
+    "cos_min": 0.9998814184144186,
+    "threshold": 0.99,
+    "pass": true
+  },
+  "patch_delta_norm": {
+    "median": 35.442012786865234,
+    "q10_q90": [
+      24.6622314453125,
+      43.864749908447266
+    ],
+    "max": 52.007118225097656,
+    "norm_cap_ref": 47.360563,
+    "fraction_above_swap_cap": 0.03007518796992481
+  },
+  "label_directory_mapping": {
+    "slot_patch_sufficiency": "followup_slotpatch"
+  },
+  "operator_shas_echo": {
+    "m_ridge_x50k": "6174269d6c7cd96c",
+    "J_last": "a171c4c2716aba52"
+  },
+  "repro": {
+    "issue": 1776,
+    "git_commit": "cf2b99ff267df4072d3ab83368ae03538b128135",
+    "jlens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+    "timestamp_utc": "2026-07-31T03:30:19Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "python_version": "3.11.15"
+  }
+}

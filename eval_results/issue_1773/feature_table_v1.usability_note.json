@@ -1,0 +1,6 @@
+{
+ "task": 1941,
+ "reason": "unusable: inter-draw kappa 0.318 vs 0.63-0.71 siblings (#1941; RETIRE \u2014 no arm cleared the registered repair lattice)",
+ "date": "2026-08-01T01:41:17.109018+00:00",
+ "note": "in-place ADDITIVE regeneration: per-row axis_usability field added; no field removed or altered (git history preserves prior bytes \u2014 upload-policy regeneration note)"
+}

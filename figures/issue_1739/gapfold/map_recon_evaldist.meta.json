@@ -1,0 +1,1201 @@
+{
+  "commit": "bec888daee",
+  "created": "2026-08-02T08:12:34Z",
+  "figsize": [
+    14.0,
+    4.6
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "reconstruction $R^2$": 0.6494160995146131,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "reconstruction $R^2$": 0.6662820926662343,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "reconstruction $R^2$": 0.6706098537906373,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "reconstruction $R^2$": 0.6667297951515603,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "reconstruction $R^2$": 0.6747460076986567,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "reconstruction $R^2$": 0.6811608485765188,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "reconstruction $R^2$": 0.6778567669458484,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "reconstruction $R^2$": 0.6667311880555438,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "reconstruction $R^2$": 0.68835123302291,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "reconstruction $R^2$": 0.6958745819075238,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "reconstruction $R^2$": 0.7093401715237331,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "reconstruction $R^2$": 0.7083987510623018,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "reconstruction $R^2$": 0.7112677348476145,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "reconstruction $R^2$": 0.7274976720367441,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "reconstruction $R^2$": 0.7387207838540664,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "reconstruction $R^2$": 0.7422890785827172,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "reconstruction $R^2$": 0.7428133936308741,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "reconstruction $R^2$": 0.7401510995314331,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "reconstruction $R^2$": 0.7523174815695522,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "reconstruction $R^2$": 0.7692366620865552,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "reconstruction $R^2$": 0.7673254365819498,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "reconstruction $R^2$": 0.7634640481285628,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "reconstruction $R^2$": 0.7593873993373392,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "reconstruction $R^2$": 0.7524069435348336,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "reconstruction $R^2$": 0.7517079324311308,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "reconstruction $R^2$": 0.7527484381345613,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "reconstruction $R^2$": 0.7681854450792234,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "reconstruction $R^2$": 0.7845493435296844,
+      "series": "WildChat holdout (in-distribution)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "reconstruction $R^2$": -0.004236053310385124,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "reconstruction $R^2$": -0.0053317335833074075,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "reconstruction $R^2$": -0.006751334432679723,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "reconstruction $R^2$": -0.008068410894907174,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "reconstruction $R^2$": -0.012245580483852159,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "reconstruction $R^2$": -0.02252882324415295,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "reconstruction $R^2$": -0.023403960360167897,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "reconstruction $R^2$": -0.021306572783198474,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "reconstruction $R^2$": -0.028066033747522257,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "reconstruction $R^2$": -0.02416242269807789,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "reconstruction $R^2$": -0.026061551726098697,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "reconstruction $R^2$": -0.03236638962310834,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "reconstruction $R^2$": -0.033544601654837525,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "reconstruction $R^2$": -0.04398147942193731,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "reconstruction $R^2$": -0.053629491946902474,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "reconstruction $R^2$": -0.056812735822407756,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "reconstruction $R^2$": -0.0652305177135084,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "reconstruction $R^2$": -0.07054952081547605,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "reconstruction $R^2$": -0.07484401318314027,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "reconstruction $R^2$": -0.08121280216126125,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "reconstruction $R^2$": -0.10241317365207259,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "reconstruction $R^2$": -0.10705625199105517,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "reconstruction $R^2$": -0.11703119385147898,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "reconstruction $R^2$": -0.11348840312303365,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "reconstruction $R^2$": -0.11631446603751727,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "reconstruction $R^2$": -0.12236646033022525,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "reconstruction $R^2$": -0.1167331399655489,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "reconstruction $R^2$": -0.11541084837833204,
+      "series": "identity+learned-bias baseline (in-dist.)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "reconstruction $R^2$": -2.642199561422858,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "reconstruction $R^2$": -2.29189574569532,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "reconstruction $R^2$": -1.9376211406095987,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "reconstruction $R^2$": -1.5936088363336243,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "reconstruction $R^2$": -1.3163287034479763,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "reconstruction $R^2$": -1.1526995568329221,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "reconstruction $R^2$": -0.9280147507148584,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "reconstruction $R^2$": -0.7497872805327721,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "reconstruction $R^2$": -0.6849380865483641,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "reconstruction $R^2$": -0.47865734651838054,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "reconstruction $R^2$": -0.37075796260756677,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "reconstruction $R^2$": -0.3556686356905172,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "reconstruction $R^2$": -0.3446260327619812,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "reconstruction $R^2$": -0.29812487642130403,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "reconstruction $R^2$": -0.34983692528522736,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "reconstruction $R^2$": -0.39660647896484225,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "reconstruction $R^2$": -0.36968512385804875,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "reconstruction $R^2$": -0.4332702955101535,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "reconstruction $R^2$": -0.6300720186897559,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "reconstruction $R^2$": -0.6127255924463593,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "reconstruction $R^2$": -0.5916677400615189,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "reconstruction $R^2$": -0.794452984895704,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "reconstruction $R^2$": -0.9492487771110103,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "reconstruction $R^2$": -1.1734006304750797,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "reconstruction $R^2$": -1.3670078671338173,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "reconstruction $R^2$": -1.506910212474589,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "reconstruction $R^2$": -1.4812073915272035,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "reconstruction $R^2$": -0.6061139637069697,
+      "series": "evil / hhrt (eval dist.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "reconstruction $R^2$": -2.104130747045685,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "reconstruction $R^2$": -1.6196050167592815,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "reconstruction $R^2$": -1.4562179771069452,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "reconstruction $R^2$": -1.2147220916295378,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "reconstruction $R^2$": -1.112545424144912,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "reconstruction $R^2$": -1.002002727392667,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "reconstruction $R^2$": -0.7558524765703931,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "reconstruction $R^2$": -0.7080597837121012,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "reconstruction $R^2$": -0.6292712860571883,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "reconstruction $R^2$": -0.5839579970786659,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "reconstruction $R^2$": -0.47909171724428434,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "reconstruction $R^2$": -0.46924749795006315,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "reconstruction $R^2$": -0.44533133833116745,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "reconstruction $R^2$": -0.4711744548501682,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "reconstruction $R^2$": -0.4271501600124201,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "reconstruction $R^2$": -0.39363748632360673,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "reconstruction $R^2$": -0.4821583845966362,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "reconstruction $R^2$": -0.5369639014021403,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "reconstruction $R^2$": -0.4667806397690939,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "reconstruction $R^2$": -0.3473448098498113,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "reconstruction $R^2$": -0.3490061512996756,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "reconstruction $R^2$": -0.40030350836392836,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "reconstruction $R^2$": -0.4758962235037756,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "reconstruction $R^2$": -0.5803894690262601,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "reconstruction $R^2$": -0.6222303695042,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "reconstruction $R^2$": -0.6144080751046483,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "reconstruction $R^2$": -0.5351369217121507,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "reconstruction $R^2$": -0.2801175462261549,
+      "series": "evil / toxicchat (eval dist.)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 0.0,
+      "reconstruction $R^2$": -13.804346670210112,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 1.0,
+      "reconstruction $R^2$": -11.509175877537947,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 2.0,
+      "reconstruction $R^2$": -9.31755929580985,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 3.0,
+      "reconstruction $R^2$": -7.0602558871780765,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 4.0,
+      "reconstruction $R^2$": -5.180410193565951,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 5.0,
+      "reconstruction $R^2$": -4.4848839630112405,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 6.0,
+      "reconstruction $R^2$": -3.8829388963039904,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 7.0,
+      "reconstruction $R^2$": -3.029244933817327,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 8.0,
+      "reconstruction $R^2$": -2.4776063251114246,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 9.0,
+      "reconstruction $R^2$": -1.7401368451178665,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 10.0,
+      "reconstruction $R^2$": -1.5355489248811547,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 11.0,
+      "reconstruction $R^2$": -1.439154293011753,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 12.0,
+      "reconstruction $R^2$": -1.2081545513263436,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 13.0,
+      "reconstruction $R^2$": -1.0748575206586364,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "reconstruction $R^2$": -0.8849191788777582,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 15.0,
+      "reconstruction $R^2$": -0.837252365527086,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 16.0,
+      "reconstruction $R^2$": -0.8050893983236433,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 17.0,
+      "reconstruction $R^2$": -0.8502465126904983,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 18.0,
+      "reconstruction $R^2$": -0.9572481300289966,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "reconstruction $R^2$": -0.9912628923924549,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 20.0,
+      "reconstruction $R^2$": -1.0105618862760002,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "reconstruction $R^2$": -1.214665736245037,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 22.0,
+      "reconstruction $R^2$": -1.4910733791479225,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 23.0,
+      "reconstruction $R^2$": -1.729271817048299,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 24.0,
+      "reconstruction $R^2$": -2.0068369773805084,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 25.0,
+      "reconstruction $R^2$": -2.2272298599961555,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "reconstruction $R^2$": -2.187511502844194,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 27.0,
+      "reconstruction $R^2$": -1.5289055020945828,
+      "series": "sycophancy / aita (eval dist.)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "category": "WildChat holdout\n(in-distribution)",
+      "kNN retrieval acc@1 (cosine, log scale)": 0.32189412077680235,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "evil\nhhrt",
+      "kNN retrieval acc@1 (cosine, log scale)": 0.3859743040685225,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "evil\ntoxicchat",
+      "kNN retrieval acc@1 (cosine, log scale)": 0.37957610789980734,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "sycophancy\naita",
+      "kNN retrieval acc@1 (cosine, log scale)": 0.3121165644171779,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "kNN retrieval acc@1 (cosine, log scale)": 0.00026602819898909286,
+      "series": "chance rate",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "kNN retrieval acc@1 (cosine, log scale)": 0.0005353319057815846,
+      "series": "chance rate",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "kNN retrieval acc@1 (cosine, log scale)": 0.0019267822736030828,
+      "series": "chance rate",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "kNN retrieval acc@1 (cosine, log scale)": 0.0007668711656441718,
+      "series": "chance rate",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "category": "WildChat holdout\n(in-distribution)",
+      "kNN retrieval acc@5 (cosine, log scale)": 0.7869114126097366,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "evil\nhhrt",
+      "kNN retrieval acc@5 (cosine, log scale)": 0.6247323340471093,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "evil\ntoxicchat",
+      "kNN retrieval acc@5 (cosine, log scale)": 0.6666666666666666,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "sycophancy\naita",
+      "kNN retrieval acc@5 (cosine, log scale)": 0.5115030674846626,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "kNN retrieval acc@5 (cosine, log scale)": 0.0013301409949454642,
+      "series": "chance rate",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "kNN retrieval acc@5 (cosine, log scale)": 0.0026766595289079227,
+      "series": "chance rate",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "kNN retrieval acc@5 (cosine, log scale)": 0.009633911368015413,
+      "series": "chance rate",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "kNN retrieval acc@5 (cosine, log scale)": 0.003834355828220859,
+      "series": "chance rate",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 156,
+  "text": {
+    "suptitle": "Map reconstruction and retrieval ON the behavior evaluation distributions",
+    "fig_texts": [
+      "Map fit on 15,034 WildChat context->answer pairs (U = 18,793 refit), context end state. Left: reconstruction R^2 per layer, in-distribution vs on each\nevaluation rung. Middle / right: kNN retrieval of the true target answer state among that rung's own held-out pool, best layer, cosine metric; the black\ndash is the chance rate (k / n_pool) and the annotation is the multiple of chance. Retrieval stays far above chance where R^2 is strongly negative."
+    ],
+    "axes": [
+      {
+        "title_left": "Map reconstruction $R^2$ per layer",
+        "xlabel": "layer",
+        "ylabel": "reconstruction $R^2$",
+        "legend_labels": [
+          "WildChat holdout (in-distribution)",
+          "identity+learned-bias baseline (in-dist.)",
+          "evil / hhrt (eval dist.)",
+          "evil / toxicchat (eval dist.)",
+          "sycophancy / aita (eval dist.)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u221215.0",
+          "\u221212.5",
+          "\u221210.0",
+          "\u22127.5",
+          "\u22125.0",
+          "\u22122.5",
+          "0.0",
+          "2.5"
+        ]
+      },
+      {
+        "title_left": "kNN retrieval acc@1 vs chance",
+        "ylabel": "kNN retrieval acc@1 (cosine, log scale)",
+        "legend_labels": [
+          "chance rate"
+        ],
+        "annotations": [
+          "1210x",
+          "721x",
+          "197x",
+          "407x"
+        ],
+        "xticklabels": [
+          "WildChat holdout\n(in-distribution)",
+          "evil\nhhrt",
+          "evil\ntoxicchat",
+          "sycophancy\naita"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ]
+      },
+      {
+        "title_left": "kNN retrieval acc@5 vs chance",
+        "ylabel": "kNN retrieval acc@5 (cosine, log scale)",
+        "legend_labels": [
+          "chance rate"
+        ],
+        "annotations": [
+          "592x",
+          "233x",
+          "69x",
+          "133x"
+        ],
+        "xticklabels": [
+          "WildChat holdout\n(in-distribution)",
+          "evil\nhhrt",
+          "evil\ntoxicchat",
+          "sycophancy\naita"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      }
+    ],
+    "series": [
+      "WildChat holdout (in-distribution)",
+      "identity+learned-bias baseline (in-dist.)",
+      "evil / hhrt (eval dist.)",
+      "evil / toxicchat (eval dist.)",
+      "sycophancy / aita (eval dist.)",
+      "chance rate"
+    ]
+  }
+}

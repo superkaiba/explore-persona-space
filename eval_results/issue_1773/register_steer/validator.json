@@ -1,0 +1,63 @@
+{
+ "git_commit": "21612dc063",
+ "generated_at": "2026-07-31T21:57:07Z",
+ "model": "Qwen/Qwen2.5-7B-Instruct",
+ "versions": {
+  "torch": "2.8.0+cu128",
+  "transformers": "4.57.6"
+ },
+ "what": "#1773 register-axis zero-shot steering-transfer validator",
+ "scope": "validates the register AXIS only; #1773's search-index-only verdict is untouched",
+ "primary_read": "register shift over COHERENT draws only, paired against the per-prompt coherent baseline mean; `register_shift_all` in per_feature.jsonl is the contaminated all-draw comparison",
+ "min_coherent_draws": 3,
+ "alpha": 0.2,
+ "mover_threshold_abs_shift": 3.136,
+ "mover_threshold_basis": "95th percentile of |shift| under usable null_random",
+ "by_arm": {
+  "register": {
+   "n_directions": 1233,
+   "n_usable": 1233,
+   "usable_rate": 1.0,
+   "coherent_rate_mean": 0.9897,
+   "shift_mean": 0.318,
+   "abs_shift_mean": 1.624,
+   "abs_shift_median": 1.198,
+   "mover_rate": 0.1208
+  },
+  "null_other": {
+   "n_directions": 400,
+   "n_usable": 400,
+   "usable_rate": 1.0,
+   "coherent_rate_mean": 0.9748,
+   "shift_mean": 0.447,
+   "abs_shift_mean": 1.453,
+   "abs_shift_median": 1.198,
+   "mover_rate": 0.08
+  },
+  "null_random": {
+   "n_directions": 400,
+   "n_usable": 400,
+   "usable_rate": 1.0,
+   "coherent_rate_mean": 0.9978,
+   "shift_mean": 0.321,
+   "abs_shift_mean": 1.227,
+   "abs_shift_median": 0.948,
+   "mover_rate": 0.05
+  }
+ },
+ "direction_claim": {
+  "n_directional_register_features": 1174,
+  "predicted_direction_counts": {
+   "formal": 1051,
+   "informal": 123,
+   "neither": 51
+  },
+  "match_rate": 0.523,
+  "shuffle_null": {
+   "n_draws": 10000,
+   "null_mean": 0.4811,
+   "null_p95": 0.4957,
+   "p_value": 0.0
+  }
+ }
+}

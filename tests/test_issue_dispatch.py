@@ -70,6 +70,25 @@ from explore_persona_space.backends.router import (
 )
 from explore_persona_space.backends.runpod import RunPodBackend, _runpod_pid_file_path
 
+
+@pytest.fixture(autouse=True)
+def _gcp_rollback_build_for_legacy_suite(request, monkeypatch):
+    """Run the legacy dispatch suite under the #2028 rollback build (flag OFF).
+
+    GCP provisioning is disabled by policy (#2028) but the gated dispatch
+    paths stay test-covered — the single-constant rollback lever. Flag-ON
+    production pins carry ``@pytest.mark.gcp_policy_default``.
+    """
+    if request.node.get_closest_marker("gcp_policy_default"):
+        return
+    from explore_persona_space.backends import router as router_module
+
+    monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", False)
+    monkeypatch.setattr(
+        router_module, "DEFAULT_AUTO_LANE_ORDER", router_module._default_auto_lane_order()
+    )
+
+
 # ---------------------------------------------------------------------------
 # Section 1 — RunPod backend wiring (characterization tests)
 # ---------------------------------------------------------------------------
@@ -892,6 +911,11 @@ def _real_slurm_backend(tmp_path, *, job_id: str = "7777"):
         src_root=tmp_path,
         submitter=lambda *, robot_alias, sbatch_script: job_id,
         rsyncer=lambda **_kw: None,
+        # #1913: prepare now materializes a snapshot via git_cloner and verifies
+        # the sync — fake both (returning src_root keeps the launch-side
+        # sentinel-path assertions on tmp_path unchanged).
+        rsync_verifier=lambda **_kw: None,
+        git_cloner=lambda *, src_root, branch, issue: src_root,
         marker_poster=lambda **_kw: None,
         secrets_pusher=lambda **_kw: None,
         runtime_clearer=lambda **_kw: None,
@@ -1938,8 +1962,9 @@ def test_validate_env_pins_rejects_secret_shaped_value_and_sanitize_splits() -> 
 def test_env_pin_allowlist_keeps_runtime_tuning_keys() -> None:
     """#1803: the house runtime-tuning set (OOM / thread-cap remediation,
     incident #1739) stays in ``ENV_PIN_ALLOWED_KEYS`` — a silent drop in a
-    future allowlist rewrite turns this membership pin red."""
-    from explore_persona_space.backends.base import ENV_PIN_ALLOWED_KEYS
+    future allowlist rewrite turns this membership pin red.
+    #1852 adds the CUDA allocator knob (gotchas.md CUDA-OOM remedy #1)."""
+    from explore_persona_space.backends.base import ENV_PIN_ALLOWED_KEYS, sanitize_env_pins
 
     runtime_tuning = {
         "MALLOC_ARENA_MAX",
@@ -1947,5 +1972,18 @@ def test_env_pin_allowlist_keeps_runtime_tuning_keys() -> None:
         "MKL_NUM_THREADS",
         "OPENBLAS_NUM_THREADS",
         "NUMEXPR_NUM_THREADS",
+        "PYTORCH_CUDA_ALLOC_CONF",
     }
     assert runtime_tuning <= ENV_PIN_ALLOWED_KEYS
+
+    # #1852: the CUDA allocator knob round-trips ``sanitize_env_pins`` with
+    # the gotchas.md hot-fix value (colon is a legal single-line char).
+    pin = {"PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"}
+    kept, dropped = sanitize_env_pins(pin)
+    assert kept == pin
+    assert dropped == []
+    # Comma-bearing multi-option value survives too (free coverage).
+    pin_multi = {"PYTORCH_CUDA_ALLOC_CONF": "max_split_size_mb:128,expandable_segments:True"}
+    kept2, dropped2 = sanitize_env_pins(pin_multi)
+    assert kept2 == pin_multi
+    assert dropped2 == []

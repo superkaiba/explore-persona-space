@@ -41,6 +41,21 @@ def test_lens_coverage_map_carries_row_15():
     assert "critic.md Statistics 15" in text and "v2-owner: statistics-critic" in text
 
 
+def test_wired_files_name_pooling_convention():
+    """Every wired file carries the pooling-convention disclosure row (#1974).
+
+    The hyphenated literal ``pooling-convention`` is asserted deliberately —
+    bare ``pooling`` could be satisfied vacuously by unrelated prose.
+    """
+    for rel in (
+        *FULL_TOKEN_FILES,
+        ".claude/agents/critic.md",
+        ".claude/rules/lens-coverage-map.md",
+    ):
+        text = (REPO / rel).read_text(encoding="utf-8")
+        assert "pooling-convention" in text, f"{rel} lost the pooling-convention row (#1974)"
+
+
 def test_helper_exposes_both_reads():
     """The canonical helper module exposes both callable reads the wiring names."""
     p = REPO / "src/explore_persona_space/analysis/mapping_baselines.py"

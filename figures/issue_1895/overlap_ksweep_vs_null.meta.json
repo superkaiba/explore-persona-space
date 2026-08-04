@@ -1,0 +1,36 @@
+{
+  "source": "eval_results/issue_1895/angles_summary.json",
+  "pair": "psae_recon_pca",
+  "k": [
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "observed_O": [
+    0.8552048206329346,
+    0.8790323734283447,
+    0.8669513463973999,
+    0.8841001987457275,
+    0.8611531257629395
+  ],
+  "null_draws_per_setting": 1000,
+  "conservative_shell": "16",
+  "finest_shell": "64",
+  "observed_percentile_conservative": [
+    61.5,
+    85.3,
+    100.0,
+    100.0,
+    100.0
+  ],
+  "observed_percentile_finest": [
+    99.1,
+    23.4,
+    90.4,
+    99.0,
+    100.0
+  ],
+  "what_is_plotted": "Per k: observed mean cos^2 principal angle between the map's top-k predictable eigendirections and the SAE reconstruction-PCA top-k subspace, against Haar-rotation nulls that preserve the variance profile within eigenvalue shells."
+}

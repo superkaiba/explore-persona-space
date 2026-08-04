@@ -1,0 +1,64 @@
+{
+ "arm_id": "imp-pers-po-lr1e5-s137",
+ "tree": "op",
+ "epochs_ran": 146,
+ "best_internal_val": 0.10959107428789139,
+ "wall_s": 15.6,
+ "recipe": {
+  "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+  "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+  "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+  "hidden": 3584,
+  "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+  "lr": 0.001,
+  "wd": 0.0001,
+  "max_epochs": 300,
+  "patience": 20,
+  "device": "cuda"
+ },
+ "heldout_r2": 0.056212044521055105,
+ "mean_cos": 0.4994733016722798,
+ "knn_euclidean": {
+  "metric": "euclidean",
+  "n": 1000,
+  "n_pool": 1000,
+  "acc_at_k": {
+   "1": 0.015,
+   "10": 0.052
+  },
+  "chance_at_k": {
+   "1": 0.001,
+   "10": 0.01
+  },
+  "median_rank": 365.5,
+  "mrr": 0.03026294768418352
+ },
+ "knn_cosine": {
+  "metric": "cosine",
+  "n": 1000,
+  "n_pool": 1000,
+  "acc_at_k": {
+   "1": 0.026,
+   "10": 0.123
+  },
+  "chance_at_k": {
+   "1": 0.001,
+   "10": 0.01
+  },
+  "median_rank": 143.0,
+  "mrr": 0.060629705246322586
+ },
+ "heldout_r2_ci95": [
+  0.04163253226709115,
+  0.07146252725014246
+ ],
+ "r2_ci_n_draws": 200,
+ "ts": "2026-07-30T18:47:59Z",
+ "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+ "torch": "2.8.0+cu128",
+ "numpy": "2.2.6",
+ "issue": 1768,
+ "layer": 19,
+ "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+ "round": "inline-write-predictability"
+}

@@ -1,0 +1,61 @@
+{
+  "arm": "reduced_basis_k",
+  "cell_id": "onpolicy_assistant_story__R_instruct_r4_op_companion_context",
+  "committed_r2": -0.5471157828882753,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 5.05,
+  "fold_se": 0.0017815831497129029,
+  "issue": 1345,
+  "k": 807,
+  "k_rule": "min(1024, floor(n_train_min/2), d_in)",
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T06:34:06Z"
+  },
+  "n_train_min": 1614,
+  "n_train_per_fold": [
+    1614,
+    1614,
+    1614,
+    1615,
+    1615
+  ],
+  "published_claim_ref": "eval_results/issue_1345/onpolicy_assistant_story/cells_R_instruct_r4_op_companion_context.json @ L19",
+  "r2_per_fold": [
+    0.26092707597328546,
+    0.2645719889676986,
+    0.2667319879085789,
+    0.2605017070367477,
+    0.256412145015807
+  ],
+  "r2_pooled": 0.26182284500999675,
+  "resume_key": {
+    "arm": "reduced_basis_k",
+    "cell_id": "onpolicy_assistant_story__R_instruct_r4_op_companion_context",
+    "issue": 1345,
+    "selector_regime": "reduced_basis_k",
+    "store_rev": "eca4accbf8eef9d4eebe546dbc8f3131c4031df4"
+  },
+  "selected_lambda_per_fold": [
+    1000.0,
+    1000.0,
+    1000.0,
+    1000.0,
+    1000.0
+  ],
+  "selector_config": {
+    "gcv_dof_cap": null,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": false
+  },
+  "tripwire": {
+    "d": 3584,
+    "estimator_degenerate_suspect": false,
+    "n_train": 1614,
+    "reasons": []
+  },
+  "variant": "onpolicy_assistant_story"
+}

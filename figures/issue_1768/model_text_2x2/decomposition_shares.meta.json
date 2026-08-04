@@ -1,0 +1,452 @@
+{
+  "commit": "74e43d5b63",
+  "created": "2026-08-01T02:13:08Z",
+  "figsize": [
+    11.5,
+    7.4
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.19021402710378718,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.21210638589948333,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.1959860165449579,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.74,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.1724528523212741,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.74,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.06924540910589781,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.74,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.21483118885610822,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.74,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.18697731021699057,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.74,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.17451022948387204,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6810351771254286,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6945856432073773,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6730052967858267,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7073269195852371,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.9285681661981073,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7758189993993688,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6765510751337706,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6961729232426991,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.128750795770784,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.09330797089313948,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.13100868666921564,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.26,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.12022022809348862,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.26,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.0021864246959950864,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.26,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.009349811744523186,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.26,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.13647161464923907,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.26,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.12931684727342868,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.26,
+      "mean-shift norm at L19": 4.335561030257595,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.74,
+      "mean-shift norm at L19": 2.707278713840361,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.74,
+      "mean-shift norm at L19": 2.738921316845447,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.74,
+      "mean-shift norm at L19": 3.0084389480804905,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.74,
+      "mean-shift norm at L19": 0.20730107026785022,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.74,
+      "mean-shift norm at L19": 0.6808446418648363,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.74,
+      "mean-shift norm at L19": 3.6922327081420323,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 6.74,
+      "mean-shift norm at L19": 3.828878808395787,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "imp-pers-con\n lr3e5 s42",
+      "mean-shift norm at L19": 10.622614734059368,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "imp-pers-po\n lr1e5 s137",
+      "mean-shift norm at L19": 6.281532309814244,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "cas-pers-con\n lr1e5 s137",
+      "mean-shift norm at L19": 6.735293100542635,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-bare-con\n lr1e5 s42",
+      "mean-shift norm at L19": 7.564263008853677,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-conv-po\n lr1e5 s137",
+      "mean-shift norm at L19": 1.0739650550065387,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-pers-po\n lr5e6 s137",
+      "mean-shift norm at L19": 1.431843622803856,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "imp-pers-ft-con s137",
+      "mean-shift norm at L19": 8.88750859039884,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-pers-ft-con s137",
+      "mean-shift norm at L19": 10.46257165982686,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.26,
+      "mean-shift norm at L19": 2.4821699449838266,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.26,
+      "mean-shift norm at L19": 1.0920596545490269,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.26,
+      "mean-shift norm at L19": 1.6416891602010855,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 3.26,
+      "mean-shift norm at L19": 1.6616705781150145,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 4.26,
+      "mean-shift norm at L19": 0.011445190007915513,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 5.26,
+      "mean-shift norm at L19": 0.029341394420431707,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 6.26,
+      "mean-shift norm at L19": 2.482890983160407,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 7.26,
+      "mean-shift norm at L19": 2.6721926751282132,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "mean-shift norm at L19": 15.014611617206679,
+      "series": "$\\|\\Delta\\|$",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "mean-shift norm at L19": 8.516705077860463,
+      "series": "$\\|\\Delta\\|$",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "mean-shift norm at L19": 9.393512620381774,
+      "series": "$\\|\\Delta\\|$",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "mean-shift norm at L19": 9.961823737367379,
+      "series": "$\\|\\Delta\\|$",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "mean-shift norm at L19": 1.1372865516305586,
+      "series": "$\\|\\Delta\\|$",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "mean-shift norm at L19": 1.6936404534986655,
+      "series": "$\\|\\Delta\\|$",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "mean-shift norm at L19": 12.18099712850904,
+      "series": "$\\|\\Delta\\|$",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "mean-shift norm at L19": 14.408224593884997,
+      "series": "$\\|\\Delta\\|$",
+      "_kind": "line",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 56,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Where the on-policy shift comes from: measured (model x text) decomposition",
+        "ylabel": "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$",
+        "legend_labels": [
+          "text effect\n$v^0(t^+)-v^0(t^0)$",
+          "function effect\n$v^+(t^0)-v^0(t^0)$",
+          "interaction"
+        ],
+        "annotations": [
+          "0.19",
+          "0.21",
+          "0.20",
+          "0.17",
+          "0.07",
+          "0.21",
+          "0.19",
+          "0.17",
+          "0.68",
+          "0.69",
+          "0.67",
+          "0.71",
+          "0.93",
+          "0.78",
+          "0.68",
+          "0.70",
+          "0.13",
+          "0.09",
+          "0.13",
+          "0.12",
+          "0.00",
+          "0.01",
+          "0.14",
+          "0.13",
+          "8 write-predictability arms, layer 19, response-span mean over the sha-joined corpus rows (n~16,400/arm). Terms sum EXACTLY to the shift."
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4"
+        ]
+      },
+      {
+        "ylabel": "mean-shift norm at L19",
+        "legend_labels": [
+          "$\\|\\Delta\\|$"
+        ],
+        "annotations": [
+          "15.0",
+          "8.5",
+          "9.4",
+          "10.0",
+          "1.1",
+          "1.7",
+          "12.2",
+          "14.4"
+        ],
+        "xticklabels": [
+          "imp-pers-con\n lr3e5 s42",
+          "imp-pers-po\n lr1e5 s137",
+          "cas-pers-con\n lr1e5 s137",
+          "syc-bare-con\n lr1e5 s42",
+          "syc-conv-po\n lr1e5 s137",
+          "mk-pers-po\n lr5e6 s137",
+          "imp-pers-ft-con s137",
+          "syc-pers-ft-con s137"
+        ],
+        "yticklabels": [
+          "0.0",
+          "2.5",
+          "5.0",
+          "7.5",
+          "10.0",
+          "12.5",
+          "15.0",
+          "17.5",
+          "20.0"
+        ]
+      }
+    ],
+    "series": [
+      "text effect\n$v^0(t^+)-v^0(t^0)$",
+      "function effect\n$v^+(t^0)-v^0(t^0)$",
+      "interaction",
+      "$\\|\\Delta\\|$"
+    ]
+  }
+}

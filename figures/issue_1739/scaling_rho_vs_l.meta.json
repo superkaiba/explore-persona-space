@@ -1,0 +1,395 @@
+{
+  "commit": "36af9cdf60",
+  "created": "2026-07-30T23:54:51Z",
+  "figsize": [
+    13.5,
+    4.4
+  ],
+  "points": [
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho (frozen layer)": 0.7211027638060928,
+      "series": "Oracle: regress true answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho (frozen layer)": 0.597768850822346,
+      "series": "Oracle: regress true answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "labeled budget L (log scale)": 8000.0,
+      "Spearman rho (frozen layer)": 0.823968766120253,
+      "series": "Oracle: regress true answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho (frozen layer)": 0.5237132725318825,
+      "series": "Direct ridge (context)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho (frozen layer)": 0.33987674207965834,
+      "series": "Direct ridge (context)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "labeled budget L (log scale)": 8000.0,
+      "Spearman rho (frozen layer)": 0.7058011107858361,
+      "series": "Direct ridge (context)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho (frozen layer)": 0.5985671967665369,
+      "series": "Context-native direction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho (frozen layer)": 0.6612357216030894,
+      "series": "Context-native direction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "labeled budget L (log scale)": 8000.0,
+      "Spearman rho (frozen layer)": 0.6650148859213463,
+      "series": "Context-native direction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho (frozen layer)": 0.5405430970823328,
+      "series": "Map-then-project (headline)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho (frozen layer)": 0.52139234750859,
+      "series": "Map-then-project (headline)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "labeled budget L (log scale)": 8000.0,
+      "Spearman rho (frozen layer)": 0.5248838063710559,
+      "series": "Map-then-project (headline)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "Spearman rho (frozen layer)": 0.34183509291326847,
+      "series": "Shuffled-map control",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "Spearman rho (frozen layer)": 0.27588658916730036,
+      "series": "Shuffled-map control",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "labeled budget L (log scale)": 8000.0,
+      "Spearman rho (frozen layer)": 0.260845544008386,
+      "series": "Shuffled-map control",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "y": 0.5008235298343656,
+      "series": "Oracle: regress true answer",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "y": 0.3562588148704207,
+      "series": "Oracle: regress true answer",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "y": 0.6524820336342535,
+      "series": "Oracle: regress true answer",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "y": 0.44766519267360444,
+      "series": "Direct ridge (context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "y": 0.3100291396100683,
+      "series": "Direct ridge (context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "y": 0.584406385930022,
+      "series": "Direct ridge (context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "y": 0.4836036587431424,
+      "series": "Context-native direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "y": 0.5195257451614952,
+      "series": "Context-native direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "y": 0.5207472304224442,
+      "series": "Context-native direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "y": 0.14139306807923485,
+      "series": "Map-then-project (headline)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "y": 0.1444399900338061,
+      "series": "Map-then-project (headline)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "y": 0.14540151973961546,
+      "series": "Map-then-project (headline)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "y": 0.16938109482678507,
+      "series": "Shuffled-map control",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "y": 0.13678184873679755,
+      "series": "Shuffled-map control",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "y": 0.13556308240607884,
+      "series": "Shuffled-map control",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "y": 0.5801373462935859,
+      "series": "Oracle: regress true answer",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "y": 0.4836712440241149,
+      "series": "Oracle: regress true answer",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "y": 0.7711501931809633,
+      "series": "Oracle: regress true answer",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "y": 0.5900479315868681,
+      "series": "Direct ridge (context)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "y": 0.47426110580060415,
+      "series": "Direct ridge (context)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "y": 0.7381864672558881,
+      "series": "Direct ridge (context)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "y": 0.43616545538610324,
+      "series": "Context-native direction",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "y": 0.44393384535654556,
+      "series": "Context-native direction",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "y": 0.42205533607451357,
+      "series": "Context-native direction",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "y": 0.3643323808152478,
+      "series": "Map-then-project (headline)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "y": 0.36338893346891327,
+      "series": "Map-then-project (headline)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "y": 0.3593140076559399,
+      "series": "Map-then-project (headline)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "labeled budget L (log scale)": 250.0,
+      "y": 0.23062863098398734,
+      "series": "Shuffled-map control",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "labeled budget L (log scale)": 2500.0,
+      "y": 0.21002679238938166,
+      "series": "Shuffled-map control",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "labeled budget L (log scale)": 16000.0,
+      "y": 0.2065818358108561,
+      "series": "Shuffled-map control",
+      "_kind": "line",
+      "_group": 14
+    }
+  ],
+  "n_series": 15,
+  "total_points": 45,
+  "text": {
+    "suptitle": "Predictor accuracy vs labeled budget (context variant, synthetic-pair direction, full unlabeled pool)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil",
+        "xlabel": "labeled budget L (log scale)",
+        "ylabel": "Spearman rho (frozen layer)",
+        "xticklabels": [
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "title_left": "hallucination",
+        "xlabel": "labeled budget L (log scale)",
+        "xticklabels": [
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ]
+      },
+      {
+        "title_left": "sycophancy",
+        "xlabel": "labeled budget L (log scale)",
+        "legend_labels": [
+          "Oracle: regress true answer",
+          "Direct ridge (context)",
+          "Context-native direction",
+          "Map-then-project (headline)",
+          "Shuffled-map control"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ]
+      }
+    ],
+    "series": [
+      "Oracle: regress true answer",
+      "Direct ridge (context)",
+      "Context-native direction",
+      "Map-then-project (headline)",
+      "Shuffled-map control"
+    ]
+  }
+}

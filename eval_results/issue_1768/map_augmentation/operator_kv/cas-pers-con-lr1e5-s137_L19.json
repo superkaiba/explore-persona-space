@@ -1,0 +1,286 @@
+{
+ "arm_id": "cas-pers-con-lr1e5-s137",
+ "layer": 19,
+ "pooling": "last_prompt",
+ "method": "lora",
+ "K_train_pairs": 20,
+ "operator_shape": [
+  3584,
+  3584
+ ],
+ "kv_orientation_check_rel_err": 1.3314691270226826e-15,
+ "keys_side_established_by_assert": "LEFT singular vectors of the raw row-vector operator A (v = c @ A) are the context-side KEYS; RIGHT singular vectors are the answer-side VALUES. Equivalently, in the COLUMN convention M = A^T (v = M c) the KEYS are M's RIGHT singular vectors -- the two phrasings agree once the operator orientation is fixed. VERIFIED per cell by key @ A ~= sigma * value.",
+ "value_target_provenance": {
+  "rB_behavior_readout": "banked rb[cas][19], stack shape (28, 3584)",
+  "wu_marker_unembedding_row": "not a marker arm"
+ },
+ "refit_reproduction": {
+  "m0_r2_refit": 0.7002099720427748,
+  "m0_r2_committed": 0.7002099719094206,
+  "m0_r2_absdiff": 1.3335421655824575e-10
+ },
+ "spectrum_real": {
+  "svals": [
+   4.5263484714552735,
+   4.1517175192900835,
+   2.7128702436267043,
+   2.601988117279663,
+   2.421732627531365,
+   2.1968969788705692,
+   2.165157514616319,
+   1.9830086750101459,
+   1.8963978276323343,
+   1.8687258279866699,
+   1.8186149398623772,
+   1.7768560114527847,
+   1.7553510808523134,
+   1.7250703168525188,
+   1.661738457773756,
+   1.613304401856671,
+   1.5974145854143451,
+   1.5385186214874145,
+   1.5027237956610893,
+   1.4693121837696594,
+   1.4309573111604803,
+   1.3901479894927578,
+   1.3674775987102041,
+   1.3556371431311378,
+   1.3183869228657967,
+   1.2892976562285845,
+   1.2734824681109573,
+   1.2514686396833958,
+   1.2308471523718245,
+   1.199515125079129,
+   1.1956248375913758,
+   1.16656956014623
+  ],
+  "fro2_exact": 306.5653718960434,
+  "sum_s4_exact": 1119.9118093218992,
+  "participation_ratio_exact": 83.91940013800301,
+  "top1_share": 0.0668302175106487,
+  "top5_share": 0.18827757528031616,
+  "top32_share": 0.40936318403200883,
+  "svd_q": 32
+ },
+ "spectrum_predicted": {
+  "svals": [
+   0.757186025783969,
+   0.2624848050908566,
+   0.1985192540580088,
+   0.14705935475542,
+   0.13154161156134414,
+   0.1071198420357603,
+   0.10007149908665308,
+   0.09401699957109332,
+   0.0880939198113242,
+   0.07408143215472254,
+   0.06654207513111762,
+   0.05353437086915626,
+   0.04486887872357159,
+   0.00292385382896483,
+   0.0026080945333437234,
+   0.002109687538739104,
+   0.0020630919320216864,
+   0.001987605569092621,
+   0.001934346986913247,
+   0.0018440254624691218,
+   0.0017778034813182146,
+   0.0016863685084159627,
+   0.0016233395088615112,
+   0.001592373473365943,
+   0.0015392694804393472,
+   0.0014739127054086284,
+   0.0014456891643284625,
+   0.0014298381996506093,
+   0.0013676363426970023,
+   0.001348261120405858,
+   0.0013441233288899786,
+   0.0012926374795017065
+  ],
+  "fro2_exact": 0.773636375555983,
+  "sum_s4_exact": 0.3362075848135089,
+  "participation_ratio_exact": 1.780189587083193,
+  "top1_share": 0.7410854708460295,
+  "top5_share": 0.9314046197132929,
+  "top32_share": 0.9998423532945202,
+  "svd_q": 32
+ },
+ "lora_rank_note": "LoRA WEIGHT updates are rank-32 per adapted layer by construction; this spectrum is of the fitted context->answer OPERATOR update, a different object, so the two ranks are not required to agree — reported split by method",
+ "key_alignment": {
+  "null_abscos_mean": 0.012519086325392075,
+  "null_abscos_p95": 0.030480006663664516,
+  "null_abscos_analytic_sd": 0.016703827619526525,
+  "n_null_draws": 200,
+  "targets": {
+   "training_context_centroid": {
+    "computed": true,
+    "abscos_per_component": [
+     0.009428414483125355,
+     0.011383587290585332,
+     0.02424911684569727,
+     0.007378116002535832,
+     0.00866340308261125
+    ],
+    "abscos_top1": 0.009428414483125355,
+    "abscos_max_over_topk": 0.02424911684569727,
+    "topk_subspace_projection": 0.030593984307097612
+   },
+   "whitened_gate_Sigma_inv_c_src": {
+    "computed": true,
+    "abscos_per_component": [
+     0.00678766115764349,
+     0.01668778953879138,
+     0.004686358718146653,
+     0.011757802668379119,
+     0.012054099406244122
+    ],
+    "abscos_top1": 0.00678766115764349,
+    "abscos_max_over_topk": 0.01668778953879138,
+    "topk_subspace_projection": 0.025101072841639323
+   },
+   "ridge_natural_key_from_augmentation": {
+    "computed": true,
+    "abscos_per_component": [
+     0.00669034208939162,
+     0.012908346791354969,
+     0.0024345341241218737,
+     0.009022019828081023,
+     0.008087308673968405
+    ],
+    "abscos_top1": 0.00669034208939162,
+    "abscos_max_over_topk": 0.012908346791354969,
+    "topk_subspace_projection": 0.019081783300488864
+   }
+  }
+ },
+ "value_alignment": {
+  "null_abscos_mean": 0.013518736344093113,
+  "null_abscos_p95": 0.03275328487761059,
+  "null_abscos_analytic_sd": 0.016703827619526525,
+  "n_null_draws": 200,
+  "targets": {
+   "delta_eq_mean_map_residual": {
+    "computed": true,
+    "abscos_per_component": [
+     0.04248060595535594,
+     0.14942571425963327,
+     0.4402647564423897,
+     0.2915995225956143,
+     0.17805324873906656
+    ],
+    "abscos_top1": 0.04248060595535594,
+    "abscos_max_over_topk": 0.4402647564423897,
+    "topk_subspace_projection": 0.5785317127817095
+   },
+   "map_residual_pc1": {
+    "computed": true,
+    "abscos_per_component": [
+     0.036424336664713765,
+     0.0419986385972012,
+     0.08845022912006849,
+     0.05518153423279554,
+     0.3098070528371297
+    ],
+    "abscos_top1": 0.036424336664713765,
+    "abscos_max_over_topk": 0.3098070528371297,
+    "topk_subspace_projection": 0.3315712181188058
+   },
+   "mean_measured_write_wtf": {
+    "computed": true,
+    "abscos_per_component": [
+     0.14164255459716088,
+     0.08314275775112519,
+     0.0774771443363552,
+     0.20515608225610277,
+     0.06356476915985472
+    ],
+    "abscos_top1": 0.14164255459716088,
+    "abscos_max_over_topk": 0.20515608225610277,
+    "topk_subspace_projection": 0.28126062166397714
+   },
+   "rB_behavior_readout": {
+    "computed": true,
+    "abscos_per_component": [
+     0.17022638409782412,
+     0.10775920248661135,
+     0.35764580851091665,
+     0.16718774028029182,
+     0.3112772456224391
+    ],
+    "abscos_top1": 0.17022638409782412,
+    "abscos_max_over_topk": 0.35764580851091665,
+    "topk_subspace_projection": 0.541613197818628
+   },
+   "wu_marker_unembedding_row": {
+    "computed": false,
+    "reason": "target unavailable"
+   }
+  }
+ },
+ "match_read": {
+  "k_effective_of_predicted_update": 11,
+  "k_used": 11,
+  "key_subspace_principal_angles": {
+   "cosines": [
+    0.09523329112066975,
+    0.0760186698010553,
+    0.07186328235754048,
+    0.06225989698338909,
+    0.058607654738304614,
+    0.04721709006254932,
+    0.04382055462065786,
+    0.02931542794104257,
+    0.024438936702097427,
+    0.021332502840788997,
+    0.008941348334493733
+   ],
+   "mean_cos": 0.049004423227508115,
+   "max_cos": 0.09523329112066975,
+   "min_cos": 0.008941348334493733,
+   "k": 11
+  },
+  "value_subspace_principal_angles": {
+   "cosines": [
+    0.7122093353138196,
+    0.548459135683936,
+    0.4716753666954042,
+    0.35662440787360017,
+    0.28703816168058527,
+    0.2532990608403624,
+    0.21212008629712473,
+    0.16692072817689527,
+    0.09996779744459174,
+    0.05767696418583415,
+    0.030649350638132046
+   ],
+   "mean_cos": 0.2906036722572987,
+   "max_cos": 0.7122093353138196,
+   "min_cos": 0.030649350638132046,
+   "k": 11
+  },
+  "at_mass": 0.0013315579227696406,
+  "at_weight": 1.0,
+  "random_subspace_null": {
+   "k": 11,
+   "ambient_dim": 3584,
+   "n_draws": 200,
+   "mean_cos_null_mean": 0.04687650116470339,
+   "mean_cos_null_p95": 0.05225475907107522,
+   "max_cos_null_mean": 0.10103749709154237,
+   "max_cos_null_p95": 0.11492584358907663,
+   "analytic_scale_sqrt_k_over_n": 0.055400328776744896
+  },
+  "key_match_vs_null_ratio": 1.0453942169303152,
+  "key_match_exceeds_null_p95": false,
+  "value_match_vs_null_ratio": 6.199346475033308,
+  "value_match_exceeds_null_p95": true
+ },
+ "ts": "2026-08-02T07:11:09Z",
+ "git_commit": "a3df7df6da53ef9852cd07b45c4c6bd2787fd1ed",
+ "torch": "2.8.0+cu128",
+ "transformers": "4.57.6",
+ "issue": 1768,
+ "position": "last_prompt",
+ "round": "inline-map-augmentation",
+ "code_tree_source": "git-checkout"
+}

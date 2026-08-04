@@ -1,0 +1,280 @@
+{
+  "commit": "d02fdfa9bc",
+  "created": "2026-07-31T00:00:50Z",
+  "figsize": [
+    12.0,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "Context variance-component share": 0.018209575620905402,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.8,
+      "Context variance-component share": 0.007935948861456116,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.8,
+      "Context variance-component share": 0.014515240405980252,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.8,
+      "Context variance-component share": 0.019701108230500506,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.8,
+      "Context variance-component share": 0.01025461553050501,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.8,
+      "Context variance-component share": 0.014307225243256462,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.8,
+      "Context variance-component share": 0.01539235389913025,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.8,
+      "Context variance-component share": 0.011194635881912945,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.8,
+      "Context variance-component share": 0.014414588779689454,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "Context variance-component share": 0.021874299093629188,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "Context variance-component share": 0.008745502041473474,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "Context variance-component share": 0.01713981423248786,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.2,
+      "Context variance-component share": 0.02342099036935193,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.2,
+      "Context variance-component share": 0.011473118080695172,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.2,
+      "Context variance-component share": 0.01635489616356884,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.2,
+      "Context variance-component share": 0.01629129614393443,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.2,
+      "Context variance-component share": 0.012087467724630437,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.2,
+      "Context variance-component share": 0.01524299367877074,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.2,
+      "y": 0.08221443478080306,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.8,
+      "y": 0.0782342199209034,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.8,
+      "y": 0.08722015180658466,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.8,
+      "y": 0.07691914233142794,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.8,
+      "y": 0.07141708484552142,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.8,
+      "y": 0.08874132058771456,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.8,
+      "y": 0.06849408819103203,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.8,
+      "y": 0.06233076113516372,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.8,
+      "y": 0.07797582626190794,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.2,
+      "y": 0.10712376995140656,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.2,
+      "y": 0.0954611108474869,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.2,
+      "y": 0.10963988319137921,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.2,
+      "y": 0.10618081229193732,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.2,
+      "y": 0.08903172849112556,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.2,
+      "y": 0.1125263716347181,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 6.2,
+      "y": 0.0838858666618427,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 7.2,
+      "y": 0.07128751188879434,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 8.2,
+      "y": 0.09055451607929083,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 36,
+  "text": {
+    "suptitle": "The context component is small before and after removing answer-sampling noise",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Raw squared residual",
+        "ylabel": "Context variance-component share",
+        "legend_labels": [
+          "Before floor subtraction",
+          "After subtracting answer-sampling floor"
+        ],
+        "xticklabels": [
+          "Context\nlayer 14",
+          "Prefix\nlayer 14",
+          "Bare-query\nlayer 14",
+          "Context\nlayer 19",
+          "Prefix\nlayer 19",
+          "Bare-query\nlayer 19",
+          "Context\nlayer 26",
+          "Prefix\nlayer 26",
+          "Bare-query\nlayer 26"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12"
+        ]
+      },
+      {
+        "title_left": "Normalized squared residual",
+        "xticklabels": [
+          "Context\nlayer 14",
+          "Prefix\nlayer 14",
+          "Bare-query\nlayer 14",
+          "Context\nlayer 19",
+          "Prefix\nlayer 19",
+          "Bare-query\nlayer 19",
+          "Context\nlayer 26",
+          "Prefix\nlayer 26",
+          "Bare-query\nlayer 26"
+        ]
+      }
+    ],
+    "series": [
+      "Before floor subtraction",
+      "After subtracting answer-sampling floor"
+    ]
+  }
+}

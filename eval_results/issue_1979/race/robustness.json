@@ -1,0 +1,259 @@
+{
+ "meta": {
+  "script": "scripts/issue1979_race.py",
+  "issue": 1979,
+  "seed": 1979,
+  "git_commit": "8c840dbe9d853cc63cd84886554213f20e0491ea",
+  "ts": "2026-08-01T20:41:35Z"
+ },
+ "line3_length_partial": {
+  "cas-pers-con-lr1e5-s42": {
+   "p6": {
+    "partial_given_length": 0.7140864550772877
+   },
+   "p7": {
+    "partial_given_length": 0.7170045789428781
+   },
+   "p5": {
+    "partial_given_length": 0.7246572197764872
+   }
+  },
+  "cas-pers-po-lr1e5-s42": {
+   "p6": {
+    "partial_given_length": 0.6562877035881051
+   },
+   "p7": {
+    "partial_given_length": 0.5554203590674127
+   },
+   "p5": {
+    "partial_given_length": 0.5335324590310401
+   }
+  },
+  "cas-bare-con-lr1e5-s42": {
+   "p6": {
+    "partial_given_length": 0.2574387187257026
+   },
+   "p7": {
+    "partial_given_length": 0.46803653969344616
+   },
+   "p5": {
+    "partial_given_length": 0.41737099154219304
+   }
+  },
+  "cas-pers-ft-con-s42": {
+   "p6": {
+    "partial_given_length": 0.5833855246495117
+   },
+   "p7": {
+    "partial_given_length": 0.7026216601735991
+   },
+   "p5": {
+    "partial_given_length": 0.6647820358929056
+   }
+  },
+  "imp-pers-con-lr3e5-s42": {
+   "p6": {
+    "partial_given_length": 0.5327269133923365
+   },
+   "p7": {
+    "partial_given_length": 0.3651496310396322
+   },
+   "p5": {
+    "partial_given_length": 0.514896827891915
+   }
+  },
+  "imp-pers-con-lr3e5-s137": {
+   "p6": {
+    "partial_given_length": 0.4116204877745537
+   },
+   "p7": {
+    "partial_given_length": 0.14758298979614562
+   },
+   "p5": {
+    "partial_given_length": 0.32128902949031696
+   }
+  },
+  "imp-pers-po-lr1e5-s42": {
+   "p6": {
+    "partial_given_length": 0.5167528414743588
+   },
+   "p7": {
+    "partial_given_length": 0.3508041798544125
+   },
+   "p5": {
+    "partial_given_length": 0.3973711853595584
+   }
+  },
+  "imp-pers-ft-con-s42": {
+   "p6": {
+    "partial_given_length": 0.48673139318396297
+   },
+   "p7": {
+    "partial_given_length": 0.23666985010710548
+   },
+   "p5": {
+    "partial_given_length": 0.38312537531468605
+   }
+  },
+  "syc-bare-con-lr1e5-s42": {
+   "p6": {
+    "partial_given_length": 0.10343078181006156
+   },
+   "p7": {
+    "partial_given_length": 0.41093780510290245
+   },
+   "p5": {
+    "partial_given_length": 0.12291558134595951
+   }
+  },
+  "syc-conv-con-lr1e5-s42": {
+   "p6": {
+    "partial_given_length": 0.6478056352940037
+   },
+   "p7": {
+    "partial_given_length": 0.6500070921823263
+   },
+   "p5": {
+    "partial_given_length": 0.5988128035208762
+   }
+  },
+  "syc-pers-po-lr1e5-s42": {
+   "p6": {
+    "partial_given_length": 0.4176324231521518
+   },
+   "p7": {
+    "partial_given_length": 0.6903072243644172
+   },
+   "p5": {
+    "partial_given_length": 0.4358265359312408
+   }
+  },
+  "syc-pers-ft-con-s42": {
+   "p6": {
+    "partial_given_length": 0.48204674483285487
+   },
+   "p7": {
+    "partial_given_length": 0.5624144484046123
+   },
+   "p5": {
+    "partial_given_length": 0.4717321425320409
+   }
+  },
+  "mk-pers-con-lr5e6-s42": {
+   "p6": {
+    "partial_given_length": -0.15913697030201548
+   },
+   "p7": {
+    "partial_given_length": 0.09676789359930069
+   },
+   "p5": {
+    "partial_given_length": -0.3742413170475552
+   }
+  },
+  "mk-bare-con-lr5e6-s42": {
+   "p6": {
+    "partial_given_length": 0.09850343525736452
+   },
+   "p7": {
+    "partial_given_length": -0.524331822838807
+   },
+   "p5": {
+    "partial_given_length": 0.27514943821831056
+   }
+  },
+  "mk-conv-con-lr5e6-s42": {
+   "p6": {
+    "partial_given_length": -0.08157893646369016
+   },
+   "p7": {
+    "partial_given_length": -0.13068358596775256
+   },
+   "p5": {
+    "partial_given_length": 0.07190285764257165
+   }
+  },
+  "mk-icl-con-lr5e6-s42": {
+   "p6": {
+    "partial_given_length": -0.037862750777339416
+   },
+   "p7": {
+    "partial_given_length": 0.4059798147152195
+   },
+   "p5": {
+    "partial_given_length": -0.06338143224448846
+   }
+  },
+  "mk-pers-po-lr5e6-s42": {
+   "p6": {
+    "partial_given_length": -0.035980775810423735
+   },
+   "p7": {
+    "partial_given_length": 0.17777456796580776
+   },
+   "p5": {
+    "partial_given_length": -0.2910698162884406
+   }
+  },
+  "mk-pers-ft-con-s42": {
+   "p6": {
+    "partial_given_length": -0.08650123717786753
+   },
+   "p7": {
+    "partial_given_length": 0.20660333434234326
+   },
+   "p5": {
+    "partial_given_length": -0.31074525682456644
+   }
+  }
+ },
+ "line5_ceiling_reread": {
+  "cas-pers-con-lr1e5-s42": {
+   "n_flagged": 0,
+   "flagged_prefixes": []
+  },
+  "cas-pers-po-lr1e5-s42": {
+   "n_flagged": 0,
+   "flagged_prefixes": []
+  },
+  "cas-bare-con-lr1e5-s42": {
+   "n_flagged": 0,
+   "flagged_prefixes": []
+  },
+  "cas-pers-ft-con-s42": {
+   "n_flagged": 0,
+   "flagged_prefixes": []
+  },
+  "imp-pers-con-lr3e5-s42": {
+   "n_flagged": 0,
+   "flagged_prefixes": []
+  },
+  "imp-pers-con-lr3e5-s137": {
+   "n_flagged": 0,
+   "flagged_prefixes": []
+  },
+  "imp-pers-po-lr1e5-s42": {
+   "n_flagged": 0,
+   "flagged_prefixes": []
+  },
+  "imp-pers-ft-con-s42": {
+   "n_flagged": 0,
+   "flagged_prefixes": []
+  },
+  "syc-bare-con-lr1e5-s42": {
+   "n_flagged": 0,
+   "flagged_prefixes": []
+  },
+  "syc-conv-con-lr1e5-s42": {
+   "n_flagged": 0,
+   "flagged_prefixes": []
+  },
+  "syc-pers-po-lr1e5-s42": {
+   "n_flagged": 0,
+   "flagged_prefixes": []
+  },
+  "syc-pers-ft-con-s42": {
+   "n_flagged": 0,
+   "flagged_prefixes": []
+  }
+ }
+}

@@ -780,6 +780,27 @@ class TrainLoraConfig:
     # re-tokenize the pre-tokenized rows (which would lose the role-header
     # bytes Qwen drops under apply_chat_template).
     dataset_kwargs: dict | None = None
+    # --- Issue #1947 single-visit sequential-consumption seam (all default
+    # OFF -> byte-identical behavior for every existing caller). ---
+    # When True, train_lora replaces HF's per-epoch RandomSampler with a
+    # SEQUENTIAL sampler over the (pre-shuffled) data file, forces
+    # dataloader_num_workers=0 (worker processes would decouple sampler-yield
+    # order from feed timing), and attaches SequentialConsumptionCallback:
+    # the callback LOGS the realized per-optimizer-step consumed dataset
+    # indices at the sampler/dataloader boundary (accumulation micro-batches
+    # attributed to their optimizer step), WRITES the realized consumption
+    # manifest, and HARD-ASSERTS at train end that every row was consumed
+    # exactly once AND the realized order equals the builder-predicted
+    # sequential mapping (fail-loud on ANY divergence — a silent reshuffle or
+    # accumulation-order divergence passes once-ness but not this).
+    sequential_sampler: bool = False
+    # Builder-predicted consumption manifest JSON (REQUIRED when
+    # sequential_sampler=True): keys n_rows / effective_batch / epochs /
+    # predicted_step_of_idx / row_ids (the #1947 datagen contract, plan §4.2).
+    sequential_consumption_manifest: str | None = None
+    # Where the callback writes the REALIZED consumption manifest.
+    # None -> <output_dir>/realized_consumption.json.
+    realized_consumption_out: str | None = None
 
 
 def _apply_chat_template_safe(tokenizer, messages, *, add_generation_prompt: bool):
@@ -1320,6 +1341,328 @@ def _validate_prompt_completion_homogeneity(data_path: Path) -> None:  # noqa: C
                 )
 
 
+_SEQ_CONSUMPTION_CLASSES: tuple | None = None
+
+
+def _sequential_consumption_classes() -> tuple:
+    """(sampler_cls, callback_cls) for the #1947 single-visit seam.
+
+    Defined lazily so sft.py keeps its torch/transformers imports deferred
+    (the CVD-pin-before-cuInit contract at the top of train_lora). The
+    callback subclasses transformers.TrainerCallback (the #816 lifecycle
+    rule — a bare class dies at Trainer.__init__'s on_init_end).
+    """
+    global _SEQ_CONSUMPTION_CLASSES
+    if _SEQ_CONSUMPTION_CLASSES is not None:
+        return _SEQ_CONSUMPTION_CLASSES
+
+    from transformers import TrainerCallback
+
+    class LoggingSequentialSampler:
+        """Sequential sampler that RECORDS every index it yields, in order.
+
+        With dataloader_num_workers=0 (forced by the seam) the DataLoader
+        pulls indices lazily at batch-formation time in the MAIN process, so
+        the recorded yield order IS the order rows were fed to the trainer
+        (accelerate's single-process wrapper may look ahead at most one
+        accumulation group; the callback's per-step snapshot check bounds
+        that). Duck-typed torch Sampler (iterable + __len__), no torch import.
+        """
+
+        def __init__(self, n: int) -> None:
+            self.n = int(n)
+            self.yielded: list[int] = []
+
+        def __iter__(self) -> Iterator[int]:
+            for i in range(self.n):
+                self.yielded.append(i)
+                yield i
+
+        def __len__(self) -> int:
+            return self.n
+
+    class SequentialConsumptionCallback(TrainerCallback):
+        """Realized-consumption logger + fail-loud single-visit asserts.
+
+        Logs the actual per-optimizer-step consumed dataset indices (from the
+        sampler's yield record; micro-batches attributed to their optimizer
+        step by position // effective_batch over the REALIZED order), writes
+        the realized consumption manifest, and at train end HARD-ASSERTS:
+        every row consumed exactly once; global_step == n_rows /
+        effective_batch; realized order == the builder-predicted sequential
+        order from the mix's consumption_manifest.json (raises on the first
+        divergent index). The manifest JSON is written BEFORE the asserts so
+        a divergence leaves forensic evidence on disk.
+        """
+
+        def __init__(
+            self,
+            *,
+            sampler,
+            manifest: dict,
+            out_path: Path,
+            effective_batch: int,
+        ) -> None:
+            self.sampler = sampler
+            self.manifest = manifest
+            self.out_path = Path(out_path)
+            self.effective_batch = int(effective_batch)
+            self.step_snapshots: list[dict] = []
+            self.finalized = False
+
+        def on_step_end(self, args, state, control, **kwargs):
+            k = int(state.global_step)
+            count = len(self.sampler.yielded)
+            n = int(self.manifest["n_rows"])
+            lo = min(k * self.effective_batch, n)
+            hi = min((k + 1) * self.effective_batch, n)
+            if not (lo <= count <= hi):
+                raise RuntimeError(
+                    f"[seq-consumption] optimizer step {k}: sampler yielded {count} rows, "
+                    f"expected in [{lo}, {hi}] (effective_batch={self.effective_batch}, "
+                    f"n_rows={n}) — the dataloader is not feeding sequentially "
+                    "(reshuffle / drop / multi-worker decoupling); refusing"
+                )
+            self.step_snapshots.append({"global_step": k, "rows_yielded": count})
+            return control
+
+        def on_train_end(self, args, state, control, **kwargs):
+            self.finalize(int(state.global_step))
+            return control
+
+        def finalize(self, global_step: int) -> None:
+            """Write the realized manifest, then run the fail-loud asserts."""
+            if self.finalized:
+                return
+            self.finalized = True
+            _finalize_consumption_record(
+                yielded=list(self.sampler.yielded),
+                manifest=self.manifest,
+                effective_batch=self.effective_batch,
+                global_step=global_step,
+                step_snapshots=self.step_snapshots,
+                out_path=self.out_path,
+            )
+
+    _SEQ_CONSUMPTION_CLASSES = (LoggingSequentialSampler, SequentialConsumptionCallback)
+    return _SEQ_CONSUMPTION_CLASSES
+
+
+def _finalize_consumption_record(
+    *,
+    yielded: list[int],
+    manifest: dict,
+    effective_batch: int,
+    global_step: int,
+    step_snapshots: list[dict],
+    out_path: Path,
+) -> dict:
+    """Write the REALIZED consumption manifest, then run the fail-loud
+    single-visit asserts (write-first so a divergence leaves forensic
+    evidence on disk). Module-level so tests can exercise it directly."""
+    n = int(manifest["n_rows"])
+    eff = int(effective_batch)
+    row_ids = list(manifest["row_ids"])
+    predicted = [int(s) for s in manifest["predicted_step_of_idx"]]
+    realized_step_of_idx: list[int | None] = [None] * n
+    for pos, idx in enumerate(yielded):
+        if 0 <= idx < n:
+            realized_step_of_idx[idx] = pos // eff
+    first_mismatch = next(
+        (
+            i
+            for i in range(n)
+            if realized_step_of_idx[i] is None or realized_step_of_idx[i] != predicted[i]
+        ),
+        None,
+    )
+    record = {
+        "n_rows": n,
+        "effective_batch": eff,
+        "epochs": int(manifest.get("epochs", 1)),
+        "global_step": global_step,
+        "n_yielded": len(yielded),
+        "realized_order": yielded,
+        "realized_step_of_idx": realized_step_of_idx,
+        "row_ids": row_ids,
+        "step_snapshots": step_snapshots,
+        "matches_predicted": first_mismatch is None and len(yielded) == n,
+        "first_mismatch_idx": first_mismatch,
+        "source": "SequentialConsumptionCallback (train/sft.py; #1947 plan §4.2)",
+        "git_commit": _git_short_sha_failsoft(),
+        "ts": _utc_now_iso(),
+    }
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out_path.with_name(out_path.name + ".tmp")
+    tmp.write_text(json.dumps(record, ensure_ascii=False, indent=1))
+    os.replace(tmp, out_path)
+    # Fail-loud asserts (AFTER the forensic write).
+    if len(yielded) != n:
+        raise RuntimeError(
+            f"[seq-consumption] consumed {len(yielded)} rows != n_rows {n} — "
+            "not a single full pass over the mix (early stop / extra epoch); "
+            f"realized manifest at {out_path}"
+        )
+    if sorted(yielded) != list(range(n)):
+        counts_bad = sorted(set(range(n)) - set(yielded)) or [
+            i for i in set(yielded) if yielded.count(i) != 1
+        ]
+        raise RuntimeError(
+            f"[seq-consumption] rows NOT consumed exactly once (first problem "
+            f"indices: {counts_bad[:5]}) — realized manifest at {out_path}"
+        )
+    if global_step != n // eff:
+        raise RuntimeError(
+            f"[seq-consumption] global_step {global_step} != n_rows/effective_batch "
+            f"{n // eff} — the optimizer schedule diverged from the single-visit plan"
+        )
+    if first_mismatch is not None:
+        i = first_mismatch
+        raise RuntimeError(
+            f"[seq-consumption] realized order DIVERGES from the builder-predicted "
+            f"sequential order at dataset idx {i} (row_id {row_ids[i]!r}): realized "
+            f"step {realized_step_of_idx[i]} != predicted {predicted[i]} — a silent "
+            "reshuffle or accumulation-order divergence corrupts every "
+            f"consumed-rows battery read; realized manifest at {out_path}"
+        )
+    logger.info(
+        "[seq-consumption] single-visit verified: %d rows consumed exactly once "
+        "over %d optimizer steps; realized manifest at %s",
+        n,
+        global_step,
+        out_path,
+    )
+    return record
+
+
+def _git_short_sha_failsoft() -> str:
+    """Repo short sha for reproducibility metadata (fail-soft: 'unknown')."""
+    import subprocess
+
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=Path(__file__).resolve().parent,
+        )
+        return proc.stdout.strip() or "unknown"
+    except Exception:
+        return "unknown"
+
+
+def _utc_now_iso() -> str:
+    import time
+
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+def _load_consumption_manifest(cfg: TrainLoraConfig) -> tuple[dict, int, int]:
+    """Load + fail-loud-validate the builder-predicted consumption manifest
+    against the config's optimizer geometry. Returns (manifest, n_rows,
+    effective_batch)."""
+    if cfg.sequential_consumption_manifest is None:
+        raise ValueError(
+            "sequential_sampler=True requires sequential_consumption_manifest "
+            "(the mix's builder-predicted consumption_manifest.json)"
+        )
+    manifest_path = Path(cfg.sequential_consumption_manifest)
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"consumption manifest missing: {manifest_path}")
+    manifest = json.loads(manifest_path.read_text())
+    required = ("n_rows", "effective_batch", "epochs", "predicted_step_of_idx", "row_ids")
+    missing = [k for k in required if k not in manifest]
+    if missing:
+        raise ValueError(f"consumption manifest {manifest_path} missing keys {missing}")
+    n = int(manifest["n_rows"])
+    eff = cfg.batch_size * cfg.grad_accum
+    if int(manifest["effective_batch"]) != eff:
+        raise ValueError(
+            f"manifest effective_batch {manifest['effective_batch']} != config "
+            f"batch_size*grad_accum {eff} — the predicted step mapping would be wrong"
+        )
+    if int(manifest["epochs"]) != 1:
+        raise ValueError(
+            f"manifest epochs {manifest['epochs']} != 1 — the sequential seam implements "
+            "exactly one pass (single-visit); repeat-regime cells train WITHOUT the seam"
+        )
+    if n % eff != 0:
+        raise ValueError(f"n_rows {n} not divisible by effective_batch {eff}")
+    row_ids = list(manifest["row_ids"])
+    if len(row_ids) != n or len(set(row_ids)) != n:
+        raise ValueError(
+            f"manifest row_ids: {len(row_ids)} entries / {len(set(row_ids))} unique != n_rows {n}"
+        )
+    if len(manifest["predicted_step_of_idx"]) != n:
+        raise ValueError(
+            f"manifest predicted_step_of_idx has {len(manifest['predicted_step_of_idx'])} "
+            f"entries != n_rows {n}"
+        )
+    return manifest, n, eff
+
+
+def _maybe_attach_sequential_consumption(trainer, cfg: TrainLoraConfig, output_dir: str) -> None:
+    """#1947 single-visit seam wiring (no-op unless cfg.sequential_sampler).
+
+    Validates the builder-predicted consumption manifest against the trainer's
+    prepared dataset + the config's optimizer geometry, installs the logging
+    SEQUENTIAL sampler via an instance-level ``_get_train_sampler`` override
+    (transformers 4.57 signature ``(self, train_dataset=None)``), and attaches
+    SequentialConsumptionCallback. Fail-loud on every contract violation.
+    """
+    if not cfg.sequential_sampler:
+        return
+    if cfg.packing:
+        raise ValueError(
+            "sequential_sampler=True is incompatible with packing=True — packing "
+            "re-groups rows and destroys the row->step consumption mapping"
+        )
+    manifest, n, eff = _load_consumption_manifest(cfg)
+    ds_len = len(trainer.train_dataset)
+    if ds_len != n:
+        raise ValueError(
+            f"prepared train dataset has {ds_len} rows != manifest n_rows {n} — "
+            "the staged mix and the manifest disagree"
+        )
+    expected_steps = n // eff
+    if cfg.max_steps is not None and cfg.max_steps != expected_steps:
+        raise ValueError(
+            f"max_steps {cfg.max_steps} != n_rows/effective_batch {expected_steps} — "
+            "would not be a single full pass"
+        )
+    if cfg.max_steps is None and cfg.epochs != 1:
+        raise ValueError(
+            f"cfg.epochs {cfg.epochs} != 1 with no max_steps — the sequential seam "
+            "implements exactly one pass"
+        )
+    sampler_cls, cb_cls = _sequential_consumption_classes()
+    sampler = sampler_cls(n)
+
+    def _sequential_train_sampler(self, train_dataset=None):
+        ds = train_dataset if train_dataset is not None else self.train_dataset
+        if ds is not None and len(ds) != n:
+            raise RuntimeError(
+                f"[seq-consumption] sampler requested for a {len(ds)}-row dataset, "
+                f"manifest pins {n} rows"
+            )
+        return sampler
+
+    trainer._get_train_sampler = types.MethodType(_sequential_train_sampler, trainer)
+    out = Path(cfg.realized_consumption_out or (Path(output_dir) / "realized_consumption.json"))
+    cb = cb_cls(sampler=sampler, manifest=manifest, out_path=out, effective_batch=eff)
+    trainer.add_callback(cb)
+    trainer._epm_consumption_callback = cb
+    logger.info(
+        "[seq-consumption] sequential sampler + consumption callback attached: "
+        "n=%d effective_batch=%d expected_steps=%d out=%s",
+        n,
+        eff,
+        expected_steps,
+        out,
+    )
+
+
 def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclomatic complexity to 16
     base_model_path: str,
     data_path: str,
@@ -1549,9 +1892,14 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         "gradient_checkpointing": cfg.gradient_checkpointing,
         "weight_decay": cfg.weight_decay,
         "packing": cfg.packing,
-        "dataloader_num_workers": cfg.dataloader_num_workers,
+        # #1947 sequential seam: worker processes decouple sampler-yield order
+        # from the main-process feed (and lose the yield log to the worker) —
+        # force in-process loading under the seam; default path byte-identical.
+        "dataloader_num_workers": (0 if cfg.sequential_sampler else cfg.dataloader_num_workers),
         "dataloader_pin_memory": True,
-        "dataloader_persistent_workers": cfg.dataloader_persistent_workers,
+        "dataloader_persistent_workers": (
+            False if cfg.sequential_sampler else cfg.dataloader_persistent_workers
+        ),
         "use_liger_kernel": False,
     }
     if cfg.packing:
@@ -1644,6 +1992,7 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg)
     _maybe_attach_marker_band_stop(trainer, tokenizer, cfg, str(_data_path))
     _maybe_attach_kl_aux(trainer, tokenizer, cfg)
+    _maybe_attach_sequential_consumption(trainer, cfg, output_dir)
 
     train_completed = False
     try:

@@ -1,0 +1,507 @@
+{
+  "commit": "c91570c52c",
+  "created": "2026-08-02T06:11:10Z",
+  "figsize": [
+    13.5,
+    4.4
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "top-1 singular share": 0.3362,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share": 0.1951,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "top-1 singular share": 0.3467,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share": 0.2048,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "top-1 singular share": 0.2293,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share": 0.2085,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "top-1 singular share": 0.2159,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share": 0.201,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "top-1 singular share": 0.2678,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share": 0.1937,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "top-1 singular share": 0.2456,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share": 0.1561,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "top-1 singular share": 0.3733,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share": 0.3155,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "top-1 singular share": 0.5333,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share": 0.4476,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "top-1 singular share": 0.5235,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share": 0.3838,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "top-1 singular share": 0.4359,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share": 0.2419,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "top-1 singular share": 0.6005,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share": 0.5234,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "top-1 singular share": 0.5903,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share": 0.3999,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "cos(write, displacement)": 0.6503,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "cos(write, displacement)": 0.7908,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "cos(write, displacement)": 0.664,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "cos(write, displacement)": 0.7405,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "cos(write, displacement)": 0.5784,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "cos(write, displacement)": 0.475,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "cos(write, displacement)": 0.6692,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "cos(write, displacement)": 0.7972,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "cos(write, displacement)": 0.5688,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "cos(write, displacement)": 0.6963,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.0,
+      "cos(write, displacement)": 0.5059,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "cos(write, displacement)": 0.3802,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "cos(write, displacement)": -0.0475,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "cos(write, displacement)": 0.3781,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "cos(write, displacement)": 0.2102,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "cos(write, displacement)": 0.307,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.0,
+      "cos(write, displacement)": 0.0861,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "cos(write, displacement)": -0.0733,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.0,
+      "cos(write, displacement)": -0.2317,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 1.0,
+      "cos(write, displacement)": 0.3514,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "cos(write, displacement)": 0.0422,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "cos(write, displacement)": 0.3014,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.0,
+      "cos(write, displacement)": 0.0563,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0,
+      "cos(write, displacement)": -0.0565,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.0,
+      "gate \u03c1 (last-prompt)": 0.0816,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "gate \u03c1 (last-prompt)": 0.4045,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "gate \u03c1 (last-prompt)": -0.1011,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "gate \u03c1 (last-prompt)": 0.3639,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 0.0,
+      "gate \u03c1 (last-prompt)": -0.0683,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 1.0,
+      "gate \u03c1 (last-prompt)": 0.2135,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 0.0,
+      "gate \u03c1 (last-prompt)": -0.0325,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "gate \u03c1 (last-prompt)": 0.0534,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.0,
+      "gate \u03c1 (last-prompt)": -0.2666,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 1.0,
+      "gate \u03c1 (last-prompt)": 0.2656,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.0,
+      "gate \u03c1 (last-prompt)": -0.2752,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.0,
+      "gate \u03c1 (last-prompt)": 0.0263,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 0.0,
+      "gate \u03c1 (last-prompt)": 0.1128,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.0,
+      "gate \u03c1 (last-prompt)": -0.0159,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 0.0,
+      "gate \u03c1 (last-prompt)": 0.4256,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 1.0,
+      "gate \u03c1 (last-prompt)": 0.3677,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 0.0,
+      "gate \u03c1 (last-prompt)": 0.7163,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 1.0,
+      "gate \u03c1 (last-prompt)": 0.592,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.0,
+      "gate \u03c1 (last-prompt)": 0.0644,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 1.0,
+      "gate \u03c1 (last-prompt)": 0.2507,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 0.0,
+      "gate \u03c1 (last-prompt)": 0.3252,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 1.0,
+      "gate \u03c1 (last-prompt)": 0.5425,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 0.0,
+      "gate \u03c1 (last-prompt)": 0.7066,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 1.0,
+      "gate \u03c1 (last-prompt)": 0.6251,
+      "_kind": "scatter",
+      "_group": 35
+    }
+  ],
+  "n_series": 36,
+  "total_points": 72,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Repeat-regime controls vs single-visit siblings (2 pairs \u00d7 3 layers; controls under-installed \u2014 dose-unmatched)"
+    ],
+    "axes": [
+      {
+        "ylabel": "top-1 singular share",
+        "legend_labels": [
+          "on-policy tree",
+          "fixed-text TF tree",
+          "impolite bare (circles)",
+          "impolite persona (triangles)"
+        ],
+        "xticklabels": [
+          "single-visit\n(1,200\u00d71)",
+          "repeat control\n(80\u00d715)"
+        ],
+        "yticklabels": [
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "ylabel": "cos(write, displacement)",
+        "xticklabels": [
+          "single-visit\n(1,200\u00d71)",
+          "repeat control\n(80\u00d715)"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "ylabel": "gate \u03c1 (last-prompt)",
+        "xticklabels": [
+          "single-visit\n(1,200\u00d71)",
+          "repeat control\n(80\u00d715)"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ]
+  }
+}

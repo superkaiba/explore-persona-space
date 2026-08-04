@@ -30,3 +30,9 @@ usual CPU leaks.
 (Incident #1776 crash-fix cycle 7, pod-1776 p4_energy, 2026-07-29: fix
 commit `b38024fb6335949652fae852a350fdb0c1cfb1cf`; pins in
 tests/test_issue1776_phase4_device.py.)
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [CUDA partial device placement](feedback_cuda_device_partial_placement.md) — CPU-only smokes structurally cannot exercise CUDA-divergent branches; one move site at entry + named-tensor same-device asserts (#1776 c7)

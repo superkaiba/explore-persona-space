@@ -47,3 +47,9 @@ launching session has closed — see experimenter.md step 2) to confirm the
 dispatch script is the process that pid points at. The launcher-internal `$$`
 write also removes the original `$!` misfire class entirely: the pid comes from
 the launcher itself, never from `$!` in the outer chain.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [SSH MCP runs sh not bash — no inline source .env](feedback_ssh_mcp_sh_not_bash_inline_source.md) — inline `&& source .env && nohup ...` silently fails under SSH MCP (POSIX sh); the captured `$!` then catches a stray bg job. Always launcher-script + `. ./.env` (#545 r28)

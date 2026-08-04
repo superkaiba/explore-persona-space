@@ -1,0 +1,354 @@
+{
+  "commit": "795f474712",
+  "created": "2026-07-30T23:07:37Z",
+  "figsize": [
+    10.0,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "Stacked combiner",
+      "Spearman rho (frozen layer, pooled OOF)": 0.28060655372232834,
+      "error": 0.05091150063320242,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Oracle-project-true-answer",
+      "Spearman rho (frozen layer, pooled OOF)": 0.3826477818530595,
+      "error": 0.05450203058229264,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Oracle-regression-true-answer",
+      "Spearman rho (frozen layer, pooled OOF)": 0.6204705368853716,
+      "error": 0.043723730538199834,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Shuffled-map control",
+      "Spearman rho (frozen layer, pooled OOF)": 0.1483351318568534,
+      "error": 0.04457354304429565,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Shuffled-pretrain control",
+      "Spearman rho (frozen layer, pooled OOF)": 0.2885588291828856,
+      "error": 0.0520747396122747,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Text-only sentence-embedding",
+      "Spearman rho (frozen layer, pooled OOF)": 0.30871178226053464,
+      "error": 0.0563001958231969,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Trivial surface features",
+      "Spearman rho (frozen layer, pooled OOF)": 0.3238914997481524,
+      "error": 0.05640032030864184,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "PV-project-context (E1)",
+      "Spearman rho (frozen layer, pooled OOF)": 0.18419604603848544,
+      "error": 0.043571375787410146,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Context-native direction",
+      "Spearman rho (frozen layer, pooled OOF)": 0.21715164481158206,
+      "error": 0.0551444543819445,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Identity+learned-bias",
+      "Spearman rho (frozen layer, pooled OOF)": 0.14479394011677632,
+      "error": 0.057284221425841456,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Ridge on whitened context",
+      "Spearman rho (frozen layer, pooled OOF)": 0.2804114440471369,
+      "error": 0.05094231662323109,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "MLP on whitened context",
+      "Spearman rho (frozen layer, pooled OOF)": 0.2982705483394322,
+      "error": 0.05068065420437824,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Map-project (headline)",
+      "Spearman rho (frozen layer, pooled OOF)": 0.23232921936215123,
+      "error": 0.04229910305922123,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Map-regression predicted answer",
+      "Spearman rho (frozen layer, pooled OOF)": 0.2870227327239559,
+      "error": 0.05207185242410847,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Map-regression true answer",
+      "Spearman rho (frozen layer, pooled OOF)": 0.1805448050027579,
+      "error": 0.05654454802912751,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Pretrain-then-finetune (L2-SP)",
+      "Spearman rho (frozen layer, pooled OOF)": 0.2910116756704258,
+      "error": 0.051994094380753544,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.2285747156852684,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.32673077246560517,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.5747989327638616,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.10388558945019295,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.23548614710564233,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.2518637248828711,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.26734080403251764,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.14093183505039902,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.16073366904551953,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.08682164077774171,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.2283224538433687,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.24620038618077447,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.19005686305690014,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 13.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.23398086398501466,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 14.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.12287652485217944,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 15.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.238021066975017,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.33039771695167325,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.43573483363019044,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.6622463938402613,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.19303267553878425,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.33963562633019173,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.3644641165292649,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.3801414446498013,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.22807458662521932,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.2710225778094085,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.20139008362942462,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.3302070870898309,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 11.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.34756169458953096,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 12.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.2746550691753426,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 13.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.3381245688332316,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 14.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.23596562091043446,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 15.0,
+      "Spearman rho (frozen layer, pooled OOF)": 0.3420092557365241,
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Spearman rho by arm",
+        "ylabel": "Spearman rho (frozen layer, pooled OOF)",
+        "xticklabels": [
+          "Stacked combiner",
+          "Oracle-project-true-answer",
+          "Oracle-regression-true-answer",
+          "Shuffled-map control",
+          "Shuffled-pretrain control",
+          "Text-only sentence-embedding",
+          "Trivial surface features",
+          "PV-project-context (E1)",
+          "Context-native direction",
+          "Identity+learned-bias",
+          "Ridge on whitened context",
+          "MLP on whitened context",
+          "Map-project (headline)",
+          "Map-regression predicted answer",
+          "Map-regression true answer",
+          "Pretrain-then-finetune (L2-SP)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ]
+  }
+}

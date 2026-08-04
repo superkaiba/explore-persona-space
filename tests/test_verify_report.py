@@ -300,6 +300,35 @@ def test_detailed_link_issue_mismatch_fails(figs_root):
     assert not link.passed and "expected issue 5" in link.detail
 
 
+def test_detailed_link_angle_bracket_form_accepted(figs_root):
+    # The template skeleton displays the URL slot as `<https://...>`; the
+    # angle-bracket-wrapped form is accepted (stripped before matching).
+    wrapped = (
+        "**Detailed writeup:** "
+        f"<https://github.com/o/r/blob/{_PIN_SHA}/docs/reports/issue_5_detailed.md>"
+    )
+    ok, results = _run(
+        _assemble(_default_sections(), detailed_link=wrapped),
+        mode="generation",
+        figs_root=figs_root,
+    )
+    assert _by_name(results, "detailed-writeup-link").passed
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_duplicate_detailed_link_fails(figs_root):
+    # A follow-up re-pin must REPLACE the old line — two link lines FAIL.
+    doubled = _detailed_link() + "\n\n" + _detailed_link(5, "b" * 40)
+    ok, results = _run(
+        _assemble(_default_sections(), detailed_link=doubled),
+        mode="generation",
+        figs_root=figs_root,
+    )
+    assert not ok
+    link = _by_name(results, "detailed-writeup-link")
+    assert not link.passed and "exactly one" in link.detail
+
+
 def test_detailed_link_raw_url_form_accepted(figs_root):
     raw = (
         "**Detailed writeup:** "

@@ -1,0 +1,53 @@
+{
+ "git_commit": "ab5904c3aaa45c2140e44e3e99d48401d4d43838",
+ "numpy": "2.2.6",
+ "python": "3.11.15",
+ "timestamp_utc": "2026-08-03T23:36:38.908949+00:00",
+ "task": 1773,
+ "seed": 17732026,
+ "task_id": 1482,
+ "caveat": "EVIDENCE-SIDE CAVEAT: every description in this file is generated from CONTEXT-side activating windows (the model's input/prompt span). Every pre-existing #1773 description (issue1773_featurepipeline) is generated from ANSWER-side windows. The two sets are NOT same-instrument: do NOT pool them into one description set or compare them as if drawn from one instrument; label context-side descriptions distinctly wherever surfaced.",
+ "evidence_side": "context",
+ "instrument": {
+  "system_prompt_sha16": "0e65ea775c2fa64d",
+  "user_template": "issue1773_common.build_describe_user_msg (verbatim reuse)",
+  "max_tokens": 700,
+  "temperature": 1.0,
+  "n_draws": 1,
+  "out_block": "omitted (matches #1773 full-dictionary shape: out=None)",
+  "window": [
+   15,
+   16
+  ],
+  "row_cap": 16,
+  "n_ex_neg": 20
+ },
+ "population": {
+  "n_context_only": 1654,
+  "n_described": 1653,
+  "drops": {
+   "content": 0,
+   "transport": 0
+  },
+  "n_packets": 1653,
+  "n_undescribed_no_windows": 1,
+  "undescribed_feat_ids": [
+   53770
+  ],
+  "n_neg_short": 2,
+  "content_drop_retry": {
+   "original_content_drops": [
+    52459,
+    120628,
+    128473
+   ],
+   "recovered": 3,
+   "note": "fresh single re-draw per rule-24-style surgical retry (fresh checkpoint dir judge_checkpoints/describe_full_content_retry); rows tagged retry_round=content-retry-1; raw text in judge_raw/describe_ctx_content_retry",
+   "in_run_transport_redispatch": 1
+  },
+  "undescribed_reason": {
+   "53770": "single (feat,row) pair in the store; per-token re-encode produced no positive activation on that row (encode/misses.json row_idx 698182) \u2014 no window, no evidence to describe"
+  }
+ },
+ "hf_prefix": "superkaiba1/explore-persona-space-data/issue1482_context_side_labels"
+}

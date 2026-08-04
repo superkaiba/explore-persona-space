@@ -28,3 +28,9 @@ After ~3 util drops in the same family, the next escalation is architectural
 (subprocess-isolate the two allocators, or stop materializing what you don't
 need — e.g. per-layer forward hooks + a logits-free forward when you only
 read hidden_states), not another util notch.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [expandable_segments raises peak resident](feedback_expandable_segments_raises_peak_resident.md) — PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True trades fragmentation for higher peak (HF resident 22→30 GiB); re-measure + re-budget the memory dial after enabling, or the next co-residency OOM bites. #545.

@@ -1591,6 +1591,109 @@ def test_bootstrap_failure_hint_carries_name_suffix(isolated_state, monkeypatch,
     assert "terminate --issue 779 --name-suffix b" in capsys.readouterr().err
 
 
+def _bootstrap_tail_ns(*, no_bootstrap: bool = False) -> argparse.Namespace:
+    """Namespace for driving _provision_wait_register_bootstrap directly (#1931)."""
+    return argparse.Namespace(issue=779, name_suffix=None, ttl_days=7, no_bootstrap=no_bootstrap)
+
+
+def _stub_provision_tail(monkeypatch, info, rcs: list[int]) -> list[str]:
+    """Stub the provision tail's collaborators; _bootstrap pops rcs per call.
+
+    Returns the (mutable) list of recorded _bootstrap call targets so tests can
+    assert the exact call count.
+    """
+    calls: list[str] = []
+
+    def fake_bootstrap(name, intent_label):
+        calls.append(name)
+        return rcs[len(calls) - 1]
+
+    monkeypatch.setattr(pod_lifecycle, "wait_for_ssh", lambda pod_id, timeout=600: info)
+    monkeypatch.setattr(pod_lifecycle, "note_ssh_wait_outcome", lambda *a, **k: None)
+    monkeypatch.setattr(pod_lifecycle, "_upsert_pods_conf", lambda pod: None)
+    monkeypatch.setattr(pod_lifecycle, "_bootstrap", fake_bootstrap)
+    return calls
+
+
+def test_provision_bootstrap_retries_once_then_succeeds(isolated_state, monkeypatch, capsys):
+    """A transient first-attempt bootstrap failure (rc=100) retries EXACTLY once;
+    the retry's rc=0 completes provision (no SystemExit) with the retry line on
+    stderr and the BOOTSTRAP-OK verdict token emitted (#1931 acceptance 1+2)."""
+    _write_metadata_file({})
+    info = _info("pod-779", pod_id="live-779")
+    calls = _stub_provision_tail(monkeypatch, info, [100, 0])
+
+    pod_lifecycle._provision_wait_register_bootstrap(
+        _bootstrap_tail_ns(), "pod-779", info, "lora-7b"
+    )
+
+    assert calls == ["pod-779", "pod-779"]  # exactly 2 calls: first try + one retry
+    captured = capsys.readouterr()
+    assert "[bootstrap-retry] bootstrap exited rc=100 on pod-779" in captured.err
+    assert "BOOTSTRAP-OK pod=pod-779" in captured.out
+    assert "BOOTSTRAP-OK pod=pod-779" in captured.err  # stream-consistent with FAILED
+    assert "BOOTSTRAP-FAILED" not in captured.out + captured.err
+
+
+def test_provision_bootstrap_fails_loud_after_retry(isolated_state, monkeypatch, capsys):
+    """Both bootstrap attempts failing (rc=100 twice) keeps the sys.exit(rc)
+    contract AND emits the machine-greppable BOOTSTRAP-FAILED verdict as the
+    last stderr line before exit (#1931 acceptance 1+3)."""
+    _write_metadata_file({})
+    info = _info("pod-779", pod_id="live-779")
+    calls = _stub_provision_tail(monkeypatch, info, [100, 100])
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle._provision_wait_register_bootstrap(
+            _bootstrap_tail_ns(), "pod-779", info, "lora-7b"
+        )
+
+    assert exc.value.code == 100
+    assert calls == ["pod-779", "pod-779"]  # never more than one retry
+    captured = capsys.readouterr()
+    assert "[bootstrap-retry]" in captured.err
+    assert "BOOTSTRAP-FAILED pod=pod-779 rc=100" in captured.err
+    assert captured.err.rstrip().splitlines()[-1] == "BOOTSTRAP-FAILED pod=pod-779 rc=100"
+    assert "BOOTSTRAP-OK" not in captured.out + captured.err
+
+
+def test_provision_bootstrap_success_no_retry(isolated_state, monkeypatch, capsys):
+    """A clean first-attempt bootstrap (rc=0) never retries: one _bootstrap
+    call, no [bootstrap-retry] line, BOOTSTRAP-OK present (#1931 acceptance 4)."""
+    _write_metadata_file({})
+    info = _info("pod-779", pod_id="live-779")
+    calls = _stub_provision_tail(monkeypatch, info, [0])
+
+    pod_lifecycle._provision_wait_register_bootstrap(
+        _bootstrap_tail_ns(), "pod-779", info, "lora-7b"
+    )
+
+    assert calls == ["pod-779"]
+    captured = capsys.readouterr()
+    assert "[bootstrap-retry]" not in captured.err
+    assert "BOOTSTRAP-OK pod=pod-779" in captured.out
+    assert "Done. SSH with: ssh pod-779" in captured.out
+
+
+def test_provision_no_bootstrap_skips_retry_and_verdict(isolated_state, monkeypatch, capsys):
+    """--no-bootstrap semantics unchanged (#1931 acceptance 5): _bootstrap is
+    never invoked and neither verdict token is printed — the skip message stays."""
+    _write_metadata_file({})
+    info = _info("pod-779", pod_id="live-779")
+    calls = _stub_provision_tail(monkeypatch, info, [])
+
+    pod_lifecycle._provision_wait_register_bootstrap(
+        _bootstrap_tail_ns(no_bootstrap=True), "pod-779", info, "lora-7b"
+    )
+
+    assert calls == []  # _bootstrap never called
+    captured = capsys.readouterr()
+    assert "Skipping bootstrap (--no-bootstrap)" in captured.out
+    assert "BOOTSTRAP-OK" not in captured.out + captured.err
+    assert "BOOTSTRAP-FAILED" not in captured.out + captured.err
+    assert "[bootstrap-retry]" not in captured.err
+
+
 def _epod(name: str, issue: int) -> pod_lifecycle.EphemeralPod:
     return pod_lifecycle.EphemeralPod(metadata=_meta(name, issue=issue), info=_info(name))
 
@@ -1932,6 +2035,69 @@ def test_has_upload_verification_pass_latest_event_wins(monkeypatch):
         [_upload_verification_event("FAIL"), _upload_verification_event("PASS")],
     )
     assert pod_lifecycle._has_upload_verification_pass(999) is True
+
+
+# The DOCUMENTED inline-round note shape (#1970, incident #1773): an inline
+# round that verified its own uploads posts this note via `task.py
+# post-marker`, then re-runs terminate. LEADING `Verdict: PASS` so BOTH
+# parsers accept it: pod_lifecycle's loose `verdict[:*\s]+PASS` regex AND
+# task_workflow.UPLOAD_VERIFICATION_PASS_RE (the finalize teardown gate).
+_INLINE_ROUND_NOTE = (
+    "Verdict: PASS — inline-round verification; "
+    "prefixes: issue1773_fulldict/, issue1773_raw_windows/"
+)
+
+
+def test_has_upload_verification_pass_accepts_inline_round_note(monkeypatch):
+    """The documented inline-round note satisfies the guard's satisfier AND
+    the terminate-guard path proceeds without --skip-upload-verify; the same
+    note also matches task_workflow.UPLOAD_VERIFICATION_PASS_RE (cross-parser
+    pin — an inline PASS marker must never read as
+    upload_verification_failed_current to a later finalize)."""
+    from explore_persona_space.task_workflow import UPLOAD_VERIFICATION_PASS_RE
+
+    event = {
+        "ts": "2026-08-03T00:00:00Z",
+        "kind": "epm:upload-verification",
+        "version": 1,
+        "by": "orchestrator",
+        "note": _INLINE_ROUND_NOTE,
+    }
+    _stub_list_events(monkeypatch, [event])
+    assert pod_lifecycle._has_upload_verification_pass(1773) is True
+
+    # Cross-parser pin: import the constant, never retype the regex.
+    assert UPLOAD_VERIFICATION_PASS_RE.search(_INLINE_ROUND_NOTE) is not None
+
+    # Terminate-guard decision flow proceeds (returns None, no SystemExit)
+    # without --skip-upload-verify for a kind=experiment task.
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.get_task",
+        lambda issue: {"id": issue, "frontmatter": {"kind": "experiment"}, "body": ""},
+    )
+    pod_lifecycle._guard_upload_verification_before_terminate(1773, skip_flag=False, dry_run=False)
+
+
+def test_terminate_guard_refusal_names_inline_recipe(monkeypatch):
+    """The refusal message names the sanctioned inline-round recipe (post
+    `epm:upload-verification` via `task.py post-marker`, then re-run
+    terminate) BEFORE the --skip-upload-verify last resort — the
+    message-content sibling of the existing --skip-upload-verify assert
+    (#1970; #1773: a verified inline round was steered straight to the
+    blunt override)."""
+    _stub_list_events(monkeypatch, [])
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.get_task",
+        lambda issue: {"id": issue, "frontmatter": {"kind": "experiment"}, "body": ""},
+    )
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle._guard_upload_verification_before_terminate(
+            1773, skip_flag=False, dry_run=False
+        )
+    message = str(exc.value)
+    assert "epm:upload-verification" in message
+    assert "post-marker" in message
+    assert "--skip-upload-verify" in message
 
 
 def _orchestrator_posted_event(verdict: str) -> dict:

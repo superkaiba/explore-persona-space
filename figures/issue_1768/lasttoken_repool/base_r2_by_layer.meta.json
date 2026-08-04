@@ -1,0 +1,82 @@
+{
+  "commit": "1750260472",
+  "created": "2026-08-01T06:29:18Z",
+  "figsize": [
+    6.0,
+    3.6
+  ],
+  "points": [
+    {
+      "layer": -0.19,
+      "base map held-out $R^2$ (median)": 0.4772187164316142,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "layer": 0.81,
+      "base map held-out $R^2$ (median)": 0.5012811586020105,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "layer": 1.81,
+      "base map held-out $R^2$ (median)": 0.4507574329780947,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "layer": 0.19,
+      "base map held-out $R^2$ (median)": 0.6075954783638828,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "layer": 1.19,
+      "base map held-out $R^2$ (median)": 0.7002099719094206,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "layer": 2.19,
+      "base map held-out $R^2$ (median)": 0.6484475537394931,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "layer",
+        "ylabel": "base map held-out $R^2$ (median)",
+        "legend_labels": [
+          "span-mean (round 1)",
+          "last-token (last_prompt)"
+        ],
+        "xticklabels": [
+          "L14",
+          "L19",
+          "L25"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "span-mean (round 1)",
+      "last-token (last_prompt)"
+    ]
+  }
+}

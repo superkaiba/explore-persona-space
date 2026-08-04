@@ -1,0 +1,617 @@
+{
+  "commit": "189cf5de16",
+  "created": "2026-08-03T23:02:06Z",
+  "figsize": [
+    9.0,
+    5.4
+  ],
+  "points": [
+    {
+      "evaluation context": -0.32099999999999995,
+      "marker log-probability, trained \u2212 base (nats)": 5.404917812347412,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "evaluation context": -0.27299999999999996,
+      "marker log-probability, trained \u2212 base (nats)": 6.719725227355957,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "evaluation context": -0.297,
+      "marker log-probability, trained \u2212 base (nats)": 4.9268067359924315,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "evaluation context": -0.24899999999999997,
+      "marker log-probability, trained \u2212 base (nats)": 6.572320652008057,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "evaluation context": -0.131,
+      "marker log-probability, trained \u2212 base (nats)": 4.816220760345459,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "evaluation context": -0.083,
+      "marker log-probability, trained \u2212 base (nats)": 5.1373741149902346,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "evaluation context": -0.107,
+      "marker log-probability, trained \u2212 base (nats)": 4.559230041503906,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "evaluation context": -0.059000000000000004,
+      "marker log-probability, trained \u2212 base (nats)": 5.08103494644165,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "evaluation context": 0.059000000000000004,
+      "marker log-probability, trained \u2212 base (nats)": 1.3122225761413575,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "evaluation context": 0.107,
+      "marker log-probability, trained \u2212 base (nats)": 1.4112728118896485,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "evaluation context": 0.083,
+      "marker log-probability, trained \u2212 base (nats)": 1.5841910362243652,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "evaluation context": 0.131,
+      "marker log-probability, trained \u2212 base (nats)": 1.981407356262207,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "evaluation context": 0.24899999999999997,
+      "marker log-probability, trained \u2212 base (nats)": -0.27254476547241213,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "evaluation context": 0.297,
+      "marker log-probability, trained \u2212 base (nats)": -0.09293699264526367,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "evaluation context": 0.27299999999999996,
+      "marker log-probability, trained \u2212 base (nats)": -0.41061887741088865,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "evaluation context": 0.32099999999999995,
+      "marker log-probability, trained \u2212 base (nats)": -0.08471841812133789,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "evaluation context": 0.679,
+      "marker log-probability, trained \u2212 base (nats)": 4.027533340454101,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "evaluation context": 0.7270000000000001,
+      "marker log-probability, trained \u2212 base (nats)": 4.958999919891357,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "evaluation context": 0.7030000000000001,
+      "marker log-probability, trained \u2212 base (nats)": 3.6679696083068847,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "evaluation context": 0.7510000000000001,
+      "marker log-probability, trained \u2212 base (nats)": 5.024861907958984,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "evaluation context": 0.869,
+      "marker log-probability, trained \u2212 base (nats)": 6.401490879058838,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "evaluation context": 0.917,
+      "marker log-probability, trained \u2212 base (nats)": 6.907080078125,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "evaluation context": 0.893,
+      "marker log-probability, trained \u2212 base (nats)": 5.761412334442139,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "evaluation context": 0.9410000000000001,
+      "marker log-probability, trained \u2212 base (nats)": 7.059951114654541,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "evaluation context": 1.059,
+      "marker log-probability, trained \u2212 base (nats)": 1.124093723297119,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "evaluation context": 1.107,
+      "marker log-probability, trained \u2212 base (nats)": 1.319669246673584,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "evaluation context": 1.083,
+      "marker log-probability, trained \u2212 base (nats)": 1.1967621803283692,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "evaluation context": 1.131,
+      "marker log-probability, trained \u2212 base (nats)": 1.8641852378845214,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "evaluation context": 1.2489999999999999,
+      "marker log-probability, trained \u2212 base (nats)": -0.21570272445678712,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "evaluation context": 1.297,
+      "marker log-probability, trained \u2212 base (nats)": 0.06345205307006836,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "evaluation context": 1.273,
+      "marker log-probability, trained \u2212 base (nats)": -0.25495119094848634,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "evaluation context": 1.321,
+      "marker log-probability, trained \u2212 base (nats)": -0.015535068511962891,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "evaluation context": 1.679,
+      "marker log-probability, trained \u2212 base (nats)": 4.946021842956543,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "evaluation context": 1.727,
+      "marker log-probability, trained \u2212 base (nats)": 6.177209854125977,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "evaluation context": 1.703,
+      "marker log-probability, trained \u2212 base (nats)": 5.089571094512939,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "evaluation context": 1.7510000000000001,
+      "marker log-probability, trained \u2212 base (nats)": 6.488930988311767,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "evaluation context": 1.869,
+      "marker log-probability, trained \u2212 base (nats)": 5.392600154876709,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "evaluation context": 1.917,
+      "marker log-probability, trained \u2212 base (nats)": 5.596810913085937,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "evaluation context": 1.893,
+      "marker log-probability, trained \u2212 base (nats)": 4.77685546875,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "evaluation context": 1.941,
+      "marker log-probability, trained \u2212 base (nats)": 5.72611083984375,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "evaluation context": 2.059,
+      "marker log-probability, trained \u2212 base (nats)": 5.762330055236816,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "evaluation context": 2.107,
+      "marker log-probability, trained \u2212 base (nats)": 5.187405681610107,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "evaluation context": 2.083,
+      "marker log-probability, trained \u2212 base (nats)": 5.750138759613037,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "evaluation context": 2.1310000000000002,
+      "marker log-probability, trained \u2212 base (nats)": 6.1818013191223145,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "evaluation context": 2.249,
+      "marker log-probability, trained \u2212 base (nats)": -0.0610966682434082,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "evaluation context": 2.297,
+      "marker log-probability, trained \u2212 base (nats)": 0.18257455825805663,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "evaluation context": 2.273,
+      "marker log-probability, trained \u2212 base (nats)": -0.20482912063598632,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "evaluation context": 2.321,
+      "marker log-probability, trained \u2212 base (nats)": 0.0839228630065918,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "evaluation context": 2.679,
+      "marker log-probability, trained \u2212 base (nats)": 4.807050895690918,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "evaluation context": 2.727,
+      "marker log-probability, trained \u2212 base (nats)": 5.838969612121582,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "evaluation context": 2.703,
+      "marker log-probability, trained \u2212 base (nats)": 4.636420345306396,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "evaluation context": 2.751,
+      "marker log-probability, trained \u2212 base (nats)": 5.827125835418701,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "evaluation context": 2.8689999999999998,
+      "marker log-probability, trained \u2212 base (nats)": 4.636322975158691,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "evaluation context": 2.917,
+      "marker log-probability, trained \u2212 base (nats)": 5.287664699554443,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "evaluation context": 2.893,
+      "marker log-probability, trained \u2212 base (nats)": 4.703542232513428,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "evaluation context": 2.941,
+      "marker log-probability, trained \u2212 base (nats)": 5.310296154022216,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "evaluation context": 3.059,
+      "marker log-probability, trained \u2212 base (nats)": 1.4417758941650392,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "evaluation context": 3.107,
+      "marker log-probability, trained \u2212 base (nats)": 1.3234106063842774,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "evaluation context": 3.083,
+      "marker log-probability, trained \u2212 base (nats)": 1.3482864379882813,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "evaluation context": 3.1310000000000002,
+      "marker log-probability, trained \u2212 base (nats)": 1.8807619094848633,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "evaluation context": 3.249,
+      "marker log-probability, trained \u2212 base (nats)": 6.621922874450684,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "evaluation context": 3.297,
+      "marker log-probability, trained \u2212 base (nats)": 8.393676376342773,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "evaluation context": 3.273,
+      "marker log-probability, trained \u2212 base (nats)": 5.269343662261963,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "evaluation context": 3.321,
+      "marker log-probability, trained \u2212 base (nats)": 4.44816255569458,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "evaluation context": 3.679,
+      "marker log-probability, trained \u2212 base (nats)": 4.4077071189880375,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "evaluation context": 3.727,
+      "marker log-probability, trained \u2212 base (nats)": 5.108839702606201,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "evaluation context": 3.703,
+      "marker log-probability, trained \u2212 base (nats)": 4.013220691680909,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "evaluation context": 3.751,
+      "marker log-probability, trained \u2212 base (nats)": 5.237078094482422,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "evaluation context": 3.8689999999999998,
+      "marker log-probability, trained \u2212 base (nats)": 5.448110866546631,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "evaluation context": 3.917,
+      "marker log-probability, trained \u2212 base (nats)": 6.154153060913086,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "evaluation context": 3.893,
+      "marker log-probability, trained \u2212 base (nats)": 5.021807289123535,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "evaluation context": 3.941,
+      "marker log-probability, trained \u2212 base (nats)": 6.390235519409179,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "evaluation context": 4.059,
+      "marker log-probability, trained \u2212 base (nats)": 1.4449757575988769,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "evaluation context": 4.106999999999999,
+      "marker log-probability, trained \u2212 base (nats)": 1.6043347358703612,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "evaluation context": 4.083,
+      "marker log-probability, trained \u2212 base (nats)": 1.426168155670166,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "evaluation context": 4.130999999999999,
+      "marker log-probability, trained \u2212 base (nats)": 2.077856349945068,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "evaluation context": 4.2490000000000006,
+      "marker log-probability, trained \u2212 base (nats)": -0.17749366760253907,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "evaluation context": 4.297,
+      "marker log-probability, trained \u2212 base (nats)": 0.020114994049072264,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "evaluation context": 4.273000000000001,
+      "marker log-probability, trained \u2212 base (nats)": -0.2827150344848633,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "evaluation context": 4.321,
+      "marker log-probability, trained \u2212 base (nats)": -0.03773632049560547,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "evaluation context": 4.679,
+      "marker log-probability, trained \u2212 base (nats)": 3.6328667640686034,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "evaluation context": 4.726999999999999,
+      "marker log-probability, trained \u2212 base (nats)": 4.283632564544678,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "evaluation context": 4.703,
+      "marker log-probability, trained \u2212 base (nats)": 3.378465270996094,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "evaluation context": 4.7509999999999994,
+      "marker log-probability, trained \u2212 base (nats)": 4.344340801239014,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "evaluation context": 4.869000000000001,
+      "marker log-probability, trained \u2212 base (nats)": 4.459216022491455,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "evaluation context": 4.917,
+      "marker log-probability, trained \u2212 base (nats)": 5.064924335479736,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "evaluation context": 4.893000000000001,
+      "marker log-probability, trained \u2212 base (nats)": 4.561243152618408,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "evaluation context": 4.941,
+      "marker log-probability, trained \u2212 base (nats)": 5.4219873428344725,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "evaluation context": 5.059,
+      "marker log-probability, trained \u2212 base (nats)": 1.2408754348754882,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "evaluation context": 5.106999999999999,
+      "marker log-probability, trained \u2212 base (nats)": 1.2948211669921874,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "evaluation context": 5.083,
+      "marker log-probability, trained \u2212 base (nats)": 1.2060664176940918,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "evaluation context": 5.130999999999999,
+      "marker log-probability, trained \u2212 base (nats)": 1.9365357398986816,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "evaluation context": 5.2490000000000006,
+      "marker log-probability, trained \u2212 base (nats)": -0.24036998748779298,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "evaluation context": 5.297,
+      "marker log-probability, trained \u2212 base (nats)": -0.027973461151123046,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "evaluation context": 5.273000000000001,
+      "marker log-probability, trained \u2212 base (nats)": -0.29003515243530276,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "evaluation context": 5.321,
+      "marker log-probability, trained \u2212 base (nats)": 0.02497272491455078,
+      "_kind": "scatter",
+      "_group": 95
+    }
+  ],
+  "n_series": 96,
+  "total_points": 96,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Marker behavior (separate scale: log-probability, not a judge rate) \u2014 16 dose-matched selected arms; short bar = mean of 4 arms; black line at 0 = base model",
+        "xlabel": "evaluation context",
+        "ylabel": "marker log-probability, trained \u2212 base (nats)",
+        "xticklabels": [
+          "no context\n(bare)",
+          "software-eng.\npersona",
+          "real conv.\nprefix",
+          "in-context\ndemos",
+          "police officer\n(neg. panel)",
+          "maritime medic\n(neg. panel)"
+        ],
+        "yticklabels": [
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10"
+        ]
+      }
+    ]
+  },
+  "caption": "Marker behavior companion on its own scale: on-policy marker log-probability, trained - base (nats), per evaluation context, for the 16 dose-matched selected marker arms (4 trained contexts x 2 regimes x 2 seeds; verdict-selected training step per arm, 20 questions per context). Triangle markers = the context was trained AS A NEGATIVE for that arm (contrastive arms only; the marker mixes carry 800 on-policy panel negatives) \u2014 low reads there are trained suppression, not generalized localization. The marker DV is a log-probability, not a judge rate, and is not commensurable with the 0-100 judge scale of the content behaviors. 0 = base model by construction; short bar = mean of 4 arms."
+}

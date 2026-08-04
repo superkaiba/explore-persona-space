@@ -1,0 +1,123 @@
+{
+  "act_var_across_tokens_definition": "Within-answer variance of the activation VALUE across ALL kept answer tokens (zeros included \u2014 the variance of the activation TRACE, not a conditional-on-firing variance), averaged over the answers in which the feature fires at least once (`act_var_n_answers`).",
+  "artifact": "run_length_perfeature.npz",
+  "coverage": {
+    "features_all_nan_mean_run_length": 2566,
+    "features_with_any_answer_firing": 128506,
+    "features_with_any_firing": 130160,
+    "note": "A feature that never fires in this subsample is NaN, never 0 \u2014 the consumer nan-inits and scatters by feat_ids, so NaN reads as 'not measured here', which is correct."
+  },
+  "dict_size": 131072,
+  "gate_flags": [],
+  "gates": {
+    "gate1_row_occupancy_census": {
+      "definition": "row occupancy \u2014 feature active ANYWHERE in the span counts 1",
+      "full_corpus_census": {
+        "answer_active": 128512,
+        "answer_only": 2164,
+        "context_active": 128002,
+        "context_only": 1654,
+        "live": 130166,
+        "n_fit": 120000
+      },
+      "full_corpus_census_cross_check": "asserted equal to issue1482_side_specificity_fullwidth.CENSUS_EXPECTED",
+      "n_rows": 120000,
+      "note": "FEATURE COUNTS are NOT expected to match: the full-corpus census sees 120,000 rows, this subsample sees 120000. The binding read is occupancy_ratio = sum(cnt)/sum(psi_cnt), which is row-count-invariant.",
+      "occupancy_ratio": {
+        "expected_full_corpus": 2.075,
+        "flag": "ok",
+        "observed": 2.0737159708832515,
+        "rel_drift": -0.0006188092128909063
+      },
+      "subsample_census": {
+        "answer_active": 128506,
+        "answer_only": 2170,
+        "context_active": 127990,
+        "context_only": 1654,
+        "live": 130160
+      }
+    },
+    "gate2_span_length_ratio": {
+      "answer_mean_tokens": 432.93963333333335,
+      "context_mean_tokens": 189.006375,
+      "full_corpus_reference": {
+        "answer_mean": 432.9,
+        "context_mean": 189.0
+      },
+      "kept_pool": {
+        "answer_mean_tokens": 432.93963333333335,
+        "context_mean_tokens": 181.00635,
+        "note": "post-mask (BOS_OFFSET=8 strip + >10x-median-norm outlier drop). The BOS strip removes 8 CONTEXT tokens per row, so the kept-pool ratio sits ABOVE the raw span ratio by construction \u2014 this is the expected source of gate-3 drift, not a sampling defect."
+      },
+      "span_ratio": {
+        "expected_full_corpus": 2.291,
+        "flag": "ok",
+        "observed": 2.2906086280599443,
+        "rel_drift": -0.00017083017898545337
+      }
+    },
+    "gate3_token_level_null": {
+      "definition": "sum(ans_tokens_active) / (sum(ans_tokens_active) + sum(ctx_tokens_active))",
+      "kept_pool_span_prediction": 0.7051754471667825,
+      "note": "The span-length prediction for THIS subsample is the kept-pool share 0.7052 (the BOS strip removes 8 context tokens/row); the 0.696 reference is the RAW full-corpus span share. Compare the observed null against BOTH.",
+      "token_level_null": {
+        "expected_full_corpus": 0.696,
+        "flag": "ok",
+        "observed": 0.7171590718060645,
+        "rel_drift": 0.030400965238598532
+      }
+    }
+  },
+  "git_commit": "15632de618",
+  "join_key": "feat_ids",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "perf": {
+    "capture_wall_s": 4265.761791467667,
+    "resumed_rows": 0,
+    "rows": 120000,
+    "rows_this_leg": 120000,
+    "s_per_row": 0.03554801492889722,
+    "tokens_per_row": 621.9460083333333,
+    "tokens_per_s": 17495.942025942753,
+    "tokens_this_leg": 74633521,
+    "tokens_total": 74633521
+  },
+  "produced_by": "scripts/issue1482_run_length.py",
+  "row_occupancy_vs_token_weighted": "The banked `side_ratio` is ROW OCCUPANCY: a feature active anywhere in a span contributes 1, whether it fires on 1 token or 400. `ans_tokens_active` / `ctx_tokens_active` here are TOKEN COUNTS, so `side_ratio_token` is a genuinely different measurement \u2014 not a refinement of `side_ratio`. `row_occupancy_ans` / `row_occupancy_ctx` are ALSO emitted so the two conventions can be compared on the same rows.",
+  "run_length_vs_persistence": "E[R] = 1/(1-p) EXACTLY for a stationary process, so mean_run_length and persistence_p are the same quantity in different units. mean_run_length = ans_tokens_active / n_runs with n_runs = ans_tokens_active - n_adjacent_pairs; persistence_p = n_adjacent_pairs / persistence_denom, where persistence_denom counts active answer positions whose ORIGINAL successor is also in the kept pool. CAVEAT: E[R] = 1/(1-p) is a STATIONARY-PROCESS identity, not a numeric identity of these two finite-span estimators \u2014 span boundaries and token-pool mask gaps make them diverge (a run truncated by the span end contributes to mean_run_length but its final token is excluded from persistence_denom). The consumer plots only mean_run_length.",
+  "sae": {
+    "dict_size": 131072,
+    "k": 64,
+    "repo": "andyrdt/saes-qwen2.5-7b-instruct",
+    "revision": "c37e53c4bb07127ad17ab88f28b93d4e87142e59",
+    "site": "resid_post layer 19",
+    "subdir": "resid_post_layer_19/trainer_1"
+  },
+  "sample": {
+    "chunk_stage": {
+      "note": "served from row cache rows_2307225bde30c553.jsonl (fetch skipped)"
+    },
+    "fit_pool_size": 120000,
+    "lmsys_frac_pool": 0.5491583333333333,
+    "n_rows_drawn": 120000,
+    "n_rows_resolved": 120000,
+    "sampled_row_ids_sha256": "88d344675fbbca3a717cd8a0c6aa4fd893241a17098bd3173f6ae00b4d9a0fb8",
+    "sampler": "full-pool (provenance-stratified over the entire sae_fit pool)",
+    "seed": 1482,
+    "stratified_sample": {
+      "n": 120000,
+      "n_lmsys": 65899,
+      "n_wildchat": 54101
+    }
+  },
+  "scaffold_frac_disambiguation": "`template_token_frac` is BEHAVIOURAL (which tokens the feature fires on). The banked `scaffold_frac` is GEOMETRIC (decoder-vector mass in the prefix-covariance top-48 eigen-subspace, #1773 L475-486). They are twins, not duplicates \u2014 do not conflate them.",
+  "seed": 1482,
+  "template_mask_definition": "A token position is TEMPLATE (chat-template scaffold) iff ANY of: (1) position <= prefix_end, the constant chat-template prefix \u2014 everything before the user query text, boundary from the offset-mapping exclude-straddler policy in issue1482_error_analysis._tokenize_row (prefix_end = last token ending entirely inside the constant prefix chars); (2) context_end-2 <= position <= context_end, the 3-token generation suffix '<|im_start|>assistant\\n' (issue779_common.GENERATION_SUFFIX, asserted token-exact by _tokenize_row); (3) token id in {<|im_start|>, <|im_end|>} anywhere in the sequence. Everything else is CONTENT. The role WORDS 'system'/'user'/'assistant' are deliberately NOT id-matched: they occur in ordinary user/assistant content, and the template's own role words are already covered positionally by (1) and (2). Answer-side tokens come from tok(response, add_special_tokens=False) so the answer span carries no template scaffold by construction except via rule (3). template_token_frac[f] = (template firings) / (ALL firings, context + answer), token-weighted.",
+  "template_special_token_ids": [
+    151644,
+    151645
+  ],
+  "timestamp_utc": "2026-08-04T00:22:06Z",
+  "token_pool": "issue1482_error_analysis._row_features reference semantics: first BOS_OFFSET=8 positions dropped + >10.0x-median-norm token rows dropped, per row. Runs/adjacency are keyed on ORIGINAL token positions, so a masked-out token BREAKS a run rather than splicing two runs together.",
+  "wall_s_total": 4583.989561319351
+}

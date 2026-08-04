@@ -29,3 +29,9 @@ ENOSPC. Useful reclaim levers when the margin is close: `uv cache clean` (the
 uv cache is NOT hardlinked into `.venv` on these pods — combined `du` proves
 it) and sparse-checkout eviction of other issues' committed `eval_results/`
 (safe on an ephemeral pod clone; the run writes only untracked files there).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [RunPod cpu-mid fallback undersized vs GCP cpu-mid](feedback_runpod_cpu_fallback_undersized.md) — cpu3c-8-16 = 50G container overlay (no /workspace volume) + 16 GB RAM vs the plan-sized e2-standard-8 (32 GB, 80G disk); sum staged-input sizes via scoped list_repo_tree + derived-cache arithmetic vs `df` BEFORE launching; shortfall → epm:failure infra provision-undersized-for-plan (#958)

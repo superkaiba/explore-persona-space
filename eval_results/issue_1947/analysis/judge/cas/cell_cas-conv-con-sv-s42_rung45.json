@@ -1,0 +1,20 @@
+{
+ "regime_key": {
+  "behavior": "writing_style",
+  "instrument": "pv_trait_score",
+  "n_draws": 3,
+  "questions_sha256": "8863647e277e96caf711301dfb7827b3d5aaddb3167751aa1265e261997487b1",
+  "stub": false
+ },
+ "record": {
+  "tag": "cas-conv-con-sv-s42-r45",
+  "n_items": 100,
+  "n_scored": 100,
+  "k_positive": 100,
+  "rate": 1.0,
+  "graded_mean": 85.82,
+  "item_drop_frac": 0.0,
+  "n_dropped_draws_content": 0,
+  "n_transport_lost_draws": 0
+ }
+}

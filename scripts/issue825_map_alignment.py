@@ -94,23 +94,29 @@ fit_primal_beta = cm.fit_primal_beta
 
 # ---------------------------------------------------------------------------
 # #1417 registered-selector refit: module-global patch style (mirrors
-# fit825.GCV_DOF_CAP / FROZEN_LAYERS). Callers set
-#   ma.LAMBDA_SELECTION = "inner-group-cv"; ma.GCV_DOF_CAP = 0.9
-# Defaults preserve the committed pure-GCV behavior byte-for-byte.
+# fit825.GCV_DOF_CAP / FROZEN_LAYERS). #1887 defaults flip: the registered
+# selector (inner-group-cv) + dof cap 0.9 are now the DEFAULTS; committed
+# pre-#1887 pure-GCV behavior is reproducible ONLY via the explicit legacy
+# pins (ma.LAMBDA_SELECTION = "gcv"; ma.GCV_DOF_CAP = None;
+# ma.LEGACY_UNGUARDED_GCV = True — restore all three in a finally block).
 # Inner-CV group contract: every battery caller's rows are the i.i.d. unit
 # (one row per conversation — #1417 single-turn), so the inner GROUP folds
 # are built over singleton per-row groups (np.arange). A multi-row-per-
 # conversation caller must NOT enable inner-CV here without threading real
 # group ids.
 # ---------------------------------------------------------------------------
-LAMBDA_SELECTION: str = "gcv"
-GCV_DOF_CAP: float | None = None
+LAMBDA_SELECTION: str = "inner-group-cv"
+GCV_DOF_CAP: float | None = 0.9
+# #1887 refusal-guard opt-in: pure UNCAPPED GCV at n_train < d is refused by
+# default (fit825._refuse_unguarded_gcv); True deliberately reproduces the
+# committed pre-#1887 behavior (legacy replay only).
+LEGACY_UNGUARDED_GCV: bool = False
 N_INNER_LAMBDA_FOLDS = fit825.N_INNER_LAMBDA_FOLDS
 INNER_LAMBDA_SEED = 4242  # fixed, registered (fit825 uses seed+4242+k per outer fold)
-# Compact selector telemetry (plan assumption 13): when a caller binds a dict,
-# every _ridge_predict/_ridge_predict_cached-style selection appends
-# {selector: {lambda_str: count}}. None (default) = no logging.
-SELECTOR_LOG: dict | None = None
+# Compact selector telemetry (plan assumption 13): every _ridge_predict/
+# _ridge_predict_cached-style selection counts into
+# {selector: {lambda_str: count}}. ON by default as of #1887 (None disables).
+SELECTOR_LOG: dict | None = {}
 
 
 def _log_selector(selector: str, lam: float) -> None:
@@ -150,10 +156,23 @@ def _ridge_prep(X_train: torch.Tensor) -> dict:
     G = Xn @ Xn.T
     w, V = torch.linalg.eigh(G)
     w = torch.clamp(w, min=0.0)
-    prep = {"w": w, "V": V, "Xn": Xn, "xmu": xmu, "xsd": xsd, "ntr": int(X_train.shape[0])}
+    # "d" (#1887): consumed by the pure-GCV n_train < d refusal guard.
+    prep = {
+        "w": w,
+        "V": V,
+        "Xn": Xn,
+        "xmu": xmu,
+        "xsd": xsd,
+        "ntr": int(X_train.shape[0]),
+        "d": int(X_train.shape[1]),
+    }
     if LAMBDA_SELECTION == "inner-group-cv":
         prep["inner"] = fit825._prep_inner_lambda(
-            X_train, np.arange(int(X_train.shape[0])), N_INNER_LAMBDA_FOLDS, INNER_LAMBDA_SEED
+            X_train,
+            np.arange(int(X_train.shape[0])),
+            N_INNER_LAMBDA_FOLDS,
+            INNER_LAMBDA_SEED,
+            device=X_train.device,
         )
         if prep["inner"] is None:
             print("[map_align] WARN: inner-group-cv: <2 usable inner folds — GCV fallback")
@@ -170,6 +189,13 @@ def _select_lambda(prep: dict, Y_train: torch.Tensor, VtY: torch.Tensor, tot: fl
         best_lam = float(LAMBDAS[int(torch.argmin(rss_curve))])
         _log_selector("inner-group-cv", best_lam)
         return best_lam
+    fit825._refuse_unguarded_gcv(
+        ntr=ntr,
+        d=prep.get("d"),
+        cap=GCV_DOF_CAP,
+        legacy_ok=LEGACY_UNGUARDED_GCV,
+        where="map_alignment._select_lambda",
+    )
     sqVtY = (VtY**2).sum(1)
     best_lam, best_gcv = float(LAMBDAS[0]), float("inf")
     for lam in LAMBDAS:
@@ -443,10 +469,18 @@ def _procrustes_cosine_null(Xb, Xi, Yb, Yi, *, n_draws, seed):
     cosine of M_inst vs Q1^T M_base Q2 over random orthogonal Q1, Q2. Full data."""
     beta_i, _ = fit_primal_beta(Xi.cpu().numpy(), Yi.cpu().numpy())
     beta_b, _ = fit_primal_beta(Xb.cpu().numpy(), Yb.cpu().numpy())
+    # Placement anchor: the CALLER's input device, total-at-entry. fit_primal_beta
+    # returns on the module-global _fit_device() (bare `cuda` == cuda:0), which
+    # collides with worker-pinned caller tensors on a multi-GPU fan-out (#1902
+    # crash-fix 6: R_in/R_out on cuda:3 vs beta_b on cuda:0). Single-device
+    # callers (the parent #825 driver) have Xb.device == _fit_device(), so this
+    # is a no-op there.
+    dev = Xb.device if isinstance(Xb, torch.Tensor) else _fit_device()
+    beta_i = beta_i.to(dev)
+    beta_b = beta_b.to(dev)
     vi = beta_i.reshape(-1)
     vi_n = vi / (vi.norm() + 1e-12)
     # recompute the parent's fitted-Procrustes aligned cosine as a self-check
-    dev = _fit_device()
 
     def _orth(A, B):
         M = A.T @ B

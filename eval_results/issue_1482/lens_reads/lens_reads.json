@@ -1,0 +1,6724 @@
+{
+ "design": {
+  "question": "Do the deviant-band / best / worst predicted directions (and the 7 trait directions) become legible under J-lens or tuned lens where the plain logit lens is illegible?",
+  "lens_conventions": {
+   "logit_lens": "W_U (gamma . v)",
+   "jlens": "W_U (gamma . (J_19 v)) \u2014 community artifact, 50 wikitext prompts",
+   "tuned_lens": "W_U (gamma . (W_t v)) \u2014 bias dropped per artifact apply_note (direction = difference of states)"
+  },
+  "tuned_lens_quality": {
+   "val_kl_tuned": 2.416729259399506,
+   "val_kl_logit_lens": 9.147417123880528,
+   "val_kl_reduction_frac": 0.7358020054545978,
+   "val_top1_tuned": 0.49698588847787367,
+   "val_top1_logit_lens": 0.07939443759419099
+  },
+  "direction_source": "#1738 holdout target-PCA (context_L19_ridge cell) + #779 r_B row 19"
+ },
+ "sets": {
+  "deviant_band": [
+   {
+    "direction": "PC80",
+    "logit_lens": {
+     "top_promoted": [
+      " \"','",
+      "-alist",
+      "\u8c22\u9080",
+      "TRL",
+      "OMPI",
+      "TEMPL",
+      "\u007f",
+      "-vars",
+      "AAF",
+      "\u0301"
+     ],
+     "top_promoted_vals": [
+      0.312,
+      0.269,
+      0.261,
+      0.23,
+      0.222,
+      0.222,
+      0.216,
+      0.214,
+      0.213,
+      0.212
+     ],
+     "top_suppressed": [
+      "Servi\u00e7o",
+      "Servi",
+      " {{--<",
+      " exem",
+      " hurd",
+      ".\"&"
+     ],
+     "write_norm_through_lens": 4.6993
+    },
+    "jlens": {
+     "top_promoted": [
+      "\u200c",
+      "**",
+      "\ufffd",
+      " \"\\\",",
+      " *__",
+      " **",
+      " springfox",
+      "\u200b",
+      "**,",
+      ":**"
+     ],
+     "top_promoted_vals": [
+      0.34,
+      0.336,
+      0.332,
+      0.321,
+      0.321,
+      0.319,
+      0.309,
+      0.304,
+      0.303,
+      0.298
+     ],
+     "top_suppressed": [
+      ":\".$",
+      "},\r\n\r\n",
+      "\t\t\t\r\n\t\t\t\r\n",
+      " confusion",
+      "AXB",
+      "uisse"
+     ],
+     "write_norm_through_lens": 8.5985
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "/filepath",
+      " protester",
+      " ng\u1ea1c",
+      "/sweetalert",
+      " dif\u00edc",
+      " Clintons",
+      " blackColor",
+      " be\u011fen",
+      " rookies",
+      " ragazzi"
+     ],
+     "top_promoted_vals": [
+      0.276,
+      0.274,
+      0.261,
+      0.25,
+      0.248,
+      0.246,
+      0.236,
+      0.231,
+      0.231,
+      0.229
+     ],
+     "top_suppressed": [
+      "Servi\u00e7o",
+      "Servi",
+      " G\u0142",
+      " exem",
+      "\"<?",
+      " \u82e5\u8981"
+     ],
+     "write_norm_through_lens": 5.3408
+    }
+   },
+   {
+    "direction": "PC91",
+    "logit_lens": {
+     "top_promoted": [
+      " sincer",
+      " winger",
+      " midfielder",
+      "\u75fc",
+      "\u7684\u6570\u91cf",
+      "\u5659",
+      "\u7545\u9500",
+      " cient\u00edfico",
+      " iPhones",
+      "f\u00e9rence"
+     ],
+     "top_promoted_vals": [
+      0.229,
+      0.211,
+      0.208,
+      0.194,
+      0.192,
+      0.19,
+      0.188,
+      0.186,
+      0.181,
+      0.18
+     ],
+     "top_suppressed": [
+      "<=(",
+      " Interracial",
+      ")((((",
+      "'=>\"",
+      ":NO",
+      "%!"
+     ],
+     "write_norm_through_lens": 4.9991
+    },
+    "jlens": {
+     "top_promoted": [
+      ".\n\n",
+      "\u3002\n\n",
+      "\".\n\n",
+      ":\n\n",
+      " Groups",
+      ".\"\n\n",
+      ".\n",
+      ";\n\n",
+      "\u76f8\u4e92",
+      " Population"
+     ],
+     "top_promoted_vals": [
+      0.489,
+      0.402,
+      0.39,
+      0.384,
+      0.376,
+      0.374,
+      0.364,
+      0.361,
+      0.349,
+      0.348
+     ],
+     "top_suppressed": [
+      " proudly",
+      " its",
+      " honorary",
+      "\u201cShe",
+      " ceremon",
+      " ******************************************************************************/\n"
+     ],
+     "write_norm_through_lens": 8.9804
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      " crossorigin",
+      ".\n\n",
+      "\n\n",
+      " cient\u00edfico",
+      ";\n\n",
+      "ystick",
+      "gnore",
+      "\u5659",
+      "\u4e0b\u9762\u5c0f\u7f16",
+      " midfielder"
+     ],
+     "top_promoted_vals": [
+      0.286,
+      0.282,
+      0.274,
+      0.271,
+      0.253,
+      0.251,
+      0.251,
+      0.251,
+      0.246,
+      0.246
+     ],
+     "top_suppressed": [
+      "\u67e5\u770b\u8be6\u60c5",
+      ")(((",
+      "_subplot",
+      ".InnerException",
+      "%!",
+      "TreeWidgetItem"
+     ],
+     "write_norm_through_lens": 5.5282
+    }
+   },
+   {
+    "direction": "PC102",
+    "logit_lens": {
+     "top_promoted": [
+      " citiz",
+      "okin",
+      "iciel",
+      "seys",
+      "-bars",
+      "\u1eb7",
+      "berra",
+      " unfavor",
+      "FRING",
+      " derp"
+     ],
+     "top_promoted_vals": [
+      0.281,
+      0.261,
+      0.242,
+      0.228,
+      0.224,
+      0.222,
+      0.216,
+      0.211,
+      0.209,
+      0.208
+     ],
+     "top_suppressed": [
+      "\u65e5\u8baf",
+      "\u7cd7",
+      "\ufffd",
+      "\ufe69",
+      "\u6cd5\u5b9d",
+      "\u5432"
+     ],
+     "write_norm_through_lens": 4.5404
+    },
+    "jlens": {
+     "top_promoted": [
+      "\u5168\u8d44\u5b50",
+      " Freedom",
+      " Approval",
+      " approval",
+      "\u4e0d\u540c\u610f",
+      "RATION",
+      "requested",
+      " Enforcement",
+      "\u8d66",
+      " Chemical"
+     ],
+     "top_promoted_vals": [
+      0.287,
+      0.282,
+      0.281,
+      0.279,
+      0.274,
+      0.274,
+      0.267,
+      0.266,
+      0.265,
+      0.261
+     ],
+     "top_suppressed": [
+      " surviv",
+      "\u7a33\u5065",
+      " survivors",
+      "\u9003\u751f",
+      "\u4f24\u4ea1",
+      "\u62a2\u6551"
+     ],
+     "write_norm_through_lens": 7.9802
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u1e62",
+      "iciel",
+      "\u1408",
+      "\ufffd",
+      "\u1409",
+      "MMdd",
+      "FRING",
+      "ocity",
+      "uchar",
+      "okin"
+     ],
+     "top_promoted_vals": [
+      0.247,
+      0.247,
+      0.243,
+      0.24,
+      0.235,
+      0.234,
+      0.233,
+      0.232,
+      0.231,
+      0.228
+     ],
+     "top_suppressed": [
+      " jsonResponse",
+      "\u4e00\u81f4\u597d\u8bc4",
+      " Worce",
+      "\u5432",
+      "sprites",
+      "\u6cd5\u5b9d"
+     ],
+     "write_norm_through_lens": 5.3479
+    }
+   },
+   {
+    "direction": "PC104",
+    "logit_lens": {
+     "top_promoted": [
+      " NDEBUG",
+      " b\u00e9n\u00e9fic",
+      "\u6240\u63d0\u4f9b\u7684",
+      " Dems",
+      "\u7248\u6743\u5f52",
+      "\u63b8",
+      " avalia",
+      "attempt",
+      "\u53d1\u751f\u5728",
+      "\u94a3"
+     ],
+     "top_promoted_vals": [
+      0.208,
+      0.2,
+      0.195,
+      0.189,
+      0.171,
+      0.168,
+      0.167,
+      0.163,
+      0.162,
+      0.16
+     ],
+     "top_suppressed": [
+      "\u4e00\u81f4\u597d\u8bc4",
+      "byss",
+      "-Compatible",
+      "SETTING",
+      "QRST",
+      "(Have"
+     ],
+     "write_norm_through_lens": 4.4915
+    },
+    "jlens": {
+     "top_promoted": [
+      "/////",
+      "antro",
+      "/original",
+      "\u53d7\u76ca",
+      "beit",
+      "\u7248\u6743\u5f52",
+      "uent",
+      ".RequestMethod",
+      "\u65e0\u507f",
+      "lke"
+     ],
+     "top_promoted_vals": [
+      0.437,
+      0.39,
+      0.389,
+      0.385,
+      0.372,
+      0.371,
+      0.362,
+      0.36,
+      0.358,
+      0.356
+     ],
+     "top_suppressed": [
+      " Candidates",
+      " \\",
+      " ``",
+      " Inspection",
+      " candidates",
+      " Testing"
+     ],
+     "write_norm_through_lens": 9.742
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u571f\u8033",
+      "\"./",
+      ")((((",
+      "\u6240\u63d0\u4f9b\u7684",
+      "\u63b8",
+      "\u7cd9",
+      ".pe",
+      "ocity",
+      "\u017b",
+      "\u7855\u58eb\u7814\u7a76"
+     ],
+     "top_promoted_vals": [
+      0.288,
+      0.254,
+      0.249,
+      0.247,
+      0.237,
+      0.228,
+      0.225,
+      0.222,
+      0.216,
+      0.213
+     ],
+     "top_suppressed": [
+      "\u4e00\u81f4\u597d\u8bc4",
+      "QRST",
+      " typingsSlinky",
+      "\u3066\u304f\u308c\u308b",
+      " Art\u00edculo",
+      " typingsJapgolly"
+     ],
+     "write_norm_through_lens": 5.2081
+    }
+   },
+   {
+    "direction": "PC106",
+    "logit_lens": {
+     "top_promoted": [
+      "#ga",
+      " pupper",
+      "-caret",
+      "ActivityIndicator",
+      "\"./",
+      "NavController",
+      ".sendStatus",
+      ".EntityManager",
+      "styleType",
+      "\u5e11"
+     ],
+     "top_promoted_vals": [
+      0.294,
+      0.264,
+      0.259,
+      0.256,
+      0.249,
+      0.247,
+      0.241,
+      0.24,
+      0.238,
+      0.237
+     ],
+     "top_suppressed": [
+      "defgroup",
+      "buat",
+      " el\u0151",
+      "\u626b\u9ed1",
+      "\u515a\u98ce",
+      "epam"
+     ],
+     "write_norm_through_lens": 4.6485
+    },
+    "jlens": {
+     "top_promoted": [
+      " Areas",
+      " Zones",
+      "\u5176\u5b83",
+      " Certain",
+      " Other",
+      " Territories",
+      ".mixer",
+      " Regions",
+      " `\"",
+      " Portions"
+     ],
+     "top_promoted_vals": [
+      0.301,
+      0.275,
+      0.259,
+      0.255,
+      0.249,
+      0.244,
+      0.242,
+      0.24,
+      0.24,
+      0.234
+     ],
+     "top_suppressed": [
+      " discussion",
+      " presentation",
+      " eagerly",
+      " price",
+      " discuss",
+      "\u5c3d\u65e9"
+     ],
+     "write_norm_through_lens": 8.83
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u5e11",
+      "\tDescription",
+      " ChatColor",
+      " \"\\\",",
+      "stral",
+      "\u6cc1",
+      " \n            \n",
+      "\u666e\u60e0",
+      " Sentence",
+      " containerView"
+     ],
+     "top_promoted_vals": [
+      0.28,
+      0.269,
+      0.249,
+      0.247,
+      0.241,
+      0.239,
+      0.239,
+      0.236,
+      0.234,
+      0.233
+     ],
+     "top_suppressed": [
+      "\u3042\u308a\u304c\u3068\u3046\u3054\u3056",
+      "defgroup",
+      "epam",
+      "nze",
+      "hores",
+      " ?>&"
+     ],
+     "write_norm_through_lens": 5.5307
+    }
+   },
+   {
+    "direction": "PC107",
+    "logit_lens": {
+     "top_promoted": [
+      " resizeMode",
+      " francais",
+      " strokeLine",
+      "\u52e0",
+      " activeClassName",
+      " j\u00f3",
+      "(strpos",
+      " fortn",
+      " minHeight",
+      " herramient"
+     ],
+     "top_promoted_vals": [
+      0.244,
+      0.234,
+      0.233,
+      0.219,
+      0.212,
+      0.206,
+      0.201,
+      0.201,
+      0.195,
+      0.194
+     ],
+     "top_suppressed": [
+      ":;\n",
+      "\u2697",
+      "\"<?",
+      ".Selenium",
+      "\ud83d\udcd0",
+      "\u0635\u0646\u062f"
+     ],
+     "write_norm_through_lens": 4.7474
+    },
+    "jlens": {
+     "top_promoted": [
+      "epam",
+      "tsy",
+      " Palette",
+      "\u8272\u8c03",
+      "bedo",
+      "anela",
+      "voluci\u00f3n",
+      "andard",
+      "/renderer",
+      "_uniform"
+     ],
+     "top_promoted_vals": [
+      0.345,
+      0.329,
+      0.325,
+      0.322,
+      0.321,
+      0.316,
+      0.315,
+      0.312,
+      0.308,
+      0.307
+     ],
+     "top_suppressed": [
+      "\n\n",
+      "\u79d1\u5b66\u7814\u7a76",
+      " ...\n\n",
+      " :\n\n",
+      "2",
+      "5"
+     ],
+     "write_norm_through_lens": 7.9664
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u52e0",
+      "\u5927\u5927\u5c0f",
+      "elerik",
+      "\u519c\u8d38",
+      " be\u011fen",
+      "\u7684\u5e26\u9886",
+      "findViewById",
+      " newcom",
+      "az\u0131",
+      "\uff61"
+     ],
+     "top_promoted_vals": [
+      0.427,
+      0.361,
+      0.35,
+      0.342,
+      0.335,
+      0.335,
+      0.332,
+      0.326,
+      0.325,
+      0.324
+     ],
+     "top_suppressed": [
+      "3",
+      "4",
+      "\u5ef6",
+      " ",
+      "5",
+      " key"
+     ],
+     "write_norm_through_lens": 5.3889
+    }
+   },
+   {
+    "direction": "PC109",
+    "logit_lens": {
+     "top_promoted": [
+      "\u59d4\u7ec4\u7ec7",
+      "='\".$_",
+      " BuzzFeed",
+      "\u5973\u6027\u670b\u53cb",
+      "usterity",
+      " \u0141a",
+      "\u55f5",
+      "\u5654",
+      "\u7eaa\u59d4\u4e66\u8bb0",
+      " Erectile"
+     ],
+     "top_promoted_vals": [
+      0.362,
+      0.326,
+      0.29,
+      0.27,
+      0.262,
+      0.261,
+      0.259,
+      0.258,
+      0.253,
+      0.25
+     ],
+     "top_suppressed": [
+      "cery",
+      "seealso",
+      "aversable",
+      "/GPL",
+      "ceries",
+      ".BLL"
+     ],
+     "write_norm_through_lens": 4.6645
+    },
+    "jlens": {
+     "top_promoted": [
+      "omore",
+      ".\n",
+      ".",
+      " [\u2026",
+      " loss",
+      "logg",
+      " taxa",
+      ":\"-",
+      " perspectives",
+      " losses"
+     ],
+     "top_promoted_vals": [
+      0.426,
+      0.411,
+      0.362,
+      0.353,
+      0.352,
+      0.346,
+      0.344,
+      0.343,
+      0.34,
+      0.338
+     ],
+     "top_suppressed": [
+      " **",
+      "      ",
+      "Routine",
+      "\u5f15\u7206",
+      "    ",
+      "\u6bcf\u5929\u90fd"
+     ],
+     "write_norm_through_lens": 8.8943
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u59d4\u7ec4\u7ec7",
+      "\u62dc\u5e08\u5b66\u827a",
+      " onPostExecute",
+      "usterity",
+      " bindActionCreators",
+      " )\n\n\n\n\n\n\n\n",
+      " CircularProgress",
+      ":\"-",
+      "\ud504\ub85c\uadf8",
+      "twor"
+     ],
+     "top_promoted_vals": [
+      0.407,
+      0.356,
+      0.351,
+      0.344,
+      0.334,
+      0.324,
+      0.321,
+      0.307,
+      0.305,
+      0.303
+     ],
+     "top_suppressed": [
+      "aversable",
+      "izarre",
+      "\u6377",
+      " reliable",
+      "\u53ef\u9760",
+      " offsetY"
+     ],
+     "write_norm_through_lens": 5.3706
+    }
+   },
+   {
+    "direction": "PC110",
+    "logit_lens": {
+     "top_promoted": [
+      " opendir",
+      "\u4e4c\u514b",
+      ":params",
+      " perror",
+      " \"&#",
+      "\u8650",
+      ",'#",
+      "(JFrame",
+      " provided",
+      "\u1ec1m"
+     ],
+     "top_promoted_vals": [
+      0.225,
+      0.207,
+      0.204,
+      0.203,
+      0.201,
+      0.2,
+      0.198,
+      0.193,
+      0.191,
+      0.191
+     ],
+     "top_suppressed": [
+      " Kardash",
+      "orget",
+      " libertine",
+      " migliori",
+      "trys",
+      "i\u1ebfu"
+     ],
+     "write_norm_through_lens": 4.497
+    },
+    "jlens": {
+     "top_promoted": [
+      ".\n",
+      "ptron",
+      ".\n\n",
+      ".\n\n\n",
+      "udem",
+      "/***/",
+      "/Dk",
+      "\u0447\u0435\u0441\u0442\u0432\u043e",
+      ".Physics",
+      "\u91c7\u77ff\u7b49"
+     ],
+     "top_promoted_vals": [
+      0.416,
+      0.374,
+      0.366,
+      0.361,
+      0.361,
+      0.356,
+      0.339,
+      0.337,
+      0.336,
+      0.335
+     ],
+     "top_suppressed": [
+      " reconnaissance",
+      "//=",
+      " guerr",
+      " *)&",
+      "\u654c",
+      " TARGET"
+     ],
+     "write_norm_through_lens": 8.3334
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "/Dk",
+      ",},\n",
+      "\u1ec1m",
+      "\u4e4c\u514b",
+      "\u2f25",
+      "@student",
+      "\u3042\u308a\u304c\u3068\u3046\u3054\u3056",
+      ".easing",
+      ":params",
+      "lush"
+     ],
+     "top_promoted_vals": [
+      0.322,
+      0.321,
+      0.318,
+      0.306,
+      0.29,
+      0.284,
+      0.283,
+      0.274,
+      0.274,
+      0.273
+     ],
+     "top_suppressed": [
+      ".isNullOrEmpty",
+      "\u4e3b\u4e49\u601d\u60f3",
+      "\\grid",
+      "i\u1ebfu",
+      "ElementsBy",
+      "\u5728\u4e4e"
+     ],
+     "write_norm_through_lens": 5.2599
+    }
+   },
+   {
+    "direction": "PC111",
+    "logit_lens": {
+     "top_promoted": [
+      "\u6e38\u620f\u64cd\u4f5c",
+      "=-=-=-=-=-=-=-=-",
+      "\u6e38\u620f\u89d2\u8272",
+      "@update",
+      ";;;;;;;;",
+      " (\"<",
+      "@show",
+      "\u6215",
+      "\u6e38\u620f\u5f53\u4e2d",
+      ".scalajs"
+     ],
+     "top_promoted_vals": [
+      0.344,
+      0.315,
+      0.313,
+      0.311,
+      0.283,
+      0.281,
+      0.278,
+      0.268,
+      0.264,
+      0.258
+     ],
+     "top_suppressed": [
+      "Uvs",
+      "almart",
+      "herits",
+      " filmy",
+      "arranty",
+      ",buf"
+     ],
+     "write_norm_through_lens": 4.7172
+    },
+    "jlens": {
+     "top_promoted": [
+      ":NSLocalizedString",
+      " replacements",
+      " my",
+      "@update",
+      " patches",
+      " corrected",
+      " worn",
+      " resemble",
+      " formations",
+      " }):"
+     ],
+     "top_promoted_vals": [
+      0.36,
+      0.351,
+      0.346,
+      0.341,
+      0.338,
+      0.335,
+      0.332,
+      0.33,
+      0.327,
+      0.326
+     ],
+     "top_suppressed": [
+      " Webseite",
+      ".onDestroy",
+      "z\u00e4hl",
+      "\u4e0b\u9762\u5c31",
+      ".firebaseio",
+      " (!["
+     ],
+     "write_norm_through_lens": 9.8372
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u6211\u81ea\u5df1",
+      "\u6e38\u620f\u64cd\u4f5c",
+      ".scalajs",
+      " decals",
+      " myself",
+      "atars",
+      "'https",
+      "swana",
+      "9",
+      "\ufeff/*\n"
+     ],
+     "top_promoted_vals": [
+      0.273,
+      0.27,
+      0.261,
+      0.256,
+      0.228,
+      0.227,
+      0.227,
+      0.225,
+      0.223,
+      0.222
+     ],
+     "top_suppressed": [
+      ",strlen",
+      "/lg",
+      "almart",
+      "herits",
+      " WHATSOEVER",
+      " \u05d4\u05d5\u05d3"
+     ],
+     "write_norm_through_lens": 5.5077
+    }
+   },
+   {
+    "direction": "PC113",
+    "logit_lens": {
+     "top_promoted": [
+      " bied",
+      ")$_",
+      "nement",
+      ".withOpacity",
+      "\u5c0f\u6e38\u620f",
+      "\"Some",
+      ">({",
+      "\u74e4",
+      ".IsSuccess",
+      " getSupportFragmentManager"
+     ],
+     "top_promoted_vals": [
+      0.26,
+      0.229,
+      0.223,
+      0.22,
+      0.218,
+      0.216,
+      0.207,
+      0.207,
+      0.204,
+      0.201
+     ],
+     "top_suppressed": [
+      " awakeFromNib",
+      " HeaderComponent",
+      "noinspection",
+      " Rosenstein",
+      " enthus",
+      " holster"
+     ],
+     "write_norm_through_lens": 4.4902
+    },
+    "jlens": {
+     "top_promoted": [
+      "://${",
+      " Wildlife",
+      "\ud0b4",
+      "\u9a9a\u6270",
+      "\"While",
+      " HuffPost",
+      ":\\/\\/",
+      "\u0447\u0438\u0441\u043b\u0435\u043d",
+      "\u5954\u6ce2",
+      "\u59d4\u5c48"
+     ],
+     "top_promoted_vals": [
+      0.433,
+      0.424,
+      0.393,
+      0.39,
+      0.386,
+      0.382,
+      0.372,
+      0.369,
+      0.368,
+      0.365
+     ],
+     "top_suppressed": [
+      " students",
+      " deton",
+      "\u4fdd\u5bc6",
+      " secrets",
+      "fuse",
+      " burner"
+     ],
+     "write_norm_through_lens": 8.837
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "grily",
+      "OUGH",
+      "\u51e4\u51f0\u7f51",
+      "ARSE",
+      "_registro",
+      "_CPP",
+      " ISSN",
+      "\u53ef\u60f3\u800c",
+      "orelease",
+      "getMethod"
+     ],
+     "top_promoted_vals": [
+      0.239,
+      0.219,
+      0.217,
+      0.215,
+      0.212,
+      0.209,
+      0.205,
+      0.203,
+      0.202,
+      0.199
+     ],
+     "top_suppressed": [
+      " awakeFromNib",
+      "\u5f97\u5929",
+      "=\\\"$",
+      "\ud83d\udcd0",
+      " HeaderComponent",
+      "twor"
+     ],
+     "write_norm_through_lens": 5.3129
+    }
+   },
+   {
+    "direction": "PC114",
+    "logit_lens": {
+     "top_promoted": [
+      " \u81ea\u52a8\u751f\u6210",
+      "\u5012\u5728\u5730",
+      "\u2105",
+      "\u6109",
+      "\u5de7\u514b",
+      "\u51b0\u6dc7",
+      " ()->",
+      "\u8bbe\u8ba1\u5668",
+      " HeaderComponent",
+      "\u8ffd"
+     ],
+     "top_promoted_vals": [
+      0.216,
+      0.215,
+      0.186,
+      0.18,
+      0.178,
+      0.177,
+      0.177,
+      0.176,
+      0.176,
+      0.173
+     ],
+     "top_suppressed": [
+      "\u7684\u65e5\u5b50\u91cc",
+      "\u7279\u522b\u58f0\u660e",
+      ",application",
+      "atomy",
+      ":frame",
+      "\u30f5"
+     ],
+     "write_norm_through_lens": 4.542
+    },
+    "jlens": {
+     "top_promoted": [
+      "\"...",
+      ":",
+      ":F",
+      ":${",
+      "))[",
+      ":$",
+      "'|",
+      "SError",
+      "eacher",
+      ":."
+     ],
+     "top_promoted_vals": [
+      0.348,
+      0.31,
+      0.308,
+      0.303,
+      0.297,
+      0.297,
+      0.297,
+      0.296,
+      0.296,
+      0.292
+     ],
+     "top_suppressed": [
+      "\u0e49\u0e2d\u0e19",
+      " convoy",
+      "\u5f85\u9047",
+      "ocale",
+      " immediate",
+      " convo"
+     ],
+     "write_norm_through_lens": 7.8961
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u8bbe\u8ba1\u5668",
+      "\u2105",
+      "\u5de7\u514b",
+      "\u203d",
+      " REUTERS",
+      " \u81ea\u52a8\u751f\u6210",
+      "\u5cac",
+      "\u6d1b\u6749",
+      "semb",
+      "\u8844"
+     ],
+     "top_promoted_vals": [
+      0.304,
+      0.303,
+      0.294,
+      0.292,
+      0.284,
+      0.28,
+      0.273,
+      0.265,
+      0.265,
+      0.262
+     ],
+     "top_suppressed": [
+      "ishops",
+      "\u7684\u65e5\u5b50\u91cc",
+      " chat",
+      "Descricao",
+      " type",
+      "\u0e49\u0e2d\u0e19"
+     ],
+     "write_norm_through_lens": 5.3101
+    }
+   },
+   {
+    "direction": "PC120",
+    "logit_lens": {
+     "top_promoted": [
+      ":\".$",
+      ":'.$",
+      "?option",
+      "DTV",
+      "-ln",
+      ":<?",
+      "b\u00fc",
+      "\u2697",
+      " MediaTek",
+      "s\u00e3o"
+     ],
+     "top_promoted_vals": [
+      0.351,
+      0.333,
+      0.295,
+      0.295,
+      0.288,
+      0.282,
+      0.281,
+      0.281,
+      0.274,
+      0.272
+     ],
+     "top_suppressed": [
+      " memberId",
+      " roomId",
+      " ownerId",
+      "\u4ece\u4e25",
+      "\u5f88\u6ee1\u610f",
+      " rico"
+     ],
+     "write_norm_through_lens": 4.5957
+    },
+    "jlens": {
+     "top_promoted": [
+      "?option",
+      "owany",
+      "\u0e32\u0e07",
+      "Yahoo",
+      ".rar",
+      ":<?",
+      "\u8ca7",
+      "/moment",
+      "\u5835",
+      "errick"
+     ],
+     "top_promoted_vals": [
+      0.435,
+      0.428,
+      0.419,
+      0.411,
+      0.402,
+      0.399,
+      0.392,
+      0.388,
+      0.387,
+      0.383
+     ],
+     "top_suppressed": [
+      ":",
+      " their",
+      "\u200b",
+      ";",
+      ",",
+      " experimental"
+     ],
+     "write_norm_through_lens": 11.1513
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u2697",
+      "/Dk",
+      "<algorithm",
+      "@dynamic",
+      "\u2302",
+      ":\".$",
+      "\ud83d\udcd0",
+      ":<?",
+      "GuidId",
+      "rawid"
+     ],
+     "top_promoted_vals": [
+      0.387,
+      0.386,
+      0.37,
+      0.346,
+      0.332,
+      0.329,
+      0.326,
+      0.322,
+      0.322,
+      0.32
+     ],
+     "top_suppressed": [
+      " roomId",
+      "1",
+      " memberId",
+      "0",
+      "2",
+      " companyName"
+     ],
+     "write_norm_through_lens": 5.2259
+    }
+   },
+   {
+    "direction": "PC149",
+    "logit_lens": {
+     "top_promoted": [
+      ":\"\",",
+      "\u5bf9\u7167\u68c0\u67e5",
+      "\u76f8\u5173\u8d1f\u8d23",
+      "InstantiationException",
+      "\u5c31\u7ed9\u5927\u5bb6",
+      "__);",
+      "\u4fdd\u9a7e",
+      "Mathf",
+      " \u81ea\u52a8\u751f\u6210",
+      "\u5c42\u51fa\u4e0d"
+     ],
+     "top_promoted_vals": [
+      0.319,
+      0.315,
+      0.296,
+      0.277,
+      0.261,
+      0.255,
+      0.253,
+      0.251,
+      0.251,
+      0.249
+     ],
+     "top_suppressed": [
+      "noinspection",
+      " BrowserAnimationsModule",
+      " HttpClientModule",
+      " preparedStatement",
+      " woll",
+      " whiteColor"
+     ],
+     "write_norm_through_lens": 4.421
+    },
+    "jlens": {
+     "top_promoted": [
+      ">NN",
+      "subtotal",
+      "icaid",
+      ":'',",
+      "elps",
+      ":\"\",",
+      "emade",
+      "\u627a",
+      " unnamed",
+      "pesan"
+     ],
+     "top_promoted_vals": [
+      0.372,
+      0.336,
+      0.336,
+      0.323,
+      0.322,
+      0.319,
+      0.304,
+      0.3,
+      0.295,
+      0.295
+     ],
+     "top_suppressed": [
+      " .\n",
+      "\u064a\u0631\u0629",
+      " again",
+      " accordingly",
+      " compared",
+      " .\n\n"
+     ],
+     "write_norm_through_lens": 7.5872
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      " \u81ea\u52a8\u751f\u6210",
+      "\u5bf9\u7167\u68c0\u67e5",
+      "Mathf",
+      "\u4e34\u65f6",
+      "eteor",
+      "\u9e82",
+      "rowable",
+      "#ad",
+      "\u02ee",
+      " Dzi"
+     ],
+     "top_promoted_vals": [
+      0.278,
+      0.273,
+      0.261,
+      0.253,
+      0.252,
+      0.249,
+      0.243,
+      0.234,
+      0.23,
+      0.229
+     ],
+     "top_suppressed": [
+      "putc",
+      "ffield",
+      ".imgur",
+      "\uffe2",
+      " BrowserAnimationsModule",
+      "/mock"
+     ],
+     "write_norm_through_lens": 5.0914
+    }
+   },
+   {
+    "direction": "PC162",
+    "logit_lens": {
+     "top_promoted": [
+      "[\"$",
+      ":animated",
+      ".JTable",
+      "ServletRequest",
+      "\"<?",
+      "dbuf",
+      "i\u1ec7u",
+      "/Runtime",
+      "__,__",
+      "\u5c31\u89c9\u5f97"
+     ],
+     "top_promoted_vals": [
+      0.295,
+      0.291,
+      0.277,
+      0.269,
+      0.266,
+      0.261,
+      0.26,
+      0.258,
+      0.254,
+      0.253
+     ],
+     "top_suppressed": [
+      "gunakan",
+      " pulumi",
+      "\u0131ndaki",
+      " goof",
+      "long",
+      "\u3092\u5909\u3048"
+     ],
+     "write_norm_through_lens": 4.551
+    },
+    "jlens": {
+     "top_promoted": [
+      " necessary",
+      " presence",
+      "\u4f2a\u88c5",
+      " needed",
+      " required",
+      " English",
+      " condition",
+      " facilit",
+      " ident",
+      " helping"
+     ],
+     "top_promoted_vals": [
+      0.361,
+      0.355,
+      0.342,
+      0.338,
+      0.337,
+      0.318,
+      0.316,
+      0.314,
+      0.305,
+      0.304
+     ],
+     "top_suppressed": [
+      ",long",
+      "{{$",
+      "SUPER",
+      " pulumi",
+      "Sexy",
+      "olatile"
+     ],
+     "write_norm_through_lens": 8.7317
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      ":animated",
+      "ornment",
+      "ServletRequest",
+      "pson",
+      "peon",
+      "WithIdentifier",
+      "bsite",
+      "i\u1ec7u",
+      "emetery",
+      "andum"
+     ],
+     "top_promoted_vals": [
+      0.273,
+      0.272,
+      0.269,
+      0.267,
+      0.257,
+      0.254,
+      0.251,
+      0.25,
+      0.232,
+      0.231
+     ],
+     "top_suppressed": [
+      "long",
+      " long",
+      "\u0131ndaki",
+      "\u6c67",
+      "leanor",
+      " centerX"
+     ],
+     "write_norm_through_lens": 5.1839
+    }
+   },
+   {
+    "direction": "PC166",
+    "logit_lens": {
+     "top_promoted": [
+      "',...\n",
+      "\",\"#",
+      " coppia",
+      "=\";\n",
+      ",SIGNAL",
+      "\u6e38\u620f\u6280\u5de7",
+      "itage",
+      " .'</",
+      " novit\u00e0",
+      "rvine"
+     ],
+     "top_promoted_vals": [
+      0.29,
+      0.284,
+      0.282,
+      0.278,
+      0.27,
+      0.262,
+      0.252,
+      0.249,
+      0.244,
+      0.234
+     ],
+     "top_suppressed": [
+      " sockfd",
+      " probably",
+      "eworthy",
+      " possibly",
+      " potentially",
+      "\u7eca"
+     ],
+     "write_norm_through_lens": 4.3006
+    },
+    "jlens": {
+     "top_promoted": [
+      "\u0625\u0636\u0627\u0641",
+      "\u62dc\u5e08\u5b66",
+      " novit\u00e0",
+      "\u5145\u88d5",
+      "\u8230",
+      "\u7b54\u590d",
+      ".KeyEvent",
+      " onStop",
+      "\u4e00\u81f4\u597d\u8bc4",
+      "m\u00e9d"
+     ],
+     "top_promoted_vals": [
+      0.372,
+      0.346,
+      0.342,
+      0.339,
+      0.338,
+      0.334,
+      0.334,
+      0.333,
+      0.329,
+      0.324
+     ],
+     "top_suppressed": [
+      " probably",
+      " perhaps",
+      " possibly",
+      " maybe",
+      " likely",
+      " potentially"
+     ],
+     "write_norm_through_lens": 8.9371
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "opause",
+      " peculiar",
+      "retweeted",
+      "    \t\r\n",
+      "\u73a2",
+      " coppia",
+      "\u6289",
+      " injector",
+      "\u5e1b",
+      "AI"
+     ],
+     "top_promoted_vals": [
+      0.241,
+      0.218,
+      0.218,
+      0.217,
+      0.214,
+      0.213,
+      0.209,
+      0.208,
+      0.208,
+      0.207
+     ],
+     "top_suppressed": [
+      " fkk",
+      "onestly",
+      "delivr",
+      "eworthy",
+      "/Dk",
+      "ditor"
+     ],
+     "write_norm_through_lens": 5.0942
+    }
+   }
+  ],
+  "best20": [
+   {
+    "direction": "PC3",
+    "logit_lens": {
+     "top_promoted": [
+      " rekl",
+      "\u54ea\u5bb6\u597d",
+      "\u5c42\u51fa\u4e0d",
+      " \u0441\u0434\u0435\u043b\u0430",
+      " uda",
+      "\u7248\u6743\u5f52",
+      "\u4ec5\u4ee3\u8868",
+      "/umd",
+      ":'.$",
+      "[\"."
+     ],
+     "top_promoted_vals": [
+      0.379,
+      0.361,
+      0.36,
+      0.343,
+      0.343,
+      0.339,
+      0.326,
+      0.322,
+      0.32,
+      0.317
+     ],
+     "top_suppressed": [
+      " threesome",
+      "\u77a0",
+      " bigot",
+      " Kardash",
+      " raping",
+      " lingerie"
+     ],
+     "write_norm_through_lens": 5.3077
+    },
+    "jlens": {
+     "top_promoted": [
+      ":\".$",
+      ":'.$",
+      "').\"",
+      "');\n\n\n\n",
+      " n\u00e4chste",
+      "\";//",
+      "');//",
+      " everyone",
+      "--+",
+      ":<?"
+     ],
+     "top_promoted_vals": [
+      0.489,
+      0.456,
+      0.358,
+      0.328,
+      0.294,
+      0.29,
+      0.286,
+      0.283,
+      0.283,
+      0.276
+     ],
+     "top_suppressed": [
+      " programmes",
+      " informations",
+      " organisations",
+      " publications",
+      "/interfaces",
+      " specific"
+     ],
+     "write_norm_through_lens": 14.2596
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      " to",
+      " just",
+      " now",
+      " that",
+      " here",
+      " each",
+      " only",
+      " still",
+      " this",
+      " left"
+     ],
+     "top_promoted_vals": [
+      0.402,
+      0.387,
+      0.371,
+      0.37,
+      0.362,
+      0.361,
+      0.353,
+      0.349,
+      0.346,
+      0.346
+     ],
+     "top_suppressed": [
+      "\u200b\u200b",
+      " addTarget",
+      " \u0130ki",
+      " \ud2b9\uc815",
+      "\u261e",
+      "\uc6f9"
+     ],
+     "write_norm_through_lens": 7.3446
+    }
+   },
+   {
+    "direction": "PC1",
+    "logit_lens": {
+     "top_promoted": [
+      " raping",
+      "documento",
+      "/MPL",
+      "alties",
+      "0",
+      "2",
+      "\u8981\u597d\u597d",
+      " maxX",
+      "\u670b\u53cb\u4eec\u5bf9",
+      "/problems"
+     ],
+     "top_promoted_vals": [
+      0.32,
+      0.258,
+      0.249,
+      0.246,
+      0.238,
+      0.238,
+      0.234,
+      0.234,
+      0.233,
+      0.233
+     ],
+     "top_suppressed": [
+      " pestic",
+      "\u5e76\u4e0d\u662f\u5f88",
+      "\u63f6",
+      " Webseite",
+      "\u8c22\u9080",
+      "\u77a0"
+     ],
+     "write_norm_through_lens": 5.4724
+    },
+    "jlens": {
+     "top_promoted": [
+      " ?>\n\n\n",
+      "\ud83d\udc46",
+      " =",
+      "\u261d",
+      "/MPL",
+      " \u751f\u547d\u5468\u671f",
+      " (",
+      " +",
+      " \n",
+      " "
+     ],
+     "top_promoted_vals": [
+      0.424,
+      0.41,
+      0.393,
+      0.388,
+      0.38,
+      0.376,
+      0.374,
+      0.362,
+      0.359,
+      0.355
+     ],
+     "top_suppressed": [
+      " pers\u00f6n",
+      "/welcome",
+      " Gesch\u00e4fts",
+      ".CompareTag",
+      " regelm\u00e4\u00dfig",
+      "},'"
+     ],
+     "write_norm_through_lens": 15.9414
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      " ?>\n\n\n",
+      " ()->",
+      " (){",
+      "/MPL",
+      " Ayr\u0131ca",
+      "\u8d8a\u4f86",
+      " RequestMethod",
+      " \u00d6n",
+      " ;\n\n\n",
+      ".dylib"
+     ],
+     "top_promoted_vals": [
+      0.375,
+      0.37,
+      0.341,
+      0.331,
+      0.328,
+      0.327,
+      0.324,
+      0.322,
+      0.316,
+      0.311
+     ],
+     "top_suppressed": [
+      " like",
+      " just",
+      " that",
+      " feel",
+      " sucht",
+      " you"
+     ],
+     "write_norm_through_lens": 6.8412
+    }
+   },
+   {
+    "direction": "PC4",
+    "logit_lens": {
+     "top_promoted": [
+      "\u65e5\u62a5\u793e",
+      " masturbating",
+      "\u8bf4\u5230\u8fd9\u91cc",
+      "\u4e0d\u5f97\u4e0d\u8bf4",
+      "-Cs",
+      "\u4e3b\u8981\u96c6\u4e2d",
+      " erotica",
+      " Parenthood",
+      " {?}",
+      " yeti"
+     ],
+     "top_promoted_vals": [
+      0.402,
+      0.374,
+      0.323,
+      0.289,
+      0.289,
+      0.277,
+      0.275,
+      0.267,
+      0.266,
+      0.258
+     ],
+     "top_suppressed": [
+      ".SharedPreferences",
+      "ifest",
+      "\u6ceb",
+      "structuring",
+      " \u0644\u0645\u0627\u0630\u0627",
+      " entreprene"
+     ],
+     "write_norm_through_lens": 4.7639
+    },
+    "jlens": {
+     "top_promoted": [
+      " F\u00f6rder",
+      " Gesch\u00e4fts",
+      "ynos",
+      " F\u00fchrung",
+      "/rand",
+      "odzi",
+      "aniu",
+      "uida",
+      "vis\u00e3o",
+      " Unternehmen"
+     ],
+     "top_promoted_vals": [
+      1.041,
+      0.913,
+      0.799,
+      0.796,
+      0.773,
+      0.767,
+      0.762,
+      0.758,
+      0.757,
+      0.756
+     ],
+     "top_suppressed": [
+      " maybe",
+      " you",
+      " someone",
+      " somebody",
+      " somehow",
+      " nice"
+     ],
+     "write_norm_through_lens": 20.9864
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u6768\u6b22",
+      "flen",
+      " masturbating",
+      " helicopt",
+      "\u043b\u044c\u0446",
+      " !***",
+      "kr\u00e4fte",
+      " disappe",
+      " inversi\u00f3n",
+      "\u65e5\u62a5\u793e"
+     ],
+     "top_promoted_vals": [
+      0.353,
+      0.315,
+      0.313,
+      0.308,
+      0.304,
+      0.304,
+      0.291,
+      0.289,
+      0.288,
+      0.287
+     ],
+     "top_suppressed": [
+      " sul",
+      ">\");\n\n",
+      " jest",
+      "aaaa",
+      "`.\n\n",
+      " wanna"
+     ],
+     "write_norm_through_lens": 5.7367
+    }
+   },
+   {
+    "direction": "PC0",
+    "logit_lens": {
+     "top_promoted": [
+      "\u6211\u771f\u7684",
+      " subparagraph",
+      "\u8fd9\u4e2a\u804c\u4e1a",
+      "\u5e94\u8be5\u600e\u4e48",
+      " emailAddress",
+      " sublic",
+      "\u8fd9\u79cd\u4e8b\u60c5",
+      " b\u00e9n\u00e9fic",
+      " enthus",
+      " FUNCT"
+     ],
+     "top_promoted_vals": [
+      0.252,
+      0.247,
+      0.237,
+      0.224,
+      0.224,
+      0.216,
+      0.211,
+      0.209,
+      0.208,
+      0.205
+     ],
+     "top_suppressed": [
+      " \u24d8",
+      "\"group",
+      "\u5c31\u591f",
+      "\"default",
+      "foundland",
+      "\u5e76\u4e0d\u662f\u5f88"
+     ],
+     "write_norm_through_lens": 4.3292
+    },
+    "jlens": {
+     "top_promoted": [
+      "Youtube",
+      ":\\\"",
+      ":<?",
+      ":\".$",
+      "Tumblr",
+      "\"|",
+      ".MM",
+      ".Sin",
+      "GX",
+      "\",\"\",\""
+     ],
+     "top_promoted_vals": [
+      0.62,
+      0.619,
+      0.616,
+      0.599,
+      0.591,
+      0.587,
+      0.583,
+      0.578,
+      0.576,
+      0.573
+     ],
+     "top_suppressed": [
+      " often",
+      " strategic",
+      " critical",
+      " significant",
+      " key",
+      " infrastructure"
+     ],
+     "write_norm_through_lens": 18.303
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "?>>",
+      "');\n\n\n\n",
+      ":<?",
+      ")=='",
+      ":System",
+      ".\"&",
+      ":\".$",
+      ".AF",
+      "\",-",
+      ":['"
+     ],
+     "top_promoted_vals": [
+      0.377,
+      0.368,
+      0.352,
+      0.343,
+      0.329,
+      0.328,
+      0.328,
+      0.325,
+      0.314,
+      0.311
+     ],
+     "top_suppressed": [
+      " network",
+      " leadership",
+      " early",
+      " development",
+      " and",
+      " practices"
+     ],
+     "write_norm_through_lens": 5.0668
+    }
+   },
+   {
+    "direction": "PC2",
+    "logit_lens": {
+     "top_promoted": [
+      "alties",
+      " unmist",
+      "UGC",
+      "rippling",
+      "antity",
+      "letics",
+      ":<?",
+      "'icon",
+      "-scenes",
+      "\u4e0d\u53ef\u6216"
+     ],
+     "top_promoted_vals": [
+      0.291,
+      0.278,
+      0.278,
+      0.278,
+      0.267,
+      0.266,
+      0.263,
+      0.263,
+      0.258,
+      0.257
+     ],
+     "top_suppressed": [
+      "\u602b",
+      " Horny",
+      " Fucking",
+      " onStop",
+      "\u6027\u4ef7",
+      " FUCK"
+     ],
+     "write_norm_through_lens": 4.9525
+    },
+    "jlens": {
+     "top_promoted": [
+      "UGC",
+      " MethodInfo",
+      "\ud83d\udc47",
+      " DeepCopy",
+      " FileInfo",
+      "NFL",
+      "rippling",
+      " ApiResponse",
+      "-widgets",
+      " FileStream"
+     ],
+     "top_promoted_vals": [
+      0.82,
+      0.801,
+      0.774,
+      0.76,
+      0.754,
+      0.75,
+      0.745,
+      0.744,
+      0.743,
+      0.742
+     ],
+     "top_suppressed": [
+      " her",
+      " glitter",
+      " passionately",
+      " dream",
+      " h",
+      " daring"
+     ],
+     "write_norm_through_lens": 19.17
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "rippling",
+      " data",
+      " file",
+      " if",
+      " is",
+      " based",
+      " context",
+      " or",
+      " you",
+      " user"
+     ],
+     "top_promoted_vals": [
+      0.358,
+      0.354,
+      0.344,
+      0.343,
+      0.339,
+      0.339,
+      0.322,
+      0.314,
+      0.314,
+      0.313
+     ],
+     "top_suppressed": [
+      "'\";\r\n",
+      "\u8b80\u53d6",
+      " activeClassName",
+      ".':",
+      "\";//",
+      "\u0e23\u0e32\u0e21"
+     ],
+     "write_norm_through_lens": 5.9974
+    }
+   },
+   {
+    "direction": "PC5",
+    "logit_lens": {
+     "top_promoted": [
+      " libertin",
+      " userEmail",
+      " extrad",
+      "\u7d20\u6674",
+      " Pornhub",
+      "\u266e",
+      "\u2019B",
+      "-valu",
+      " athleticism",
+      " voyeur"
+     ],
+     "top_promoted_vals": [
+      0.451,
+      0.395,
+      0.378,
+      0.36,
+      0.355,
+      0.342,
+      0.339,
+      0.325,
+      0.324,
+      0.319
+     ],
+     "top_suppressed": [
+      "\u5176\u5b83\u95ee\u9898",
+      "\u5e7f\u544a\u670d\u52a1",
+      "\u72ec\u4e00",
+      "\u6e38\u620f\u6280\u5de7",
+      "\u7eb0",
+      "\u27f9"
+     ],
+     "write_norm_through_lens": 5.977
+    },
+    "jlens": {
+     "top_promoted": [
+      " ++\n",
+      " Congratulations",
+      " Training",
+      "\u2764",
+      " &\n",
+      " Highlights",
+      " Customer",
+      " Welcome",
+      " Online",
+      " Recru"
+     ],
+     "top_promoted_vals": [
+      0.471,
+      0.442,
+      0.421,
+      0.419,
+      0.418,
+      0.415,
+      0.413,
+      0.412,
+      0.41,
+      0.408
+     ],
+     "top_suppressed": [
+      "openh",
+      " presumably",
+      "eczy",
+      " tats\u00e4ch",
+      " neither",
+      "\u8e5a"
+     ],
+     "write_norm_through_lens": 16.0477
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u2019B",
+      " libertin",
+      "\u266e",
+      " extrad",
+      "GBT",
+      " userEmail",
+      "%f",
+      " WHETHER",
+      "\u266f",
+      " Pendant"
+     ],
+     "top_promoted_vals": [
+      0.431,
+      0.422,
+      0.406,
+      0.399,
+      0.398,
+      0.39,
+      0.377,
+      0.377,
+      0.377,
+      0.375
+     ],
+     "top_suppressed": [
+      "\u5176\u5b83\u95ee\u9898",
+      "\u7eb0",
+      "\u5c5e\u4e8e\u81ea\u5df1",
+      "\u72ec\u4e00",
+      "\u27f9",
+      "\u8bf3"
+     ],
+     "write_norm_through_lens": 6.3058
+    }
+   },
+   {
+    "direction": "PC6",
+    "logit_lens": {
+     "top_promoted": [
+      " deltaTime",
+      "\u5b63\u540e",
+      "\u8bcb",
+      "\u8a79\u59c6",
+      "\u5176\u5b83\u95ee\u9898",
+      "\u7cbc",
+      "\u5982\u679c\u73a9\u5bb6",
+      "\u7ce8",
+      "\u70c0",
+      "\u8c29"
+     ],
+     "top_promoted_vals": [
+      0.296,
+      0.27,
+      0.269,
+      0.256,
+      0.25,
+      0.238,
+      0.237,
+      0.235,
+      0.235,
+      0.233
+     ],
+     "top_suppressed": [
+      "/Dk",
+      "\u5229\u7528\u60a8\u7684",
+      " undefeated",
+      " PointF",
+      " licensors",
+      "paralleled"
+     ],
+     "write_norm_through_lens": 5.274
+    },
+    "jlens": {
+     "top_promoted": [
+      " necessary",
+      " requests",
+      " required",
+      " request",
+      " requirements",
+      " issues",
+      " pending",
+      " additional",
+      " security",
+      " requesting"
+     ],
+     "top_promoted_vals": [
+      0.629,
+      0.622,
+      0.618,
+      0.617,
+      0.572,
+      0.56,
+      0.559,
+      0.554,
+      0.55,
+      0.548
+     ],
+     "top_suppressed": [
+      " Filme",
+      " Geb\u00e4",
+      " vieille",
+      "_EMIT",
+      " famous",
+      " Gr\u00f6\u00dfe"
+     ],
+     "write_norm_through_lens": 16.11
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      " issue",
+      "\u5b63\u540e",
+      " issues",
+      "\u8bcb",
+      " request",
+      "\u8c29",
+      " client",
+      " deltaTime",
+      "\u824f",
+      " actions"
+     ],
+     "top_promoted_vals": [
+      0.276,
+      0.275,
+      0.272,
+      0.268,
+      0.266,
+      0.259,
+      0.259,
+      0.255,
+      0.253,
+      0.244
+     ],
+     "top_suppressed": [
+      "].'",
+      "/Dk",
+      "/Instruction",
+      "/MPL",
+      "\u2697",
+      "(*)("
+     ],
+     "write_norm_through_lens": 5.9133
+    }
+   },
+   {
+    "direction": "PC15",
+    "logit_lens": {
+     "top_promoted": [
+      " d\u00e9march",
+      " nomine",
+      " Sexo",
+      " filmy",
+      "\u3053\u3068\u3082\u3042\u308a\u307e\u3059",
+      "\u524d\u63d0\u662f",
+      "/Area",
+      "\u5e74\u5e74\u5e95",
+      " li\u00e9",
+      " mastur"
+     ],
+     "top_promoted_vals": [
+      0.407,
+      0.337,
+      0.271,
+      0.252,
+      0.234,
+      0.233,
+      0.229,
+      0.218,
+      0.217,
+      0.215
+     ],
+     "top_suppressed": [
+      " \u0441\u0435\u0440\u044c\u0435\u0437\u043d",
+      " rekl",
+      "\u0432\u0435\u0449\u0430",
+      "/tos",
+      " oko",
+      " \u043e\u0441\u0442\u0430\u043b\u044c\u043d"
+     ],
+     "write_norm_through_lens": 4.8201
+    },
+    "jlens": {
+     "top_promoted": [
+      "}->{",
+      "='\".$_",
+      "\"math",
+      "}->",
+      ":\n\n",
+      "'http",
+      "\u6709\u610f\u601d\u7684",
+      "\\modules",
+      ">());\n\n",
+      "\u4e00\u4e0b\u5b50\u5c31"
+     ],
+     "top_promoted_vals": [
+      0.494,
+      0.489,
+      0.487,
+      0.48,
+      0.476,
+      0.469,
+      0.465,
+      0.465,
+      0.463,
+      0.461
+     ],
+     "top_suppressed": [
+      " n\u00e2",
+      " opc",
+      " indice",
+      " latency",
+      "\ud504\ub85c\uadf8",
+      " dak"
+     ],
+     "write_norm_through_lens": 9.8396
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      " d\u00e9march",
+      "\u0443",
+      "\"w",
+      " nomine",
+      "\u043c",
+      "\u0435",
+      "\u0441\u0442",
+      "\u0434",
+      "!=(",
+      "')));\n\n"
+     ],
+     "top_promoted_vals": [
+      0.53,
+      0.486,
+      0.424,
+      0.421,
+      0.418,
+      0.414,
+      0.412,
+      0.388,
+      0.385,
+      0.384
+     ],
+     "top_suppressed": [
+      " \u0430\u043d\u0433\u043b\u0438",
+      "\u0432\u0435\u0449\u0430",
+      " \u0441\u0435\u0440\u044c\u0435\u0437\u043d",
+      "\u91cd\u8981\u4e3e\u63aa",
+      " \u043f\u043e\u043b\u043e\u0436\u0438\u0442\u0435\u043b\u044c\u043d",
+      "fa"
+     ],
+     "write_norm_through_lens": 6.3759
+    }
+   },
+   {
+    "direction": "PC7",
+    "logit_lens": {
+     "top_promoted": [
+      "\u6709\u671f\u5f92",
+      "\u5efa\u6863\u7acb",
+      "\u5b59\u609f",
+      "\u62dc\u5e08\u5b66",
+      "\u963d",
+      "\u8487",
+      "\u5f88\u5f00\u5fc3",
+      "FOUNDATION",
+      "\u7610",
+      "\u0434\u043e\u0431\u0430\u0432"
+     ],
+     "top_promoted_vals": [
+      0.493,
+      0.466,
+      0.358,
+      0.35,
+      0.336,
+      0.335,
+      0.329,
+      0.327,
+      0.322,
+      0.317
+     ],
+     "top_suppressed": [
+      " Playoff",
+      "\u963f\u6839",
+      "\u5956\u5b66",
+      "\u84ca",
+      "\u576c",
+      "\u5895"
+     ],
+     "write_norm_through_lens": 5.2486
+    },
+    "jlens": {
+     "top_promoted": [
+      " Gesch\u00e4",
+      "\u7684\u5e26\u9886",
+      " Website",
+      "\u7596",
+      " \u0627\u0644\u062a\u0639\u0627",
+      " Steam",
+      "SizePolicy",
+      " Worldwide",
+      " FindObjectOfType",
+      " USA"
+     ],
+     "top_promoted_vals": [
+      0.345,
+      0.322,
+      0.291,
+      0.29,
+      0.284,
+      0.284,
+      0.282,
+      0.279,
+      0.278,
+      0.272
+     ],
+     "top_suppressed": [
+      "\uff0c",
+      "\uff1a\n\n",
+      "\uff08",
+      " somehow",
+      " fundamentally",
+      " \uff0c"
+     ],
+     "write_norm_through_lens": 11.5415
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u6709\u671f\u5f92",
+      "\u5efa\u6863\u7acb",
+      " Home",
+      "\u4f1a\u8ba9\u4f60",
+      "\u8d8a\u6765\u8d8a\u597d",
+      "\u62dc\u5e08\u5b66",
+      " Cloud",
+      " Best",
+      " API",
+      " Data"
+     ],
+     "top_promoted_vals": [
+      0.301,
+      0.3,
+      0.296,
+      0.287,
+      0.286,
+      0.28,
+      0.28,
+      0.278,
+      0.275,
+      0.275
+     ],
+     "top_suppressed": [
+      "/Dk",
+      "./(",
+      "/GPL",
+      "/\n\n\n\n",
+      ":<?",
+      ":normal"
+     ],
+     "write_norm_through_lens": 5.5937
+    }
+   },
+   {
+    "direction": "PC8",
+    "logit_lens": {
+     "top_promoted": [
+      " bigot",
+      "(iOS",
+      " assh",
+      " libertine",
+      "::$_",
+      "\u261d",
+      "[\".",
+      " sodom",
+      "?option",
+      "\u8d22\u8fd0"
+     ],
+     "top_promoted_vals": [
+      0.333,
+      0.331,
+      0.329,
+      0.322,
+      0.309,
+      0.307,
+      0.306,
+      0.304,
+      0.303,
+      0.298
+     ],
+     "top_suppressed": [
+      " adoles",
+      "\u7f8e\u5a92",
+      " airstrikes",
+      " dumpster",
+      " cigaret",
+      " cornerback"
+     ],
+     "write_norm_through_lens": 5.728
+    },
+    "jlens": {
+     "top_promoted": [
+      "\u7bb4",
+      "SMART",
+      "Comfort",
+      "Outdoor",
+      "Tips",
+      "nice",
+      "\u00f8j",
+      "Arduino",
+      "r\u00e4",
+      "Coach"
+     ],
+     "top_promoted_vals": [
+      0.694,
+      0.678,
+      0.669,
+      0.661,
+      0.659,
+      0.643,
+      0.641,
+      0.637,
+      0.632,
+      0.625
+     ],
+     "top_suppressed": [
+      " political",
+      " United",
+      " historical",
+      " history",
+      " controversial",
+      " unprecedented"
+     ],
+     "write_norm_through_lens": 17.3817
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u8d22\u8fd0",
+      "\u606b",
+      " -------------------------------------------------------------------------",
+      "\u261d",
+      "\u597d\u5417",
+      "\u5b17",
+      " maneu",
+      " sodom",
+      "\u89ca",
+      "\u5490"
+     ],
+     "top_promoted_vals": [
+      0.31,
+      0.298,
+      0.252,
+      0.251,
+      0.249,
+      0.248,
+      0.248,
+      0.243,
+      0.241,
+      0.241
+     ],
+     "top_suppressed": [
+      "swers",
+      " n\u00e4ch",
+      "\u7f8e\u5a92",
+      " political",
+      " sp\u00e9cialis\u00e9",
+      "\u00e1bado"
+     ],
+     "write_norm_through_lens": 6.3613
+    }
+   },
+   {
+    "direction": "PC14",
+    "logit_lens": {
+     "top_promoted": [
+      " iht",
+      "\u6215",
+      "_unset",
+      " assaulting",
+      " felon",
+      "_insn",
+      "\u72f0",
+      "pr\u00e9sent",
+      ".BASELINE",
+      " handguns"
+     ],
+     "top_promoted_vals": [
+      0.224,
+      0.224,
+      0.215,
+      0.207,
+      0.194,
+      0.193,
+      0.193,
+      0.189,
+      0.187,
+      0.187
+     ],
+     "top_suppressed": [
+      "\u6027\u4ef7",
+      "----</",
+      "\u709d",
+      "-scenes",
+      "\u6c46",
+      "crast"
+     ],
+     "write_norm_through_lens": 5.5999
+    },
+    "jlens": {
+     "top_promoted": [
+      " bindActionCreators",
+      "\u2630",
+      " info",
+      " \u81ea\u52a8\u751f\u6210",
+      ".rar",
+      " stuff",
+      "\u2503",
+      "=-=-=-=-",
+      " etc",
+      " \u82e5\u8981"
+     ],
+     "top_promoted_vals": [
+      0.204,
+      0.202,
+      0.2,
+      0.178,
+      0.164,
+      0.145,
+      0.14,
+      0.136,
+      0.136,
+      0.133
+     ],
+     "top_suppressed": [
+      " Mar\u00eda",
+      "\ufffd",
+      " agricult",
+      "graphql",
+      " H\u00f6he",
+      "\u7684\u6210\u529f"
+     ],
+     "write_norm_through_lens": 12.1593
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      ".BASELINE",
+      ":\"-",
+      " request",
+      ".Selenium",
+      "\u1e20",
+      "\u6215",
+      " be\u011fen",
+      "\u1e21",
+      "raison",
+      "\u521d\u604b"
+     ],
+     "top_promoted_vals": [
+      0.302,
+      0.285,
+      0.274,
+      0.273,
+      0.268,
+      0.259,
+      0.253,
+      0.253,
+      0.251,
+      0.245
+     ],
+     "top_suppressed": [
+      "\u6027\u4ef7",
+      "\u5728\u5e02\u573a\u4e0a",
+      " \u00e9",
+      "scanf",
+      "\u653e\u5bbd",
+      "UBY"
+     ],
+     "write_norm_through_lens": 6.4873
+    }
+   },
+   {
+    "direction": "PC11",
+    "logit_lens": {
+     "top_promoted": [
+      "\ud83d\udcd0",
+      " \u0441\u043e\u0447\u0435\u0442\u0430",
+      " sucht",
+      "\u2697",
+      " dumpsters",
+      "\u1e8d",
+      " \u30c8\u30e9\u30c3\u30af",
+      " Jackets",
+      " ($('#",
+      "\u2302"
+     ],
+     "top_promoted_vals": [
+      0.366,
+      0.324,
+      0.323,
+      0.319,
+      0.312,
+      0.304,
+      0.298,
+      0.298,
+      0.286,
+      0.273
+     ],
+     "top_suppressed": [
+      "\u54c8\u54c8\u54c8\u54c8",
+      "\u5176\u5b83\u95ee\u9898",
+      "\u4ece\u6839\u672c",
+      "\u6362\u53e5\u8bdd",
+      "\u6e38\u620f\u64cd\u4f5c",
+      "\u7f51\u7ad9\u9996\u9875"
+     ],
+     "write_norm_through_lens": 5.5419
+    },
+    "jlens": {
+     "top_promoted": [
+      " possibly",
+      " Possibly",
+      " or",
+      " Official",
+      " Cash",
+      " official",
+      " Report",
+      " Private",
+      " /",
+      " likely"
+     ],
+     "top_promoted_vals": [
+      0.286,
+      0.284,
+      0.284,
+      0.281,
+      0.274,
+      0.267,
+      0.261,
+      0.256,
+      0.243,
+      0.242
+     ],
+     "top_suppressed": [
+      "ipop",
+      " tileSize",
+      " centerX",
+      " lineWidth",
+      " \uc21c\uac04",
+      "Putin"
+     ],
+     "write_norm_through_lens": 16.726
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u2697",
+      "\ud83d\udcd0",
+      "alborg",
+      "arhus",
+      "\u2302",
+      " dumpsters",
+      " \u0441\u043e\u0447\u0435\u0442\u0430",
+      "\ud83d\udcd9",
+      "/Dk",
+      " ksz"
+     ],
+     "top_promoted_vals": [
+      0.479,
+      0.435,
+      0.381,
+      0.348,
+      0.344,
+      0.333,
+      0.331,
+      0.33,
+      0.33,
+      0.328
+     ],
+     "top_suppressed": [
+      "\u54c8\u54c8\u54c8\u54c8",
+      " cin\u00e9",
+      ".setTexture",
+      " transform",
+      "\u5176\u5b83\u95ee\u9898",
+      " data"
+     ],
+     "write_norm_through_lens": 6.6196
+    }
+   },
+   {
+    "direction": "PC10",
+    "logit_lens": {
+     "top_promoted": [
+      ":<?",
+      ":numel",
+      ":\".$",
+      " Pornhub",
+      "$__",
+      ";;;;;;;;",
+      "',//",
+      " pornstar",
+      ",Th",
+      "\u8fd9\u4e2a\u804c\u4e1a"
+     ],
+     "top_promoted_vals": [
+      0.391,
+      0.382,
+      0.378,
+      0.377,
+      0.359,
+      0.352,
+      0.349,
+      0.349,
+      0.343,
+      0.343
+     ],
+     "top_suppressed": [
+      " orgy",
+      " imageURL",
+      " imageSize",
+      " cerco",
+      " ma\u00e7",
+      " siti"
+     ],
+     "write_norm_through_lens": 5.4933
+    },
+    "jlens": {
+     "top_promoted": [
+      " Mitarbeiter",
+      "verst\u00e4ndlich",
+      " W\u00e4h",
+      " Veranst",
+      " Mitar",
+      ";;;;;;;;",
+      ".RequestMethod",
+      " Gesch\u00e4fts",
+      "f\u00fchren",
+      ".FileReader"
+     ],
+     "top_promoted_vals": [
+      0.585,
+      0.549,
+      0.53,
+      0.528,
+      0.528,
+      0.51,
+      0.499,
+      0.485,
+      0.483,
+      0.475
+     ],
+     "top_suppressed": [
+      " dataSize",
+      " testName",
+      " texture",
+      " \u00e9quip\u00e9",
+      " textures",
+      " modelName"
+     ],
+     "write_norm_through_lens": 13.3777
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      " \u0e18",
+      " memorandum",
+      " callee",
+      "1",
+      "\u7f17",
+      " January",
+      " fiscal",
+      "'Connor",
+      " United",
+      " referendum"
+     ],
+     "top_promoted_vals": [
+      0.268,
+      0.263,
+      0.234,
+      0.228,
+      0.226,
+      0.226,
+      0.224,
+      0.219,
+      0.214,
+      0.213
+     ],
+     "top_suppressed": [
+      " \u05d4\u05d5\u05d3",
+      "gnore",
+      " orgy",
+      " disadv",
+      "l\u00f3g",
+      "\u7279\u8272\u793e\u4f1a"
+     ],
+     "write_norm_through_lens": 6.095
+    }
+   },
+   {
+    "direction": "PC16",
+    "logit_lens": {
+     "top_promoted": [
+      " =",
+      " userEmail",
+      " searchData",
+      " emailAddress",
+      "/",
+      "z",
+      " createSelector",
+      " playerId",
+      "[",
+      " consect"
+     ],
+     "top_promoted_vals": [
+      0.254,
+      0.22,
+      0.219,
+      0.218,
+      0.216,
+      0.21,
+      0.207,
+      0.195,
+      0.194,
+      0.192
+     ],
+     "top_suppressed": [
+      "\u2697",
+      ";base",
+      "?>>",
+      "\ud83d\udcd0",
+      ":<?",
+      "@student"
+     ],
+     "write_norm_through_lens": 5.348
+    },
+    "jlens": {
+     "top_promoted": [
+      " someone",
+      " pretty",
+      " things",
+      "\u6216",
+      " stuff",
+      " maybe",
+      " people",
+      " really",
+      " sometimes",
+      " something"
+     ],
+     "top_promoted_vals": [
+      0.462,
+      0.445,
+      0.433,
+      0.427,
+      0.424,
+      0.419,
+      0.418,
+      0.41,
+      0.405,
+      0.401
+     ],
+     "top_suppressed": [
+      "operands",
+      " Premiership",
+      " annum",
+      "titre",
+      "\ufffd",
+      "\u51ed\u501f\u7740"
+     ],
+     "write_norm_through_lens": 10.4503
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      " people",
+      " popular",
+      " someone",
+      " \"",
+      " sometimes",
+      " kind",
+      " talk",
+      " ideas",
+      " fun",
+      " idea"
+     ],
+     "top_promoted_vals": [
+      0.27,
+      0.248,
+      0.242,
+      0.242,
+      0.237,
+      0.234,
+      0.232,
+      0.231,
+      0.231,
+      0.226
+     ],
+     "top_suppressed": [
+      "\u2697",
+      " =>$",
+      ",Yes",
+      "i\u00e9ndo",
+      "swire",
+      ";break"
+     ],
+     "write_norm_through_lens": 6.1352
+    }
+   },
+   {
+    "direction": "PC17",
+    "logit_lens": {
+     "top_promoted": [
+      "\u754c\u7b2c\u4e00",
+      " \"-\";\n",
+      "\u221c",
+      " vegas",
+      "\u4e1c\u65b9\u8d22\u5bcc",
+      "\u515a\u603b",
+      "\u7f8e\u5a92",
+      "\"><?=$",
+      "\u6aa9",
+      "_deinit"
+     ],
+     "top_promoted_vals": [
+      0.288,
+      0.264,
+      0.255,
+      0.251,
+      0.248,
+      0.24,
+      0.24,
+      0.235,
+      0.233,
+      0.227
+     ],
+     "top_suppressed": [
+      "\",__",
+      " undefeated",
+      ".Listen",
+      "INLINE",
+      ".sz",
+      "$__"
+     ],
+     "write_norm_through_lens": 5.6153
+    },
+    "jlens": {
+     "top_promoted": [
+      "<fieldset",
+      "\u5bf9\u4eba\u4f53",
+      "<Texture",
+      "\u79c1\u81ea",
+      "=localhost",
+      "\u97ed",
+      "\u53ef\u4ee5\u66f4\u597d",
+      " decorative",
+      "\u7981\u5fcc",
+      "ScrollPane"
+     ],
+     "top_promoted_vals": [
+      0.52,
+      0.507,
+      0.484,
+      0.481,
+      0.478,
+      0.476,
+      0.471,
+      0.47,
+      0.468,
+      0.466
+     ],
+     "top_suppressed": [
+      " pretty",
+      " really",
+      " bigger",
+      " tech",
+      " \\$",
+      " calculations"
+     ],
+     "write_norm_through_lens": 14.0806
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      " addCriterion",
+      "\u2697",
+      "\ud83d\udcd0",
+      "|;\n",
+      " safezone",
+      " },{",
+      "BOSE",
+      " POLITICO",
+      " glyphicon",
+      "\ud83d\udea9"
+     ],
+     "top_promoted_vals": [
+      0.404,
+      0.399,
+      0.399,
+      0.327,
+      0.317,
+      0.315,
+      0.313,
+      0.31,
+      0.308,
+      0.304
+     ],
+     "top_suppressed": [
+      " undefeated",
+      "/operators",
+      " bindActionCreators",
+      "\u852b",
+      " getArguments",
+      "/animations"
+     ],
+     "write_norm_through_lens": 6.4327
+    }
+   },
+   {
+    "direction": "PC12",
+    "logit_lens": {
+     "top_promoted": [
+      "\u73a9\u5bb6\u670b\u53cb",
+      "\u6709\u7684\u73a9\u5bb6",
+      "\u4f20\u5947\u6e38\u620f",
+      "\u9b54\u6cd5\u5e08\u548c",
+      "\u5728\u73a9\u5bb6\u4e2d",
+      "\u4e2d\u56fd\u7f51\u6e38",
+      "\u2216",
+      "\u7f51\u9996\u9875",
+      "\u6218\u58eb\u804c\u4e1a",
+      "\u6cd5\u5e08\u804c\u4e1a"
+     ],
+     "top_promoted_vals": [
+      0.442,
+      0.432,
+      0.416,
+      0.39,
+      0.381,
+      0.378,
+      0.367,
+      0.365,
+      0.36,
+      0.359
+     ],
+     "top_suppressed": [
+      " sophistic",
+      " bureaucr",
+      " libertine",
+      " enthus",
+      " disadv",
+      " cuckold"
+     ],
+     "write_norm_through_lens": 4.975
+    },
+    "jlens": {
+     "top_promoted": [
+      "Ngu\u1ed3n",
+      ".Sin",
+      ":Event",
+      "\u0392",
+      "\u2630",
+      " Gr\u00fcnde",
+      "@student",
+      "/tos",
+      "#ad",
+      "EPROM"
+     ],
+     "top_promoted_vals": [
+      0.515,
+      0.508,
+      0.477,
+      0.465,
+      0.453,
+      0.438,
+      0.437,
+      0.433,
+      0.428,
+      0.425
+     ],
+     "top_suppressed": [
+      " approximately",
+      " around",
+      " about",
+      " roughly",
+      " particularly",
+      " relatively"
+     ],
+     "write_norm_through_lens": 14.7815
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u4f20\u5947\u6e38\u620f",
+      "\u73a9\u5bb6\u670b\u53cb",
+      "\u65b0\u4eba\u73a9\u5bb6",
+      ";';\n",
+      "\u6709\u7684\u73a9\u5bb6",
+      "\u4e2d\u56fd\u7f51\u6e38",
+      "#ga",
+      "\u6e38\u620f\u6280\u5de7",
+      "\u6e38\u620f\u4ee3",
+      "\u5bb6\u90fd\u77e5\u9053"
+     ],
+     "top_promoted_vals": [
+      0.523,
+      0.517,
+      0.468,
+      0.467,
+      0.465,
+      0.463,
+      0.452,
+      0.45,
+      0.441,
+      0.435
+     ],
+     "top_suppressed": [
+      " around",
+      " much",
+      " sophistic",
+      " relatively",
+      " very",
+      "0"
+     ],
+     "write_norm_through_lens": 6.3732
+    }
+   },
+   {
+    "direction": "PC21",
+    "logit_lens": {
+     "top_promoted": [
+      "\u7f51\u7ad9\u9996\u9875",
+      "\u5956\u5b66",
+      "\u7eaa\u59d4\u76d1",
+      "\u4e09\u5927\u804c\u4e1a",
+      ")throws",
+      "\u73a9\u5bb6\u670b\u53cb",
+      "\u89e3\u653e\u601d\u60f3",
+      "LoggedIn",
+      "\u9b54\u9f99",
+      "\u5c42\u51fa\u4e0d"
+     ],
+     "top_promoted_vals": [
+      0.297,
+      0.266,
+      0.247,
+      0.245,
+      0.236,
+      0.234,
+      0.222,
+      0.22,
+      0.218,
+      0.209
+     ],
+     "top_suppressed": [
+      "\"sync",
+      " seiz",
+      " mamma",
+      " gamm",
+      "ASHBOARD",
+      "grily"
+     ],
+     "write_norm_through_lens": 5.0242
+    },
+    "jlens": {
+     "top_promoted": [
+      " emphasis",
+      " mainly",
+      " largely",
+      "\u4e3b\u8981\u662f",
+      "\u5c24\u5176\u662f\u5728",
+      " particularly",
+      " chiefly",
+      "\u00e1n\u00ed",
+      " flexibility",
+      " primarily"
+     ],
+     "top_promoted_vals": [
+      0.403,
+      0.397,
+      0.387,
+      0.369,
+      0.359,
+      0.358,
+      0.355,
+      0.355,
+      0.354,
+      0.348
+     ],
+     "top_suppressed": [
+      " illegally",
+      " ANY",
+      " illegal",
+      "[number",
+      "\u975e\u6cd5",
+      " clandest"
+     ],
+     "write_norm_through_lens": 11.036
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      " addCriterion",
+      "T\u00dc",
+      " \u0434\u0430\u0436",
+      "\u76d1\u542c\u9875\u9762",
+      " \u043f\u043e\u0447\u0435\u043c",
+      " \u043e\u0441\u0442\u0430\u043b\u044c\u043d",
+      "\u7fb0",
+      ".Designer",
+      "gnore",
+      " \u043f\u043e\u043a\u0443\u043f\u0430"
+     ],
+     "top_promoted_vals": [
+      0.407,
+      0.379,
+      0.376,
+      0.367,
+      0.357,
+      0.347,
+      0.343,
+      0.342,
+      0.339,
+      0.339
+     ],
+     "top_suppressed": [
+      "\u7206\u51fa",
+      " \u0441",
+      "4",
+      " \u043e\u0442",
+      " \u043d\u0435",
+      "\u4e3b\u673a"
+     ],
+     "write_norm_through_lens": 6.0002
+    }
+   },
+   {
+    "direction": "PC20",
+    "logit_lens": {
+     "top_promoted": [
+      "\u4e3b\u8981\u96c6\u4e2d",
+      "\u7f8e\u5a92",
+      "1",
+      " cosplay",
+      " giveaways",
+      " hairst",
+      "\u4e0d\u826f\u4fe1\u606f",
+      "2",
+      " advertis",
+      "\u4e3b\u8425\u4e1a"
+     ],
+     "top_promoted_vals": [
+      0.256,
+      0.247,
+      0.221,
+      0.221,
+      0.212,
+      0.208,
+      0.204,
+      0.203,
+      0.202,
+      0.191
+     ],
+     "top_suppressed": [
+      ";!",
+      "\u0168",
+      " earthqu",
+      ":<?",
+      "\u016a",
+      "hores"
+     ],
+     "write_norm_through_lens": 5.2857
+    },
+    "jlens": {
+     "top_promoted": [
+      " river",
+      " land",
+      " map",
+      " maps",
+      " forts",
+      " forests",
+      "//\n\n\n",
+      "\u4f5a",
+      " monuments",
+      " villages"
+     ],
+     "top_promoted_vals": [
+      0.362,
+      0.351,
+      0.346,
+      0.339,
+      0.313,
+      0.312,
+      0.311,
+      0.304,
+      0.291,
+      0.29
+     ],
+     "top_suppressed": [
+      " personally",
+      " personalized",
+      " professionally",
+      " <<=",
+      "\u516c\u7f51",
+      "\u67d4\u548c"
+     ],
+     "write_norm_through_lens": 11.8544
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u4e3b\u8425\u4e1a",
+      "\u7f8e\u5a92",
+      "\u5e94\u6536\u8d26",
+      "\u4e3b\u8981\u96c6\u4e2d",
+      "\u7654",
+      "\u4e0d\u826f\u4fe1\u606f",
+      "\u6ce8\u660e\u6765\u6e90",
+      "\u6963",
+      " htons",
+      "\u8b6c"
+     ],
+     "top_promoted_vals": [
+      0.308,
+      0.285,
+      0.275,
+      0.27,
+      0.27,
+      0.268,
+      0.249,
+      0.236,
+      0.233,
+      0.232
+     ],
+     "top_suppressed": [
+      "hores",
+      " HeaderComponent",
+      "#######\n",
+      " )->",
+      "-cookie",
+      "(Channel"
+     ],
+     "write_norm_through_lens": 6.0578
+    }
+   },
+   {
+    "direction": "PC13",
+    "logit_lens": {
+     "top_promoted": [
+      " disadv",
+      " semiclass",
+      " tumblr",
+      " resembl",
+      "\u65b0\u578b\u51a0",
+      " fontStyle",
+      " brawl",
+      " screenHeight",
+      " Vimeo",
+      " scaleY"
+     ],
+     "top_promoted_vals": [
+      0.304,
+      0.269,
+      0.25,
+      0.248,
+      0.239,
+      0.237,
+      0.23,
+      0.23,
+      0.224,
+      0.223
+     ],
+     "top_suppressed": [
+      "\u52e0",
+      "alyzed",
+      "\u5386\u53f2\u65b0",
+      ".SetParent",
+      "-unused",
+      "umbn"
+     ],
+     "write_norm_through_lens": 5.4568
+    },
+    "jlens": {
+     "top_promoted": [
+      " description",
+      " characters",
+      " inspiration",
+      " character",
+      " names",
+      " art",
+      " artistic",
+      " artist",
+      " specific",
+      " stylist"
+     ],
+     "top_promoted_vals": [
+      0.519,
+      0.5,
+      0.494,
+      0.485,
+      0.478,
+      0.477,
+      0.475,
+      0.469,
+      0.468,
+      0.463
+     ],
+     "top_suppressed": [
+      "Democrats",
+      "riger",
+      "ongyang",
+      "illegal",
+      "emergency",
+      "hsi"
+     ],
+     "write_norm_through_lens": 22.1014
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      " centerX",
+      " RoundedRectangle",
+      " createStackNavigator",
+      "\u65b0\u6d6a\u5fae\u535a",
+      "\u5fae\u4fe1\u516c\u4f17",
+      " fontStyle",
+      " imageData",
+      " yOffset",
+      " ypos",
+      " screenHeight"
+     ],
+     "top_promoted_vals": [
+      0.277,
+      0.268,
+      0.259,
+      0.258,
+      0.251,
+      0.25,
+      0.249,
+      0.243,
+      0.241,
+      0.229
+     ],
+     "top_suppressed": [
+      "axies",
+      "(GameObject",
+      "onium",
+      "umbn",
+      "riger",
+      " d\u00e9march"
+     ],
+     "write_norm_through_lens": 6.5711
+    }
+   },
+   {
+    "direction": "PC18",
+    "logit_lens": {
+     "top_promoted": [
+      "\u66b4\u8dcc",
+      "\u60bb",
+      "\u5927\u8dcc",
+      "\u70ed\u641c",
+      "our",
+      "\u60f4",
+      "\u5c31\u591f",
+      " valueType",
+      "\u535a\u4e3b",
+      " getLogger"
+     ],
+     "top_promoted_vals": [
+      0.291,
+      0.231,
+      0.222,
+      0.213,
+      0.205,
+      0.204,
+      0.203,
+      0.201,
+      0.198,
+      0.192
+     ],
+     "top_suppressed": [
+      "Prosec",
+      " Capcom",
+      " gratuites",
+      "UNET",
+      " }):",
+      " lowes"
+     ],
+     "write_norm_through_lens": 5.1515
+    },
+    "jlens": {
+     "top_promoted": [
+      " healthier",
+      " affordable",
+      " veggies",
+      " wholesome",
+      " vegan",
+      " safer",
+      " veg",
+      " healthy",
+      " (~(",
+      " appr\u00e9ci"
+     ],
+     "top_promoted_vals": [
+      0.329,
+      0.324,
+      0.299,
+      0.295,
+      0.285,
+      0.276,
+      0.269,
+      0.266,
+      0.26,
+      0.259
+     ],
+     "top_suppressed": [
+      " information",
+      " Information",
+      " communications",
+      "_information",
+      "information",
+      " communication"
+     ],
+     "write_norm_through_lens": 11.4775
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u60bb",
+      "\u66b4\u8dcc",
+      "\u5021",
+      " vegan",
+      "\u53cd\u8150\u5021\u5ec9",
+      " lifestyle",
+      " healthy",
+      "\u8dcc\u7834",
+      "value",
+      " healthier"
+     ],
+     "top_promoted_vals": [
+      0.311,
+      0.291,
+      0.271,
+      0.25,
+      0.243,
+      0.242,
+      0.242,
+      0.234,
+      0.234,
+      0.233
+     ],
+     "top_suppressed": [
+      " Capcom",
+      " gratuites",
+      "ltra",
+      "ormsg",
+      "\u5df4\u83f2",
+      "Prosec"
+     ],
+     "write_norm_through_lens": 6.0003
+    }
+   }
+  ],
+  "worst20": [
+   {
+    "direction": "PC235",
+    "logit_lens": {
+     "top_promoted": [
+      "-initialized",
+      "(paren",
+      " Parenthood",
+      "loid",
+      "\u51fa\u56fd\u7559\u5b66",
+      ",},\n",
+      "stad",
+      "\u5f88\u6f02\u4eae",
+      "(jq",
+      "ISIBLE"
+     ],
+     "top_promoted_vals": [
+      0.217,
+      0.214,
+      0.212,
+      0.209,
+      0.207,
+      0.205,
+      0.201,
+      0.199,
+      0.198,
+      0.196
+     ],
+     "top_suppressed": [
+      " AppBundle",
+      " Damian",
+      "benh",
+      ".DrawLine",
+      "\u65b0\u6d6a\u8d22\u7ecf",
+      "adena"
+     ],
+     "write_norm_through_lens": 4.0902
+    },
+    "jlens": {
+     "top_promoted": [
+      " specific",
+      " engineering",
+      " unknown",
+      " music",
+      " sheet",
+      " puzzle",
+      " specified",
+      " specifically",
+      " program",
+      " map"
+     ],
+     "top_promoted_vals": [
+      0.335,
+      0.33,
+      0.321,
+      0.315,
+      0.311,
+      0.31,
+      0.304,
+      0.299,
+      0.298,
+      0.297
+     ],
+     "top_suppressed": [
+      "agini",
+      "eneg",
+      "/tiny",
+      " be\u011fen",
+      "ubern",
+      "aminer"
+     ],
+     "write_norm_through_lens": 9.8719
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "#af",
+      ",},\n",
+      "}}],\n",
+      "ITERAL",
+      "\uff01');\n",
+      ")(\"",
+      "stad",
+      "#aa",
+      "\u4e3b\u4e49\u601d\u60f3",
+      "*ft"
+     ],
+     "top_promoted_vals": [
+      0.333,
+      0.319,
+      0.31,
+      0.305,
+      0.292,
+      0.285,
+      0.283,
+      0.283,
+      0.278,
+      0.271
+     ],
+     "top_suppressed": [
+      " AppBundle",
+      "\u308f\u304b\u3063\u3066",
+      "\u00fasqueda",
+      "\u4ea7\u503c",
+      " avalia",
+      " Damian"
+     ],
+     "write_norm_through_lens": 4.8026
+    }
+   },
+   {
+    "direction": "PC238",
+    "logit_lens": {
+     "top_promoted": [
+      "TRY",
+      " Couples",
+      " Russo",
+      "\ufffd\ufffd",
+      " creo",
+      " pushViewController",
+      "\u59aa",
+      " Croat",
+      "\u8c29",
+      " newIndex"
+     ],
+     "top_promoted_vals": [
+      0.193,
+      0.191,
+      0.19,
+      0.185,
+      0.183,
+      0.183,
+      0.182,
+      0.182,
+      0.18,
+      0.178
+     ],
+     "top_suppressed": [
+      ".getHours",
+      "ocol",
+      "ffield",
+      ":<?",
+      "|;\n",
+      ")||("
+     ],
+     "write_norm_through_lens": 4.1584
+    },
+    "jlens": {
+     "top_promoted": [
+      "TRY",
+      "endars",
+      "\u2715",
+      "(Collider",
+      "\u65e5\u672c\u4eba",
+      "_try",
+      "{\\\"",
+      "\u00f6yle",
+      "\u521d\u604b",
+      "\u79f0\u4e4b"
+     ],
+     "top_promoted_vals": [
+      0.409,
+      0.352,
+      0.34,
+      0.336,
+      0.335,
+      0.332,
+      0.327,
+      0.323,
+      0.32,
+      0.319
+     ],
+     "top_suppressed": [
+      ":",
+      " ",
+      ":\n\n",
+      "\u00a0",
+      ":\n",
+      " independent"
+     ],
+     "write_norm_through_lens": 8.038
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      " {{--<",
+      " Interracial",
+      "\".\n\n\n\n",
+      " IonicPage",
+      "foundland",
+      "odyn",
+      " pushViewController",
+      "/stretch",
+      "?\"\n\n\n\n",
+      "\ufffd\ufffd"
+     ],
+     "top_promoted_vals": [
+      0.363,
+      0.337,
+      0.315,
+      0.295,
+      0.292,
+      0.28,
+      0.28,
+      0.265,
+      0.265,
+      0.256
+     ],
+     "top_suppressed": [
+      "\u96be\u70b9",
+      " class",
+      "ocol",
+      ".getHours",
+      " Class",
+      " as"
+     ],
+     "write_norm_through_lens": 4.7873
+    }
+   },
+   {
+    "direction": "PC246",
+    "logit_lens": {
+     "top_promoted": [
+      " ...\n\n\n\n",
+      "rift",
+      " ceasefire",
+      "SFML",
+      "arranty",
+      "RouterModule",
+      "\u7a80",
+      " ...\"\n\n",
+      " .\n\n\n\n",
+      "forgettable"
+     ],
+     "top_promoted_vals": [
+      0.234,
+      0.233,
+      0.224,
+      0.222,
+      0.216,
+      0.212,
+      0.211,
+      0.211,
+      0.208,
+      0.208
+     ],
+     "top_suppressed": [
+      " (;;)",
+      " (;;",
+      "\u8e2a",
+      "subtract",
+      ")))),",
+      "IPP"
+     ],
+     "write_norm_through_lens": 4.1452
+    },
+    "jlens": {
+     "top_promoted": [
+      "\u043e\u043e\u0440\u0443\u0436",
+      "]|[",
+      "\u2267",
+      "ennen",
+      "etrofit",
+      "linik",
+      "izza",
+      "achinery",
+      "/*/",
+      "alleries"
+     ],
+     "top_promoted_vals": [
+      0.397,
+      0.359,
+      0.357,
+      0.351,
+      0.347,
+      0.342,
+      0.338,
+      0.338,
+      0.334,
+      0.33
+     ],
+     "top_suppressed": [
+      " \u2018",
+      "\n",
+      " \u2019",
+      " instead",
+      " instructions",
+      "\u2026"
+     ],
+     "write_norm_through_lens": 7.6125
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      " hairst",
+      " uintptr",
+      " Fitzgerald",
+      "\u7ea8",
+      "3",
+      "round",
+      "icons",
+      " *(*",
+      " y\u0131l",
+      " Jerseys"
+     ],
+     "top_promoted_vals": [
+      0.22,
+      0.216,
+      0.212,
+      0.211,
+      0.197,
+      0.195,
+      0.194,
+      0.194,
+      0.193,
+      0.193
+     ],
+     "top_suppressed": [
+      "?>>",
+      "\ud83d\udd51",
+      "anine",
+      ".rar",
+      "H\u00f4tel",
+      "erde"
+     ],
+     "write_norm_through_lens": 4.9306
+    }
+   },
+   {
+    "direction": "PC251",
+    "logit_lens": {
+     "top_promoted": [
+      "elmet",
+      "odeled",
+      "BuilderInterface",
+      "/***/",
+      "inati",
+      "\"crypto",
+      "CreateDate",
+      "minent",
+      "\u8d70\u52bf\u56fe",
+      "plets"
+     ],
+     "top_promoted_vals": [
+      0.227,
+      0.215,
+      0.214,
+      0.211,
+      0.197,
+      0.196,
+      0.196,
+      0.19,
+      0.19,
+      0.188
+     ],
+     "top_suppressed": [
+      "}elseif",
+      "_deinit",
+      "\ud83d\ude42",
+      "QUENCE",
+      ":green",
+      ".gs"
+     ],
+     "write_norm_through_lens": 4.1739
+    },
+    "jlens": {
+     "top_promoted": [
+      "elmet",
+      "\"crypto",
+      " ...\n",
+      "reator",
+      " enthusi",
+      ",:,",
+      "_METHOD",
+      "\u63f8",
+      "bsite",
+      "ripper"
+     ],
+     "top_promoted_vals": [
+      0.374,
+      0.327,
+      0.309,
+      0.305,
+      0.28,
+      0.279,
+      0.279,
+      0.276,
+      0.275,
+      0.274
+     ],
+     "top_suppressed": [
+      "``",
+      "\u00a0\u00a0",
+      "lake",
+      "`",
+      "```",
+      "STRU"
+     ],
+     "write_norm_through_lens": 6.4865
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "elmet",
+      "Wunused",
+      "Verdana",
+      "odeled",
+      " enthusi",
+      "inness",
+      "gency",
+      "\u00e1cil",
+      "\u8d70\u52bf\u56fe",
+      "imity"
+     ],
+     "top_promoted_vals": [
+      0.279,
+      0.274,
+      0.26,
+      0.254,
+      0.251,
+      0.249,
+      0.237,
+      0.234,
+      0.233,
+      0.23
+     ],
+     "top_suppressed": [
+      " in",
+      " esk",
+      "TextChanged",
+      "/topics",
+      "#line",
+      " \u0431\u0438\u043b"
+     ],
+     "write_norm_through_lens": 4.8875
+    }
+   },
+   {
+    "direction": "PC252",
+    "logit_lens": {
+     "top_promoted": [
+      " bergen",
+      " ApplicationException",
+      "ALLERY",
+      "m\u00f6glich",
+      "\u52e0",
+      "zent",
+      " v\u00f6",
+      " TORT",
+      "\u00e9gorie",
+      " citiz"
+     ],
+     "top_promoted_vals": [
+      0.288,
+      0.271,
+      0.255,
+      0.245,
+      0.224,
+      0.222,
+      0.212,
+      0.208,
+      0.208,
+      0.208
+     ],
+     "top_suppressed": [
+      "\u6c46",
+      " *((",
+      "/sidebar",
+      "RSpec",
+      "abez",
+      "avigate"
+     ],
+     "write_norm_through_lens": 4.0921
+    },
+    "jlens": {
+     "top_promoted": [
+      " ```",
+      " ____",
+      "\u6784\u601d",
+      "```",
+      "`",
+      " ........",
+      " ,\n\n",
+      " Initial",
+      "\u6661",
+      " !\n\n"
+     ],
+     "top_promoted_vals": [
+      0.293,
+      0.259,
+      0.257,
+      0.252,
+      0.243,
+      0.236,
+      0.232,
+      0.231,
+      0.23,
+      0.229
+     ],
+     "top_suppressed": [
+      "egov",
+      "arnation",
+      "ummings",
+      "emetery",
+      "exampleInputEmail",
+      ":both"
+     ],
+     "write_norm_through_lens": 7.2702
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u00eble",
+      ":CGRect",
+      " ApplicationException",
+      "aniem",
+      "ibbon",
+      "m\u00f6glich",
+      "\u4f53\u5f69",
+      "printStats",
+      "enties",
+      "ALLERY"
+     ],
+     "top_promoted_vals": [
+      0.349,
+      0.328,
+      0.316,
+      0.306,
+      0.305,
+      0.298,
+      0.289,
+      0.289,
+      0.289,
+      0.284
+     ],
+     "top_suppressed": [
+      "avigate",
+      " \"",
+      "'s",
+      "-describedby",
+      "9",
+      " part"
+     ],
+     "write_norm_through_lens": 4.8002
+    }
+   },
+   {
+    "direction": "PC242",
+    "logit_lens": {
+     "top_promoted": [
+      "hlen",
+      " kommun",
+      "grily",
+      " n\u00e4m",
+      "\u6d39",
+      "|=\n",
+      " krat",
+      "wagon",
+      "@implementation",
+      "\u7cbf"
+     ],
+     "top_promoted_vals": [
+      0.236,
+      0.231,
+      0.23,
+      0.228,
+      0.226,
+      0.219,
+      0.217,
+      0.215,
+      0.215,
+      0.21
+     ],
+     "top_suppressed": [
+      "|required",
+      "\u8986",
+      ".onOptionsItemSelected",
+      "\u0640",
+      "\u6e8f",
+      "\u65e2\u6709"
+     ],
+     "write_norm_through_lens": 4.1416
+    },
+    "jlens": {
+     "top_promoted": [
+      " \n\n",
+      ".chomp",
+      " \n",
+      " analyst",
+      " or",
+      "\u6216\u8005\u5176\u4ed6",
+      " tranquil",
+      " dilig",
+      " artist",
+      "*)_"
+     ],
+     "top_promoted_vals": [
+      0.267,
+      0.26,
+      0.254,
+      0.24,
+      0.238,
+      0.234,
+      0.233,
+      0.233,
+      0.232,
+      0.232
+     ],
+     "top_suppressed": [
+      "en\u00ed",
+      " \u81ea\u52a8\u751f\u6210",
+      "\u6298\u817e",
+      "ac\u0131",
+      "outines",
+      "\u5df7"
+     ],
+     "write_norm_through_lens": 7.7748
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "@implementation",
+      "hlen",
+      ".ma",
+      ".bi",
+      " kommun",
+      "exampleInput",
+      "verty",
+      "ForResource",
+      "ivic",
+      "\u4e24\u8fb9"
+     ],
+     "top_promoted_vals": [
+      0.233,
+      0.227,
+      0.222,
+      0.221,
+      0.221,
+      0.22,
+      0.22,
+      0.213,
+      0.212,
+      0.212
+     ],
+     "top_suppressed": [
+      " neg\u00f3",
+      "\u8c35",
+      "\u8fd9\u4e2a\u5730\u56fe",
+      " pestic",
+      "\u8986",
+      " guarante"
+     ],
+     "write_norm_through_lens": 4.8909
+    }
+   },
+   {
+    "direction": "PC249",
+    "logit_lens": {
+     "top_promoted": [
+      "\".\n\n\n\n",
+      "\u76f8\u5173\u8d1f\u8d23",
+      " d\u1ee5",
+      " Gorgeous",
+      "aternity",
+      "zept",
+      ":System",
+      ":\".$",
+      "inki",
+      "\u515c"
+     ],
+     "top_promoted_vals": [
+      0.268,
+      0.259,
+      0.232,
+      0.225,
+      0.219,
+      0.215,
+      0.212,
+      0.21,
+      0.206,
+      0.205
+     ],
+     "top_suppressed": [
+      " dikke",
+      "etchup",
+      "exampleInputEmail",
+      " pours",
+      "[--",
+      "adiator"
+     ],
+     "write_norm_through_lens": 4.141
+    },
+    "jlens": {
+     "top_promoted": [
+      " much",
+      " relevant",
+      "gars",
+      " more",
+      " specifically",
+      "abcdefghijklmnop",
+      "agli",
+      " greater",
+      " largely",
+      "abilia"
+     ],
+     "top_promoted_vals": [
+      0.328,
+      0.324,
+      0.323,
+      0.32,
+      0.319,
+      0.315,
+      0.305,
+      0.303,
+      0.303,
+      0.298
+     ],
+     "top_suppressed": [
+      "\u6216",
+      "CVE",
+      " Publi\u00e9",
+      "\u6084\u6084",
+      "di\u011fi",
+      "\u6216\u662f"
+     ],
+     "write_norm_through_lens": 7.5516
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "aternity",
+      " Wroc",
+      ".SDK",
+      "zept",
+      ".EventQueue",
+      "\u66f4\u591a\u7cbe\u5f69",
+      "vey",
+      ":\".$",
+      " baiser",
+      "erville"
+     ],
+     "top_promoted_vals": [
+      0.263,
+      0.252,
+      0.249,
+      0.245,
+      0.237,
+      0.236,
+      0.234,
+      0.232,
+      0.232,
+      0.231
+     ],
+     "top_suppressed": [
+      " Decompiled",
+      " dikke",
+      "[--",
+      " mooie",
+      "mue",
+      "prix"
+     ],
+     "write_norm_through_lens": 4.9185
+    }
+   },
+   {
+    "direction": "PC244",
+    "logit_lens": {
+     "top_promoted": [
+      ".Preference",
+      "asca",
+      ":<?",
+      " grosse",
+      "\u5e5b",
+      "izr",
+      "\u4ec5\u6b21",
+      "nection",
+      ".Txt",
+      "\u0642\u062a\u0631\u062d"
+     ],
+     "top_promoted_vals": [
+      0.252,
+      0.234,
+      0.226,
+      0.225,
+      0.224,
+      0.223,
+      0.22,
+      0.219,
+      0.216,
+      0.214
+     ],
+     "top_suppressed": [
+      "verages",
+      "\u0107e",
+      "onestly",
+      "\u1e45",
+      "\u62cd\u62cd",
+      " disastr"
+     ],
+     "write_norm_through_lens": 4.0956
+    },
+    "jlens": {
+     "top_promoted": [
+      "...\"",
+      "...\"\n\n",
+      "...\"\n",
+      "...\")\n",
+      "\u51b6",
+      "\"...",
+      "...</",
+      " ...\"\n",
+      " [...]",
+      " ...\n\n"
+     ],
+     "top_promoted_vals": [
+      0.378,
+      0.373,
+      0.344,
+      0.342,
+      0.339,
+      0.338,
+      0.337,
+      0.334,
+      0.329,
+      0.328
+     ],
+     "top_suppressed": [
+      "-uppercase",
+      "toLocale",
+      "\u556d",
+      "\u6062\u590d",
+      " champagne",
+      "ottenham"
+     ],
+     "write_norm_through_lens": 7.0952
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "izr",
+      ".Preference",
+      " antibiot",
+      "\u51b6",
+      "\u631e",
+      "://%",
+      "nesday",
+      ".Compile",
+      ".scrollView",
+      "AVIS"
+     ],
+     "top_promoted_vals": [
+      0.258,
+      0.247,
+      0.241,
+      0.237,
+      0.237,
+      0.236,
+      0.232,
+      0.231,
+      0.231,
+      0.23
+     ],
+     "top_suppressed": [
+      "verages",
+      " PureComponent",
+      "\u96a8\u6642",
+      "\u0107e",
+      "onestly",
+      "\u987c"
+     ],
+     "write_norm_through_lens": 4.8059
+    }
+   },
+   {
+    "direction": "PC240",
+    "logit_lens": {
+     "top_promoted": [
+      " sublic",
+      " RELATED",
+      " FixedUpdate",
+      " \u82e5\u8981",
+      " bureaucr",
+      "AutoSize",
+      "\u00e1bado",
+      " paraph",
+      " celebr",
+      " Crushing"
+     ],
+     "top_promoted_vals": [
+      0.228,
+      0.223,
+      0.222,
+      0.214,
+      0.207,
+      0.206,
+      0.204,
+      0.201,
+      0.2,
+      0.2
+     ],
+     "top_suppressed": [
+      ")){\n\n",
+      "-await",
+      ".vaadin",
+      "orget",
+      ".Ticks",
+      "\u5c31\u591f"
+     ],
+     "write_norm_through_lens": 4.2347
+    },
+    "jlens": {
+     "top_promoted": [
+      "*****\n\n",
+      "?\n\n",
+      ":\n\n",
+      "-------\n\n",
+      "%\n\n",
+      "\u2026\n\n",
+      "ultan",
+      ",\n\n",
+      "///\n\n",
+      "\u2019\n\n"
+     ],
+     "top_promoted_vals": [
+      0.503,
+      0.455,
+      0.435,
+      0.416,
+      0.408,
+      0.407,
+      0.403,
+      0.401,
+      0.396,
+      0.392
+     ],
+     "top_suppressed": [
+      " \n",
+      " infantry",
+      " brigade",
+      " volunteers",
+      " Infantry",
+      "\u52c7\u6c14"
+     ],
+     "write_norm_through_lens": 7.5508
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "Q",
+      "acic",
+      "acet",
+      "uzzer",
+      "scri\u00e7\u00e3o",
+      "\u86f0",
+      "%);\n",
+      ".transparent",
+      ".SwingConstants",
+      "ricanes"
+     ],
+     "top_promoted_vals": [
+      0.271,
+      0.261,
+      0.249,
+      0.246,
+      0.242,
+      0.241,
+      0.241,
+      0.241,
+      0.239,
+      0.236
+     ],
+     "top_suppressed": [
+      "='\".$_",
+      "='\".",
+      "\u7f1d",
+      "s\u00e3o",
+      " multer",
+      " v\u00e5r"
+     ],
+     "write_norm_through_lens": 4.952
+    }
+   },
+   {
+    "direction": "PC222",
+    "logit_lens": {
+     "top_promoted": [
+      "orgh",
+      "ookies",
+      "\u0438\u0434\u0435\u043d\u0442",
+      "\u6765\u770b\u770b\u5427",
+      "\u75a5",
+      "riott",
+      " lineback",
+      "TOTYPE",
+      "ubbo",
+      "bedo"
+     ],
+     "top_promoted_vals": [
+      0.245,
+      0.233,
+      0.23,
+      0.229,
+      0.228,
+      0.225,
+      0.221,
+      0.22,
+      0.213,
+      0.208
+     ],
+     "top_suppressed": [
+      "AuthProvider",
+      "indsay",
+      "\u7b49\u95ee\u9898",
+      "\u76f8\u4f20",
+      "\u8ba4",
+      " fully"
+     ],
+     "write_norm_through_lens": 4.2083
+    },
+    "jlens": {
+     "top_promoted": [
+      "\u6216\u591a",
+      ":[",
+      " either",
+      "both",
+      "opportunit\u00e0",
+      "\u4ea4\u66ff",
+      "\u53d1\u660e",
+      "Both",
+      " both",
+      "either"
+     ],
+     "top_promoted_vals": [
+      0.326,
+      0.305,
+      0.297,
+      0.291,
+      0.284,
+      0.274,
+      0.274,
+      0.269,
+      0.268,
+      0.268
+     ],
+     "top_suppressed": [
+      "\u91cd\u5efa",
+      "\u5b8c\u597d",
+      "obierno",
+      "wner",
+      "\u4fee\u590d",
+      " restored"
+     ],
+     "write_norm_through_lens": 6.677
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      ":';\n",
+      "-UA",
+      "/MPL",
+      "-Mobile",
+      " earthqu",
+      ":both",
+      "ookies",
+      "lijah",
+      ",Yes",
+      "\u2697"
+     ],
+     "top_promoted_vals": [
+      0.349,
+      0.345,
+      0.335,
+      0.332,
+      0.322,
+      0.319,
+      0.311,
+      0.31,
+      0.309,
+      0.308
+     ],
+     "top_suppressed": [
+      " fresh",
+      "0",
+      "2",
+      "A",
+      "C",
+      "\u76f8\u4f20"
+     ],
+     "write_norm_through_lens": 4.9088
+    }
+   },
+   {
+    "direction": "PC247",
+    "logit_lens": {
+     "top_promoted": [
+      "},${",
+      "activex",
+      "ertiary",
+      " neg\u00f3",
+      "[$_",
+      "\u5c0f\u7f16\u4e00\u8d77",
+      "rvine",
+      "->{'",
+      "\u5a20",
+      "\u8114"
+     ],
+     "top_promoted_vals": [
+      0.227,
+      0.212,
+      0.209,
+      0.202,
+      0.201,
+      0.199,
+      0.199,
+      0.198,
+      0.19,
+      0.189
+     ],
+     "top_suppressed": [
+      "\u88ab\u8a89",
+      " \u82e5\u8981",
+      " gratuitement",
+      "\\core",
+      " @\"\\",
+      "strcasecmp"
+     ],
+     "write_norm_through_lens": 4.2622
+    },
+    "jlens": {
+     "top_promoted": [
+      "UILDER",
+      ".AddParameter",
+      "\u01dc",
+      ";element",
+      "UNDLE",
+      " T\u00fcrk\u00e7e",
+      "ilmington",
+      " taxp",
+      "\u041a\u0443\u043f\u0438\u0442\u044c",
+      "\u7ccd"
+     ],
+     "top_promoted_vals": [
+      0.311,
+      0.295,
+      0.286,
+      0.277,
+      0.265,
+      0.265,
+      0.262,
+      0.26,
+      0.255,
+      0.253
+     ],
+     "top_suppressed": [
+      "\uff1f\n\n",
+      "getMock",
+      " ?\n\n",
+      " traditionally",
+      " \"\n\n",
+      " ,\n\n"
+     ],
+     "write_norm_through_lens": 7.0862
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u0131c",
+      "ertiary",
+      " neg\u00f3",
+      "cosity",
+      "vrolet",
+      "[$_",
+      "c\u00e1",
+      "\u8114",
+      ">\\<",
+      "<path"
+     ],
+     "top_promoted_vals": [
+      0.321,
+      0.314,
+      0.279,
+      0.259,
+      0.254,
+      0.253,
+      0.252,
+      0.251,
+      0.251,
+      0.25
+     ],
+     "top_suppressed": [
+      " \u82e5\u8981",
+      "/Dk",
+      "\u88ab\u8a89",
+      " \".\";\n",
+      "\u6b9a",
+      ".setViewport"
+     ],
+     "write_norm_through_lens": 5.0261
+    }
+   },
+   {
+    "direction": "PC243",
+    "logit_lens": {
+     "top_promoted": [
+      " eventual",
+      "\u6700\u7ec8",
+      "\u7ec8",
+      "\u76f4\u81f3",
+      " \"(\\<",
+      " eventually",
+      " ultimately",
+      "\u8fdb\u4e00\u6b65",
+      "any",
+      " outputPath"
+     ],
+     "top_promoted_vals": [
+      0.202,
+      0.193,
+      0.19,
+      0.19,
+      0.176,
+      0.174,
+      0.174,
+      0.164,
+      0.161,
+      0.161
+     ],
+     "top_suppressed": [
+      "\u5229\u7528\u60a8\u7684",
+      "LOBAL",
+      " v\u00edde",
+      "Ngu\u1ed3n",
+      "OpenHelper",
+      "-Bold"
+     ],
+     "write_norm_through_lens": 4.0745
+    },
+    "jlens": {
+     "top_promoted": [
+      " eventual",
+      " Eventually",
+      " eventually",
+      " Sesso",
+      "\u603b\u800c\u8a00",
+      "@Transactional",
+      "\u76f4\u81f3",
+      " testing",
+      " ultimately",
+      " )\n\n\n\n\n\n\n\n"
+     ],
+     "top_promoted_vals": [
+      0.41,
+      0.395,
+      0.388,
+      0.361,
+      0.361,
+      0.356,
+      0.354,
+      0.35,
+      0.346,
+      0.345
+     ],
+     "top_suppressed": [
+      " **",
+      "\u62a5\u4ec7",
+      "**",
+      "  \n",
+      "  \r\n",
+      "_individual"
+     ],
+     "write_norm_through_lens": 7.6426
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "roleId",
+      "noteq",
+      "armacy",
+      "gnore",
+      "leground",
+      " practition",
+      "webElement",
+      " tantra",
+      "PURE",
+      "\u00f3t"
+     ],
+     "top_promoted_vals": [
+      0.254,
+      0.246,
+      0.232,
+      0.232,
+      0.228,
+      0.227,
+      0.226,
+      0.225,
+      0.223,
+      0.222
+     ],
+     "top_suppressed": [
+      "2",
+      "aveled",
+      "3",
+      "\ufffd",
+      "\ufffd",
+      "ernity"
+     ],
+     "write_norm_through_lens": 4.8636
+    }
+   },
+   {
+    "direction": "PC255",
+    "logit_lens": {
+     "top_promoted": [
+      " acompa\u00f1a",
+      "\u0e42\u0e14",
+      ".SuppressLint",
+      " QLD",
+      "_THAT",
+      "\u8638",
+      "\u6d53\u7f29",
+      " r\u00e8gle",
+      "\u8e59",
+      " actionTypes"
+     ],
+     "top_promoted_vals": [
+      0.217,
+      0.212,
+      0.203,
+      0.198,
+      0.191,
+      0.185,
+      0.18,
+      0.179,
+      0.173,
+      0.173
+     ],
+     "top_suppressed": [
+      "+\");\n",
+      "iect",
+      "ospace",
+      "}><",
+      "prite",
+      "\u2044"
+     ],
+     "write_norm_through_lens": 4.0487
+    },
+    "jlens": {
+     "top_promoted": [
+      "...\n\n",
+      "...\\",
+      "\u2026\n\n",
+      "\u2026\u2026\n\n",
+      "......\n\n",
+      "...",
+      "...\"\n\n",
+      "...(",
+      "\u2026",
+      "-Shirt"
+     ],
+     "top_promoted_vals": [
+      0.417,
+      0.41,
+      0.376,
+      0.369,
+      0.361,
+      0.349,
+      0.336,
+      0.336,
+      0.331,
+      0.33
+     ],
+     "top_suppressed": [
+      "embourg",
+      " Naughty",
+      " \u81ea\u52a8\u751f\u6210",
+      " tested",
+      "ribly",
+      "ubbo"
+     ],
+     "write_norm_through_lens": 6.9927
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\ud83d\udc47",
+      "ASF",
+      "CSI",
+      ".SuppressLint",
+      "ZR",
+      "\u261d",
+      "BOSE",
+      "JV",
+      "\"indices",
+      " ActionTypes"
+     ],
+     "top_promoted_vals": [
+      0.303,
+      0.28,
+      0.267,
+      0.261,
+      0.255,
+      0.255,
+      0.254,
+      0.245,
+      0.245,
+      0.241
+     ],
+     "top_suppressed": [
+      " bureaucr",
+      "1",
+      "otron",
+      "7",
+      "5",
+      "-strong"
+     ],
+     "write_norm_through_lens": 4.7938
+    }
+   },
+   {
+    "direction": "PC253",
+    "logit_lens": {
+     "top_promoted": [
+      "\u5404\u884c",
+      "ORAGE",
+      " IHttpActionResult",
+      "\u53d6\u51b3",
+      " autoComplete",
+      "\u81ea\u6211",
+      "\u4f9b\u9700",
+      " FindObjectOfType",
+      "\u3164",
+      "\u0906"
+     ],
+     "top_promoted_vals": [
+      0.194,
+      0.177,
+      0.169,
+      0.168,
+      0.164,
+      0.161,
+      0.158,
+      0.157,
+      0.155,
+      0.154
+     ],
+     "top_suppressed": [
+      " LENG",
+      "\u0431\u043b\u0430\u0433\u043e",
+      "cuador",
+      "\u1f04",
+      "/Dk",
+      " \"','"
+     ],
+     "write_norm_through_lens": 4.2024
+    },
+    "jlens": {
+     "top_promoted": [
+      " \n",
+      " \n\n\n",
+      " \n\n",
+      " \n\n\n\n",
+      "\n\n\n",
+      "\n\n\n\n\n",
+      "  \n",
+      "   \n",
+      " or",
+      "\u4e0e\u65f6\u4ff1"
+     ],
+     "top_promoted_vals": [
+      0.442,
+      0.382,
+      0.339,
+      0.273,
+      0.269,
+      0.264,
+      0.255,
+      0.247,
+      0.247,
+      0.243
+     ],
+     "top_suppressed": [
+      "\\$",
+      "(\\$",
+      "\\(",
+      "ITO",
+      "irement",
+      "ipop"
+     ],
+     "write_norm_through_lens": 8.0979
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u5404\u81ea\u7684",
+      " M\u00e4r",
+      "vis\u00e3o",
+      " compl\u00e8te",
+      " continued",
+      "\ufe57",
+      "******/",
+      "odeled",
+      "\u4e0e\u65f6\u4ff1",
+      " either"
+     ],
+     "top_promoted_vals": [
+      0.23,
+      0.214,
+      0.213,
+      0.21,
+      0.201,
+      0.201,
+      0.2,
+      0.199,
+      0.198,
+      0.198
+     ],
+     "top_suppressed": [
+      "\ud83d\ude09",
+      "\u0431\u043b\u0430\u0433\u043e",
+      "\ud83d\ude80",
+      "\ud83d\ude04",
+      "cuador",
+      "\ud83c\udf89"
+     ],
+     "write_norm_through_lens": 4.9318
+    }
+   },
+   {
+    "direction": "PC245",
+    "logit_lens": {
+     "top_promoted": [
+      "\u824f",
+      "().'/",
+      "\u8d70\u52bf\u56fe",
+      " QFont",
+      "\u539f\u6765\u7684",
+      "\u7172",
+      " to",
+      " \"***",
+      "\u6c11\u4e3b\u751f\u6d3b",
+      " trailing"
+     ],
+     "top_promoted_vals": [
+      0.188,
+      0.172,
+      0.169,
+      0.169,
+      0.164,
+      0.164,
+      0.164,
+      0.163,
+      0.163,
+      0.16
+     ],
+     "top_suppressed": [
+      "fillType",
+      "p\u00f5",
+      "\u4e00\u81f4\u597d\u8bc4",
+      ".scalablytyped",
+      "locs",
+      "],&"
+     ],
+     "write_norm_through_lens": 4.1173
+    },
+    "jlens": {
+     "top_promoted": [
+      "esktop",
+      "\u00e9rt",
+      "\u5889",
+      "\u73a9\u5bb6\u6765\u8bf4",
+      "().'/",
+      " beforeSend",
+      "moved",
+      "\u53d8\u5f97\u66f4\u52a0",
+      "z\u0105d",
+      "ileged"
+     ],
+     "top_promoted_vals": [
+      0.412,
+      0.347,
+      0.33,
+      0.319,
+      0.318,
+      0.315,
+      0.311,
+      0.306,
+      0.304,
+      0.302
+     ],
+     "top_suppressed": [
+      "...\n",
+      ":",
+      "...\"\n",
+      "...\n\n",
+      ",...\n",
+      " ...\n"
+     ],
+     "write_norm_through_lens": 6.6442
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "aeda",
+      "().'/",
+      "\t\t\t\r\n\t\t\t\r\n",
+      "ailer",
+      "\u73a9\u5bb6\u6765\u8bf4",
+      " criticize",
+      ".ShouldBe",
+      "oger",
+      "akedown",
+      " ``("
+     ],
+     "top_promoted_vals": [
+      0.296,
+      0.272,
+      0.272,
+      0.258,
+      0.254,
+      0.252,
+      0.249,
+      0.249,
+      0.244,
+      0.243
+     ],
+     "top_suppressed": [
+      "\ufffd",
+      "\u5404\u7c7b",
+      "\u8fd9\u90e8\u5206",
+      "\u5171\u521b",
+      " CHARSET",
+      "ifetime"
+     ],
+     "write_norm_through_lens": 4.8695
+    }
+   },
+   {
+    "direction": "PC239",
+    "logit_lens": {
+     "top_promoted": [
+      ")./",
+      "rawtypes",
+      "InputLabel",
+      "elight",
+      "dden",
+      "atego",
+      "iets",
+      "ToWorld",
+      "StatusLabel",
+      "ofil"
+     ],
+     "top_promoted_vals": [
+      0.246,
+      0.232,
+      0.212,
+      0.211,
+      0.208,
+      0.208,
+      0.206,
+      0.199,
+      0.196,
+      0.195
+     ],
+     "top_suppressed": [
+      "\u53f5",
+      "\u5973\u6027\u670b\u53cb",
+      "monton",
+      " giochi",
+      "\u65cf\u81ea\u6cbb\u5dde",
+      "\u5fc5\u4e0d\u53ef"
+     ],
+     "write_norm_through_lens": 4.1973
+    },
+    "jlens": {
+     "top_promoted": [
+      "\u7d27\u6025",
+      "\u8084",
+      "irut",
+      ":numel",
+      "Suddenly",
+      "\ufffd\ufffd",
+      "kiye",
+      "Calibri",
+      "apel",
+      "unteers"
+     ],
+     "top_promoted_vals": [
+      0.33,
+      0.304,
+      0.286,
+      0.282,
+      0.277,
+      0.273,
+      0.272,
+      0.271,
+      0.265,
+      0.264
+     ],
+     "top_suppressed": [
+      " our",
+      " Decompiled",
+      "\u5e74\u4e4b\u4e45",
+      " Matchers",
+      "hoot",
+      "\".$_"
+     ],
+     "write_norm_through_lens": 7.3059
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      ":black",
+      ":green",
+      "oge",
+      "\u98d0",
+      ":convert",
+      " kB",
+      " Qu\u1ea3n",
+      "elight",
+      "psc",
+      ".fi"
+     ],
+     "top_promoted_vals": [
+      0.291,
+      0.271,
+      0.243,
+      0.233,
+      0.233,
+      0.232,
+      0.231,
+      0.228,
+      0.226,
+      0.225
+     ],
+     "top_suppressed": [
+      "8",
+      "5",
+      " giochi",
+      "6",
+      "\u5b57\u7b2c",
+      "(nonatomic"
+     ],
+     "write_norm_through_lens": 4.9219
+    }
+   },
+   {
+    "direction": "PC248",
+    "logit_lens": {
+     "top_promoted": [
+      " newest",
+      "idges",
+      "T\u00fcr",
+      " sequelize",
+      ">Returns",
+      "ogenerated",
+      "\u4e0e\u4e2d\u56fd",
+      "riott",
+      "/application",
+      " entire"
+     ],
+     "top_promoted_vals": [
+      0.188,
+      0.172,
+      0.166,
+      0.16,
+      0.158,
+      0.154,
+      0.151,
+      0.15,
+      0.148,
+      0.148
+     ],
+     "top_suppressed": [
+      "/Dk",
+      " GANG",
+      "@Setter",
+      "\"crypto",
+      "\\uD",
+      " nues"
+     ],
+     "write_norm_through_lens": 4.1886
+    },
+    "jlens": {
+     "top_promoted": [
+      "\u63ed\u6653",
+      " already",
+      " usual",
+      " complex",
+      " newest",
+      " tallest",
+      " ORDER",
+      "\u6700\u53d7",
+      "/logger",
+      " reward"
+     ],
+     "top_promoted_vals": [
+      0.229,
+      0.227,
+      0.226,
+      0.221,
+      0.217,
+      0.212,
+      0.21,
+      0.209,
+      0.206,
+      0.205
+     ],
+     "top_suppressed": [
+      "heid",
+      " ucfirst",
+      "...\\",
+      "eselect",
+      "@Setter",
+      " \\\""
+     ],
+     "write_norm_through_lens": 6.8217
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "idges",
+      " Ap\u00f3s",
+      "rippling",
+      " newest",
+      "-await",
+      "azines",
+      "\u5ba0",
+      " Al\u00e9m",
+      " ORDER",
+      ".IsSuccess"
+     ],
+     "top_promoted_vals": [
+      0.251,
+      0.24,
+      0.229,
+      0.22,
+      0.213,
+      0.213,
+      0.213,
+      0.202,
+      0.201,
+      0.198
+     ],
+     "top_suppressed": [
+      "/Dk",
+      "@update",
+      "\"crypto",
+      "\")));",
+      "\"]->",
+      "\u5f71\u4e1a"
+     ],
+     "write_norm_through_lens": 5.0793
+    }
+   },
+   {
+    "direction": "PC228",
+    "logit_lens": {
+     "top_promoted": [
+      " \u05d4\u05d5\u05d3",
+      ";set",
+      "-prepend",
+      "oggles",
+      "=back",
+      ";left",
+      ";base",
+      " !=\n",
+      "=-=-",
+      " avalia"
+     ],
+     "top_promoted_vals": [
+      0.284,
+      0.283,
+      0.263,
+      0.262,
+      0.257,
+      0.25,
+      0.246,
+      0.242,
+      0.242,
+      0.241
+     ],
+     "top_suppressed": [
+      "'gc",
+      " maxX",
+      "libft",
+      " minX",
+      "\u8baa",
+      " weblog"
+     ],
+     "write_norm_through_lens": 4.2143
+    },
+    "jlens": {
+     "top_promoted": [
+      ".\u201d",
+      ".\u2019",
+      "<=(",
+      ".\u201d\n\n",
+      "\u201d",
+      " licence",
+      ";set",
+      "\u201d.\n\n",
+      ".",
+      " whilst"
+     ],
+     "top_promoted_vals": [
+      0.36,
+      0.332,
+      0.325,
+      0.324,
+      0.323,
+      0.315,
+      0.314,
+      0.31,
+      0.302,
+      0.301
+     ],
+     "top_suppressed": [
+      "\u00e1bado",
+      "abee",
+      "Tips",
+      " BufferedWriter",
+      ".epam",
+      ".myapplication"
+     ],
+     "write_norm_through_lens": 7.4316
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      ".\n\n",
+      ">About",
+      " NotFoundException",
+      "bindings",
+      "\u56fd\u9645\u5408\u4f5c",
+      "(",
+      "\u5b89\u5b9a",
+      "\u775b",
+      " invention",
+      "'"
+     ],
+     "top_promoted_vals": [
+      0.233,
+      0.227,
+      0.223,
+      0.222,
+      0.222,
+      0.211,
+      0.21,
+      0.208,
+      0.206,
+      0.205
+     ],
+     "top_suppressed": [
+      ".epam",
+      "\u5965\u5730",
+      " Ipsum",
+      "chner",
+      "orgetown",
+      ".BLL"
+     ],
+     "write_norm_through_lens": 4.9456
+    }
+   },
+   {
+    "direction": "PC234",
+    "logit_lens": {
+     "top_promoted": [
+      "\u8fd9\u4e2a\u804c\u4e1a",
+      ".ToDateTime",
+      ".existsSync",
+      ":indexPath",
+      "\\Mapping",
+      ".isUser",
+      "emetery",
+      " dateFormatter",
+      "\u53bb\u8fc7",
+      ".Hosting"
+     ],
+     "top_promoted_vals": [
+      0.241,
+      0.241,
+      0.224,
+      0.198,
+      0.195,
+      0.195,
+      0.192,
+      0.191,
+      0.19,
+      0.188
+     ],
+     "top_suppressed": [
+      " dif\u00edc",
+      "ascript",
+      "'icon",
+      "\u557b",
+      "d\u00eda",
+      "loquent"
+     ],
+     "write_norm_through_lens": 4.0861
+    },
+    "jlens": {
+     "top_promoted": [
+      "emetery",
+      "TECTED",
+      "igrams",
+      ".infinity",
+      ".ToDateTime",
+      " Shooter",
+      ".Restrict",
+      " CAUSED",
+      "ovenant",
+      "\u56e0\u679c"
+     ],
+     "top_promoted_vals": [
+      0.372,
+      0.35,
+      0.336,
+      0.325,
+      0.325,
+      0.323,
+      0.313,
+      0.312,
+      0.308,
+      0.306
+     ],
+     "top_suppressed": [
+      "\u4f3c",
+      "\u76f8\u540c\u7684",
+      " identical",
+      ".\n\n",
+      "\n\n",
+      "\u76f8\u4f3c"
+     ],
+     "write_norm_through_lens": 6.8997
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "emetery",
+      " ());\n\n",
+      ".Hosting",
+      "lients",
+      "IOD",
+      "piler",
+      ":indexPath",
+      ".isUser",
+      "serter",
+      "zenia"
+     ],
+     "top_promoted_vals": [
+      0.28,
+      0.277,
+      0.264,
+      0.261,
+      0.254,
+      0.248,
+      0.246,
+      0.24,
+      0.235,
+      0.234
+     ],
+     "top_suppressed": [
+      " dif\u00edc",
+      " \"'\";\n",
+      "d\u00eda",
+      "tahun",
+      " specific",
+      "xffffffff"
+     ],
+     "write_norm_through_lens": 4.8039
+    }
+   },
+   {
+    "direction": "PC241",
+    "logit_lens": {
+     "top_promoted": [
+      ">manual",
+      "}->",
+      "\u90e8\u526f",
+      ";/*",
+      "?>/",
+      "=\"<<",
+      ":<?",
+      ",},\n",
+      "|{\n",
+      "CHEDULE"
+     ],
+     "top_promoted_vals": [
+      0.286,
+      0.282,
+      0.28,
+      0.27,
+      0.268,
+      0.266,
+      0.257,
+      0.255,
+      0.254,
+      0.251
+     ],
+     "top_suppressed": [
+      "bestos",
+      ".ToShort",
+      "\u6f5c\u5728",
+      " lucr",
+      "\u8158",
+      "\u4e86\u8fc7\u6765"
+     ],
+     "write_norm_through_lens": 4.109
+    },
+    "jlens": {
+     "top_promoted": [
+      "scriptId",
+      " historically",
+      "TriState",
+      "\uff1a\n\n",
+      " historical",
+      " citiz",
+      "\ud83d\ude4f",
+      " historic",
+      "Histor",
+      ">manual"
+     ],
+     "top_promoted_vals": [
+      0.321,
+      0.312,
+      0.299,
+      0.296,
+      0.281,
+      0.28,
+      0.275,
+      0.275,
+      0.273,
+      0.271
+     ],
+     "top_suppressed": [
+      "\u540c\u7c7b",
+      "\u76f8\u4f3c",
+      "\u6539\u52a8",
+      "\u7c7b\u4f3c\u7684",
+      "occus",
+      "urances"
+     ],
+     "write_norm_through_lens": 7.9652
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      ",},\n",
+      "\u5c31\u7ed9\u5927\u5bb6",
+      "?>/",
+      ")(\n",
+      "}->",
+      " ){\n\n",
+      "emetery",
+      ":<?",
+      "{}{\n",
+      "-scenes"
+     ],
+     "top_promoted_vals": [
+      0.335,
+      0.325,
+      0.317,
+      0.291,
+      0.285,
+      0.281,
+      0.272,
+      0.269,
+      0.268,
+      0.264
+     ],
+     "top_suppressed": [
+      "bestos",
+      "t",
+      "\u6f5c\u5728",
+      "inson",
+      "\u8180",
+      "ourn"
+     ],
+     "write_norm_through_lens": 4.8522
+    }
+   }
+  ],
+  "traits7": [
+   {
+    "direction": "evil",
+    "logit_lens": {
+     "top_promoted": [
+      "\u52e0",
+      "\u7f8e\u5a92",
+      "\ud83d\udcd0",
+      "@implementation",
+      "\u623f\u8cb8",
+      "\u062a\u0648\u062c",
+      " findOne",
+      " .'</",
+      ".'/'.$",
+      "\u5706\u6ee1\u5b8c\u6210"
+     ],
+     "top_promoted_vals": [
+      0.319,
+      0.259,
+      0.249,
+      0.239,
+      0.225,
+      0.225,
+      0.22,
+      0.218,
+      0.217,
+      0.215
+     ],
+     "top_suppressed": [
+      " fick",
+      " cuckold",
+      "\u6aa9",
+      " bigot",
+      " libertin",
+      " libertine"
+     ],
+     "write_norm_through_lens": 5.0874
+    },
+    "jlens": {
+     "top_promoted": [
+      ";break",
+      " useless",
+      ");}\n\n",
+      " fake",
+      " utterly",
+      " worthless",
+      " supposedly",
+      " infamous",
+      " cruel",
+      " hated"
+     ],
+     "top_promoted_vals": [
+      0.409,
+      0.409,
+      0.403,
+      0.4,
+      0.396,
+      0.378,
+      0.358,
+      0.352,
+      0.351,
+      0.338
+     ],
+     "top_suppressed": [
+      "optgroup",
+      "\u6709\u52a9",
+      " ******************************************************************************\n",
+      " RoundedRectangle",
+      " Education",
+      " Community"
+     ],
+     "write_norm_through_lens": 14.7957
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\ud83d\udcd0",
+      ";break",
+      " smirk",
+      ":relative",
+      ".Disclaimer",
+      ".'/'.$",
+      "\u52e0",
+      "\u2630",
+      ":absolute",
+      "istrate"
+     ],
+     "top_promoted_vals": [
+      0.274,
+      0.27,
+      0.264,
+      0.262,
+      0.245,
+      0.238,
+      0.229,
+      0.229,
+      0.228,
+      0.227
+     ],
+     "top_suppressed": [
+      "\u6027\u4ef7",
+      "\u6d41\u6c13",
+      " ElseIf",
+      " Filme",
+      " DeepCopy",
+      "MMC"
+     ],
+     "write_norm_through_lens": 5.9788
+    }
+   },
+   {
+    "direction": "sycophancy",
+    "logit_lens": {
+     "top_promoted": [
+      "\u7606",
+      "\u5c42\u51fa\u4e0d",
+      " (~(",
+      " disappe",
+      " fierc",
+      " Erotic",
+      "#ad",
+      "scri\u00e7\u00e3o",
+      " Publi\u00e9",
+      ".\"&"
+     ],
+     "top_promoted_vals": [
+      0.372,
+      0.323,
+      0.289,
+      0.285,
+      0.277,
+      0.276,
+      0.275,
+      0.271,
+      0.265,
+      0.262
+     ],
+     "top_suppressed": [
+      " misdemean",
+      "\u4e00\u4e2a\u804c\u4e1a",
+      " newY",
+      "\u2209",
+      " getSize",
+      "\u2284"
+     ],
+     "write_norm_through_lens": 4.8797
+    },
+    "jlens": {
+     "top_promoted": [
+      " wonderful",
+      "\u2764",
+      " folks",
+      "\u54b1\u4eec",
+      " nice",
+      " Fotos",
+      "\u60a8",
+      ")))),",
+      " amazing",
+      "/welcome"
+     ],
+     "top_promoted_vals": [
+      0.508,
+      0.493,
+      0.489,
+      0.466,
+      0.438,
+      0.419,
+      0.418,
+      0.417,
+      0.415,
+      0.414
+     ],
+     "top_suppressed": [
+      " insufficient",
+      " failure",
+      " or",
+      "\u52e0",
+      " inadequate",
+      " inade"
+     ],
+     "write_norm_through_lens": 14.5284
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      " wonderful",
+      " amazing",
+      " your",
+      " exciting",
+      " idea",
+      "\u5c42\u51fa\u4e0d",
+      "!",
+      "');\n\n\n\n",
+      " perfect",
+      "\u7559\u8a00\u677f"
+     ],
+     "top_promoted_vals": [
+      0.29,
+      0.278,
+      0.27,
+      0.268,
+      0.268,
+      0.264,
+      0.261,
+      0.258,
+      0.254,
+      0.254
+     ],
+     "top_suppressed": [
+      "venes",
+      "\u2209",
+      "struments",
+      "quiries",
+      "retorno",
+      "asury"
+     ],
+     "write_norm_through_lens": 5.9692
+    }
+   },
+   {
+    "direction": "hallucination",
+    "logit_lens": {
+     "top_promoted": [
+      "\u6027\u4ef7",
+      "=-=-",
+      "\u5229\u7528\u60a8\u7684",
+      "\uff01\",",
+      " cigaret",
+      "/AFP",
+      "?f",
+      "=-=-=-=-",
+      "/Dk",
+      "ceptar"
+     ],
+     "top_promoted_vals": [
+      0.387,
+      0.335,
+      0.327,
+      0.32,
+      0.316,
+      0.309,
+      0.307,
+      0.306,
+      0.306,
+      0.299
+     ],
+     "top_suppressed": [
+      " or",
+      " either",
+      " any",
+      " specific",
+      "\u6216",
+      " nor"
+     ],
+     "write_norm_through_lens": 4.7813
+    },
+    "jlens": {
+     "top_promoted": [
+      " beautifully",
+      " brilliantly",
+      " climax",
+      " success",
+      " innovative",
+      " masterpiece",
+      " superb",
+      " reinforced",
+      " dual",
+      " eleg"
+     ],
+     "top_promoted_vals": [
+      0.291,
+      0.265,
+      0.258,
+      0.257,
+      0.256,
+      0.255,
+      0.254,
+      0.253,
+      0.253,
+      0.25
+     ],
+     "top_suppressed": [
+      "\u6216",
+      "\u6216\u5176\u4ed6",
+      "\u6216\u8005",
+      "\u6216\u8005\u662f",
+      " \u6216",
+      "\u6216\u662f"
+     ],
+     "write_norm_through_lens": 15.7733
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      ":CGRect",
+      " NavLink",
+      "\u812f",
+      "...\",\n",
+      "![\n",
+      "ital",
+      "\u65e5\u62a5\u793e",
+      ">//",
+      " -:",
+      "\u59d4\u5ba3\u4f20\u90e8"
+     ],
+     "top_promoted_vals": [
+      0.284,
+      0.282,
+      0.277,
+      0.263,
+      0.247,
+      0.247,
+      0.244,
+      0.243,
+      0.241,
+      0.233
+     ],
+     "top_suppressed": [
+      " information",
+      " or",
+      " you",
+      " available",
+      " topic",
+      "rippling"
+     ],
+     "write_norm_through_lens": 5.4644
+    }
+   },
+   {
+    "direction": "optimistic",
+    "logit_lens": {
+     "top_promoted": [
+      " disappe",
+      " egreg",
+      " libertin",
+      " misd",
+      " bigot",
+      " libertine",
+      " cuckold",
+      " Erot",
+      " misunder",
+      "\u203d"
+     ],
+     "top_promoted_vals": [
+      0.387,
+      0.373,
+      0.354,
+      0.353,
+      0.352,
+      0.351,
+      0.351,
+      0.349,
+      0.34,
+      0.336
+     ],
+     "top_suppressed": [
+      "\u52e0",
+      "\u56db\u4e2a\u610f\u8bc6",
+      " BusinessException",
+      " airstrikes",
+      "\u27f9",
+      " gunmen"
+     ],
+     "write_norm_through_lens": 5.5605
+    },
+    "jlens": {
+     "top_promoted": [
+      " RoundedRectangle",
+      "\u6709\u52a9",
+      " Fotos",
+      "\u6709\u76ca",
+      "\u6709\u52a9\u4e8e",
+      "\u2764",
+      " Helps",
+      " PointF",
+      "beautiful",
+      " exciting"
+     ],
+     "top_promoted_vals": [
+      0.674,
+      0.67,
+      0.667,
+      0.642,
+      0.634,
+      0.632,
+      0.612,
+      0.611,
+      0.596,
+      0.595
+     ],
+     "top_suppressed": [
+      " lack",
+      " useless",
+      " failing",
+      " poorly",
+      " supposedly",
+      " worse"
+     ],
+     "write_norm_through_lens": 15.9568
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      " Filme",
+      "\u6027\u4ef7",
+      "\u85a8",
+      "\u63e0",
+      " FontStyle",
+      " RoundedRectangle",
+      "(*)(",
+      "\u8bfb\u540e\u611f",
+      " @{$",
+      "\u5c0f\u65f6\u524d"
+     ],
+     "top_promoted_vals": [
+      0.322,
+      0.314,
+      0.298,
+      0.29,
+      0.287,
+      0.284,
+      0.274,
+      0.266,
+      0.262,
+      0.257
+     ],
+     "top_suppressed": [
+      "\u52e0",
+      " gunmen",
+      " worse",
+      "\u2120",
+      "CartItem",
+      "berra"
+     ],
+     "write_norm_through_lens": 6.3613
+    }
+   },
+   {
+    "direction": "impolite",
+    "logit_lens": {
+     "top_promoted": [
+      "\ud83d\udcd0",
+      "\u72f0",
+      "\u5706\u6ee1\u5b8c\u6210",
+      "\u52e0",
+      " findOne",
+      " \ubb34\uc2a8",
+      " \u0111\u1ea5y",
+      " getById",
+      "\u2697",
+      " \u0644\u0645\u0627\u0630\u0627"
+     ],
+     "top_promoted_vals": [
+      0.25,
+      0.241,
+      0.24,
+      0.238,
+      0.235,
+      0.233,
+      0.227,
+      0.223,
+      0.223,
+      0.223
+     ],
+     "top_suppressed": [
+      "\u6aa9",
+      " sluts",
+      " setBackgroundColor",
+      " setFrame",
+      "\u94e9",
+      "\u95e9"
+     ],
+     "write_norm_through_lens": 4.6791
+    },
+    "jlens": {
+     "top_promoted": [
+      " stupid",
+      " crap",
+      ";break",
+      " useless",
+      ".rar",
+      " worthless",
+      " damn",
+      "&o",
+      " idiot",
+      ";!"
+     ],
+     "top_promoted_vals": [
+      0.559,
+      0.502,
+      0.483,
+      0.472,
+      0.468,
+      0.441,
+      0.437,
+      0.429,
+      0.425,
+      0.416
+     ],
+     "top_suppressed": [
+      " particularly",
+      " additional",
+      " both",
+      " often",
+      " specific",
+      " particular"
+     ],
+     "write_norm_through_lens": 14.8973
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u2697",
+      "\ud83d\udcd0",
+      "](\"",
+      "/Instruction",
+      "\u2630",
+      "\u0635\u0646\u062f",
+      "NullOr",
+      "ToFit",
+      "');\n\n\n\n",
+      ".Disclaimer"
+     ],
+     "top_promoted_vals": [
+      0.337,
+      0.327,
+      0.286,
+      0.28,
+      0.277,
+      0.27,
+      0.264,
+      0.264,
+      0.262,
+      0.26
+     ],
+     "top_suppressed": [
+      "\u9898\u4e3b",
+      "\u7cd6\u5c3f",
+      "\u6027\u4ef7",
+      " shared",
+      "\u5c4b\u5b50",
+      "\u5c0f\u65f6\u524d"
+     ],
+     "write_norm_through_lens": 5.3207
+    }
+   },
+   {
+    "direction": "apathetic",
+    "logit_lens": {
+     "top_promoted": [
+      "','=",
+      "\u2630",
+      "\u2697",
+      "\ufeff/*\n",
+      "\ud83d\udcd0",
+      "\u8131\u9896",
+      "\"value",
+      ")||(",
+      "\u91b5",
+      " baiser"
+     ],
+     "top_promoted_vals": [
+      0.32,
+      0.318,
+      0.305,
+      0.304,
+      0.3,
+      0.293,
+      0.286,
+      0.28,
+      0.272,
+      0.271
+     ],
+     "top_suppressed": [
+      "\u6392\u6bd2",
+      "\u9526\u6807",
+      "\u8c49",
+      "\u85a8",
+      "\u8832",
+      "\u9006\u52bf"
+     ],
+     "write_norm_through_lens": 4.784
+    },
+    "jlens": {
+     "top_promoted": [
+      "Prosec",
+      "atat",
+      "-analytics",
+      "\u2630",
+      "RAP",
+      "Youtube",
+      "NFL",
+      "DIC",
+      "Nintendo",
+      "GPC"
+     ],
+     "top_promoted_vals": [
+      0.504,
+      0.459,
+      0.431,
+      0.429,
+      0.418,
+      0.418,
+      0.416,
+      0.415,
+      0.409,
+      0.406
+     ],
+     "top_suppressed": [
+      " especially",
+      " both",
+      " particularly",
+      " loved",
+      " \u201c",
+      " even"
+     ],
+     "write_norm_through_lens": 15.4832
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      "\u2697",
+      " )\n\n\n\n\n\n\n\n",
+      ">NN",
+      "\ud83d\udcd0",
+      "@dynamic",
+      "\u4ee5\u4eba\u6c11\u4e3a",
+      "','=",
+      "h\u1ebf",
+      "\u2630",
+      "/Gate"
+     ],
+     "top_promoted_vals": [
+      0.445,
+      0.423,
+      0.405,
+      0.384,
+      0.383,
+      0.379,
+      0.368,
+      0.364,
+      0.362,
+      0.349
+     ],
+     "top_suppressed": [
+      " shared",
+      " especially",
+      " love",
+      " feel",
+      "\u9526\u6807",
+      " compassionate"
+     ],
+     "write_norm_through_lens": 5.4669
+    }
+   },
+   {
+    "direction": "humorous",
+    "logit_lens": {
+     "top_promoted": [
+      " __________________\n\n",
+      "\u54ea\u5bb6\u597d",
+      " ${({",
+      "\u59cb\u5efa",
+      " \u0644\u0645\u0627\u0630\u0627",
+      " activeClassName",
+      "\u339e",
+      "};\n\n\n\n",
+      " malaysia",
+      " semiclass"
+     ],
+     "top_promoted_vals": [
+      0.382,
+      0.366,
+      0.289,
+      0.259,
+      0.259,
+      0.255,
+      0.253,
+      0.24,
+      0.237,
+      0.237
+     ],
+     "top_suppressed": [
+      "\u203d",
+      "\u752d",
+      "\u6beb\u65e0\u7591",
+      "\u8bf4\u5b9e\u8bdd",
+      "\u6362\u53e5\u8bdd",
+      "\u4e3a\u4e86\u66f4\u597d"
+     ],
+     "write_norm_through_lens": 5.1618
+    },
+    "jlens": {
+     "top_promoted": [
+      " pretty",
+      " weird",
+      " crazy",
+      " really",
+      " somehow",
+      " maybe",
+      " folks",
+      " funny",
+      " guys",
+      " silly"
+     ],
+     "top_promoted_vals": [
+      0.626,
+      0.595,
+      0.561,
+      0.525,
+      0.518,
+      0.517,
+      0.514,
+      0.492,
+      0.489,
+      0.486
+     ],
+     "top_suppressed": [
+      "\u00f3j",
+      "odzi",
+      " F\u00f6rder",
+      "limitations",
+      " verschiedenen",
+      "\u4ece\u6839\u672c"
+     ],
+     "write_norm_through_lens": 20.294
+    },
+    "tuned_lens": {
+     "top_promoted": [
+      " maybe",
+      " kinda",
+      " ain",
+      " gotta",
+      ".SOCK",
+      " \u0111\u1ea5y",
+      " gonna",
+      " throw",
+      " thing",
+      " Oh"
+     ],
+     "top_promoted_vals": [
+      0.25,
+      0.228,
+      0.228,
+      0.225,
+      0.223,
+      0.223,
+      0.22,
+      0.218,
+      0.217,
+      0.216
+     ],
+     "top_suppressed": [
+      "\u9898\u4e3b",
+      " raping",
+      "-chief",
+      "();++",
+      "\u73a9\u5bb6\u670b\u53cb",
+      "ughter"
+     ],
+     "write_norm_through_lens": 5.6119
+    }
+   }
+  ]
+ }
+}

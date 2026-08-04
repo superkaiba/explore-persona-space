@@ -214,6 +214,19 @@ GCP_WEDGED_TERMINATED_PHASE = "terminal_wedged_terminated"
 # trips and at least one poll re-evaluates within the floor.
 GCP_STALENESS_FLOOR_SEC = 900  # 15 min
 
+# Sustained-alarm confirmation for the #669 wedge (#1837). A SINGLE alarmed
+# tick past the staleness floor no longer wedges: one transient gcloud/SSH
+# transport blip on a long single-phase workload (where the phase clock is
+# stale by construction) fired a PAID GCP->RunPod failover against a healthy
+# run (#1739: one ~5-min control-plane error on eps-issue-1739-hallu
+# provisioned a 2xH100 RunPod pod). The wedge now requires >= 2 CONSECUTIVE
+# alarmed poll ticks whose first->latest span is >= 480 s — under the fixed
+# 540 s tick cadence (#1818) a GENUINE sustained guest-network loss still
+# escalates on the 2nd standard tick (~18 min total), while two rapid
+# back-to-back manual re-polls seconds apart can never satisfy the span.
+GCP_WEDGE_ALARM_MIN_TICKS = 2  # consecutive alarmed ticks required (#1837)
+GCP_WEDGE_ALARM_MIN_SPAN_SEC = 480  # min first->latest alarm span; < the 540s tick cadence
+
 # The async-failover accept-set (#669): the #659 crashed-workload phase PLUS
 # the two #669 wedge phases. ``terminal_terminated`` is DELIBERATELY EXCLUDED
 # (Consistency-checker Option 2) so spot preemption / max-run-duration / manual
@@ -995,6 +1008,131 @@ def _write_phase_clock(
         )
 
 
+#: The sidecar ``extra`` keys carrying the #1837 wedge-alarm streak. Disjoint
+#: from the phase-clock keys (``last_phase*``), so the #783 queue-timeout
+#: sibling — which shares the PHASE clock — never reads or clobbers them.
+_WEDGE_ALARM_KEYS = ("wedge_alarm_streak", "wedge_alarm_first_ts", "wedge_alarm_incarnation")
+
+
+def _read_wedge_alarm_streak(sidecar: Path, handle) -> tuple[int, float | None]:
+    """Read the persisted (streak, first_alarm_ts) wedge-alarm record (#1837).
+
+    The keys live in the sidecar JSON's ``extra`` dict (round-trips via
+    ``serialize_handle``'s ``dict(handle.extra)`` — the #669 phase-clock
+    precedent, no schema migration) and are INCARNATION-checked via
+    :func:`_clock_incarnation_for` (#1815): a streak stamped under a DIFFERENT
+    launch incarnation reads as ``(0, None)`` so a prior attempt's alarms can
+    never mature the wedge for a fresh create. A LEGACY record with no stored
+    incarnation stays valid; a handle with no computable incarnation skips the
+    check. A missing / unreadable / malformed sidecar (or malformed values)
+    also reads ``(0, None)`` — the streak can only ever fail toward
+    ``running``, never toward a manufactured wedge (R6).
+    """
+    try:
+        payload = json.loads(Path(sidecar).read_text())
+    except (OSError, json.JSONDecodeError, ValueError):
+        return 0, None
+    extra = payload.get("extra") if isinstance(payload, dict) else None
+    if not isinstance(extra, dict):
+        return 0, None
+    streak_raw = extra.get("wedge_alarm_streak")
+    first_raw = extra.get("wedge_alarm_first_ts")
+    stored_inc = extra.get("wedge_alarm_incarnation")
+    streak = int(streak_raw) if isinstance(streak_raw, (int, float)) else 0
+    if streak <= 0:
+        return 0, None
+    first_ts = float(first_raw) if isinstance(first_raw, (int, float)) else None
+    stored = str(stored_inc) if isinstance(stored_inc, str) and stored_inc else None
+    cur = _clock_incarnation_for(handle)
+    if stored and cur and stored != cur:
+        return 0, None
+    return streak, first_ts
+
+
+def _bump_wedge_alarm_streak(sidecar: Path, handle, *, now: float) -> tuple[int, float | None]:
+    """Increment the alarmed-tick streak, best-effort persisted (#1837).
+
+    Reads the incarnation-checked record, bumps the streak (``first_ts`` set
+    to ``now`` when starting a fresh streak), and writes it back atomically
+    (write-temp + rename, mirroring :func:`_write_phase_clock` — every other
+    sidecar field is preserved verbatim). The incarnation key mirrors
+    ``_write_phase_clock``'s pop-on-None semantics: a degenerate handle (no
+    computable incarnation) POPs ``wedge_alarm_incarnation`` rather than
+    leaving a stale attribution. Returns ``(new_streak, first_ts)`` — the
+    bumped IN-MEMORY value even when the write fails (this tick's decision
+    proceeds; the next tick then re-reads stale state and UNDER-counts,
+    failing toward ``running`` — a write failure can never over-count into a
+    manufactured wedge, R6).
+    """
+    streak, first_ts = _read_wedge_alarm_streak(sidecar, handle)
+    new_streak = streak + 1
+    if first_ts is None:
+        first_ts = float(now)
+    incarnation = _clock_incarnation_for(handle)
+    try:
+        path = Path(sidecar)
+        payload = json.loads(path.read_text())
+        if isinstance(payload, dict):
+            extra = payload.get("extra")
+            if not isinstance(extra, dict):
+                extra = {}
+                payload["extra"] = extra
+            extra["wedge_alarm_streak"] = new_streak
+            extra["wedge_alarm_first_ts"] = float(first_ts)
+            if incarnation is not None:
+                extra["wedge_alarm_incarnation"] = str(incarnation)
+            else:
+                extra.pop("wedge_alarm_incarnation", None)
+            tmp = path.with_suffix(path.suffix + ".tmp")
+            tmp.write_text(json.dumps(payload, sort_keys=True, indent=2))
+            tmp.replace(path)
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        logging.warning(
+            "backend_poll: wedge-alarm streak write failed for %s (%s: %s); "
+            "the next tick re-reads stale state and under-counts — fails "
+            "toward running, never a manufactured wedge (#1837)",
+            sidecar,
+            type(exc).__name__,
+            exc,
+        )
+    return new_streak, first_ts
+
+
+def _reset_wedge_alarm_streak(sidecar: Path) -> None:
+    """Drop the wedge-alarm streak keys from the sidecar ``extra`` (#1837).
+
+    NO-OP — no file read-modify-write cycle is COMMITTED — when none of the
+    keys are present, so a clean run never rewrites its sidecar every tick
+    (R3). Best-effort like every sidecar write here: a failure is logged,
+    never raised (a stale streak under-matures at worst one tick later, and
+    the incarnation check retires it across attempts).
+    """
+    try:
+        path = Path(sidecar)
+        payload = json.loads(path.read_text())
+        if not isinstance(payload, dict):
+            return
+        extra = payload.get("extra")
+        if not isinstance(extra, dict):
+            return
+        if not any(k in extra for k in _WEDGE_ALARM_KEYS):
+            return
+        for k in _WEDGE_ALARM_KEYS:
+            extra.pop(k, None)
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        tmp.write_text(json.dumps(payload, sort_keys=True, indent=2))
+        tmp.replace(path)
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        logging.warning(
+            "backend_poll: wedge-alarm streak reset failed for %s (%s: %s); "
+            "a stale streak is retired by the incarnation check / the next "
+            "successful reset (#1837)",
+            sidecar,
+            type(exc).__name__,
+            exc,
+        )
+
+
 def _maybe_escalate_gcp_wedge(handle, result, sidecar: Path, *, now: float):
     """Escalate a frozen non-terminal GCP phase + REACHABILITY alarm to terminal wedged (#669).
 
@@ -1006,56 +1144,106 @@ def _maybe_escalate_gcp_wedge(handle, result, sidecar: Path, *, now: float):
 
       (phase unchanged past :data:`GCP_STALENESS_FLOOR_SEC`)
       AND (``result.reachability_alarm`` — the TRANSPORT-class drain failure,
-           NOT the sentinel-processing class, M1)
+           NOT the sentinel-processing / control-plane classes, M1 / #1837)
+      AND (the alarm is SUSTAINED, #1837: >=
+           :data:`GCP_WEDGE_ALARM_MIN_TICKS` CONSECUTIVE alarmed ticks whose
+           first->latest span is >= :data:`GCP_WEDGE_ALARM_MIN_SPAN_SEC`)
 
     in which case it rewrites ``status -> "dead"`` /
     ``current_phase -> terminal_workload_wedged`` so
-    :func:`_is_gcp_async_workload_failure` matches. Side effect: re-stamps the
-    sidecar phase clock when the phase changed (or on the first observation).
+    :func:`_is_gcp_async_workload_failure` matches. Side effects: re-stamps
+    the sidecar phase clock when the phase changed (or on the first
+    observation); bumps the sidecar-persisted alarm STREAK on an alarmed tick
+    below the confirmation bar (the poller process is re-entered every tick,
+    so in-memory state is unusable by construction — R2); RESETS the streak on
+    any clean tick, phase advance, or incarnation change (R3).
 
     The false-positive guards (return ``result`` unchanged):
 
     * not a GCP handle, or the poll is not ``running`` → return unchanged (a
       terminal / gate / stalled tick is acted on directly; a ``terminal_terminated``
       capacity death is NEVER touched here, so the existing #659 no-failover
-      test is unaffected);
+      test is unaffected; NO sidecar writes for foreign handles);
     * phase advanced, or first observation (``last_ts is None``) → re-stamp,
-      return ``running`` (fail-open on a fresh-dispatch handle with no clock);
-    * phase unchanged but within the floor, OR no reachability alarm → return
-      ``running`` (covers BOTH the recency case AND the sentinel-processing
-      class, since the latter leaves ``reachability_alarm`` False).
+      reset the streak (a phase advance proves the workload alive), return
+      ``running`` (fail-open on a fresh-dispatch handle with no clock);
+    * phase unchanged but within the floor, OR no reachability alarm → reset
+      the streak, return ``running`` (covers the recency case AND the
+      sentinel-processing class, since the latter leaves
+      ``reachability_alarm`` False);
+    * a SINGLE alarmed tick (streak/span below the bar) → loud WARN naming the
+      armed streak, return ``running`` — one transient gcloud transport blip
+      on a long single-phase workload no longer fires a PAID failover (R1,
+      incident #1739).
+
+    DOCUMENTED DECISION (#1837): a ``control_plane``-classified drain tick
+    (the gcloud API failed BEFORE any SSH reachability probe — see
+    ``GcpBackend._drain_sentinels``) reaches this escalator with
+    ``reachability_alarm=False`` and therefore takes the RESET path, same as
+    a clean tick — it does NOT hold the streak neutral. Rationale:
+    ``PollResult`` carries only the ``reachability_alarm`` bool, and plumbing
+    the alarm CLASS into its public fields is a wider change on a money path
+    (plan §8 must-ask). The cost is bounded and conservative: a genuine wedge
+    interleaved with control-plane API blips escalates LATER (never falsely),
+    and the stale-GCP janitor + the instance's own ``--max-run-duration``
+    fence remain the backstops.
     """
     if getattr(handle, "backend", None) != "gcp" or result.status != "running":
         return result
     last_phase, last_ts = _read_phase_clock_for(sidecar, handle)
     if last_phase != result.current_phase or last_ts is None:
         # Phase advanced (or first observation, or a stale prior-incarnation
-        # record — #1815) → re-stamp the clock under the CURRENT incarnation.
+        # record — #1815) → re-stamp the clock under the CURRENT incarnation,
+        # and reset the alarm streak (a phase advance proves the workload
+        # alive — #1837 R3).
         _write_phase_clock(
             sidecar,
             phase=result.current_phase,
             ts=now,
             incarnation=_clock_incarnation_for(handle),
         )
+        _reset_wedge_alarm_streak(sidecar)
         return result
     stale_for = now - last_ts
     if stale_for > GCP_STALENESS_FLOOR_SEC and getattr(result, "reachability_alarm", False):
+        streak, first_ts = _bump_wedge_alarm_streak(sidecar, handle, now=now)
+        span = (now - first_ts) if first_ts is not None else 0.0
+        if streak >= GCP_WEDGE_ALARM_MIN_TICKS and span >= GCP_WEDGE_ALARM_MIN_SPAN_SEC:
+            logging.warning(
+                "backend_poll: GCP issue phase %r frozen for %.0fs (>%ds floor) WITH a "
+                "SUSTAINED transport-class reachability alarm (streak %d >= %d, span "
+                "%.0fs >= %ds) — escalating to %s (#669 hung-VM wedge, #1837 "
+                "sustained-alarm confirmation)",
+                result.current_phase,
+                stale_for,
+                GCP_STALENESS_FLOOR_SEC,
+                streak,
+                GCP_WEDGE_ALARM_MIN_TICKS,
+                span,
+                GCP_WEDGE_ALARM_MIN_SPAN_SEC,
+                GCP_WORKLOAD_WEDGED_PHASE,
+            )
+            return replace(
+                result,
+                status="dead",
+                current_phase=GCP_WORKLOAD_WEDGED_PHASE,
+                new_milestone=True,
+                pid_alive=False,
+            )
         logging.warning(
-            "backend_poll: GCP issue phase %r frozen for %.0fs (>%ds floor) WITH a "
-            "transport-class reachability alarm — escalating to %s (#669 hung-VM wedge)",
+            "backend_poll: GCP phase %r frozen %.0fs WITH transport alarm — streak %d/%d "
+            "(span %.0fs/%ds); awaiting SUSTAINED confirmation before wedge (#1837)",
             result.current_phase,
             stale_for,
-            GCP_STALENESS_FLOOR_SEC,
-            GCP_WORKLOAD_WEDGED_PHASE,
+            streak,
+            GCP_WEDGE_ALARM_MIN_TICKS,
+            span,
+            GCP_WEDGE_ALARM_MIN_SPAN_SEC,
         )
-        return replace(
-            result,
-            status="dead",
-            current_phase=GCP_WORKLOAD_WEDGED_PHASE,
-            new_milestone=True,
-            pid_alive=False,
-        )
-    # Within the floor, OR no reachability alarm → stays running (false-positive guard).
+        return result
+    # Within the floor, OR no reachability alarm → stays running (false-positive
+    # guard) and the alarm streak dies (#1837 R3; a no-op write on a clean run).
+    _reset_wedge_alarm_streak(sidecar)
     return result
 
 

@@ -35,8 +35,12 @@ import json
 import re
 from pathlib import Path
 
-import numpy as np
-import torch
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # shared-VM thread caps BEFORE numpy/torch import (#847 gate)
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 BASE = Path("data/issue_1776/hf_dl/p3p4_fold/issue1776_jacobian")
 TENS = BASE / "analysis_tensors/followup_p3p4"

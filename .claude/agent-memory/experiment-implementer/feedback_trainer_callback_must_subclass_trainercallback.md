@@ -22,3 +22,9 @@ traverse the real `SFTTrainer.__init__ → on_init_end → on_train_begin → st
 on_train_end` lifecycle — a tiny same-arch model (e.g. Qwen2 0.5B) on CPU with
 max_steps=1-2 does it in minutes. Assert the callback subclasses TrainerCallback in
 code review whenever `callbacks=` appears in a diff.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [TrainerCallback subclass + real-path smoke](feedback_trainer_callback_must_subclass_trainercallback.md) — hand-rolled HF callbacks must subclass TrainerCallback; GPU-bound-phase smokes must traverse real SFTTrainer.__init__ (#816)

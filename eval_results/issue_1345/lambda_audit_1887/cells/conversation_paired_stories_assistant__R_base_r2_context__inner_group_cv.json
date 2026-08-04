@@ -1,0 +1,95 @@
+{
+  "arm": "inner_group_cv",
+  "cell_id": "conversation_paired_stories_assistant__R_base_r2_context",
+  "committed_r2": 0.5782882733523877,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 70.64,
+  "fold_se": 0.001752300472789918,
+  "issue": 1345,
+  "knn": {
+    "cosine": {
+      "acc_at_k": {
+        "1": 0.3035563082133785,
+        "5": 0.5325994919559696,
+        "10": 0.6329381879762913
+      },
+      "chance_at_k": {
+        "1": 0.00021168501270110075,
+        "5": 0.0010584250635055038,
+        "10": 0.0021168501270110076
+      },
+      "median_rank": 4.0,
+      "metric": "cosine",
+      "mrr": 0.41435838014111775,
+      "n": 4724,
+      "n_pool": 4724
+    },
+    "euclidean": {
+      "acc_at_k": {
+        "1": 0.26989839119390346,
+        "5": 0.4968247248094835,
+        "10": 0.5899661303979679
+      },
+      "chance_at_k": {
+        "1": 0.00021168501270110075,
+        "5": 0.0010584250635055038,
+        "10": 0.0021168501270110076
+      },
+      "median_rank": 6.0,
+      "metric": "euclidean",
+      "mrr": 0.3814549938582689,
+      "n": 4724,
+      "n_pool": 4724
+    }
+  },
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T05:15:13Z"
+  },
+  "n_train_min": 3779,
+  "n_train_per_fold": [
+    3779,
+    3779,
+    3779,
+    3779,
+    3780
+  ],
+  "published_claim_ref": "eval_results/issue_1345/conversation_paired_stories_assistant/cells_R_base_r2_context.json @ L19",
+  "r2_per_fold": [
+    0.5812399490501519,
+    0.5900662798478921,
+    0.5866484051607147,
+    0.5809749358731976,
+    0.5828042980123767
+  ],
+  "r2_pooled": 0.5843117751537238,
+  "resume_key": {
+    "arm": "inner_group_cv",
+    "cell_id": "conversation_paired_stories_assistant__R_base_r2_context",
+    "issue": 1345,
+    "selector_regime": "inner_group_cv",
+    "store_rev": "e151f8fd30a466cd9e2f05b9b86cf6dde76bca74+allow:matched:77f73466e0a7a3d7f29f31aaa8f0dd9372431045"
+  },
+  "selected_lambda_per_fold": [
+    3162.2776601683795,
+    3162.2776601683795,
+    3162.2776601683795,
+    3162.2776601683795,
+    3162.2776601683795
+  ],
+  "selector_config": {
+    "gcv_dof_cap": 0.9,
+    "lambda_selection": "inner-group-cv",
+    "legacy_unguarded": false
+  },
+  "tripwire": {
+    "d": 3584,
+    "estimator_degenerate_suspect": false,
+    "n_train": 3779,
+    "reasons": []
+  },
+  "variant": "conversation_paired_stories_assistant"
+}

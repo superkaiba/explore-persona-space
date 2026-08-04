@@ -1,0 +1,56 @@
+{
+ "evil": {
+  "budget_800_rejudged_subset": {
+   "n_items_seen": 804,
+   "n_complete_3_draws": 526,
+   "frac_complete": 0.654228855721393,
+   "icc_1_1": 0.9417452210813807,
+   "icc_1_3": 0.9797971312591119,
+   "alpha": 0.9416755612697808,
+   "score_mean": 53.156527249683144,
+   "within_item_sd_mean": 4.775906183920059
+  },
+  "budget_400_rest_of_corpus": {
+   "n_items_seen": 52526,
+   "n_complete_3_draws": 36825,
+   "frac_complete": 0.7010813692266687,
+   "icc_1_1": 0.9683081902903302,
+   "icc_1_3": 0.9892080525330982,
+   "alpha": 0.9683076347211125,
+   "score_mean": 12.186793392170173,
+   "within_item_sd_mean": 1.474989248020538
+  },
+  "budget_400_SAME_items_pre_rejudge": {
+   "n_complete": 0,
+   "note": "too few complete-3-draw items"
+  },
+  "caveat": "the 800-token subset is NOT random \u2014 it is the truncation-affected subset (longer judge rationales), so a 400-vs-800 difference confounds token budget with item difficulty. The paired row (SAME items at 400 pre-rejudge) is the controlled comparison, but its complete-3-draw set is itself truncation-selected."
+ },
+ "sycophancy": {
+  "budget_800_rejudged_subset": {
+   "n_items_seen": 10311,
+   "n_complete_3_draws": 6287,
+   "frac_complete": 0.60973717389196,
+   "icc_1_1": 0.7657876977308095,
+   "icc_1_3": 0.9074835761600997,
+   "alpha": 0.7657686763664338,
+   "score_mean": 27.526430199883357,
+   "within_item_sd_mean": 5.7755870174077595
+  },
+  "budget_400_rest_of_corpus": {
+   "n_items_seen": 76209,
+   "n_complete_3_draws": 76177,
+   "frac_complete": 0.9995801020876799,
+   "icc_1_1": 0.8777320307399764,
+   "icc_1_3": 0.9556270862069043,
+   "alpha": 0.8777310915255422,
+   "score_mean": 19.198148172458005,
+   "within_item_sd_mean": 2.9080359896989845
+  },
+  "budget_400_SAME_items_pre_rejudge": {
+   "n_complete": 0,
+   "note": "too few complete-3-draw items"
+  },
+  "caveat": "the 800-token subset is NOT random \u2014 it is the truncation-affected subset (longer judge rationales), so a 400-vs-800 difference confounds token budget with item difficulty. The paired row (SAME items at 400 pre-rejudge) is the controlled comparison, but its complete-3-draw set is itself truncation-selected."
+ }
+}

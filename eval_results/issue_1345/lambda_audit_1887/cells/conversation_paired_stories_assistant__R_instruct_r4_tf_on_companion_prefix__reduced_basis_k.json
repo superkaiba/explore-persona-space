@@ -1,0 +1,97 @@
+{
+  "arm": "reduced_basis_k",
+  "cell_id": "conversation_paired_stories_assistant__R_instruct_r4_tf_on_companion_prefix",
+  "committed_r2": -0.24953073998605624,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 0.17,
+  "fold_se": 0.0100297958918437,
+  "issue": 1345,
+  "k": 46,
+  "k_rule": "min(1024, floor(n_train_min/2), d_in)",
+  "knn": {
+    "cosine": {
+      "acc_at_k": {
+        "1": 0.017094017094017096,
+        "5": 0.05128205128205128,
+        "10": 0.08547008547008547
+      },
+      "chance_at_k": {
+        "1": 0.008547008547008548,
+        "5": 0.042735042735042736,
+        "10": 0.08547008547008547
+      },
+      "median_rank": 55.0,
+      "metric": "cosine",
+      "mrr": 0.0539435694312762,
+      "n": 117,
+      "n_pool": 117
+    },
+    "euclidean": {
+      "acc_at_k": {
+        "1": 0.008547008547008548,
+        "5": 0.05982905982905983,
+        "10": 0.10256410256410256
+      },
+      "chance_at_k": {
+        "1": 0.008547008547008548,
+        "5": 0.042735042735042736,
+        "10": 0.08547008547008547
+      },
+      "median_rank": 59.0,
+      "metric": "euclidean",
+      "mrr": 0.0492321599015167,
+      "n": 117,
+      "n_pool": 117
+    }
+  },
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T05:52:03Z"
+  },
+  "n_train_min": 93,
+  "n_train_per_fold": [
+    93,
+    93,
+    94,
+    94,
+    94
+  ],
+  "published_claim_ref": "eval_results/issue_1345/conversation_paired_stories_assistant/matched_row/cells_R_instruct_r4_tf_on_companion_prefix.json @ L19",
+  "r2_per_fold": [
+    -0.020071548080796475,
+    -0.05484609526427908,
+    -0.03634670490305636,
+    -0.018165647109153138,
+    -0.07007241858080682
+  ],
+  "r2_pooled": -0.040424611576279856,
+  "resume_key": {
+    "arm": "reduced_basis_k",
+    "cell_id": "conversation_paired_stories_assistant__R_instruct_r4_tf_on_companion_prefix",
+    "issue": 1345,
+    "selector_regime": "reduced_basis_k",
+    "store_rev": "1ef6def108678c458a03d190c8105ced55fe58a7+allow:matched:77f73466e0a7a3d7f29f31aaa8f0dd9372431045"
+  },
+  "selected_lambda_per_fold": [
+    316.22776601683796,
+    316.22776601683796,
+    316.22776601683796,
+    316.22776601683796,
+    316.22776601683796
+  ],
+  "selector_config": {
+    "gcv_dof_cap": null,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": false
+  },
+  "tripwire": {
+    "d": 3584,
+    "estimator_degenerate_suspect": false,
+    "n_train": 93,
+    "reasons": []
+  },
+  "variant": "conversation_paired_stories_assistant"
+}

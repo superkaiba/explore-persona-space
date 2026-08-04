@@ -16,3 +16,9 @@ The post-Edit formatter hook runs ruff with F401: a top-level `import X` with no
 - Round-N revisions → an Edit adding imports followed by a separate Edit adding usages gets stripped in between; put both in one Edit or extract a helper carrying imports + usages together (#601 r2).
 - Top-level import SHADOWED by function-local imports of the same name is genuinely unused to F401 → remove the lazy local imports FIRST (or same batch), then add the top import (#606 r3).
 - ALWAYS finish with `ruff check` + `ruff format` to confirm new imports survived — your Edit succeeding doesn't mean the format pass kept it.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Ruff strips unused imports](feedback_ruff_strips_unused_imports.md) — post-Edit hook removes reference-less imports; land import + usage together; ruff check after. 7 orderings catalogued.

@@ -523,8 +523,11 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   `ans_uhdr_max`, `sw_eng_C1`, `cond_4`; 2-segment all-alpha metric names
   like `log_prob` stay allowed), bare hypothesis codes (`H3`/`H1c` —
   single digit + optional single lowercase letter, case-sensitive, so
-  `H100`/`H200` never match), or slot-family
-  codes (`f16`/`l16` only, #1072). Plain-English condition names are the
+  `H100`/`H200` never match), slot-family
+  codes (`f16`/`l16` only, #1072), or bare candidate/panel codes
+  (`P1`/`P7`/`M4`/`P3b` — same single-digit + optional-lowercase-letter
+  shape as the H-code class, so `P100`/`M40` GPU names and lowercase
+  `p97.5`/`p50` percentiles never match, #1900). Plain-English condition names are the
   project rule end to end; config slugs belong in the Repro config row /
   provenance keys. Scans string VALUES only (provenance-keyed subtrees
   pruned via `_META_PROVENANCE_KEYS`) plus dict keys containing internal
@@ -566,7 +569,9 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   untracked at branch HEAD; the loss was invisible to every check (#964).
 - **check 30** (`check_hf_file_count_claims`, WARN): numeric file-count
   claims adjacent to hex-pinned HF `/tree/<sha>` markdown links ("N files" /
-  "N shards" inside the link text; a parenthetical opening with the
+  "N shards" / "N chunks" / "N sidecars", each with one optional modifier
+  token between count and noun — "3 activation chunks" / "3 chunk files",
+  the #1901 footer shapes, #1936 — inside the link text; a parenthetical opening with the
   count-noun immediately before the link; or, in a parenthetical
   immediately AFTER the link, the two anchored phrases "N files
   (listed )?at the pinned revision" — whole-prefix — and "N files
@@ -594,9 +599,11 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   folder entries excluded. Per-namespace-qualified counts are excluded
   from the link-text / paren-before-link patterns by a negative lookahead
   (wrong whole-prefix semantics). Mismatch → WARN, never FAIL (there is no
-  `passed=False` path); shard claims are one-sided (WARN only when
-  claimed > file count — a shards prefix legitimately also holds a
-  manifest/sidecar). Every non-definitive probe outcome (offline fence /
+  `passed=False` path); subset-noun (shard/chunk/sidecar) and
+  modifier-qualified claims are one-sided (WARN only when claimed > file
+  count — a shards prefix legitimately also holds a manifest/sidecar, and
+  a modifier restricts the counted class to a subset of the prefix's
+  files; #1936). Every non-definitive probe outcome (offline fence /
   missing `huggingface_hub` / 429 / network error / `not_found` /
   page-time cap / the per-body `_HF_COUNT_MAX_PROBES` cap, shared across
   whole-prefix + per-namespace probes) surfaces as an `unverified` note on
@@ -773,25 +780,41 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   critic round. (Numbered 36 because 28-35 are taken by the
   generation-agnostic checks.)
 
-- **check 37** (`check_footer_reuse_bullets_pinned`, WARN, v4-only, #1370):
-  every footer `- Reused ... from [#M](...)` bullet carries a
-  revision/path pin — the body->pin sibling of check 35's metadata->body
-  direction (#1315: two unpinned `- Reused ... from [#1090]` bullets were
-  invisible to check 35's metadata-side trigger and survived to the LM
-  critic). Bullet-scoped satisfiers: a revision-URL segment
+- **check 37** (`check_footer_reuse_bullets_pinned`, WARN, v4-only, #1370;
+  widened #1907): every footer `- Reused` bullet that REFERENCES another
+  issue carries a revision/path pin AND the canonical
+  `- Reused ... from [#M](...)` form — the body->pin sibling of check
+  35's metadata->body direction (#1315: two unpinned
+  `- Reused ... from [#1090]` bullets were invisible to check 35's
+  metadata-side trigger and survived to the LM critic). Match set
+  (widened after incidents #1739/#1900): a bullet enters when it matches
+  the canonical `from [#M](` clause OR references an issue anywhere —
+  a `[#M](...)` link, a bare `#M` token, a `/tasks/M` fragment, or an
+  `issue<M>_` path token (`_REUSED_ISSUE_TOKEN_RE`); a `- Reused` bullet
+  with NO issue reference (same-task round-reuse) stays out of scope.
+  Two WARN arms, one CheckResult: the PIN arm (bullet-scoped satisfiers
+  UNCHANGED: a revision-URL segment
   (`/tree|resolve|commit|blob/<7-40 hex>`), `@ <rev>` (optional backtick),
   a committed `eval_results/issue_<M>/` path, a SPEC-sanctioned WandB
   `/runs/<id>` URL, or a bare letter-bearing >=7-hex token; the
-  from-link's own `#M` / `/tasks/M` NEVER satisfies (vacuity guard —
-  every trigger bullet carries it by construction). WARN uniformly
+  from-link's own `#M` / `/tasks/M` NEVER satisfies — vacuity guard),
+  and the FORM arm (an issue-referencing bullet lacking the canonical
+  `from [#M](...)` clause — #1739: bare `#779 ... rev 037fcbb`, pin
+  present but not independently resolvable/linked; #1900: links present
+  with an intervening noun phrase after `from`). WARN uniformly
   (corpus 2026-07-15: 40 trigger bullets across committed v4 bodies,
-  4 unpinned — #810/#811/#833/#1112, all `awaiting_promotion`; a FAIL
-  would newly block their re-verifies). Body-text-only: lives in the
-  body-only CHECKS list, runs on stdin bodies, and is deliberately NOT
-  fenced by `EPM_VERIFY_BODY_NO_EVAL_SCAN` (no eval scan to fence).
-  Documented false-negative residual: a bullet quoting the CURRENT
-  task's own code SHA satisfies the bare-hex form — LM Lens 5 keeps
-  owning semantic pin-correctness.
+  4 unpinned — #810/#811/#833/#1112, all `awaiting_promotion`;
+  re-calibrated 2026-08-01: widened match set 60 bullets, form arm fires
+  on exactly 2 — the #1900 + #1639 incident bullets — pin arm adds 0).
+  Body-text-only: lives in the body-only CHECKS list, runs on stdin
+  bodies, and is deliberately NOT fenced by
+  `EPM_VERIFY_BODY_NO_EVAL_SCAN` (no eval scan to fence). Documented
+  residuals (LM Lens 5 keeps owning semantic pin-correctness): a bullet
+  quoting the CURRENT task's own code SHA satisfies the bare-hex pin
+  form; a same-task bullet citing its OWN `issue<N>_` path / `#<N>`
+  token fires a noise form WARN (body-only check, no issue-number
+  parameter — accepted residual); non-`- Reused`-anchored phrasings
+  (`Re-used`, `Inherited ... from [#M]`) stay out of scope.
 
 - **check 38** (`check_linked_not_embedded_figures`, WARN, v4-only, #1371): a
   non-image markdown LINK in the footer-truncated v4 `## Results` section
@@ -1012,6 +1035,92 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   alpha=2 lattice (the H1-carrying headline) as a `> **Figure.**`-captioned
   GFM table with zero inline image; the mechanical verifier read PASS and
   a round-1 LM REVISE was burned.
+
+- **check 49** (`check_v4_result_figure_cardinality`, WARN, v4-only,
+  #1879): a single `### <result>` section embedding MORE THAN ONE inline
+  figure (markdown `![...]` plus HTML `<img>` embeds; fenced code +
+  `<details>` bodies excluded) with NO pair evidence — no embedded
+  basename matching the `_PER_UNIT_FIG_RE` companion-naming convention,
+  and no declared-pair idiom (per-unit vocabulary, raw-alongside,
+  unbinned/low-level, companion/counterpart) in the figures' alt text or
+  the section's blockquote caption lines — draws a WARN naming the H3,
+  the figure count, and the figure basenames. The idiom scan deliberately
+  EXCLUDES general section prose (the origin section's what-is-plotted
+  beat says "per-question" as routine SPEC-mandated disclosure prose, so
+  whole-section matching silences the exact incident shape); the
+  clean-result-critic Lens 9 one-result-one-figure rule stays the
+  substantive owner. WARN never FAILs — the sanctioned raw+processed /
+  aggregate+per-unit pair is the COMMON conforming 2-figure case.
+  Incident: task #1769's fu1 re-gate shipped `fig_dose_ladder.png` +
+  `fig_alpha3_lattice.png` — two distinct analyses — under one
+  `### <result>`; the verifier read PASS and only the LM critic caught it.
+
+- **check 50** (`check_repro_artifacts_clean`, WARN, generation-agnostic,
+  #1989; incident #1768): `(ood_)eval_results/issue_<K>/...`-rooted
+  directory references parsed out of the fence-stripped repro region (v4
+  `**Repro:**` footer / v3+v2 `## Reproducibility` H2) are each probed
+  with a path-scoped `git status --porcelain -u -- <dir>` at the resolved
+  (main-pinned) repo root; untracked (`??`) or modified-class entries
+  draw ONE WARN naming per-dir entry counts + up to 10 entry names each
+  with their porcelain status. WARN-only by design — it can NEVER FAIL
+  (gate-time `--file` invocations run on staged candidates with no status
+  context, and the user-chat inline free-analysis carve-out legitimately
+  dirties `eval_results/issue_<N>/` mid-round until the same-turn
+  commit); default porcelain excludes gitignored files, which IS the
+  required npz-convention tolerance (no `--ignored`). Fail-soft per dir:
+  a git probe failure degrades to a "probe failure; not assessed" skip
+  note, never a WARN. Two deliberate scope-outs: (a) only the resolved
+  repo root is probed — worktree copies of the same dirs are invisible;
+  (b) a footer naming only HF URLs (no in-repo `eval_results/...` token)
+  is a vacuous PASS — the natural future widening is `--issue`-mode
+  probing of the top-level `eval_results/issue_<N>/` dir. Incident:
+  #1768's parked body sat beside 16 untracked + 4 modified
+  `eval_results/issue_1768/map_augmentation/operator_kv/` result files
+  with zero mechanical signal (check 29 covers figures only; check 15
+  reads git TREES, never the working tree).
+
+- **check 51** (`check_v4_dropped_condition_placement`, FAIL/WARN, v4-only,
+  #2017; incident #1947): a `## Methodology` declaration that a planned
+  condition was DROPPED AT A GATE — a sentence matching
+  `was/were dropped|removed|excluded|cut at|by … gate|criterion|floor`
+  on the section's prose layer (fenced code + `<details>` bodies +
+  blockquote lines stripped; the span never crosses `.`/`;`/newline, so
+  judge drop-rate prose with a gate/floor mention in a later sentence
+  never matches) — must name the dropped condition in `## Takeaways` AND
+  in at least one `### <result>` block under `## Results` (CLAUDE.md
+  After-Every-Experiment item 8(a)). The name is extracted best-effort:
+  (1) a parenthetical immediately preceding the verb group
+  (`… (sycophancy) was dropped …`), else (2) the last
+  backtick/bold/italic-wrapped token in the subject clause — colon-ended
+  slot labels (`**Design:**`) and mostly-digit spans (`232 of 240`) are
+  rejected as candidates, falling through to the WARN path rather than a
+  junk-name FAIL (#2017 r2). FAIL when a
+  confidently-extracted name is missing from either placement (detail
+  quotes the declaring sentence, truncated ~120 chars, and names the
+  missing placement(s)); WARN when a declaration is detected but no name
+  is extractable — surface, never block on a failed heuristic
+  extraction. Vacuous PASS on v3/v2/legacy bodies (forward-only) and on
+  v4 bodies with no drop-at-gate language. Incident #1947: the sycophancy
+  yield-gate drop was declared only in Methodology `**Design:**`; every
+  existing check passed and the missing Takeaways/result placements were
+  caught manually by the critic round.
+
+- **judge drop-line population reconciliation**
+  (`check_judge_drop_line_population`, FAIL/WARN, v3+v4, #1776 incident /
+  task #1881; unnumbered — dispatched outside CHECKS next to the #732
+  judge-error-denominator check, same precedent): a judge-health drop-line
+  sentence `"<X> content drops [and <T> transport losses] of|across <Y>
+  draws"` in the fence-stripped Methodology+Results region is reconciled
+  against schema-keyed judge-artifact populations (dict leaves carrying
+  numeric `content_drops` + `valid_draws`) under `eval_results/issue_<N>/`.
+  FAIL only on the PROVABLY CROSSED signature — X matches one population's
+  numerator while Y matches a DIFFERENT population's denominator with no
+  single population matching both (the #1776 incident: the all-arms drop
+  numerator 192/67,500 quoted over the steered-only denominator 56,250);
+  WARN when the pair reconciles against nothing; graceful PASS on
+  legacy/v2 bodies, no drop-line, unknown issue, the
+  `EPM_VERIFY_BODY_NO_EVAL_SCAN=1` fence, an unresolved eval root, or no
+  leaf-bearing artifact. Worst verdict wins across multiple claims.
 
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
@@ -2552,6 +2661,27 @@ _PER_UNIT_EXEMPT_PHRASE_RE = re.compile(r"not\s+embedded|superseded\s+by", re.IG
 # PAREN|LINKTEXT in-detail-tag precedent).
 _PER_UNIT_NAMED_CLASS = "companion-named-not-embedded"
 
+# Check 49: declared-pair idiom for the sanctioned >1-figure-per-result
+# exception (the raw+processed / aggregate+per-unit pair — SPEC.md
+# § "Low-level data plot behind every aggregate"). Scanned ONLY over
+# figure-adjacent text — each inline figure's ALT text plus the section's
+# blockquote (`> `) caption lines — NEVER general section prose: the
+# origin #1769 section's what-is-plotted beat says "per-question" as
+# routine SPEC-mandated disclosure prose, so a whole-section scan would
+# silence the exact incident shape (#1879). Four alternates: a per-<unit>
+# vocabulary hit (separator REQUIRED, unlike `_PER_UNIT_FIG_RE`'s
+# optional one — this scans prose reads, not filename stems), a bounded
+# raw-alongside idiom, unbinned / low-level, and a bare
+# companion / counterpart. Lookbehind stops mid-word matches (the
+# `_PER_UNIT_FIG_RE` convention).
+_DECLARED_PAIR_RE = re.compile(
+    r"(?<![a-z0-9])per[-_ ](unit|question|context|cell|pair|seed|source|point)s?\b"
+    r"|\braw\b[^.\n]{0,60}\b(alongside|counterpart|version|view|scatter)\b"
+    r"|\b(unbinned|low[- ]level)\b"
+    r"|\b(companion|counterpart)\b",
+    re.IGNORECASE,
+)
+
 # Check 38: any markdown link (image embeds are masked out before this
 # scans, so no `!`-lookbehind is needed); link text tolerates `]` not
 # followed by `(` — the same tolerance `_IMAGE_RE` uses — and may be
@@ -3253,6 +3383,121 @@ def check_figure_caption(body: str) -> CheckResult:
         else "no blockquote captions under `## Results` to check"
     )
     return CheckResult(name, True, detail)
+
+
+def _v4_block_inline_figures(block_lines: list[str]) -> list[tuple[str, str]]:
+    """Return [(url, alt_text)] for every inline figure embed in a
+    `### <result>` block — markdown `![alt](url)` images (`_IMAGE_RE`)
+    plus HTML `<img src=…>` embeds (the check-38/#1510 symmetric-embed
+    doctrine: a body that embeds via raw HTML gets the same treatment).
+    Callers pass block lines already run through `_prose_layer` (fenced
+    code + `<details>` bodies stripped), so no fence state is threaded
+    here.
+    """
+    figures: list[tuple[str, str]] = []
+    for ln in block_lines:
+        for m in _IMAGE_RE.finditer(ln):
+            url = m.group(1)
+            full = m.group(0)
+            # full == "![" + alt + "](" + url + ")" — slice the alt out of
+            # the match instead of duplicating `_IMAGE_RE` with an
+            # alt-capturing twin (one source for the image grammar).
+            alt = full[2 : len(full) - len(url) - 3]
+            figures.append((url, alt))
+        for tag_m in re.finditer(r"<img\b[^>]*", ln, re.IGNORECASE):
+            tag = tag_m.group(0)
+            src_m = re.search(r"src\s*=\s*[\"']([^\"']+)[\"']", tag, re.IGNORECASE)
+            if src_m is None:
+                continue
+            alt_m = re.search(r"alt\s*=\s*[\"']([^\"']*)[\"']", tag, re.IGNORECASE)
+            figures.append((src_m.group(1), alt_m.group(1) if alt_m else ""))
+    return figures
+
+
+def _fig_basename(url: str) -> str:
+    """Basename of a figure URL with any query string / fragment stripped
+    (`…png?raw=1` → `…png`), for per-unit stem matching + WARN naming."""
+    return url.split("?", 1)[0].split("#", 1)[0].rstrip("/").rsplit("/", 1)[-1]
+
+
+def check_v4_result_figure_cardinality(body: str) -> CheckResult:
+    """Check 49 (v4 only, WARN): a single `### <result>` section under
+    `## Results` embedding MORE THAN ONE inline figure with NO pair
+    evidence draws a WARN naming the H3 heading, the figure count, and
+    the figure basenames.
+
+    Pair evidence (either silences): (a) any embedded figure basename
+    matches the `_PER_UNIT_FIG_RE` per-unit companion naming convention;
+    (b) `_DECLARED_PAIR_RE` matches the FIGURE-ADJACENT text ONLY — the
+    union of each inline figure's ALT text and the section's blockquote
+    (`> `) caption lines — NEVER the section's general prose. The
+    caption/alt scoping is load-bearing: the origin #1769 fu1 dose-ladder
+    section's what-is-plotted beat contains "per-question" as routine
+    SPEC-mandated disclosure prose, so whole-section matching silences
+    the exact incident shape; SPEC's own pair rule places the pair's
+    declaration in the figure unit (alt self-description + shared
+    caption) (#1879).
+
+    WARN, NEVER FAIL: the sanctioned raw+processed / aggregate+per-unit
+    pair (SPEC.md § "Low-level data plot behind every aggregate") is the
+    COMMON conforming 2-figure case — for aggregate results the pair is
+    REQUIRED — and pair detection from text is necessarily heuristic, so
+    a FAIL here would block `set-body` on conforming bodies. The
+    clean-result-critic Lens 9 one-result-one-figure rule stays the
+    substantive owner (a silenced true violation falls to it). Incident:
+    #1769's fu1 re-gate shipped `fig_dose_ladder.png` +
+    `fig_alpha3_lattice.png` — two distinct analyses — under one
+    `### <result>`; the verifier read PASS and only the LM critic caught
+    it. Scans the `_prose_layer` (fenced code + `<details>` stripped, so
+    a quoted example embed never counts); the preamble before the first
+    `### ` heading is not a result section and is never flagged. PASSes
+    vacuously on v3 / v2 / legacy bodies (forward-only).
+    """
+    label = "One inline figure per result, or a declared pair (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    results = _v4_results_body(body)
+    if results is None:
+        return CheckResult(label, True, "## Results missing — check 2 will report")
+    prose = _prose_layer(results)
+    result_h3s = _collect_tldr_h3_names(prose)
+    if not result_h3s:
+        return CheckResult(label, True, "no `### <result>` headings — check 3 will report")
+    plines = prose.splitlines()
+    flagged: list[str] = []
+    for idx, (name, line_no) in enumerate(result_h3s):
+        end_line = result_h3s[idx + 1][1] if idx + 1 < len(result_h3s) else len(plines)
+        block = plines[line_no + 1 : end_line]
+        figures = _v4_block_inline_figures(block)
+        if len(figures) < 2:
+            continue
+        basenames = [_fig_basename(url) for url, _alt in figures]
+        if any(_PER_UNIT_FIG_RE.search(b) for b in basenames):
+            continue  # pair evidence (a): a per-unit companion stem
+        caption_lines = [ln for ln in block if ln.lstrip().startswith(">")]
+        adjacent = "\n".join([alt for _url, alt in figures] + caption_lines)
+        if _DECLARED_PAIR_RE.search(adjacent):
+            continue  # pair evidence (b): declared pair in alt / caption text
+        flagged.append(f"'{name[:48]}' embeds {len(figures)} figures ({', '.join(basenames)})")
+    if flagged:
+        preview = "; ".join(flagged[:2]) + (" …" if len(flagged) > 2 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(flagged)} `### <result>` section(s) embed >1 inline figure with no pair "
+            "evidence — no per-unit companion basename, and no declared-pair idiom in the "
+            "figures' alt text / blockquote captions. The lens-9 one-result-one-figure rule "
+            "allows a second figure only as the sanctioned raw+processed / aggregate+per-unit "
+            "pair (SPEC.md § Low-level data plot behind every aggregate): declare the pair in "
+            "the caption/alt, or split the extra analysis into its own `### <result>` "
+            f"(substantive owner: clean-result-critic Lens 9): {preview}",
+            is_warn=True,
+        )
+    return CheckResult(
+        label,
+        True,
+        f"all {len(result_h3s)} `### <result>`(s) scanned — no unpaired multi-figure section",
+    )
 
 
 def is_v2_nested_design(body: str) -> bool:
@@ -6016,6 +6261,278 @@ def check_judge_error_denominator(
     )
 
 
+# ─── Judge drop-line population reconciliation (#1776 incident, task #1881) ─
+
+# A judge-health drop-line sentence: "<X> content drops [and <T> transport
+# losses] of|across <Y> draws". Grounded against the observed corpus
+# phrasings (clarifier scan 2026-08-01): "192 content drops of 56,250 draws
+# (0.34% ...)", "0 content drops and 0 transport losses of 26,600 draws",
+# the `across` variant, and "342 content drops of 121,250 draws overall".
+# A denominator-less mention ("1,938 content drops (1.6%)") carries no
+# population pair and deliberately does NOT match. Singular "content drop" /
+# "transport loss" tolerated.
+_JUDGE_DROP_LINE_RE = re.compile(
+    r"(?P<drops>\d[\d,]*)\s+content\s+drops?"
+    r"(?:\s+and\s+(?P<transport>\d[\d,]*)\s+transport\s+loss(?:es)?)?"
+    r"\s+(?:of|across)\s+(?P<draws>\d[\d,]*)\s+draws",
+    re.IGNORECASE,
+)
+
+
+def _drop_line_int(token: str) -> int:
+    """Parse a comma-grouped integer claim token ('56,250' -> 56250)."""
+    return int(token.replace(",", ""))
+
+
+def _iter_drop_population_leaves(
+    node: object,
+    path: tuple[str, ...],
+    leaves: list[tuple[tuple[str, ...], int, int, int]],
+) -> None:
+    """Recursive descent collecting `(key_path, content_drops, valid_draws,
+    transport_losses)` LEAF tuples: a leaf is any dict carrying BOTH numeric
+    `content_drops` AND `valid_draws` (bools excluded; `transport_losses`
+    optional — 0 when absent/non-numeric). Descent STOPS at a leaf (no
+    double-counting) — the `_scan_issue_judge_errors` convention. List
+    elements inherit the parent key path (no index segment)."""
+
+    def _num(v: object) -> bool:
+        return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+    if isinstance(node, dict):
+        cd = node.get("content_drops")
+        vd = node.get("valid_draws")
+        if _num(cd) and _num(vd):
+            tl = node.get("transport_losses")
+            leaves.append((path, int(cd), int(vd), int(tl) if _num(tl) else 0))
+            return
+        for k, v in node.items():
+            _iter_drop_population_leaves(v, (*path, str(k)), leaves)
+    elif isinstance(node, list):
+        for v in node:
+            _iter_drop_population_leaves(v, path, leaves)
+
+
+def _drop_population_candidates(
+    leaves: list[tuple[tuple[str, ...], int, int, int]], label: str
+) -> list[dict]:
+    """Aggregate one file's leaf tuples into candidate populations: the
+    whole-file total, the baseline-excluded total (leaves whose key path has
+    NO segment starting with `baseline`, case-insensitive — the
+    "steered-only" split; added only when it differs from the whole), and
+    one total per key-path PREFIX holding >=1 leaf (per-trait / per-arm
+    subtree populations). Candidate dict:
+    ``{label, drops, draws, draws_vt}`` with ``draws`` =
+    sum(content_drops + valid_draws) and ``draws_vt`` additionally adding
+    transport_losses (identical when transport == 0)."""
+
+    def _agg(subset: list[tuple[tuple[str, ...], int, int, int]], sub_label: str) -> dict:
+        return {
+            "label": sub_label,
+            "drops": sum(cd for _p, cd, _vd, _tl in subset),
+            "draws": sum(cd + vd for _p, cd, vd, _tl in subset),
+            "draws_vt": sum(cd + vd + tl for _p, cd, vd, tl in subset),
+        }
+
+    out = [_agg(leaves, f"{label} (all leaves)")]
+    non_baseline = [
+        lf for lf in leaves if not any(seg.lower().startswith("baseline") for seg in lf[0])
+    ]
+    if non_baseline and len(non_baseline) != len(leaves):
+        out.append(_agg(non_baseline, f"{label} (baseline-excluded)"))
+    by_prefix: dict[tuple[str, ...], list[tuple[tuple[str, ...], int, int, int]]] = {}
+    for lf in leaves:
+        for i in range(1, len(lf[0]) + 1):
+            by_prefix.setdefault(lf[0][:i], []).append(lf)
+    for prefix, subset in sorted(by_prefix.items()):
+        if len(subset) == len(leaves):
+            continue  # identical to the whole-file total — skip the duplicate
+        out.append(_agg(subset, f"{label} [{'.'.join(prefix)}]"))
+    return out
+
+
+def _scan_judge_drop_populations(repo: Path, issue: int) -> list[dict] | None:
+    """Scan committed `repo/eval_results/issue_<N>/**/*.json` for judge
+    drop-population leaves — SCHEMA-keyed (dicts with numeric
+    `content_drops` + `valid_draws`), NOT name-keyed on `judge_scores*.json`
+    (the identical leaf schema ships under other filenames, e.g. #1776's
+    `judge_swap.json`). Returns the candidate population list (per-file
+    whole / baseline-excluded / per-subtree totals plus the cross-file
+    union when >1 file carries leaves, deduped on identical
+    `(drops, draws, draws_vt)` triples), or None when the eval dir is
+    absent / no leaf-bearing file exists / the
+    `EPM_VERIFY_BODY_NO_EVAL_SCAN=1` fence is set (graceful skip).
+
+    Corrupt / unreadable / oversize (`_REUSE_SCAN_MAX_BYTES` stat guard)
+    JSONs are skipped silently (the `_scan_issue_judge_errors` convention —
+    never crash the gate); a cheap substring pre-filter avoids `json.loads`
+    on files that cannot carry the leaf schema."""
+    if os.environ.get("EPM_VERIFY_BODY_NO_EVAL_SCAN") == "1":
+        return None
+    eval_dir = repo / "eval_results" / f"issue_{issue}"
+    if not eval_dir.is_dir():
+        return None
+
+    candidates: list[dict] = []
+    file_totals: list[tuple[int, int, int]] = []  # per-file whole (drops, draws, draws_vt)
+    nb_totals: list[tuple[int, int, int]] = []  # per-file baseline-excluded fallback=whole
+    for path in sorted(eval_dir.rglob("*.json")):
+        try:
+            if path.stat().st_size > _REUSE_SCAN_MAX_BYTES:
+                continue  # oversize guard — never page a 100+ MB blob at gate time
+            text = path.read_text()
+        except (OSError, UnicodeDecodeError):
+            continue
+        if '"content_drops"' not in text or '"valid_draws"' not in text:
+            continue
+        try:
+            payload = json.loads(text)
+        except json.JSONDecodeError:
+            continue  # a corrupt artifact must not crash the gate
+        leaves: list[tuple[tuple[str, ...], int, int, int]] = []
+        _iter_drop_population_leaves(payload, (), leaves)
+        if not leaves:
+            continue
+        file_cands = _drop_population_candidates(leaves, str(path.relative_to(repo)))
+        candidates.extend(file_cands)
+        whole = file_cands[0]
+        nb = next((c for c in file_cands if c["label"].endswith("(baseline-excluded)")), whole)
+        file_totals.append((whole["drops"], whole["draws"], whole["draws_vt"]))
+        nb_totals.append((nb["drops"], nb["draws"], nb["draws_vt"]))
+
+    if not candidates:
+        return None
+    if len(file_totals) > 1:
+        for tag, totals in (("all leaves", file_totals), ("baseline-excluded", nb_totals)):
+            candidates.append(
+                {
+                    "label": f"cross-file union ({tag})",
+                    "drops": sum(t[0] for t in totals),
+                    "draws": sum(t[1] for t in totals),
+                    "draws_vt": sum(t[2] for t in totals),
+                }
+            )
+    # Dedup identical (drops, draws, draws_vt) triples (first label wins) —
+    # keeps FAIL/WARN messages readable; matching is value-exact either way.
+    seen: set[tuple[int, int, int]] = set()
+    deduped: list[dict] = []
+    for c in candidates:
+        key = (c["drops"], c["draws"], c["draws_vt"])
+        if key not in seen:
+            seen.add(key)
+            deduped.append(c)
+    return deduped
+
+
+def check_judge_drop_line_population(
+    body: str,
+    *,
+    issue: int | None = None,
+    eval_root: Path | None = None,
+    body_source_path: Path | None = None,
+) -> CheckResult:
+    """FAIL when a judge-health drop-line sentence (`"<X> content drops
+    [and <T> transport losses] of|across <Y> draws"`) in a v3/v4 body's
+    fence-stripped Methodology+Results region asserts a PROVABLY CROSSED
+    population pair — X matches one committed judge-artifact population's
+    numerator while Y matches a DIFFERENT population's denominator, with NO
+    single population matching both (the #1776 incident: the all-arms drop
+    numerator, 192 of 67,500, quoted over the steered-only draw denominator
+    56,250). WARN when the claimed pair reconciles against no candidate at
+    all — an unenumerated honest subset is a plausible population, so only
+    the crossed signature earns a FAIL (never a new hard-FAIL on absence of
+    evidence).
+
+    Candidate populations come from `_scan_judge_drop_populations`
+    (schema-keyed leaves; per-file whole / baseline-excluded / per-subtree
+    totals + the cross-file union); Y is accepted as drops+valid OR
+    drops+valid+transport (integer-exact after comma-stripping). Verdict
+    ladder (worst across claims wins — any FAIL > any WARN > PASS):
+    PASS-skip on legacy/v2 bodies, no drop-line asserted, issue unknown
+    (stdin), the `EPM_VERIFY_BODY_NO_EVAL_SCAN=1` fence, eval root
+    unresolved (is_warn, the #732 convention), or no leaf-bearing artifact.
+    """
+    name = "judge drop-line population reconciles"
+    # Generation gate: only structured (v3 / v4) bodies. Legacy / v2 PASS
+    # vacuously (forward-grandfathering, the #732 convention).
+    if not (is_v3(body) or is_v4(body)):
+        return CheckResult(name, True, "skipped — legacy/v2 body")
+
+    method = section_text(body, "Methodology") or ""
+    results_s = section_text(body, "Results") or ""
+    scan_region = _strip_fenced_blocks(method + "\n" + results_s)
+    claims = list(_JUDGE_DROP_LINE_RE.finditer(scan_region))
+    if not claims:
+        return CheckResult(name, True, "no judge drop-line asserted")
+
+    if issue is None:
+        return CheckResult(
+            name, True, "skipped — issue number unknown (stdin); cannot read eval_results"
+        )
+    if os.environ.get("EPM_VERIFY_BODY_NO_EVAL_SCAN") == "1":
+        return CheckResult(
+            name, True, "skipped — EPM_VERIFY_BODY_NO_EVAL_SCAN=1 (eval scan fenced off)"
+        )
+    repo = _resolve_eval_root(issue, eval_root=eval_root, body_source_path=body_source_path)
+    if repo is None:
+        return CheckResult(name, True, "skipped — eval root unresolved", is_warn=True)
+    candidates = _scan_judge_drop_populations(repo, issue)
+    if not candidates:
+        return CheckResult(
+            name,
+            True,
+            "no drop-population judge artifact (content_drops/valid_draws leaves) in "
+            "committed eval JSONs — graceful skip",
+        )
+
+    fails: list[str] = []
+    warns: list[str] = []
+    oks: list[str] = []
+    for m in claims:
+        x = _drop_line_int(m.group("drops"))
+        y = _drop_line_int(m.group("draws"))
+        claim_txt = f"'{m.group(0)}'"
+        exact = [c for c in candidates if c["drops"] == x and y in (c["draws"], c["draws_vt"])]
+        if exact:
+            oks.append(f"{claim_txt} == {exact[0]['label']}")
+            continue
+        num_matches = [c for c in candidates if c["drops"] == x]
+        den_matches = [c for c in candidates if y in (c["draws"], c["draws_vt"])]
+        if num_matches and den_matches:
+            # `exact` is empty, so every numerator-matching candidate is
+            # necessarily a DIFFERENT population than every
+            # denominator-matching one — the provable crossing.
+            a, b = num_matches[0], den_matches[0]
+            msg = (
+                f"{claim_txt}: CROSSED population pair — numerator {x:,} matches "
+                f"{a['label']} ({a['drops']:,}/{a['draws']:,}) while denominator {y:,} "
+                f"matches {b['label']} ({b['drops']:,}/{b['draws']:,}); no single "
+                f"committed population carries both. Quote one population's "
+                f"(drops, draws) pair."
+            )
+            if len(num_matches) > 1:
+                msg += (
+                    f" [numerator {x:,} matches {len(num_matches)} candidate populations "
+                    "— population fingerprint degraded]"
+                )
+            fails.append(msg)
+        else:
+            nearest = sorted(candidates, key=lambda c: (abs(c["draws"] - y), abs(c["drops"] - x)))[
+                :3
+            ]
+            near_txt = "; ".join(f"{c['label']} = {c['drops']:,}/{c['draws']:,}" for c in nearest)
+            warns.append(
+                f"{claim_txt}: could not reconcile ({x:,}, {y:,}) against any committed "
+                f"judge-artifact population — nearest candidates: {near_txt}"
+            )
+
+    if fails:
+        return CheckResult(name, False, " | ".join(fails + warns))
+    if warns:
+        return CheckResult(name, True, " | ".join(warns), is_warn=True)
+    return CheckResult(name, True, f"{len(oks)} drop-line claim(s) reconcile: " + "; ".join(oks))
+
+
 # ─── Check 35 (#1256): cross-issue reuse pins declared in the body ─────────
 
 # A metadata KEY that pins another issue's HF revision: `hf_rev_<M>` or
@@ -6334,6 +6851,26 @@ def check_cross_issue_reuse_provenance(
 # not (and must not) fence it.
 _FOOTER_REUSED_BULLET_RE = re.compile(r"^\s*[-*]\s+Reused\b", re.IGNORECASE)
 _REUSED_FROM_ISSUE_RE = re.compile(r"\bfrom\s+\[#(\d+)\]\(", re.IGNORECASE)
+# Widened match set (#1739/#1900): a `- Reused` bullet that references
+# another issue ANYWHERE — not only via the canonical `from [#M](` clause —
+# enters check 37. Alternatives, in incident order:
+#   `\[#\d+\]\(`       — a `[#M](...)` link anywhere in the bullet (the #1900
+#                        shape: `from the <line> ([#1112](...), ...)` — links
+#                        present, intervening noun phrase after `from`);
+#   `(?<![\w/])#\d+\b` — a bare `#M` issue token, no link at all (the #1739
+#                        shape: `direction bank #779 rev 037fcbb`);
+#   `/tasks/\d+\b`     — a dashboard task-URL fragment;
+#   `\bissue\d+_`      — an `issue<M>_...` artifact-path token (the #1639
+#                        shape: cross-issue reuse cited by path only).
+# Same-task exclusion rationale: the naive ANY-`- Reused` widening was
+# measured on the live 2026-08-01 corpus at 14 form + 8 pin firings,
+# dominated by same-task round-reuse bullets (#810/#833/#841 "this task's
+# own outputs") where a `from [#M](...)` self-link would be noise; the
+# issue-token scoping keeps both incident shapes while excluding those.
+_REUSED_ISSUE_TOKEN_RE = re.compile(
+    r"\[#\d+\]\(|(?<![\w/])#\d+\b|/tasks/\d+\b|\bissue\d+_",
+    re.IGNORECASE,
+)
 # Bullet-scoped pin forms (corpus 2026-07-15: 36/40 committed trigger
 # bullets satisfy one; the satisfier is deliberately BULLET-scoped and
 # excludes issue-mention forms — `#M` / `/tasks/M` appear in EVERY
@@ -6402,20 +6939,40 @@ def _reused_bullet_pinned(bullet: str) -> bool:
 
 
 def check_footer_reuse_bullets_pinned(body: str) -> CheckResult:
-    """Check 37 (WARN, v4-only, #1370): every footer
-    `- Reused ... from [#M](...)` bullet carries a revision/path pin.
+    """Check 37 (WARN, v4-only, #1370; widened #1907): every footer
+    `- Reused` bullet that REFERENCES another issue carries a
+    revision/path pin AND the canonical `- Reused ... from [#M](...)`
+    form.
 
     Body-text-only sibling of Check 35 (#1256) — the body->pin direction.
+    Match set (widened by #1907 after incidents #1739/#1900): a `- Reused`
+    bullet enters when it matches `_REUSED_FROM_ISSUE_RE` (the canonical
+    `from [#M](` clause) OR `_REUSED_ISSUE_TOKEN_RE` (a `[#M](...)` link
+    anywhere / a bare `#M` token / a `/tasks/M` fragment / an `issue<M>_`
+    path token). Two WARN arms over that set, ONE CheckResult:
+    - pin arm (`_reused_bullet_pinned` UNCHANGED): the bullet carries no
+      revision/path pin (#1900: an unpinned `from the <line> ([#M]...)`
+      bullet escaped the old form-keyed match set entirely);
+    - form arm (NEW): the bullet does NOT match the canonical
+      `- Reused ... from [#M](...)` shape (#1739: bare `#779 ... rev
+      037fcbb`, no link — the rev pin satisfied the pin arm but the
+      reference was not independently resolvable/linked; #1639:
+      `issue1310_...` path-token reuse, pinned but link-less).
     WARN, not FAIL (corpus 2026-07-15: 40 trigger bullets across 40
-    footered v4 bodies; 4 lack every pin form — 3 are code-harness reuse
-    (#811/#833/#1112, remedy: append `@ <code-sha>`), 1 is the incident
-    class (#810); a FAIL would newly block any future re-verify of all
-    4 parked bodies). The from-link's own `#M` / `/tasks/M` NEVER
-    satisfies — every trigger bullet carries it by construction.
-    Documented false-negative residual: a bullet quoting the CURRENT
-    task's own code SHA (a letter-bearing hex unrelated to the reused
-    artifact) satisfies the bare-hex form — LM Lens 5 keeps owning
-    semantic pin-correctness.
+    footered v4 bodies, 4 unpinned; re-calibrated 2026-08-01: widened
+    match set 60 bullets, form arm fires on exactly 2 — the #1900 and
+    #1639 incident bullets — and the pin arm adds 0 new firings; a FAIL
+    would newly block re-verifies of the parked offenders). The
+    from-link's own `#M` / `/tasks/M` NEVER satisfies the PIN arm —
+    every canonical trigger bullet carries it by construction.
+    Documented residuals (LM clean-result-critic Lens 5 keeps owning
+    semantic pin-correctness): (a) a bullet quoting the CURRENT task's
+    own code SHA satisfies the bare-hex pin form; (b) a SAME-task bullet
+    citing its OWN `issue<N>_` path or `#<N>` token fires a noise form
+    WARN — the check is body-only with no issue-number parameter, so it
+    cannot tell self-references apart (accepted residual); (c)
+    non-`- Reused`-anchored phrasings (`Re-used`, `Inherited ... from
+    [#M]`) stay out of scope.
     Deliberately NOT fenced by `EPM_VERIFY_BODY_NO_EVAL_SCAN` (no
     filesystem scan)."""
     name = "footer Reused bullets carry a revision/path pin"
@@ -6424,19 +6981,38 @@ def check_footer_reuse_bullets_pinned(body: str) -> CheckResult:
     footer = _v4_footer_text(body)
     if footer is None:
         return CheckResult(name, True, "skipped — no **Repro:** footer found")
-    unpinned = [
-        b
-        for b in _footer_reused_bullets(footer)
-        if _REUSED_FROM_ISSUE_RE.search(b) and not _reused_bullet_pinned(b)
-    ]
-    if not unpinned:
-        return CheckResult(name, True, "all footer Reused-from-[#M] bullets pinned")
-    shown = "; ".join(f"`{b[:120]}`" for b in unpinned)
+    unpinned: list[str] = []
+    noncanonical: list[str] = []
+    for b in _footer_reused_bullets(footer):
+        canonical = bool(_REUSED_FROM_ISSUE_RE.search(b))
+        if not canonical and not _REUSED_ISSUE_TOKEN_RE.search(b):
+            continue  # no issue reference (same-task round-reuse) — out of scope
+        if not _reused_bullet_pinned(b):
+            unpinned.append(b)
+        if not canonical:
+            noncanonical.append(b)
+    if not unpinned and not noncanonical:
+        return CheckResult(
+            name, True, "all footer Reused issue-referencing bullets pinned + canonical-form"
+        )
+    parts = []
+    if unpinned:
+        shown = "; ".join(f"`{b[:120]}`" for b in unpinned)
+        parts.append(
+            f"unpinned: {len(unpinned)} issue-referencing footer `- Reused` bullet(s) "
+            f"carry no pinned path/revision: {shown}"
+        )
+    if noncanonical:
+        shown = "; ".join(f"`{b[:120]}`" for b in noncanonical)
+        parts.append(
+            f"non-canonical form: {len(noncanonical)} issue-referencing footer `- Reused` "
+            f"bullet(s) lack the canonical `from [#M](...)` clause "
+            f"(#1739 bare-`#M` / #1900 intervening-noun-phrase classes): {shown}"
+        )
     detail = (
-        f"{len(unpinned)} footer `- Reused ... from [#M](...)` bullet(s) carry no "
-        f"pinned path/revision: {shown} — add the permanent pin per reused artifact, "
-        "expected shape: `- Reused <kind> from [#M](...): <path> @ <rev> — fit: "
-        "<one line>` (an HF/GitHub `/tree/<sha>`-style URL, `@ <sha>`, a "
+        "; ".join(parts)
+        + " — expected shape: `- Reused <kind> from [#M](...): <path> @ <rev> — fit: "
+        "<one line>` (pin: an HF/GitHub `/tree/<sha>`-style URL, `@ <sha>`, a "
         "committed `eval_results/issue_<M>/...` path, or a WandB run URL)"
     )
     return CheckResult(name, True, detail, is_warn=True)
@@ -6799,6 +7375,183 @@ def check_repro_artifact_urls_exist(body: str) -> CheckResult:
             unverified
         )
     return CheckResult(name, True, detail)
+
+
+# ─── Check 50: repro-named result dirs clean in working tree (#1989) ────────
+# A path token rooted at `(ood_)eval_results/issue_<K>` (underscore after
+# `issue` optional), backticked or bare. The continuation char class is an
+# explicit allowlist of path-component chars PLUS the glob/brace chars
+# (`*` / `{` / `}`) so a globbed / brace-expanded token is captured whole and
+# then truncated at the first glob/brace char by the reducer. The lookbehind
+# blocks mid-word matches (`my_eval_results/...`, `eval_results` inside
+# `ood_eval_results` — the `ood_` form is matched by its own alternation)
+# while still matching after a backtick, `(`, `/` (URL paths), or line start.
+_REPRO_EVAL_RESULTS_PATH_RE = re.compile(
+    r"(?<![A-Za-z0-9_])(?:\./)?"
+    r"(?P<path>(?:ood_)?eval_results/issue_?\d+(?:/[A-Za-z0-9_.*{}/-]*)?)"
+)
+
+# WARN-note cap: entry names shown per (dir, class) pair before `+K more`.
+_REPRO_CLEAN_MAX_NAMED_ENTRIES = 10
+
+
+def _repro_eval_results_dirs(text: str) -> set[str]:
+    """Deduped `(ood_)eval_results/issue_<K>[/...]` DIRECTORY prefixes
+    referenced by ``text`` (check 50 input; callers pass the FENCE-STRIPPED
+    repro region so illustrative paths never fire).
+
+    Per-token reduction: truncate at the first glob/brace char (`*` / `{`),
+    strip trailing `/` + sentence dots, drop a trailing component carrying a
+    file extension (`.../summary.json` probes its parent dir), then
+    re-verify the survivor is still rooted at `(ood_)eval_results/issue_<K>`
+    (a bare `eval_results` with no issue dir never enters). Parent-subsumes-
+    child collapse: a dir whose referenced ancestor is also in the set is
+    dropped — one path-scoped `git status` on the parent already covers it.
+    """
+    raw: set[str] = set()
+    for m in _REPRO_EVAL_RESULTS_PATH_RE.finditer(text):
+        tok = m.group("path")
+        for ch in ("*", "{"):
+            i = tok.find(ch)
+            if i != -1:
+                tok = tok[:i]
+        tok = tok.rstrip("/.")
+        parts = [p for p in tok.split("/") if p]
+        if len(parts) < 2:
+            continue
+        if len(parts) > 2 and re.search(r"\.[A-Za-z0-9]{1,8}$", parts[-1]):
+            parts = parts[:-1]
+        if not re.fullmatch(r"(?:ood_)?eval_results", parts[0]):
+            continue
+        if not re.fullmatch(r"issue_?\d+", parts[1]):
+            continue
+        raw.add("/".join(parts))
+    collapsed: set[str] = set()
+    for d in sorted(raw, key=lambda s: (s.count("/"), s)):
+        if not any(d == p or d.startswith(p + "/") for p in collapsed):
+            collapsed.add(d)
+    return collapsed
+
+
+def _git_status_porcelain_under(repo: Path, dir_path: str) -> list[str] | None:
+    """Porcelain-v1 status lines for the working tree under ``dir_path`` —
+    ONE `git status --porcelain -u -- <dir>` per call (check 50). The
+    path-scoped `-u` is deliberate: default untracked-files=normal collapses
+    a fully-untracked subdir to one `?? dir/` entry and under-counts; scoped
+    to one dir it is cheap (NOT the repo-wide `-uall` memory caveat). NO
+    `--ignored` — default porcelain excludes gitignored files, which IS the
+    required tolerance for convention-ignored artifacts (the repo-wide
+    `*.npz` rule). None on any git error (fail-soft: the caller degrades
+    that dir to a skip note — never a WARN from a failed probe)."""
+    try:
+        r = subprocess.run(
+            ["git", "-c", "core.quotePath=off", "status", "--porcelain", "-u", "--", dir_path],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if r.returncode != 0:
+        return None
+    return [line for line in r.stdout.splitlines() if line.strip()]
+
+
+def check_repro_artifacts_clean(body: str) -> CheckResult:
+    """Check 50 (WARN, generation-agnostic; #1989, incident #1768): result
+    dirs the repro region names should be CLEAN in the resolved repo root's
+    working tree.
+
+    Parses `(ood_)eval_results/issue_<K>/...`-rooted directory references
+    out of the FENCE-STRIPPED repro region (v4 `**Repro:**` footer / v3+v2
+    `## Reproducibility` H2 via `_repro_section_text`), probes each deduped
+    dir with a path-scoped `git status --porcelain -u -- <dir>` at the
+    resolved repo root, and WARNs naming untracked (`??`) / modified-class
+    entries. Check 15 (`check_repro_committed_claims_exist`) reads git
+    TREES and check 29 covers figures only — neither sees the working tree,
+    so #1768's 16 untracked + 4 modified `map_augmentation/operator_kv/`
+    result files sat beside the parked body with zero mechanical signal.
+
+    Severity: WARN only (`passed=True, is_warn=True`) — this check can
+    NEVER FAIL. Gate-time `--file` invocations run on staged candidates
+    with no status context, the user-chat inline free-analysis carve-out
+    legitimately dirties `eval_results/issue_<N>/` mid-round until its
+    same-turn commit, and a new FAIL class would newly hard-FAIL
+    grandfathered parked bodies (forward-only doctrine). A named entry is
+    NOT necessarily a staleness hazard — a body may legitimately disclose
+    held-locally files (the #1768 `noise_floor_percontext/` case); the WARN
+    is the missing signal, the critic keeps the judgment.
+
+    Fail-soft everywhere (check 29 conventions): a git probe failure for a
+    dir degrades to a per-dir "probe failure; not assessed" skip note,
+    NEVER a WARN; per-dir continue; repo root unresolved → skipped PASS;
+    no network; never raises. Default porcelain excludes gitignored files —
+    the required npz-convention tolerance (no `--ignored`).
+
+    Two deliberate scope-outs: (a) only the resolved (main-pinned) repo
+    root is probed — worktree copies of the same dirs are invisible; (b) a
+    footer naming only HF URLs (no in-repo `eval_results/...` token) gets a
+    vacuous PASS. The natural future widening is `--issue`-mode probing of
+    the top-level `eval_results/issue_<N>/` dir.
+    """
+    name = "repro-named result dirs clean in working tree"
+    repro = _repro_section_text(body)
+    if repro is None:
+        # check_repro_subgroups already FAILs on a missing repro region —
+        # don't double-report.
+        return CheckResult(name, True, "no Reproducibility/Repro region — other checks report")
+    dirs = _repro_eval_results_dirs(_strip_fenced_blocks(repro))
+    if not dirs:
+        return CheckResult(name, True, "no repro-named eval_results dirs to check")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(name, True, "skipped — repo root unresolved (running outside the repo)")
+    findings: list[str] = []
+    skipped: list[str] = []
+    n_clean = 0
+    for d in sorted(dirs):
+        lines = _git_status_porcelain_under(repo, d)
+        if lines is None:
+            # CONSERVATIVE: a failed probe for this dir can never WARN —
+            # skip note, continue to the next dir.
+            skipped.append(f"`{d}` — probe failure; not assessed")
+            continue
+        untracked: list[tuple[str, str]] = []
+        modified: list[tuple[str, str]] = []
+        for line in lines:
+            xy, path = line[:2], line[3:]
+            if xy == "??":
+                untracked.append((xy, path))
+            else:
+                modified.append((xy.strip() or xy, path))
+        if not untracked and not modified:
+            n_clean += 1
+            continue
+        parts: list[str] = []
+        for label, entries in (("untracked", untracked), ("modified", modified)):
+            if not entries:
+                continue
+            shown = ", ".join(f"`{p}` ({xy})" for xy, p in entries[:_REPRO_CLEAN_MAX_NAMED_ENTRIES])
+            extra = (
+                f" +{len(entries) - _REPRO_CLEAN_MAX_NAMED_ENTRIES} more"
+                if len(entries) > _REPRO_CLEAN_MAX_NAMED_ENTRIES
+                else ""
+            )
+            noun = "entry" if len(entries) == 1 else "entries"
+            parts.append(f"{len(entries)} {label} {noun}: {shown}{extra}")
+        findings.append(f"`{d}` — " + "; ".join(parts))
+    suffix = "; skipped: " + "; ".join(skipped) if skipped else ""
+    if findings:
+        note = (
+            "; ".join(findings)
+            + ". Not every named entry is necessarily stale — a body may legitimately "
+            "disclose held-locally files — but post-park analysis output must be folded "
+            "via a new round + committed by explicit path, or reverted: an uncommitted "
+            "result file contradicting a parked body is the #1768 staleness hazard" + suffix
+        )
+        return CheckResult(name, True, note, is_warn=True)
+    return CheckResult(name, True, f"{n_clean} repro-named dir(s) clean in working tree" + suffix)
 
 
 # ─── Check 42: body-wide same-repo artifact-URL existence (#1507) ──────────
@@ -8061,6 +8814,18 @@ _HYPOTHESIS_CODE_RE = re.compile(r"\bH\d[a-z]?\b")
 #     spellings never match (no word boundary before the `f`).
 _SLOT_FAMILY_RE = re.compile(r"\b[fl]16\b")
 
+# (e) bare candidate/panel codes (`P1`, `P7`, `M4`, `P3b`) — plan-internal
+#     candidate ids rendered into figure text (#1900: legend "P1 | P7",
+#     title "P7-residualized" passed check 28 clean; caught only by the
+#     LM clean-result critic; pre-fix evidence at
+#     `git show 0e5e6c3e7d:figures/issue_1900/mediation_forest.meta.json`,
+#     56 matching lines). Same shape discipline as the H-code class:
+#     SINGLE digit + optional single LOWERCASE letter, case-sensitive —
+#     `P100`/`P40`/`M40` GPU names (multi-digit) never match (no word
+#     boundary between digits), and lowercase `p97.5`/`p50` percentile
+#     shorthand stays clean (uppercase-only).
+_CANDIDATE_CODE_RE = re.compile(r"\b[PM]\d[a-z]?\b")
+
 # Path/URI-SHAPED string: no internal whitespace and at least one path
 # separator — a file path or URL, which is provenance, not rendered text.
 # Deliberately NOT a whole-string any-slash skip: a slash-separated rendered
@@ -8076,10 +8841,13 @@ def _opaque_code_tokens(text: str) -> list[str]:
     digit (`ctx_blk_max`, `sw_eng_C1`, `BS_E0`, `cond_4`); 2-segment
     all-alpha tokens (`log_prob`, `judge_rate`, `helpful_assistant`) are
     allowed; bare hypothesis codes (`H3`/`H1c` — `\bH\d[a-z]?\b`, single
-    digit + optional single lowercase letter, case-sensitive) and
-    slot-family codes (`f16`/`l16` only). PATH-SHAPED
+    digit + optional single lowercase letter, case-sensitive);
+    slot-family codes (`f16`/`l16` only); and bare candidate/panel codes
+    (`P1`/`P7`/`M4`/`P3b` — `\b[PM]\d[a-z]?\b`, same single-digit +
+    optional-lowercase-letter shape discipline as the hypothesis class,
+    #1900). PATH-SHAPED
     strings (whitespace-free with a path separator —
-    file paths, URLs) are exempt from ALL FOUR token scans;
+    file paths, URLs) are exempt from ALL FIVE token scans;
     strings that merely CONTAIN a slash (e.g. a slash-separated rendered
     label) are still scanned, with individual path-shaped whitespace-split
     words skipped for every token class — the exemption is load-bearing
@@ -8113,10 +8881,11 @@ def _opaque_code_tokens(text: str) -> list[str]:
                 continue
             if tok.count("_") >= 2 or any(ch.isdigit() for ch in tok):
                 hits.append(tok)
-        # Hypothesis-code + slot-family classes (#1072) reuse the SAME
-        # per-word path exemption the pin/snake classes get, so a
-        # boundary-terminated token inside a path word stays provenance.
-        for regex in (_HYPOTHESIS_CODE_RE, _SLOT_FAMILY_RE):
+        # Hypothesis-code + slot-family (#1072) + candidate-code (#1900)
+        # classes reuse the SAME per-word path exemption the pin/snake
+        # classes get, so a boundary-terminated token inside a path word
+        # stays provenance.
+        for regex in (_HYPOTHESIS_CODE_RE, _SLOT_FAMILY_RE, _CANDIDATE_CODE_RE):
             for m in regex.finditer(text):
                 tok = m.group(0)
                 if _only_in_path_words(tok):
@@ -8162,7 +8931,8 @@ def check_figure_label_codes(body: str) -> CheckResult:
     """Check 28 (WARN): rendered figure text (sidecar ``.meta.json`` values)
     must not carry opaque config-code tokens — ``@L<digits>`` layer pins,
     regime-code slugs (``ctx_blk_max``, ``sw_eng_C1``), bare hypothesis
-    codes (``H3``/``H1c``), or slot-family codes (``f16``/``l16``). Plain-English
+    codes (``H3``/``H1c``), slot-family codes (``f16``/``l16``), or bare
+    candidate/panel codes (``P1``/``P7``/``M4``). Plain-English
     condition names are the rule end to end (memory
     feedback_no_opaque_condition_codes, SPEC statistical-framing bullet);
     config slugs belong in the Repro config row / provenance keys. Incident
@@ -8172,7 +8942,11 @@ def check_figure_label_codes(body: str) -> CheckResult:
     ``Parallel share of the gap by depth (H3)`` and the xlabel
     ``answer position t (f16 slots)`` passed check 28 clean and were caught
     only by the LM clean-result critic (hand-fixed in ``1f19deacfd``) —
-    mechanized here as the hypothesis-code + slot-family classes. The
+    mechanized here as the hypothesis-code + slot-family classes. Incident
+    #1900: ``mediation_forest.png``'s legend text ``P1 | P7`` and the
+    ``P7-residualized`` title passed check 28 clean (n_fail=0, twice) and
+    burned an LM clean-result-critic round (pre-fix sidecar evidence at
+    ``0e5e6c3e7d``) — mechanized here as the candidate-code class (e). The
     "code-span contexts" exclusion in the originating diff sketch is a
     documented NO-OP on this channel: sidecar strings are matplotlib
     rendered text serialized to JSON (never markdown), so backtick code
@@ -8196,12 +8970,15 @@ def check_figure_label_codes(body: str) -> CheckResult:
     now arrive as scanned VALUES in new sidecars, narrowing this residual to
     key names); (iii) a token inside a path-shaped word (or a
     whole path-shaped string) is exempt — the path exemption covers ALL
-    FOUR token classes. WARN,
+    FIVE token classes. WARN,
     never FAIL; fail-soft on missing / unparsable sidecars (the check-24
     convention, NOT check 26's loud missing-sidecar FAIL); NO-OP PASS
     offline / no figures / no scannable same-repo sidecar.
     """
-    label = "figure text opaque config codes (slug / @L-pin / H-code / slot-family tokens)"
+    label = (
+        "figure text opaque config codes "
+        "(slug / @L-pin / H-code / slot-family / P-M candidate tokens)"
+    )
     section = _figure_scan_section(body)
     text = section_text(body, section)
     if text is None:
@@ -9426,18 +10203,31 @@ def check_audit_availability_claims_match_hf(body: str) -> CheckResult:
 _MD_HF_LINK_RE = re.compile(
     r"\[(?P<text>[^\]]{1,300})\]\((?P<url>https?://huggingface\.co/[^)\s]+)\)"
 )
-# A numeric count claim: "515 files" / "1 file" / "10 shards". Comma-grouped
-# thousands allowed ("1,234 files"); bounded at 6 plain digits. The negative
+# A numeric count claim: "515 files" / "1 file" / "10 shards" / "3 chunks" /
+# "1 sidecar", with ONE optional modifier token between count and noun
+# ("3 activation chunks" / "3 chunk files" — the #1901 footer shapes, #1936).
+# Comma-grouped thousands allowed ("1,234 files"); bounded at 6 plain digits.
+# The modifier starts with a letter (a "3 44 files" typo can never bind 44 as
+# a modifier) and admits hyphens ("over-length-skip"); exactly ONE token —
+# two-modifier claims ("3 large activation chunks") stay unextracted, a
+# documented recall sacrifice. The negative
 # lookahead makes per-namespace-qualified counts ("891 files per namespace")
 # INVISIBLE to the whole-prefix Patterns A/B — such a count has per-namespace
 # semantics (each named sub-namespace holds N files, #833), so reading it as
 # a whole-prefix claim would compare N against the parent's total and
-# manufacture a guaranteed false WARN. Per-namespace claims are extracted
-# ONLY in the observed link-then-paren position
+# manufacture a guaranteed false WARN. Backtracking residual (#1936): on a
+# lookahead decline a distributive claim can backtrack to a bare SUBSET-noun
+# match ("891 chunk files per namespace" → noun="chunk") — harmless, because
+# every such escape is a subset-noun ONE-SIDED claim
+# (`_count_claim_is_one_sided`) and a genuine distributive count is <= the
+# whole-prefix total, so no wrong WARN can fire. Per-namespace claims are
+# extracted ONLY in the observed link-then-paren position
 # (`_gather_hf_per_namespace_claims`); A/B-position per-namespace claims are
 # a documented recall sacrifice, never a wrong comparison.
 _COUNT_NOUN_RE = re.compile(
-    r"\b(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"\b(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+"
+    r"(?:(?P<mod>[A-Za-z][\w-]{0,30})[ \t]+)?"
+    r"(?P<noun>files?|shards?|chunks?|sidecars?)\b"
     r"(?!\s+(?:listed\s+)?per\s+namespace\b)",
     re.IGNORECASE,
 )
@@ -9448,7 +10238,9 @@ _COUNT_NOUN_RE = re.compile(
 # `... (515 files verified via scoped listing): [issue931_story_map @ ...](url)`.
 # Carries the same per-namespace negative lookahead as `_COUNT_NOUN_RE`.
 _COUNT_PAREN_LINK_RE = re.compile(
-    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+"
+    r"(?:(?P<mod>[A-Za-z][\w-]{0,30})[ \t]+)?"
+    r"(?P<noun>files?|shards?|chunks?|sidecars?)\b"
     r"(?!\s+(?:listed\s+)?per\s+namespace\b)"
     r"[^()]{0,80}\)"
     r"\s{0,2}[:\u2013\u2014-]?\s{0,2}"  # ':' / en-dash / em-dash / hyphen separators
@@ -9519,7 +10311,9 @@ _FILES_LISTING_VERIFIED_RE = re.compile(
 # #1005 "(17 files incl. `f2f3/` …)" / "(50 files: 42 updated + 8 verbatim)"
 # shapes).
 _COUNT_OPEN_PAREN_AFTER_LINK_RE = re.compile(
-    r"(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+"
+    r"(?:(?P<mod>[A-Za-z][\w-]{0,30})[ \t]+)?"
+    r"(?P<noun>files?|shards?|chunks?|sidecars?)\b"
     r"(?!\s+(?:listed\s+)?per\s+\w+\b)",
     re.IGNORECASE,
 )
@@ -9548,8 +10342,13 @@ _BACKTICK_DIR_RE = re.compile(r"`(?P<ns>[A-Za-z0-9_\-./]{1,120}/)`")
 # is check 32's FILE territory) immediately followed by a parenthetical
 # OPENING with the count-noun. The count scopes to <link-prefix>/<sub> at
 # the sha of the nearest preceding pinned /tree link on the same line
-# (binder below). The paren qualifier bound is 200 (Pattern B uses 80; the
-# live #1112 qualifier is ~85 chars). The count-noun lookahead is WIDER
+# (binder below). The post-noun paren qualifier bound is 400 (Pattern B
+# uses 80; originally 200, sized on the ~85-char live #1112 qualifier —
+# widened 200 → 400 for #1901's realized 220-char `raw_completions/` tail,
+# ~1.8x margin per the #1505 widen-with-margin precedent; still bounded,
+# the _SUBPATH_CLAIM_MAX_GAP runaway-scan rationale. The count-OPENS-the-
+# paren position, not the tail bound, is the precision anchor, so the
+# widen adds no false-positive surface). The count-noun lookahead is WIDER
 # than _COUNT_NOUN_RE's per-namespace decline: ANY distributive
 # "per <word>" qualifier declines (e.g. the #460 "(11 files per adapter,
 # 176 files total)" shape — per-adapter semantics, the join would target a
@@ -9564,9 +10363,11 @@ _BACKTICK_DIR_RE = re.compile(r"`(?P<ns>[A-Za-z0-9_\-./]{1,120}/)`")
 _BACKTICK_SUBPATH_COUNT_PAREN_RE = re.compile(
     r"`(?P<sub>(?!\.\.?/)[A-Za-z0-9_\-./]{1,120}/)`"
     r"[ \t]{0,2}"
-    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+"
+    r"(?:(?P<mod>[A-Za-z][\w-]{0,30})[ \t]+)?"
+    r"(?P<noun>files?|shards?|chunks?|sidecars?)\b"
     r"(?!\s+(?:listed\s+)?per\s+\w+\b)"
-    r"[^()]{0,200}\)"
+    r"[^()]{0,400}\)"
     r"(?!\s{0,2}[:\u2013\u2014-]?\s{0,2}\[[^\]]{1,300}\]\(https?://huggingface\.co)",
     re.IGNORECASE,
 )
@@ -9590,6 +10391,33 @@ _HF_COUNT_MAX_PROBES = 8
 # same convention as _HF_EXISTENCE_CACHE (#733) — so a transient throttle
 # that has since cleared is re-probed on the next verify_text invocation.
 _HF_TREE_FILE_COUNT_CACHE: dict[tuple[str, str, str, str], tuple[int, int]] = {}
+
+# The count-noun vocabulary's SUBSET nouns (#1936): a shard/chunk/sidecar
+# count names a subset of a prefix's files (shards ride beside a manifest,
+# chunks beside a sidecar), so it can never support a two-sided exact
+# compare against the prefix's files-only total.
+_SUBSET_COUNT_NOUNS = ("shard", "chunk", "sidecar")
+
+
+def _count_noun_label(m: re.Match) -> str:
+    """Reported noun label for a count-claim regex match: ``"<mod> <noun>"``
+    when the single optional modifier token matched ("3 activation chunks" /
+    "3 chunk files", #1936), else the bare noun. The label flows through the
+    claim tuple into WARN messages and :func:`_count_claim_is_one_sided`."""
+    mod = m.group("mod")
+    return f"{mod} {m.group('noun')}" if mod else m.group("noun")
+
+
+def _count_claim_is_one_sided(noun_label: str) -> bool:
+    """True when the claim counts a SUBSET of the prefix's files: a
+    modifier-qualified claim ("chunk files", "activation chunks" — the
+    modifier restricts the counted class to a subset of the prefix's files)
+    or a bare subset noun (shard/chunk/sidecar) — compare ONE-SIDED: WARN
+    only when claimed > files-only count, the #931 folder-inflation
+    signature. A bare "N file(s)" claim stays two-sided (exact compare),
+    byte-identical behavior to the pre-#1936 check."""
+    words = noun_label.lower().split()
+    return len(words) > 1 or words[-1].rstrip("s").startswith(_SUBSET_COUNT_NOUNS)
 
 
 def _nearest_preceding_pinned_tree_link(
@@ -9659,12 +10487,15 @@ def _scan_paren_after_link_patterns(stripped: str, add) -> None:
             # footer) fires E AND F and collapses the same way.
             em = _COUNT_OPEN_PAREN_AFTER_LINK_RE.match(lm.group("paren"))
             if em is not None:
-                add(em.group("count"), em.group("noun"), lm.group("url"))
+                add(em.group("count"), _count_noun_label(em), lm.group("url"))
 
 
 def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, str]]:
     """Extract ``(claimed_count, noun, repo_id, repo_type, sha, path_prefix)``
-    tuples for numeric file/shard-count claims ADJACENT to hex-pinned HF
+    tuples for numeric file/shard/chunk/sidecar-count claims — with one
+    optional modifier token between count and noun ("3 activation chunks" /
+    "3 chunk files", the #1901 footer shapes, #1936; ``noun`` then carries
+    the composed ``"<mod> <noun>"`` label — ADJACENT to hex-pinned HF
     ``/tree`` markdown links (check 30). Fence-stripped; deduplicated;
     ``/blob/`` links and moving refs (``/tree/main``) are out of scope (the
     shared URL regex only matches 7-40-char hex revisions, mirroring
@@ -9741,8 +10572,16 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     by Patterns D and E, whose counts must OPEN the paren (a leading
     space, "( 52 files)", deliberately does not match — B/D anchor
     parity); compound claims ("8 eval JSONs + 2 npz"); nouns other
-    than file(s) / shard(s) ("rows" / "completions" are RECORD counts, not
-    file counts); per-namespace-qualified counts in A/B positions (see the
+    than file(s) / shard(s) / chunk(s) / sidecar(s) ("rows" /
+    "completions" are RECORD counts, not file counts); claims with MORE
+    than one modifier token between count and noun ("3 large activation
+    chunks" — one-modifier-max, #1936); MID-PAREN continuation claims
+    after a conjunction ("… plus 1 over-length-skip sidecar", the #1901
+    footer's second clause — the E/D count-OPENS-the-paren anchor
+    excludes sub-scoped clause counts by design, the #1072 false-WARN
+    class — reaching them would take mid-paren finditer semantics, which
+    would extract sub-scoped clause counts as wrongly-scoped whole-prefix
+    claims); per-namespace-qualified counts in A/B positions (see the
     lookahead note above). Pattern-D-specific sacrifices: a claim whose
     nearest preceding HF link is unpinned / ``/blob/`` / ``/tree/main``
     (declined, never re-bound to an earlier link); a bracketed, multi-line,
@@ -9782,6 +10621,20 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     while A/B keep the narrow #833 per-namespace-only lookahead — a "per
     adapter"-style count in A/B position is a PRE-EXISTING hole outside
     #1143's / #1422's scope, left unchanged by design.
+
+    Modifier residuals (#1936 — all WARN-only by construction, each named
+    rather than guarded): (1) BACKTRACKING — on a ``per``-lookahead
+    decline a distributive claim can backtrack to a bare SUBSET-noun
+    match ("3 chunk files per namespace" → noun="chunk"); harmless: every
+    such escape is a subset-noun ONE-SIDED claim
+    (``_count_claim_is_one_sided``) and a genuine distributive count is
+    <= the whole-prefix total, so no wrong WARN can fire. (2) GREEDY-MOD
+    REBIND — "9 file shards" flips from noun="file" (two-sided) to
+    mod="file" + noun="shards" (one-sided); unattested phrasing, an
+    undercount-detection loss only. (3) INVERTED-SEMANTICS modifiers
+    ("2 missing files", "8 tensor chunks in one npz") — rare accepted
+    residuals of the no-stopword design: they compare one-sided, so at
+    worst a real undercount goes un-WARNed, never a wrong WARN.
     """
     kind_to_type = {"datasets": "dataset", "spaces": "space", None: "model"}
     stripped = _strip_fenced_blocks(body)
@@ -9824,15 +10677,15 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     link_matches = list(_MD_HF_LINK_RE.finditer(stripped))
     for lm in link_matches:  # Pattern A: count in link TEXT
         for cm in _COUNT_NOUN_RE.finditer(lm.group("text")):
-            _add(cm.group("count"), cm.group("noun"), lm.group("url"))
+            _add(cm.group("count"), _count_noun_label(cm), lm.group("url"))
     for pm in _COUNT_PAREN_LINK_RE.finditer(stripped):  # Pattern B: paren before link
-        _add(pm.group("count"), pm.group("noun"), pm.group("url"))
+        _add(pm.group("count"), _count_noun_label(pm), pm.group("url"))
     _scan_paren_after_link_patterns(stripped, _add)  # Patterns C + E + F: paren after link
     for dm in _BACKTICK_SUBPATH_COUNT_PAREN_RE.finditer(stripped):  # Pattern D (#1143)
         lm = _nearest_preceding_pinned_tree_link(stripped, dm.start(), link_matches)
         if lm is None:
             continue
-        _add(dm.group("count"), dm.group("noun"), lm.group("url"), sub_path=dm.group("sub"))
+        _add(dm.group("count"), _count_noun_label(dm), lm.group("url"), sub_path=dm.group("sub"))
     return out
 
 
@@ -9958,8 +10811,9 @@ def _verify_hf_whole_prefix_claims(
     compare each ``_gather_hf_count_claims`` tuple against the files-only
     count from the caller's shared memoized/capped ``probed`` closure,
     appending mismatch messages / unverified notes to the caller's lists.
-    Files claims are two-sided; shard claims are one-sided (folder-inflation
-    only)."""
+    Bare files claims are two-sided; subset-noun (shard/chunk/sidecar) and
+    modifier-qualified claims are one-sided (folder-inflation only;
+    :func:`_count_claim_is_one_sided`, #1936)."""
     for count, noun, repo_id, repo_type, sha, prefix in claims:
         result = probed((repo_id, repo_type, sha, prefix))
         if result is None:
@@ -9970,8 +10824,8 @@ def _verify_hf_whole_prefix_claims(
             if skip_note not in unverified:
                 unverified.append(skip_note)
             continue
-        if noun.lower().startswith("shard") and count <= n_files:
-            continue  # shard claims are one-sided: only folder-inflation WARNs
+        if _count_claim_is_one_sided(noun) and count <= n_files:
+            continue  # subset-noun / modifier claims are one-sided: only folder-inflation WARNs
         if count == n_files:
             continue
         msg = (
@@ -10082,11 +10936,16 @@ def check_hf_file_count_claims(body: str) -> CheckResult:
     - **WARN, never FAIL.** A mismatch returns ``CheckResult(name, True,
       detail, is_warn=True)`` — ``passed`` stays True so overall ``ok``
       never flips. There is NO code path returning ``passed=False``.
-    - **Files claims are two-sided; shard claims are one-sided.** A hex
-      pin is immutable so a "N files" claim admits exact comparison; a
+    - **Bare files claims are two-sided; subset-noun (shard/chunk/sidecar)
+      and modifier-qualified claims are one-sided.** A hex pin is
+      immutable so a bare "N files" claim admits exact comparison; a
       legitimate "9 shards" prefix can also hold a manifest/sidecar
-      (10 files), so shard claims WARN only when claimed > file count —
-      the folder-inflation signature (#931's "10 shards" vs 9 files).
+      (10 files), and a modifier restricts the counted class to a subset
+      of the prefix's files ("chunk files" / "activation chunks" count
+      only those files), so subset-noun and modifier-qualified claims
+      WARN only when claimed > file count — the folder-inflation
+      signature (#931's "10 shards" vs 9 files;
+      ``_count_claim_is_one_sided``, #1936).
     - **Descriptive diagnostics.** When the claimed count equals
       files+folders, the WARN notes the claim is *consistent with*
       files+folders (folder entries are not files) — a diagnosis hint,
@@ -10670,7 +11529,10 @@ _UNPINNED_CUE_WINDOW = 250  # chars of same-line look-back for the cue
 _BACKTICK_ISSUE_PARENT_RE = re.compile(r"`(?P<parent>issue\d+_[A-Za-z0-9_\-./]{0,118}/)`")
 # Slashless sibling of _BACKTICK_SUBPATH_COUNT_PAREN_RE (#1487, the #1345
 # `analysis_tensors/turnstore` (10 files) footer shape): same paren/count/
-# noun/lookahead shape VERBATIM, but the token does NOT end in "/". A
+# noun/lookahead shape VERBATIM (incl. the widened noun set + single
+# optional modifier token and the post-noun qualifier bound 400 — #1936
+# parity with Pattern D, which keeps the "same shape" claim true), but
+# the token does NOT end in "/". A
 # slashless token has no intrinsic directory signature, so the gatherer
 # admits it ONLY under the strong G4 arms (own issue<N>_ prefix, or a
 # binding backtick parent anchor) — never the weak same-line HF cue — and
@@ -10681,9 +11543,11 @@ _BACKTICK_ISSUE_PARENT_RE = re.compile(r"`(?P<parent>issue\d+_[A-Za-z0-9_\-./]{0
 _BACKTICK_SLASHLESS_SUBPATH_COUNT_PAREN_RE = re.compile(
     r"`(?P<sub>(?!\.\.?/)[A-Za-z0-9_\-./]{0,119}[A-Za-z0-9_\-])`"
     r"[ \t]{0,2}"
-    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+"
+    r"(?:(?P<mod>[A-Za-z][\w-]{0,30})[ \t]+)?"
+    r"(?P<noun>files?|shards?|chunks?|sidecars?)\b"
     r"(?!\s+(?:listed\s+)?per\s+\w+\b)"
-    r"[^()]{0,200}\)"
+    r"[^()]{0,400}\)"
     r"(?!\s{0,2}[:\u2013\u2014-]?\s{0,2}\[[^\]]{1,300}\]\(https?://huggingface\.co)",
     re.IGNORECASE,
 )
@@ -10829,7 +11693,7 @@ def _gather_hf_unpinned_count_claims(body: str) -> list[tuple[int, str, str, str
             if _HF_CUE_RE.search(window) is None:
                 continue  # G4: no HF context — stay silent (precision first)
         count = int(dm.group("count").replace(",", ""))
-        noun = dm.group("noun")
+        noun = _count_noun_label(dm)
         key = (count, noun.lower().rstrip("s"), token)
         if key in seen:
             continue
@@ -10883,8 +11747,10 @@ def check_hf_unpinned_count_claims(body: str) -> CheckResult:
       per-process only — acceptable staleness for the short-lived verifier
       CLI — and mismatch WARNs carry a may-have-moved hedge.
     - **Probe budget.** Own memo + cap ``_HF_UNPINNED_MAX_PROBES`` (the
-      check-30 ``_probed`` closure shape); shard claims are one-sided
-      (claimed <= files is count-consistent), matching check 30.
+      check-30 ``_probed`` closure shape); subset-noun (shard/chunk/
+      sidecar) and modifier-qualified claims are one-sided (claimed <=
+      files is count-consistent; :func:`_count_claim_is_one_sided`),
+      matching check 30.
 
     Vacuous PASS — with ZERO Hub probes — when no unpinned backtick
     HF-path count claim extracts (see ``_gather_hf_unpinned_count_claims``
@@ -10933,7 +11799,7 @@ def check_hf_unpinned_count_claims(body: str) -> CheckResult:
         status, n_files, n_dirs, note = result
         if status != "ok":
             warn_lines.append(base + f" (count not confirmed at main: {note})")
-        elif count == n_files or (noun.lower().startswith("shard") and count <= n_files):
+        elif count == n_files or (_count_claim_is_one_sided(noun) and count <= n_files):
             warn_lines.append(
                 base + f" — `{resolved}` at `{_HF_DATA_REPO_ID}@main` holds {n_files} "
                 "file(s) (count consistent; add a pinned /tree/<sha> link)"
@@ -12316,8 +13182,11 @@ _SUBSET_DISCLOSURE_RE = re.compile(
 # audit (not "any unwrapped table") so a benign composition / row-count
 # summary table never WARNs.
 _DATA_CONDITION_CODE_RE = re.compile(
-    # condition_labels: C1/C2, H1/H2/H3, P1/P2/P3 (optional prime)
-    r"\b[CcHhP][1-9](?:'|′)?(?:\s*(?:condition|control|completion|coefficient|"  # noqa: RUF001
+    # condition_labels: C1/C2, H1/H2/H3, H1c/H4b sub-tags, P1/P2/P3
+    # (optional prime). The optional [a-rt-z] sub-tag letter excludes
+    # plural-s so "the five flat H2s" heading prose stays unmatched;
+    # H100/H200 stay excluded by [1-9] + the trailing lookahead.
+    r"\b[CcHhP][1-9][a-rt-z]?(?:'|′)?(?:\s*(?:condition|control|completion|coefficient|"  # noqa: RUF001
     r"hypothesis|test|sub-?(?:claim|experiment|hypothesis)))?(?![a-zA-Z0-9_])"
     # cell_tags: BS_E*, Z_*, G*, Method A/B, M1-paired
     r"|\bBS_E[0-9A-Za-z_]*|\bZ_[a-zA-Z_]+|\b[Gg][0-9]+[a-c]?\b(?=\s|:|\.|,|$)"
@@ -14654,6 +15523,243 @@ def check_body_params_subset_of_doc(
     )
 
 
+# ─── v4 dropped-at-gate condition placement (check 51, #2017) ────────────────
+
+# A `## Methodology` sentence declaring a planned condition dropped at a
+# gate/criterion/floor — e.g. #1947's "A third planned behavior (sycophancy)
+# was dropped at the datagen yield gate". The `[^.;\n]*?` gap keeps the verb
+# group and the gate noun inside ONE sentence-ish span (a `.`/`;` or a line
+# break ends the candidate), so ordinary judge drop-rate prose ("malformed
+# judge returns were dropped from both arms") with a gate/floor mention in a
+# LATER sentence never matches.
+_DROPPED_AT_GATE_RE = re.compile(
+    r"(?:was|were)\s+(?:dropped|removed|excluded|cut)\s+(?:at|by)\s+"
+    r"(?:the\s+|a\s+|an\s+|its\s+)?[^.;\n]*?\b(?:gate|criterion|floor)\b",
+    re.IGNORECASE,
+)
+
+# Backtick / bold / italic-wrapped tokens (priority-2 name extraction). The
+# italic forms require non-word context so snake_case identifiers
+# (`harmful_compliance`) never read as underscore-italics.
+_C51_WRAPPED_TOKEN_RE = re.compile(
+    r"`([^`\n]{2,60})`"
+    r"|\*\*([^*\n]{2,60})\*\*"
+    r"|(?<!\w)\*([^*\n]{2,60})\*(?!\w)"
+    r"|(?<![\w_])_([^_\n]{2,60})_(?![\w_])"
+)
+
+
+def _strip_blockquote_lines(text: str) -> str:
+    """Drop blockquote (`>`-prefixed) lines — figure-caption chrome the
+    dropped-at-gate scan must not read as Methodology prose. Companion to
+    `_prose_layer`, which strips fenced code + `<details>` bodies but NOT
+    blockquote lines (#2017)."""
+    return "\n".join(ln for ln in text.splitlines() if not ln.lstrip().startswith(">"))
+
+
+def _c51_clean_condition_name(raw: str) -> str | None:
+    """Normalize an extracted condition-name candidate; None when the
+    candidate is not plausibly a NAME (no alphabetic content, an
+    `n=16`-style stat parenthetical, a colon-ended v4 slot label like
+    `Design:`, or a mostly-digit stat span like `232 of 240`) — a rejected
+    candidate falls through to the caller's next extraction priority, and
+    with none surviving the check WARNs, never FAILs on a guess (#2017 r2).
+    Formatting wrappers are stripped at the EDGES only — an interior `_`
+    is part of a snake_case name (`harmful_compliance`), never chrome."""
+    name = re.sub(r"\s+", " ", raw).strip()
+    name = name.strip("`*_\"' \u2018\u2019\u201c\u201d")
+    if not name or len(name) > 60 or not re.search(r"[A-Za-z]", name):
+        return None
+    if name.endswith(":"):
+        # A bold token ending in a colon is a v4 slot label / heading
+        # (`**Design:**`, `**Data extraction:**` -- format-mandated chrome on
+        # every v4 Methodology bullet), never a condition name (#2017 r2).
+        return None
+    if re.fullmatch(r"[a-zA-Z]\s*[=≈<>≤≥]\s*[\d,.\s%]+", name):
+        return None
+    if sum(c.isdigit() for c in name) > sum(c.isalpha() for c in name):
+        # Mostly-digit spans (`232 of 240`) are stat parentheticals whose
+        # "of"/"vs" connective supplies the alphabetic chars, not names
+        # (#2017 r2).
+        return None
+    return name
+
+
+def _c51_subject_clause(prose: str, match_start: int) -> str:
+    """The subject clause preceding a dropped-at-gate verb group: text from
+    the previous sentence terminator (`.`/`;`/newline) to the match start.
+    The detection regex cannot cross those terminators, so the clause and
+    the verb group always share one sentence."""
+    seg_start = max(
+        prose.rfind(".", 0, match_start),
+        prose.rfind(";", 0, match_start),
+        prose.rfind("\n", 0, match_start),
+    )
+    return prose[seg_start + 1 : match_start]
+
+
+def _c51_declaring_sentence(prose: str, m: re.Match) -> str:
+    """The full declaring sentence around a dropped-at-gate match, whitespace-
+    normalized, list-marker-stripped, truncated to ~120 chars for the check
+    detail."""
+    seg_start = (
+        max(
+            prose.rfind(".", 0, m.start()),
+            prose.rfind(";", 0, m.start()),
+            prose.rfind("\n", 0, m.start()),
+        )
+        + 1
+    )
+    ends = [i for i in (prose.find(t, m.end()) for t in (".", ";", "\n")) if i != -1]
+    seg_end = min(ends) + 1 if ends else len(prose)
+    sentence = re.sub(r"\s+", " ", prose[seg_start:seg_end]).strip()
+    sentence = re.sub(r"^[-*+]\s+", "", sentence)
+    if len(sentence) > 120:
+        sentence = sentence[:117].rstrip() + "…"
+    return sentence
+
+
+def _extract_dropped_condition_name(subject: str) -> str | None:
+    """Best-effort extraction of the dropped condition's NAME from the
+    subject clause preceding a dropped-at-gate verb group.
+
+    Priority: (1) a parenthetical immediately preceding the verb group —
+    `A third planned behavior (sycophancy) was dropped …` → `sycophancy`
+    (the #1947 shape); (2) the LAST backtick/bold/italic-wrapped token in
+    the subject clause — "The `harmful_compliance` behavior was dropped …"
+    → `harmful_compliance`. None when neither form yields a plausible name
+    (the caller's WARN path — surface, never block on a failed heuristic).
+    """
+    m = re.search(r"\(([^()]{2,60})\)\s*$", subject.rstrip())
+    if m:
+        name = _c51_clean_condition_name(m.group(1))
+        if name is not None:
+            return name
+    wrapped = _C51_WRAPPED_TOKEN_RE.findall(subject)
+    for groups in reversed(wrapped):
+        for g in groups:
+            if g and g.strip():
+                name = _c51_clean_condition_name(g)
+                if name is not None:
+                    return name
+    return None
+
+
+def _c51_name_in_text(name: str, text: str | None) -> bool:
+    """Case-insensitive token-bounded match of `name` in `text`: single-token
+    names match on the whole token (never inside a longer word); multi-token
+    names match the full token sequence under flexible separators — `[\\W_]+`
+    so a space-separated extraction still matches a snake_case placement
+    mention ("casual writing style" ↔ `casual_writing_style`)."""
+    if not text:
+        return False
+    tokens = [re.escape(t) for t in re.split(r"[\W_]+", name) if t]
+    if not tokens:
+        return False
+    pat = r"(?<![0-9a-zA-Z])" + r"[\W_]+".join(tokens) + r"(?![0-9a-zA-Z])"
+    return re.search(pat, text, flags=re.IGNORECASE) is not None
+
+
+def _v4_result_block_texts(body: str) -> list[str]:
+    """Text (heading + prose) of each `### <result>` block under the
+    footer-truncated `## Results` section. Empty when `## Results` is absent
+    or carries no `### ` headings."""
+    results = _v4_results_body(body)
+    if results is None:
+        return []
+    rlines = results.splitlines()
+    h3s = _collect_tldr_h3_names(results)
+    out: list[str] = []
+    for idx, (_name, line_no) in enumerate(h3s):
+        end_line = h3s[idx + 1][1] if idx + 1 < len(h3s) else len(rlines)
+        out.append("\n".join(rlines[line_no:end_line]))
+    return out
+
+
+def check_v4_dropped_condition_placement(body: str) -> CheckResult:
+    """Check 51 (v4 only, #2017; incident #1947): a `## Methodology`
+    declaration that a planned condition was DROPPED AT A GATE (yield gate /
+    kill criterion / floor) must name the dropped condition in `## Takeaways`
+    AND in at least one `### <result>` block under `## Results` — CLAUDE.md
+    After-Every-Experiment item 8(a).
+
+    Detection runs on the `## Methodology` prose layer ONLY (fenced code +
+    `<details>` bodies + blockquote lines stripped): sentences matching
+    `was/were dropped|removed|excluded|cut at|by … gate|criterion|floor`
+    within one sentence (the span never crosses `.`/`;`/newline, so judge
+    drop-rate prose with a gate/floor mention in a later sentence never
+    matches). The dropped condition's name is extracted best-effort —
+    (1) a parenthetical immediately preceding the verb group, else (2) the
+    last backtick/bold/italic-wrapped token in the subject clause; a
+    colon-ended candidate (a bold slot label such as `**Design:**` leading
+    the bullet) or a mostly-digit candidate (`232 of 240`) is REJECTED —
+    extraction falls through to the next priority, and to the WARN path
+    when none survives (#2017 r2). FAIL when
+    a confidently-extracted name is missing from `## Takeaways` or from
+    every `### <result>` block (detail quotes the declaring sentence and
+    names the missing placement(s)); WARN when a drop-at-gate declaration is
+    detected but no name is extractable (surface, never block on a failed
+    heuristic extraction). Vacuous PASS on v3/v2/legacy bodies (forward-only)
+    and on v4 bodies with no drop-at-gate language. Incident #1947: the
+    sycophancy yield-gate drop was declared only in Methodology
+    `**Design:**`; every existing check passed and the missing
+    Takeaways/result placements were caught manually by the critic round.
+    """
+    label = "dropped-at-gate condition placement (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    methodology = section_text(body, "Methodology")
+    if methodology is None:
+        return CheckResult(label, True, "## Methodology missing — check 2 will report")
+    prose = _strip_blockquote_lines(_prose_layer(methodology))
+    matches = list(_DROPPED_AT_GATE_RE.finditer(prose))
+    if not matches:
+        return CheckResult(label, True, "no dropped-at-gate declaration in ## Methodology")
+    takeaways = section_text(body, "Takeaways")
+    result_blocks = _v4_result_block_texts(body)
+    failures: list[str] = []
+    unextracted: list[str] = []
+    for m in matches:
+        sentence = _c51_declaring_sentence(prose, m)
+        name = _extract_dropped_condition_name(_c51_subject_clause(prose, m.start()))
+        if name is None:
+            unextracted.append(sentence)
+            continue
+        missing: list[str] = []
+        if not _c51_name_in_text(name, takeaways):
+            missing.append("## Takeaways")
+        if not any(_c51_name_in_text(name, blk) for blk in result_blocks):
+            missing.append("every `### <result>` block under ## Results")
+        if missing:
+            failures.append(
+                f'dropped condition `{name}` (declared: "{sentence}") is absent from '
+                + " AND from ".join(missing)
+            )
+    if failures:
+        return CheckResult(
+            label,
+            False,
+            "; ".join(failures)
+            + " — CLAUDE.md After-Every-Experiment item 8(a): name the dropped condition in "
+            "## Takeaways and in the relevant `### <result>` prose",
+        )
+    if unextracted:
+        preview = "; ".join(f'"{s}"' for s in unextracted[:2])
+        return CheckResult(
+            label,
+            True,
+            f"{len(unextracted)} dropped-at-gate declaration(s) with no extractable condition "
+            f"name — verify the 8(a) Takeaways/result placement manually: {preview}",
+            is_warn=True,
+        )
+    return CheckResult(
+        label,
+        True,
+        f"{len(matches)} dropped-at-gate declaration(s); every extracted condition name "
+        "appears in ## Takeaways and ≥1 `### <result>` block",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 
@@ -14700,12 +15806,22 @@ CHECKS = [
     # check 48 (v4, WARN) — figure-less quantitative result section
     # (#1832; incident #1769 Result 5):
     check_v4_quant_result_figure,
-    # check 37 (WARN, v4, #1370) — footer `- Reused ... from [#M](...)` bullets carry a
-    # revision/path pin (body-text-only sibling of check 35's metadata-side trigger):
+    # check 49 (v4, WARN) — >1 inline figure in one `### <result>` with no
+    # raw+processed / aggregate+per-unit pair evidence in the figures'
+    # basenames / alt text / blockquote captions (#1879; incident #1769
+    # fu1 dose-ladder):
+    check_v4_result_figure_cardinality,
+    # check 37 (WARN, v4, #1370; widened #1907) — footer issue-referencing `- Reused`
+    # bullets carry a revision/path pin + the canonical `from [#M](...)` form
+    # (body-text-only sibling of check 35's metadata-side trigger; #1739/#1900):
     check_footer_reuse_bullets_pinned,
     # check 39 (v4) — `Disclosure: N of M` count claim in the Sample slot
     # reconciles with the example items actually shown (#1421; incident #1005):
     check_v4_sample_disclosure_count,
+    # check 51 (v4) — a ## Methodology dropped-at-gate condition declaration
+    # names the dropped condition in ## Takeaways AND >=1 `### <result>` block
+    # (CLAUDE.md After-Every-Experiment item 8(a); #2017; incident #1947):
+    check_v4_dropped_condition_placement,
     # generation-agnostic checks (v2 AND v3 AND v4):
     check_figure_url_sha_matches_repro,  # check 22
     check_hf_url_resolves,  # check 23
@@ -14746,6 +15862,10 @@ CHECKS = [
     # adjacent to a pinned /tree/<sha> link resolve at that revision
     # (#1520; incident #1426):
     check_hf_brace_expanded_path_claims,
+    # check 50 (WARN, generation-agnostic) — repro-named eval_results dirs are
+    # clean in the resolved repo root's WORKING TREE (untracked/modified
+    # entries under a footer-named result dir; #1989; incident #1768):
+    check_repro_artifacts_clean,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`
@@ -14926,6 +16046,15 @@ def verify_text(
     # PASS when the issue is unknown or no eval data is reachable.
     results.append(
         check_judge_error_denominator(
+            body, issue=issue, eval_root=eval_root, body_source_path=body_source_path
+        )
+    )
+    # Judge drop-line population reconciliation (#1776 incident, task #1881)
+    # — same context needs as the #732 check (issue + the eval-root ladder),
+    # so it also lives outside the body-only CHECKS list. Graceful PASS when
+    # the issue is unknown or no drop-population artifact is reachable.
+    results.append(
+        check_judge_drop_line_population(
             body, issue=issue, eval_root=eval_root, body_source_path=body_source_path
         )
     )

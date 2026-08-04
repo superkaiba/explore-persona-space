@@ -1,0 +1,4 @@
+{
+  "source": "eval_results/issue_1895/input_side/input_side_summary.json",
+  "what_is_plotted": "Held-out per-direction R2 over answer-PCA directions (variance rank, log x) for the dense-input map (v_C -> v_A) vs the SAE-input map (SAE(v_C) top-8192 codes -> v_A); same 120k-fit/20k-holdout split, same val-selected ridge recipe."
+}

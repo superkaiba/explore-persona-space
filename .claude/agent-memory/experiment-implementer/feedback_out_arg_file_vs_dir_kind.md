@@ -27,3 +27,9 @@ relocates (never deletes) — fail-loud on foreign shapes.
 (Incident #1776 crash-fix cycle 5, pod-1776 p3_upload, 2026-07-29: fix commit
 `f313eacbd565683ca50f47427c548115c8ca6def`; rollout text had already uploaded
 + verified — only the tensor/summary batch was blocked.)
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [out-arg FILE-vs-DIR kind](feedback_out_arg_file_vs_dir_kind.md) — a file path passed as an out-dir arg misnests deliverables while .exists()/-e checks pass; use is_file/-f + argparse kind guards + class-sweep out args (#1776 c5)

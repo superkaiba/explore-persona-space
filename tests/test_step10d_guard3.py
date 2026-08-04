@@ -219,7 +219,8 @@ def test_safe_case_push_appears_before_gh_pr_merge():
     # first-occurrence pins would retarget it.
     base = text.find("#### The auto-merge procedure (safe case")
     assert base != -1, "safe-case auto-merge heading not found in SKILL.md"
-    merge_line = "gh pr merge <PR> $MERGE_FORM --delete-branch=false"
+    # "$PR" is the #1897 probe-rebound PR number (was the <PR> placeholder).
+    merge_line = 'gh pr merge "$PR" $MERGE_FORM --delete-branch=false'
     push_line = 'git -C "$WT" push origin issue-<N>'
     merge_offset = text.find(merge_line, base)
     push_offset = text.find(push_line, base)
@@ -495,7 +496,7 @@ def test_gate_verdict_file_gates_safe_case_and_recovery():
     assert first != -1 and second != -1, (
         "both the safe case and the recovery must consume the persisted verdict file"
     )
-    ready = text.find("gh pr ready <PR>")
+    ready = text.find('gh pr ready "$PR"')  # the #1897 probe-rebound "$PR"
     assert -1 < first < ready < second, "the safe-case verdict conditional must precede gh pr ready"
     rec = text.find("#### Merge-conflict recovery")
     rec_push = text.find('git -C "$WT" push\n', rec)
@@ -646,7 +647,7 @@ _NONEMPTY_SHA_CHECK = '[ -n "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/
 # $MERGE_FORM variable; the merge-conflict recovery block is hard-pinned to
 # --squash (its just-added merge commit makes --rebase documented-doomed,
 # #1041). Each consumer is pinned to ITS OWN success-checked merge form.
-_MERGE_SUCCESS_IF_SAFE = "if gh pr merge <PR> $MERGE_FORM --delete-branch=false; then"
+_MERGE_SUCCESS_IF_SAFE = 'if gh pr merge "$PR" $MERGE_FORM --delete-branch=false; then'
 _MERGE_SUCCESS_IF_RECOVERY = "if gh pr merge <PR> --squash --delete-branch=false; then"
 
 
@@ -698,7 +699,7 @@ def test_gate_verdict_consumed_only_after_merge_success():
     probe = "grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt"
     first = text.find(probe)
     second = text.find(probe, first + 1)
-    ready = text.find("gh pr ready <PR>")
+    ready = text.find('gh pr ready "$PR"')  # the #1897 probe-rebound "$PR"
     m1 = text.find(_MERGE_SUCCESS_IF_SAFE, first)
     m2 = text.find(_MERGE_SUCCESS_IF_RECOVERY, second)
     assert -1 < first < ready < m1, "safe case: conditional -> gh pr ready -> success-checked merge"
@@ -1446,6 +1447,29 @@ def test_tg_leg_node_grain_subtraction():
         assert (
             "[ -s /tmp/issue-<N>-tg-new.txt ] || [ -s /tmp/issue-<N>-tg-new-nodes.txt ]" in block
         ), "the verdict must OR the node-grain file beside the file-grain hit set"
+
+
+def test_tg_blocks_bash_parseable(tmp_path):
+    """#1847 (origin #1790): both Step 10d TG executable fences must parse
+    under `bash -n`. Orchestrators execute these blocks verbatim; the
+    substring pins above are structurally blind to a comment/formatting edit
+    that breaks parseability (#1790: msg-strip comments spliced inside the
+    node-grain pipelines broke both fences while every pin stayed green).
+    Convention matches the #1253 strong pin: substitute `<N>` -> a dummy
+    numeric id, write to a file, assert `bash -n` rc==0. Note: a comment
+    line placed after a trailing `|` is valid bash, so the negative smoke
+    is not exhaustive comment coverage."""
+    text = _skill_text()
+    for i, block in enumerate(_tg_blocks(text)):
+        # _tg_blocks segments start with the fence language tag ("bash\n");
+        # strip it so bash -n sees only the block body.
+        body = block.split("\n", 1)[1] if block.startswith("bash") else block
+        script = tmp_path / f"tg_block_{i}.sh"
+        script.write_text(body.replace("<N>", "1790"), encoding="utf-8")
+        bn = subprocess.run(["bash", "-n", str(script)], capture_output=True, text=True)
+        assert bn.returncode == 0, (
+            f"bash -n failed on TG block {i} (the #1790 regression class):\n{bn.stderr}"
+        )
 
 
 # --------------------------------------------------------------------------

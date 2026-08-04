@@ -20,6 +20,7 @@ tools:
   - Glob
   - Bash
   - Write
+model: "claude-fable-5"
 ---
 
 # Codex Follow-Up Critic (thin Claude wrapper, marker mode)

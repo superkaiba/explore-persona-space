@@ -1,0 +1,29 @@
+{
+  "kept_question_ids": [
+    "sycophancy-trainq-0232"
+  ],
+  "kept_request_ids": [
+    "pos-00603"
+  ],
+  "meta": {
+    "emit_target": 300,
+    "git_commit": "bed915164f562ca1c1723bc01fc6a62830b1bd47",
+    "hard_floor": 240,
+    "judge_max_tokens": 500,
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "n_judge_draws": 3,
+    "python": "3.11.15",
+    "timestamp_utc": "2026-08-02T14:35:53Z"
+  },
+  "n_censored": 4,
+  "n_dropped_draws": 6,
+  "n_kept": 1,
+  "n_rejudged": 4,
+  "n_transport_lost_draws": 0,
+  "scores": {
+    "pos-00412": null,
+    "pos-00603": 75.0,
+    "pos-00707": null,
+    "pos-00711": 45.0
+  }
+}

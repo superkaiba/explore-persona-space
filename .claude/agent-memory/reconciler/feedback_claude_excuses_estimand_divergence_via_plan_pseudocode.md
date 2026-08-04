@@ -9,3 +9,9 @@ type: feedback
 **Origin:** #539 r1 — `_twoway_demean` shortcut `y − src_mean − byst_mean + grand_mean` on the unbalanced 16×16-minus-diagonal cohort; exact-FE comparison moved gauss_kl "pair affinity" 0.077→0.043 (−44%).
 
 Contrast with PASS-leaning precedents: [[feedback_codex_methodology_choice_as_bug]] (plan offered explicit options — not the case here) and [[feedback_codex_plan_section_in_scope]] (un-invoked path — not the case: the statistic is computed and reported on the primary cohort). Companions: [[feedback_claude_treats_predictor_formula_mismatch_as_nit]]; [[feedback_claude_misses_floor_vs_raise_divergence]].
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Claude excuses estimand divergence via plan pseudocode](feedback_claude_excuses_estimand_divergence_via_plan_pseudocode.md) — named estimand governs over a shortcut formula exact only off the primary cohort; systematic error under the estimand's name → FAIL. #539 r1.

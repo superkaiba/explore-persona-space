@@ -26,6 +26,7 @@ tools:
   - Grep
   - Glob
   - Bash
+model: "claude-fable-5"
 ---
 
 > **DEPRECATED 2026-05-13.** This agent is retained for historical

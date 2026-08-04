@@ -1,0 +1,907 @@
+{
+  "commit": "a41792eabf",
+  "created": "2026-08-03T06:07:43Z",
+  "figsize": [
+    8.0,
+    5.2
+  ],
+  "points": [
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 25.0,
+      "AUROC at depth $k$": 0.14583333333333334,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 50.0,
+      "AUROC at depth $k$": 0.27159468438538203,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 100.0,
+      "AUROC at depth $k$": 0.4185281385281385,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 200.0,
+      "AUROC at depth $k$": 0.4606615285806037,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 400.0,
+      "AUROC at depth $k$": 0.5056744760941626,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 800.0,
+      "AUROC at depth $k$": 0.5200105880307843,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 1600.0,
+      "AUROC at depth $k$": 0.5271060900577179,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 3200.0,
+      "AUROC at depth $k$": 0.5181599338607185,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 6400.0,
+      "AUROC at depth $k$": 0.5093203985987095,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 12800.0,
+      "AUROC at depth $k$": 0.5045975377633173,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 25600.0,
+      "AUROC at depth $k$": 0.49890597605094283,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 51200.0,
+      "AUROC at depth $k$": 0.4893221832300102,
+      "series": "interpretable",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 25.0,
+      "AUROC at depth $k$": 0.34125636672325976,
+      "series": "abstraction_high",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 50.0,
+      "AUROC at depth $k$": 0.42303030303030303,
+      "series": "abstraction_high",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 100.0,
+      "AUROC at depth $k$": 0.47151771336553944,
+      "series": "abstraction_high",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 200.0,
+      "AUROC at depth $k$": 0.5230154460923692,
+      "series": "abstraction_high",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 400.0,
+      "AUROC at depth $k$": 0.5373278962532274,
+      "series": "abstraction_high",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 800.0,
+      "AUROC at depth $k$": 0.5587776141384388,
+      "series": "abstraction_high",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 1600.0,
+      "AUROC at depth $k$": 0.5643707232236121,
+      "series": "abstraction_high",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 3200.0,
+      "AUROC at depth $k$": 0.5640309500165508,
+      "series": "abstraction_high",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 6400.0,
+      "AUROC at depth $k$": 0.5607522451642694,
+      "series": "abstraction_high",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 12800.0,
+      "AUROC at depth $k$": 0.562107775305038,
+      "series": "abstraction_high",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 25600.0,
+      "AUROC at depth $k$": 0.5659116064909459,
+      "series": "abstraction_high",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 51200.0,
+      "AUROC at depth $k$": 0.5694620659408276,
+      "series": "abstraction_high",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 25.0,
+      "AUROC at depth $k$": 0.9276315789473685,
+      "series": "speaker_language",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 50.0,
+      "AUROC at depth $k$": 0.833634719710669,
+      "series": "speaker_language",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 100.0,
+      "AUROC at depth $k$": 0.7887529137529138,
+      "series": "speaker_language",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 200.0,
+      "AUROC at depth $k$": 0.782608695652174,
+      "series": "speaker_language",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 400.0,
+      "AUROC at depth $k$": 0.7838534417880597,
+      "series": "speaker_language",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 800.0,
+      "AUROC at depth $k$": 0.7927163189999247,
+      "series": "speaker_language",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 1600.0,
+      "AUROC at depth $k$": 0.7697627612195957,
+      "series": "speaker_language",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 3200.0,
+      "AUROC at depth $k$": 0.7437812437812438,
+      "series": "speaker_language",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 6400.0,
+      "AUROC at depth $k$": 0.7095426803138476,
+      "series": "speaker_language",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 12800.0,
+      "AUROC at depth $k$": 0.676124183877415,
+      "series": "speaker_language",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 25600.0,
+      "AUROC at depth $k$": 0.6322085298813718,
+      "series": "speaker_language",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 51200.0,
+      "AUROC at depth $k$": 0.5820960775763773,
+      "series": "speaker_language",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 25.0,
+      "AUROC at depth $k$": 0.24489795918367346,
+      "series": "speaker_register",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 50.0,
+      "AUROC at depth $k$": 0.4377880184331797,
+      "series": "speaker_register",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 100.0,
+      "AUROC at depth $k$": 0.4876296887470072,
+      "series": "speaker_register",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 200.0,
+      "AUROC at depth $k$": 0.5074725456196846,
+      "series": "speaker_register",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 400.0,
+      "AUROC at depth $k$": 0.49845306975249115,
+      "series": "speaker_register",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 800.0,
+      "AUROC at depth $k$": 0.5268849201587705,
+      "series": "speaker_register",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 1600.0,
+      "AUROC at depth $k$": 0.5307689795991898,
+      "series": "speaker_register",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 3200.0,
+      "AUROC at depth $k$": 0.518000337962394,
+      "series": "speaker_register",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 6400.0,
+      "AUROC at depth $k$": 0.5030570334165169,
+      "series": "speaker_register",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 12800.0,
+      "AUROC at depth $k$": 0.4958255204859817,
+      "series": "speaker_register",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 25600.0,
+      "AUROC at depth $k$": 0.49240544711885775,
+      "series": "speaker_register",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 51200.0,
+      "AUROC at depth $k$": 0.4960618043438424,
+      "series": "speaker_register",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 25.0,
+      "AUROC at depth $k$": 0.7304964539007093,
+      "series": "speaker_identity",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 50.0,
+      "AUROC at depth $k$": 0.717391304347826,
+      "series": "speaker_identity",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 100.0,
+      "AUROC at depth $k$": 0.7300531914893617,
+      "series": "speaker_identity",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 200.0,
+      "AUROC at depth $k$": 0.6700436843572822,
+      "series": "speaker_identity",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 400.0,
+      "AUROC at depth $k$": 0.7068903318903319,
+      "series": "speaker_identity",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 800.0,
+      "AUROC at depth $k$": 0.6997245920463618,
+      "series": "speaker_identity",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 1600.0,
+      "AUROC at depth $k$": 0.6803102442021195,
+      "series": "speaker_identity",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 3200.0,
+      "AUROC at depth $k$": 0.6858421952316689,
+      "series": "speaker_identity",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 6400.0,
+      "AUROC at depth $k$": 0.6788916968477532,
+      "series": "speaker_identity",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 12800.0,
+      "AUROC at depth $k$": 0.671005191249774,
+      "series": "speaker_identity",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 25600.0,
+      "AUROC at depth $k$": 0.6611726169192357,
+      "series": "speaker_identity",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 51200.0,
+      "AUROC at depth $k$": 0.6471172906701853,
+      "series": "speaker_identity",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 25.0,
+      "AUROC at depth $k$": 0.5225,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 50.0,
+      "AUROC at depth $k$": 0.5750487329434698,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 100.0,
+      "AUROC at depth $k$": 0.5949103045473508,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 200.0,
+      "AUROC at depth $k$": 0.5939257981018119,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 400.0,
+      "AUROC at depth $k$": 0.6154378970131099,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 800.0,
+      "AUROC at depth $k$": 0.6291899511051748,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 1600.0,
+      "AUROC at depth $k$": 0.6384637794901066,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 3200.0,
+      "AUROC at depth $k$": 0.6461918466071164,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 6400.0,
+      "AUROC at depth $k$": 0.6385882796898541,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 12800.0,
+      "AUROC at depth $k$": 0.626912053788805,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 25600.0,
+      "AUROC at depth $k$": 0.6098673917460583,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 51200.0,
+      "AUROC at depth $k$": 0.5804912624527557,
+      "series": "content_syntax",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 25.0,
+      "AUROC at depth $k$": 0.24444444444444444,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 50.0,
+      "AUROC at depth $k$": 0.26373626373626374,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 100.0,
+      "AUROC at depth $k$": 0.30434782608695654,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 200.0,
+      "AUROC at depth $k$": 0.3125638406537283,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 400.0,
+      "AUROC at depth $k$": 0.3147784824565406,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 800.0,
+      "AUROC at depth $k$": 0.315481893811501,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 1600.0,
+      "AUROC at depth $k$": 0.3110022418879056,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 3200.0,
+      "AUROC at depth $k$": 0.31160433540530075,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 6400.0,
+      "AUROC at depth $k$": 0.3212289441500204,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 12800.0,
+      "AUROC at depth $k$": 0.34371652456017066,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 25600.0,
+      "AUROC at depth $k$": 0.37127149840411594,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 51200.0,
+      "AUROC at depth $k$": 0.410816924955492,
+      "series": "content_topic",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 25.0,
+      "AUROC at depth $k$": 0.5106382978723404,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 50.0,
+      "AUROC at depth $k$": 0.4463157894736842,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 100.0,
+      "AUROC at depth $k$": 0.44735311227457825,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 200.0,
+      "AUROC at depth $k$": 0.5103947368421052,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 400.0,
+      "AUROC at depth $k$": 0.5370963688905641,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 800.0,
+      "AUROC at depth $k$": 0.52402,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 1600.0,
+      "AUROC at depth $k$": 0.5104540397055084,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 3200.0,
+      "AUROC at depth $k$": 0.5012648917434994,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 6400.0,
+      "AUROC at depth $k$": 0.4980419648261448,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 12800.0,
+      "AUROC at depth $k$": 0.49420071769552354,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 25600.0,
+      "AUROC at depth $k$": 0.4947967945618893,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 51200.0,
+      "AUROC at depth $k$": 0.5064457757770753,
+      "series": "content_operation",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 25.0,
+      "AUROC at depth $k$": 0.20408163265306123,
+      "series": "content_entity",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 50.0,
+      "AUROC at depth $k$": 0.10101010101010101,
+      "series": "content_entity",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 100.0,
+      "AUROC at depth $k$": 0.3333333333333333,
+      "series": "content_entity",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 200.0,
+      "AUROC at depth $k$": 0.41759911589998616,
+      "series": "content_entity",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 400.0,
+      "AUROC at depth $k$": 0.38937626530415503,
+      "series": "content_entity",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 800.0,
+      "AUROC at depth $k$": 0.372426767385538,
+      "series": "content_entity",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 1600.0,
+      "AUROC at depth $k$": 0.3470689128828047,
+      "series": "content_entity",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 3200.0,
+      "AUROC at depth $k$": 0.33536761707404356,
+      "series": "content_entity",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 6400.0,
+      "AUROC at depth $k$": 0.3472152619319325,
+      "series": "content_entity",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 12800.0,
+      "AUROC at depth $k$": 0.3624849285257159,
+      "series": "content_entity",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 25600.0,
+      "AUROC at depth $k$": 0.378408563302597,
+      "series": "content_entity",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 51200.0,
+      "AUROC at depth $k$": 0.39680882716851745,
+      "series": "content_entity",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 25.0,
+      "AUROC at depth $k$": 0.7346938775510204,
+      "series": "content_task_format",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 50.0,
+      "AUROC at depth $k$": 0.6119791666666666,
+      "series": "content_task_format",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 100.0,
+      "AUROC at depth $k$": 0.6154741128563118,
+      "series": "content_task_format",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 200.0,
+      "AUROC at depth $k$": 0.5713058419243986,
+      "series": "content_task_format",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 400.0,
+      "AUROC at depth $k$": 0.49833333333333335,
+      "series": "content_task_format",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 800.0,
+      "AUROC at depth $k$": 0.45154541507125096,
+      "series": "content_task_format",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 1600.0,
+      "AUROC at depth $k$": 0.45499758376288657,
+      "series": "content_task_format",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 3200.0,
+      "AUROC at depth $k$": 0.4501516749190048,
+      "series": "content_task_format",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 6400.0,
+      "AUROC at depth $k$": 0.46878053608733744,
+      "series": "content_task_format",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 12800.0,
+      "AUROC at depth $k$": 0.47387497083363417,
+      "series": "content_task_format",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 25600.0,
+      "AUROC at depth $k$": 0.46448604894496826,
+      "series": "content_task_format",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)": 51200.0,
+      "AUROC at depth $k$": 0.46618422638377227,
+      "series": "content_task_format",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 120,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "How deep into the ranking does each judged label separate?",
+        "xlabel": "tail width $k$ (AUROC computed among top-$k$ $\\cup$ bottom-$k$ only)",
+        "ylabel": "AUROC at depth $k$",
+        "legend_labels": [
+          "interpretable",
+          "abstraction_high",
+          "speaker_language",
+          "speaker_register",
+          "speaker_identity",
+          "content_syntax",
+          "content_topic",
+          "content_operation",
+          "content_entity",
+          "content_task_format"
+        ],
+        "annotations": [
+          "ring = separation depth $k^*$; rightmost point = global AUROC"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "interpretable",
+      "abstraction_high",
+      "speaker_language",
+      "speaker_register",
+      "speaker_identity",
+      "content_syntax",
+      "content_topic",
+      "content_operation",
+      "content_entity",
+      "content_task_format"
+    ]
+  }
+}

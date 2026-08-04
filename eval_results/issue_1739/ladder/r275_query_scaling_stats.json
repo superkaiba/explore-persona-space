@@ -1,0 +1,1582 @@
+{
+ "ladder_leg1_pooled_context_end": {
+  "sycophancy": {
+   "arm6_map_proj_e1": [
+    {
+     "budget_l": 250,
+     "rho": 0.14780984857939594,
+     "ci": [
+      0.10309573852574871,
+      0.18844887250203982
+     ],
+     "layer": 19,
+     "n_eval": 1982
+    },
+    {
+     "budget_l": 2500,
+     "rho": 0.20033589551923164,
+     "ci": [
+      0.15395884768854082,
+      0.24139580769139427
+     ],
+     "layer": 11,
+     "n_eval": 1982
+    },
+    {
+     "budget_l": 16000,
+     "rho": 0.20033589551923164,
+     "ci": [
+      0.15395884768854082,
+      0.24139580769139427
+     ],
+     "layer": 11,
+     "n_eval": 1982
+    }
+   ],
+   "arm4_ridge_ctx": [
+    {
+     "budget_l": 250,
+     "rho": 0.051407992789790115,
+     "ci": [
+      0.0009111567661690529,
+      0.09889205408606105
+     ],
+     "layer": 20,
+     "n_eval": 1982
+    },
+    {
+     "budget_l": 2500,
+     "rho": 0.024965318970170194,
+     "ci": [
+      -0.021983311210220007,
+      0.06588174547100378
+     ],
+     "layer": 19,
+     "n_eval": 1982
+    },
+    {
+     "budget_l": 16000,
+     "rho": 0.19320635708068928,
+     "ci": [
+      0.14610769525983416,
+      0.23899777742680187
+     ],
+     "layer": 20,
+     "n_eval": 1982
+    }
+   ],
+   "arm11_oracle_proj": [
+    {
+     "budget_l": 250,
+     "rho": 0.08426817677603524,
+     "ci": [
+      0.04071590918916402,
+      0.12690460318296318
+     ],
+     "layer": 11,
+     "n_eval": 1982
+    },
+    {
+     "budget_l": 2500,
+     "rho": 0.08426817677603524,
+     "ci": [
+      0.04071590918916402,
+      0.12690460318296318
+     ],
+     "layer": 11,
+     "n_eval": 1982
+    },
+    {
+     "budget_l": 16000,
+     "rho": 0.08426817677603524,
+     "ci": [
+      0.04071590918916402,
+      0.12690460318296318
+     ],
+     "layer": 11,
+     "n_eval": 1982
+    }
+   ],
+   "arm1_ctx_e1": [
+    {
+     "budget_l": 250,
+     "rho": 0.014666473513451324,
+     "ci": [
+      -0.02516224767443173,
+      0.06125570100454505
+     ],
+     "layer": 16,
+     "n_eval": 1982
+    },
+    {
+     "budget_l": 2500,
+     "rho": 0.014666473513451324,
+     "ci": [
+      -0.02516224767443173,
+      0.06125570100454505
+     ],
+     "layer": 16,
+     "n_eval": 1982
+    },
+    {
+     "budget_l": 16000,
+     "rho": 0.014666473513451324,
+     "ci": [
+      -0.02516224767443173,
+      0.06125570100454505
+     ],
+     "layer": 16,
+     "n_eval": 1982
+    }
+   ],
+   "arm3_identity_bias": [
+    {
+     "budget_l": 250,
+     "rho": 0.014666473513451324,
+     "ci": [
+      -0.02516224767443173,
+      0.06125570100454505
+     ],
+     "layer": 16,
+     "n_eval": 1982
+    },
+    {
+     "budget_l": 2500,
+     "rho": 0.014666473513451324,
+     "ci": [
+      -0.02516224767443173,
+      0.06125570100454505
+     ],
+     "layer": 16,
+     "n_eval": 1982
+    },
+    {
+     "budget_l": 16000,
+     "rho": 0.014666473513451324,
+     "ci": [
+      -0.02516224767443173,
+      0.06125570100454505
+     ],
+     "layer": 16,
+     "n_eval": 1982
+    }
+   ],
+   "arm13_shuffled_map": [
+    {
+     "budget_l": 250,
+     "rho": 0.013259101764462336,
+     "ci": [
+      -0.0316226277116978,
+      0.059119325146038265
+     ],
+     "layer": 24,
+     "n_eval": 1982
+    },
+    {
+     "budget_l": 2500,
+     "rho": 0.013259101764462336,
+     "ci": [
+      -0.0316226277116978,
+      0.059119325146038265
+     ],
+     "layer": 24,
+     "n_eval": 1982
+    },
+    {
+     "budget_l": 16000,
+     "rho": 0.013259101764462336,
+     "ci": [
+      -0.0316226277116978,
+      0.059119325146038265
+     ],
+     "layer": 24,
+     "n_eval": 1982
+    }
+   ]
+  },
+  "hallucination": {
+   "arm6_map_proj_e1": [
+    {
+     "budget_l": 250,
+     "rho": -0.06483911013471,
+     "ci": [
+      -0.11443856799280351,
+      -0.01978475937949384
+     ],
+     "layer": 23,
+     "n_eval": 1967
+    },
+    {
+     "budget_l": 2500,
+     "rho": -0.06483911013471,
+     "ci": [
+      -0.11443856799280351,
+      -0.01978475937949384
+     ],
+     "layer": 23,
+     "n_eval": 1967
+    },
+    {
+     "budget_l": 16000,
+     "rho": -0.06483911013471,
+     "ci": [
+      -0.11443856799280351,
+      -0.01978475937949384
+     ],
+     "layer": 23,
+     "n_eval": 1967
+    }
+   ],
+   "arm4_ridge_ctx": [
+    {
+     "budget_l": 250,
+     "rho": 0.0027334162442984706,
+     "ci": [
+      -0.04231286352354732,
+      0.0484595773857705
+     ],
+     "layer": 16,
+     "n_eval": 1967
+    },
+    {
+     "budget_l": 2500,
+     "rho": -0.01883091352429033,
+     "ci": [
+      -0.06112905116340238,
+      0.023334319376341766
+     ],
+     "layer": 18,
+     "n_eval": 1967
+    },
+    {
+     "budget_l": 16000,
+     "rho": 0.017535629043725076,
+     "ci": [
+      -0.02856925797908596,
+      0.061504329967548545
+     ],
+     "layer": 20,
+     "n_eval": 1967
+    }
+   ],
+   "arm11_oracle_proj": [
+    {
+     "budget_l": 250,
+     "rho": 0.1776250067441395,
+     "ci": [
+      0.12897881111142884,
+      0.22217726079100428
+     ],
+     "layer": 27,
+     "n_eval": 1967
+    },
+    {
+     "budget_l": 2500,
+     "rho": 0.1776250067441395,
+     "ci": [
+      0.12897881111142884,
+      0.22217726079100428
+     ],
+     "layer": 27,
+     "n_eval": 1967
+    },
+    {
+     "budget_l": 16000,
+     "rho": 0.1776250067441395,
+     "ci": [
+      0.12897881111142884,
+      0.22217726079100428
+     ],
+     "layer": 27,
+     "n_eval": 1967
+    }
+   ],
+   "arm1_ctx_e1": [
+    {
+     "budget_l": 250,
+     "rho": 0.016076425110871307,
+     "ci": [
+      -0.02769179342713326,
+      0.06746424661576264
+     ],
+     "layer": 2,
+     "n_eval": 1967
+    },
+    {
+     "budget_l": 2500,
+     "rho": -0.08708136914685885,
+     "ci": [
+      -0.1283977208496973,
+      -0.041136556918949574
+     ],
+     "layer": 24,
+     "n_eval": 1967
+    },
+    {
+     "budget_l": 16000,
+     "rho": -0.08708136914685885,
+     "ci": [
+      -0.1283977208496973,
+      -0.041136556918949574
+     ],
+     "layer": 24,
+     "n_eval": 1967
+    }
+   ],
+   "arm3_identity_bias": [
+    {
+     "budget_l": 250,
+     "rho": -0.0868186264748443,
+     "ci": [
+      -0.13055521553717972,
+      -0.04323470674673988
+     ],
+     "layer": 12,
+     "n_eval": 1967
+    },
+    {
+     "budget_l": 2500,
+     "rho": -0.08708136914685885,
+     "ci": [
+      -0.1283977208496973,
+      -0.041136556918949574
+     ],
+     "layer": 24,
+     "n_eval": 1967
+    },
+    {
+     "budget_l": 16000,
+     "rho": -0.08708136914685885,
+     "ci": [
+      -0.1283977208496973,
+      -0.041136556918949574
+     ],
+     "layer": 24,
+     "n_eval": 1967
+    }
+   ],
+   "arm13_shuffled_map": [
+    {
+     "budget_l": 250,
+     "rho": -0.04127672871202404,
+     "ci": [
+      -0.08638710148043155,
+      0.0025844834602956734
+     ],
+     "layer": 5,
+     "n_eval": 1967
+    },
+    {
+     "budget_l": 2500,
+     "rho": -0.06301280841215792,
+     "ci": [
+      -0.10924001905674424,
+      -0.02326467578432042
+     ],
+     "layer": 10,
+     "n_eval": 1967
+    },
+    {
+     "budget_l": 16000,
+     "rho": -0.02400356231410862,
+     "ci": [
+      -0.06821928255170481,
+      0.017346923323152488
+     ],
+     "layer": 25,
+     "n_eval": 1967
+    }
+   ]
+  },
+  "evil": {
+   "arm6_map_proj_e1": [
+    {
+     "budget_l": 250,
+     "rho": 0.1103449355653389,
+     "ci": [
+      0.057737386694296226,
+      0.15343540959033294
+     ],
+     "layer": 22,
+     "n_eval": 1987
+    },
+    {
+     "budget_l": 2500,
+     "rho": 0.1103449355653389,
+     "ci": [
+      0.057737386694296226,
+      0.15343540959033294
+     ],
+     "layer": 22,
+     "n_eval": 1987
+    },
+    {
+     "budget_l": 8000,
+     "rho": 0.1103449355653389,
+     "ci": [
+      0.057737386694296226,
+      0.15343540959033294
+     ],
+     "layer": 22,
+     "n_eval": 1987
+    }
+   ],
+   "arm4_ridge_ctx": [
+    {
+     "budget_l": 250,
+     "rho": 0.04199136025925502,
+     "ci": [
+      -0.00899209999673578,
+      0.09606518388407832
+     ],
+     "layer": 14,
+     "n_eval": 1987
+    },
+    {
+     "budget_l": 2500,
+     "rho": 0.0018877491102541302,
+     "ci": [
+      -0.04418278060298166,
+      0.04827543944799957
+     ],
+     "layer": 15,
+     "n_eval": 1987
+    },
+    {
+     "budget_l": 8000,
+     "rho": 0.08430225438189178,
+     "ci": [
+      0.03659637972287431,
+      0.12807689491073526
+     ],
+     "layer": 19,
+     "n_eval": 1987
+    }
+   ],
+   "arm11_oracle_proj": [
+    {
+     "budget_l": 250,
+     "rho": 0.15576916013499797,
+     "ci": [
+      0.11243916030370091,
+      0.19564193377328382
+     ],
+     "layer": 22,
+     "n_eval": 1987
+    },
+    {
+     "budget_l": 2500,
+     "rho": 0.15576916013499797,
+     "ci": [
+      0.11243916030370091,
+      0.19564193377328382
+     ],
+     "layer": 22,
+     "n_eval": 1987
+    },
+    {
+     "budget_l": 8000,
+     "rho": 0.15576916013499797,
+     "ci": [
+      0.11243916030370091,
+      0.19564193377328382
+     ],
+     "layer": 22,
+     "n_eval": 1987
+    }
+   ],
+   "arm1_ctx_e1": [
+    {
+     "budget_l": 250,
+     "rho": 0.01804916880815889,
+     "ci": [
+      -0.02016648059576289,
+      0.05651109372249188
+     ],
+     "layer": 18,
+     "n_eval": 1987
+    },
+    {
+     "budget_l": 2500,
+     "rho": -0.006266225010684816,
+     "ci": [
+      -0.0509871632329117,
+      0.040198376084468426
+     ],
+     "layer": 15,
+     "n_eval": 1987
+    },
+    {
+     "budget_l": 8000,
+     "rho": -0.006266225010684816,
+     "ci": [
+      -0.0509871632329117,
+      0.040198376084468426
+     ],
+     "layer": 15,
+     "n_eval": 1987
+    }
+   ],
+   "arm3_identity_bias": [
+    {
+     "budget_l": 250,
+     "rho": 0.01804916880815889,
+     "ci": [
+      -0.02016648059576289,
+      0.05651109372249188
+     ],
+     "layer": 18,
+     "n_eval": 1987
+    },
+    {
+     "budget_l": 2500,
+     "rho": -0.006266225010684816,
+     "ci": [
+      -0.0509871632329117,
+      0.040198376084468426
+     ],
+     "layer": 15,
+     "n_eval": 1987
+    },
+    {
+     "budget_l": 8000,
+     "rho": -0.006266225010684816,
+     "ci": [
+      -0.0509871632329117,
+      0.040198376084468426
+     ],
+     "layer": 15,
+     "n_eval": 1987
+    }
+   ],
+   "arm13_shuffled_map": [
+    {
+     "budget_l": 250,
+     "rho": 0.01658604165526897,
+     "ci": [
+      -0.026201376822395327,
+      0.06216377540743005
+     ],
+     "layer": 22,
+     "n_eval": 1987
+    },
+    {
+     "budget_l": 2500,
+     "rho": 0.08102727731323896,
+     "ci": [
+      0.03897401901488248,
+      0.1226198797451045
+     ],
+     "layer": 19,
+     "n_eval": 1987
+    },
+    {
+     "budget_l": 8000,
+     "rho": 0.08102727731323896,
+     "ci": [
+      0.03897401901488248,
+      0.1226198797451045
+     ],
+     "layer": 19,
+     "n_eval": 1987
+    }
+   ]
+  }
+ },
+ "evil_leg2_pooled_context_end": {
+  "arm11_oracle_proj": [
+   {
+    "ladder_rung_l": 250,
+    "budget_l_of_row": 6468,
+    "rho": 0.15576916013499797,
+    "ci": [
+     0.11243916030370091,
+     0.19564193377328382
+    ],
+    "layer": 22,
+    "n_eval": 1987
+   },
+   {
+    "ladder_rung_l": 2500,
+    "budget_l_of_row": 6468,
+    "rho": 0.15576916013499797,
+    "ci": [
+     0.11243916030370091,
+     0.19564193377328382
+    ],
+    "layer": 22,
+    "n_eval": 1987
+   },
+   {
+    "ladder_rung_l": 8000,
+    "budget_l_of_row": 6468,
+    "rho": 0.15576916013499797,
+    "ci": [
+     0.11243916030370091,
+     0.19564193377328382
+    ],
+    "layer": 22,
+    "n_eval": 1987
+   }
+  ],
+  "arm13_shuffled_map": [
+   {
+    "ladder_rung_l": 250,
+    "budget_l_of_row": 6468,
+    "rho": 0.0680898245982501,
+    "ci": [
+     0.025120386840124218,
+     0.1065242288034844
+    ],
+    "layer": 17,
+    "n_eval": 1987
+   },
+   {
+    "ladder_rung_l": 2500,
+    "budget_l_of_row": 6468,
+    "rho": 0.0680898245982501,
+    "ci": [
+     0.025120386840124218,
+     0.1065242288034844
+    ],
+    "layer": 17,
+    "n_eval": 1987
+   },
+   {
+    "ladder_rung_l": 8000,
+    "budget_l_of_row": 6468,
+    "rho": 0.0680898245982501,
+    "ci": [
+     0.025120386840124218,
+     0.1065242288034844
+    ],
+    "layer": 17,
+    "n_eval": 1987
+   }
+  ],
+  "arm1_ctx_e1": [
+   {
+    "ladder_rung_l": 250,
+    "budget_l_of_row": 6468,
+    "rho": 0.003381803875829451,
+    "ci": [
+     -0.03704114368817064,
+     0.04750195954086259
+    ],
+    "layer": 12,
+    "n_eval": 1987
+   },
+   {
+    "ladder_rung_l": 2500,
+    "budget_l_of_row": 6468,
+    "rho": 0.003381803875829451,
+    "ci": [
+     -0.03704114368817064,
+     0.04750195954086259
+    ],
+    "layer": 12,
+    "n_eval": 1987
+   },
+   {
+    "ladder_rung_l": 8000,
+    "budget_l_of_row": 6468,
+    "rho": 0.003381803875829451,
+    "ci": [
+     -0.03704114368817064,
+     0.04750195954086259
+    ],
+    "layer": 12,
+    "n_eval": 1987
+   }
+  ],
+  "arm3_identity_bias": [
+   {
+    "ladder_rung_l": 250,
+    "budget_l_of_row": 6468,
+    "rho": 0.003381803875829451,
+    "ci": [
+     -0.03704114368817064,
+     0.04750195954086259
+    ],
+    "layer": 12,
+    "n_eval": 1987
+   },
+   {
+    "ladder_rung_l": 2500,
+    "budget_l_of_row": 6468,
+    "rho": 0.003381803875829451,
+    "ci": [
+     -0.03704114368817064,
+     0.04750195954086259
+    ],
+    "layer": 12,
+    "n_eval": 1987
+   },
+   {
+    "ladder_rung_l": 8000,
+    "budget_l_of_row": 6468,
+    "rho": 0.003381803875829451,
+    "ci": [
+     -0.03704114368817064,
+     0.04750195954086259
+    ],
+    "layer": 12,
+    "n_eval": 1987
+   }
+  ],
+  "arm4_ridge_ctx": [
+   {
+    "ladder_rung_l": 250,
+    "budget_l_of_row": 6468,
+    "rho": -0.08131075469567142,
+    "ci": [
+     -0.12763355542395038,
+     -0.02842543088417813
+    ],
+    "layer": 24,
+    "n_eval": 1987
+   },
+   {
+    "ladder_rung_l": 2500,
+    "budget_l_of_row": 6468,
+    "rho": -0.08131075469567142,
+    "ci": [
+     -0.12763355542395038,
+     -0.02842543088417813
+    ],
+    "layer": 24,
+    "n_eval": 1987
+   },
+   {
+    "ladder_rung_l": 8000,
+    "budget_l_of_row": 6468,
+    "rho": -0.08131075469567142,
+    "ci": [
+     -0.12763355542395038,
+     -0.02842543088417813
+    ],
+    "layer": 24,
+    "n_eval": 1987
+   }
+  ],
+  "arm6_map_proj_e1": [
+   {
+    "ladder_rung_l": 250,
+    "budget_l_of_row": 6468,
+    "rho": -0.06716815220224041,
+    "ci": [
+     -0.10903614932294317,
+     -0.019244494713839287
+    ],
+    "layer": 27,
+    "n_eval": 1987
+   },
+   {
+    "ladder_rung_l": 2500,
+    "budget_l_of_row": 6468,
+    "rho": -0.06716815220224041,
+    "ci": [
+     -0.10903614932294317,
+     -0.019244494713839287
+    ],
+    "layer": 27,
+    "n_eval": 1987
+   },
+   {
+    "ladder_rung_l": 8000,
+    "budget_l_of_row": 6468,
+    "rho": -0.06716815220224041,
+    "ci": [
+     -0.10903614932294317,
+     -0.019244494713839287
+    ],
+    "layer": 27,
+    "n_eval": 1987
+   }
+  ]
+ },
+ "evil_leg2_invariant_across_rungs": {
+  "arm11_oracle_proj": {
+   "distinct_rho": [
+    0.155769160135
+   ],
+   "distinct_row_budget_l": [
+    6468
+   ],
+   "invariant": true
+  },
+  "arm13_shuffled_map": {
+   "distinct_rho": [
+    0.068089824598
+   ],
+   "distinct_row_budget_l": [
+    6468
+   ],
+   "invariant": true
+  },
+  "arm1_ctx_e1": {
+   "distinct_rho": [
+    0.003381803876
+   ],
+   "distinct_row_budget_l": [
+    6468
+   ],
+   "invariant": true
+  },
+  "arm3_identity_bias": {
+   "distinct_rho": [
+    0.003381803876
+   ],
+   "distinct_row_budget_l": [
+    6468
+   ],
+   "invariant": true
+  },
+  "arm4_ridge_ctx": {
+   "distinct_rho": [
+    -0.081310754696
+   ],
+   "distinct_row_budget_l": [
+    6468
+   ],
+   "invariant": true
+  },
+  "arm6_map_proj_e1": {
+   "distinct_rho": [
+    -0.067168152202
+   ],
+   "distinct_row_budget_l": [
+    6468
+   ],
+   "invariant": true
+  }
+ },
+ "turn_subsets_at_max_budget": {
+  "sycophancy": {
+   "budget_l": 16000,
+   "arms": {
+    "arm11_oracle_proj": {
+     "pooled": {
+      "rho": 0.08426817677603524,
+      "ci": [
+       0.04071590918916402,
+       0.12690460318296318
+      ],
+      "layer": 11,
+      "n_eval": 1982
+     },
+     "multi_turn_only": {
+      "rho": 0.1474247072973291,
+      "ci": [
+       0.08562195915345121,
+       0.20796630002986757
+      ],
+      "layer": 11,
+      "n_eval": 1008
+     },
+     "single_turn_only": {
+      "rho": 0.03277602127698871,
+      "ci": [
+       -0.029054628064611995,
+       0.09924887283969508
+      ],
+      "layer": 11,
+      "n_eval": 974
+     }
+    },
+    "arm13_shuffled_map": {
+     "pooled": {
+      "rho": 0.013259101764462336,
+      "ci": [
+       -0.0316226277116978,
+       0.059119325146038265
+      ],
+      "layer": 24,
+      "n_eval": 1982
+     },
+     "multi_turn_only": {
+      "rho": 0.011404694724295217,
+      "ci": [
+       -0.0523896021409084,
+       0.07430360439636412
+      ],
+      "layer": 24,
+      "n_eval": 1008
+     },
+     "single_turn_only": {
+      "rho": 0.015221387313709398,
+      "ci": [
+       -0.04827283726392737,
+       0.07434048928372766
+      ],
+      "layer": 24,
+      "n_eval": 974
+     }
+    },
+    "arm1_ctx_e1": {
+     "pooled": {
+      "rho": 0.014666473513451324,
+      "ci": [
+       -0.02516224767443173,
+       0.06125570100454505
+      ],
+      "layer": 16,
+      "n_eval": 1982
+     },
+     "multi_turn_only": {
+      "rho": 0.034748712885153014,
+      "ci": [
+       -0.025944600505723052,
+       0.0904498295492209
+      ],
+      "layer": 16,
+      "n_eval": 1008
+     },
+     "single_turn_only": {
+      "rho": -0.0018151359040506315,
+      "ci": [
+       -0.06450887367640665,
+       0.06272657028085789
+      ],
+      "layer": 16,
+      "n_eval": 974
+     }
+    },
+    "arm3_identity_bias": {
+     "pooled": {
+      "rho": 0.014666473513451324,
+      "ci": [
+       -0.02516224767443173,
+       0.06125570100454505
+      ],
+      "layer": 16,
+      "n_eval": 1982
+     },
+     "multi_turn_only": {
+      "rho": 0.034748712885153014,
+      "ci": [
+       -0.025944600505723052,
+       0.0904498295492209
+      ],
+      "layer": 16,
+      "n_eval": 1008
+     },
+     "single_turn_only": {
+      "rho": -0.0018151359040506315,
+      "ci": [
+       -0.06450887367640665,
+       0.06272657028085789
+      ],
+      "layer": 16,
+      "n_eval": 974
+     }
+    },
+    "arm4_ridge_ctx": {
+     "pooled": {
+      "rho": 0.19320635708068928,
+      "ci": [
+       0.14610769525983416,
+       0.23899777742680187
+      ],
+      "layer": 20,
+      "n_eval": 1982
+     },
+     "multi_turn_only": {
+      "rho": 0.19170505812543412,
+      "ci": [
+       0.13263923401603242,
+       0.25145395401840936
+      ],
+      "layer": 20,
+      "n_eval": 1008
+     },
+     "single_turn_only": {
+      "rho": 0.18637115856790137,
+      "ci": [
+       0.1238102123546567,
+       0.25726496361812407
+      ],
+      "layer": 20,
+      "n_eval": 974
+     }
+    },
+    "arm6_map_proj_e1": {
+     "pooled": {
+      "rho": 0.20033589551923164,
+      "ci": [
+       0.15395884768854082,
+       0.24139580769139427
+      ],
+      "layer": 11,
+      "n_eval": 1982
+     },
+     "multi_turn_only": {
+      "rho": 0.2802142955829119,
+      "ci": [
+       0.22242443632700346,
+       0.3344450263510758
+      ],
+      "layer": 11,
+      "n_eval": 1008
+     },
+     "single_turn_only": {
+      "rho": 0.06357694095580557,
+      "ci": [
+       -0.0018674755029544643,
+       0.1239532883889414
+      ],
+      "layer": 11,
+      "n_eval": 974
+     }
+    }
+   }
+  },
+  "hallucination": {
+   "budget_l": 16000,
+   "arms": {
+    "arm11_oracle_proj": {
+     "pooled": {
+      "rho": 0.1776250067441395,
+      "ci": [
+       0.12897881111142884,
+       0.22217726079100428
+      ],
+      "layer": 27,
+      "n_eval": 1967
+     },
+     "multi_turn_only": {
+      "rho": 0.20486907193786708,
+      "ci": [
+       0.13830321116595876,
+       0.26867236958272045
+      ],
+      "layer": 27,
+      "n_eval": 1004
+     },
+     "single_turn_only": {
+      "rho": 0.22760575198905136,
+      "ci": [
+       0.1643132377035918,
+       0.28239818924524807
+      ],
+      "layer": 27,
+      "n_eval": 963
+     }
+    },
+    "arm13_shuffled_map": {
+     "pooled": {
+      "rho": -0.02400356231410862,
+      "ci": [
+       -0.06821928255170481,
+       0.017346923323152488
+      ],
+      "layer": 25,
+      "n_eval": 1967
+     },
+     "multi_turn_only": {
+      "rho": 0.0015438937046292642,
+      "ci": [
+       -0.0583964764632707,
+       0.06051676425343894
+      ],
+      "layer": 25,
+      "n_eval": 1004
+     },
+     "single_turn_only": {
+      "rho": -0.06205105133805329,
+      "ci": [
+       -0.12577392859247788,
+       0.00022517254463392633
+      ],
+      "layer": 25,
+      "n_eval": 963
+     }
+    },
+    "arm1_ctx_e1": {
+     "pooled": {
+      "rho": -0.08708136914685885,
+      "ci": [
+       -0.1283977208496973,
+       -0.041136556918949574
+      ],
+      "layer": 24,
+      "n_eval": 1967
+     },
+     "multi_turn_only": {
+      "rho": -0.07684498396392943,
+      "ci": [
+       -0.13733898165245287,
+       -0.018524649814266166
+      ],
+      "layer": 24,
+      "n_eval": 1004
+     },
+     "single_turn_only": {
+      "rho": -0.09610228031682591,
+      "ci": [
+       -0.15498880309716237,
+       -0.03693234332377363
+      ],
+      "layer": 24,
+      "n_eval": 963
+     }
+    },
+    "arm3_identity_bias": {
+     "pooled": {
+      "rho": -0.08708136914685885,
+      "ci": [
+       -0.1283977208496973,
+       -0.041136556918949574
+      ],
+      "layer": 24,
+      "n_eval": 1967
+     },
+     "multi_turn_only": {
+      "rho": -0.07684498396392943,
+      "ci": [
+       -0.13733898165245287,
+       -0.018524649814266166
+      ],
+      "layer": 24,
+      "n_eval": 1004
+     },
+     "single_turn_only": {
+      "rho": -0.09610228031682591,
+      "ci": [
+       -0.15498880309716237,
+       -0.03693234332377363
+      ],
+      "layer": 24,
+      "n_eval": 963
+     }
+    },
+    "arm4_ridge_ctx": {
+     "pooled": {
+      "rho": 0.017535629043725076,
+      "ci": [
+       -0.02856925797908596,
+       0.061504329967548545
+      ],
+      "layer": 20,
+      "n_eval": 1967
+     },
+     "multi_turn_only": {
+      "rho": 0.06663138458491774,
+      "ci": [
+       0.004583997086777949,
+       0.13924277055253373
+      ],
+      "layer": 20,
+      "n_eval": 1004
+     },
+     "single_turn_only": {
+      "rho": -0.03514031567678179,
+      "ci": [
+       -0.10478526182247959,
+       0.028343409702552856
+      ],
+      "layer": 20,
+      "n_eval": 963
+     }
+    },
+    "arm6_map_proj_e1": {
+     "pooled": {
+      "rho": -0.06483911013471,
+      "ci": [
+       -0.11443856799280351,
+       -0.01978475937949384
+      ],
+      "layer": 23,
+      "n_eval": 1967
+     },
+     "multi_turn_only": {
+      "rho": -0.16762261629839315,
+      "ci": [
+       -0.2307520986157528,
+       -0.09600063377066596
+      ],
+      "layer": 23,
+      "n_eval": 1004
+     },
+     "single_turn_only": {
+      "rho": 0.15373453635198261,
+      "ci": [
+       0.0845104757125641,
+       0.21656610229244228
+      ],
+      "layer": 23,
+      "n_eval": 963
+     }
+    }
+   }
+  },
+  "evil": {
+   "budget_l": 8000,
+   "arms": {
+    "arm11_oracle_proj": {
+     "pooled": {
+      "rho": 0.15576916013499797,
+      "ci": [
+       0.11243916030370091,
+       0.19564193377328382
+      ],
+      "layer": 22,
+      "n_eval": 1987
+     },
+     "multi_turn_only": {
+      "rho": 0.17099019350259484,
+      "ci": [
+       0.10321029710703385,
+       0.22262329767138495
+      ],
+      "layer": 22,
+      "n_eval": 1009
+     },
+     "single_turn_only": {
+      "rho": 0.15165080183941831,
+      "ci": [
+       0.10334792984137227,
+       0.1918984866653095
+      ],
+      "layer": 22,
+      "n_eval": 978
+     }
+    },
+    "arm13_shuffled_map": {
+     "pooled": {
+      "rho": 0.08102727731323896,
+      "ci": [
+       0.03897401901488248,
+       0.1226198797451045
+      ],
+      "layer": 19,
+      "n_eval": 1987
+     },
+     "multi_turn_only": {
+      "rho": 0.05594883296972542,
+      "ci": [
+       -0.0029885906444698605,
+       0.11586101737753281
+      ],
+      "layer": 19,
+      "n_eval": 1009
+     },
+     "single_turn_only": {
+      "rho": 0.1106743757381215,
+      "ci": [
+       0.05262544649044545,
+       0.1633626226855324
+      ],
+      "layer": 19,
+      "n_eval": 978
+     }
+    },
+    "arm1_ctx_e1": {
+     "pooled": {
+      "rho": -0.006266225010684816,
+      "ci": [
+       -0.0509871632329117,
+       0.040198376084468426
+      ],
+      "layer": 15,
+      "n_eval": 1987
+     },
+     "multi_turn_only": {
+      "rho": -0.021774003248651388,
+      "ci": [
+       -0.0772978711668242,
+       0.04097130299238845
+      ],
+      "layer": 15,
+      "n_eval": 1009
+     },
+     "single_turn_only": {
+      "rho": 0.00892419979537085,
+      "ci": [
+       -0.07516291180039401,
+       0.08708623885592649
+      ],
+      "layer": 15,
+      "n_eval": 978
+     }
+    },
+    "arm3_identity_bias": {
+     "pooled": {
+      "rho": -0.006266225010684816,
+      "ci": [
+       -0.0509871632329117,
+       0.040198376084468426
+      ],
+      "layer": 15,
+      "n_eval": 1987
+     },
+     "multi_turn_only": {
+      "rho": -0.021774003248651388,
+      "ci": [
+       -0.0772978711668242,
+       0.04097130299238845
+      ],
+      "layer": 15,
+      "n_eval": 1009
+     },
+     "single_turn_only": {
+      "rho": 0.00892419979537085,
+      "ci": [
+       -0.07516291180039401,
+       0.08708623885592649
+      ],
+      "layer": 15,
+      "n_eval": 978
+     }
+    },
+    "arm4_ridge_ctx": {
+     "pooled": {
+      "rho": 0.08430225438189178,
+      "ci": [
+       0.03659637972287431,
+       0.12807689491073526
+      ],
+      "layer": 19,
+      "n_eval": 1987
+     },
+     "multi_turn_only": {
+      "rho": 0.0666097248291245,
+      "ci": [
+       0.003526342386870275,
+       0.13327832434128864
+      ],
+      "layer": 19,
+      "n_eval": 1009
+     },
+     "single_turn_only": {
+      "rho": 0.10701366799262747,
+      "ci": [
+       0.04186322522489854,
+       0.15988190286200604
+      ],
+      "layer": 19,
+      "n_eval": 978
+     }
+    },
+    "arm6_map_proj_e1": {
+     "pooled": {
+      "rho": 0.1103449355653389,
+      "ci": [
+       0.057737386694296226,
+       0.15343540959033294
+      ],
+      "layer": 22,
+      "n_eval": 1987
+     },
+     "multi_turn_only": {
+      "rho": 0.08828139799729445,
+      "ci": [
+       0.013031272079845904,
+       0.1656512684107084
+      ],
+      "layer": 22,
+      "n_eval": 1009
+     },
+     "single_turn_only": {
+      "rho": 0.14749751171193218,
+      "ci": [
+       0.09418338667300799,
+       0.19361887218474294
+      ],
+      "layer": 22,
+      "n_eval": 978
+     }
+    }
+   }
+  }
+ },
+ "meta": {
+  "sycophancy": {
+   "budgets_run": [
+    250,
+    2500,
+    16000
+   ],
+   "legs_run": [
+    "1"
+   ],
+   "map_kind": "linear",
+   "map_source": "refit-in-process",
+   "u_sizes": [
+    "full"
+   ],
+   "draw": 0,
+   "seed": 0,
+   "frozen_layer_source": {
+    "context_end": "own-train-pool-selection",
+    "prefix_end": "own-train-pool-selection"
+   },
+   "render_agrees_with_expected": true,
+   "subsets_emitted": [
+    "pooled",
+    "multi_turn_only",
+    "single_turn_only"
+   ],
+   "preds_persisted_files": [
+    "bareq_leg1_preds.context_end.jsonl",
+    "bareq_leg1_preds.prefix_end.jsonl"
+   ],
+   "mapping_baselines_leg1_reason": "leg 1 FITS NO MAP \u2014 it APPLIES committed train-fit maps/ridges to bare reps and scores rho, so the standing identity+learned-bias / kNN-retrieval pair (which attaches to a FITTED v_X -> v_Y map) has nothing to attach to. NOTE: the arm slug 'arm3_identity_bias' is an activation->DV SCORING arm and is NOT the mapping_baselines identity+bias map baseline.",
+   "ts": "2026-08-02T16:05:51Z"
+  },
+  "hallucination": {
+   "budgets_run": [
+    250,
+    2500,
+    16000
+   ],
+   "legs_run": [
+    "1"
+   ],
+   "map_kind": "linear",
+   "map_source": "refit-in-process",
+   "u_sizes": [
+    "full"
+   ],
+   "draw": 0,
+   "seed": 0,
+   "frozen_layer_source": {
+    "context_end": "own-train-pool-selection",
+    "prefix_end": "own-train-pool-selection"
+   },
+   "render_agrees_with_expected": true,
+   "subsets_emitted": [
+    "pooled",
+    "multi_turn_only",
+    "single_turn_only"
+   ],
+   "preds_persisted_files": [
+    "bareq_leg1_preds.context_end.jsonl",
+    "bareq_leg1_preds.prefix_end.jsonl"
+   ],
+   "mapping_baselines_leg1_reason": "leg 1 FITS NO MAP \u2014 it APPLIES committed train-fit maps/ridges to bare reps and scores rho, so the standing identity+learned-bias / kNN-retrieval pair (which attaches to a FITTED v_X -> v_Y map) has nothing to attach to. NOTE: the arm slug 'arm3_identity_bias' is an activation->DV SCORING arm and is NOT the mapping_baselines identity+bias map baseline.",
+   "ts": "2026-08-02T16:24:37Z"
+  },
+  "evil": {
+   "budgets_run": [
+    250,
+    2500,
+    8000
+   ],
+   "legs_run": [
+    "1",
+    "2"
+   ],
+   "map_kind": "linear",
+   "map_source": "refit-in-process",
+   "u_sizes": [
+    "full"
+   ],
+   "draw": 0,
+   "seed": 0,
+   "frozen_layer_source": {
+    "context_end": "own-bare-train-pool-selection (by-query folds)",
+    "prefix_end": "own-train-pool-selection"
+   },
+   "render_agrees_with_expected": true,
+   "subsets_emitted": [
+    "pooled",
+    "multi_turn_only",
+    "single_turn_only"
+   ],
+   "preds_persisted_files": [
+    "bareq_leg1_preds.context_end.jsonl",
+    "bareq_leg1_preds.prefix_end.jsonl",
+    "bareq_leg2_preds.wildchat_rung.jsonl"
+   ],
+   "mapping_baselines_leg1_reason": "leg 1 FITS NO MAP \u2014 it APPLIES committed train-fit maps/ridges to bare reps and scores rho, so the standing identity+learned-bias / kNN-retrieval pair (which attaches to a FITTED v_X -> v_Y map) has nothing to attach to. NOTE: the arm slug 'arm3_identity_bias' is an activation->DV SCORING arm and is NOT the mapping_baselines identity+bias map baseline.",
+   "ts": "2026-08-02T19:55:14Z"
+  }
+ },
+ "null_probe_by_rung": {
+  "sycophancy": {
+   "L250": {
+    "verdict": "ANOMALY",
+    "n_finite_rho": 28,
+    "any_ci_excludes_zero": true,
+    "constant": true
+   },
+   "L2500": {
+    "verdict": "ANOMALY",
+    "n_finite_rho": 28,
+    "any_ci_excludes_zero": true,
+    "constant": true
+   },
+   "L16000": {
+    "verdict": "ANOMALY",
+    "n_finite_rho": 28,
+    "any_ci_excludes_zero": true,
+    "constant": true
+   }
+  },
+  "hallucination": {
+   "L250": {
+    "verdict": "ANOMALY",
+    "n_finite_rho": 28,
+    "any_ci_excludes_zero": true,
+    "constant": true
+   },
+   "L2500": {
+    "verdict": "ANOMALY",
+    "n_finite_rho": 28,
+    "any_ci_excludes_zero": true,
+    "constant": true
+   },
+   "L16000": {
+    "verdict": "ANOMALY",
+    "n_finite_rho": 28,
+    "any_ci_excludes_zero": true,
+    "constant": true
+   }
+  },
+  "evil": {
+   "L250": {
+    "verdict": "ANOMALY",
+    "n_finite_rho": 28,
+    "any_ci_excludes_zero": true,
+    "constant": true
+   },
+   "L2500": {
+    "verdict": "ANOMALY",
+    "n_finite_rho": 28,
+    "any_ci_excludes_zero": true,
+    "constant": true
+   },
+   "L8000": {
+    "verdict": "ANOMALY",
+    "n_finite_rho": 28,
+    "any_ci_excludes_zero": true,
+    "constant": true
+   }
+  }
+ },
+ "score_done_L16000": {
+  "git_commit": "6717bb6c2e36eb45fea1d381d9166673c88f1917",
+  "judge_called": false,
+  "wall_s": 5196.9,
+  "ts": "2026-08-02T16:24:37Z",
+  "env_versions": {
+   "python": "3.11.15",
+   "numpy": "2.2.6",
+   "torch": "2.8.0+cu128"
+  },
+  "caveats": [
+   "#1092's 0.02 was bare->answer-ACTIVATIONS at SAE grain, so it is an analogy, not a numerically comparable floor for bare->judged-DV"
+  ]
+ },
+ "figures": {
+  "ladder_rho_vs_l": "/home/thomasjiralerspong/explore-persona-space/figures/issue_1739/ladder/ladder_rho_vs_l.png",
+  "ladder_turn_subsets": "/home/thomasjiralerspong/explore-persona-space/figures/issue_1739/ladder/ladder_turn_subsets.png"
+ },
+ "provenance": {
+  "hf_repo": "superkaiba1/explore-persona-space-data",
+  "hf_prefix": "issue1739_maxood/r275_query_scaling",
+  "script": "scripts/issue1739_r275_fold.py",
+  "note": "aggregation + rendering only; no fits, no GPU, no judge calls"
+ }
+}

@@ -30,3 +30,9 @@ equivalent that calls only the committed, layer/param-agnostic helpers
 version bit-matches the original on a shared input. Never commit the
 sibling's uncommitted change as a side effect of your own work — it isn't
 yours.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Reused script may carry uncommitted sibling edits](feedback_reused_script_may_have_uncommitted_sibling_edits.md) — a reused helper's WORKING-TREE copy can have a parallel session's UNCOMMITTED signature change (new `--layer` arg) NOT on main; calling it "works" in smoke but breaks against committed main. Diff against HEAD before depending on a signature; inline a self-contained equivalent using only committed helpers; never commit the sibling's dirty change. #667 alllayer.

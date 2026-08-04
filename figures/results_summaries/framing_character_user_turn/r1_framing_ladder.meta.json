@@ -1,0 +1,246 @@
+{
+  "commit": "abd729ecc9",
+  "created": "2026-08-03T06:30:54Z",
+  "figsize": [
+    7.5,
+    4.4
+  ],
+  "points": [
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 1.0,
+      "held-out $R^2$ on target framing": 0.52028467637771,
+      "series": "bare text (n=4,724)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 2.0,
+      "held-out $R^2$ on target framing": 0.5540217841241653,
+      "series": "bare text (n=4,724)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 3.0,
+      "held-out $R^2$ on target framing": 0.5170919510351252,
+      "series": "bare text (n=4,724)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 4.0,
+      "held-out $R^2$ on target framing": 0.5591140340875796,
+      "series": "bare text (n=4,724)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 5.0,
+      "held-out $R^2$ on target framing": 0.5542955555957347,
+      "series": "bare text (n=4,724)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 6.0,
+      "held-out $R^2$ on target framing": 0.5917849016004719,
+      "series": "bare text (n=4,724)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 7.0,
+      "held-out $R^2$ on target framing": 0.6061712069782184,
+      "series": "bare text (n=4,724)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 8.0,
+      "held-out $R^2$ on target framing": 0.5197019493410562,
+      "series": "bare text (n=4,724)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 9.0,
+      "held-out $R^2$ on target framing": 0.6197446538053923,
+      "series": "bare text (n=4,724)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 1.0,
+      "held-out $R^2$ on target framing": -0.2626449973181484,
+      "series": "story, inserted answer (n=2,163)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 2.0,
+      "held-out $R^2$ on target framing": -0.07531184663064816,
+      "series": "story, inserted answer (n=2,163)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 3.0,
+      "held-out $R^2$ on target framing": -0.18659975207183988,
+      "series": "story, inserted answer (n=2,163)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 4.0,
+      "held-out $R^2$ on target framing": 0.10734359907478663,
+      "series": "story, inserted answer (n=2,163)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 5.0,
+      "held-out $R^2$ on target framing": 0.12809741263477514,
+      "series": "story, inserted answer (n=2,163)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 6.0,
+      "held-out $R^2$ on target framing": 0.2136154135307956,
+      "series": "story, inserted answer (n=2,163)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 7.0,
+      "held-out $R^2$ on target framing": 0.3018428299756847,
+      "series": "story, inserted answer (n=2,163)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 8.0,
+      "held-out $R^2$ on target framing": -0.11913701920251163,
+      "series": "story, inserted answer (n=2,163)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 9.0,
+      "held-out $R^2$ on target framing": 0.3336534819997097,
+      "series": "story, inserted answer (n=2,163)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 1.0,
+      "held-out $R^2$ on target framing": -0.34910652964226885,
+      "series": "story, on-policy answer (n=2,018)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 2.0,
+      "held-out $R^2$ on target framing": -0.129704682978949,
+      "series": "story, on-policy answer (n=2,018)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 3.0,
+      "held-out $R^2$ on target framing": -0.20819860317600836,
+      "series": "story, on-policy answer (n=2,018)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 4.0,
+      "held-out $R^2$ on target framing": 0.0862138512223265,
+      "series": "story, on-policy answer (n=2,018)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 5.0,
+      "held-out $R^2$ on target framing": 0.10193514890762745,
+      "series": "story, on-policy answer (n=2,018)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 6.0,
+      "held-out $R^2$ on target framing": 0.16975726732114793,
+      "series": "story, on-policy answer (n=2,018)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 7.0,
+      "held-out $R^2$ on target framing": 0.17842208915134772,
+      "series": "story, on-policy answer (n=2,018)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 8.0,
+      "held-out $R^2$ on target framing": -0.006675975401019052,
+      "series": "story, on-policy answer (n=2,018)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 9.0,
+      "held-out $R^2$ on target framing": 0.1750224814414384,
+      "series": "story, on-policy answer (n=2,018)",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 27,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Assistant map transferred across framings",
+        "xlabel": "transfer tier (correction fitted in target, source operator frozen)",
+        "ylabel": "held-out $R^2$ on target framing",
+        "legend_labels": [
+          "bare text (n=4,724)",
+          "story, inserted answer (n=2,163)",
+          "story, on-policy answer (n=2,018)"
+        ],
+        "legend_title": "target framing (dashed = target's own ceiling)",
+        "annotations": [
+          "chat-template source map \u2192 each target framing, instruct model, context arm, L19"
+        ],
+        "xticklabels": [
+          "direct",
+          "context\noffset",
+          "answer\noffset",
+          "bias\nrefit",
+          "global\nscale",
+          "rotation",
+          "context\nreparam",
+          "answer\nreparam",
+          "full\nA\u00b7M\u00b7B"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "bare text (n=4,724)",
+      "story, inserted answer (n=2,163)",
+      "story, on-policy answer (n=2,018)"
+    ]
+  }
+}

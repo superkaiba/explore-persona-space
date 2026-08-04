@@ -25,3 +25,9 @@ cuda `eigh`/`svd` on data-derived Grams — especially subsampled or
 group-split fits where tiny near-duplicate blocks arise (10+ scripts in
 this repo call `linalg.eigh`). Do NOT jitter the Gram instead (changes the
 numbers); the CPU fallback is exact.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [cuSOLVER eigh non-convergence CPU fallback](feedback_cusolver_eigh_nonconvergence_cpu_fallback.md) — cuda eigh raises LinAlgError on near-singular Grams CPU LAPACK handles; wrap Gram eigh sites in _eigh_robust-style CPU fallback (#1335 r10)

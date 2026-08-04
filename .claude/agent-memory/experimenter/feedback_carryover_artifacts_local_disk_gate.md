@@ -9,3 +9,9 @@ When a plan claims "carry-over data on HF Hub" and the HF visibility gate PASSes
 **Why:** burned at #504 v1 (2026-06-06, HF gate passed, crash on `data/issue_472/centroids_L10.pt` missing locally) and #504 v10 (2026-06-06, R_eval.json missing from the staging recipe). Symmetric read-side gap to the #488 write-side path-paraphrase guard. The post-#468 workflow fix on `experimenter.md § Before Running item 4` (introspect argparse defaults + stat-check + auto-stage) is the canonical defense.
 
 **How to apply:** never trust the brief's staging recipe verbatim. Grep `add_argument.*Path\(.*data/issue_<M>` across the dispatcher AND every script it shells out to; stat-check each local default on the pod; stage missing files from `superkaiba1/explore-persona-space-data` via `hf_hub_download`. If no HF mirror exists, post `epm:failure v1 infra reason: dispatcher-default-path-no-hf-mirror`. Prefer the dispatcher's `--dry-run` (if exposed) — it exercises the real read path.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Carry-over artifacts local-disk gate](feedback_carryover_artifacts_local_disk_gate.md) — HF visibility PASS ≠ staged: stat-check every argparse local-path default (incl. shelled-out scripts) on the pod (#504 v1/v10)

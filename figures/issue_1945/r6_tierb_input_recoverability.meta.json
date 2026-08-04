@@ -1,0 +1,1330 @@
+{
+  "commit": "d6628781f3",
+  "created": "2026-08-01T02:20:39Z",
+  "figsize": [
+    9.0,
+    4.0
+  ],
+  "points": [
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "series": "other cells (22 fold halves)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.001539153714229681,
+      "series": "other cells (22 fold halves)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.0012734352466640384,
+      "series": "other cells (22 fold halves)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.001414276770319926,
+      "series": "other cells (22 fold halves)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.0011543267436573922,
+      "series": "other cells (22 fold halves)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": 0.0007168801594928969,
+      "series": "other cells (22 fold halves)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": -4.162008878258758e-05,
+      "series": "other cells (22 fold halves)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": -0.0011293026803919886,
+      "series": "other cells (22 fold halves)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.0016392460360449828,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.0017214847414792395,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.0011188779324632187,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.0009744715249835386,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": 0.000578143760329493,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": -0.00033953125240290843,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": -0.0018545301648556784,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.0015007881796926935,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.0008655864447659829,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.0011083286934217922,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.000944880132541328,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": 0.0003207692506709182,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": -0.0006641962584414906,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": -0.0019777851362031006,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.0013838472552657412,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.0010851034780151154,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.001297199828301981,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.0010177827121049699,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": 0.0003710643378208456,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": -0.000615337257238014,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": -0.0020761466895995737,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.001340547988164821,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.0011333742339876495,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.0008940413042606734,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.000625137607201824,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": 0.0002017469359104654,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": -0.0005562346043464411,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": -0.0019824580965380114,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.00118079103653387,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.0010980131305445607,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.0007749951319305628,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.0005952469891935859,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": 7.926531243320357e-05,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": -0.0007534312776175267,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": -0.00222416824756777,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.002028878613686708,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.0033207246617137894,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.003672150051099202,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.003776502418410402,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": 0.0036692328142547623,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": 0.0033189062800562967,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": 0.002440831576293665,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.0021841114665626183,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.0033139817433291345,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.003676481287850625,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.0039571897287950355,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": 0.0038952188725629743,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": 0.0032632678716373016,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": 0.0022662849656820304,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.0008178615227584255,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.0010217435033948916,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.0008036250364905023,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.0007456528926358029,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": 0.00015681704743191488,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": -0.0008097240689199943,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": -0.0020432262108573116,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.0011037116797061627,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.0010719732843418421,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.001134098383183801,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.0008552394471415141,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": 0.0003091272189609862,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": -0.0006407559167539824,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": -0.002043407776153162,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.0008764973699672414,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.0004118722920813337,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.000451007097386301,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.00042822640392674543,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": -6.176379410737973e-05,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": -0.001077899895643679,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": -0.002660466463867176,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.0007627182620608449,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.0002617956023235875,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.0004591344956496036,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.00015891453729213585,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": -0.00026542046616009126,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": -0.0012734702865173538,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": -0.002726268548505604,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "series": "primary cell (2 fold halves)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.0009032910731215372,
+      "series": "primary cell (2 fold halves)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.00033035808844980276,
+      "series": "primary cell (2 fold halves)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.00029459396019296957,
+      "series": "primary cell (2 fold halves)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.0001248991351636525,
+      "series": "primary cell (2 fold halves)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": -0.0003186695182347018,
+      "series": "primary cell (2 fold halves)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": -0.001124307769663166,
+      "series": "primary cell (2 fold halves)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": -0.0023621960320876715,
+      "series": "primary cell (2 fold halves)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.0009923728414547963,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.0005338437250815846,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.000583247967663597,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.00045273979592907755,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": 1.587667760681899e-05,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": -0.0007939848919075646,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": -0.0022054442646627383,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.0014913320381571703,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.002625237589407169,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.0022265327473598617,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.002416067788263692,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": 0.002432552484757782,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": 0.001849812178577756,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": 0.0009375911581360769,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.001883101772283174,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.00294840897129867,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.002683468961058477,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.0030391159434966764,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": 0.0029819898066005012,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": 0.002703260547764635,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": 0.0021580256135857825,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.0011352049000182259,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.0013656298507704746,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.0013880120194971915,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.0007836460689117349,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": 0.00024315696930861635,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": -0.0009900179861386405,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": -0.0025400765543476538,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.0013151771983421353,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.0012894108093271669,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.0009900221993121804,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.0006839145794662823,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": 0.00013040689190915332,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": -0.0011446948928873065,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": -0.0025975998873053723,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.0010233903345478663,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.001097589778096411,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.0013282129714082705,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.0007999570392064559,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": -2.350345178117765e-05,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": -0.0012526373808927997,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": -0.002710017789621612,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.0013997940098862873,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.0015511282554488335,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.0016489270752738628,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.0012263825084272571,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": 0.0006541176887579569,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": -0.0006255441717188698,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": -0.002098879632433805,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.0006788218397681565,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.0007541333129617167,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.000765365097784165,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.0003187566808140804,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": -0.00032432439271827253,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": -0.0012929649493501538,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": -0.0028396328337306083,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.0010401590937830249,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.0012566719981624828,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.0009826331491844152,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.0006228366505759894,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": -1.0702244300810186e-05,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": -0.0010254290154798756,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": -0.0025077486695055775,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.0018578411147498375,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.003713953748556376,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.0044480876043011324,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.004613680723875456,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": 0.004277649569628408,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": 0.0033728042790696043,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": 0.002267782998375226,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": 0.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": 0.00265007343228328,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "rank kept from the fitted map": 2.0,
+      "held-out interaction R-squared": 0.004025436619434558,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "rank kept from the fitted map": 4.0,
+      "held-out interaction R-squared": 0.004657569635159492,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "rank kept from the fitted map": 8.0,
+      "held-out interaction R-squared": 0.004711408619680449,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "rank kept from the fitted map": 16.0,
+      "held-out interaction R-squared": 0.004391949304255209,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "rank kept from the fitted map": 32.0,
+      "held-out interaction R-squared": 0.0035252886243007007,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "rank kept from the fitted map": 64.0,
+      "held-out interaction R-squared": 0.0022757926995787547,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": -0.00029411907196053456,
+      "series": "permuted-pairing null, p97.5 (median across units)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": -0.00029411907196053456,
+      "series": "permuted-pairing null, p97.5 (median across units)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "rank kept from the fitted map": 0.0,
+      "held-out interaction R-squared": -0.004603690852929221,
+      "series": "untruncated ridge, primary cell (mean of folds)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "rank kept from the fitted map": 1.0,
+      "held-out interaction R-squared": -0.004603690852929221,
+      "series": "untruncated ridge, primary cell (mean of folds)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": -0.15,
+      "retrieval accuracy (cosine)": 0.004827031375703942,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "x": 0.85,
+      "retrieval accuracy (cosine)": 0.011263073209975865,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "x": 1.85,
+      "retrieval accuracy (cosine)": 0.0333869670152856,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "x": 0.15,
+      "retrieval accuracy (cosine)": 0.0032193158953722333,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "x": 1.15,
+      "retrieval accuracy (cosine)": 0.012072434607645875,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "x": 2.15,
+      "retrieval accuracy (cosine)": 0.036619718309859155,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "x": -0.3,
+      "retrieval accuracy (cosine)": 0.00040225261464199515,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 0.3,
+      "retrieval accuracy (cosine)": 0.00040225261464199515,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 28
+    }
+  ],
+  "n_series": 29,
+  "total_points": 204,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Predicting the interaction from map outputs",
+        "xlabel": "rank kept from the fitted map",
+        "ylabel": "held-out interaction R-squared",
+        "legend_labels": [
+          "other cells (22 fold halves)",
+          "primary cell (2 fold halves)",
+          "permuted-pairing null, p97.5 (median across units)",
+          "untruncated ridge, primary cell (mean of folds)"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70"
+        ],
+        "yticklabels": [
+          "\u22120.008",
+          "\u22120.006",
+          "\u22120.004",
+          "\u22120.002",
+          "0.000",
+          "0.002",
+          "0.004",
+          "0.006"
+        ]
+      },
+      {
+        "title_left": "Nearest-neighbor retrieval, primary cell",
+        "ylabel": "retrieval accuracy (cosine)",
+        "legend_labels": [
+          "chance",
+          "fold half 0",
+          "fold half 1"
+        ],
+        "xticklabels": [
+          "top-1",
+          "top-5",
+          "top-25"
+        ],
+        "yticklabels": [
+          "0.000",
+          "0.005",
+          "0.010",
+          "0.015",
+          "0.020",
+          "0.025",
+          "0.030",
+          "0.035",
+          "0.040"
+        ]
+      }
+    ],
+    "series": [
+      "other cells (22 fold halves)",
+      "primary cell (2 fold halves)",
+      "permuted-pairing null, p97.5 (median across units)",
+      "untruncated ridge, primary cell (mean of folds)",
+      "chance",
+      "fold half 0",
+      "fold half 1"
+    ]
+  }
+}

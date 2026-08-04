@@ -20,3 +20,11 @@ enumerate every input it reads from `data/` / local disk; each gets
 local-first → `hf_hub_download` fallback → fail-loud, plus one early
 preflight that stat-probes the full set (HF-presence-aware) before the model
 loads. (#779 rounds 4-5, commits 56d460e030 + 412df7073f.)
+
+## Merged sibling index rows (#1891 curation, 2026-07-30)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the ~25 KB loader truncation limit (task #1891). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [SLURM rsync lane: committed eval_results NOT node-reachable](feedback_slurm_rsync_lane_committed_eval_results_unshipped.md) — the fellows lane ships only RSYNC_INCLUDE_PATHS; a leg consuming committed parent eval_results inputs needs #734 upload-first + fail-loud leg-entry staging (#1689 job 15724)
+- [HF-fetch fallback for every pod-side data/ input](feedback_hf_fallback_pod_side_data_inputs.md) — git-clone lanes stage no data/; local-first → HF-fetch → fail-loud per input + pre-model-load whole-set preflight (#779 r4-r5)
+- [cross-machine input staging](feedback_cross_machine_input_staging.md) — VM-produced inputs need producer HF-upload + consumer launcher staging on git-clone lanes (#1773)

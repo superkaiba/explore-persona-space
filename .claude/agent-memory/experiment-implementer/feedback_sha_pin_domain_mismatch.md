@@ -26,3 +26,9 @@ chain) with a fails-pre-fix pytest.
 (Incident #1776 crash-fix cycle 4, pod-1776 p1_contexts, 2026-07-29: fix
 commit `04ce114b8fb2b9439494dac3a1c77923fcedc940`; execute-forward sweep of 18
 remaining phase entries found 0 further seam bugs.)
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [sha pins live in a DOMAIN](feedback_sha_pin_domain_mismatch.md) — recompute a reused pin from its producer's recipe before asserting; wrong-domain compare masquerades as data drift (#1776 c4)

@@ -22,3 +22,9 @@ never a silent skip or coerced zero; ≥ 2 unique rows that still zero out →
 keep the raise. And size smoke capture panels to ≥ 2 contexts so the smoke
 exercises the real nondegenerate spectral path instead of short-circuiting
 every prefix cloud to degenerate records. (#1112 fix commit 6771d578cd.)
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [prefix-arm degenerate cloud kills spectral smoke](feedback_prefix_arm_degenerate_cloud_smoke.md) — single-context smoke slices zero prefix-arm clouds (1 unique row/context); gate on structural unique rows + ≥2-context smokes (#1112)

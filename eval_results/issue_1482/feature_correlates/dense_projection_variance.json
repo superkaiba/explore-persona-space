@@ -1,0 +1,14 @@
+{
+ "design": {
+  "question": "feature ACTIVATION variance vs dense-state variance along the unit decoder direction \u2014 same quantity?",
+  "proj_var": "Var over #1738 multi-turn holdout (n=9,941) of Yc @ unit-decoder-dir; CAVEAT: panel r2/activity/feat_var are the #1482 single-turn regime (cross-corpus join)",
+  "feat_var": "banked holdout activation variance (#1482 single-turn, holdout_feature_variance.npy)"
+ },
+ "spearman": {
+  "featvar_vs_projvar": 0.0039007165987435064,
+  "r2_vs_log_featvar": 0.020272182358016706,
+  "r2_vs_log_projvar": 0.40372375815300304,
+  "r2_vs_log_projvar_partial_activity": 0.44658299471401913
+ },
+ "n": 16384
+}

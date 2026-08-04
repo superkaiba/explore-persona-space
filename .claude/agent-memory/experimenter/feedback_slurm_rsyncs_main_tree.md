@@ -42,3 +42,9 @@ any SLURM-resolved feature-branch launch — post-#793 that is actively harmful
 3. On a genuinely unresolvable branch, `prepare` itself fails loud
    (`RuntimeError` from the cloner) and the router advances lanes — no
    experimenter-side cancel is needed for the stale-tree class.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [SLURM honors --repo-branch since #793; workload-side git push impossible](feedback_slurm_rsyncs_main_tree.md) — `SlurmBackend.prepare` materializes the branch tree VM-side (fail-loud `RuntimeError` on unresolvable); do NOT scancel/fail a SLURM feature-branch launch on the old stale-main ground; results land via `fetch_results` pull + `confirm_artifacts` + VM-side commit (no cluster git checkout) — #653/#793

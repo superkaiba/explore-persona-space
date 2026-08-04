@@ -1,0 +1,78 @@
+{
+  "split_rule": "even/odd by holdout array position (te_pos order): index % 2 == 0 -> half_A, index % 2 == 1 -> half_B; deterministic, no RNG",
+  "n_half_A": 10000,
+  "n_half_B": 10000,
+  "prov_counts": {
+    "half_A": {
+      "lmsys": 5492,
+      "wildchat": 4508
+    },
+    "half_B": {
+      "lmsys": 5491,
+      "wildchat": 4509
+    }
+  },
+  "O64": {
+    "full_reference": {
+      "primary_banked_ridge": 0.8669513463973999,
+      "matched_refit": 0.8790439963340759
+    },
+    "within_half": {
+      "A": 0.8764023184776306,
+      "B": 0.8642460703849792
+    },
+    "cross_half": {
+      "pred_A_vs_sae_B": 0.8753816485404968,
+      "pred_B_vs_sae_A": 0.8668314218521118
+    },
+    "banked_fixed_pred": {
+      "full_recompute": 0.8669511675834656,
+      "sae_A": 0.8636319637298584,
+      "sae_B": 0.8628047704696655
+    },
+    "matched_full_recompute": 0.8790438771247864
+  },
+  "partial_rho": {
+    "full_reference": {
+      "observed": 0.07572134014528405,
+      "bootstrap_ci": [
+        0.037670774207744714,
+        0.09024904796551758
+      ]
+    },
+    "within_half": {
+      "A": 0.10484023291532699,
+      "B": 0.07153498916041574
+    },
+    "cross_half": {
+      "g_A_vs_fve_B": 0.0677014583943668,
+      "g_B_vs_fve_A": 0.03031875259023342
+    },
+    "full_recompute_fp16_inputs": 0.07557237063054958,
+    "full_recompute_committed_profiles": 0.07572134014528405,
+    "rho_unpartialled": {
+      "within_half": {
+        "A": 0.9668660754114828,
+        "B": 0.9574645840989839
+      },
+      "cross_half": {
+        "g_A_vs_fve_B": 0.9579474849812968,
+        "g_B_vs_fve_A": 0.9634126111315657
+      },
+      "full_reference": 0.969833687008501
+    }
+  },
+  "recompute_checks": {
+    "g_full_vs_committed_spearman": 0.9999994969228571,
+    "g_full_vs_committed_max_abs": 0.0009258168973571568,
+    "fve_full_vs_banked_spearman": 0.9999999780392492,
+    "fve_full_vs_banked_max_abs": 0.0012081749162684563
+  },
+  "inputs_fingerprint_code_sha": "7c50b3c66560afe22324e45e596ae133891d5acf",
+  "notes": "Cross-half cells derive the constructions (P_sae eigh; g(u)/FVE_u profiles) on one half and pair them with the other half's construction, removing the shared-holdout coupling; within-half cells keep the coupling at half n as the sampling-variance contrast. P_pred for the within/cross O(64) cells is the per-half matched g(u) top-64 (the banked-ridge primary P_pred is issue_1482-derived and already holdout-decoupled; its per-half read is the banked_fixed_pred block). Conventions imported from issue1895_subspaces.py: centered-ss_tot per-direction R2 (clamp 1e-9), fp64 covariance-eigh PCA, O = mean cos^2 of subspace principal angles, midrank+lstsq partial Spearman with var_rank = Q eigen-order index (holdout-independent). Stored projections are fp16; the full-recompute rows quantify the storage-precision effect vs the run's fp32-computed committed profiles.",
+  "git_commit": "e080881ad4887ea37d1970a5d9697d075b235e7e",
+  "timestamp_utc": "2026-08-01T05:38:00.917004Z",
+  "python_version": "3.11.15",
+  "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+  "cuda_visible_devices": "all"
+}

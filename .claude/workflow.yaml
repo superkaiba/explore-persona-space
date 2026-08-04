@@ -2745,7 +2745,12 @@ markers:
       `next_action=interpret` for COMPLETED, `fallback_runpod` for
       PREEMPTED/TIMEOUT/NODE_FAIL (the orchestrator re-routes a fresh
       run to RunPod), `investigate` for FAILED/OOM (the operator picks
-      whether to retry or pivot). v1.
+      whether to retry or pivot). Optional `workload_done_despite_slurm:
+      true` (#1866): a dead-class slurm_state whose attempt-fresh
+      status.json carries `{"phase":"done","exit_code":"0"}` routes
+      `next_action=interpret` (the workload finished; the dead-class
+      label is a teardown/epilog artifact — slurm_state rides verbatim
+      for the audit trail). v1.
   # ── campaign lifecycle markers (/campaign <N>, task #586) ──────────────
   - kind: "epm:campaign-started"
     posted_by: campaign skill (Step 0)
@@ -2896,6 +2901,12 @@ steps:
     entry_condition: "epm:experiment-implementation posted"
     posts_marker: "epm:code-review"
     next_expected_step: "6a"
+  - id: "5a"
+    name: code_review_dispatch
+    entry_status_label:
+      - code_reviewing
+    entry_condition: "implementation marker posted; reviewer ensemble spawned, verdicts pending"
+    next_expected_step: "5"
   - id: "5b"
     name: code_review_revise
     entry_status_label:

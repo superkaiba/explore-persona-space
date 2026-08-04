@@ -1,0 +1,931 @@
+{
+  "commit": "64d35d7202",
+  "created": "2026-08-02T08:59:47Z",
+  "figsize": [
+    14.5,
+    5.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "fixed-text cos(write direction, displacement)": 0.306,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "fixed-text cos(write direction, displacement)": 0.27527948472420133,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "fixed-text cos(write direction, displacement)": 0.309,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "fixed-text cos(write direction, displacement)": 0.2999117754600061,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "fixed-text cos(write direction, displacement)": 0.3776,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "fixed-text cos(write direction, displacement)": 0.32237005992729817,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "fixed-text cos(write direction, displacement)": 0.3949,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "fixed-text cos(write direction, displacement)": 0.37661904387066786,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "fixed-text cos(write direction, displacement)": 0.3281,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "fixed-text cos(write direction, displacement)": 0.27428441892139804,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "fixed-text cos(write direction, displacement)": 0.3737,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.0,
+      "fixed-text cos(write direction, displacement)": 0.36019356730070906,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 6.0,
+      "fixed-text cos(write direction, displacement)": 0.3743,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.0,
+      "fixed-text cos(write direction, displacement)": 0.3404220873327658,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 7.0,
+      "fixed-text cos(write direction, displacement)": 0.3554,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.0,
+      "fixed-text cos(write direction, displacement)": 0.3385173835954388,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 8.0,
+      "fixed-text cos(write direction, displacement)": 0.4193,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.0,
+      "fixed-text cos(write direction, displacement)": 0.34275411370485,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 9.0,
+      "fixed-text cos(write direction, displacement)": 0.4971,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 9.0,
+      "fixed-text cos(write direction, displacement)": 0.47637541716669574,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 10.0,
+      "fixed-text cos(write direction, displacement)": 0.4777,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 10.0,
+      "fixed-text cos(write direction, displacement)": 0.427310153460161,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 11.0,
+      "fixed-text cos(write direction, displacement)": 0.4275,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 11.0,
+      "fixed-text cos(write direction, displacement)": 0.41678029131615607,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 12.0,
+      "fixed-text cos(write direction, displacement)": 0.2955,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 12.0,
+      "fixed-text cos(write direction, displacement)": 0.23905472698317545,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 13.0,
+      "fixed-text cos(write direction, displacement)": 0.3062,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 13.0,
+      "fixed-text cos(write direction, displacement)": 0.3008217273823327,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 14.0,
+      "fixed-text cos(write direction, displacement)": 0.3827,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 14.0,
+      "fixed-text cos(write direction, displacement)": 0.34167758523786673,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 15.0,
+      "fixed-text cos(write direction, displacement)": 0.3971,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 15.0,
+      "fixed-text cos(write direction, displacement)": 0.3758192862701098,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 16.0,
+      "fixed-text cos(write direction, displacement)": 0.307,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 16.0,
+      "fixed-text cos(write direction, displacement)": 0.3063243115540715,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 17.0,
+      "fixed-text cos(write direction, displacement)": 0.1992,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 17.0,
+      "fixed-text cos(write direction, displacement)": 0.15617152477272747,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 18.0,
+      "fixed-text cos(write direction, displacement)": 0.2102,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 18.0,
+      "fixed-text cos(write direction, displacement)": 0.21305097058356068,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 19.0,
+      "fixed-text cos(write direction, displacement)": 0.233,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 19.0,
+      "fixed-text cos(write direction, displacement)": 0.19916258420112382,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 20.0,
+      "fixed-text cos(write direction, displacement)": 0.2317,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 20.0,
+      "fixed-text cos(write direction, displacement)": 0.23705838587488434,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 21.0,
+      "fixed-text cos(write direction, displacement)": 0.1059,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 21.0,
+      "fixed-text cos(write direction, displacement)": 0.07738863911795155,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 22.0,
+      "fixed-text cos(write direction, displacement)": 0.0915,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 22.0,
+      "fixed-text cos(write direction, displacement)": 0.0837399257754368,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 23.0,
+      "fixed-text cos(write direction, displacement)": 0.1502,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 23.0,
+      "fixed-text cos(write direction, displacement)": 0.12660116536879792,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 24.0,
+      "fixed-text cos(write direction, displacement)": 0.1278,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 24.0,
+      "fixed-text cos(write direction, displacement)": 0.11681464045954582,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 25.0,
+      "fixed-text cos(write direction, displacement)": 0.1054,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 25.0,
+      "fixed-text cos(write direction, displacement)": 0.07356715348454772,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 26.0,
+      "fixed-text cos(write direction, displacement)": 0.058,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 26.0,
+      "fixed-text cos(write direction, displacement)": 0.029921559848892294,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 27.0,
+      "fixed-text cos(write direction, displacement)": 0.1336,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 27.0,
+      "fixed-text cos(write direction, displacement)": 0.10192323399766416,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 28.0,
+      "fixed-text cos(write direction, displacement)": 0.1694,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 28.0,
+      "fixed-text cos(write direction, displacement)": 0.1594971969293444,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 29.0,
+      "fixed-text cos(write direction, displacement)": 0.3014,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 29.0,
+      "fixed-text cos(write direction, displacement)": 0.29521707432583966,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 30.0,
+      "fixed-text cos(write direction, displacement)": 0.0524,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 30.0,
+      "fixed-text cos(write direction, displacement)": 0.036679517129577184,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 31.0,
+      "fixed-text cos(write direction, displacement)": 0.0422,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 31.0,
+      "fixed-text cos(write direction, displacement)": 0.024940177883100063,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 32.0,
+      "fixed-text cos(write direction, displacement)": 0.1275,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "x": 32.0,
+      "fixed-text cos(write direction, displacement)": 0.11991778752672826,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "x": 33.0,
+      "fixed-text cos(write direction, displacement)": 0.1433,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "x": 33.0,
+      "fixed-text cos(write direction, displacement)": 0.1281068218670872,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "x": 0.0,
+      "y": 0.1749,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "x": 0.0,
+      "y": 0.14341883470831907,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "x": 1.0,
+      "y": 0.1764,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "x": 1.0,
+      "y": 0.17978523304404675,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "x": 2.0,
+      "y": 0.3675,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "x": 2.0,
+      "y": 0.2852948938850057,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "x": 3.0,
+      "y": 0.3512,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "x": 3.0,
+      "y": 0.3193380108896547,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "x": 4.0,
+      "y": 0.3493,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "x": 4.0,
+      "y": 0.284600640559084,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "x": 5.0,
+      "y": 0.4436,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "x": 5.0,
+      "y": 0.4250810063939757,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "x": 6.0,
+      "y": 0.4559,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 6.0,
+      "y": 0.41991172803076654,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 7.0,
+      "y": 0.4221,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 7.0,
+      "y": 0.40058992940340854,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 8.0,
+      "y": 0.2264,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 8.0,
+      "y": 0.13239362664000262,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 9.0,
+      "y": 0.536,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 9.0,
+      "y": 0.5083139300358258,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 10.0,
+      "y": 0.4985,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 10.0,
+      "y": 0.4442658261982252,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 11.0,
+      "y": 0.4076,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 11.0,
+      "y": 0.39443481913025635,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 12.0,
+      "y": 0.2087,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 12.0,
+      "y": 0.14737792927938315,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 13.0,
+      "y": 0.2117,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 13.0,
+      "y": 0.21236184823293702,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 14.0,
+      "y": 0.3946,
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "x": 14.0,
+      "y": 0.33308519578229684,
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "x": 15.0,
+      "y": 0.4066,
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "x": 15.0,
+      "y": 0.3707180537235537,
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "x": 16.0,
+      "y": -0.0733,
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "x": 16.0,
+      "y": -0.06941103824708365,
+      "_kind": "scatter",
+      "_group": 101
+    },
+    {
+      "x": 17.0,
+      "y": 0.1041,
+      "_kind": "scatter",
+      "_group": 102
+    },
+    {
+      "x": 17.0,
+      "y": 0.044142339903976244,
+      "_kind": "scatter",
+      "_group": 103
+    },
+    {
+      "x": 18.0,
+      "y": 0.0861,
+      "_kind": "scatter",
+      "_group": 104
+    },
+    {
+      "x": 18.0,
+      "y": 0.07861966034352125,
+      "_kind": "scatter",
+      "_group": 105
+    },
+    {
+      "x": 19.0,
+      "y": 0.1892,
+      "_kind": "scatter",
+      "_group": 106
+    },
+    {
+      "x": 19.0,
+      "y": 0.12725495042396404,
+      "_kind": "scatter",
+      "_group": 107
+    },
+    {
+      "x": 20.0,
+      "y": 0.1769,
+      "_kind": "scatter",
+      "_group": 108
+    },
+    {
+      "x": 20.0,
+      "y": 0.1757823862703683,
+      "_kind": "scatter",
+      "_group": 109
+    },
+    {
+      "x": 21.0,
+      "y": 0.1304,
+      "_kind": "scatter",
+      "_group": 110
+    },
+    {
+      "x": 21.0,
+      "y": 0.08236097715570503,
+      "_kind": "scatter",
+      "_group": 111
+    },
+    {
+      "x": 22.0,
+      "y": 0.0827,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": 22.0,
+      "y": 0.07259597249453405,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 23.0,
+      "y": 0.2114,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 23.0,
+      "y": 0.16951843736407185,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 24.0,
+      "y": 0.1597,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 24.0,
+      "y": 0.14826333791813698,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 25.0,
+      "y": 0.1625,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 25.0,
+      "y": 0.08621251430676366,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 26.0,
+      "y": 0.1006,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 26.0,
+      "y": 0.07200282363753437,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 27.0,
+      "y": 0.1962,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 27.0,
+      "y": 0.13599360701164598,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 28.0,
+      "y": 0.2184,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 28.0,
+      "y": 0.20634507423573467,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 29.0,
+      "y": -0.0565,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 29.0,
+      "y": -0.05779603737661711,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 30.0,
+      "y": 0.0345,
+      "_kind": "scatter",
+      "_group": 128
+    },
+    {
+      "x": 30.0,
+      "y": 0.000562049715467565,
+      "_kind": "scatter",
+      "_group": 129
+    },
+    {
+      "x": 31.0,
+      "y": 0.0563,
+      "_kind": "scatter",
+      "_group": 130
+    },
+    {
+      "x": 31.0,
+      "y": 0.0408627837593188,
+      "_kind": "scatter",
+      "_group": 131
+    },
+    {
+      "x": 32.0,
+      "y": 0.1301,
+      "_kind": "scatter",
+      "_group": 132
+    },
+    {
+      "x": 32.0,
+      "y": 0.10094575460352553,
+      "_kind": "scatter",
+      "_group": 133
+    },
+    {
+      "x": 33.0,
+      "y": 0.1535,
+      "_kind": "scatter",
+      "_group": 134
+    },
+    {
+      "x": 33.0,
+      "y": 0.12496270737335266,
+      "_kind": "scatter",
+      "_group": 135
+    }
+  ],
+  "n_series": 136,
+  "total_points": 136,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Fixed-text write-displacement alignment is behavior-structured (full 300/1,200-row read filled; 20-row-precision mean open)",
+      "Key: cas / imp = casual writing style / impolite; bare / pers / conv / icl = bare assistant / software-engineer persona / conversation prefix / in-context-learning prefix; con / po = contrastive / positive-only; s42 / s137 = seed; REP = repeat-regime control (80 rows x 15 epochs)"
+    ],
+    "axes": [
+      {
+        "title_left": "layer 19",
+        "ylabel": "fixed-text cos(write direction, displacement)",
+        "legend_labels": [
+          "casual writing style",
+          "impolite",
+          "closest-approach cell (squares)",
+          "20-row-precision mean (open)",
+          "corpus-covariance null p95 (\u00b1)"
+        ],
+        "xticklabels": [
+          "cas-bare-con\u00b7s137",
+          "cas-bare-con\u00b7s42",
+          "cas-bare-po\u00b7s137",
+          "cas-bare-po\u00b7s42",
+          "cas-conv-con\u00b7s137",
+          "cas-conv-con\u00b7s42",
+          "cas-conv-po\u00b7s137",
+          "cas-conv-po\u00b7s42",
+          "cas-icl-con\u00b7s137",
+          "cas-icl-con\u00b7s42",
+          "cas-icl-po\u00b7s137",
+          "cas-icl-po\u00b7s42",
+          "cas-pers-con\u00b7s137",
+          "cas-pers-con\u00b7s42",
+          "cas-pers-po\u00b7s137",
+          "cas-pers-po\u00b7s42",
+          "imp-bare-con-rep-s42",
+          "imp-bare-con\u00b7s137",
+          "imp-bare-con\u00b7s42",
+          "imp-bare-po\u00b7s137",
+          "imp-bare-po\u00b7s42",
+          "imp-conv-con\u00b7s137",
+          "imp-conv-con\u00b7s42",
+          "imp-conv-po\u00b7s137",
+          "imp-conv-po\u00b7s42",
+          "imp-icl-con\u00b7s137",
+          "imp-icl-con\u00b7s42",
+          "imp-icl-po\u00b7s137",
+          "imp-icl-po\u00b7s42",
+          "imp-pers-con-rep-s42",
+          "imp-pers-con\u00b7s137",
+          "imp-pers-con\u00b7s42",
+          "imp-pers-po\u00b7s137",
+          "imp-pers-po\u00b7s42"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "layer 25",
+        "xticklabels": [
+          "cas-bare-con\u00b7s137",
+          "cas-bare-con\u00b7s42",
+          "cas-bare-po\u00b7s137",
+          "cas-bare-po\u00b7s42",
+          "cas-conv-con\u00b7s137",
+          "cas-conv-con\u00b7s42",
+          "cas-conv-po\u00b7s137",
+          "cas-conv-po\u00b7s42",
+          "cas-icl-con\u00b7s137",
+          "cas-icl-con\u00b7s42",
+          "cas-icl-po\u00b7s137",
+          "cas-icl-po\u00b7s42",
+          "cas-pers-con\u00b7s137",
+          "cas-pers-con\u00b7s42",
+          "cas-pers-po\u00b7s137",
+          "cas-pers-po\u00b7s42",
+          "imp-bare-con-rep-s42",
+          "imp-bare-con\u00b7s137",
+          "imp-bare-con\u00b7s42",
+          "imp-bare-po\u00b7s137",
+          "imp-bare-po\u00b7s42",
+          "imp-conv-con\u00b7s137",
+          "imp-conv-con\u00b7s42",
+          "imp-conv-po\u00b7s137",
+          "imp-conv-po\u00b7s42",
+          "imp-icl-con\u00b7s137",
+          "imp-icl-con\u00b7s42",
+          "imp-icl-po\u00b7s137",
+          "imp-icl-po\u00b7s42",
+          "imp-pers-con-rep-s42",
+          "imp-pers-con\u00b7s137",
+          "imp-pers-con\u00b7s42",
+          "imp-pers-po\u00b7s137",
+          "imp-pers-po\u00b7s42"
+        ]
+      }
+    ]
+  }
+}

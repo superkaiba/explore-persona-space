@@ -1,0 +1,310 @@
+{
+  "design": {
+    "task": 1482,
+    "round": "sae_dense_bridge (user-chat inline, 0 GPU)",
+    "layer": 19,
+    "sae": {
+      "repo": "andyrdt/saes-qwen2.5-7b-instruct",
+      "revision": "c37e53c4bb07127ad17ab88f28b93d4e87142e59",
+      "k": 64,
+      "dict_size": 131072
+    },
+    "pooling": "mean ONLY \u2014 decode(mean-pooled features) == mean of per-token reconstructions, and the dense target v_x IS the mean-response vector; max/frac have no decode identity and are not scored here",
+    "restriction": {
+      "f_out": 16384,
+      "f_in": 8192,
+      "activity_floor": 1200
+    },
+    "splits": {
+      "n_train": 120000,
+      "n_val": 2000,
+      "n_holdout": 20000,
+      "dropped_vs_split_union": 0
+    },
+    "n_train_vs_d": {
+      "sae_ctx": "120000 vs 16384",
+      "dense_ctx": "120000 vs 3584"
+    },
+    "lambda_grid": "N1M.LAMBDAS_N1M = logspace(-3, 8, 23), selected on the 2,000-row sae_val carve (parent convention)",
+    "dense_targets": "regenerated from the #779 n1M capture (v_x @ L19), joined on manifest ci \u2014 see scripts/issue1482_dense_targets_stage.py",
+    "stated_deviations": [
+      "CONTEXT ARM ONLY: the #1482 corpus is single-turn, so the prefix is degenerate; the standing prefix-AND-context both-arms rule is answered for the context arm here and for three-arm coverage by the #1738 multi-turn twin.",
+      "Feature-space and dense-space R2 are NOT comparable numbers; the dense-space column is the common currency and the reconstruction ceilings are its reference line.",
+      "The banked dense->dense numbers were fit on 943,444 rows; the matched-n (120,000) refit is the like-for-like row."
+    ]
+  },
+  "cells": {
+    "sae_ctx__to__dense  [NEW]": {
+      "feature_space_r2": null,
+      "dense_space_r2": 0.6605856908933668,
+      "selected_lambda": 31622.776601683792,
+      "val_r2": 0.6599772591646276,
+      "note": "SAE features over context -> dense answer vector; the missing cell of the 2x2",
+      "input_dim": 16384,
+      "knn_retrieval": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 5000,
+          "n_pool": 20000,
+          "acc_at_k": {
+            "1": 0.497,
+            "5": 0.6878,
+            "10": 0.7506
+          },
+          "chance_at_k": {
+            "1": 5e-05,
+            "5": 0.00025,
+            "10": 0.0005
+          },
+          "median_rank": 2.0,
+          "mrr": 0.5849487728197399
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 5000,
+          "n_pool": 20000,
+          "acc_at_k": {
+            "1": 0.5102,
+            "5": 0.6982,
+            "10": 0.7534
+          },
+          "chance_at_k": {
+            "1": 5e-05,
+            "5": 0.00025,
+            "10": 0.0005
+          },
+          "median_rank": 1.0,
+          "mrr": 0.5966524319980426
+        }
+      },
+      "identity_bias_baseline_dense_r2": null,
+      "identity_bias_inapplicable": "input space is R^16384 (SAE features), target is R^3584 (residual stream) \u2014 dimensions differ, the identity family is undefined"
+    },
+    "sae_ctx__to__sae  (decoded)": {
+      "feature_space_r2": 0.6901407426514781,
+      "dense_space_r2": 0.47650768374651953,
+      "selected_lambda": 10000.0,
+      "val_r2": 0.6902784824495651,
+      "note": "refit of the parent sae_ctx/mean/ridge arm; prediction decoded to R^3584",
+      "input_dim": 16384,
+      "knn_retrieval": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 5000,
+          "n_pool": 20000,
+          "acc_at_k": {
+            "1": 0.0912,
+            "5": 0.2014,
+            "10": 0.2716
+          },
+          "chance_at_k": {
+            "1": 5e-05,
+            "5": 0.00025,
+            "10": 0.0005
+          },
+          "median_rank": 82.0,
+          "mrr": 0.1496883757557467
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 5000,
+          "n_pool": 20000,
+          "acc_at_k": {
+            "1": 0.108,
+            "5": 0.2198,
+            "10": 0.2838
+          },
+          "chance_at_k": {
+            "1": 5e-05,
+            "5": 0.00025,
+            "10": 0.0005
+          },
+          "median_rank": 69.0,
+          "mrr": 0.16694675090400654
+        }
+      },
+      "identity_bias_baseline_dense_r2": null,
+      "identity_bias_inapplicable": "input space is R^16384 (SAE features), target is R^3584 (residual stream) \u2014 dimensions differ, the identity family is undefined"
+    },
+    "dense_ctx__to__sae  (decoded)": {
+      "feature_space_r2": 0.7216031048274669,
+      "dense_space_r2": 0.5008487010145839,
+      "selected_lambda": 3162.2776601683795,
+      "val_r2": 0.7192687620673748,
+      "note": "refit of the parent sae_dense_in/mean/ridge arm; prediction decoded to R^3584",
+      "input_dim": 3584,
+      "knn_retrieval": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 5000,
+          "n_pool": 20000,
+          "acc_at_k": {
+            "1": 0.1048,
+            "5": 0.2344,
+            "10": 0.3062
+          },
+          "chance_at_k": {
+            "1": 5e-05,
+            "5": 0.00025,
+            "10": 0.0005
+          },
+          "median_rank": 48.0,
+          "mrr": 0.17350490406322724
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 5000,
+          "n_pool": 20000,
+          "acc_at_k": {
+            "1": 0.1214,
+            "5": 0.2544,
+            "10": 0.3222
+          },
+          "chance_at_k": {
+            "1": 5e-05,
+            "5": 0.00025,
+            "10": 0.0005
+          },
+          "median_rank": 45.0,
+          "mrr": 0.1905399473943214
+        }
+      },
+      "identity_bias_baseline_dense_r2": -1.0229822863871925
+    },
+    "dense_ctx__to__dense  (matched n=120k)": {
+      "feature_space_r2": null,
+      "dense_space_r2": 0.7166207983746851,
+      "selected_lambda": 1000.0,
+      "val_r2": 0.7157482944753883,
+      "note": "the parent dense map REFIT on the SAE arms' own 120,000 fit rows",
+      "input_dim": 3584,
+      "knn_retrieval": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 5000,
+          "n_pool": 20000,
+          "acc_at_k": {
+            "1": 0.6932,
+            "5": 0.827,
+            "10": 0.865
+          },
+          "chance_at_k": {
+            "1": 5e-05,
+            "5": 0.00025,
+            "10": 0.0005
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7550034878988376
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 5000,
+          "n_pool": 20000,
+          "acc_at_k": {
+            "1": 0.7036,
+            "5": 0.834,
+            "10": 0.8664
+          },
+          "chance_at_k": {
+            "1": 5e-05,
+            "5": 0.00025,
+            "10": 0.0005
+          },
+          "median_rank": 1.0,
+          "mrr": 0.763292145249423
+        }
+      },
+      "identity_bias_baseline_dense_r2": -1.0229822863871925
+    }
+  },
+  "ceilings": {
+    "sae_reconstruction_restricted_f_out": {
+      "dense_space_r2": 0.6497478012738498,
+      "note": "decode of the TRUE mean-pooled features over the 16384 retained columns \u2014 the ceiling a restricted feature-space map inherits"
+    },
+    "sae_reconstruction_full_dictionary": {
+      "dense_space_r2": 0.8958612867166412,
+      "note": "decode of the TRUE mean-pooled features over all 131072 columns \u2014 the SAE's own reconstruction of v_x on this holdout"
+    }
+  },
+  "banked_reference": {
+    "dense_ctx__to__dense__ridge__full_pool": {
+      "dense_space_r2": 0.7242755664709597,
+      "n_train": 943444,
+      "source": "eval_results/issue_1482/percontext/refit_holdout__ridge__seed0.json"
+    },
+    "dense_ctx__to__dense__mlp_w8192__full_pool": {
+      "dense_space_r2": 0.7796256442170776,
+      "n_train": 943444,
+      "source": "eval_results/issue_1482/percontext/refit_holdout__mlp_w8192__seed0.json"
+    },
+    "sae_ctx__to__sae__mean__ridge__parent": {
+      "feature_space_r2": 0.6901409540488584,
+      "selected_lambda": 10000.0,
+      "source": "eval_results/issue_1482/sae_perfeature/summary.json"
+    },
+    "dense_ctx__to__sae__mean__ridge__parent": {
+      "feature_space_r2": 0.7216031048274667,
+      "selected_lambda": 3162.2776601683795,
+      "source": "eval_results/issue_1482/sae_perfeature/summary.json"
+    }
+  },
+  "knn_setup": {
+    "n_pred": 5000,
+    "pool": "the full holdout dense targets",
+    "n_pool": 20000,
+    "ks": [
+      1,
+      5,
+      10
+    ],
+    "chance_at_k": {
+      "1": 5e-05,
+      "5": 0.00025,
+      "10": 0.0005
+    },
+    "metrics": [
+      "euclidean",
+      "cosine"
+    ]
+  },
+  "metadata": {
+    "git_commit": "5bcc42d7bbf3190254dfa65b5411533f7c6fa479",
+    "timestamp_utc": "2026-08-02T05:08:23Z",
+    "wall_time_s": 5077.2,
+    "device": "cpu",
+    "arm_meta": {
+      "sae_ctx": {
+        "n_train": 120000,
+        "d": 16384,
+        "wall_s": 2676.5,
+        "equivalence_check": {
+          "rel_max_abs": 4.252942810740273e-15,
+          "tol": 1e-08,
+          "n_rows": 256,
+          "lambdas": [
+            0.01,
+            1000.0
+          ]
+        },
+        "n_train_vs_d": "120000 vs 16384 (over-determined, ratio 7.3:1)"
+      },
+      "dense_ctx": {
+        "n_train": 120000,
+        "d": 3584,
+        "wall_s": 395.4,
+        "equivalence_check": {
+          "rel_max_abs": 4.339951560607356e-16,
+          "tol": 1e-08,
+          "n_rows": 256,
+          "lambdas": [
+            0.01,
+            1000.0
+          ]
+        },
+        "n_train_vs_d": "120000 vs 3584 (over-determined, ratio 33.5:1)"
+      }
+    },
+    "predictions_hf_path": "issue1482_error_analysis/analysis_tensors/sae_dense_bridge/holdout_dense_predictions.npz"
+  }
+}

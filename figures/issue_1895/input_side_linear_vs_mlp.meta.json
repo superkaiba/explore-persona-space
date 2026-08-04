@@ -1,0 +1,35 @@
+{
+  "source": [
+    "eval_results/issue_1895/input_side/input_side_summary.json",
+    "eval_results/issue_1895/input_side/mlp_cells_summary.json"
+  ],
+  "cells": [
+    "vC__to__vA",
+    "vC__to__rbarA",
+    "rbarC__to__vA",
+    "rbarC__to__rbarA",
+    "eC__to__vA"
+  ],
+  "linear_pooled_r2": [
+    0.7166207983746854,
+    0.7456883039418896,
+    0.6560168485876052,
+    0.7063051073156934,
+    0.6625472355169661
+  ],
+  "mlp_pooled_r2": [
+    0.7443010154912908,
+    0.7773970557757963,
+    0.6836953079812881,
+    0.7336395389203896,
+    0.7111058458031547
+  ],
+  "nonlinear_premium": [
+    0.0276802171166054,
+    0.031708751833906756,
+    0.027678459393682853,
+    0.027334431604696174,
+    0.048558610286188575
+  ],
+  "what_is_plotted": "Held-out pooled R2 on the 20k holdout for each fair-grid cell, ridge vs the parent-recipe MLP (w8192, lr 3e-4, seed 0, internal-val early stop); same kept rows and same target per cell, so each bar pair varies ONLY the fitter. Annotation = nonlinear premium (MLP - ridge)."
+}

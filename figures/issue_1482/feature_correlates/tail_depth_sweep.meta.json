@@ -1,0 +1,3455 @@
+{
+  "commit": "b4e56f8064",
+  "created": "2026-08-02T14:10:56Z",
+  "figsize": [
+    12.5,
+    16.8
+  ],
+  "points": [
+    {
+      "tail width k (per arm, log)": 25.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.4221221567194785,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width k (per arm, log)": 50.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.2931169681338826,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width k (per arm, log)": 100.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.21230516940290922,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width k (per arm, log)": 150.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.176746505259921,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width k (per arm, log)": 200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.15568544166811782,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width k (per arm, log)": 300.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.13003381174126663,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width k (per arm, log)": 400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.1163977705492667,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width k (per arm, log)": 600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.09996425458414221,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width k (per arm, log)": 800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.0875016119005442,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width k (per arm, log)": 1200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.07497321870942106,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width k (per arm, log)": 1600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.06838114827540007,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width k (per arm, log)": 2400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.05684381975957806,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width k (per arm, log)": 3200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.050823120229458216,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width k (per arm, log)": 4800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.04101484257098332,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width k (per arm, log)": 6400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.035652794126686434,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width k (per arm, log)": 8000.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.031047023010517573,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "tail width k (per arm, log)": 25.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.41228215671947854,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width k (per arm, log)": 50.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.2775969681338826,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width k (per arm, log)": 100.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.19212516940290925,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width k (per arm, log)": 150.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.15095317192658766,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width k (per arm, log)": 200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.1285504416681178,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width k (per arm, log)": 300.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.0988304784079333,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width k (per arm, log)": 400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.08188027054926672,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width k (per arm, log)": 600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.06178092125080886,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width k (per arm, log)": 800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.051079111900544205,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width k (per arm, log)": 1200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.037312385376087734,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width k (per arm, log)": 1600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.02957927327540007,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width k (per arm, log)": 2400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.021930486426244733,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width k (per arm, log)": 3200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.01729499522945821,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width k (per arm, log)": 4800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.013080259237649985,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width k (per arm, log)": 6400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.011721544126686434,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width k (per arm, log)": 8000.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.011089398010517571,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "tail width k (per arm, log)": 25.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.2,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width k (per arm, log)": 50.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.2,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width k (per arm, log)": 100.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.27,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width k (per arm, log)": 150.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.20666666666666667,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width k (per arm, log)": 200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.19499999999999995,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width k (per arm, log)": 300.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.18333333333333335,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width k (per arm, log)": 400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.13,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width k (per arm, log)": 600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.08000000000000002,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width k (per arm, log)": 800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.0625,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width k (per arm, log)": 1200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.02583333333333332,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width k (per arm, log)": 1600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.01687500000000003,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width k (per arm, log)": 2400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.010000000000000009,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width k (per arm, log)": 3200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.008124999999999993,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width k (per arm, log)": 4800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.006666666666666654,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width k (per arm, log)": 6400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.0009375000000000355,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "tail width k (per arm, log)": 8000.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.0003750000000000142,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 0.0,
+      "label prevalence": 0.4346764346764347,
+      "error": 0.03387187263891345,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 1.0,
+      "label prevalence": 0.4175824175824176,
+      "error": 0.03369819696376747,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 2.0,
+      "label prevalence": 0.4517704517704518,
+      "error": 0.034004756022201654,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 3.0,
+      "label prevalence": 0.4810744810744811,
+      "error": 0.03413894849251484,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 4.0,
+      "label prevalence": 0.4822954822954823,
+      "error": 0.03414199219161013,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 5.0,
+      "label prevalence": 0.4835164835164835,
+      "error": 0.03414483273264346,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 6.0,
+      "label prevalence": 0.525030525030525,
+      "error": 0.03412068059623438,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 7.0,
+      "label prevalence": 0.4945054945054945,
+      "error": 0.034161262654973684,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 8.0,
+      "label prevalence": 0.48595848595848595,
+      "error": 0.034149904539678894,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 9.0,
+      "label prevalence": 0.5018315018315018,
+      "error": 0.034163087714147444,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 10.0,
+      "label prevalence": 0.4945054945054945,
+      "error": 0.034161262654973684,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 11.0,
+      "label prevalence": 0.5115995115995116,
+      "error": 0.034154164275553955,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 12.0,
+      "label prevalence": 0.5128205128205128,
+      "error": 0.0341521358961622,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 13.0,
+      "label prevalence": 0.5213675213675214,
+      "error": 0.03413225139911405,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 14.0,
+      "label prevalence": 0.4884004884004884,
+      "error": 0.03415416427555393,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 15.0,
+      "label prevalence": 0.49206349206349204,
+      "error": 0.03415903189467387,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 16.0,
+      "label prevalence": 0.46764346764346765,
+      "error": 0.03409204121138523,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 17.0,
+      "label prevalence": 0.442002442002442,
+      "error": 0.03393378632192451,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 18.0,
+      "label prevalence": 0.4468864468864469,
+      "error": 0.03397092115337791,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 19.0,
+      "label prevalence": 0.38170731707317074,
+      "error": 0.03317787713580295,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 0.0,
+      "label prevalence": 0.4346764346764347,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 1.0,
+      "label prevalence": 0.4175824175824176,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 2.0,
+      "label prevalence": 0.4517704517704518,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 3.0,
+      "label prevalence": 0.4810744810744811,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 4.0,
+      "label prevalence": 0.4822954822954823,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 5.0,
+      "label prevalence": 0.4835164835164835,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 6.0,
+      "label prevalence": 0.525030525030525,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 7.0,
+      "label prevalence": 0.4945054945054945,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 8.0,
+      "label prevalence": 0.48595848595848595,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 9.0,
+      "label prevalence": 0.5018315018315018,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 10.0,
+      "label prevalence": 0.4945054945054945,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 11.0,
+      "label prevalence": 0.5115995115995116,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 12.0,
+      "label prevalence": 0.5128205128205128,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 13.0,
+      "label prevalence": 0.5213675213675214,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 14.0,
+      "label prevalence": 0.4884004884004884,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 15.0,
+      "label prevalence": 0.49206349206349204,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 16.0,
+      "label prevalence": 0.46764346764346765,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 17.0,
+      "label prevalence": 0.442002442002442,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 18.0,
+      "label prevalence": 0.4468864468864469,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 19.0,
+      "label prevalence": 0.38170731707317074,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 0.0,
+      "label prevalence": 0.4011095269702694,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 1.0,
+      "label prevalence": 0.3842689894590333,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 2.0,
+      "label prevalence": 0.41799085677336323,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 3.0,
+      "label prevalence": 0.4470238869082765,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 4.0,
+      "label prevalence": 0.4482361441510656,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 5.0,
+      "label prevalence": 0.4494486045519167,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 6.0,
+      "label prevalence": 0.49079298871239657,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 7.0,
+      "label prevalence": 0.4603698831065464,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 8.0,
+      "label prevalence": 0.45187413462865017,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 9.0,
+      "label prevalence": 0.4676598636986792,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 10.0,
+      "label prevalence": 0.4603698831065464,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 11.0,
+      "label prevalence": 0.47739119467234814,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 12.0,
+      "label prevalence": 0.47860852399362425,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 13.0,
+      "label prevalence": 0.4871355150838635,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 14.0,
+      "label prevalence": 0.4543004767765439,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 15.0,
+      "label prevalence": 0.45794151198307725,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 16.0,
+      "label prevalence": 0.4337024838286773,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 17.0,
+      "label prevalence": 0.4083394189385649,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 18.0,
+      "label prevalence": 0.4131634878746493,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 19.0,
+      "label prevalence": 0.3490810223717341,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 0.0,
+      "label prevalence": 0.4688532722480963,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 1.0,
+      "label prevalence": 0.45166538338656825,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 2.0,
+      "label prevalence": 0.48600036881776654,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 3.0,
+      "label prevalence": 0.5153017838933062,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 4.0,
+      "label prevalence": 0.5165201285342859,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 5.0,
+      "label prevalence": 0.5177382700172036,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 6.0,
+      "label prevalence": 0.5590343499048653,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 7.0,
+      "label prevalence": 0.5286924084164938,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 8.0,
+      "label prevalence": 0.520173943708008,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 9.0,
+      "label prevalence": 0.5359860391269741,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 10.0,
+      "label prevalence": 0.5286924084164938,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 11.0,
+      "label prevalence": 0.545699523223456,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 12.0,
+      "label prevalence": 0.5469127957859486,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 13.0,
+      "label prevalence": 0.5554000178820916,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 14.0,
+      "label prevalence": 0.5226088053276517,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 15.0,
+      "label prevalence": 0.526259575772425,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 16.0,
+      "label prevalence": 0.5018865662514478,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 17.0,
+      "label prevalence": 0.4762069915824139,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 18.0,
+      "label prevalence": 0.4811053301814051,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 19.0,
+      "label prevalence": 0.41543677664334,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "tail width k (per arm, log)": 25.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.3118161816121204,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width k (per arm, log)": 50.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.2200180745812439,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width k (per arm, log)": 100.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.15466848586110693,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width k (per arm, log)": 150.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.1294806528079218,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width k (per arm, log)": 200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.11333233563524064,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width k (per arm, log)": 300.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.0940960778212437,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width k (per arm, log)": 400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.08121893208776132,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width k (per arm, log)": 600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.06740585422279617,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width k (per arm, log)": 800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.05947311922196087,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width k (per arm, log)": 1200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.050316739887174985,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width k (per arm, log)": 1600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.043805868126050404,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width k (per arm, log)": 2400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.035860010062929944,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width k (per arm, log)": 3200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.03199827203079811,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width k (per arm, log)": 4800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.026424371329759673,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width k (per arm, log)": 6400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.02299492673110038,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width k (per arm, log)": 8000.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.020412723964018057,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "tail width k (per arm, log)": 25.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.2980961816121204,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width k (per arm, log)": 50.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.20295807458124387,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width k (per arm, log)": 100.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.14473848586110694,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width k (per arm, log)": 150.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.12117398614125512,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width k (per arm, log)": 200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.10607733563524063,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width k (per arm, log)": 300.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.0846860778212437,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width k (per arm, log)": 400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.07103643208776131,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width k (per arm, log)": 600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.055035854222796166,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width k (per arm, log)": 800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.04716311922196087,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width k (per arm, log)": 1200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.03708757322050832,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width k (per arm, log)": 1600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.030564618126050408,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width k (per arm, log)": 2400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.023655010062929943,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width k (per arm, log)": 3200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.020075772030798106,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width k (per arm, log)": 4800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.01607249632975967,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width k (per arm, log)": 6400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.014007114231100378,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width k (per arm, log)": 8000.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.012893223964018059,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "tail width k (per arm, log)": 25.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.27999999999999997,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width k (per arm, log)": 50.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.19999999999999998,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width k (per arm, log)": 100.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.26,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width k (per arm, log)": 150.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.2733333333333333,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width k (per arm, log)": 200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.30500000000000005,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width k (per arm, log)": 300.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.2666666666666667,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width k (per arm, log)": 400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.2275,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width k (per arm, log)": 600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.22166666666666665,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width k (per arm, log)": 800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.19375,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width k (per arm, log)": 1200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.17833333333333332,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width k (per arm, log)": 1600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.16312500000000002,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width k (per arm, log)": 2400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.12874999999999998,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width k (per arm, log)": 3200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.11156249999999998,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width k (per arm, log)": 4800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.09208333333333335,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width k (per arm, log)": 6400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.06968750000000001,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "tail width k (per arm, log)": 8000.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.05662500000000001,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 0.0,
+      "label prevalence": 0.3508557457212714,
+      "error": 0.03263533568485044,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 1.0,
+      "label prevalence": 0.27472527472527475,
+      "error": 0.030517477932864356,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 2.0,
+      "label prevalence": 0.20904645476772615,
+      "error": 0.027833639534960763,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 3.0,
+      "label prevalence": 0.21733821733821734,
+      "error": 0.02821114872247865,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 4.0,
+      "label prevalence": 0.17603911980440098,
+      "error": 0.0260822540965632,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 5.0,
+      "label prevalence": 0.1978021978021978,
+      "error": 0.02725391960697532,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 6.0,
+      "label prevalence": 0.17237163814180928,
+      "error": 0.02586824831571516,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 7.0,
+      "label prevalence": 0.17216117216117216,
+      "error": 0.02584006874059222,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 8.0,
+      "label prevalence": 0.1784841075794621,
+      "error": 0.026222628679268778,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 9.0,
+      "label prevalence": 0.17826617826617827,
+      "error": 0.02619420637660863,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 10.0,
+      "label prevalence": 0.1687041564792176,
+      "error": 0.02565001775157097,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 11.0,
+      "label prevalence": 0.17216117216117216,
+      "error": 0.02584006874059222,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 12.0,
+      "label prevalence": 0.17359413202933985,
+      "error": 0.025940047790257242,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 13.0,
+      "label prevalence": 0.17216117216117216,
+      "error": 0.02584006874059222,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 14.0,
+      "label prevalence": 0.14058679706601468,
+      "error": 0.023823734103832428,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 15.0,
+      "label prevalence": 0.1282051282051282,
+      "error": 0.022908678631684276,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 16.0,
+      "label prevalence": 0.15647921760391198,
+      "error": 0.02489062737413869,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 17.0,
+      "label prevalence": 0.15018315018315018,
+      "error": 0.02446431855310835,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 18.0,
+      "label prevalence": 0.14425427872860636,
+      "error": 0.024078468990098682,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 19.0,
+      "label prevalence": 0.15873015873015872,
+      "error": 0.02501898985795553,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 0.0,
+      "label prevalence": 0.3508557457212714,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 1.0,
+      "label prevalence": 0.27472527472527475,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 2.0,
+      "label prevalence": 0.20904645476772615,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 3.0,
+      "label prevalence": 0.21733821733821734,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 4.0,
+      "label prevalence": 0.17603911980440098,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 5.0,
+      "label prevalence": 0.1978021978021978,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 6.0,
+      "label prevalence": 0.17237163814180928,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 7.0,
+      "label prevalence": 0.17216117216117216,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 8.0,
+      "label prevalence": 0.1784841075794621,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 9.0,
+      "label prevalence": 0.17826617826617827,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 10.0,
+      "label prevalence": 0.1687041564792176,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 11.0,
+      "label prevalence": 0.17216117216117216,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 12.0,
+      "label prevalence": 0.17359413202933985,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 13.0,
+      "label prevalence": 0.17216117216117216,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 14.0,
+      "label prevalence": 0.14058679706601468,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 15.0,
+      "label prevalence": 0.1282051282051282,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 16.0,
+      "label prevalence": 0.15647921760391198,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 17.0,
+      "label prevalence": 0.15018315018315018,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 18.0,
+      "label prevalence": 0.14425427872860636,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 19.0,
+      "label prevalence": 0.15873015873015872,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 0.0,
+      "label prevalence": 0.3189175414770435,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 1.0,
+      "label prevalence": 0.24525949828945776,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 2.0,
+      "label prevalence": 0.18257279296119305,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 3.0,
+      "label prevalence": 0.1904466832312751,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 4.0,
+      "label prevalence": 0.1514711266239442,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 5.0,
+      "label prevalence": 0.17195909727662748,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 6.0,
+      "label prevalence": 0.1480347933186093,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 7.0,
+      "label prevalence": 0.1478516283634375,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 8.0,
+      "label prevalence": 0.15376431143202723,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 9.0,
+      "label prevalence": 0.15357399543684325,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 10.0,
+      "label prevalence": 0.14460268479657057,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 11.0,
+      "label prevalence": 0.1478516283634375,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 12.0,
+      "label prevalence": 0.14917977353946155,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 13.0,
+      "label prevalence": 0.1478516283634375,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 14.0,
+      "label prevalence": 0.11844303545023996,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 15.0,
+      "label prevalence": 0.10703218456450583,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 16.0,
+      "label prevalence": 0.13319427822005972,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 17.0,
+      "label prevalence": 0.12735196159700157,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 18.0,
+      "label prevalence": 0.12183863965015664,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 19.0,
+      "label prevalence": 0.1353043968853454,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 0.0,
+      "label prevalence": 0.38418821284674437,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 1.0,
+      "label prevalence": 0.30629445415518647,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 2.0,
+      "label prevalence": 0.23824007203111458,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 3.0,
+      "label prevalence": 0.2468689806762324,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 4.0,
+      "label prevalence": 0.20363563481707062,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 5.0,
+      "label prevalence": 0.2264669364905781,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 6.0,
+      "label prevalence": 0.19977128995003962,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 7.0,
+      "label prevalence": 0.19953176584462193,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 8.0,
+      "label prevalence": 0.2062095687905648,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 9.0,
+      "label prevalence": 0.2059624081900605,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 10.0,
+      "label prevalence": 0.1959027202997125,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 11.0,
+      "label prevalence": 0.19953176584462193,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 12.0,
+      "label prevalence": 0.20105986911997603,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 13.0,
+      "label prevalence": 0.19953176584462193,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 14.0,
+      "label prevalence": 0.16609050365790481,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 15.0,
+      "label prevalence": 0.15284954182787439,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 16.0,
+      "label prevalence": 0.1829755329683371,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 17.0,
+      "label prevalence": 0.17628059870321827,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 18.0,
+      "label prevalence": 0.169995577630354,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 19.0,
+      "label prevalence": 0.18534237660125646,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "tail width k (per arm, log)": 25.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.24495029499206467,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "tail width k (per arm, log)": 50.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.18,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "tail width k (per arm, log)": 100.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.12716248419477902,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "tail width k (per arm, log)": 150.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.10357272215831141,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "tail width k (per arm, log)": 200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.08999441354896791,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "tail width k (per arm, log)": 300.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.07548929235163492,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "tail width k (per arm, log)": 400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.06738695150573511,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "tail width k (per arm, log)": 600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.05566699063919942,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "tail width k (per arm, log)": 800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.04932293301277477,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "tail width k (per arm, log)": 1200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.04013406650491112,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "tail width k (per arm, log)": 1600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.034729005285568805,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "tail width k (per arm, log)": 2400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.028442198958648343,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "tail width k (per arm, log)": 3200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.02522934825598598,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "tail width k (per arm, log)": 4800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.020526474106311397,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "tail width k (per arm, log)": 6400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.01789413125154835,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "tail width k (per arm, log)": 8000.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.015884627505477485,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "tail width k (per arm, log)": 25.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.2385902949920647,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "tail width k (per arm, log)": 50.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.17174,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "tail width k (per arm, log)": 100.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.12127248419477901,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "tail width k (per arm, log)": 150.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.09652605549164474,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "tail width k (per arm, log)": 200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.08266941354896791,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "tail width k (per arm, log)": 300.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.06590262568496826,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "tail width k (per arm, log)": 400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.05593695150573511,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "tail width k (per arm, log)": 600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.044115323972532754,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "tail width k (per arm, log)": 800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.038101683012774765,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "tail width k (per arm, log)": 1200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.029573233171577784,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "tail width k (per arm, log)": 1600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.024550255285568808,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "tail width k (per arm, log)": 2400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.019689698958648347,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "tail width k (per arm, log)": 3200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.01734059825598598,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "tail width k (per arm, log)": 4800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.01442918243964473,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "tail width k (per arm, log)": 6400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.012492881251548349,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "tail width k (per arm, log)": 8000.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.011347377505477487,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "tail width k (per arm, log)": 25.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.28,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "tail width k (per arm, log)": 50.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.16,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "tail width k (per arm, log)": 100.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.21000000000000002,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "tail width k (per arm, log)": 150.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.21333333333333335,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "tail width k (per arm, log)": 200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.25,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "tail width k (per arm, log)": 300.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.22333333333333333,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "tail width k (per arm, log)": 400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.19,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "tail width k (per arm, log)": 600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.17,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "tail width k (per arm, log)": 800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.13499999999999998,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "tail width k (per arm, log)": 1200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.11583333333333333,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "tail width k (per arm, log)": 1600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.103125,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "tail width k (per arm, log)": 2400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.07416666666666667,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "tail width k (per arm, log)": 3200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.05812500000000001,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "tail width k (per arm, log)": 4800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.044791666666666674,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "tail width k (per arm, log)": 6400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.033750000000000016,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "tail width k (per arm, log)": 8000.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.028999999999999998,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 0.0,
+      "label prevalence": 0.2555012224938875,
+      "error": 0.02984017046171837,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 1.0,
+      "label prevalence": 0.16971916971916973,
+      "error": 0.025695160024442026,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 2.0,
+      "label prevalence": 0.10635696821515893,
+      "error": 0.02115765733241228,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 3.0,
+      "label prevalence": 0.10012210012210013,
+      "error": 0.020593897719474827,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 4.0,
+      "label prevalence": 0.08312958435207823,
+      "error": 0.01897526334865568,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 5.0,
+      "label prevalence": 0.1111111111111111,
+      "error": 0.021549603838729794,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 6.0,
+      "label prevalence": 0.08557457212713937,
+      "error": 0.019222814070419494,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 7.0,
+      "label prevalence": 0.08913308913308914,
+      "error": 0.019562963914301998,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 8.0,
+      "label prevalence": 0.08557457212713937,
+      "error": 0.019222814070419494,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 9.0,
+      "label prevalence": 0.0927960927960928,
+      "error": 0.019915670759915474,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 10.0,
+      "label prevalence": 0.07579462102689487,
+      "error": 0.018203268784017235,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 11.0,
+      "label prevalence": 0.08180708180708181,
+      "error": 0.018827817179770015,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 12.0,
+      "label prevalence": 0.08924205378973105,
+      "error": 0.019585612820231982,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 13.0,
+      "label prevalence": 0.08424908424908426,
+      "error": 0.019077466794903006,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 14.0,
+      "label prevalence": 0.07334963325183375,
+      "error": 0.017935454819244245,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 15.0,
+      "label prevalence": 0.08302808302808302,
+      "error": 0.018953235794642406,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 16.0,
+      "label prevalence": 0.08924205378973105,
+      "error": 0.019585612820231982,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 17.0,
+      "label prevalence": 0.0927960927960928,
+      "error": 0.019915670759915474,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 18.0,
+      "label prevalence": 0.097799511002445,
+      "error": 0.020395147447500567,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 19.0,
+      "label prevalence": 0.12332112332112333,
+      "error": 0.022534888347194422,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 0.0,
+      "label prevalence": 0.2555012224938875,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 1.0,
+      "label prevalence": 0.16971916971916973,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 2.0,
+      "label prevalence": 0.10635696821515893,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 3.0,
+      "label prevalence": 0.10012210012210013,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 4.0,
+      "label prevalence": 0.08312958435207823,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 5.0,
+      "label prevalence": 0.1111111111111111,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 6.0,
+      "label prevalence": 0.08557457212713937,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 7.0,
+      "label prevalence": 0.08913308913308914,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 8.0,
+      "label prevalence": 0.08557457212713937,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 9.0,
+      "label prevalence": 0.0927960927960928,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 10.0,
+      "label prevalence": 0.07579462102689487,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 11.0,
+      "label prevalence": 0.08180708180708181,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 12.0,
+      "label prevalence": 0.08924205378973105,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 13.0,
+      "label prevalence": 0.08424908424908426,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 14.0,
+      "label prevalence": 0.07334963325183375,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 15.0,
+      "label prevalence": 0.08302808302808302,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 16.0,
+      "label prevalence": 0.08924205378973105,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 17.0,
+      "label prevalence": 0.0927960927960928,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 18.0,
+      "label prevalence": 0.097799511002445,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 19.0,
+      "label prevalence": 0.12332112332112333,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 0.0,
+      "label prevalence": 0.22680389045941926,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 1.0,
+      "label prevalence": 0.14556593519581884,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 2.0,
+      "label prevalence": 0.08703928075061938,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 3.0,
+      "label prevalence": 0.08139504381337336,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 4.0,
+      "label prevalence": 0.06610286052188405,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 5.0,
+      "label prevalence": 0.09137704617107828,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 6.0,
+      "label prevalence": 0.06828886919090887,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 7.0,
+      "label prevalence": 0.07148826914158629,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 8.0,
+      "label prevalence": 0.06828886919090887,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 9.0,
+      "label prevalence": 0.07478146512162612,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 10.0,
+      "label prevalence": 0.05957417691415663,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 11.0,
+      "label prevalence": 0.06493161022481167,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 12.0,
+      "label prevalence": 0.07157640952727931,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 13.0,
+      "label prevalence": 0.06711256249344755,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 14.0,
+      "label prevalence": 0.05740843148814101,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 15.0,
+      "label prevalence": 0.06602149255182371,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 16.0,
+      "label prevalence": 0.07157640952727931,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 17.0,
+      "label prevalence": 0.07478146512162612,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 18.0,
+      "label prevalence": 0.07928433276777092,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 19.0,
+      "label prevalence": 0.10254477108145797,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 0.0,
+      "label prevalence": 0.286484231382856,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 1.0,
+      "label prevalence": 0.1969562552447029,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 2.0,
+      "label prevalence": 0.12935459541544395,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 3.0,
+      "label prevalence": 0.12258283925232301,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 4.0,
+      "label prevalence": 0.10405338721919541,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 5.0,
+      "label prevalence": 0.13447625384853787,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 6.0,
+      "label prevalence": 0.10673449733174786,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 7.0,
+      "label prevalence": 0.11061419697019029,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 8.0,
+      "label prevalence": 0.10673449733174786,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 9.0,
+      "label prevalence": 0.11461280664145707,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 10.0,
+      "label prevalence": 0.0959807144821911,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 11.0,
+      "label prevalence": 0.1025872445843517,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 12.0,
+      "label prevalence": 0.11074763516774327,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 13.0,
+      "label prevalence": 0.10526749608325356,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 14.0,
+      "label prevalence": 0.0932793411266295,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 15.0,
+      "label prevalence": 0.10392796414110853,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 16.0,
+      "label prevalence": 0.11074763516774327,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 17.0,
+      "label prevalence": 0.11461280664145707,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 18.0,
+      "label prevalence": 0.12007462766277205,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 19.0,
+      "label prevalence": 0.14761454777584682,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "tail width k (per arm, log)": 25.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.20808539729810546,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "tail width k (per arm, log)": 50.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.14935632821432443,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "tail width k (per arm, log)": 100.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.10478999999999998,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "tail width k (per arm, log)": 150.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.08817999996243044,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "tail width k (per arm, log)": 200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.07598109145664103,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "tail width k (per arm, log)": 300.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.06290085383718952,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "tail width k (per arm, log)": 400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.05572038807247425,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "tail width k (per arm, log)": 600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.04714990388104538,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "tail width k (per arm, log)": 800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.04176680518797012,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "tail width k (per arm, log)": 1200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.03484803133736755,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "tail width k (per arm, log)": 1600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.03112813981737171,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "tail width k (per arm, log)": 2400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.025962320561989133,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "tail width k (per arm, log)": 3200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.02328962243997161,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "tail width k (per arm, log)": 4800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.01924766894569746,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "tail width k (per arm, log)": 6400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.01690855778263598,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "tail width k (per arm, log)": 8000.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.015092408265881556,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "tail width k (per arm, log)": 25.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.20308539729810546,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "tail width k (per arm, log)": 50.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.14247632821432443,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "tail width k (per arm, log)": 100.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.09999999999999999,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "tail width k (per arm, log)": 150.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.08173333329576378,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "tail width k (per arm, log)": 200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.07197109145664102,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "tail width k (per arm, log)": 300.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.056764187170522847,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "tail width k (per arm, log)": 400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.047772888072474255,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "tail width k (per arm, log)": 600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.036973237214378715,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "tail width k (per arm, log)": 800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.031285555187970125,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "tail width k (per arm, log)": 1200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.023813031337367556,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "tail width k (per arm, log)": 1600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.019788764817371712,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "tail width k (per arm, log)": 2400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.014829820561989135,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "tail width k (per arm, log)": 3200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.012243997439971609,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "tail width k (per arm, log)": 4800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.009656418945697461,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "tail width k (per arm, log)": 6400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.008436057782635979,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "tail width k (per arm, log)": 8000.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": -0.007682533265881553,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "tail width k (per arm, log)": 25.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.0,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "tail width k (per arm, log)": 50.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.04000000000000001,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "tail width k (per arm, log)": 100.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.04,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "tail width k (per arm, log)": 150.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.05333333333333334,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "tail width k (per arm, log)": 200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.049999999999999996,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "tail width k (per arm, log)": 300.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.04000000000000001,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "tail width k (per arm, log)": 400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.0325,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "tail width k (per arm, log)": 600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.04166666666666667,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "tail width k (per arm, log)": 800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.04750000000000001,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "tail width k (per arm, log)": 1200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.049166666666666664,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "tail width k (per arm, log)": 1600.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.044375000000000005,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "tail width k (per arm, log)": 2400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.03916666666666666,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "tail width k (per arm, log)": 3200.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.0390625,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "tail width k (per arm, log)": 4800.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.035833333333333335,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "tail width k (per arm, log)": 6400.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.02703125,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "tail width k (per arm, log)": 8000.0,
+      "\u0394_k = frac(top-k) \u2212 frac(bottom-k)": 0.020250000000000004,
+      "series": "observed \u0394_k",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 0.0,
+      "label prevalence": 0.0843520782396088,
+      "error": 0.019099621799432143,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 1.0,
+      "label prevalence": 0.08424908424908426,
+      "error": 0.019077466794903006,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 2.0,
+      "label prevalence": 0.08557457212713937,
+      "error": 0.019222814070419494,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 3.0,
+      "label prevalence": 0.10500610500610501,
+      "error": 0.02102731498326793,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 4.0,
+      "label prevalence": 0.08190709046454768,
+      "error": 0.018849715636963707,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 5.0,
+      "label prevalence": 0.08302808302808302,
+      "error": 0.018953235794642406,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 6.0,
+      "label prevalence": 0.08068459657701711,
+      "error": 0.018722954740425415,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 7.0,
+      "label prevalence": 0.07692307692307693,
+      "error": 0.018313775125117282,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 8.0,
+      "label prevalence": 0.08801955990220049,
+      "error": 0.019465788427835723,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 9.0,
+      "label prevalence": 0.07936507936507936,
+      "error": 0.01857332064447341,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 10.0,
+      "label prevalence": 0.08924205378973105,
+      "error": 0.019585612820231982,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 11.0,
+      "label prevalence": 0.08669108669108669,
+      "error": 0.01932245736001953,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 12.0,
+      "label prevalence": 0.08190709046454768,
+      "error": 0.018849715636963707,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 13.0,
+      "label prevalence": 0.08424908424908426,
+      "error": 0.019077466794903006,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 14.0,
+      "label prevalence": 0.061124694376528114,
+      "error": 0.0165061781090291,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 15.0,
+      "label prevalence": 0.04395604395604396,
+      "error": 0.014167663826659259,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 16.0,
+      "label prevalence": 0.06723716381418093,
+      "error": 0.0172406801053278,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 17.0,
+      "label prevalence": 0.054945054945054944,
+      "error": 0.015707817029211146,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 18.0,
+      "label prevalence": 0.04523227383863081,
+      "error": 0.014365945281876125,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 19.0,
+      "label prevalence": 0.03540903540903541,
+      "error": 0.012812457423691498,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 0.0,
+      "label prevalence": 0.0843520782396088,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 1.0,
+      "label prevalence": 0.08424908424908426,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 2.0,
+      "label prevalence": 0.08557457212713937,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 3.0,
+      "label prevalence": 0.10500610500610501,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 4.0,
+      "label prevalence": 0.08190709046454768,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 5.0,
+      "label prevalence": 0.08302808302808302,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 6.0,
+      "label prevalence": 0.08068459657701711,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 7.0,
+      "label prevalence": 0.07692307692307693,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 8.0,
+      "label prevalence": 0.08801955990220049,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 9.0,
+      "label prevalence": 0.07936507936507936,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 10.0,
+      "label prevalence": 0.08924205378973105,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 11.0,
+      "label prevalence": 0.08669108669108669,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 12.0,
+      "label prevalence": 0.08190709046454768,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 13.0,
+      "label prevalence": 0.08424908424908426,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 14.0,
+      "label prevalence": 0.061124694376528114,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 15.0,
+      "label prevalence": 0.04395604395604396,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 16.0,
+      "label prevalence": 0.06723716381418093,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 17.0,
+      "label prevalence": 0.054945054945054944,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 18.0,
+      "label prevalence": 0.04523227383863081,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 19.0,
+      "label prevalence": 0.03540903540903541,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 0.0,
+      "label prevalence": 0.0671952817665019,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 1.0,
+      "label prevalence": 0.06711256249344755,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 2.0,
+      "label prevalence": 0.06828886919090887,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 3.0,
+      "label prevalence": 0.08582283031711799,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 4.0,
+      "label prevalence": 0.06501162853818172,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 5.0,
+      "label prevalence": 0.06602149255182371,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 6.0,
+      "label prevalence": 0.0639216097393257,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 7.0,
+      "label prevalence": 0.06058444851192668,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 8.0,
+      "label prevalence": 0.07047945422428126,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 9.0,
+      "label prevalence": 0.06275550487633941,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 10.0,
+      "label prevalence": 0.07157640952727931,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 11.0,
+      "label prevalence": 0.06929817381209989,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 12.0,
+      "label prevalence": 0.06501162853818172,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 13.0,
+      "label prevalence": 0.06711256249344755,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 14.0,
+      "label prevalence": 0.04666991124441304,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 15.0,
+      "label prevalence": 0.03191743437950501,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 16.0,
+      "label prevalence": 0.05201930772508589,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 17.0,
+      "label prevalence": 0.04131498965391302,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 18.0,
+      "label prevalence": 0.03299200803143996,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 19.0,
+      "label prevalence": 0.024765534189281735,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 0.0,
+      "label prevalence": 0.10539452536536618,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 1.0,
+      "label prevalence": 0.10526749608325356,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 2.0,
+      "label prevalence": 0.10673449733174786,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 3.0,
+      "label prevalence": 0.12787746028365385,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 4.0,
+      "label prevalence": 0.10271105981210914,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 5.0,
+      "label prevalence": 0.10392796414110853,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 6.0,
+      "label prevalence": 0.10136751922017653,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 7.0,
+      "label prevalence": 0.09721199876216124,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 8.0,
+      "label prevalence": 0.1094110310799527,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 9.0,
+      "label prevalence": 0.09990214616528623,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 10.0,
+      "label prevalence": 0.11074763516774327,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 11.0,
+      "label prevalence": 0.10794308853213895,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 12.0,
+      "label prevalence": 0.10271105981210914,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 13.0,
+      "label prevalence": 0.10526749608325356,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 14.0,
+      "label prevalence": 0.07968226746247124,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 15.0,
+      "label prevalence": 0.06025276203282353,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 16.0,
+      "label prevalence": 0.08650066793574149,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 17.0,
+      "label prevalence": 0.07273062371233531,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 18.0,
+      "label prevalence": 0.06172389859519221,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "R\u00b2 rank bin (0 = best-predicted 5%)": 19.0,
+      "label prevalence": 0.05039044903666473,
+      "_kind": "line",
+      "_group": 27
+    }
+  ],
+  "n_series": 28,
+  "total_points": 512,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "abstraction_high: tail-contrast depth (dashed = scan-corrected)",
+        "xlabel": "tail width k (per arm, log)",
+        "ylabel": "\u0394_k = frac(top-k) \u2212 frac(bottom-k)",
+        "legend_labels": [
+          "stratified permutation band (pointwise 95%)",
+          "observed \u0394_k"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "abstraction_high: prevalence across the full ranking",
+        "xlabel": "R\u00b2 rank bin (0 = best-predicted 5%)",
+        "ylabel": "label prevalence",
+        "xticklabels": [
+          "\u22122.5",
+          "0.0",
+          "2.5",
+          "5.0",
+          "7.5",
+          "10.0",
+          "12.5",
+          "15.0",
+          "17.5",
+          "20.0"
+        ],
+        "yticklabels": [
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50",
+          "0.55",
+          "0.60"
+        ]
+      },
+      {
+        "title_left": "speaker_any: tail-contrast depth (dashed = scan-corrected)",
+        "xlabel": "tail width k (per arm, log)",
+        "ylabel": "\u0394_k = frac(top-k) \u2212 frac(bottom-k)",
+        "legend_labels": [
+          "stratified permutation band (pointwise 95%)",
+          "observed \u0394_k"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      },
+      {
+        "title_left": "speaker_any: prevalence across the full ranking",
+        "xlabel": "R\u00b2 rank bin (0 = best-predicted 5%)",
+        "ylabel": "label prevalence",
+        "xticklabels": [
+          "\u22122.5",
+          "0.0",
+          "2.5",
+          "5.0",
+          "7.5",
+          "10.0",
+          "12.5",
+          "15.0",
+          "17.5",
+          "20.0"
+        ],
+        "yticklabels": [
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      },
+      {
+        "title_left": "speaker_language: tail-contrast depth (dashed = scan-corrected)",
+        "xlabel": "tail width k (per arm, log)",
+        "ylabel": "\u0394_k = frac(top-k) \u2212 frac(bottom-k)",
+        "legend_labels": [
+          "stratified permutation band (pointwise 95%)",
+          "observed \u0394_k"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ],
+        "yticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      },
+      {
+        "title_left": "speaker_language: prevalence across the full ranking",
+        "xlabel": "R\u00b2 rank bin (0 = best-predicted 5%)",
+        "ylabel": "label prevalence",
+        "xticklabels": [
+          "\u22122.5",
+          "0.0",
+          "2.5",
+          "5.0",
+          "7.5",
+          "10.0",
+          "12.5",
+          "15.0",
+          "17.5",
+          "20.0"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      },
+      {
+        "title_left": "speaker_register: tail-contrast depth (dashed = scan-corrected)",
+        "xlabel": "tail width k (per arm, log)",
+        "ylabel": "\u0394_k = frac(top-k) \u2212 frac(bottom-k)",
+        "legend_labels": [
+          "stratified permutation band (pointwise 95%)",
+          "observed \u0394_k"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ],
+        "yticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ]
+      },
+      {
+        "title_left": "speaker_register: prevalence across the full ranking",
+        "xlabel": "R\u00b2 rank bin (0 = best-predicted 5%)",
+        "ylabel": "label prevalence",
+        "xticklabels": [
+          "\u22122.5",
+          "0.0",
+          "2.5",
+          "5.0",
+          "7.5",
+          "10.0",
+          "12.5",
+          "15.0",
+          "17.5",
+          "20.0"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14"
+        ]
+      }
+    ],
+    "series": [
+      "observed \u0394_k",
+      "stratified permutation band (pointwise 95%)"
+    ]
+  }
+}

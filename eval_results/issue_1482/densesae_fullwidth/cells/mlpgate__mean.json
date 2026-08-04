@@ -1,0 +1,51 @@
+{
+  "method": "mlp_panel",
+  "pooling": "mean",
+  "width": 8192,
+  "d_in": 3584,
+  "d_out": 16384,
+  "n_train": 120000,
+  "n_internal_val": 12000,
+  "n_holdout": 20000,
+  "epochs_ran": 73,
+  "best_internal_val_mse": 0.004400097846984864,
+  "recipe": {
+    "lr": 0.0003,
+    "weight_decay": 0.0001,
+    "batch": 4096,
+    "max_epochs": 300,
+    "patience": 20,
+    "seed": 1482
+  },
+  "pooled_r2_panel": 0.7392042994435699,
+  "pooled_r2_full": null,
+  "n_scored_columns": 16384,
+  "wall_s": {
+    "train": 209.94735836982727
+  },
+  "cell": "mlpgate__mean",
+  "metadata": {
+    "git_commit": "2217e1c8e2f188a9ea0110a704db3318e8e45036",
+    "generated_utc": "2026-08-03T17:52:50.571894+00:00",
+    "python": "3.11.10",
+    "numpy": "2.2.6",
+    "scipy": "1.17.1",
+    "torch": "2.8.0+cu128",
+    "host": "936031b2bcd9",
+    "cuda_visible_devices": "1",
+    "seed": 1482
+  },
+  "smoke": false,
+  "total_wall_s": 235.1344268321991,
+  "reproduction_gate": {
+    "banked_pooled_r2": 0.7387111516996565,
+    "banked_epochs_ran": 71,
+    "refit_pooled_r2": 0.7392042994435699,
+    "refit_epochs_ran": 73,
+    "delta": 0.0004931477439134024,
+    "tol": 0.02,
+    "pass": true,
+    "note": "panel-width (16,384-output) replication of the banked MLP; a full-width MLP is a DIFFERENT model and is not expected to match.",
+    "enforced": true
+  }
+}

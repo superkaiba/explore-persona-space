@@ -1,0 +1,3765 @@
+{
+  "commit": "c91570c52c",
+  "created": "2026-08-02T06:10:47Z",
+  "figsize": [
+    15.5,
+    5.2
+  ],
+  "points": [
+    {
+      "x": 0.09862417748014679,
+      "top-1 singular share of per-row answer-shift stack": 0.1949,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.02200376168926116,
+      "top-1 singular share of per-row answer-shift stack": 0.125,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12909525116809767,
+      "top-1 singular share of per-row answer-shift stack": 0.1519,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.07105249046137102,
+      "top-1 singular share of per-row answer-shift stack": 0.2633,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.14609615476044616,
+      "top-1 singular share of per-row answer-shift stack": 0.1129,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.17122404658923213,
+      "top-1 singular share of per-row answer-shift stack": 0.0944,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.09401029271652706,
+      "top-1 singular share of per-row answer-shift stack": 0.1889,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.10298314989970336,
+      "top-1 singular share of per-row answer-shift stack": 0.1028,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.13387909223680347,
+      "top-1 singular share of per-row answer-shift stack": 0.0959,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.017861062357595825,
+      "top-1 singular share of per-row answer-shift stack": 0.0947,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": -0.04651271127627074,
+      "top-1 singular share of per-row answer-shift stack": 0.0914,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.15363539598549664,
+      "top-1 singular share of per-row answer-shift stack": 0.0823,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.051791443229039225,
+      "top-1 singular share of per-row answer-shift stack": 0.119,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.11619418077749877,
+      "top-1 singular share of per-row answer-shift stack": 0.0977,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": -0.020370888422160782,
+      "top-1 singular share of per-row answer-shift stack": 0.1128,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -0.09819406015748032,
+      "top-1 singular share of per-row answer-shift stack": 0.1693,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 0.019650523325700525,
+      "top-1 singular share of per-row answer-shift stack": 0.1951,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.15702578780249687,
+      "top-1 singular share of per-row answer-shift stack": 0.2901,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.11794722191732954,
+      "top-1 singular share of per-row answer-shift stack": 0.3362,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.04739918368394333,
+      "top-1 singular share of per-row answer-shift stack": 0.3232,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.09291158643073455,
+      "top-1 singular share of per-row answer-shift stack": 0.3563,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": -0.052370651473247376,
+      "top-1 singular share of per-row answer-shift stack": 0.1904,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.16945128878216514,
+      "top-1 singular share of per-row answer-shift stack": 0.1874,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.14152360367599115,
+      "top-1 singular share of per-row answer-shift stack": 0.21,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.10021805894655428,
+      "top-1 singular share of per-row answer-shift stack": 0.2019,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": -0.10993006517329167,
+      "top-1 singular share of per-row answer-shift stack": 0.1273,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": -0.0119804386582677,
+      "top-1 singular share of per-row answer-shift stack": 0.3709,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.16423064431659765,
+      "top-1 singular share of per-row answer-shift stack": 0.1388,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": -0.12445578285568278,
+      "top-1 singular share of per-row answer-shift stack": 0.1308,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.06589762316728368,
+      "top-1 singular share of per-row answer-shift stack": 0.201,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 0.08811437612681416,
+      "top-1 singular share of per-row answer-shift stack": 0.2309,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 0.16830350367631558,
+      "top-1 singular share of per-row answer-shift stack": 0.2159,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": -0.0627028710702653,
+      "top-1 singular share of per-row answer-shift stack": 0.1734,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": -0.04663450582744719,
+      "top-1 singular share of per-row answer-shift stack": 0.1586,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 0.9890400920592909,
+      "top-1 singular share of per-row answer-shift stack": 0.4406,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 0.8882096892703428,
+      "top-1 singular share of per-row answer-shift stack": 0.3168,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 0.8667717419207698,
+      "top-1 singular share of per-row answer-shift stack": 0.2024,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 0.9912537734413361,
+      "top-1 singular share of per-row answer-shift stack": 0.2554,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 0.9016873656583183,
+      "top-1 singular share of per-row answer-shift stack": 0.1572,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 1.0611330380857038,
+      "top-1 singular share of per-row answer-shift stack": 0.1419,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 0.977374690794039,
+      "top-1 singular share of per-row answer-shift stack": 0.2142,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 1.1197641505808216,
+      "top-1 singular share of per-row answer-shift stack": 0.1628,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 1.0720954367208098,
+      "top-1 singular share of per-row answer-shift stack": 0.1316,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 0.9324519908975348,
+      "top-1 singular share of per-row answer-shift stack": 0.1271,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 1.1196135285022724,
+      "top-1 singular share of per-row answer-shift stack": 0.1132,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 1.1097151686988487,
+      "top-1 singular share of per-row answer-shift stack": 0.1258,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 0.9594922164508628,
+      "top-1 singular share of per-row answer-shift stack": 0.2514,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 0.9237981174148879,
+      "top-1 singular share of per-row answer-shift stack": 0.1951,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 1.0656983814309913,
+      "top-1 singular share of per-row answer-shift stack": 0.1853,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.8703108940993516,
+      "top-1 singular share of per-row answer-shift stack": 0.1953,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.891966952891039,
+      "top-1 singular share of per-row answer-shift stack": 0.2048,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 0.822650417110362,
+      "top-1 singular share of per-row answer-shift stack": 0.3128,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 1.1032927759007698,
+      "top-1 singular share of per-row answer-shift stack": 0.3467,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 1.0593463083731316,
+      "top-1 singular share of per-row answer-shift stack": 0.3474,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 1.0738595363054806,
+      "top-1 singular share of per-row answer-shift stack": 0.3814,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 1.1010624511679086,
+      "top-1 singular share of per-row answer-shift stack": 0.2054,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 0.9852096791938024,
+      "top-1 singular share of per-row answer-shift stack": 0.2043,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 1.0247468305430418,
+      "top-1 singular share of per-row answer-shift stack": 0.2246,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 0.8703269193259566,
+      "top-1 singular share of per-row answer-shift stack": 0.217,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 0.8612308264729505,
+      "top-1 singular share of per-row answer-shift stack": 0.122,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 1.0606250662445698,
+      "top-1 singular share of per-row answer-shift stack": 0.4011,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 0.9895946342115277,
+      "top-1 singular share of per-row answer-shift stack": 0.1425,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 1.023484998333228,
+      "top-1 singular share of per-row answer-shift stack": 0.1353,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 1.0953995886697692,
+      "top-1 singular share of per-row answer-shift stack": 0.1937,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 1.0484985952002126,
+      "top-1 singular share of per-row answer-shift stack": 0.2649,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "x": 1.0192885842368784,
+      "top-1 singular share of per-row answer-shift stack": 0.2678,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "x": 1.0213145778683488,
+      "top-1 singular share of per-row answer-shift stack": 0.1785,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "x": 0.9294220353025404,
+      "top-1 singular share of per-row answer-shift stack": 0.1755,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "x": 1.8310944204444581,
+      "top-1 singular share of per-row answer-shift stack": 0.4476,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "x": 1.9772182601236505,
+      "top-1 singular share of per-row answer-shift stack": 0.3279,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "x": 1.8972504822150305,
+      "top-1 singular share of per-row answer-shift stack": 0.1872,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "x": 1.967070311740869,
+      "top-1 singular share of per-row answer-shift stack": 0.2082,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "x": 2.1272251063765397,
+      "top-1 singular share of per-row answer-shift stack": 0.1422,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "x": 1.9042182149115228,
+      "top-1 singular share of per-row answer-shift stack": 0.1347,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "x": 1.8409889870080638,
+      "top-1 singular share of per-row answer-shift stack": 0.1692,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "x": 1.9212982011279187,
+      "top-1 singular share of per-row answer-shift stack": 0.1634,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "x": 1.925693752796006,
+      "top-1 singular share of per-row answer-shift stack": 0.1283,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "x": 2.058289945301682,
+      "top-1 singular share of per-row answer-shift stack": 0.1153,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "x": 2.02053157484286,
+      "top-1 singular share of per-row answer-shift stack": 0.1055,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "x": 2.102203355278309,
+      "top-1 singular share of per-row answer-shift stack": 0.1107,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "x": 2.0591528745178596,
+      "top-1 singular share of per-row answer-shift stack": 0.2487,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 1.9662992701184254,
+      "top-1 singular share of per-row answer-shift stack": 0.1967,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 2.1130473384797726,
+      "top-1 singular share of per-row answer-shift stack": 0.1807,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 1.8801102511667733,
+      "top-1 singular share of per-row answer-shift stack": 0.1403,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 1.8281763463281897,
+      "top-1 singular share of per-row answer-shift stack": 0.2085,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 1.852417229879231,
+      "top-1 singular share of per-row answer-shift stack": 0.2301,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 2.080049366214722,
+      "top-1 singular share of per-row answer-shift stack": 0.2293,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 1.9862758028904994,
+      "top-1 singular share of per-row answer-shift stack": 0.2557,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 1.8780578404520967,
+      "top-1 singular share of per-row answer-shift stack": 0.272,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 2.000376119037211,
+      "top-1 singular share of per-row answer-shift stack": 0.1882,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 1.8748323569767407,
+      "top-1 singular share of per-row answer-shift stack": 0.1692,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 2.070675335027985,
+      "top-1 singular share of per-row answer-shift stack": 0.2081,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 1.980616259206651,
+      "top-1 singular share of per-row answer-shift stack": 0.1857,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 1.9571676413947336,
+      "top-1 singular share of per-row answer-shift stack": 0.1122,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 1.9285443520932355,
+      "top-1 singular share of per-row answer-shift stack": 0.3169,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 2.0469017335228,
+      "top-1 singular share of per-row answer-shift stack": 0.0999,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 1.9502525397992205,
+      "top-1 singular share of per-row answer-shift stack": 0.1069,
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "x": 1.8515539709537965,
+      "top-1 singular share of per-row answer-shift stack": 0.1561,
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "x": 1.8624821247633856,
+      "top-1 singular share of per-row answer-shift stack": 0.2327,
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "x": 2.166283159237825,
+      "top-1 singular share of per-row answer-shift stack": 0.2456,
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "x": 2.1470890486547387,
+      "top-1 singular share of per-row answer-shift stack": 0.1504,
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "x": 2.07189456817187,
+      "top-1 singular share of per-row answer-shift stack": 0.1552,
+      "_kind": "scatter",
+      "_group": 101
+    },
+    {
+      "x": 2.915713186125427,
+      "top-1 singular share of per-row answer-shift stack": 0.3518,
+      "_kind": "scatter",
+      "_group": 102
+    },
+    {
+      "x": 3.1689034958451807,
+      "top-1 singular share of per-row answer-shift stack": 0.3508,
+      "_kind": "scatter",
+      "_group": 103
+    },
+    {
+      "x": 3.1003503254276863,
+      "top-1 singular share of per-row answer-shift stack": 0.3405,
+      "_kind": "scatter",
+      "_group": 104
+    },
+    {
+      "x": 3.0780804680972382,
+      "top-1 singular share of per-row answer-shift stack": 0.326,
+      "_kind": "scatter",
+      "_group": 105
+    },
+    {
+      "x": 2.981770140771764,
+      "top-1 singular share of per-row answer-shift stack": 0.3146,
+      "_kind": "scatter",
+      "_group": 106
+    },
+    {
+      "x": 2.9180069622642573,
+      "top-1 singular share of per-row answer-shift stack": 0.3491,
+      "_kind": "scatter",
+      "_group": 107
+    },
+    {
+      "x": 2.8547007463752596,
+      "top-1 singular share of per-row answer-shift stack": 0.2705,
+      "_kind": "scatter",
+      "_group": 108
+    },
+    {
+      "x": 3.1449368627557828,
+      "top-1 singular share of per-row answer-shift stack": 0.2354,
+      "_kind": "scatter",
+      "_group": 109
+    },
+    {
+      "x": 2.9840794643401,
+      "top-1 singular share of per-row answer-shift stack": 0.5056,
+      "_kind": "scatter",
+      "_group": 110
+    },
+    {
+      "x": 2.8928508113262827,
+      "top-1 singular share of per-row answer-shift stack": 0.4106,
+      "_kind": "scatter",
+      "_group": 111
+    },
+    {
+      "x": 2.930144384694235,
+      "top-1 singular share of per-row answer-shift stack": 0.3507,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": 3.0285190448190824,
+      "top-1 singular share of per-row answer-shift stack": 0.3766,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 2.8836382018581235,
+      "top-1 singular share of per-row answer-shift stack": 0.3969,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 3.128381142273255,
+      "top-1 singular share of per-row answer-shift stack": 0.3959,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 3.093067030740676,
+      "top-1 singular share of per-row answer-shift stack": 0.3606,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 3.0790066641423373,
+      "top-1 singular share of per-row answer-shift stack": 0.3654,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 2.9755534943190374,
+      "top-1 singular share of per-row answer-shift stack": 0.3155,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 3.0458311826528797,
+      "top-1 singular share of per-row answer-shift stack": 0.3581,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 3.0302752688085848,
+      "top-1 singular share of per-row answer-shift stack": 0.3733,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 3.053944776559735,
+      "top-1 singular share of per-row answer-shift stack": 0.2819,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 2.85039995561036,
+      "top-1 singular share of per-row answer-shift stack": 0.2735,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 2.9696906647814196,
+      "top-1 singular share of per-row answer-shift stack": 0.499,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 2.834981102590281,
+      "top-1 singular share of per-row answer-shift stack": 0.4845,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 2.9978366949280266,
+      "top-1 singular share of per-row answer-shift stack": 0.4402,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 2.938750036439803,
+      "top-1 singular share of per-row answer-shift stack": 0.4528,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 2.872028707991777,
+      "top-1 singular share of per-row answer-shift stack": 0.5423,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 2.8572250683801186,
+      "top-1 singular share of per-row answer-shift stack": 0.5105,
+      "_kind": "scatter",
+      "_group": 128
+    },
+    {
+      "x": 3.031552045983976,
+      "top-1 singular share of per-row answer-shift stack": 0.4881,
+      "_kind": "scatter",
+      "_group": 129
+    },
+    {
+      "x": 2.881413468673279,
+      "top-1 singular share of per-row answer-shift stack": 0.5669,
+      "_kind": "scatter",
+      "_group": 130
+    },
+    {
+      "x": 3.153043242615647,
+      "top-1 singular share of per-row answer-shift stack": 0.2419,
+      "_kind": "scatter",
+      "_group": 131
+    },
+    {
+      "x": 3.0291820102921423,
+      "top-1 singular share of per-row answer-shift stack": 0.4935,
+      "_kind": "scatter",
+      "_group": 132
+    },
+    {
+      "x": 2.9448731296325414,
+      "top-1 singular share of per-row answer-shift stack": 0.4359,
+      "_kind": "scatter",
+      "_group": 133
+    },
+    {
+      "x": 3.03272957693331,
+      "top-1 singular share of per-row answer-shift stack": 0.4562,
+      "_kind": "scatter",
+      "_group": 134
+    },
+    {
+      "x": 2.828209393570691,
+      "top-1 singular share of per-row answer-shift stack": 0.4242,
+      "_kind": "scatter",
+      "_group": 135
+    },
+    {
+      "x": 4.16508131676692,
+      "top-1 singular share of per-row answer-shift stack": 0.6427,
+      "_kind": "scatter",
+      "_group": 136
+    },
+    {
+      "x": 3.993629237299444,
+      "top-1 singular share of per-row answer-shift stack": 0.6598,
+      "_kind": "scatter",
+      "_group": 137
+    },
+    {
+      "x": 4.101784681810103,
+      "top-1 singular share of per-row answer-shift stack": 0.5705,
+      "_kind": "scatter",
+      "_group": 138
+    },
+    {
+      "x": 3.8497827999720777,
+      "top-1 singular share of per-row answer-shift stack": 0.5597,
+      "_kind": "scatter",
+      "_group": 139
+    },
+    {
+      "x": 3.9951969991017378,
+      "top-1 singular share of per-row answer-shift stack": 0.6151,
+      "_kind": "scatter",
+      "_group": 140
+    },
+    {
+      "x": 3.9966545179676274,
+      "top-1 singular share of per-row answer-shift stack": 0.5634,
+      "_kind": "scatter",
+      "_group": 141
+    },
+    {
+      "x": 4.157617523790994,
+      "top-1 singular share of per-row answer-shift stack": 0.4993,
+      "_kind": "scatter",
+      "_group": 142
+    },
+    {
+      "x": 4.025822098855387,
+      "top-1 singular share of per-row answer-shift stack": 0.4801,
+      "_kind": "scatter",
+      "_group": 143
+    },
+    {
+      "x": 3.9904561843805033,
+      "top-1 singular share of per-row answer-shift stack": 0.6144,
+      "_kind": "scatter",
+      "_group": 144
+    },
+    {
+      "x": 3.9161112387130816,
+      "top-1 singular share of per-row answer-shift stack": 0.6922,
+      "_kind": "scatter",
+      "_group": 145
+    },
+    {
+      "x": 3.9393648390433187,
+      "top-1 singular share of per-row answer-shift stack": 0.6196,
+      "_kind": "scatter",
+      "_group": 146
+    },
+    {
+      "x": 4.007442064889753,
+      "top-1 singular share of per-row answer-shift stack": 0.5577,
+      "_kind": "scatter",
+      "_group": 147
+    },
+    {
+      "x": 3.9780081257098168,
+      "top-1 singular share of per-row answer-shift stack": 0.6426,
+      "_kind": "scatter",
+      "_group": 148
+    },
+    {
+      "x": 3.827780348756919,
+      "top-1 singular share of per-row answer-shift stack": 0.631,
+      "_kind": "scatter",
+      "_group": 149
+    },
+    {
+      "x": 4.117465092709969,
+      "top-1 singular share of per-row answer-shift stack": 0.5357,
+      "_kind": "scatter",
+      "_group": 150
+    },
+    {
+      "x": 4.142617877862316,
+      "top-1 singular share of per-row answer-shift stack": 0.5385,
+      "_kind": "scatter",
+      "_group": 151
+    },
+    {
+      "x": 3.8704896720394997,
+      "top-1 singular share of per-row answer-shift stack": 0.4476,
+      "_kind": "scatter",
+      "_group": 152
+    },
+    {
+      "x": 4.019453011674058,
+      "top-1 singular share of per-row answer-shift stack": 0.5195,
+      "_kind": "scatter",
+      "_group": 153
+    },
+    {
+      "x": 3.8590872668087597,
+      "top-1 singular share of per-row answer-shift stack": 0.5333,
+      "_kind": "scatter",
+      "_group": 154
+    },
+    {
+      "x": 4.062006433494332,
+      "top-1 singular share of per-row answer-shift stack": 0.4833,
+      "_kind": "scatter",
+      "_group": 155
+    },
+    {
+      "x": 3.921244162182043,
+      "top-1 singular share of per-row answer-shift stack": 0.482,
+      "_kind": "scatter",
+      "_group": 156
+    },
+    {
+      "x": 4.057392148489084,
+      "top-1 singular share of per-row answer-shift stack": 0.623,
+      "_kind": "scatter",
+      "_group": 157
+    },
+    {
+      "x": 4.0817180611432775,
+      "top-1 singular share of per-row answer-shift stack": 0.6074,
+      "_kind": "scatter",
+      "_group": 158
+    },
+    {
+      "x": 4.0967130970903565,
+      "top-1 singular share of per-row answer-shift stack": 0.562,
+      "_kind": "scatter",
+      "_group": 159
+    },
+    {
+      "x": 3.8587867405441227,
+      "top-1 singular share of per-row answer-shift stack": 0.5589,
+      "_kind": "scatter",
+      "_group": 160
+    },
+    {
+      "x": 4.149764264249539,
+      "top-1 singular share of per-row answer-shift stack": 0.6186,
+      "_kind": "scatter",
+      "_group": 161
+    },
+    {
+      "x": 3.902877036722157,
+      "top-1 singular share of per-row answer-shift stack": 0.6663,
+      "_kind": "scatter",
+      "_group": 162
+    },
+    {
+      "x": 3.8334685202234247,
+      "top-1 singular share of per-row answer-shift stack": 0.5393,
+      "_kind": "scatter",
+      "_group": 163
+    },
+    {
+      "x": 4.019746888980934,
+      "top-1 singular share of per-row answer-shift stack": 0.562,
+      "_kind": "scatter",
+      "_group": 164
+    },
+    {
+      "x": 3.953532022190478,
+      "top-1 singular share of per-row answer-shift stack": 0.5234,
+      "_kind": "scatter",
+      "_group": 165
+    },
+    {
+      "x": 4.1187243075276685,
+      "top-1 singular share of per-row answer-shift stack": 0.5999,
+      "_kind": "scatter",
+      "_group": 166
+    },
+    {
+      "x": 4.110970529943149,
+      "top-1 singular share of per-row answer-shift stack": 0.6005,
+      "_kind": "scatter",
+      "_group": 167
+    },
+    {
+      "x": 3.9341700014161773,
+      "top-1 singular share of per-row answer-shift stack": 0.5903,
+      "_kind": "scatter",
+      "_group": 168
+    },
+    {
+      "x": 4.163043782225108,
+      "top-1 singular share of per-row answer-shift stack": 0.6016,
+      "_kind": "scatter",
+      "_group": 169
+    },
+    {
+      "x": 4.924730421730443,
+      "top-1 singular share of per-row answer-shift stack": 0.6007,
+      "_kind": "scatter",
+      "_group": 170
+    },
+    {
+      "x": 5.0054205665234175,
+      "top-1 singular share of per-row answer-shift stack": 0.6147,
+      "_kind": "scatter",
+      "_group": 171
+    },
+    {
+      "x": 4.912147432604337,
+      "top-1 singular share of per-row answer-shift stack": 0.5104,
+      "_kind": "scatter",
+      "_group": 172
+    },
+    {
+      "x": 5.156975685217627,
+      "top-1 singular share of per-row answer-shift stack": 0.5176,
+      "_kind": "scatter",
+      "_group": 173
+    },
+    {
+      "x": 4.879258814329527,
+      "top-1 singular share of per-row answer-shift stack": 0.6104,
+      "_kind": "scatter",
+      "_group": 174
+    },
+    {
+      "x": 4.836167822981238,
+      "top-1 singular share of per-row answer-shift stack": 0.575,
+      "_kind": "scatter",
+      "_group": 175
+    },
+    {
+      "x": 4.976634941601094,
+      "top-1 singular share of per-row answer-shift stack": 0.499,
+      "_kind": "scatter",
+      "_group": 176
+    },
+    {
+      "x": 5.177255203060101,
+      "top-1 singular share of per-row answer-shift stack": 0.469,
+      "_kind": "scatter",
+      "_group": 177
+    },
+    {
+      "x": 5.141003815851769,
+      "top-1 singular share of per-row answer-shift stack": 0.5707,
+      "_kind": "scatter",
+      "_group": 178
+    },
+    {
+      "x": 5.089498887004502,
+      "top-1 singular share of per-row answer-shift stack": 0.6939,
+      "_kind": "scatter",
+      "_group": 179
+    },
+    {
+      "x": 5.140685296716269,
+      "top-1 singular share of per-row answer-shift stack": 0.5966,
+      "_kind": "scatter",
+      "_group": 180
+    },
+    {
+      "x": 5.1416407902912304,
+      "top-1 singular share of per-row answer-shift stack": 0.5471,
+      "_kind": "scatter",
+      "_group": 181
+    },
+    {
+      "x": 5.006789009739122,
+      "top-1 singular share of per-row answer-shift stack": 0.6095,
+      "_kind": "scatter",
+      "_group": 182
+    },
+    {
+      "x": 4.933734458659085,
+      "top-1 singular share of per-row answer-shift stack": 0.5984,
+      "_kind": "scatter",
+      "_group": 183
+    },
+    {
+      "x": 5.097924475559956,
+      "top-1 singular share of per-row answer-shift stack": 0.5035,
+      "_kind": "scatter",
+      "_group": 184
+    },
+    {
+      "x": 5.058198054740394,
+      "top-1 singular share of per-row answer-shift stack": 0.5002,
+      "_kind": "scatter",
+      "_group": 185
+    },
+    {
+      "x": 4.954516782394536,
+      "top-1 singular share of per-row answer-shift stack": 0.3838,
+      "_kind": "scatter",
+      "_group": 186
+    },
+    {
+      "x": 4.854008000502145,
+      "top-1 singular share of per-row answer-shift stack": 0.5108,
+      "_kind": "scatter",
+      "_group": 187
+    },
+    {
+      "x": 5.088844260085649,
+      "top-1 singular share of per-row answer-shift stack": 0.5235,
+      "_kind": "scatter",
+      "_group": 188
+    },
+    {
+      "x": 4.914485785732231,
+      "top-1 singular share of per-row answer-shift stack": 0.4804,
+      "_kind": "scatter",
+      "_group": 189
+    },
+    {
+      "x": 5.15725273419216,
+      "top-1 singular share of per-row answer-shift stack": 0.4791,
+      "_kind": "scatter",
+      "_group": 190
+    },
+    {
+      "x": 4.906749407002047,
+      "top-1 singular share of per-row answer-shift stack": 0.606,
+      "_kind": "scatter",
+      "_group": 191
+    },
+    {
+      "x": 4.864192855668135,
+      "top-1 singular share of per-row answer-shift stack": 0.5917,
+      "_kind": "scatter",
+      "_group": 192
+    },
+    {
+      "x": 5.119200561964966,
+      "top-1 singular share of per-row answer-shift stack": 0.5435,
+      "_kind": "scatter",
+      "_group": 193
+    },
+    {
+      "x": 4.875182353984818,
+      "top-1 singular share of per-row answer-shift stack": 0.5441,
+      "_kind": "scatter",
+      "_group": 194
+    },
+    {
+      "x": 4.884536590936786,
+      "top-1 singular share of per-row answer-shift stack": 0.6162,
+      "_kind": "scatter",
+      "_group": 195
+    },
+    {
+      "x": 5.035777804947504,
+      "top-1 singular share of per-row answer-shift stack": 0.6584,
+      "_kind": "scatter",
+      "_group": 196
+    },
+    {
+      "x": 5.134842334701487,
+      "top-1 singular share of per-row answer-shift stack": 0.5253,
+      "_kind": "scatter",
+      "_group": 197
+    },
+    {
+      "x": 4.890716479657247,
+      "top-1 singular share of per-row answer-shift stack": 0.534,
+      "_kind": "scatter",
+      "_group": 198
+    },
+    {
+      "x": 4.9317165222440345,
+      "top-1 singular share of per-row answer-shift stack": 0.3999,
+      "_kind": "scatter",
+      "_group": 199
+    },
+    {
+      "x": 5.099865741766824,
+      "top-1 singular share of per-row answer-shift stack": 0.5733,
+      "_kind": "scatter",
+      "_group": 200
+    },
+    {
+      "x": 5.169857513381948,
+      "top-1 singular share of per-row answer-shift stack": 0.5903,
+      "_kind": "scatter",
+      "_group": 201
+    },
+    {
+      "x": 5.000266827032843,
+      "top-1 singular share of per-row answer-shift stack": 0.5498,
+      "_kind": "scatter",
+      "_group": 202
+    },
+    {
+      "x": 4.87180310091845,
+      "top-1 singular share of per-row answer-shift stack": 0.5527,
+      "_kind": "scatter",
+      "_group": 203
+    },
+    {
+      "x": 0.09862417748014679,
+      "cos(write direction, activation displacement)": 0.6491,
+      "_kind": "scatter",
+      "_group": 204
+    },
+    {
+      "x": -0.02200376168926116,
+      "cos(write direction, activation displacement)": 0.6748,
+      "_kind": "scatter",
+      "_group": 205
+    },
+    {
+      "x": 0.12909525116809767,
+      "cos(write direction, activation displacement)": 0.5283,
+      "_kind": "scatter",
+      "_group": 206
+    },
+    {
+      "x": 0.07105249046137102,
+      "cos(write direction, activation displacement)": 0.4848,
+      "_kind": "scatter",
+      "_group": 207
+    },
+    {
+      "x": -0.14609615476044616,
+      "cos(write direction, activation displacement)": 0.6868,
+      "_kind": "scatter",
+      "_group": 208
+    },
+    {
+      "x": 0.17122404658923213,
+      "cos(write direction, activation displacement)": 0.5603,
+      "_kind": "scatter",
+      "_group": 209
+    },
+    {
+      "x": 0.09401029271652706,
+      "cos(write direction, activation displacement)": 0.6116,
+      "_kind": "scatter",
+      "_group": 210
+    },
+    {
+      "x": 0.10298314989970336,
+      "cos(write direction, activation displacement)": 0.3915,
+      "_kind": "scatter",
+      "_group": 211
+    },
+    {
+      "x": -0.13387909223680347,
+      "cos(write direction, activation displacement)": 0.7961,
+      "_kind": "scatter",
+      "_group": 212
+    },
+    {
+      "x": -0.017861062357595825,
+      "cos(write direction, activation displacement)": 0.8076,
+      "_kind": "scatter",
+      "_group": 213
+    },
+    {
+      "x": -0.04651271127627074,
+      "cos(write direction, activation displacement)": 0.8201,
+      "_kind": "scatter",
+      "_group": 214
+    },
+    {
+      "x": 0.15363539598549664,
+      "cos(write direction, activation displacement)": 0.7975,
+      "_kind": "scatter",
+      "_group": 215
+    },
+    {
+      "x": 0.051791443229039225,
+      "cos(write direction, activation displacement)": 0.619,
+      "_kind": "scatter",
+      "_group": 216
+    },
+    {
+      "x": 0.11619418077749877,
+      "cos(write direction, activation displacement)": 0.5158,
+      "_kind": "scatter",
+      "_group": 217
+    },
+    {
+      "x": -0.020370888422160782,
+      "cos(write direction, activation displacement)": 0.6235,
+      "_kind": "scatter",
+      "_group": 218
+    },
+    {
+      "x": -0.09819406015748032,
+      "cos(write direction, activation displacement)": 0.5617,
+      "_kind": "scatter",
+      "_group": 219
+    },
+    {
+      "x": 0.019650523325700525,
+      "cos(write direction, activation displacement)": 0.7908,
+      "_kind": "scatter",
+      "_group": 220
+    },
+    {
+      "x": -0.15702578780249687,
+      "cos(write direction, activation displacement)": 0.6945,
+      "_kind": "scatter",
+      "_group": 221
+    },
+    {
+      "x": 0.11794722191732954,
+      "cos(write direction, activation displacement)": 0.6503,
+      "_kind": "scatter",
+      "_group": 222
+    },
+    {
+      "x": 0.04739918368394333,
+      "cos(write direction, activation displacement)": 0.6329,
+      "_kind": "scatter",
+      "_group": 223
+    },
+    {
+      "x": 0.09291158643073455,
+      "cos(write direction, activation displacement)": 0.6242,
+      "_kind": "scatter",
+      "_group": 224
+    },
+    {
+      "x": -0.052370651473247376,
+      "cos(write direction, activation displacement)": 0.7077,
+      "_kind": "scatter",
+      "_group": 225
+    },
+    {
+      "x": 0.16945128878216514,
+      "cos(write direction, activation displacement)": 0.6275,
+      "_kind": "scatter",
+      "_group": 226
+    },
+    {
+      "x": 0.14152360367599115,
+      "cos(write direction, activation displacement)": 0.7419,
+      "_kind": "scatter",
+      "_group": 227
+    },
+    {
+      "x": 0.10021805894655428,
+      "cos(write direction, activation displacement)": 0.6267,
+      "_kind": "scatter",
+      "_group": 228
+    },
+    {
+      "x": -0.10993006517329167,
+      "cos(write direction, activation displacement)": 0.8038,
+      "_kind": "scatter",
+      "_group": 229
+    },
+    {
+      "x": -0.0119804386582677,
+      "cos(write direction, activation displacement)": 0.6794,
+      "_kind": "scatter",
+      "_group": 230
+    },
+    {
+      "x": -0.16423064431659765,
+      "cos(write direction, activation displacement)": 0.7446,
+      "_kind": "scatter",
+      "_group": 231
+    },
+    {
+      "x": -0.12445578285568278,
+      "cos(write direction, activation displacement)": 0.7176,
+      "_kind": "scatter",
+      "_group": 232
+    },
+    {
+      "x": 0.06589762316728368,
+      "cos(write direction, activation displacement)": 0.7972,
+      "_kind": "scatter",
+      "_group": 233
+    },
+    {
+      "x": 0.08811437612681416,
+      "cos(write direction, activation displacement)": 0.7487,
+      "_kind": "scatter",
+      "_group": 234
+    },
+    {
+      "x": 0.16830350367631558,
+      "cos(write direction, activation displacement)": 0.6692,
+      "_kind": "scatter",
+      "_group": 235
+    },
+    {
+      "x": -0.0627028710702653,
+      "cos(write direction, activation displacement)": 0.7266,
+      "_kind": "scatter",
+      "_group": 236
+    },
+    {
+      "x": -0.04663450582744719,
+      "cos(write direction, activation displacement)": 0.7291,
+      "_kind": "scatter",
+      "_group": 237
+    },
+    {
+      "x": 0.9890400920592909,
+      "cos(write direction, activation displacement)": 0.6847,
+      "_kind": "scatter",
+      "_group": 238
+    },
+    {
+      "x": 0.8882096892703428,
+      "cos(write direction, activation displacement)": 0.7262,
+      "_kind": "scatter",
+      "_group": 239
+    },
+    {
+      "x": 0.8667717419207698,
+      "cos(write direction, activation displacement)": 0.57,
+      "_kind": "scatter",
+      "_group": 240
+    },
+    {
+      "x": 0.9912537734413361,
+      "cos(write direction, activation displacement)": 0.5092,
+      "_kind": "scatter",
+      "_group": 241
+    },
+    {
+      "x": 0.9016873656583183,
+      "cos(write direction, activation displacement)": 0.7058,
+      "_kind": "scatter",
+      "_group": 242
+    },
+    {
+      "x": 1.0611330380857038,
+      "cos(write direction, activation displacement)": 0.5042,
+      "_kind": "scatter",
+      "_group": 243
+    },
+    {
+      "x": 0.977374690794039,
+      "cos(write direction, activation displacement)": 0.6134,
+      "_kind": "scatter",
+      "_group": 244
+    },
+    {
+      "x": 1.1197641505808216,
+      "cos(write direction, activation displacement)": 0.2756,
+      "_kind": "scatter",
+      "_group": 245
+    },
+    {
+      "x": 1.0720954367208098,
+      "cos(write direction, activation displacement)": 0.8723,
+      "_kind": "scatter",
+      "_group": 246
+    },
+    {
+      "x": 0.9324519908975348,
+      "cos(write direction, activation displacement)": 0.9093,
+      "_kind": "scatter",
+      "_group": 247
+    },
+    {
+      "x": 1.1196135285022724,
+      "cos(write direction, activation displacement)": 0.8938,
+      "_kind": "scatter",
+      "_group": 248
+    },
+    {
+      "x": 1.1097151686988487,
+      "cos(write direction, activation displacement)": 0.8774,
+      "_kind": "scatter",
+      "_group": 249
+    },
+    {
+      "x": 0.9594922164508628,
+      "cos(write direction, activation displacement)": 0.6294,
+      "_kind": "scatter",
+      "_group": 250
+    },
+    {
+      "x": 0.9237981174148879,
+      "cos(write direction, activation displacement)": 0.4399,
+      "_kind": "scatter",
+      "_group": 251
+    },
+    {
+      "x": 1.0656983814309913,
+      "cos(write direction, activation displacement)": 0.6506,
+      "_kind": "scatter",
+      "_group": 252
+    },
+    {
+      "x": 0.8703108940993516,
+      "cos(write direction, activation displacement)": 0.569,
+      "_kind": "scatter",
+      "_group": 253
+    },
+    {
+      "x": 0.891966952891039,
+      "cos(write direction, activation displacement)": 0.7405,
+      "_kind": "scatter",
+      "_group": 254
+    },
+    {
+      "x": 0.822650417110362,
+      "cos(write direction, activation displacement)": 0.6646,
+      "_kind": "scatter",
+      "_group": 255
+    },
+    {
+      "x": 1.1032927759007698,
+      "cos(write direction, activation displacement)": 0.664,
+      "_kind": "scatter",
+      "_group": 256
+    },
+    {
+      "x": 1.0593463083731316,
+      "cos(write direction, activation displacement)": 0.4929,
+      "_kind": "scatter",
+      "_group": 257
+    },
+    {
+      "x": 1.0738595363054806,
+      "cos(write direction, activation displacement)": 0.52,
+      "_kind": "scatter",
+      "_group": 258
+    },
+    {
+      "x": 1.1010624511679086,
+      "cos(write direction, activation displacement)": 0.6089,
+      "_kind": "scatter",
+      "_group": 259
+    },
+    {
+      "x": 0.9852096791938024,
+      "cos(write direction, activation displacement)": 0.5378,
+      "_kind": "scatter",
+      "_group": 260
+    },
+    {
+      "x": 1.0247468305430418,
+      "cos(write direction, activation displacement)": 0.6173,
+      "_kind": "scatter",
+      "_group": 261
+    },
+    {
+      "x": 0.8703269193259566,
+      "cos(write direction, activation displacement)": 0.5276,
+      "_kind": "scatter",
+      "_group": 262
+    },
+    {
+      "x": 0.8612308264729505,
+      "cos(write direction, activation displacement)": 0.767,
+      "_kind": "scatter",
+      "_group": 263
+    },
+    {
+      "x": 1.0606250662445698,
+      "cos(write direction, activation displacement)": 0.6981,
+      "_kind": "scatter",
+      "_group": 264
+    },
+    {
+      "x": 0.9895946342115277,
+      "cos(write direction, activation displacement)": 0.7368,
+      "_kind": "scatter",
+      "_group": 265
+    },
+    {
+      "x": 1.023484998333228,
+      "cos(write direction, activation displacement)": 0.7151,
+      "_kind": "scatter",
+      "_group": 266
+    },
+    {
+      "x": 1.0953995886697692,
+      "cos(write direction, activation displacement)": 0.6963,
+      "_kind": "scatter",
+      "_group": 267
+    },
+    {
+      "x": 1.0484985952002126,
+      "cos(write direction, activation displacement)": 0.6695,
+      "_kind": "scatter",
+      "_group": 268
+    },
+    {
+      "x": 1.0192885842368784,
+      "cos(write direction, activation displacement)": 0.5688,
+      "_kind": "scatter",
+      "_group": 269
+    },
+    {
+      "x": 1.0213145778683488,
+      "cos(write direction, activation displacement)": 0.5982,
+      "_kind": "scatter",
+      "_group": 270
+    },
+    {
+      "x": 0.9294220353025404,
+      "cos(write direction, activation displacement)": 0.6003,
+      "_kind": "scatter",
+      "_group": 271
+    },
+    {
+      "x": 1.8310944204444581,
+      "cos(write direction, activation displacement)": 0.6064,
+      "_kind": "scatter",
+      "_group": 272
+    },
+    {
+      "x": 1.9772182601236505,
+      "cos(write direction, activation displacement)": 0.6841,
+      "_kind": "scatter",
+      "_group": 273
+    },
+    {
+      "x": 1.8972504822150305,
+      "cos(write direction, activation displacement)": 0.5903,
+      "_kind": "scatter",
+      "_group": 274
+    },
+    {
+      "x": 1.967070311740869,
+      "cos(write direction, activation displacement)": 0.4889,
+      "_kind": "scatter",
+      "_group": 275
+    },
+    {
+      "x": 2.1272251063765397,
+      "cos(write direction, activation displacement)": 0.6909,
+      "_kind": "scatter",
+      "_group": 276
+    },
+    {
+      "x": 1.9042182149115228,
+      "cos(write direction, activation displacement)": 0.5572,
+      "_kind": "scatter",
+      "_group": 277
+    },
+    {
+      "x": 1.8409889870080638,
+      "cos(write direction, activation displacement)": 0.6484,
+      "_kind": "scatter",
+      "_group": 278
+    },
+    {
+      "x": 1.9212982011279187,
+      "cos(write direction, activation displacement)": 0.3192,
+      "_kind": "scatter",
+      "_group": 279
+    },
+    {
+      "x": 1.925693752796006,
+      "cos(write direction, activation displacement)": 0.8578,
+      "_kind": "scatter",
+      "_group": 280
+    },
+    {
+      "x": 2.058289945301682,
+      "cos(write direction, activation displacement)": 0.8978,
+      "_kind": "scatter",
+      "_group": 281
+    },
+    {
+      "x": 2.02053157484286,
+      "cos(write direction, activation displacement)": 0.8763,
+      "_kind": "scatter",
+      "_group": 282
+    },
+    {
+      "x": 2.102203355278309,
+      "cos(write direction, activation displacement)": 0.8632,
+      "_kind": "scatter",
+      "_group": 283
+    },
+    {
+      "x": 2.0591528745178596,
+      "cos(write direction, activation displacement)": 0.5717,
+      "_kind": "scatter",
+      "_group": 284
+    },
+    {
+      "x": 1.9662992701184254,
+      "cos(write direction, activation displacement)": 0.3382,
+      "_kind": "scatter",
+      "_group": 285
+    },
+    {
+      "x": 2.1130473384797726,
+      "cos(write direction, activation displacement)": 0.65,
+      "_kind": "scatter",
+      "_group": 286
+    },
+    {
+      "x": 1.8801102511667733,
+      "cos(write direction, activation displacement)": 0.5908,
+      "_kind": "scatter",
+      "_group": 287
+    },
+    {
+      "x": 1.8281763463281897,
+      "cos(write direction, activation displacement)": 0.475,
+      "_kind": "scatter",
+      "_group": 288
+    },
+    {
+      "x": 1.852417229879231,
+      "cos(write direction, activation displacement)": 0.5492,
+      "_kind": "scatter",
+      "_group": 289
+    },
+    {
+      "x": 2.080049366214722,
+      "cos(write direction, activation displacement)": 0.5784,
+      "_kind": "scatter",
+      "_group": 290
+    },
+    {
+      "x": 1.9862758028904994,
+      "cos(write direction, activation displacement)": 0.3253,
+      "_kind": "scatter",
+      "_group": 291
+    },
+    {
+      "x": 1.8780578404520967,
+      "cos(write direction, activation displacement)": 0.3585,
+      "_kind": "scatter",
+      "_group": 292
+    },
+    {
+      "x": 2.000376119037211,
+      "cos(write direction, activation displacement)": 0.541,
+      "_kind": "scatter",
+      "_group": 293
+    },
+    {
+      "x": 1.8748323569767407,
+      "cos(write direction, activation displacement)": 0.4809,
+      "_kind": "scatter",
+      "_group": 294
+    },
+    {
+      "x": 2.070675335027985,
+      "cos(write direction, activation displacement)": 0.535,
+      "_kind": "scatter",
+      "_group": 295
+    },
+    {
+      "x": 1.980616259206651,
+      "cos(write direction, activation displacement)": 0.4665,
+      "_kind": "scatter",
+      "_group": 296
+    },
+    {
+      "x": 1.9571676413947336,
+      "cos(write direction, activation displacement)": 0.7443,
+      "_kind": "scatter",
+      "_group": 297
+    },
+    {
+      "x": 1.9285443520932355,
+      "cos(write direction, activation displacement)": 0.6646,
+      "_kind": "scatter",
+      "_group": 298
+    },
+    {
+      "x": 2.0469017335228,
+      "cos(write direction, activation displacement)": 0.7284,
+      "_kind": "scatter",
+      "_group": 299
+    },
+    {
+      "x": 1.9502525397992205,
+      "cos(write direction, activation displacement)": 0.7196,
+      "_kind": "scatter",
+      "_group": 300
+    },
+    {
+      "x": 1.8515539709537965,
+      "cos(write direction, activation displacement)": 0.3802,
+      "_kind": "scatter",
+      "_group": 301
+    },
+    {
+      "x": 1.8624821247633856,
+      "cos(write direction, activation displacement)": 0.6424,
+      "_kind": "scatter",
+      "_group": 302
+    },
+    {
+      "x": 2.166283159237825,
+      "cos(write direction, activation displacement)": 0.5059,
+      "_kind": "scatter",
+      "_group": 303
+    },
+    {
+      "x": 2.1470890486547387,
+      "cos(write direction, activation displacement)": 0.6256,
+      "_kind": "scatter",
+      "_group": 304
+    },
+    {
+      "x": 2.07189456817187,
+      "cos(write direction, activation displacement)": 0.6071,
+      "_kind": "scatter",
+      "_group": 305
+    },
+    {
+      "x": 2.915713186125427,
+      "cos(write direction, activation displacement)": 0.0425,
+      "_kind": "scatter",
+      "_group": 306
+    },
+    {
+      "x": 3.1689034958451807,
+      "cos(write direction, activation displacement)": 0.0297,
+      "_kind": "scatter",
+      "_group": 307
+    },
+    {
+      "x": 3.1003503254276863,
+      "cos(write direction, activation displacement)": 0.0896,
+      "_kind": "scatter",
+      "_group": 308
+    },
+    {
+      "x": 3.0780804680972382,
+      "cos(write direction, activation displacement)": 0.098,
+      "_kind": "scatter",
+      "_group": 309
+    },
+    {
+      "x": 2.981770140771764,
+      "cos(write direction, activation displacement)": 0.211,
+      "_kind": "scatter",
+      "_group": 310
+    },
+    {
+      "x": 2.9180069622642573,
+      "cos(write direction, activation displacement)": 0.2447,
+      "_kind": "scatter",
+      "_group": 311
+    },
+    {
+      "x": 2.8547007463752596,
+      "cos(write direction, activation displacement)": 0.2455,
+      "_kind": "scatter",
+      "_group": 312
+    },
+    {
+      "x": 3.1449368627557828,
+      "cos(write direction, activation displacement)": 0.2169,
+      "_kind": "scatter",
+      "_group": 313
+    },
+    {
+      "x": 2.9840794643401,
+      "cos(write direction, activation displacement)": 0.0295,
+      "_kind": "scatter",
+      "_group": 314
+    },
+    {
+      "x": 2.8928508113262827,
+      "cos(write direction, activation displacement)": 0.2336,
+      "_kind": "scatter",
+      "_group": 315
+    },
+    {
+      "x": 2.930144384694235,
+      "cos(write direction, activation displacement)": 0.2259,
+      "_kind": "scatter",
+      "_group": 316
+    },
+    {
+      "x": 3.0285190448190824,
+      "cos(write direction, activation displacement)": 0.0739,
+      "_kind": "scatter",
+      "_group": 317
+    },
+    {
+      "x": 2.8836382018581235,
+      "cos(write direction, activation displacement)": -0.0095,
+      "_kind": "scatter",
+      "_group": 318
+    },
+    {
+      "x": 3.128381142273255,
+      "cos(write direction, activation displacement)": 0.0146,
+      "_kind": "scatter",
+      "_group": 319
+    },
+    {
+      "x": 3.093067030740676,
+      "cos(write direction, activation displacement)": 0.0973,
+      "_kind": "scatter",
+      "_group": 320
+    },
+    {
+      "x": 3.0790066641423373,
+      "cos(write direction, activation displacement)": 0.0828,
+      "_kind": "scatter",
+      "_group": 321
+    },
+    {
+      "x": 2.9755534943190374,
+      "cos(write direction, activation displacement)": 0.3781,
+      "_kind": "scatter",
+      "_group": 322
+    },
+    {
+      "x": 3.0458311826528797,
+      "cos(write direction, activation displacement)": -0.1015,
+      "_kind": "scatter",
+      "_group": 323
+    },
+    {
+      "x": 3.0302752688085848,
+      "cos(write direction, activation displacement)": -0.0475,
+      "_kind": "scatter",
+      "_group": 324
+    },
+    {
+      "x": 3.053944776559735,
+      "cos(write direction, activation displacement)": -0.0431,
+      "_kind": "scatter",
+      "_group": 325
+    },
+    {
+      "x": 2.85039995561036,
+      "cos(write direction, activation displacement)": -0.0472,
+      "_kind": "scatter",
+      "_group": 326
+    },
+    {
+      "x": 2.9696906647814196,
+      "cos(write direction, activation displacement)": 0.0279,
+      "_kind": "scatter",
+      "_group": 327
+    },
+    {
+      "x": 2.834981102590281,
+      "cos(write direction, activation displacement)": -0.0049,
+      "_kind": "scatter",
+      "_group": 328
+    },
+    {
+      "x": 2.9978366949280266,
+      "cos(write direction, activation displacement)": 0.0487,
+      "_kind": "scatter",
+      "_group": 329
+    },
+    {
+      "x": 2.938750036439803,
+      "cos(write direction, activation displacement)": -0.0103,
+      "_kind": "scatter",
+      "_group": 330
+    },
+    {
+      "x": 2.872028707991777,
+      "cos(write direction, activation displacement)": -0.1541,
+      "_kind": "scatter",
+      "_group": 331
+    },
+    {
+      "x": 2.8572250683801186,
+      "cos(write direction, activation displacement)": -0.2237,
+      "_kind": "scatter",
+      "_group": 332
+    },
+    {
+      "x": 3.031552045983976,
+      "cos(write direction, activation displacement)": -0.166,
+      "_kind": "scatter",
+      "_group": 333
+    },
+    {
+      "x": 2.881413468673279,
+      "cos(write direction, activation displacement)": -0.1339,
+      "_kind": "scatter",
+      "_group": 334
+    },
+    {
+      "x": 3.153043242615647,
+      "cos(write direction, activation displacement)": 0.3514,
+      "_kind": "scatter",
+      "_group": 335
+    },
+    {
+      "x": 3.0291820102921423,
+      "cos(write direction, activation displacement)": -0.2618,
+      "_kind": "scatter",
+      "_group": 336
+    },
+    {
+      "x": 2.9448731296325414,
+      "cos(write direction, activation displacement)": -0.2317,
+      "_kind": "scatter",
+      "_group": 337
+    },
+    {
+      "x": 3.03272957693331,
+      "cos(write direction, activation displacement)": -0.1393,
+      "_kind": "scatter",
+      "_group": 338
+    },
+    {
+      "x": 2.828209393570691,
+      "cos(write direction, activation displacement)": -0.1193,
+      "_kind": "scatter",
+      "_group": 339
+    },
+    {
+      "x": 4.16508131676692,
+      "cos(write direction, activation displacement)": 0.306,
+      "_kind": "scatter",
+      "_group": 340
+    },
+    {
+      "x": 3.993629237299444,
+      "cos(write direction, activation displacement)": 0.309,
+      "_kind": "scatter",
+      "_group": 341
+    },
+    {
+      "x": 4.101784681810103,
+      "cos(write direction, activation displacement)": 0.3776,
+      "_kind": "scatter",
+      "_group": 342
+    },
+    {
+      "x": 3.8497827999720777,
+      "cos(write direction, activation displacement)": 0.3949,
+      "_kind": "scatter",
+      "_group": 343
+    },
+    {
+      "x": 3.9951969991017378,
+      "cos(write direction, activation displacement)": 0.3281,
+      "_kind": "scatter",
+      "_group": 344
+    },
+    {
+      "x": 3.9966545179676274,
+      "cos(write direction, activation displacement)": 0.3737,
+      "_kind": "scatter",
+      "_group": 345
+    },
+    {
+      "x": 4.157617523790994,
+      "cos(write direction, activation displacement)": 0.3743,
+      "_kind": "scatter",
+      "_group": 346
+    },
+    {
+      "x": 4.025822098855387,
+      "cos(write direction, activation displacement)": 0.3554,
+      "_kind": "scatter",
+      "_group": 347
+    },
+    {
+      "x": 3.9904561843805033,
+      "cos(write direction, activation displacement)": 0.4193,
+      "_kind": "scatter",
+      "_group": 348
+    },
+    {
+      "x": 3.9161112387130816,
+      "cos(write direction, activation displacement)": 0.4971,
+      "_kind": "scatter",
+      "_group": 349
+    },
+    {
+      "x": 3.9393648390433187,
+      "cos(write direction, activation displacement)": 0.4777,
+      "_kind": "scatter",
+      "_group": 350
+    },
+    {
+      "x": 4.007442064889753,
+      "cos(write direction, activation displacement)": 0.4275,
+      "_kind": "scatter",
+      "_group": 351
+    },
+    {
+      "x": 3.9780081257098168,
+      "cos(write direction, activation displacement)": 0.2955,
+      "_kind": "scatter",
+      "_group": 352
+    },
+    {
+      "x": 3.827780348756919,
+      "cos(write direction, activation displacement)": 0.3062,
+      "_kind": "scatter",
+      "_group": 353
+    },
+    {
+      "x": 4.117465092709969,
+      "cos(write direction, activation displacement)": 0.3827,
+      "_kind": "scatter",
+      "_group": 354
+    },
+    {
+      "x": 4.142617877862316,
+      "cos(write direction, activation displacement)": 0.3971,
+      "_kind": "scatter",
+      "_group": 355
+    },
+    {
+      "x": 3.8704896720394997,
+      "cos(write direction, activation displacement)": 0.307,
+      "_kind": "scatter",
+      "_group": 356
+    },
+    {
+      "x": 4.019453011674058,
+      "cos(write direction, activation displacement)": 0.1992,
+      "_kind": "scatter",
+      "_group": 357
+    },
+    {
+      "x": 3.8590872668087597,
+      "cos(write direction, activation displacement)": 0.2102,
+      "_kind": "scatter",
+      "_group": 358
+    },
+    {
+      "x": 4.062006433494332,
+      "cos(write direction, activation displacement)": 0.233,
+      "_kind": "scatter",
+      "_group": 359
+    },
+    {
+      "x": 3.921244162182043,
+      "cos(write direction, activation displacement)": 0.2317,
+      "_kind": "scatter",
+      "_group": 360
+    },
+    {
+      "x": 4.057392148489084,
+      "cos(write direction, activation displacement)": 0.1059,
+      "_kind": "scatter",
+      "_group": 361
+    },
+    {
+      "x": 4.0817180611432775,
+      "cos(write direction, activation displacement)": 0.0915,
+      "_kind": "scatter",
+      "_group": 362
+    },
+    {
+      "x": 4.0967130970903565,
+      "cos(write direction, activation displacement)": 0.1502,
+      "_kind": "scatter",
+      "_group": 363
+    },
+    {
+      "x": 3.8587867405441227,
+      "cos(write direction, activation displacement)": 0.1278,
+      "_kind": "scatter",
+      "_group": 364
+    },
+    {
+      "x": 4.149764264249539,
+      "cos(write direction, activation displacement)": 0.1054,
+      "_kind": "scatter",
+      "_group": 365
+    },
+    {
+      "x": 3.902877036722157,
+      "cos(write direction, activation displacement)": 0.058,
+      "_kind": "scatter",
+      "_group": 366
+    },
+    {
+      "x": 3.8334685202234247,
+      "cos(write direction, activation displacement)": 0.1336,
+      "_kind": "scatter",
+      "_group": 367
+    },
+    {
+      "x": 4.019746888980934,
+      "cos(write direction, activation displacement)": 0.1694,
+      "_kind": "scatter",
+      "_group": 368
+    },
+    {
+      "x": 3.953532022190478,
+      "cos(write direction, activation displacement)": 0.3014,
+      "_kind": "scatter",
+      "_group": 369
+    },
+    {
+      "x": 4.1187243075276685,
+      "cos(write direction, activation displacement)": 0.0524,
+      "_kind": "scatter",
+      "_group": 370
+    },
+    {
+      "x": 4.110970529943149,
+      "cos(write direction, activation displacement)": 0.0422,
+      "_kind": "scatter",
+      "_group": 371
+    },
+    {
+      "x": 3.9341700014161773,
+      "cos(write direction, activation displacement)": 0.1275,
+      "_kind": "scatter",
+      "_group": 372
+    },
+    {
+      "x": 4.163043782225108,
+      "cos(write direction, activation displacement)": 0.1433,
+      "_kind": "scatter",
+      "_group": 373
+    },
+    {
+      "x": 4.924730421730443,
+      "cos(write direction, activation displacement)": 0.1749,
+      "_kind": "scatter",
+      "_group": 374
+    },
+    {
+      "x": 5.0054205665234175,
+      "cos(write direction, activation displacement)": 0.1764,
+      "_kind": "scatter",
+      "_group": 375
+    },
+    {
+      "x": 4.912147432604337,
+      "cos(write direction, activation displacement)": 0.3675,
+      "_kind": "scatter",
+      "_group": 376
+    },
+    {
+      "x": 5.156975685217627,
+      "cos(write direction, activation displacement)": 0.3512,
+      "_kind": "scatter",
+      "_group": 377
+    },
+    {
+      "x": 4.879258814329527,
+      "cos(write direction, activation displacement)": 0.3493,
+      "_kind": "scatter",
+      "_group": 378
+    },
+    {
+      "x": 4.836167822981238,
+      "cos(write direction, activation displacement)": 0.4436,
+      "_kind": "scatter",
+      "_group": 379
+    },
+    {
+      "x": 4.976634941601094,
+      "cos(write direction, activation displacement)": 0.4559,
+      "_kind": "scatter",
+      "_group": 380
+    },
+    {
+      "x": 5.177255203060101,
+      "cos(write direction, activation displacement)": 0.4221,
+      "_kind": "scatter",
+      "_group": 381
+    },
+    {
+      "x": 5.141003815851769,
+      "cos(write direction, activation displacement)": 0.2264,
+      "_kind": "scatter",
+      "_group": 382
+    },
+    {
+      "x": 5.089498887004502,
+      "cos(write direction, activation displacement)": 0.536,
+      "_kind": "scatter",
+      "_group": 383
+    },
+    {
+      "x": 5.140685296716269,
+      "cos(write direction, activation displacement)": 0.4985,
+      "_kind": "scatter",
+      "_group": 384
+    },
+    {
+      "x": 5.1416407902912304,
+      "cos(write direction, activation displacement)": 0.4076,
+      "_kind": "scatter",
+      "_group": 385
+    },
+    {
+      "x": 5.006789009739122,
+      "cos(write direction, activation displacement)": 0.2087,
+      "_kind": "scatter",
+      "_group": 386
+    },
+    {
+      "x": 4.933734458659085,
+      "cos(write direction, activation displacement)": 0.2117,
+      "_kind": "scatter",
+      "_group": 387
+    },
+    {
+      "x": 5.097924475559956,
+      "cos(write direction, activation displacement)": 0.3946,
+      "_kind": "scatter",
+      "_group": 388
+    },
+    {
+      "x": 5.058198054740394,
+      "cos(write direction, activation displacement)": 0.4066,
+      "_kind": "scatter",
+      "_group": 389
+    },
+    {
+      "x": 4.954516782394536,
+      "cos(write direction, activation displacement)": -0.0733,
+      "_kind": "scatter",
+      "_group": 390
+    },
+    {
+      "x": 4.854008000502145,
+      "cos(write direction, activation displacement)": 0.1041,
+      "_kind": "scatter",
+      "_group": 391
+    },
+    {
+      "x": 5.088844260085649,
+      "cos(write direction, activation displacement)": 0.0861,
+      "_kind": "scatter",
+      "_group": 392
+    },
+    {
+      "x": 4.914485785732231,
+      "cos(write direction, activation displacement)": 0.1892,
+      "_kind": "scatter",
+      "_group": 393
+    },
+    {
+      "x": 5.15725273419216,
+      "cos(write direction, activation displacement)": 0.1769,
+      "_kind": "scatter",
+      "_group": 394
+    },
+    {
+      "x": 4.906749407002047,
+      "cos(write direction, activation displacement)": 0.1304,
+      "_kind": "scatter",
+      "_group": 395
+    },
+    {
+      "x": 4.864192855668135,
+      "cos(write direction, activation displacement)": 0.0827,
+      "_kind": "scatter",
+      "_group": 396
+    },
+    {
+      "x": 5.119200561964966,
+      "cos(write direction, activation displacement)": 0.2114,
+      "_kind": "scatter",
+      "_group": 397
+    },
+    {
+      "x": 4.875182353984818,
+      "cos(write direction, activation displacement)": 0.1597,
+      "_kind": "scatter",
+      "_group": 398
+    },
+    {
+      "x": 4.884536590936786,
+      "cos(write direction, activation displacement)": 0.1625,
+      "_kind": "scatter",
+      "_group": 399
+    },
+    {
+      "x": 5.035777804947504,
+      "cos(write direction, activation displacement)": 0.1006,
+      "_kind": "scatter",
+      "_group": 400
+    },
+    {
+      "x": 5.134842334701487,
+      "cos(write direction, activation displacement)": 0.1962,
+      "_kind": "scatter",
+      "_group": 401
+    },
+    {
+      "x": 4.890716479657247,
+      "cos(write direction, activation displacement)": 0.2184,
+      "_kind": "scatter",
+      "_group": 402
+    },
+    {
+      "x": 4.9317165222440345,
+      "cos(write direction, activation displacement)": -0.0565,
+      "_kind": "scatter",
+      "_group": 403
+    },
+    {
+      "x": 5.099865741766824,
+      "cos(write direction, activation displacement)": 0.0345,
+      "_kind": "scatter",
+      "_group": 404
+    },
+    {
+      "x": 5.169857513381948,
+      "cos(write direction, activation displacement)": 0.0563,
+      "_kind": "scatter",
+      "_group": 405
+    },
+    {
+      "x": 5.000266827032843,
+      "cos(write direction, activation displacement)": 0.1301,
+      "_kind": "scatter",
+      "_group": 406
+    },
+    {
+      "x": 4.87180310091845,
+      "cos(write direction, activation displacement)": 0.1535,
+      "_kind": "scatter",
+      "_group": 407
+    },
+    {
+      "x": 0.09862417748014679,
+      "gate rank correlation (last-prompt-token read)": 0.1895,
+      "_kind": "scatter",
+      "_group": 408
+    },
+    {
+      "x": -0.02200376168926116,
+      "gate rank correlation (last-prompt-token read)": 0.0563,
+      "_kind": "scatter",
+      "_group": 409
+    },
+    {
+      "x": 0.12909525116809767,
+      "gate rank correlation (last-prompt-token read)": 0.1493,
+      "_kind": "scatter",
+      "_group": 410
+    },
+    {
+      "x": 0.07105249046137102,
+      "gate rank correlation (last-prompt-token read)": 0.2115,
+      "_kind": "scatter",
+      "_group": 411
+    },
+    {
+      "x": -0.14609615476044616,
+      "gate rank correlation (last-prompt-token read)": -0.0064,
+      "_kind": "scatter",
+      "_group": 412
+    },
+    {
+      "x": 0.17122404658923213,
+      "gate rank correlation (last-prompt-token read)": 0.1012,
+      "_kind": "scatter",
+      "_group": 413
+    },
+    {
+      "x": 0.09401029271652706,
+      "gate rank correlation (last-prompt-token read)": -0.0329,
+      "_kind": "scatter",
+      "_group": 414
+    },
+    {
+      "x": 0.10298314989970336,
+      "gate rank correlation (last-prompt-token read)": 0.3261,
+      "_kind": "scatter",
+      "_group": 415
+    },
+    {
+      "x": -0.13387909223680347,
+      "gate rank correlation (last-prompt-token read)": 0.1291,
+      "_kind": "scatter",
+      "_group": 416
+    },
+    {
+      "x": -0.017861062357595825,
+      "gate rank correlation (last-prompt-token read)": 0.1554,
+      "_kind": "scatter",
+      "_group": 417
+    },
+    {
+      "x": -0.04651271127627074,
+      "gate rank correlation (last-prompt-token read)": 0.2239,
+      "_kind": "scatter",
+      "_group": 418
+    },
+    {
+      "x": 0.15363539598549664,
+      "gate rank correlation (last-prompt-token read)": -0.0057,
+      "_kind": "scatter",
+      "_group": 419
+    },
+    {
+      "x": 0.051791443229039225,
+      "gate rank correlation (last-prompt-token read)": 0.2185,
+      "_kind": "scatter",
+      "_group": 420
+    },
+    {
+      "x": 0.11619418077749877,
+      "gate rank correlation (last-prompt-token read)": 0.3384,
+      "_kind": "scatter",
+      "_group": 421
+    },
+    {
+      "x": -0.020370888422160782,
+      "gate rank correlation (last-prompt-token read)": 0.2097,
+      "_kind": "scatter",
+      "_group": 422
+    },
+    {
+      "x": -0.09819406015748032,
+      "gate rank correlation (last-prompt-token read)": 0.1604,
+      "_kind": "scatter",
+      "_group": 423
+    },
+    {
+      "x": 0.019650523325700525,
+      "gate rank correlation (last-prompt-token read)": 0.4045,
+      "_kind": "scatter",
+      "_group": 424
+    },
+    {
+      "x": -0.15702578780249687,
+      "gate rank correlation (last-prompt-token read)": 0.0508,
+      "_kind": "scatter",
+      "_group": 425
+    },
+    {
+      "x": 0.11794722191732954,
+      "gate rank correlation (last-prompt-token read)": 0.0816,
+      "_kind": "scatter",
+      "_group": 426
+    },
+    {
+      "x": 0.04739918368394333,
+      "gate rank correlation (last-prompt-token read)": -0.1668,
+      "_kind": "scatter",
+      "_group": 427
+    },
+    {
+      "x": 0.09291158643073455,
+      "gate rank correlation (last-prompt-token read)": -0.1389,
+      "_kind": "scatter",
+      "_group": 428
+    },
+    {
+      "x": -0.052370651473247376,
+      "gate rank correlation (last-prompt-token read)": 0.1722,
+      "_kind": "scatter",
+      "_group": 429
+    },
+    {
+      "x": 0.16945128878216514,
+      "gate rank correlation (last-prompt-token read)": 0.1247,
+      "_kind": "scatter",
+      "_group": 430
+    },
+    {
+      "x": 0.14152360367599115,
+      "gate rank correlation (last-prompt-token read)": 0.1325,
+      "_kind": "scatter",
+      "_group": 431
+    },
+    {
+      "x": 0.10021805894655428,
+      "gate rank correlation (last-prompt-token read)": 0.1132,
+      "_kind": "scatter",
+      "_group": 432
+    },
+    {
+      "x": -0.10993006517329167,
+      "gate rank correlation (last-prompt-token read)": 0.2539,
+      "_kind": "scatter",
+      "_group": 433
+    },
+    {
+      "x": -0.0119804386582677,
+      "gate rank correlation (last-prompt-token read)": 0.1452,
+      "_kind": "scatter",
+      "_group": 434
+    },
+    {
+      "x": -0.16423064431659765,
+      "gate rank correlation (last-prompt-token read)": 0.3496,
+      "_kind": "scatter",
+      "_group": 435
+    },
+    {
+      "x": -0.12445578285568278,
+      "gate rank correlation (last-prompt-token read)": 0.4915,
+      "_kind": "scatter",
+      "_group": 436
+    },
+    {
+      "x": 0.06589762316728368,
+      "gate rank correlation (last-prompt-token read)": 0.0534,
+      "_kind": "scatter",
+      "_group": 437
+    },
+    {
+      "x": 0.08811437612681416,
+      "gate rank correlation (last-prompt-token read)": 0.2952,
+      "_kind": "scatter",
+      "_group": 438
+    },
+    {
+      "x": 0.16830350367631558,
+      "gate rank correlation (last-prompt-token read)": -0.0325,
+      "_kind": "scatter",
+      "_group": 439
+    },
+    {
+      "x": -0.0627028710702653,
+      "gate rank correlation (last-prompt-token read)": -0.0547,
+      "_kind": "scatter",
+      "_group": 440
+    },
+    {
+      "x": -0.04663450582744719,
+      "gate rank correlation (last-prompt-token read)": -0.052,
+      "_kind": "scatter",
+      "_group": 441
+    },
+    {
+      "x": 0.9890400920592909,
+      "gate rank correlation (last-prompt-token read)": 0.2613,
+      "_kind": "scatter",
+      "_group": 442
+    },
+    {
+      "x": 0.8882096892703428,
+      "gate rank correlation (last-prompt-token read)": 0.1201,
+      "_kind": "scatter",
+      "_group": 443
+    },
+    {
+      "x": 0.8667717419207698,
+      "gate rank correlation (last-prompt-token read)": 0.1822,
+      "_kind": "scatter",
+      "_group": 444
+    },
+    {
+      "x": 0.9912537734413361,
+      "gate rank correlation (last-prompt-token read)": 0.269,
+      "_kind": "scatter",
+      "_group": 445
+    },
+    {
+      "x": 0.9016873656583183,
+      "gate rank correlation (last-prompt-token read)": 0.0626,
+      "_kind": "scatter",
+      "_group": 446
+    },
+    {
+      "x": 1.0611330380857038,
+      "gate rank correlation (last-prompt-token read)": 0.0929,
+      "_kind": "scatter",
+      "_group": 447
+    },
+    {
+      "x": 0.977374690794039,
+      "gate rank correlation (last-prompt-token read)": -0.07,
+      "_kind": "scatter",
+      "_group": 448
+    },
+    {
+      "x": 1.1197641505808216,
+      "gate rank correlation (last-prompt-token read)": 0.3435,
+      "_kind": "scatter",
+      "_group": 449
+    },
+    {
+      "x": 1.0720954367208098,
+      "gate rank correlation (last-prompt-token read)": 0.064,
+      "_kind": "scatter",
+      "_group": 450
+    },
+    {
+      "x": 0.9324519908975348,
+      "gate rank correlation (last-prompt-token read)": -0.0468,
+      "_kind": "scatter",
+      "_group": 451
+    },
+    {
+      "x": 1.1196135285022724,
+      "gate rank correlation (last-prompt-token read)": 0.1298,
+      "_kind": "scatter",
+      "_group": 452
+    },
+    {
+      "x": 1.1097151686988487,
+      "gate rank correlation (last-prompt-token read)": 0.0561,
+      "_kind": "scatter",
+      "_group": 453
+    },
+    {
+      "x": 0.9594922164508628,
+      "gate rank correlation (last-prompt-token read)": 0.1136,
+      "_kind": "scatter",
+      "_group": 454
+    },
+    {
+      "x": 0.9237981174148879,
+      "gate rank correlation (last-prompt-token read)": 0.0754,
+      "_kind": "scatter",
+      "_group": 455
+    },
+    {
+      "x": 1.0656983814309913,
+      "gate rank correlation (last-prompt-token read)": 0.0344,
+      "_kind": "scatter",
+      "_group": 456
+    },
+    {
+      "x": 0.8703108940993516,
+      "gate rank correlation (last-prompt-token read)": -0.0563,
+      "_kind": "scatter",
+      "_group": 457
+    },
+    {
+      "x": 0.891966952891039,
+      "gate rank correlation (last-prompt-token read)": 0.3639,
+      "_kind": "scatter",
+      "_group": 458
+    },
+    {
+      "x": 0.822650417110362,
+      "gate rank correlation (last-prompt-token read)": -0.1425,
+      "_kind": "scatter",
+      "_group": 459
+    },
+    {
+      "x": 1.1032927759007698,
+      "gate rank correlation (last-prompt-token read)": -0.1011,
+      "_kind": "scatter",
+      "_group": 460
+    },
+    {
+      "x": 1.0593463083731316,
+      "gate rank correlation (last-prompt-token read)": -0.2962,
+      "_kind": "scatter",
+      "_group": 461
+    },
+    {
+      "x": 1.0738595363054806,
+      "gate rank correlation (last-prompt-token read)": -0.263,
+      "_kind": "scatter",
+      "_group": 462
+    },
+    {
+      "x": 1.1010624511679086,
+      "gate rank correlation (last-prompt-token read)": 0.1387,
+      "_kind": "scatter",
+      "_group": 463
+    },
+    {
+      "x": 0.9852096791938024,
+      "gate rank correlation (last-prompt-token read)": 0.0761,
+      "_kind": "scatter",
+      "_group": 464
+    },
+    {
+      "x": 1.0247468305430418,
+      "gate rank correlation (last-prompt-token read)": 0.118,
+      "_kind": "scatter",
+      "_group": 465
+    },
+    {
+      "x": 0.8703269193259566,
+      "gate rank correlation (last-prompt-token read)": 0.0633,
+      "_kind": "scatter",
+      "_group": 466
+    },
+    {
+      "x": 0.8612308264729505,
+      "gate rank correlation (last-prompt-token read)": 0.1889,
+      "_kind": "scatter",
+      "_group": 467
+    },
+    {
+      "x": 1.0606250662445698,
+      "gate rank correlation (last-prompt-token read)": -0.0646,
+      "_kind": "scatter",
+      "_group": 468
+    },
+    {
+      "x": 0.9895946342115277,
+      "gate rank correlation (last-prompt-token read)": 0.1663,
+      "_kind": "scatter",
+      "_group": 469
+    },
+    {
+      "x": 1.023484998333228,
+      "gate rank correlation (last-prompt-token read)": 0.2772,
+      "_kind": "scatter",
+      "_group": 470
+    },
+    {
+      "x": 1.0953995886697692,
+      "gate rank correlation (last-prompt-token read)": 0.2656,
+      "_kind": "scatter",
+      "_group": 471
+    },
+    {
+      "x": 1.0484985952002126,
+      "gate rank correlation (last-prompt-token read)": 0.2291,
+      "_kind": "scatter",
+      "_group": 472
+    },
+    {
+      "x": 1.0192885842368784,
+      "gate rank correlation (last-prompt-token read)": -0.2666,
+      "_kind": "scatter",
+      "_group": 473
+    },
+    {
+      "x": 1.0213145778683488,
+      "gate rank correlation (last-prompt-token read)": -0.2655,
+      "_kind": "scatter",
+      "_group": 474
+    },
+    {
+      "x": 0.9294220353025404,
+      "gate rank correlation (last-prompt-token read)": -0.2089,
+      "_kind": "scatter",
+      "_group": 475
+    },
+    {
+      "x": 1.8310944204444581,
+      "gate rank correlation (last-prompt-token read)": 0.2324,
+      "_kind": "scatter",
+      "_group": 476
+    },
+    {
+      "x": 1.9772182601236505,
+      "gate rank correlation (last-prompt-token read)": 0.0421,
+      "_kind": "scatter",
+      "_group": 477
+    },
+    {
+      "x": 1.8972504822150305,
+      "gate rank correlation (last-prompt-token read)": 0.2099,
+      "_kind": "scatter",
+      "_group": 478
+    },
+    {
+      "x": 1.967070311740869,
+      "gate rank correlation (last-prompt-token read)": 0.3356,
+      "_kind": "scatter",
+      "_group": 479
+    },
+    {
+      "x": 2.1272251063765397,
+      "gate rank correlation (last-prompt-token read)": -0.0383,
+      "_kind": "scatter",
+      "_group": 480
+    },
+    {
+      "x": 1.9042182149115228,
+      "gate rank correlation (last-prompt-token read)": -0.0738,
+      "_kind": "scatter",
+      "_group": 481
+    },
+    {
+      "x": 1.8409889870080638,
+      "gate rank correlation (last-prompt-token read)": -0.1642,
+      "_kind": "scatter",
+      "_group": 482
+    },
+    {
+      "x": 1.9212982011279187,
+      "gate rank correlation (last-prompt-token read)": 0.2716,
+      "_kind": "scatter",
+      "_group": 483
+    },
+    {
+      "x": 1.925693752796006,
+      "gate rank correlation (last-prompt-token read)": 0.3893,
+      "_kind": "scatter",
+      "_group": 484
+    },
+    {
+      "x": 2.058289945301682,
+      "gate rank correlation (last-prompt-token read)": 0.1022,
+      "_kind": "scatter",
+      "_group": 485
+    },
+    {
+      "x": 2.02053157484286,
+      "gate rank correlation (last-prompt-token read)": 0.2401,
+      "_kind": "scatter",
+      "_group": 486
+    },
+    {
+      "x": 2.102203355278309,
+      "gate rank correlation (last-prompt-token read)": 0.0361,
+      "_kind": "scatter",
+      "_group": 487
+    },
+    {
+      "x": 2.0591528745178596,
+      "gate rank correlation (last-prompt-token read)": 0.2165,
+      "_kind": "scatter",
+      "_group": 488
+    },
+    {
+      "x": 1.9662992701184254,
+      "gate rank correlation (last-prompt-token read)": 0.3042,
+      "_kind": "scatter",
+      "_group": 489
+    },
+    {
+      "x": 2.1130473384797726,
+      "gate rank correlation (last-prompt-token read)": 0.1463,
+      "_kind": "scatter",
+      "_group": 490
+    },
+    {
+      "x": 1.8801102511667733,
+      "gate rank correlation (last-prompt-token read)": 0.1737,
+      "_kind": "scatter",
+      "_group": 491
+    },
+    {
+      "x": 1.8281763463281897,
+      "gate rank correlation (last-prompt-token read)": 0.2135,
+      "_kind": "scatter",
+      "_group": 492
+    },
+    {
+      "x": 1.852417229879231,
+      "gate rank correlation (last-prompt-token read)": -0.08,
+      "_kind": "scatter",
+      "_group": 493
+    },
+    {
+      "x": 2.080049366214722,
+      "gate rank correlation (last-prompt-token read)": -0.0683,
+      "_kind": "scatter",
+      "_group": 494
+    },
+    {
+      "x": 1.9862758028904994,
+      "gate rank correlation (last-prompt-token read)": -0.117,
+      "_kind": "scatter",
+      "_group": 495
+    },
+    {
+      "x": 1.8780578404520967,
+      "gate rank correlation (last-prompt-token read)": -0.1027,
+      "_kind": "scatter",
+      "_group": 496
+    },
+    {
+      "x": 2.000376119037211,
+      "gate rank correlation (last-prompt-token read)": -0.0111,
+      "_kind": "scatter",
+      "_group": 497
+    },
+    {
+      "x": 1.8748323569767407,
+      "gate rank correlation (last-prompt-token read)": -0.1048,
+      "_kind": "scatter",
+      "_group": 498
+    },
+    {
+      "x": 2.070675335027985,
+      "gate rank correlation (last-prompt-token read)": 0.026,
+      "_kind": "scatter",
+      "_group": 499
+    },
+    {
+      "x": 1.980616259206651,
+      "gate rank correlation (last-prompt-token read)": -0.0374,
+      "_kind": "scatter",
+      "_group": 500
+    },
+    {
+      "x": 1.9571676413947336,
+      "gate rank correlation (last-prompt-token read)": 0.2871,
+      "_kind": "scatter",
+      "_group": 501
+    },
+    {
+      "x": 1.9285443520932355,
+      "gate rank correlation (last-prompt-token read)": -0.03,
+      "_kind": "scatter",
+      "_group": 502
+    },
+    {
+      "x": 2.0469017335228,
+      "gate rank correlation (last-prompt-token read)": 0.2288,
+      "_kind": "scatter",
+      "_group": 503
+    },
+    {
+      "x": 1.9502525397992205,
+      "gate rank correlation (last-prompt-token read)": 0.3444,
+      "_kind": "scatter",
+      "_group": 504
+    },
+    {
+      "x": 1.8515539709537965,
+      "gate rank correlation (last-prompt-token read)": 0.0263,
+      "_kind": "scatter",
+      "_group": 505
+    },
+    {
+      "x": 1.8624821247633856,
+      "gate rank correlation (last-prompt-token read)": 0.2987,
+      "_kind": "scatter",
+      "_group": 506
+    },
+    {
+      "x": 2.166283159237825,
+      "gate rank correlation (last-prompt-token read)": -0.2752,
+      "_kind": "scatter",
+      "_group": 507
+    },
+    {
+      "x": 2.1470890486547387,
+      "gate rank correlation (last-prompt-token read)": -0.1549,
+      "_kind": "scatter",
+      "_group": 508
+    },
+    {
+      "x": 2.07189456817187,
+      "gate rank correlation (last-prompt-token read)": -0.1837,
+      "_kind": "scatter",
+      "_group": 509
+    },
+    {
+      "x": 2.915713186125427,
+      "gate rank correlation (last-prompt-token read)": 0.2281,
+      "_kind": "scatter",
+      "_group": 510
+    },
+    {
+      "x": 3.1689034958451807,
+      "gate rank correlation (last-prompt-token read)": 0.1977,
+      "_kind": "scatter",
+      "_group": 511
+    },
+    {
+      "x": 3.1003503254276863,
+      "gate rank correlation (last-prompt-token read)": 0.1282,
+      "_kind": "scatter",
+      "_group": 512
+    },
+    {
+      "x": 3.0780804680972382,
+      "gate rank correlation (last-prompt-token read)": 0.1098,
+      "_kind": "scatter",
+      "_group": 513
+    },
+    {
+      "x": 2.981770140771764,
+      "gate rank correlation (last-prompt-token read)": 0.3567,
+      "_kind": "scatter",
+      "_group": 514
+    },
+    {
+      "x": 2.9180069622642573,
+      "gate rank correlation (last-prompt-token read)": 0.2912,
+      "_kind": "scatter",
+      "_group": 515
+    },
+    {
+      "x": 2.8547007463752596,
+      "gate rank correlation (last-prompt-token read)": 0.1924,
+      "_kind": "scatter",
+      "_group": 516
+    },
+    {
+      "x": 3.1449368627557828,
+      "gate rank correlation (last-prompt-token read)": 0.1907,
+      "_kind": "scatter",
+      "_group": 517
+    },
+    {
+      "x": 2.9840794643401,
+      "gate rank correlation (last-prompt-token read)": -0.0857,
+      "_kind": "scatter",
+      "_group": 518
+    },
+    {
+      "x": 2.8928508113262827,
+      "gate rank correlation (last-prompt-token read)": 0.0775,
+      "_kind": "scatter",
+      "_group": 519
+    },
+    {
+      "x": 2.930144384694235,
+      "gate rank correlation (last-prompt-token read)": 0.0095,
+      "_kind": "scatter",
+      "_group": 520
+    },
+    {
+      "x": 3.0285190448190824,
+      "gate rank correlation (last-prompt-token read)": 0.0201,
+      "_kind": "scatter",
+      "_group": 521
+    },
+    {
+      "x": 2.8836382018581235,
+      "gate rank correlation (last-prompt-token read)": 0.1419,
+      "_kind": "scatter",
+      "_group": 522
+    },
+    {
+      "x": 3.128381142273255,
+      "gate rank correlation (last-prompt-token read)": 0.1544,
+      "_kind": "scatter",
+      "_group": 523
+    },
+    {
+      "x": 3.093067030740676,
+      "gate rank correlation (last-prompt-token read)": 0.1665,
+      "_kind": "scatter",
+      "_group": 524
+    },
+    {
+      "x": 3.0790066641423373,
+      "gate rank correlation (last-prompt-token read)": 0.1483,
+      "_kind": "scatter",
+      "_group": 525
+    },
+    {
+      "x": 2.9755534943190374,
+      "gate rank correlation (last-prompt-token read)": -0.0159,
+      "_kind": "scatter",
+      "_group": 526
+    },
+    {
+      "x": 3.0458311826528797,
+      "gate rank correlation (last-prompt-token read)": 0.1011,
+      "_kind": "scatter",
+      "_group": 527
+    },
+    {
+      "x": 3.0302752688085848,
+      "gate rank correlation (last-prompt-token read)": 0.1128,
+      "_kind": "scatter",
+      "_group": 528
+    },
+    {
+      "x": 3.053944776559735,
+      "gate rank correlation (last-prompt-token read)": 0.0036,
+      "_kind": "scatter",
+      "_group": 529
+    },
+    {
+      "x": 2.85039995561036,
+      "gate rank correlation (last-prompt-token read)": -0.0027,
+      "_kind": "scatter",
+      "_group": 530
+    },
+    {
+      "x": 2.9696906647814196,
+      "gate rank correlation (last-prompt-token read)": 0.3628,
+      "_kind": "scatter",
+      "_group": 531
+    },
+    {
+      "x": 2.834981102590281,
+      "gate rank correlation (last-prompt-token read)": 0.356,
+      "_kind": "scatter",
+      "_group": 532
+    },
+    {
+      "x": 2.9978366949280266,
+      "gate rank correlation (last-prompt-token read)": 0.2809,
+      "_kind": "scatter",
+      "_group": 533
+    },
+    {
+      "x": 2.938750036439803,
+      "gate rank correlation (last-prompt-token read)": 0.2782,
+      "_kind": "scatter",
+      "_group": 534
+    },
+    {
+      "x": 2.872028707991777,
+      "gate rank correlation (last-prompt-token read)": -0.0772,
+      "_kind": "scatter",
+      "_group": 535
+    },
+    {
+      "x": 2.8572250683801186,
+      "gate rank correlation (last-prompt-token read)": -0.0577,
+      "_kind": "scatter",
+      "_group": 536
+    },
+    {
+      "x": 3.031552045983976,
+      "gate rank correlation (last-prompt-token read)": -0.1643,
+      "_kind": "scatter",
+      "_group": 537
+    },
+    {
+      "x": 2.881413468673279,
+      "gate rank correlation (last-prompt-token read)": -0.1824,
+      "_kind": "scatter",
+      "_group": 538
+    },
+    {
+      "x": 3.153043242615647,
+      "gate rank correlation (last-prompt-token read)": 0.2507,
+      "_kind": "scatter",
+      "_group": 539
+    },
+    {
+      "x": 3.0291820102921423,
+      "gate rank correlation (last-prompt-token read)": 0.0385,
+      "_kind": "scatter",
+      "_group": 540
+    },
+    {
+      "x": 2.9448731296325414,
+      "gate rank correlation (last-prompt-token read)": 0.0644,
+      "_kind": "scatter",
+      "_group": 541
+    },
+    {
+      "x": 3.03272957693331,
+      "gate rank correlation (last-prompt-token read)": -0.0186,
+      "_kind": "scatter",
+      "_group": 542
+    },
+    {
+      "x": 2.828209393570691,
+      "gate rank correlation (last-prompt-token read)": -0.0123,
+      "_kind": "scatter",
+      "_group": 543
+    },
+    {
+      "x": 4.16508131676692,
+      "gate rank correlation (last-prompt-token read)": 0.7121,
+      "_kind": "scatter",
+      "_group": 544
+    },
+    {
+      "x": 3.993629237299444,
+      "gate rank correlation (last-prompt-token read)": 0.7143,
+      "_kind": "scatter",
+      "_group": 545
+    },
+    {
+      "x": 4.101784681810103,
+      "gate rank correlation (last-prompt-token read)": 0.752,
+      "_kind": "scatter",
+      "_group": 546
+    },
+    {
+      "x": 3.8497827999720777,
+      "gate rank correlation (last-prompt-token read)": 0.7501,
+      "_kind": "scatter",
+      "_group": 547
+    },
+    {
+      "x": 3.9951969991017378,
+      "gate rank correlation (last-prompt-token read)": 0.5639,
+      "_kind": "scatter",
+      "_group": 548
+    },
+    {
+      "x": 3.9966545179676274,
+      "gate rank correlation (last-prompt-token read)": 0.4798,
+      "_kind": "scatter",
+      "_group": 549
+    },
+    {
+      "x": 4.157617523790994,
+      "gate rank correlation (last-prompt-token read)": 0.5813,
+      "_kind": "scatter",
+      "_group": 550
+    },
+    {
+      "x": 4.025822098855387,
+      "gate rank correlation (last-prompt-token read)": 0.5521,
+      "_kind": "scatter",
+      "_group": 551
+    },
+    {
+      "x": 3.9904561843805033,
+      "gate rank correlation (last-prompt-token read)": 0.3692,
+      "_kind": "scatter",
+      "_group": 552
+    },
+    {
+      "x": 3.9161112387130816,
+      "gate rank correlation (last-prompt-token read)": 0.2923,
+      "_kind": "scatter",
+      "_group": 553
+    },
+    {
+      "x": 3.9393648390433187,
+      "gate rank correlation (last-prompt-token read)": 0.4439,
+      "_kind": "scatter",
+      "_group": 554
+    },
+    {
+      "x": 4.007442064889753,
+      "gate rank correlation (last-prompt-token read)": 0.499,
+      "_kind": "scatter",
+      "_group": 555
+    },
+    {
+      "x": 3.9780081257098168,
+      "gate rank correlation (last-prompt-token read)": 0.6041,
+      "_kind": "scatter",
+      "_group": 556
+    },
+    {
+      "x": 3.827780348756919,
+      "gate rank correlation (last-prompt-token read)": 0.6209,
+      "_kind": "scatter",
+      "_group": 557
+    },
+    {
+      "x": 4.117465092709969,
+      "gate rank correlation (last-prompt-token read)": 0.6331,
+      "_kind": "scatter",
+      "_group": 558
+    },
+    {
+      "x": 4.142617877862316,
+      "gate rank correlation (last-prompt-token read)": 0.6309,
+      "_kind": "scatter",
+      "_group": 559
+    },
+    {
+      "x": 3.8704896720394997,
+      "gate rank correlation (last-prompt-token read)": 0.3677,
+      "_kind": "scatter",
+      "_group": 560
+    },
+    {
+      "x": 4.019453011674058,
+      "gate rank correlation (last-prompt-token read)": 0.4137,
+      "_kind": "scatter",
+      "_group": 561
+    },
+    {
+      "x": 3.8590872668087597,
+      "gate rank correlation (last-prompt-token read)": 0.4256,
+      "_kind": "scatter",
+      "_group": 562
+    },
+    {
+      "x": 4.062006433494332,
+      "gate rank correlation (last-prompt-token read)": 0.4467,
+      "_kind": "scatter",
+      "_group": 563
+    },
+    {
+      "x": 3.921244162182043,
+      "gate rank correlation (last-prompt-token read)": 0.4485,
+      "_kind": "scatter",
+      "_group": 564
+    },
+    {
+      "x": 4.057392148489084,
+      "gate rank correlation (last-prompt-token read)": 0.4721,
+      "_kind": "scatter",
+      "_group": 565
+    },
+    {
+      "x": 4.0817180611432775,
+      "gate rank correlation (last-prompt-token read)": 0.5083,
+      "_kind": "scatter",
+      "_group": 566
+    },
+    {
+      "x": 4.0967130970903565,
+      "gate rank correlation (last-prompt-token read)": 0.5305,
+      "_kind": "scatter",
+      "_group": 567
+    },
+    {
+      "x": 3.8587867405441227,
+      "gate rank correlation (last-prompt-token read)": 0.5517,
+      "_kind": "scatter",
+      "_group": 568
+    },
+    {
+      "x": 4.149764264249539,
+      "gate rank correlation (last-prompt-token read)": 0.16,
+      "_kind": "scatter",
+      "_group": 569
+    },
+    {
+      "x": 3.902877036722157,
+      "gate rank correlation (last-prompt-token read)": 0.0059,
+      "_kind": "scatter",
+      "_group": 570
+    },
+    {
+      "x": 3.8334685202234247,
+      "gate rank correlation (last-prompt-token read)": 0.0907,
+      "_kind": "scatter",
+      "_group": 571
+    },
+    {
+      "x": 4.019746888980934,
+      "gate rank correlation (last-prompt-token read)": 0.0978,
+      "_kind": "scatter",
+      "_group": 572
+    },
+    {
+      "x": 3.953532022190478,
+      "gate rank correlation (last-prompt-token read)": 0.5425,
+      "_kind": "scatter",
+      "_group": 573
+    },
+    {
+      "x": 4.1187243075276685,
+      "gate rank correlation (last-prompt-token read)": 0.3458,
+      "_kind": "scatter",
+      "_group": 574
+    },
+    {
+      "x": 4.110970529943149,
+      "gate rank correlation (last-prompt-token read)": 0.3252,
+      "_kind": "scatter",
+      "_group": 575
+    },
+    {
+      "x": 3.9341700014161773,
+      "gate rank correlation (last-prompt-token read)": 0.3795,
+      "_kind": "scatter",
+      "_group": 576
+    },
+    {
+      "x": 4.163043782225108,
+      "gate rank correlation (last-prompt-token read)": 0.3739,
+      "_kind": "scatter",
+      "_group": 577
+    },
+    {
+      "x": 4.924730421730443,
+      "gate rank correlation (last-prompt-token read)": 0.7022,
+      "_kind": "scatter",
+      "_group": 578
+    },
+    {
+      "x": 5.0054205665234175,
+      "gate rank correlation (last-prompt-token read)": 0.7034,
+      "_kind": "scatter",
+      "_group": 579
+    },
+    {
+      "x": 4.912147432604337,
+      "gate rank correlation (last-prompt-token read)": 0.6031,
+      "_kind": "scatter",
+      "_group": 580
+    },
+    {
+      "x": 5.156975685217627,
+      "gate rank correlation (last-prompt-token read)": 0.5811,
+      "_kind": "scatter",
+      "_group": 581
+    },
+    {
+      "x": 4.879258814329527,
+      "gate rank correlation (last-prompt-token read)": 0.4582,
+      "_kind": "scatter",
+      "_group": 582
+    },
+    {
+      "x": 4.836167822981238,
+      "gate rank correlation (last-prompt-token read)": 0.3906,
+      "_kind": "scatter",
+      "_group": 583
+    },
+    {
+      "x": 4.976634941601094,
+      "gate rank correlation (last-prompt-token read)": 0.4956,
+      "_kind": "scatter",
+      "_group": 584
+    },
+    {
+      "x": 5.177255203060101,
+      "gate rank correlation (last-prompt-token read)": 0.4918,
+      "_kind": "scatter",
+      "_group": 585
+    },
+    {
+      "x": 5.141003815851769,
+      "gate rank correlation (last-prompt-token read)": 0.583,
+      "_kind": "scatter",
+      "_group": 586
+    },
+    {
+      "x": 5.089498887004502,
+      "gate rank correlation (last-prompt-token read)": 0.29,
+      "_kind": "scatter",
+      "_group": 587
+    },
+    {
+      "x": 5.140685296716269,
+      "gate rank correlation (last-prompt-token read)": 0.4852,
+      "_kind": "scatter",
+      "_group": 588
+    },
+    {
+      "x": 5.1416407902912304,
+      "gate rank correlation (last-prompt-token read)": 0.5584,
+      "_kind": "scatter",
+      "_group": 589
+    },
+    {
+      "x": 5.006789009739122,
+      "gate rank correlation (last-prompt-token read)": 0.67,
+      "_kind": "scatter",
+      "_group": 590
+    },
+    {
+      "x": 4.933734458659085,
+      "gate rank correlation (last-prompt-token read)": 0.6687,
+      "_kind": "scatter",
+      "_group": 591
+    },
+    {
+      "x": 5.097924475559956,
+      "gate rank correlation (last-prompt-token read)": 0.5193,
+      "_kind": "scatter",
+      "_group": 592
+    },
+    {
+      "x": 5.058198054740394,
+      "gate rank correlation (last-prompt-token read)": 0.5269,
+      "_kind": "scatter",
+      "_group": 593
+    },
+    {
+      "x": 4.954516782394536,
+      "gate rank correlation (last-prompt-token read)": 0.592,
+      "_kind": "scatter",
+      "_group": 594
+    },
+    {
+      "x": 4.854008000502145,
+      "gate rank correlation (last-prompt-token read)": 0.7278,
+      "_kind": "scatter",
+      "_group": 595
+    },
+    {
+      "x": 5.088844260085649,
+      "gate rank correlation (last-prompt-token read)": 0.7163,
+      "_kind": "scatter",
+      "_group": 596
+    },
+    {
+      "x": 4.914485785732231,
+      "gate rank correlation (last-prompt-token read)": 0.5213,
+      "_kind": "scatter",
+      "_group": 597
+    },
+    {
+      "x": 5.15725273419216,
+      "gate rank correlation (last-prompt-token read)": 0.5262,
+      "_kind": "scatter",
+      "_group": 598
+    },
+    {
+      "x": 4.906749407002047,
+      "gate rank correlation (last-prompt-token read)": 0.4779,
+      "_kind": "scatter",
+      "_group": 599
+    },
+    {
+      "x": 4.864192855668135,
+      "gate rank correlation (last-prompt-token read)": 0.7146,
+      "_kind": "scatter",
+      "_group": 600
+    },
+    {
+      "x": 5.119200561964966,
+      "gate rank correlation (last-prompt-token read)": 0.4714,
+      "_kind": "scatter",
+      "_group": 601
+    },
+    {
+      "x": 4.875182353984818,
+      "gate rank correlation (last-prompt-token read)": 0.5043,
+      "_kind": "scatter",
+      "_group": 602
+    },
+    {
+      "x": 4.884536590936786,
+      "gate rank correlation (last-prompt-token read)": 0.7093,
+      "_kind": "scatter",
+      "_group": 603
+    },
+    {
+      "x": 5.035777804947504,
+      "gate rank correlation (last-prompt-token read)": 0.6197,
+      "_kind": "scatter",
+      "_group": 604
+    },
+    {
+      "x": 5.134842334701487,
+      "gate rank correlation (last-prompt-token read)": 0.4225,
+      "_kind": "scatter",
+      "_group": 605
+    },
+    {
+      "x": 4.890716479657247,
+      "gate rank correlation (last-prompt-token read)": 0.5208,
+      "_kind": "scatter",
+      "_group": 606
+    },
+    {
+      "x": 4.9317165222440345,
+      "gate rank correlation (last-prompt-token read)": 0.6251,
+      "_kind": "scatter",
+      "_group": 607
+    },
+    {
+      "x": 5.099865741766824,
+      "gate rank correlation (last-prompt-token read)": 0.7024,
+      "_kind": "scatter",
+      "_group": 608
+    },
+    {
+      "x": 5.169857513381948,
+      "gate rank correlation (last-prompt-token read)": 0.7066,
+      "_kind": "scatter",
+      "_group": 609
+    },
+    {
+      "x": 5.000266827032843,
+      "gate rank correlation (last-prompt-token read)": 0.4927,
+      "_kind": "scatter",
+      "_group": 610
+    },
+    {
+      "x": 4.87180310091845,
+      "gate rank correlation (last-prompt-token read)": 0.4878,
+      "_kind": "scatter",
+      "_group": 611
+    }
+  ],
+  "n_series": 612,
+  "total_points": 612,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Theory-assumption battery on exactly the trained rows \u2014 34 content cells, per layer"
+    ],
+    "axes": [
+      {
+        "title_left": "Write rank (share < 0.6 = high-rank write)",
+        "ylabel": "top-1 singular share of per-row answer-shift stack",
+        "legend_labels": [
+          "on-policy tree (n=300 rows)",
+          "fixed-text TF tree (n=1,200 rows)",
+          "closest-approach cell (open)",
+          "#1768 corpus median (protocol differs)"
+        ],
+        "xticklabels": [
+          "on-policy\nL14",
+          "on-policy\nL19",
+          "on-policy\nL25",
+          "fixed text\nL14",
+          "fixed text\nL19",
+          "fixed text\nL25"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "Write-displacement alignment vs covariance null (dashes)",
+        "ylabel": "cos(write direction, activation displacement)",
+        "xticklabels": [
+          "on-policy\nL14",
+          "on-policy\nL19",
+          "on-policy\nL25",
+          "fixed text\nL14",
+          "fixed text\nL19",
+          "fixed text\nL25"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Base-geometry gate vs 0.3\u20130.7 theory band",
+        "ylabel": "gate rank correlation (last-prompt-token read)",
+        "xticklabels": [
+          "on-policy\nL14",
+          "on-policy\nL19",
+          "on-policy\nL25",
+          "fixed text\nL14",
+          "fixed text\nL19",
+          "fixed text\nL25"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

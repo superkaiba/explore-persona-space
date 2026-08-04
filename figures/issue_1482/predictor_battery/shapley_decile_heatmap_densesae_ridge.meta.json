@@ -1,0 +1,120 @@
+{
+  "commit": "e3ebc3a79b",
+  "created": "2026-08-03T23:17:51Z",
+  "figsize": [
+    13.2,
+    14.200000000000001
+  ],
+  "text": {
+    "suptitle": "Exact Shapley share by block, within activity deciles",
+    "fig_texts": [
+      "113,262 features, full dictionary; collinearity collapsed at |rho| >= 0.9 (complete linkage)  |  REAL TARGET - dense context to SAE feature map, ridge__mean arm (#1482 single-turn corpus, 121,111 scored; covariates same corpus)",
+      "The firing-frequency block IS the stratifying variable: within an activity decile its\nvariance is restricted BY CONSTRUCTION and its share is mechanically suppressed.\nDo NOT read 'activity contributes nothing within deciles' as a finding.",
+      "x = axis suppressed (a class below the 30-feature floor). Flagged axes carry globally rare classes: side_class carries '2' (261 pooled); speaker_property carries 'unclear' (22 pooled).\nDeciles are equal-COUNT, not equal-width in log-activity \u2014 d1 (42.0x) and d10 (8.6x) are the least tightly conditioned columns. Uncertainty is split-half, not bootstrap."
+    ],
+    "axes": [
+      {
+        "xlabel": "activity decile (equal-count; n and internal activity ratio annotated)",
+        "annotations": [
+          "0.12",
+          "0.21",
+          "0.11",
+          "0.29",
+          "0.31",
+          "0.31",
+          "0.26",
+          "0.22",
+          "0.20",
+          "0.17",
+          "0.16",
+          "0.16",
+          "0.15",
+          "0.21",
+          "0.30",
+          "0.36",
+          "0.34",
+          "0.31",
+          "0.26",
+          "0.23",
+          "0.21",
+          "0.21",
+          "0.20",
+          "0.29",
+          "0.12",
+          "0.16",
+          "0.22",
+          "0.23",
+          "x",
+          "x",
+          "x",
+          "x",
+          "x",
+          "x",
+          "x",
+          "x",
+          "x",
+          "x",
+          "x",
+          "x",
+          "x",
+          "x",
+          "x",
+          "x",
+          "x",
+          "x",
+          "x"
+        ],
+        "xticklabels": [
+          "1\nn=11,220\n42.0x",
+          "2\nn=11,394\n2.9x",
+          "3\nn=11,311\n2.3x",
+          "4\nn=11,375\n2.1x",
+          "5\nn=11,323\n1.9x",
+          "6\nn=11,334\n1.8x",
+          "7\nn=11,320\n1.8x",
+          "8\nn=11,328\n1.8x",
+          "9\nn=11,329\n2.1x",
+          "10\nn=11,328\n8.6x"
+        ],
+        "yticklabels": [
+          "activity  [conditioning variable]",
+          "act_var_across_answers",
+          "side_ratio",
+          "mean_act_cond",
+          "consistency",
+          "enc_norm",
+          "proj_var",
+          "enc_dec_cos",
+          "redundancy_max_cos",
+          "footprint_kurt",
+          "axis:content_type",
+          "scaffold_frac",
+          "write_norm",
+          "axis:abstraction",
+          "dense_latent_flag",
+          "axis:speaker_property",
+          "axis:interpretable",
+          "footprint_var",
+          "footprint_skew",
+          "logit_footprint_concentration",
+          "massive_dim_mass",
+          "axis:side_class"
+        ]
+      },
+      {
+        "ylabel": "Shapley share of block $R^2$",
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      }
+    ]
+  }
+}

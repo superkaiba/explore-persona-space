@@ -36,8 +36,8 @@ headline figure per result, compact methodology. It is paired with a
 (committed to the issue branch, SHA-pin-linked from the body's
 `**Detailed writeup:**` line right after the sentinel) that carries the full
 detail: the unabridged Methodology (complete hyperparameter table, worked
-examples), EVERY figure view the plotter produced (aggregate + per-unit + raw
-+ alt-groupings, each with its factual caption + SHA-pinned image), and any
+examples), EVERY figure view the plotter produced (aggregate, per-unit, raw,
+alt-groupings — each with its factual caption + SHA-pinned image), and any
 extra tables. The detailed doc is 100% agent-written mechanical assembly —
 the interpretivity rule applies to all of it; it carries NO Takeaways / TLDR /
 Conclusion (claims live only in the body, Thomas's voice). See § The detailed
@@ -259,7 +259,10 @@ processed, every alt-grouping the manifest names>
 
 Rules: NO Takeaways / TLDR / Conclusion sections (no Thomas slots — the doc is
 regenerated wholesale on follow-up rounds, so nothing hand-written may live
-here); the interpretivity rule + banned lexicon apply to every line; every
+here); the interpretivity rule applies throughout, and the banned-lexicon
+scope mirrors the body's (the Motivation copy keeps the body's
+hypothesis-framing exemption; every other section is agent methodology prose
+under the full scan); every
 image is SHA-pinned. The orchestrator commits it by explicit path on the
 issue branch, captures the commit SHA, and splices the body's
 `**Detailed writeup:**` blob link pinned at that SHA. Same-issue follow-up

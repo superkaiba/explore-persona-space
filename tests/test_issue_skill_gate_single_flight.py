@@ -93,17 +93,72 @@ def test_step10d_surgical_single_flight_hook_present():
     assert text.index(probe) < text.index("rm -f /tmp/issue-<N>-surgical-outcome.txt")
 
 
+FLEET_PROBE_FORM = (
+    'uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --fleet --exclude-issue <N>'
+)
+
+
+def test_gate_fleet_arbitration_hooks_present():
+    """#1962: the cross-issue gate-fleet arbitration probe is present at each
+    gate-launch site AFTER the per-issue single-flight probe and BEFORE the
+    launch (canonical paragraph at Step 9c 1b; short hooks at 1d, both Step
+    10d gate blocks, and the Step 9a-ter inline payload gate). Additive pin
+    — the per-issue probe pins above are untouched."""
+    text = _text()
+    # 9c 1b canonical (+ its until-loop) + 1d + 10d (i)/(ii) + 10d (iii)
+    # + 9a-ter — at least 5 hooked sites carry the invocation verbatim:
+    assert text.count(FLEET_PROBE_FORM) >= 5
+    assert "Gate-fleet arbitration (#1962)" in text
+    assert "[gate-fleet] cap-expired after 45 min — launching over cap" in text
+
+    sec = text[text.index("9c. Test-verdict gate") : text.index("### Step 10: Auto-complete")]
+    # 1b: the canonical paragraph sits AFTER the per-issue probe statement
+    # and BEFORE the launch preamble rm:
+    assert sec.index(FLEET_PROBE_FORM) > sec.index(PROBE_ISSUE_FORM)
+    assert sec.index(FLEET_PROBE_FORM) < sec.index(
+        "rm -f /tmp/step9c-junit-issue-<N>.xml /tmp/step9c-rc-issue-<N>"
+    )
+    # Queue shape: the bounded fleet until-loop (fixed internal regex — the
+    # loop can never spin on exit 2):
+    assert f"until {FLEET_PROBE_FORM} >/dev/null" in sec
+    # 1d: a further in-section hook between the 1b launch and the compare rm:
+    assert sec.rindex(FLEET_PROBE_FORM) > sec.index("rm -f /tmp/step9c-junit-issue-<N>.xml")
+    assert sec.rindex(FLEET_PROBE_FORM) < sec.index("rm -f /tmp/step9c-compare-issue-<N>.json")
+
+    # 10d forms (i)/(ii): hook precedes the stale-verdict rm:
+    start = text.index("#### Pre-push workflow-lint gate")
+    region = text[start : text.index("#### The auto-merge procedure", start)]
+    assert FLEET_PROBE_FORM in region
+    assert region.index(FLEET_PROBE_FORM) < region.index("rm -f /tmp/issue-<N>-lint-verdict.txt")
+
+    # 10d form (iii): hook after the surgical per-issue probe, before the
+    # outcome-sentinel rm:
+    surgical_probe = (
+        'uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe '
+        r"--pattern 'issue-<N>-surgical-outcome\.txt|issue-<N>-lint-gate-tree'"
+    )
+    fleet_after_surgical = text.index(FLEET_PROBE_FORM, text.index(surgical_probe))
+    assert fleet_after_surgical < text.index("rm -f /tmp/issue-<N>-surgical-outcome.txt")
+
+    # 9a-ter inline payload lint gate: hook precedes the fenced helper launch:
+    sec9 = _gate_section()
+    assert FLEET_PROBE_FORM in sec9
+    assert sec9.index(FLEET_PROBE_FORM) < sec9.index("uv run python scripts/inline_lint_gate.py")
+
+
 def test_step9ater_inline_gate_single_flight_hook_present_and_precedes_launch():
     """#1647: the Step 9a-ter inline payload lint gate carries its own
     per-site single-flight hook (the #1606 pattern at the inline site),
     issue-scoped via the -inline-payload suffix, placed BEFORE the fenced
-    gate launch; #1821 swaps it to the self-excluding helper form."""
+    gate launch; #1821 swaps it to the self-excluding helper form; #1948
+    widens the pattern to match round-unique payload names (the `issue-<N>-`
+    prefix + `inline-payload\\.txt` tail keep it exact-issue-scoped)."""
     sec = _gate_section()
     assert LABEL in sec
-    # Self-/ancestor-excluding helper probe (#1821):
+    # Self-/ancestor-excluding helper probe (#1821; #1948 round-unique widening):
     assert (
         'uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe '
-        r"--pattern 'issue-<N>-inline-payload\.txt'" in sec
+        r"--pattern 'issue-<N>-[^ ]*inline-payload\.txt'" in sec
     )
     # The raw pgrep form is no longer the prescribed inline probe (#1821):
     assert "pgrep -af 'issue-<N>-inline-payload[.]txt'" not in sec

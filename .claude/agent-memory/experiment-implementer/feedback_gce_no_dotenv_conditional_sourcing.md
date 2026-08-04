@@ -12,3 +12,9 @@ Phase-2 reduce; the sentinel it was polling for already existed.
 **How to apply:** in any script that runs on pod/GCE lanes, use
 `if [ -f ./.env ]; then set -a; . ./.env; set +a; fi` (VM/worktree venues keep working); never put the
 sourcing inside the && chain of the command whose rc is being classified.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [GCE workload scripts must source ./.env conditionally](feedback_gce_no_dotenv_conditional_sourcing.md) — GCE exports tokens with no .env; &&-chained sourcing silently kills the real command (#923)

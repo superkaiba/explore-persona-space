@@ -73,16 +73,24 @@ CLAUDE.md as always-on rules; the rest live here and load when you touch code.)
   the pid verify, protect from earlyoom collateral kills:
   `bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PHASE_PID"`
   (session-wide; children inherit; −600 not −1000 so a runaway fit still dies first; pipefail
-  makes an empty/failed pgrep FAIL the sweep — `choom=ok` only when the sweep pipeline exited
-  zero; on any failure proceed unprotected and record `choom=failed`).
+  makes an empty/failed pgrep FAIL the sweep — `choom=ok` only when a sweep run's pipeline exited
+  zero; on failure RE-RUN the sweep ONCE — when the real python3 child appears or after
+  ≤ ~30-60 s, whichever comes FIRST — then record the final `choom=ok|failed`; post-retry
+  `choom=failed` at projected peak RSS ≥ ~16 GiB → route the phase off the VM per SKILL.md
+  § "Detached VM-side long compute phases"; sub-16-GiB phases proceed unprotected).
   Record `pid=$PHASE_PID` + the log path + `choom=ok|failed` + `harvest=<abs output path>` (the
   § Harvest contract's declared results location; #1656) in the stage-dispatch breadcrumb
   (SKILL.md § Detached VM-side long compute phases — incl. the collateral-kill signature and the
-  relaunch-once-then-pod-pivot rule; #811).
+  relaunch-once-then-pod-pivot rule, with its first-kill CPU-pod exception for storm-attributed
+  API-bound drivers; #811).
 - **Post-pipe `$?` is the LAST stage's status, not the pipeline's.** After ANY `cmd_a | cmd_b` (a `tail`/`grep`/`head` post-filter, `2>&1 | json.load`, a `| jq`), a bare `$?` captures `cmd_b`'s exit code and MASKS `cmd_a`'s failure. Use `set -o pipefail` (single-shot: `bash -o pipefail -c '...'`) or `${PIPESTATUS[0]}` before echoing an rc; a wrapper printing `=== rc=$? ===` after a pipeline is the banned regression (#1717 defect (e), session `a2c4bae3`, 2026-07-26 — `rc=0` on a failed `select_step9c_tests.py` invocation because `$?` read `tail -20`'s status). Generalizes the CLAUDE.md "never pipe `git push`/`merge`/`commit` through `tail`/`grep`/`head`" bullet to every command whose exit code drives a decision.
 - **Env sync after dep changes:** `uv lock && git push`, then `pod.py sync env`.
 - **HF cache** always `/workspace/.cache/huggingface` on pods (symlinks enforce).
 - **Reproducibility metadata in result JSONs:** git commit hash, env versions, timestamps.
+  Lane caveat: on git-less scratch trees (fellows/SLURM `materialize_branch_src` rsync copies) a
+  strict `git rev-parse` shellout kills the workload (git exits 128 → the workload dies rc=1) —
+  degrade `EPS_GIT_SHA` env → `check=False` → `"unavailable-no-git-checkout"` (full entry:
+  `.claude/rules/gotchas.md`; incident #1902).
 - **Supersede → delete the old version.** When an improved version of a script
   / helper supersedes an old one, DELETE the old version after rewiring every
   reference to it — do NOT keep both. Two live scripts that do the same job

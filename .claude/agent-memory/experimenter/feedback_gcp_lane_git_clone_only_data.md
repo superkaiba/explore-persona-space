@@ -13,3 +13,9 @@ The GCP lane (`backends/gcp.py` startup script) runs the workload from a fresh `
 2. If absent from git: confirm an HF mirror exists AND the dispatcher has a `hf_hub_download` fallback for that path BEFORE launch. Local file presence is NOT sufficient.
 
 If neither check passes, refuse the launch and surface the gap: either (a) commit the file to the issue branch (the `data/canonical_persona_pool/` + `data/assistant_axis/` `.gitignore` precedent — re-include via `!data/<subdir>/`), or (b) mirror to HF + wire a fetch fallback. The fix is short; catching it at the gate beats a 30-second GPU crash.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [GCP lane is git-clone-only — local data/ doesn't reach the VM](feedback_gcp_lane_git_clone_only_data.md) — for `--backend gcp`, verify each hard-required `data/` input is git-tracked OR HF-mirrored with a fetch fallback; local presence at VM repo root is NOT sufficient (the GCE startup script does not rsync data/) — #634

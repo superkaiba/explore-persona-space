@@ -132,6 +132,29 @@ def _no_real_marker_posts(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _gcp_rollback_build_for_legacy_suite(request, monkeypatch):
+    """Run the legacy GCP failover/retry poll suite under the #2028 rollback build.
+
+    GCP provisioning is disabled by policy (#2028,
+    ``router.GCP_PROVISIONING_DISABLED = True``), but the gated poller legs
+    (the #1596/#1601 queue-loss on-demand retries — the only fresh-GCP-create
+    paths in this module) are KEPT and must stay test-covered — they are the
+    single-constant rollback lever. This autouse fixture runs every test with
+    the gate OFF; flag-ON production pins carry
+    ``@pytest.mark.gcp_policy_default``. (The in-flight-handle paths — crash
+    persist, teardown, GCP→RunPod failover — are UNGATED either way.)
+    """
+    if request.node.get_closest_marker("gcp_policy_default"):
+        return
+    from explore_persona_space.backends import router as router_module
+
+    monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", False)
+    monkeypatch.setattr(
+        router_module, "DEFAULT_AUTO_LANE_ORDER", router_module._default_auto_lane_order()
+    )
+
+
+@pytest.fixture(autouse=True)
 def _isolate_lease_store(monkeypatch, tmp_path):
     """Redirect EVERY ``LeaseStore()`` to a per-test tmp ``~/.eps-routing/``.
 
@@ -682,14 +705,61 @@ def _gcp_handle_with_clock(*, phase: str, ts: float, incarnation: str | None = N
     return _gcp_handle(extra=extra)
 
 
+def _rewind_wedge_alarm_first_ts(sidecar, seconds: float) -> None:
+    """Age the persisted #1837 alarm streak by ``seconds`` (models real tick spacing)."""
+    payload = json.loads(Path(sidecar).read_text())
+    payload["extra"]["wedge_alarm_first_ts"] = float(
+        payload["extra"]["wedge_alarm_first_ts"] - seconds
+    )
+    Path(sidecar).write_text(json.dumps(payload))
+
+
 def test_poll_running_with_frozen_phase_and_drain_timeout_returns_terminal_wedged(
     tmp_path, monkeypatch, capsys
 ):
-    """Fix 1 POSITIVE (#669, end-to-end): a RUNNING GCP poll whose non-terminal
-    phase ('workload') is frozen past the 15-min floor AND carries a
-    transport-class reachability alarm is escalated to status=dead /
-    terminal_workload_wedged, which the async-failover predicate then matches —
+    """Fix 1 POSITIVE (#669, end-to-end) — UPDATED to the #1837 two-tick
+    contract (R1/R7, a deliberate contract change): a RUNNING GCP poll whose
+    non-terminal phase ('workload') is frozen past the 15-min floor AND
+    carries a transport-class reachability alarm is escalated to status=dead /
+    terminal_workload_wedged only on the SECOND consecutive alarmed tick with
+    first->latest span >= 480s; the async-failover predicate then matches and
     the run fails over to RunPod exactly once."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    # Tick 1: alarmed, but a single tick ARMS the streak and stays running.
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "workload"
+    assert len(rp.launches) == 0
+    assert read_handle_sidecar(sidecar).extra["wedge_alarm_streak"] == 1
+
+    # Model the standard 540s tick cadence (#1818) by aging the persisted
+    # first-alarm ts past the 480s span floor, then tick 2: SUSTAINED alarm ->
+    # wedged -> failed over -> RUNNING-shaped async-failover JSON.
+    _rewind_wedge_alarm_first_ts(sidecar, 500)
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["current_phase"] == "gcp_workload_failover_runpod_async"
+    assert out["status"] == "running"
+    assert len(rp.launches) == 1
+    assert read_handle_sidecar(sidecar).backend == "runpod"
+
+
+def test_single_alarmed_tick_stays_running_and_arms_streak(tmp_path, monkeypatch, capsys):
+    """R1 (#1837): ONE alarmed tick past the staleness floor returns running
+    (no failover — the #1739 single-blip false positive) and persists an armed
+    streak record (streak 1, incarnation-stamped, fresh first_ts) in the
+    sidecar extra so the NEXT tick can confirm or reset it."""
     sidecar = tmp_path / "issue-659-handle.json"
     write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar)
     rp = _PassiveRunpodBackend()
@@ -702,11 +772,183 @@ def test_poll_running_with_frozen_phase_and_drain_timeout_returns_terminal_wedge
     rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
     assert rc == 0
     out = _last_json_line(capsys)
-    # Escalated to wedged -> failed over -> RUNNING-shaped async-failover JSON.
-    assert out["current_phase"] == "gcp_workload_failover_runpod_async"
     assert out["status"] == "running"
-    assert len(rp.launches) == 1
-    assert read_handle_sidecar(sidecar).backend == "runpod"
+    assert out["current_phase"] == "workload"
+    assert len(rp.launches) == 0
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.backend == "gcp"
+    assert recovered.extra["wedge_alarm_streak"] == 1
+    assert recovered.extra["wedge_alarm_incarnation"] == "instance-fake-1"  # job_id
+    assert recovered.extra["wedge_alarm_first_ts"] > _time.time() - 60
+
+
+def test_two_alarmed_ticks_within_min_span_stay_running(tmp_path, monkeypatch, capsys):
+    """R1 span guard (#1837): two consecutive alarmed ticks only ~60s apart
+    (below GCP_WEDGE_ALARM_MIN_SPAN_SEC=480) stay running — two rapid
+    back-to-back re-polls can never satisfy the sustained-alarm confirmation."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+    _rewind_wedge_alarm_first_ts(sidecar, 60)  # ticks ~60s apart: span < 480
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "workload"
+    assert len(rp.launches) == 0
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.backend == "gcp"
+    assert recovered.extra["wedge_alarm_streak"] == 2  # counted, span not yet met
+
+
+def test_clean_tick_resets_alarm_streak(tmp_path, monkeypatch, capsys):
+    """R3 (#1837): a CLEAN tick (no reachability alarm) between two alarmed
+    ticks resets the streak — the consecutive requirement restarts at 1, so an
+    intermittent blip pattern never accumulates into a wedge."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    # Alarmed tick -> streak 1.
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+    )
+    assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+    assert read_handle_sidecar(sidecar).extra["wedge_alarm_streak"] == 1
+
+    # Clean tick (alarm False) -> streak keys DROPPED from the sidecar.
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=False)),
+    )
+    assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+    extra = read_handle_sidecar(sidecar).extra
+    assert "wedge_alarm_streak" not in extra
+    assert "wedge_alarm_first_ts" not in extra
+    assert "wedge_alarm_incarnation" not in extra
+
+    # Alarmed again: streak RESTARTS at 1 -> still running, no failover.
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+    )
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert len(rp.launches) == 0
+    assert read_handle_sidecar(sidecar).extra["wedge_alarm_streak"] == 1
+
+
+def test_alarm_streak_from_prior_incarnation_reads_absent(tmp_path, monkeypatch, capsys):
+    """R2 (#1837, the #1815 incarnation key): a streak stamped under a
+    DIFFERENT launch incarnation (an OLD instance id) reads as ABSENT — the
+    first alarmed tick of the new incarnation re-arms at streak 1 and stays
+    running instead of maturing off the prior attempt's alarms."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    extra = dict(_GCP_EXTRA_659)
+    extra["last_phase"] = "workload"
+    extra["last_phase_change_ts"] = _time.time() - 1000
+    # A prior incarnation's MATURE record: streak 1 aged past the span floor —
+    # if it were honored, this tick would wedge (streak 2, span >= 480).
+    extra["wedge_alarm_streak"] = 1
+    extra["wedge_alarm_first_ts"] = _time.time() - 500
+    extra["wedge_alarm_incarnation"] = "instance-OLD-0"  # != job_id
+    write_handle_sidecar(_gcp_handle(extra=extra), sidecar)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert len(rp.launches) == 0
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.extra["wedge_alarm_streak"] == 1  # re-armed, not matured
+    assert recovered.extra["wedge_alarm_incarnation"] == "instance-fake-1"
+
+
+def test_phase_advance_resets_alarm_streak(tmp_path, monkeypatch, capsys):
+    """R3 (#1837): a PHASE ADVANCE between alarmed ticks resets the streak —
+    an advancing phase proves the workload alive, so the prior alarm never
+    carries across it."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="phase_A", ts=_time.time() - 1000), sidecar)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    # Alarmed tick on frozen phase_A -> streak 1.
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("phase_A", reachability_alarm=True)),
+    )
+    assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+    assert read_handle_sidecar(sidecar).extra["wedge_alarm_streak"] == 1
+
+    # Phase ADVANCES (alarm still raised): clock re-stamps, streak dies.
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("phase_B", reachability_alarm=True)),
+    )
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "phase_B"
+    assert len(rp.launches) == 0
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.extra["last_phase"] == "phase_B"
+    assert "wedge_alarm_streak" not in recovered.extra
+    assert "wedge_alarm_first_ts" not in recovered.extra
+
+
+def test_streak_write_failure_never_wedges_first_tick(tmp_path, monkeypatch, capsys):
+    """R6 (#1837 fail-loud pin): a streak WRITE failure (read-only sidecar dir)
+    must not raise and must not silently wedge — the poll returns running (the
+    write failure is logged loudly; the next tick re-reads stale state and
+    UNDER-counts, failing toward running, never a manufactured wedge). Also
+    pins the read-side fail-open: a MISSING sidecar reads (0, None)."""
+    from scripts.backend_poll import _read_wedge_alarm_streak
+
+    # Read-side fail-open: missing sidecar -> (0, None), no raise.
+    assert _read_wedge_alarm_streak(tmp_path / "nope.json", _gcp_handle()) == (0, None)
+
+    ro_dir = tmp_path / "ro"
+    ro_dir.mkdir()
+    sidecar = ro_dir / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    ro_dir.chmod(0o500)  # tmp+rename write of the streak now fails (EACCES)
+    try:
+        rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    finally:
+        ro_dir.chmod(0o700)
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "workload"
+    assert len(rp.launches) == 0
+    # Nothing persisted (the write failed) — the streak stayed in-memory only.
+    assert "wedge_alarm_streak" not in read_handle_sidecar(sidecar).extra
 
 
 def test_poll_running_with_recent_phase_change_stays_running(tmp_path, monkeypatch, capsys):
@@ -1010,15 +1252,21 @@ def test_concurrent_failover_preserves_first_runpod_sidecar(tmp_path, monkeypatc
 
 
 def test_async_failover_skips_cpu_gcp_handle(tmp_path, monkeypatch, capsys):
-    """#677: a CPU GCP handle (extra.gpu_count==0) whose poll surfaces
-    terminal_workload_failed does NOT fail over to RunPod (RunPod is GPU-only).
+    """#677: an UNMAPPED CPU GCP handle (extra.gpu_count==0, intent NOT in
+    RUNPOD_CPU_INSTANCE_FOR_INTENT) whose poll surfaces
+    terminal_workload_failed does NOT fail over to RunPod.
     It emits the ordinary dead JSON; RunPodBackend is never constructed.
+    (#2028 mapped cpu-bigmem, so the unmapped shape is simulated by deleting
+    it from the map — the fail-loud floor for a future unmapped CPU intent.)
 
     RunPodBackend is monkeypatched to RAISE if constructed — the strongest
     "never touched RunPod" assertion: if the predicate fails to exclude the CPU
     handle, _failover_dead_gcp_to_runpod constructs RunPodBackend() and the test
     fails with the explicit AssertionError, not a downstream crash.
     """
+    from explore_persona_space.backends import router as router_module
+
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     cpu_extra = dict(_GCP_EXTRA_659)
     cpu_extra["intent"] = "cpu-bigmem"
     cpu_extra["gpu_count"] = 0
@@ -1064,11 +1312,13 @@ def _cpu_gcp_handle(intent: str) -> RunHandle:
     return _gcp_handle(extra=extra)
 
 
-def test_async_cpu_small_handle_predicate_is_failover_eligible() -> None:
+def test_async_cpu_small_handle_predicate_is_failover_eligible(monkeypatch) -> None:
     """#747: the predicate _is_gcp_async_workload_failure returns True for a
     cpu-small GCP handle (gpu_count==0, intent IN RUNPOD_CPU_INSTANCE_FOR_INTENT)
     at terminal_workload_failed — the #677 CPU exclusion is RELAXED for a mapped
-    intent. The companion cpu-bigmem case (NOT in the map) stays False."""
+    intent. cpu-bigmem is mapped too as of #2028 (True); an UNMAPPED intent
+    (simulated by deleting cpu-bigmem from the map) stays False."""
+    from explore_persona_space.backends import router as router_module
     from scripts.backend_poll import _is_gcp_async_workload_failure
 
     assert (
@@ -1077,7 +1327,15 @@ def test_async_cpu_small_handle_predicate_is_failover_eligible() -> None:
         )
         is True
     )
-    # cpu-bigmem (NOT in the map) stays EXCLUDED.
+    # #2028: cpu-bigmem is mapped now — eligible.
+    assert (
+        _is_gcp_async_workload_failure(
+            _cpu_gcp_handle("cpu-bigmem"), _poll("dead", "terminal_workload_failed")
+        )
+        is True
+    )
+    # An UNMAPPED CPU intent stays EXCLUDED (the #677 floor).
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     assert (
         _is_gcp_async_workload_failure(
             _cpu_gcp_handle("cpu-bigmem"), _poll("dead", "terminal_workload_failed")
@@ -1376,11 +1634,16 @@ def test_gcp_first_pending_observation_stamps_clock_stays_running(tmp_path, monk
 
 
 def test_gcp_cpu_bigmem_pending_past_floor_does_NOT_fail_over(tmp_path, monkeypatch, capsys):
-    """#783 negative control: a cpu-bigmem GCP handle (gpu_count==0, intent NOT
-    in RUNPOD_CPU_INSTANCE_FOR_INTENT) stuck "pending" past the floor is escalated
-    to terminal_queue_timeout by the clock BUT the _is_gcp_queue_timeout predicate
-    EXCLUDES it (no RunPod CPU lane), so it falls through to the ordinary dead
-    path — RunPod is never constructed."""
+    """#783 negative control: an UNMAPPED CPU GCP handle (gpu_count==0, intent
+    NOT in RUNPOD_CPU_INSTANCE_FOR_INTENT) stuck "pending" past the floor is
+    escalated to terminal_queue_timeout by the clock BUT the
+    _is_gcp_queue_timeout predicate EXCLUDES it (no RunPod CPU lane), so it
+    falls through to the ordinary dead path — RunPod is never constructed.
+    (#2028 mapped cpu-bigmem, so the unmapped shape is simulated by deleting
+    it from the map — the floor for a future unmapped CPU intent.)"""
+    from explore_persona_space.backends import router as router_module
+
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     cpu_extra = dict(_GCP_EXTRA_659)
     cpu_extra["intent"] = "cpu-bigmem"
     cpu_extra["gpu_count"] = 0
@@ -1408,16 +1671,21 @@ def test_gcp_cpu_bigmem_pending_past_floor_does_NOT_fail_over(tmp_path, monkeypa
     assert read_handle_sidecar(sidecar).backend == "gcp"
 
 
-def test_gcp_cpu_small_pending_past_floor_predicate_is_eligible() -> None:
+def test_gcp_cpu_small_pending_past_floor_predicate_is_eligible(monkeypatch) -> None:
     """#783: the queue-timeout predicate _is_gcp_queue_timeout returns True for a
     cpu-small handle at terminal_queue_timeout (mapped CPU intent, #747-relaxed)
-    and False for cpu-bigmem — mirroring the #659 CPU-intent guard exactly."""
+    — and for cpu-bigmem too as of #2028 (mapped); an UNMAPPED intent
+    (simulated by deleting cpu-bigmem from the map) stays False — mirroring
+    the #659 CPU-intent guard exactly."""
+    from explore_persona_space.backends import router as router_module
     from scripts.backend_poll import _is_gcp_queue_timeout
 
     def _tq_poll() -> PollResult:
         return _poll("dead", "terminal_queue_timeout")
 
     assert _is_gcp_queue_timeout(_cpu_gcp_handle("cpu-small"), _tq_poll()) is True
+    assert _is_gcp_queue_timeout(_cpu_gcp_handle("cpu-bigmem"), _tq_poll()) is True  # #2028
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     assert _is_gcp_queue_timeout(_cpu_gcp_handle("cpu-bigmem"), _tq_poll()) is False
     # A GPU handle is eligible; a non-GCP / non-dead / wrong-phase handle is not.
     assert _is_gcp_queue_timeout(_gcp_handle(), _tq_poll()) is True
@@ -2579,13 +2847,16 @@ def test_gcp_pre_workload_running_observation_does_NOT_reset_streak(tmp_path, mo
 
 
 def test_gcp_boot_loop_cpu_bigmem_records_but_never_rewrites(tmp_path, monkeypatch, capsys):
-    """#1029 AC-4 (CPU guard): a cpu-bigmem boot loop RECORDS the streak (the
-    route()-side skip is its only breaker) but NEVER rewrites to
+    """#1029 AC-4 (CPU guard): an UNMAPPED CPU boot loop RECORDS the streak
+    (the route()-side skip is its only breaker) but NEVER rewrites to
     terminal_boot_loop — no RunPod lane exists for it (#677), so both deaths
-    print the ordinary dead JSON. The cpu-small counterpart (mapped, #747) DOES
-    rewrite and fails over."""
+    print the ordinary dead JSON. (#2028 mapped cpu-bigmem, so the unmapped
+    shape is simulated by deleting it from the map.) The cpu-small
+    counterpart (mapped, #747) DOES rewrite and fail over."""
+    from explore_persona_space.backends import router as router_module
     from explore_persona_space.backends.router import gcp_boot_death_streak
 
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     rp = _PassiveRunpodBackend()
     monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
 
@@ -2921,14 +3192,17 @@ def test_gcp_terminated_phase_with_pending_clock_not_vanish(tmp_path, monkeypatc
 
 
 def test_gcp_queue_vanish_cpu_bigmem_excluded(tmp_path, monkeypatch, capsys):
-    """#1116 negative control (acceptance criterion 4): a cpu-bigmem GCP handle
-    (gpu_count==0, intent NOT in RUNPOD_CPU_INSTANCE_FOR_INTENT) whose queued
-    instance vanished keeps its ORDINARY dead path byte-identically — the CPU
-    guard gates the REWRITE itself (no terminal_queue_vanish phase, unlike the
-    #783 cpu-bigmem shape), the #1029 boot-death record still happens, and
-    RunPod is never constructed."""
+    """#1116 negative control (acceptance criterion 4): an UNMAPPED CPU GCP
+    handle (gpu_count==0, intent NOT in RUNPOD_CPU_INSTANCE_FOR_INTENT) whose
+    queued instance vanished keeps its ORDINARY dead path byte-identically —
+    the CPU guard gates the REWRITE itself (no terminal_queue_vanish phase,
+    unlike the #783 shape), the #1029 boot-death record still happens, and
+    RunPod is never constructed. (#2028 mapped cpu-bigmem, so the unmapped
+    shape is simulated by deleting it from the map.)"""
+    from explore_persona_space.backends import router as router_module
     from explore_persona_space.backends.router import gcp_boot_death_streak
 
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     cpu_extra = dict(_GCP_EXTRA_1116)
     cpu_extra["intent"] = "cpu-bigmem"
     cpu_extra["gpu_count"] = 0

@@ -1,0 +1,392 @@
+{
+  "commit": "0a6f324d02",
+  "created": "2026-08-02T00:31:31Z",
+  "figsize": [
+    9.0,
+    7.199999999999999
+  ],
+  "points": [
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.539278013533173,
+      "y": 0.0,
+      "series": "pooled cos (disjoint halves)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.49475252777802015,
+      "y": 0.0,
+      "series": "median per-prefix cos",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.9438126628221181,
+      "y": 0.0,
+      "series": "shared-baseline read (record-only, known-invalid)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.41098371415773355,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.37172715495201747,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.9356289278472263,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.6760963727811655,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.6290209585963253,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.9260439226733382,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.3463496109879363,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.22569288577963192,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.9408616770212221,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.7956602632466862,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.7599289885196445,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.9602420273519806,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.749211865794682,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.7042578150773031,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.9546241559808363,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.7243924981207766,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.6698095120863297,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.921552269091609,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.5123555416393385,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.3970985637318805,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.9145059247228006,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": -0.6310597460717557,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": -0.6388117054959959,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.8030196816978853,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": -0.7903183228578461,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": -0.7654991961513818,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.7866029306704471,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": -0.9867412995289928,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": -0.958925379378488,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.5907094023725274,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": -0.8119034717420381,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": -0.7944914711809521,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.7734401237072468,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": -0.9031920932682463,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": -0.8938385857825394,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.6398177144533262,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": -0.7427786860042447,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": -0.7361924026606819,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.8497577821078217,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.5251698195326694,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.4609339504037182,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.9273126316950181,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": -0.9050980878249523,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": -0.8912704175905561,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.9596169868466925,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.6371030457405805,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.5835238641771029,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.9178575173251576,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": -0.33228131306582875,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": -0.3606038496751225,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean": 0.9407230852202132,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 53
+    }
+  ],
+  "n_series": 54,
+  "total_points": 54,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "write-delta alignment per arm (gray bands = corpus-covariance norm-matched null 95%)",
+        "xlabel": "cos(matched-text write, on-policy delta) \u2014 layer-19 span mean",
+        "legend_labels": [
+          "pooled cos (disjoint halves)",
+          "median per-prefix cos",
+          "shared-baseline read (record-only, known-invalid)"
+        ],
+        "xticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "casual bare-context contrastive",
+          "casual persona contrastive",
+          "casual persona full fine-tune",
+          "casual persona positive-only",
+          "impolite persona contrastive (seed 137)",
+          "impolite persona contrastive (seed 42)",
+          "impolite persona full fine-tune",
+          "impolite persona positive-only",
+          "marker bare-context contrastive",
+          "marker conversation contrastive",
+          "marker ICL contrastive",
+          "marker persona contrastive",
+          "marker persona full fine-tune",
+          "marker persona positive-only",
+          "sycophancy bare-context contrastive",
+          "sycophancy conversation contrastive",
+          "sycophancy persona full fine-tune",
+          "sycophancy persona positive-only"
+        ]
+      }
+    ],
+    "series": [
+      "pooled cos (disjoint halves)",
+      "median per-prefix cos",
+      "shared-baseline read (record-only, known-invalid)"
+    ]
+  }
+}

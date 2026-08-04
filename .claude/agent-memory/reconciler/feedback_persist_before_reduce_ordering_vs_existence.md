@@ -39,3 +39,9 @@ Two paired calibration rules from #906 r9 (Claude PASS vs Codex FAIL, reconciled
 producer write line vs the reduce line yourself; check whether upload is inside
 the producers' try-block; check the concerns ledger for the class's prior
 severity before letting either side re-class it.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Persist-before-reduce: ordering not existence; derived expected-set ≠ hollow gate](feedback_persist_before_reduce_ordering_vs_existence.md) — Claude counts a site persisted because the file exists (write AFTER remote judge); Codex FAILs a glob-derived upload verify though producers make the state unreachable; prior-round CONCERN severity binds. #906 r9.

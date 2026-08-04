@@ -20,6 +20,7 @@ tools:
   - Glob
   - Bash
   - Write
+model: "claude-fable-5"
 ---
 
 # Codex Efficiency Critic (thin Claude wrapper, in-context mode, PLAN MODE only)

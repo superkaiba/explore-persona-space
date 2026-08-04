@@ -1,0 +1,251 @@
+{
+ "scope": "TARGET-INDEPENDENT, FULL WIDTH (131,072). No rho, no AUROC, no figure here.",
+ "join_key": "feat_ids",
+ "standing_rule": "full width + the dense context -> SAE feature map for every deliverable; the SAE->SAE target and panel width are never published as results",
+ "discrete_predictors": {
+  "gurnee_footprint_class": {
+   "census": {
+    "other": 109248,
+    "promoting": 8063,
+    "suppressing": 5045,
+    "partition": 8716
+   },
+   "expected": {
+    "other": 109248,
+    "promoting": 8063,
+    "suppressing": 5045,
+    "partition": 8716
+   },
+   "status": "PASS",
+   "levels": {
+    "0": "other",
+    "1": "promoting",
+    "2": "suppressing",
+    "3": "partition"
+   },
+   "why_kept_despite_refutation": "its value is the CONTRAST with its continuous parent (footprint kurtosis): the class read rho -0.026 while the parent's activity-partialled rho was -0.135. Thresholding a continuous predictor at q0.90 destroyed the signal. Report them adjacent."
+  },
+  "side_class": {
+   "census": {
+    "context_only": 1654,
+    "two_sided": 126348,
+    "answer_only": 2164,
+    "live": 130166
+   },
+   "expected": {
+    "context_only": 1654,
+    "two_sided": 126348,
+    "answer_only": 2164,
+    "live": 130166
+   },
+   "status": "PASS",
+   "context_only_have_no_r2": "context-only features are answer-inactive by construction, so no per-feature R^2 exists for them; their count is reported and they are excluded from every future AUROC with the exclusion stated"
+  },
+  "dense_latent_flag": {
+   "threshold": 0.5,
+   "n": 899,
+   "prevalence": 0.00685882568359375,
+   "n_panel": 899,
+   "prevalence_panel": 0.05487060546875,
+   "prevalence_note": "FULL-WIDTH prevalence 0.69% (899 features); on the legacy panel 5.49% (899 of 16384). Every dense latent is inside the panel by construction \u2014 activity 0.5 sits far above the panel floor 0.0810 \u2014 so the panel figure is an enrichment of the top-activity stratum, not a second estimate of the same quantity. Quote the grain with the number.",
+   "note": "the early-layer round found a real effect at LAYER 3 (median R^2 0.245 dense vs 0.095 overall); this is the first time the flag exists at layer 19 full width. Whether it carries an effect here is an R^2-dependent read, DEFERRED."
+  },
+  "judge_unanimity": {
+   "per_axis": {
+    "abstraction": {
+     "n_judged": 128271,
+     "prevalence_unanimous": 0.5789071575024752,
+     "expected_prevalence": 0.578,
+     "abs_delta": 0.0009071575024752754,
+     "status": "PASS",
+     "loose_prevalence": 0.5915444644541634,
+     "loose_only_low_evidence_rows": 268
+    },
+    "speaker_property": {
+     "n_judged": 128249,
+     "prevalence_unanimous": 0.7502748559442959,
+     "expected_prevalence": 0.749,
+     "abs_delta": 0.001274855944295883,
+     "status": "PASS",
+     "loose_prevalence": 0.7587271635646282,
+     "loose_only_low_evidence_rows": 206
+    },
+    "content_type": {
+     "n_judged": 128332,
+     "prevalence_unanimous": 0.6865006389676775,
+     "expected_prevalence": 0.686,
+     "abs_delta": 0.0005006389676774914,
+     "status": "PASS",
+     "loose_prevalence": 0.6961319078639778,
+     "loose_only_low_evidence_rows": 222
+    },
+    "functional_role": {
+     "n_judged": 128123,
+     "prevalence_unanimous": 0.6230341156544883,
+     "expected_prevalence": 0.621,
+     "abs_delta": 0.0020341156544883,
+     "status": "PASS",
+     "loose_prevalence": 0.6732358749014619,
+     "loose_only_low_evidence_rows": 989,
+     "retired": "RETIRED \u2014 kappa 0.310, below the 0.6 usability bar"
+    },
+    "interpretable": {
+     "n_judged": 128275,
+     "prevalence_unanimous": 0.7775482362112649,
+     "expected_prevalence": 0.776,
+     "abs_delta": 0.001548236211264875,
+     "status": "PASS",
+     "loose_prevalence": 0.7993373611381797,
+     "loose_only_low_evidence_rows": 495
+    }
+   },
+   "definition": "STRICT: every LAUNCHED judge draw survived AND all returned the same label. The looser 'surviving draws agreed' variant is also stored (unanimous_loose_*) and reads systematically higher because it counts a feature unanimous when draws were LOST. That is not a harmless inflation: per axis, hundreds of rows are unanimous on <= 2 surviving draws (measured per axis in loose_only_low_evidence_rows), so the loose flag promotes the LOWEST-evidence features into the highest-confidence bucket \u2014 precisely inverting what the predictor is meant to measure. Strict reproduces the independently measured prevalences to within 0.002.",
+   "usage": "a PREDICTOR (describability proxy), never a filter \u2014 it selects on cleanliness"
+  },
+  "cross_dictionary_match_flag": {
+   "joinable": false,
+   "banked_artifact": "eval_results/issue_1482/matryoshka_tier/matching.npz",
+   "banked_shapes": {
+    "best_lmsys_to_pile": [
+     65536
+    ],
+    "best_pile_to_lmsys": [
+     65536
+    ],
+    "match_rows": []
+   },
+   "banked_width": 65536,
+   "our_width": 131072,
+   "reason": "the banked cross-dictionary matching is 65536-wide \u2014 it matches the two LAYER-20 matryoshka twins (jumprelu, k=100, 65,536 features) to each other. These predictors are LAYER-19 andyrdt BatchTopK features (131,072). There is no feature-id correspondence between the two dictionaries.",
+   "action": "DROPPED from the predictor set rather than mapped by a fabricated correspondence. Producing it would require running decoder matching between the layer-19 dictionary and a differently-trained layer-19 dictionary, which does not exist here."
+  }
+ },
+ "retired_axes": {
+  "functional_role": "RETIRED \u2014 kappa 0.310, below the 0.6 usability bar"
+ },
+ "matryoshka_tier": {
+  "joins_per_feature_table": false,
+  "reason": "different dictionary (layer 20, jumprelu k=100, 65,536 features), so it cannot be a peer row in the per-feature table or the depth sweep",
+  "keep_as": "a clearly separated DICTIONARY-LEVEL result (tier median R^2 0.435 / 0.174 / 0.043), never a peer row"
+ },
+ "width_map_confound_correction": {
+  "sae_to_sae": {
+   "rho_activity_vs_r2_panel": 0.2928978790994351,
+   "n": 16384,
+   "source": "eval_results/issue_1482/sae_perfeature/sae_ctx__mean__ridge.npz"
+  },
+  "dense_to_sae": {
+   "rho_activity_vs_r2_panel": 0.29568724526664963,
+   "n": 16384,
+   "source": "eval_results/issue_1482/sae_perfeature/sae_dense_in__mean__ridge.npz"
+  },
+  "sae_to_sae_FULLWIDTH": {
+   "rho_activity_vs_r2": 0.7417176017050736,
+   "n": 115150,
+   "source": "eval_results/issue_1738/sae_twoway/perfeature/sae_context_r2.npy"
+  },
+  "interpretation": "At MATCHED panel width the two maps are indistinguishable on firing frequency (+0.293 SAE->SAE vs +0.296 dense->SAE; |delta| = 0.003), while the SAME map read at FULL width gives +0.742. The panel-vs-full-width gap is therefore a STRATUM effect, not a map effect \u2014 the panel is the top-activity stratum. Any earlier statement attributing that gap to the dense->SAE map is CORRECTED here."
+ },
+ "activity_decile_geometry": {
+  "deciles": [
+   {
+    "decile": 1,
+    "lo": 8.333333333333334e-06,
+    "hi": 0.0002916666666666667,
+    "dex": 1.5440680443502757,
+    "internal_ratio": 35.0
+   },
+   {
+    "decile": 2,
+    "lo": 0.0002916666666666667,
+    "hi": 0.0009083333333333334,
+    "dex": 0.493358453590348,
+    "internal_ratio": 3.1142857142857143
+   },
+   {
+    "decile": 3,
+    "lo": 0.0009083333333333334,
+    "hi": 0.002191666666666667,
+    "dex": 0.3825292505491342,
+    "internal_ratio": 2.4128440366972477
+   },
+   {
+    "decile": 4,
+    "lo": 0.002191666666666667,
+    "hi": 0.0046166666666666665,
+    "dex": 0.3235540162386718,
+    "internal_ratio": 2.1064638783269958
+   },
+   {
+    "decile": 5,
+    "lo": 0.0046166666666666665,
+    "hi": 0.008833333333333334,
+    "dex": 0.2817961005363405,
+    "internal_ratio": 1.9133574007220218
+   },
+   {
+    "decile": 6,
+    "lo": 0.008833333333333334,
+    "hi": 0.016358333333333332,
+    "dex": 0.2676144343352359,
+    "internal_ratio": 1.85188679245283
+   },
+   {
+    "decile": 7,
+    "lo": 0.016358333333333332,
+    "hi": 0.029591666666666665,
+    "dex": 0.2574303727016093,
+    "internal_ratio": 1.8089658685685177
+   },
+   {
+    "decile": 8,
+    "lo": 0.029591666666666665,
+    "hi": 0.05491666666666667,
+    "dex": 0.26853474229239443,
+    "internal_ratio": 1.8558152633061111
+   },
+   {
+    "decile": 9,
+    "lo": 0.05491666666666667,
+    "hi": 0.11396000000000009,
+    "dex": 0.31704827202105457,
+    "internal_ratio": 2.0751441578148726
+   },
+   {
+    "decile": 10,
+    "lo": 0.11396000000000009,
+    "hi": 1.0,
+    "dex": 0.9432475594325604,
+    "internal_ratio": 8.775008775008768
+   }
+  ],
+  "total_dex": 5.079181246047625,
+  "caveat_line": "deciles are equal-COUNT, not equal-width in log-activity; deciles 1 and 10 span 35x and 8.8x internally, so their endpoint values are the least tightly conditioned"
+ },
+ "metric_note": "the depth sweep metric is AUROC-at-depth, NOT classification accuracy \u2014 accuracy is not comparable across prevalences spanning 0.7% to 77%",
+ "deferred_r2_dependent_reads": {
+  "why": "the standing rule is FULL WIDTH + the dense context -> SAE feature map for every deliverable. The full-width dense->SAE R^2 arrays (task #7's pod) do not exist yet, so every R^2-dependent read below is DEFERRED rather than substituted from the SAE->SAE target or from panel width.",
+  "single_swap": "all of these run from the same substrate; the final run is one input-path swap (--r2-npy) against the dense->SAE ridge and MLP arrays.",
+  "deferred": [
+   "raw rho + activity-partialled rho per continuous predictor (both arms)",
+   "raw AUROC + excess-over-stratified-null per binary/one-vs-rest label, sorted by excess",
+   "within-activity-decile rho (continuous) and AUROC (binary) \u2014 the headline evidence",
+   "top-decile value per predictor",
+   "predictor x decile heatmap (null-relative encoding)",
+   "AUROC-at-depth sweep, unified construction (label = top-k vs bottom-k by R^2, score = the predictor), per-k recomputed null band; Delta_k kept in JSON only, with the identity AUROC = 0.5 + Delta_k/2 noted so it is not read as independent evidence",
+   "abstraction: per-level medians + n + CIs (PRIMARY), Kruskal-Wallis omnibus eta^2 vs the activity-stratified null (COMPARABLE), ordinal Spearman with its tie ceiling and attainment fraction (SECONDARY, a monotone-trend test)",
+   "per-axis omnibus statistic (Kruskal-Wallis / eta^2) alongside the one-vs-rest AUROCs",
+   "linear vs nonlinear: both arms in every figure, plus the pooled-vs-per-feature divergence at full width against the pre-registered expectation that it WIDENS"
+  ],
+  "pre_registered_expectation_linear_vs_nonlinear": "at panel grain the divergence was ridge pooled 0.7216 / per-feature median +0.1767 / 99.3% positive vs MLP pooled 0.7387 / median -0.0285 / 46.1% positive. Full width adds ~7x more rare features, and the capacity-allocation account predicts the MLP abandons them harder, so the divergence should WIDEN. To be reported as held or not. GRID: 7 cells \u2014 ridge x {mean, max, frac} vs MLP(w=8192) x {mean, max, frac}, plus mlpgate__mean as the panel-width MLP reproduction gate. The w=32,768 arm (mlpw32k__mean) was REMOVED by user directive, so there is NO capacity ladder and the 'does abandonment ease with more hidden units' question cannot be answered this round.",
+  "pod_status_at_write_time": "pod-1482 is RUNNING (8xH100, pod_id kdxtgasnn1npbw), verified against the live RunPod API at write time \u2014 NOT inferred from the task tracker. An earlier draft of this file asserted no pod existed; that was read off a stale tracker row (#10 in_progress) and was WRONG. The deferral below stands on the arrays not existing YET, not on any expectation that they will not.",
+  "outcome_if_arrays_never_land": "GATED \u2014 do not quote this without a fresh live re-check of pod-1482 and of eval_results/issue_1482/densesae_fullwidth/. IF, after that re-check, the arrays are confirmed unavailable, the honest wording is 'target-independent covariate substrate delivered at full width; the R^2-dependent reads could not be produced on the specified map' \u2014 never a substitution of the SAE->SAE target and never a fallback to panel width. This is a contingency template, NOT a statement about the current run."
+ },
+ "metadata": {
+  "git_commit": "6cb343ce3dbd1fe8d9f55fbc7a101514cf94f888",
+  "timestamp_utc": "2026-08-03T17:43:05.052546+00:00",
+  "python_version": "3.11.15",
+  "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+  "numpy_version": "2.2.6"
+ }
+}

@@ -15,3 +15,9 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 **PATH gap (both variants):** SSH non-login shells skip ~/.bashrc — every subsequent command needs `export PATH="/root/.local/bin:$PATH"` (or the full `/root/.local/bin/uv` path), including inside launcher scripts. Related: [[feedback_load_env_in_nohup]].
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [uv missing: provision vs resume variants](feedback_pod_provision_uv_missing.md) — provision-incomplete (no .venv → epm:failure, recovery too long) vs resume-wipe (.venv survives → fast inline reinstall + PATH export) (#390, #472)

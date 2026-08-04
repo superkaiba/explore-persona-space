@@ -26,6 +26,7 @@ import sys
 import textwrap
 import threading
 import time
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -113,6 +114,12 @@ def origin_and_clone(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv("EPM_ROOT_SYNC_ABORT_LOCK_WAIT_S", raising=False)
     monkeypatch.delenv("EPM_ROOT_SYNC_ABORT_LOCK_POLL_S", raising=False)
     monkeypatch.delenv("EPM_ROOT_SYNC_ABORT_LOCK_RETRIES", raising=False)
+    # #1870: the KEPT-stash Telegram push must NEVER fire for real from a test
+    # (the default script path exists on the dev VM). Per-test recorder
+    # monkeypatches still win — they run after fixture setup.
+    monkeypatch.setattr(srr, "_telegram_push_kept", lambda msg: False)
+    monkeypatch.delenv("EPM_DISABLE_KEPT_STASH_PUSH", raising=False)
+    monkeypatch.delenv("EPM_TELEGRAM_PUSH_SCRIPT", raising=False)
     return origin, local, other
 
 
@@ -476,6 +483,175 @@ def test_stranded_autostash_rescue_before_clear_seam(origin_and_clone, monkeypat
     assert any("autostash" in line for line in _git(local, "stash", "list").stdout.splitlines())
     patches = list(srr.RESCUE_ROOT.glob("stash-*.patch"))
     assert len(patches) == 1 and "local-dirty" in patches[0].read_text()
+
+
+# ─── 5b. KEPT-stash durable surfacing (#1870) ────────────────────────────────
+#
+# A successful sync over a stranded conflicting autostash runs BOTH recover
+# passes (preflight + post-pull) with per-call ``processed`` sets, so ONE run
+# yields TWO KEPT outcomes on the same sha — assertions key row counts on the
+# KEPT report lines, never a hardcoded per-run constant.
+
+
+def _capture_pushes(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """Replace the KEPT-stash push fn with a recorder (never a real Telegram call)."""
+    pushes: list[str] = []
+    monkeypatch.setattr(srr, "_telegram_push_kept", lambda msg: pushes.append(msg) or True)
+    return pushes
+
+
+def _sidecar_rows(local: Path) -> list[dict]:
+    return [json.loads(ln) for ln in srr._kept_sidecar_path(local).read_text().splitlines()]
+
+
+def test_kept_outcome_appends_sidecar_row_and_report_advisory(
+    origin_and_clone, capsys, monkeypatch
+):
+    """(a) Exactly ONE well-formed sidecar row per KEPT outcome (schema per plan
+    item 2); every report line keeps the verbatim ``KEPT `` head and gains the
+    ``sidecar=`` advisory; the first (new-sha) outcome fires exactly one push."""
+    _origin, local, other = origin_and_clone
+    pushes = _capture_pushes(monkeypatch)
+    _strand_autostash(local, other)
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 0
+    kept = [s for s in rep["stash"] if s.startswith("KEPT ")]
+    assert kept, rep["stash"]
+    sidecar = srr._kept_sidecar_path(local)
+    rows = _sidecar_rows(local)
+    assert len(rows) == len(kept)  # one row per KEPT outcome
+    for row in rows:
+        assert set(row) == {
+            "ts",
+            "repo",
+            "ref",
+            "sha",
+            "sha12",
+            "reason",
+            "detail",
+            "rescue_patch",
+            "stash_list_len",
+        }
+        datetime.fromisoformat(row["ts"])  # UTC ISO timestamp parses
+        assert row["repo"] == str(local)
+        assert row["reason"] == "apply-check-dirty"
+        assert row["detail"] == ""
+        assert len(row["sha"]) == 40 and row["sha12"] == row["sha"][:12]
+        assert row["ref"].startswith("stash@{")
+        assert row["rescue_patch"].endswith(f"stash-{row['sha12']}.patch")
+        assert row["stash_list_len"] == 1  # entry KEPT -> still in `git stash list`
+    assert all(f"; sidecar={sidecar}" in s for s in kept)
+    assert len(pushes) == 1 and "#1736" in pushes[0]
+
+
+def test_kept_sidecar_write_failure_fail_soft(origin_and_clone, capsys, monkeypatch):
+    """(b) A sidecar write failure is FAIL-SOFT: the sync completes (exit 0,
+    state machine + KEPT decision unchanged), the report line carries
+    ``sidecar-write FAILED`` — the error is neither raised nor silently
+    swallowed — and the push is SUPPRESSED (plan must-ask: an unsuppressed
+    push would re-fire on every sync run under a persistent write failure)."""
+    _origin, local, other = origin_and_clone
+    pushes = _capture_pushes(monkeypatch)
+    _strand_autostash(local, other)
+    sidecar = srr._kept_sidecar_path(local)
+    sidecar.mkdir(parents=True)  # a directory at the sidecar path -> OSError on append
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 0
+    kept = [s for s in rep["stash"] if s.startswith("KEPT ")]
+    assert kept, rep["stash"]
+    assert all("sidecar-write FAILED (" in s for s in kept)
+    assert pushes == []
+    assert any("KEPT-stash sidecar append failed" in m for m in rep["messages"])
+    # Entry still KEPT — the recovery semantics are untouched by the failure.
+    assert any("autostash" in ln for ln in _git(local, "stash", "list").stdout.splitlines())
+
+
+def test_kept_push_dedup_second_run_same_sha_no_second_push(origin_and_clone, capsys, monkeypatch):
+    """(c) Push dedup keys on the full stash-commit sha read from the sidecar
+    BEFORE the append: a dry-run writes nothing (plan item 6), the first real
+    sync pushes ONCE, and a second sync over the SAME kept sha appends more
+    rows (one per KEPT outcome) but fires NO second push."""
+    _origin, local, other = origin_and_clone
+    pushes = _capture_pushes(monkeypatch)
+    _strand_autostash(local, other)
+
+    rc0, _rep0, _ = _run(local, "--dry-run", capsys=capsys)
+    assert rc0 == 0
+    assert not srr._kept_sidecar_path(local).exists()  # dry-run writes nothing
+    assert pushes == []
+
+    rc1, rep1, _ = _run(local, capsys=capsys)
+    assert rc1 == 0
+    kept1 = [s for s in rep1["stash"] if s.startswith("KEPT ")]
+    assert len(pushes) == 1  # deduped even across the two same-run recover passes
+    rc2, rep2, _ = _run(local, capsys=capsys)
+    assert rc2 == 0
+    kept2 = [s for s in rep2["stash"] if s.startswith("KEPT ")]
+    assert kept2, rep2["stash"]
+    rows = _sidecar_rows(local)
+    assert len(rows) == len(kept1) + len(kept2)  # every KEPT outcome recorded
+    assert len({r["sha"] for r in rows}) == 1
+    assert len(pushes) == 1  # same sha -> no second push
+
+
+def test_kept_push_kill_switch_suppresses_push(origin_and_clone, capsys, monkeypatch):
+    """(c) The ``EPM_DISABLE_KEPT_STASH_PUSH=1`` kill switch suppresses the
+    push entirely; sidecar recording and the report advisory are unaffected."""
+    _origin, local, other = origin_and_clone
+    pushes = _capture_pushes(monkeypatch)
+    monkeypatch.setenv("EPM_DISABLE_KEPT_STASH_PUSH", "1")
+    _strand_autostash(local, other)
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 0
+    kept = [s for s in rep["stash"] if s.startswith("KEPT ")]
+    assert kept and all("; sidecar=" in s for s in kept)
+    assert _sidecar_rows(local)  # recording unaffected
+    assert pushes == []
+
+
+def test_popped_clean_entry_writes_no_sidecar_row(origin_and_clone, capsys, monkeypatch):
+    """(d) The popped (clean-apply) path writes NO sidecar row and fires no push."""
+    _origin, local, _other = origin_and_clone
+    pushes = _capture_pushes(monkeypatch)
+    _write(local, "g.txt", "g-base\n")
+    _commit(local, "g.txt")
+    _git(local, "push", "-q", "origin", "main")
+    _write(local, "g.txt", "g-dirty\n")
+    sha = _git(local, "stash", "create").stdout.strip()
+    _git(local, "stash", "store", "-m", "autostash", sha)
+    _git(local, "checkout", "HEAD", "--", "g.txt")
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 0
+    assert any("popped" in s for s in rep["stash"])
+    assert not srr._kept_sidecar_path(local).exists()
+    assert pushes == []
+
+
+def test_kept_sidecar_known_shas_fail_soft(tmp_path):
+    """(e) The dedup scan is fail-soft on ALL read errors: OSError on open
+    (path is a directory / missing file) returns ``set()``; malformed JSON,
+    non-dict rows, and sha-less / non-str-sha rows are skipped."""
+    as_dir = tmp_path / "sidecar-as-dir"
+    as_dir.mkdir()
+    assert srr._kept_sidecar_known_shas(as_dir) == set()
+    assert srr._kept_sidecar_known_shas(tmp_path / "missing.jsonl") == set()
+
+    f = tmp_path / "events.jsonl"
+    sha = "a" * 40
+    f.write_text(
+        "not-json\n"
+        + json.dumps({"sha": sha})
+        + "\n[1, 2]\n"
+        + json.dumps({"nosha": True})
+        + "\n"
+        + json.dumps({"sha": 7})
+        + "\n"
+    )
+    assert srr._kept_sidecar_known_shas(f) == {sha}
 
 
 # ─── 6. Push retry (success) ─────────────────────────────────────────────────

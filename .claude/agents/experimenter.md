@@ -23,6 +23,7 @@ tools:
   - TodoWrite
   - Skill
   - mcp__ssh
+model: "claude-fable-5"
 ---
 
 # Experimenter
@@ -990,8 +991,10 @@ authoritative recipe is agent memory
 
    (The generic contract binding ALL launcher authors — including
    orchestrator / watch-session relaunches outside this agent — is
-   `.claude/rules/pod-side-reporting.md` § Pid-file launch contract;
-   this section is the agent-specific recipe.)
+   `.claude/rules/pod-side-reporting.md` § Pid-file launch contract,
+   incl. 1g (relaunch = re-run the launcher FILE, #1768) + 1h
+   (breadcrumbs/watches key on the identity-verified WORKER pid, never
+   the wrapper, #1769); this section is the agent-specific recipe.)
 
 2. **Confirm the launch survived disconnect — the probe MUST be a
    SEPARATE SSH invocation, issued AFTER the launching session has
@@ -1056,10 +1059,13 @@ authoritative recipe is agent memory
      pod-side; write it in the launch itself (the step-1 launcher's
      `echo $$ > /workspace/logs/issue-<N>.pid` — the launcher-internal
      pre-exec carve-out — or for a rare launcher-less relaunch
-     `setsid nohup ... < /dev/null & printf '%s\n' "$!" > /workspace/logs/issue-<N>.pid.tmp && mv /workspace/logs/issue-<N>.pid.tmp /workspace/logs/issue-<N>.pid`
+     `setsid nohup ... < /dev/null >> /workspace/logs/issue-<N>.log 2>&1 & printf '%s\n' "$!" > /workspace/logs/issue-<N>.pid.tmp && mv /workspace/logs/issue-<N>.pid.tmp /workspace/logs/issue-<N>.pid`
      in the same SSH command (atomic tmp+rename per the § Pid-file
-     launch contract) — even the launcher-less shape keeps the full
-     detachment trio: `setsid` + `nohup` + stdin from `/dev/null`,
+     launch contract) — even the launcher-less shape detaches
+     ALL THREE stdio fds: `setsid` + `nohup` + stdin from `/dev/null` AND
+     stdout/stderr into the log (pod-side-reporting.md § Pid-file launch
+     contract item 1f — attached remote stdout/stderr holds the ssh
+     channel open and hangs the local client),
      never bare `nohup ... &`). A pidfile
      written only on the local VM silently reads `PID_ALIVE=0` every
      tick and the poller falls back to the pid from the latest

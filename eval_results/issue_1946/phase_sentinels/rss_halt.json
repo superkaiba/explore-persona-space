@@ -1,0 +1,10 @@
+{
+  "projected_gb": 19.52716626599431,
+  "cap_gb": 16.0,
+  "git_commit": "716dab2e20fd51781e13142daf76c1cf5c5d600d",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "ts": "2026-08-01T01:09:31Z",
+  "data_revision": "05cb982b0d3f9a21b5735d196a0afdc8175590e5",
+  "smoke": false
+}

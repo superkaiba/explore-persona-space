@@ -15,3 +15,9 @@ calibrated for the registered Δ; the pod run died rc=1 mid-p3 (GCE att-20260722
 on a healthy dataset. **How to apply:** every COMPANION statistic (noise-floor
 ratios, sensitivity subsets) gets its OWN drop-class semantics + its own guard
 threshold; fails-pre-fix regression test with a shared-first-token fixture.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Companion-stat drop-class semantics](feedback_companion_stat_drop_class_semantics.md) — zero split-half floors at early positions are a named non-fatal exclusion, never an integrity-guard trip (#1415)

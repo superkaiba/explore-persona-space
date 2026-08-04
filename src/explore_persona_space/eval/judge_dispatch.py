@@ -216,6 +216,29 @@ def _parsed_with_raw(parsed: dict | None, text: str) -> dict | None:
     return out
 
 
+_STOP_REASON_KEY = "stop_reason"
+
+
+def _with_stop_reason(score: object, stop_reason: object) -> object:
+    """Attach the API response's ``stop_reason`` to a dict-shaped judge score (#2021).
+
+    Unlike :func:`_parsed_with_raw` this is UNCONDITIONAL (no contextvar gate)
+    and covers parse-failure error dicts too — truncation diagnosis
+    (llm-judging.md rules 23/26) is exactly about failed parses. The
+    ``isinstance(str)`` gate is load-bearing: (a) it never persists a non-str
+    (a ``MagicMock`` attribute from test fakes, an SDK enum surprise); (b) it
+    leaves transport / no-response error dicts untouched (their mint sites
+    have no API response, so they pass ``None``). Non-dict scores (bare-string
+    parses) pass through unchanged. Copies before annotating — never mutates a
+    caller-visible dict.
+    """
+    if not isinstance(score, dict) or not isinstance(stop_reason, str) or not stop_reason:
+        return score
+    out = dict(score)
+    out[_STOP_REASON_KEY] = stop_reason
+    return out
+
+
 # Item: same 4-tuple already used by batch_judge.
 JudgeItem = tuple[str, str, str, str]  # (custom_id, question, completion, user_msg)
 
@@ -630,6 +653,11 @@ def _collect_batch_results(
     ``result.result.error.error.type`` (double ``.error``); access is
     getattr-guarded so a shape mismatch fails OPEN (routed to retriable, the
     conservative default that never silently quarantines).
+
+    Succeeded rows (parsed verdicts AND parse-failure error dicts) carry the
+    API response's ``stop_reason`` via :func:`_with_stop_reason` (#2021, rule
+    26); errored/expired/canceled/unknown rows have no API response and carry
+    no ``stop_reason`` key.
     """
     scores: dict[str, dict] = {}
     retriable: list[str] = []
@@ -640,12 +668,17 @@ def _collect_batch_results(
         cid = result.custom_id
         rtype = result.result.type
         if rtype == "succeeded":
+            msg = result.result.message
+            stop_reason = getattr(msg, "stop_reason", None)
             text = next(
-                (b.text for b in result.result.message.content if b.type == "text"),
+                (b.text for b in msg.content if b.type == "text"),
                 "",
             )
             parsed = _parsed_with_raw(_normalize_scalar_score(parse_judge_json(text)), text)
-            scores[cid] = parsed if parsed is not None else error_dict_factory("parse_error")
+            score = parsed if parsed is not None else error_dict_factory("parse_error")
+            # #2021 (rule 26): parsed verdicts AND parse-failure dicts carry the
+            # response's stop_reason; no-response rows below carry no key.
+            scores[cid] = _with_stop_reason(score, stop_reason)
         elif rtype == "errored":
             etype = getattr(
                 getattr(getattr(result.result, "error", None), "error", None), "type", None
@@ -715,9 +748,14 @@ async def _judge_items_sync(
                     judge_model, judge_system_prompt, user_msg, max_tokens, ttl="5m"
                 )
                 result = await client.messages.create(**params)
+                stop_reason = getattr(result, "stop_reason", None)
                 text = next((b.text for b in result.content if b.type == "text"), "")
                 parsed = _parsed_with_raw(_normalize_scalar_score(parse_judge_json(text)), text)
                 score = parsed if parsed is not None else error_dict_factory("parse_error")
+                # #2021 (rule 26): parsed AND parse-failure dicts carry the
+                # response's stop_reason; the exception branch (no response)
+                # stays untouched.
+                score = _with_stop_reason(score, stop_reason)
             except Exception as e:  # per-item capture is the legacy contract
                 base = error_dict_factory(f"error: {e}")
                 # rule 24(i) (#1313): a transport-class exception (429/5xx incl.
@@ -786,11 +824,18 @@ async def _judge_items_sync_multiorg(
         parsed = _parsed_with_raw(_normalize_scalar_score(parse_judge_json(text)), text)
         return parsed if parsed is not None else error_dict_factory("parse_error")
 
+    def _parse_response_meta(text: str, stop_reason: str | None) -> dict:
+        # COMPOSED over _parse_response (never a duplicated body): identical
+        # parse, then the #2021 stop_reason attach — so the two callables can
+        # never drift apart.
+        return _with_stop_reason(_parse_response(text), stop_reason)
+
     raw_results = await api_dispatch.dispatch_calls(
         dispatch_items,
         model=judge_model,
         build_request=_build_request,
         parse_response=_parse_response,
+        parse_response_meta=_parse_response_meta,
         cost_pref="latency",  # judge dispatches care about wall-clock
         force_path="sync",  # router only enters this helper after deciding sync
     )

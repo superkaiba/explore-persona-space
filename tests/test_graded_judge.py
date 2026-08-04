@@ -245,6 +245,10 @@ def test_judge_result_backcompat_defaults():
     assert r.n_transport_lost_draws == 0
     assert r.per_item_transport_losses == {}
     assert r.n_refusal_draws == 0  # #1801: new trailing field defaults to 0
+    # #2021: the truncation/tally fields default to zero/empty too.
+    assert r.n_truncation_dropped_draws == 0
+    assert r.per_item_truncation_drops == {}
+    assert r.stop_reason_tally == {}
 
 
 # ── #1801: REFUSAL sub-tally within content drops (llm-judging.md rules 9/23) ─
@@ -332,3 +336,194 @@ def test_transport_draws_stay_out_of_both_content_counters(tmp_path, monkeypatch
     assert result.n_transport_lost_draws == 1
     assert result.n_dropped_draws == 0
     assert result.n_refusal_draws == 0
+
+
+# ── #2021: truncation-vs-content split + stop_reason tally (rules 23/26) ──────
+
+
+def _parse_error_dict(**extra) -> dict:
+    """The dispatch-path parse-failure error-dict shape (judge_dispatch mint)."""
+    return {"aligned": None, "coherent": None, "reasoning": "parse_error", "error": True, **extra}
+
+
+def _transport_dict(**extra) -> dict:
+    return {
+        "aligned": None,
+        "coherent": None,
+        "reasoning": "error: 529 overloaded",
+        "error": True,
+        "transport": True,
+        **extra,
+    }
+
+
+def test_truncation_drop_counts_as_subset_of_dropped(tmp_path, monkeypatch, caplog):
+    """#2021: a stop_reason="max_tokens" parse-failure draw counts in BOTH
+    ``n_dropped_draws`` AND ``n_truncation_dropped_draws`` (subset semantics —
+    the content-drop total is numerically unchanged vs a pre-#2021 reduce),
+    with the per-item split populated and the warning log naming the
+    truncation clause."""
+    draws = {
+        "arm-a": [
+            {"score": 80, "stop_reason": "end_turn"},
+            _parse_error_dict(stop_reason="max_tokens"),
+        ]
+    }
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    with caplog.at_level("WARNING", logger="explore_persona_space.eval.graded_judge"):
+        result = judge_graded(
+            items=[("arm-a", "q?", "a.")],
+            eval_prompt="Rate {question} / {answer} 0-100.",
+            n_draws=2,
+            cache_dir=tmp_path / "cache",
+            save_raw=tmp_path / "raw.json",
+        )
+
+    assert result.scores == {"arm-a": 80.0}
+    assert result.n_dropped_draws == 1  # the truncated draw — SUBSET, not additive
+    assert result.n_truncation_dropped_draws == 1
+    assert result.per_item_truncation_drops == {"arm-a": 1}
+    assert result.n_refusal_draws == 0
+    assert result.n_transport_lost_draws == 0
+    assert any("truncation-class" in rec.message for rec in caplog.records)
+
+
+def test_legacy_dict_without_stop_reason_classifies_unknown_no_crash(tmp_path, monkeypatch):
+    """#2021 backcompat: a pre-#2021 save_raw (no ``stop_reason`` field
+    anywhere) reduces without KeyError — truncation stays 0, the parse
+    failure stays a plain content drop, and every answered draw tallies as
+    ``"unknown"``."""
+    draws = {"arm-a": [_parse_error_dict(), 70]}  # legacy shapes: no stop_reason
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    result = judge_graded(
+        items=[("arm-a", "q?", "a.")],
+        eval_prompt="Rate {question} / {answer} 0-100.",
+        n_draws=2,
+        cache_dir=tmp_path / "cache",
+        save_raw=tmp_path / "raw.json",
+    )
+
+    assert result.scores == {"arm-a": 70.0}
+    assert result.n_dropped_draws == 1
+    assert result.n_truncation_dropped_draws == 0
+    assert result.per_item_truncation_drops == {}
+    assert result.stop_reason_tally == {"unknown": 2}
+
+
+def test_refusal_takes_precedence_over_truncation(tmp_path, monkeypatch):
+    """#2021 precedence: a REFUSAL verdict that ALSO carries a truncation
+    stop_reason counts as a refusal drop (a produced verdict, rule 9), NEVER
+    a truncation drop — but its stop_reason still tallies."""
+    draws = {"arm-a": [{"score": "REFUSAL", "stop_reason": "max_tokens"}, 90]}
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    result = judge_graded(
+        items=[("arm-a", "q?", "a.")],
+        eval_prompt="Rate {question} / {answer} 0-100.",
+        n_draws=2,
+        cache_dir=tmp_path / "cache",
+        save_raw=tmp_path / "raw.json",
+    )
+
+    assert result.n_dropped_draws == 1
+    assert result.n_refusal_draws == 1
+    assert result.n_truncation_dropped_draws == 0
+    assert result.per_item_truncation_drops == {}
+    assert result.stop_reason_tally == {"max_tokens": 1, "unknown": 1}
+
+
+def test_transport_dict_never_counts_truncation(tmp_path, monkeypatch):
+    """#2021 precedence: transport is checked FIRST — even a pathological
+    both-flagged dict (``transport: True`` + a truncation stop_reason, which
+    no mint site produces) counts transport only, in NO content counter, and
+    is EXCLUDED from the stop_reason tally (the [S1] decision)."""
+    draws = {"arm-a": [_transport_dict(stop_reason="max_tokens"), 85]}
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    result = judge_graded(
+        items=[("arm-a", "q?", "a.")],
+        eval_prompt="Rate {question} / {answer} 0-100.",
+        n_draws=2,
+        cache_dir=tmp_path / "cache",
+        save_raw=tmp_path / "raw.json",
+    )
+
+    assert result.n_transport_lost_draws == 1
+    assert result.n_dropped_draws == 0
+    assert result.n_truncation_dropped_draws == 0
+    # [S1] pin: the transport draw does NOT tally (not even as "unknown" or
+    # "max_tokens") — only the answered kept draw does.
+    assert result.stop_reason_tally == {"unknown": 1}
+
+
+def test_stop_reason_tally_covers_kept_and_dropped_draws(tmp_path, monkeypatch):
+    """#2021 [S1] pin: the tally spans kept draws AND content-dropped draws
+    ("unknown" for absent), and EXCLUDES transport-lost draws — so
+    ``sum(tally.values()) == n_total_draws - n_transport_lost_draws``."""
+    draws = {
+        "arm-a": [
+            {"score": 80, "stop_reason": "end_turn"},  # kept, tallied
+            _parse_error_dict(stop_reason="max_tokens"),  # dropped, tallied
+            _transport_dict(),  # transport, EXCLUDED from the tally
+            70,  # kept legacy bare-scalar draw -> "unknown"
+        ]
+    }
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    result = judge_graded(
+        items=[("arm-a", "q?", "a.")],
+        eval_prompt="Rate {question} / {answer} 0-100.",
+        n_draws=4,
+        cache_dir=tmp_path / "cache",
+        save_raw=tmp_path / "raw.json",
+    )
+
+    assert result.stop_reason_tally == {"end_turn": 1, "max_tokens": 1, "unknown": 1}
+    assert sum(result.stop_reason_tally.values()) == (
+        result.n_total_draws - result.n_transport_lost_draws
+    )
+    assert result.n_truncation_dropped_draws == 1
+    assert result.n_dropped_draws == 1
+
+
+def test_kept_truncated_verdict_stays_scored(tmp_path, monkeypatch):
+    """#2021 [S3] pin: a KEPT (parsed, in-range) verdict carrying
+    ``stop_reason="max_tokens"`` stays a scored draw — drop counters all 0 —
+    while the tally shows the truncation key. This is the only surface that
+    catches kept-but-truncated responses; the rule-26 pilot gate reads it."""
+    draws = {"arm-a": [{"score": 55, "stop_reason": "max_tokens"}]}
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    result = judge_graded(
+        items=[("arm-a", "q?", "a.")],
+        eval_prompt="Rate {question} / {answer} 0-100.",
+        n_draws=1,
+        cache_dir=tmp_path / "cache",
+        save_raw=tmp_path / "raw.json",
+    )
+
+    assert result.scores == {"arm-a": 55.0}
+    assert result.n_dropped_draws == 0
+    assert result.n_truncation_dropped_draws == 0
+    assert result.n_transport_lost_draws == 0
+    assert result.stop_reason_tally == {"max_tokens": 1}

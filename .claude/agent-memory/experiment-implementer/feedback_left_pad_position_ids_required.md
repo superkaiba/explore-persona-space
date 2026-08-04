@@ -31,3 +31,9 @@ forward-pass you make AFTER generate does NOT inherit them. Always pair a
 batched extraction implementation with a CPU smoke that asserts
 `cosine(batched, serial) >= 0.999` on a tiny real-tokenizer slice with
 B>=2 (so left-pad actually fires). Linked: [[eval-rig-per-phase-checkpoint]].
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Left-pad → explicit position_ids required](feedback_left_pad_position_ids_required.md) — batched generate/forward under left-pad needs cumsum position_ids; smoke cosine(batched, serial) ≥ 0.999. #502.

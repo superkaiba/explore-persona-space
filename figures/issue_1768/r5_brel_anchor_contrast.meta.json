@@ -1,0 +1,135 @@
+{
+  "commit": "2d73c835b4",
+  "created": "2026-08-01T02:45:30Z",
+  "figsize": [
+    13.4,
+    9.2
+  ],
+  "text": {
+    "suptitle": "Behavior-relevant never-trained prefixes overshoot the trained-prefix anchor\n(* = 456-token prefix, below the 547.5-912.5 token band)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "sycophancy \u2014 persona-trained",
+        "ylabel": "raw map difference m (median, layer 19)",
+        "annotations": [
+          "11.2",
+          "12.1",
+          "11.1",
+          "18.4",
+          "37.2",
+          "37.4",
+          "51.2",
+          "24.7"
+        ],
+        "yticklabels": [
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40",
+          "45",
+          "50",
+          "55"
+        ]
+      },
+      {
+        "title_left": "impoliteness \u2014 persona-trained",
+        "ylabel": "raw map difference m (median, layer 19)",
+        "annotations": [
+          "19.7",
+          "20.0",
+          "22.6",
+          "22.3",
+          "47.5",
+          "39.0",
+          "48.0",
+          "43.3"
+        ],
+        "yticklabels": [
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40",
+          "45",
+          "50"
+        ]
+      },
+      {
+        "title_left": "casual writing \u2014 persona-trained",
+        "ylabel": "raw map difference m (median, layer 19)",
+        "annotations": [
+          "14.0",
+          "14.7",
+          "13.8",
+          "16.7",
+          "31.5",
+          "36.6",
+          "45.0",
+          "25.7"
+        ],
+        "xticklabels": [
+          "bare prompts",
+          "own trained prefix",
+          "neutral rung 85 tok",
+          "neutral rung 730 tok",
+          "behavior-relevant 1 (580 tok)",
+          "behavior-relevant 2 (456 tok)*",
+          "behavior-relevant 3 (568 tok)",
+          "swapped trained prefix"
+        ],
+        "yticklabels": [
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40",
+          "45",
+          "50"
+        ]
+      },
+      {
+        "title_left": "sycophancy \u2014 conversation-trained",
+        "ylabel": "raw map difference m (median, layer 19)",
+        "annotations": [
+          "3.5",
+          "4.8",
+          "2.7",
+          "4.3",
+          "6.4",
+          "7.5",
+          "8.8",
+          "3.4"
+        ],
+        "xticklabels": [
+          "bare prompts",
+          "own trained prefix",
+          "neutral rung 85 tok",
+          "neutral rung 730 tok",
+          "behavior-relevant 1 (580 tok)",
+          "behavior-relevant 2 (456 tok)*",
+          "behavior-relevant 3 (568 tok)",
+          "swapped trained prefix"
+        ],
+        "yticklabels": [
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10"
+        ]
+      }
+    ]
+  }
+}

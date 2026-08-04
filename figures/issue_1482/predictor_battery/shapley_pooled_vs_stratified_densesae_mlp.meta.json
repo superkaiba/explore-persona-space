@@ -1,0 +1,812 @@
+{
+  "commit": "e3ebc3a79b",
+  "created": "2026-08-03T23:16:34Z",
+  "figsize": [
+    13.0,
+    12.200000000000001
+  ],
+  "points": [
+    {
+      "contribution to $R^2$": 0.0006535273341447498,
+      "y": 0.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.005468371170325752,
+      "y": 1.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.0066406696908710315,
+      "y": 2.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.008987086536847435,
+      "y": 3.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.009250507007600434,
+      "y": 4.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.010095089542801554,
+      "y": 5.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.017926104912632346,
+      "y": 6.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.016104350820684395,
+      "y": 7.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.02377711041666578,
+      "y": 8.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.032972248265635676,
+      "y": 9.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.04403222308908602,
+      "y": 10.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.04225595501741522,
+      "y": 11.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.017283154499726016,
+      "y": 12.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.06316043744121264,
+      "y": 13.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.10215356465387952,
+      "y": 14.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.11990134370583304,
+      "y": 15.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.13696767493673212,
+      "y": 16.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.1629154471067603,
+      "y": 17.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.43146634111020926,
+      "y": 18.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.41988168122369457,
+      "y": 19.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.6596123157202642,
+      "y": 20.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 0.862318736541871,
+      "y": 21.0,
+      "series": "alone (over-counts)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "contribution to $R^2$": 3.685748998349947e-05,
+      "y": 0.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 5.873155983771028e-08,
+      "y": 1.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 3.6289399125699617e-06,
+      "y": 2.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 1.3688823346846846e-05,
+      "y": 3.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 5.052207155986643e-05,
+      "y": 4.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 0.0001305818525612068,
+      "y": 5.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 6.671588557582986e-05,
+      "y": 6.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 0.0001148201029528284,
+      "y": 7.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 1.822863071598846e-08,
+      "y": 8.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 0.00010003591655349808,
+      "y": 9.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 6.717503985265161e-05,
+      "y": 10.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 6.94814542732125e-05,
+      "y": 11.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 0.00010870339889335057,
+      "y": 12.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 0.0005221306113800672,
+      "y": 13.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 1.9746154994004783e-05,
+      "y": 14.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 8.655230639109668e-05,
+      "y": 15.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 0.0003622940264387253,
+      "y": 16.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 0.0002759123124141949,
+      "y": 17.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 0.00033674800398064697,
+      "y": 18.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 0.0028972420724238113,
+      "y": 19.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 0.017764217097365975,
+      "y": 20.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 0.012884584101812258,
+      "y": 21.0,
+      "series": "unique-last (under-counts)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "contribution to $R^2$": 0.0006870022557764151,
+      "y": 0.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.001147919617271906,
+      "y": 1.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.0012847676385120655,
+      "y": 2.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.0021668585190573035,
+      "y": 3.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.002534745242581326,
+      "y": 4.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.002643898618740889,
+      "y": 5.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.0031514817889285156,
+      "y": 6.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.003471902542311628,
+      "y": 7.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.0043889180986308165,
+      "y": 8.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.004908808914232285,
+      "y": 9.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.00737411877878628,
+      "y": 10.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.007800167207296723,
+      "y": 11.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.012918951309744423,
+      "y": 12.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.017834827007207413,
+      "y": 13.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.022888140636831714,
+      "y": 14.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.02379687847563013,
+      "y": 15.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.026584365089323426,
+      "y": 16.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.03780720119943776,
+      "y": 17.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.10385454084977586,
+      "y": 18.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.10982731909890754,
+      "y": 19.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.21754936147723228,
+      "y": 20.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "contribution to $R^2$": 0.2785758931111149,
+      "y": 21.0,
+      "series": "exact Shapley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.00017357548245453482,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": -1.0474338260111334e-18,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.001316806018913243,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.00010071523229319175,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 9.341352279981067e-05,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.0019804719509826005,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": -1.3094723630928902e-18,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.0030046927890591477,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.0008862461002050863,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.0004118670205780942,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.007261855617320852,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.0014310404328119347,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.0025427354929042274,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.0017317581088581945,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.0007597410566435678,
+      "y": 14.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.0013988587836189755,
+      "y": 15.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.001784411619234368,
+      "y": 16.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.0023861026745472997,
+      "y": 17.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.13223902283221675,
+      "y": 18.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.26654182841031065,
+      "y": 19.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.009760811609938101,
+      "y": 20.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.2120783204729916,
+      "y": 21.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.01099353828848826,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.0039857790618974985,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.005484718358094373,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.0016248839080180103,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.0015004664616008441,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.015446353910129872,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.018663538044028625,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.015516386319728136,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.014854146760623063,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.008515615206789775,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.01565866639301427,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.01453122724975176,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.014767598241341237,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.013826521274333158,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.006436415474043901,
+      "y": 14.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.0069224824726279235,
+      "y": 15.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.06877114329000414,
+      "y": 16.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.016981312730442524,
+      "y": 17.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.2677062482235933,
+      "y": 18.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.36117495887118234,
+      "y": 19.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.23245308734487197,
+      "y": 20.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Shapley share: min .. max across activity deciles": 0.30354139480590814,
+      "y": 21.0,
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 110,
+  "text": {
+    "suptitle": "Pooled vs stratified Shapley decomposition",
+    "fig_texts": [
+      "113,262 features; 22 blocks after collapsing collinearity at |rho| >= 0.9  |  REAL TARGET - dense context to SAE feature map, mlp__mean arm (#1482 single-turn corpus, 121,111 scored; covariates same corpus)",
+      "Shapley sits between two endpoints by construction: a block ALONE over-counts (the set sums above the total) and its UNIQUE contribution when added last under-counts (sums below). A wide bracket means the block shares variance with others. Split-half share agreement: half1 rho=+1.000, half2 rho=+1.000. Uncertainty is split-half, not bootstrap."
+    ],
+    "axes": [
+      {
+        "title_left": "POOLED \u2014 the misleading contrast",
+        "xlabel": "contribution to $R^2$",
+        "legend_labels": [
+          "bracket: unique-last .. alone",
+          "alone (over-counts)",
+          "unique-last (under-counts)",
+          "exact Shapley"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "massive_dim_mass",
+          "axis:side_class",
+          "footprint_var",
+          "footprint_skew",
+          "logit_footprint_concentration",
+          "axis:speaker_property",
+          "dense_latent_flag",
+          "axis:content_type",
+          "scaffold_frac",
+          "axis:interpretable",
+          "write_norm",
+          "axis:abstraction",
+          "enc_norm",
+          "side_ratio",
+          "redundancy_max_cos",
+          "footprint_kurt",
+          "proj_var",
+          "enc_dec_cos",
+          "consistency",
+          "mean_act_cond",
+          "activity",
+          "act_var_across_answers"
+        ]
+      },
+      {
+        "title_left": "STRATIFIED \u2014 the range the pooled number averages away",
+        "xlabel": "Shapley share: min .. max across activity deciles",
+        "xticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      }
+    ],
+    "series": [
+      "alone (over-counts)",
+      "unique-last (under-counts)",
+      "exact Shapley",
+      "bracket: unique-last .. alone"
+    ]
+  }
+}
