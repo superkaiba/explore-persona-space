@@ -2,7 +2,8 @@
 title: '6k-row scaffold-and-splice lattice: framing x character x condition context-to-answer
   maps at well-posed n'
 kind: experiment
-tags: []
+tags:
+- trigger-dense
 created_at: '2026-08-03T22:07:42Z'
 has_clean_result: false
 parent_id: 1345
