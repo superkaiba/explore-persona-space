@@ -114,3 +114,4 @@
 - [Figure sidecar can outlive the PNG bytes](feedback_figure_sidecar_can_outlive_png_bytes.md) — correct .meta.json beside a partial render; READ the PNG, re-sha the mirror (#1768)
 - [Fenced dispatcher-block extraction probe](feedback_fenced_dispatcher_block_extraction_probe.md) — sed-extract SMOKE=0 embedded-python legs; replicate the registry preamble; drive both branches (#1336 unit D)
 - [Registered fallback must route production](feedback_registered_fallback_must_route_production.md) — 'auto' resolved to the primary; assert realized routing in the smoke (#1738 r3)
+- [Adoptable tests: repo-root paths + no live HF fetch](feedback_adoptable_tests_no_worktree_paths_no_network.md) — /tmp evidence suites still need adoption shape; Step 9c runs tests/ fleet-wide (#1491)
