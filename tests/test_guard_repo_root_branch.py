@@ -107,13 +107,19 @@ SCRIPT = _REPO_ROOT / "scripts" / "guard_repo_root_branch.sh"
 # REPO-constant text pin test read it; no git STATE is read through it anymore.
 REPO = Path("/home/thomasjiralerspong/explore-persona-space")
 
-# Deny-event sidecar (#1528): the guard's default sidecar path lives under the
-# CANONICAL checkout's .claude/cache/ (the guard hardcodes REPO). The harness
-# pins EPM_GUARD_DENY_SIDECAR to /dev/null so the suite's hundreds of deny
-# cases never create/append the production sidecar; the snapshot below backs
-# the end-of-module production-protection test.
+# Deny-event sidecar (#1528, #1990): the guard's default sidecar path lives
+# under the CANONICAL checkout's .claude/cache/ (the guard hardcodes REPO).
+# The harness pins EPM_GUARD_DENY_SIDECAR to /dev/null so the suite's hundreds
+# of deny cases never create/append the production sidecar; the ROW-IDENTITY
+# snapshot below backs the end-of-module production-protection test.
+#
+# Row-identity (not byte-size) because a foreign concurrent session may
+# LEGITIMATELY append a REAL deny row during our gate window (#1876 measured
+# a ~36-min window with two such rows); a byte-size predicate false-FAILs
+# there. The membership predicate (every snapshot row still present at
+# end-of-module) tolerates foreign appends while still proving no OBSERVED
+# row was rewritten/dropped.
 _PROD_SIDECAR = REPO / ".claude" / "cache" / "guard-deny-events.jsonl"
-_PROD_SIDECAR_SIZE_AT_IMPORT = _PROD_SIDECAR.stat().st_size if _PROD_SIDECAR.exists() else None
 
 
 def _read_sidecar_rows(path: Path) -> list[bytes]:
@@ -4073,17 +4079,45 @@ def test_1861_sticky_arm_b_local_main_merge_still_blocked(monkeypatch):
 
 
 def test_zz_production_sidecar_untouched_by_suite():
-    """The suite must never create/append the PRODUCTION deny sidecar (#1528).
+    """The suite must never rewrite/drop rows from the PRODUCTION deny sidecar (#1528, #1990).
 
     The harness pins EPM_GUARD_DENY_SIDECAR (default ``/dev/null``) on every
     guard invocation; this end-of-module check compares the production
-    sidecar's size/absence against the module-import snapshot. Runs LAST in
-    file order by position. Known caveat: a concurrent REAL deny in another
-    session appending mid-run would false-fail this — denies are rare
-    exception events, accepted.
+    sidecar's ROW SET against the module-import snapshot. Runs LAST in file
+    order by position.
+
+    #1990: raw byte-size equality false-FAILed under fleet concurrency
+    (#1876: 36-min gate window, two foreign concurrent production deny rows
+    appended). Row-identity snapshot: any row NEW to the sidecar since
+    module import is treated as foreign concurrent activity and tolerated;
+    every row PRESENT at import must still be present at end-of-module (an
+    append-only sidecar cannot legitimately rewrite / drop / reorder).
+
+    Scope reduction from the byte-size shape: this predicate proves row
+    OBSERVABILITY, not suite-attribution of new rows. Direct
+    suite-attribution catch lives WHOLLY in the harness's
+    EPM_GUARD_DENY_SIDECAR=/dev/null pin — a future pin-leak would surface
+    as a real production-sidecar row appearing without a corresponding
+    foreign session; the positive-control test below catches the SHAPE (a
+    suite-attributable append IS observable via ``len(new_rows) == 1``),
+    not the attribution.
+
+    Membership-not-count predicate — negligible collision risk for
+    timestamped JSONL denial records (each row's ``ts`` field makes
+    duplicate rows vanishingly unlikely in practice).
+
+    Residual false-fail: external rotation/truncation of the production
+    sidecar mid-run (a row present at import disappears at end-of-module)
+    FAILs this predicate — arguably desirable signal, though rare on the
+    shared VM.
     """
-    current = _PROD_SIDECAR.stat().st_size if _PROD_SIDECAR.exists() else None
-    assert current == _PROD_SIDECAR_SIZE_AT_IMPORT
+    current_rows = _read_sidecar_rows(_PROD_SIDECAR)
+    current_set = set(current_rows)
+    for row in _PROD_SIDECAR_ROWS_AT_IMPORT:
+        assert row in current_set, "production sidecar row disappeared mid-run"
+    # New rows are tolerated (foreign concurrent activity is by construction
+    # legal — the harness pins /dev/null on every deliberate guard subprocess
+    # so we cannot have written them).
 
 
 def test_zz_production_sidecar_positive_control_catches_suite_write(tmp_path):
