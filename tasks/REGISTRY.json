@@ -8291,8 +8291,8 @@
     "2071": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2071",
-      "status": "proposed",
+      "path": "tasks/archived/2071",
+      "status": "archived",
       "title": "workflow-fix: no-progress heartbeats mask tick_triage staleness"
     },
     "208": {
