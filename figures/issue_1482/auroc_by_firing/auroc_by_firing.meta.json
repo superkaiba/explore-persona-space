@@ -399,6 +399,6 @@
     "Binarising R^2 at the within-bin median discards magnitude and costs power; it is done to put binary and continuous predictors on one scale.",
     "Matched on per-token firing only. rho(per-answer, per-token) = 0.96 so the rest of the activity family is largely but not exactly matched; mean_act_cond is only 0.40 with activity and is NOT well matched by this design.",
     "No confidence intervals. Cells near 0.5 are not distinguishable from chance here.",
-    "v2 (proj_var-corrected) covariate universe."
+    "CORRECTION: this figure uses the V1 covariate universe (n=113,260), NOT v2. issue1482_shapley_blocks.load_inputs reads COV_NPZ hardcoded to the original fullwidth_covariates.npz. The commit message for this figure wrongly states v2. Checked and immaterial: raw pooled AUROC differs by at most 0.033 (mean_run_length) between universes, most under 0.02, with no ranking changes."
   ]
 }
