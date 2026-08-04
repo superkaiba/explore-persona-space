@@ -2,9 +2,9 @@
   "act_var_across_tokens_definition": "Within-answer variance of the activation VALUE across ALL kept answer tokens (zeros included \u2014 the variance of the activation TRACE, not a conditional-on-firing variance), averaged over the answers in which the feature fires at least once (`act_var_n_answers`).",
   "artifact": "run_length_perfeature.npz",
   "coverage": {
-    "features_all_nan_mean_run_length": 27855,
-    "features_with_any_answer_firing": 103217,
-    "features_with_any_firing": 109211,
+    "features_all_nan_mean_run_length": 2566,
+    "features_with_any_answer_firing": 128506,
+    "features_with_any_firing": 130160,
     "note": "A feature that never fires in this subsample is NaN, never 0 \u2014 the consumer nan-inits and scatters by feat_ids, so NaN reads as 'not measured here', which is correct."
   },
   "dict_size": 131072,
@@ -21,63 +21,66 @@
         "n_fit": 120000
       },
       "full_corpus_census_cross_check": "asserted equal to issue1482_side_specificity_fullwidth.CENSUS_EXPECTED",
-      "n_rows": 2000,
-      "note": "FEATURE COUNTS are NOT expected to match: the full-corpus census sees 120,000 rows, this subsample sees 2000. The binding read is occupancy_ratio = sum(cnt)/sum(psi_cnt), which is row-count-invariant.",
+      "n_rows": 120000,
+      "note": "FEATURE COUNTS are NOT expected to match: the full-corpus census sees 120,000 rows, this subsample sees 120000. The binding read is occupancy_ratio = sum(cnt)/sum(psi_cnt), which is row-count-invariant.",
       "occupancy_ratio": {
         "expected_full_corpus": 2.075,
         "flag": "ok",
-        "observed": 2.1537871549739593,
-        "rel_drift": 0.03796971324046224
+        "observed": 2.0737159708832515,
+        "rel_drift": -0.0006188092128909063
       },
       "subsample_census": {
-        "answer_active": 103217,
-        "answer_only": 11855,
-        "context_active": 97356,
-        "context_only": 5994,
-        "live": 109211
+        "answer_active": 128506,
+        "answer_only": 2170,
+        "context_active": 127990,
+        "context_only": 1654,
+        "live": 130160
       }
     },
     "gate2_span_length_ratio": {
-      "answer_mean_tokens": 433.889,
-      "context_mean_tokens": 178.574,
+      "answer_mean_tokens": 432.93963333333335,
+      "context_mean_tokens": 189.006375,
       "full_corpus_reference": {
         "answer_mean": 432.9,
         "context_mean": 189.0
       },
       "kept_pool": {
-        "answer_mean_tokens": 433.889,
-        "context_mean_tokens": 170.574,
+        "answer_mean_tokens": 432.93963333333335,
+        "context_mean_tokens": 181.00635,
         "note": "post-mask (BOS_OFFSET=8 strip + >10x-median-norm outlier drop). The BOS strip removes 8 CONTEXT tokens per row, so the kept-pool ratio sits ABOVE the raw span ratio by construction \u2014 this is the expected source of gate-3 drift, not a sampling defect."
       },
       "span_ratio": {
         "expected_full_corpus": 2.291,
         "flag": "ok",
-        "observed": 2.4297434116948713,
-        "rel_drift": 0.0605601971605724
+        "observed": 2.2906086280599443,
+        "rel_drift": -0.00017083017898545337
       }
     },
     "gate3_token_level_null": {
       "definition": "sum(ans_tokens_active) / (sum(ans_tokens_active) + sum(ctx_tokens_active))",
-      "kept_pool_span_prediction": 0.7178090304948359,
-      "note": "The span-length prediction for THIS subsample is the kept-pool share 0.7178 (the BOS strip removes 8 context tokens/row); the 0.696 reference is the RAW full-corpus span share. Compare the observed null against BOTH.",
+      "kept_pool_span_prediction": 0.7051754471667825,
+      "note": "The span-length prediction for THIS subsample is the kept-pool share 0.7052 (the BOS strip removes 8 context tokens/row); the 0.696 reference is the RAW full-corpus span share. Compare the observed null against BOTH.",
       "token_level_null": {
         "expected_full_corpus": 0.696,
         "flag": "ok",
-        "observed": 0.7309006360907319,
-        "rel_drift": 0.050144592084384924
+        "observed": 0.7171590718060645,
+        "rel_drift": 0.030400965238598532
       }
     }
   },
-  "git_commit": "8636046e837cc70e977f1a803673a87c45d3da91",
+  "git_commit": "15632de618",
   "join_key": "feat_ids",
   "model": "Qwen/Qwen2.5-7B-Instruct",
   "perf": {
-    "capture_wall_s": 76.16216588020325,
-    "rows": 2000,
-    "s_per_row": 0.038081082940101624,
-    "tokens_per_row": 612.463,
-    "tokens_per_s": 16083.129803933185,
-    "tokens_total": 1224926
+    "capture_wall_s": 4265.761791467667,
+    "resumed_rows": 0,
+    "rows": 120000,
+    "rows_this_leg": 120000,
+    "s_per_row": 0.03554801492889722,
+    "tokens_per_row": 621.9460083333333,
+    "tokens_per_s": 17495.942025942753,
+    "tokens_this_leg": 74633521,
+    "tokens_total": 74633521
   },
   "produced_by": "scripts/issue1482_run_length.py",
   "row_occupancy_vs_token_weighted": "The banked `side_ratio` is ROW OCCUPANCY: a feature active anywhere in a span contributes 1, whether it fires on 1 token or 400. `ans_tokens_active` / `ctx_tokens_active` here are TOKEN COUNTS, so `side_ratio_token` is a genuinely different measurement \u2014 not a refinement of `side_ratio`. `row_occupancy_ans` / `row_occupancy_ctx` are ALSO emitted so the two conventions can be compared on the same rows.",
@@ -92,21 +95,19 @@
   },
   "sample": {
     "chunk_stage": {
-      "n_chunks_enumerated": 1920,
-      "n_chunks_hit": 1236,
-      "note": "every chunk is streamed with delete-after; only drawn rows are kept"
+      "note": "served from row cache rows_2307225bde30c553.jsonl (fetch skipped)"
     },
     "fit_pool_size": 120000,
     "lmsys_frac_pool": 0.5491583333333333,
-    "n_rows_drawn": 2000,
-    "n_rows_resolved": 2000,
-    "sampled_row_ids_sha256": "7e97918b41c1520e0b84f79375a17b1f52a40281c00d3b782296b8b220296f4f",
+    "n_rows_drawn": 120000,
+    "n_rows_resolved": 120000,
+    "sampled_row_ids_sha256": "88d344675fbbca3a717cd8a0c6aa4fd893241a17098bd3173f6ae00b4d9a0fb8",
     "sampler": "full-pool (provenance-stratified over the entire sae_fit pool)",
     "seed": 1482,
     "stratified_sample": {
-      "n": 2000,
-      "n_lmsys": 1098,
-      "n_wildchat": 902
+      "n": 120000,
+      "n_lmsys": 65899,
+      "n_wildchat": 54101
     }
   },
   "scaffold_frac_disambiguation": "`template_token_frac` is BEHAVIOURAL (which tokens the feature fires on). The banked `scaffold_frac` is GEOMETRIC (decoder-vector mass in the prefix-covariance top-48 eigen-subspace, #1773 L475-486). They are twins, not duplicates \u2014 do not conflate them.",
@@ -116,7 +117,7 @@
     151644,
     151645
   ],
-  "timestamp_utc": "2026-08-03T19:26:10Z",
+  "timestamp_utc": "2026-08-04T00:22:06Z",
   "token_pool": "issue1482_error_analysis._row_features reference semantics: first BOS_OFFSET=8 positions dropped + >10.0x-median-norm token rows dropped, per row. Runs/adjacency are keyed on ORIGINAL token positions, so a masked-out token BREAKS a run rather than splicing two runs together.",
-  "wall_s_total": 750.7878000736237
+  "wall_s_total": 4583.989561319351
 }
