@@ -7631,8 +7631,8 @@
     "1986": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1986",
-      "status": "reviewing",
+      "path": "tasks/completed/1986",
+      "status": "completed",
       "title": "workflow-fix: letter-arrow transition token class for figure opaque-code check"
     },
     "1987": {
