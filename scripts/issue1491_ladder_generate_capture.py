@@ -193,11 +193,18 @@ def _download_ladder_split(split_key: str, cache_dir: Path) -> list[dict]:
     from huggingface_hub import hf_hub_download  # type: ignore
 
     fname = SPLIT_FILES[split_key]
-    local = hf_hub_download(
-        repo_id=LADDER_HF_REPO,
-        filename=f"{MANIFEST_HF_PREFIX}/{fname}",
-        repo_type="dataset",
-        cache_dir=str(cache_dir),
+    # Routed through hub.retry_transient (workflow_lint --check-live-hf-retry-routing):
+    # a transient 429/5xx here would otherwise kill every shard of a wave at
+    # startup during a Hub storm; a genuinely-missing manifest still fails
+    # loud (retry_transient re-raises the response-bearing 404 unchanged).
+    local = hub.retry_transient(
+        lambda: hf_hub_download(
+            repo_id=LADDER_HF_REPO,
+            filename=f"{MANIFEST_HF_PREFIX}/{fname}",
+            repo_type="dataset",
+            cache_dir=str(cache_dir),
+        ),
+        what=f"hf_hub_download {MANIFEST_HF_PREFIX}/{fname}",
     )
     rows: list[dict] = []
     with open(local, encoding="utf-8") as fh:
@@ -853,7 +860,15 @@ def run_capture(args) -> int:
             n_cand = min(n_cand, args.shard_size)
         cand = shard_rows[:n_cand]
         cand_prompts = [r["prompt"] for r in cand]
-        cand_cis = [int(r.get("ladder_local_id", r.get("i", i))) for i, r in enumerate(cand)]
+        # Last-resort ci fallback must use the GLOBAL row index, matching the
+        # main chunk loop's `start + s + i`. The probe takes shard_rows[:n_cand],
+        # i.e. s == 0, so the global index is `start + i`. This was a bare local
+        # `i`: inert while every manifest row carries ladder_local_id, but on a
+        # manifest missing it with shard_index > 0 the probe cis would silently
+        # diverge from the main loop's, mispairing the parity comparison.
+        cand_cis = [
+            int(r.get("ladder_local_id", r.get("i", start + i))) for i, r in enumerate(cand)
+        ]
         kept_probe_prompts, kept_probe_cis, probe_skipped = _filter_overlength_prompts(
             cand_prompts,
             cand_cis,
