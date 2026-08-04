@@ -145,7 +145,58 @@ them):
 
 Claude Fable 5 said this:
 
-<!-- FABLE_SIDE_READ -->
+> **Setup.** Unprimed: told only that two groups of 100 descriptions were drawn
+> from one pool by an unknown criterion. **Verdict: correct** — it called B the
+> context/prompt-side group, and B is `context_only`. ~75–80% confidence on the
+> direction, ~45% on the specific operationalization. Full verbatim report:
+> [`eval_results/issue_1482/side_specific/fable_read_side.md`](https://github.com/superkaiba/explore-persona-space/blob/main/eval_results/issue_1482/side_specific/fable_read_side.md)
+
+**Its sharpest discriminators**, all hand-tallied:
+
+| discriminator | A (`answer_only`) | B (`context_only`) |
+|---|---|---|
+| explicit prompt / AI-directive / user-message apparatus | **0** | **14** |
+| adversarial or jailbreak prompt templates | **0** | **4** |
+| digit / number-subject features | ~1.5 | **12** |
+| markdown / ASCII layout structure | **6** | **0** |
+| URL-related | 2 | 8 |
+| quotes a literal token | 38 | 54 |
+| code context · legal/license | 32 · 13 | 26 · 13 — **shared, non-discriminating** |
+
+Its reasoning for the direction is finer-grained than the counts: the
+*conversational* items in A are **response-located** (*"'your' … when responding
+to or acknowledging someone's question"*), while B's are **user-located**
+(*"first-person pronouns … in user messages where the speaker refers to
+themselves as wanting or needing to do something"*). And the oddball items split
+the same way — B's are user-**pasted** artifacts (Java stack traces, Google
+`&ved=` URL params, CDN hex hashes, embed code, a postal address, medical
+vital-signs, corrupted Unicode), A's are assistant-**output** artifacts (markdown
+lists, ASCII tables, newline structure, rhyming verse).
+
+**Two things it flagged that limit the claim:**
+
+- **It detected the evidence-side confound and could only partly exclude it.**
+  Phrasing conventions and lengths are indistinguishable across the two sets
+  (mean 25.3 vs 24.9 words, identical min/max), which argues against two separate
+  labelling setups. And ~85 of B's 100 items describe non-chat material, which a
+  purely chat-corpus example pool would not produce. But it explicitly could not
+  rule out a milder version — B's top-activating windows landing
+  disproportionately in the chat-formatted slice because of *how examples were
+  selected* rather than what the units encode.
+- **Most of each group is unexplained.** License/legal boilerplate splits ~evenly
+  (9 vs 12) and code context is near-identical, so "~60–70% of each group is not
+  explained by my criterion at the level of the description text; the
+  discriminating signal lives in a ~15–25 item minority per side."
+
+> **Known partial unblinding, disclosed.** The packet header interpolated the
+> packet-set name, so both files opened `# side — group A/B`. The reader used
+> exactly that to eliminate a top-vs-random design: *"the criterion itself is
+> named 'side' … implying two sides of one axis."* It did **not** reveal which
+> side was which, or the direction — those it derived from content. The generator
+> now emits a neutral `# Group A` header, but this read predates the fix and its
+> verdict should be read with the leak in mind. The same leak was present in the
+> best/worst-features packets above (`# extremes — group A`), where the reader did
+> not cite it.
 
 > **Evidence-side caveat — load-bearing for reading the above.** The two
 > description sets are **not same-instrument**. Answer-only descriptions come from
