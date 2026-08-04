@@ -1,0 +1,263 @@
+{
+  "n_rejects_scanned": 13003,
+  "by_reject_reason": {
+    "judge_pass_but_below_floor": 0,
+    "judge_fail": 11631,
+    "judge_malformed": 1372,
+    "transport_loss": 0,
+    "other": 0
+  },
+  "n_recoverable_at_min_turns_1": 0,
+  "n_recoverable_after_rejudge": 0,
+  "n_still_unusable": 13003,
+  "recovery_fraction_total": 0.0,
+  "per_variant": {
+    "char_dana_op": {
+      "n": 1524,
+      "by_reject_reason": {
+        "judge_pass_but_below_floor": 0,
+        "judge_fail": 1508,
+        "judge_malformed": 16,
+        "transport_loss": 0,
+        "other": 0
+      },
+      "recoverable_at_min_turns_1": 0,
+      "recoverable_after_rejudge": 0
+    },
+    "char_dana_op_base": {
+      "n": 913,
+      "by_reject_reason": {
+        "judge_pass_but_below_floor": 0,
+        "judge_fail": 891,
+        "judge_malformed": 22,
+        "transport_loss": 0,
+        "other": 0
+      },
+      "recoverable_at_min_turns_1": 0,
+      "recoverable_after_rejudge": 0
+    },
+    "char_helios_op": {
+      "n": 2425,
+      "by_reject_reason": {
+        "judge_pass_but_below_floor": 0,
+        "judge_fail": 2158,
+        "judge_malformed": 267,
+        "transport_loss": 0,
+        "other": 0
+      },
+      "recoverable_at_min_turns_1": 0,
+      "recoverable_after_rejudge": 0
+    },
+    "char_helios_op_base": {
+      "n": 2407,
+      "by_reject_reason": {
+        "judge_pass_but_below_floor": 0,
+        "judge_fail": 2128,
+        "judge_malformed": 279,
+        "transport_loss": 0,
+        "other": 0
+      },
+      "recoverable_at_min_turns_1": 0,
+      "recoverable_after_rejudge": 0
+    },
+    "char_vex_op": {
+      "n": 1378,
+      "by_reject_reason": {
+        "judge_pass_but_below_floor": 0,
+        "judge_fail": 1059,
+        "judge_malformed": 319,
+        "transport_loss": 0,
+        "other": 0
+      },
+      "recoverable_at_min_turns_1": 0,
+      "recoverable_after_rejudge": 0
+    },
+    "char_vex_op_base": {
+      "n": 1447,
+      "by_reject_reason": {
+        "judge_pass_but_below_floor": 0,
+        "judge_fail": 1088,
+        "judge_malformed": 359,
+        "transport_loss": 0,
+        "other": 0
+      },
+      "recoverable_at_min_turns_1": 0,
+      "recoverable_after_rejudge": 0
+    },
+    "char_wren_op": {
+      "n": 1319,
+      "by_reject_reason": {
+        "judge_pass_but_below_floor": 0,
+        "judge_fail": 1268,
+        "judge_malformed": 51,
+        "transport_loss": 0,
+        "other": 0
+      },
+      "recoverable_at_min_turns_1": 0,
+      "recoverable_after_rejudge": 0
+    },
+    "char_wren_op_base": {
+      "n": 1590,
+      "by_reject_reason": {
+        "judge_pass_but_below_floor": 0,
+        "judge_fail": 1531,
+        "judge_malformed": 59,
+        "transport_loss": 0,
+        "other": 0
+      },
+      "recoverable_at_min_turns_1": 0,
+      "recoverable_after_rejudge": 0
+    }
+  },
+  "pilot_gate": {
+    "passed": false,
+    "verdict": "FAIL",
+    "failures": [
+      "arm char_dana_op: parse-fail 100.0% >= 2% (rule 26(b); REFUSAL excluded) \u2014 inspect the raw responses, or waive via waive_parse_fail_arms with a recorded explanation",
+      "arm char_dana_op_base: parse-fail 100.0% >= 2% (rule 26(b); REFUSAL excluded) \u2014 inspect the raw responses, or waive via waive_parse_fail_arms with a recorded explanation",
+      "arm char_helios_op: parse-fail 100.0% >= 2% (rule 26(b); REFUSAL excluded) \u2014 inspect the raw responses, or waive via waive_parse_fail_arms with a recorded explanation",
+      "arm char_helios_op_base: parse-fail 100.0% >= 2% (rule 26(b); REFUSAL excluded) \u2014 inspect the raw responses, or waive via waive_parse_fail_arms with a recorded explanation",
+      "arm char_vex_op: parse-fail 100.0% >= 2% (rule 26(b); REFUSAL excluded) \u2014 inspect the raw responses, or waive via waive_parse_fail_arms with a recorded explanation",
+      "arm char_vex_op_base: parse-fail 100.0% >= 2% (rule 26(b); REFUSAL excluded) \u2014 inspect the raw responses, or waive via waive_parse_fail_arms with a recorded explanation",
+      "arm char_wren_op: parse-fail 100.0% >= 2% (rule 26(b); REFUSAL excluded) \u2014 inspect the raw responses, or waive via waive_parse_fail_arms with a recorded explanation",
+      "arm char_wren_op_base: parse-fail 83.3% >= 2% (rule 26(b); REFUSAL excluded) \u2014 inspect the raw responses, or waive via waive_parse_fail_arms with a recorded explanation"
+    ],
+    "warnings": [],
+    "arms": {
+      "char_dana_op": {
+        "n_items": 12,
+        "n_draws": 24,
+        "n_scored": 0,
+        "n_content_dropped": 24,
+        "n_refusal": 0,
+        "n_truncation": 0,
+        "n_transport_lost": 0,
+        "n_unknown_stop_reason_drops": 0,
+        "parse_fail_rate": 1.0,
+        "stop_reason_tally": {
+          "end_turn": 24
+        },
+        "waived": false
+      },
+      "char_dana_op_base": {
+        "n_items": 12,
+        "n_draws": 24,
+        "n_scored": 0,
+        "n_content_dropped": 24,
+        "n_refusal": 0,
+        "n_truncation": 0,
+        "n_transport_lost": 0,
+        "n_unknown_stop_reason_drops": 0,
+        "parse_fail_rate": 1.0,
+        "stop_reason_tally": {
+          "end_turn": 24
+        },
+        "waived": false
+      },
+      "char_helios_op": {
+        "n_items": 12,
+        "n_draws": 24,
+        "n_scored": 0,
+        "n_content_dropped": 24,
+        "n_refusal": 0,
+        "n_truncation": 0,
+        "n_transport_lost": 0,
+        "n_unknown_stop_reason_drops": 0,
+        "parse_fail_rate": 1.0,
+        "stop_reason_tally": {
+          "end_turn": 24
+        },
+        "waived": false
+      },
+      "char_helios_op_base": {
+        "n_items": 12,
+        "n_draws": 24,
+        "n_scored": 0,
+        "n_content_dropped": 24,
+        "n_refusal": 0,
+        "n_truncation": 0,
+        "n_transport_lost": 0,
+        "n_unknown_stop_reason_drops": 0,
+        "parse_fail_rate": 1.0,
+        "stop_reason_tally": {
+          "end_turn": 24
+        },
+        "waived": false
+      },
+      "char_vex_op": {
+        "n_items": 12,
+        "n_draws": 24,
+        "n_scored": 0,
+        "n_content_dropped": 24,
+        "n_refusal": 0,
+        "n_truncation": 0,
+        "n_transport_lost": 0,
+        "n_unknown_stop_reason_drops": 0,
+        "parse_fail_rate": 1.0,
+        "stop_reason_tally": {
+          "end_turn": 24
+        },
+        "waived": false
+      },
+      "char_vex_op_base": {
+        "n_items": 12,
+        "n_draws": 24,
+        "n_scored": 0,
+        "n_content_dropped": 24,
+        "n_refusal": 0,
+        "n_truncation": 0,
+        "n_transport_lost": 0,
+        "n_unknown_stop_reason_drops": 0,
+        "parse_fail_rate": 1.0,
+        "stop_reason_tally": {
+          "end_turn": 24
+        },
+        "waived": false
+      },
+      "char_wren_op": {
+        "n_items": 12,
+        "n_draws": 24,
+        "n_scored": 0,
+        "n_content_dropped": 24,
+        "n_refusal": 0,
+        "n_truncation": 0,
+        "n_transport_lost": 0,
+        "n_unknown_stop_reason_drops": 0,
+        "parse_fail_rate": 1.0,
+        "stop_reason_tally": {
+          "end_turn": 24
+        },
+        "waived": false
+      },
+      "char_wren_op_base": {
+        "n_items": 12,
+        "n_draws": 24,
+        "n_scored": 2,
+        "n_content_dropped": 22,
+        "n_refusal": 2,
+        "n_truncation": 0,
+        "n_transport_lost": 0,
+        "n_unknown_stop_reason_drops": 0,
+        "parse_fail_rate": 0.8333333333333334,
+        "stop_reason_tally": {
+          "end_turn": 24
+        },
+        "waived": false
+      }
+    },
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1024,
+    "n_total_draws": 192,
+    "parse_fail_threshold": 0.02,
+    "rubric_hash": "37f7d7c3f9f4bd39"
+  },
+  "matcher_config": {
+    "story_min_turns": 1,
+    "max_tokens": 1024,
+    "pilot_n": 200
+  },
+  "parent_repo": "superkaiba1/explore-persona-space-data",
+  "parent_prefix": "issue1345_framing",
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "utc": "2026-08-04T14:45:03.050443+00:00"
+}
