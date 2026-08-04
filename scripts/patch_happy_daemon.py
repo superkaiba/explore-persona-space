@@ -52,55 +52,16 @@ BACKUP_SUFFIX = ".eps-original"
 # aborts before writing anything.
 
 PATCHES: list[tuple[str, str, str]] = [
-    (
-        "schema body",
-        """body: z.object({
-          directory: z.string(),
-          sessionId: z.string().optional(),
-          agent: z.enum(["claude", "codex", "gemini", "openclaw"]).optional(),
-          environmentVariables: z.record(z.string(), z.string()).optional()
-        }),""",
-        """body: z.object({
-          directory: z.string(),
-          sessionId: z.string().optional(),
-          agent: z.enum(["claude", "codex", "gemini", "openclaw"]).optional(),
-          environmentVariables: z.record(z.string(), z.string()).optional(),
-          claudeArgs: z.array(z.string()).optional()
-        }),""",
-    ),
-    (
-        "HTTP handler destructure",
-        """const { directory, sessionId, agent, environmentVariables } = request.body;
-      logger.debug(`[CONTROL SERVER] Spawn session request: dir=${directory}, sessionId=${sessionId || "new"}, agent=${agent || "default"}`);
-      const result = await spawnSession({ directory, sessionId, agent, environmentVariables });""",
-        """const { directory, sessionId, agent, environmentVariables, claudeArgs } = request.body;
-      logger.debug(`[CONTROL SERVER] Spawn session request: dir=${directory}, sessionId=${sessionId || "new"}, agent=${agent || "default"}, claudeArgs=${JSON.stringify(claudeArgs)}`);
-      const result = await spawnSession({ directory, sessionId, agent, environmentVariables, claudeArgs });""",
-    ),
-    (
-        "tmux fullCommand",
-        """const fullCommand = `node --no-warnings --no-deprecation ${cliPath} ${agent} --happy-starting-mode remote --started-by daemon`;""",
-        """const __epsClaudeArgsSuffix = (options.claudeArgs || []).map((s) => "'" + String(s).replace(/'/g, "'\\\\''") + "'").join(" ");
-          const fullCommand = `node --no-warnings --no-deprecation ${cliPath} ${agent} --happy-starting-mode remote --started-by daemon${__epsClaudeArgsSuffix ? " " + __epsClaudeArgsSuffix : ""}`;""",
-    ),
-    (
-        "non-tmux args array",
-        """const args = [
-            agentCommand,
-            "--happy-starting-mode",
-            "remote",
-            "--started-by",
-            "daemon"
-          ];""",
-        """const args = [
-            agentCommand,
-            "--happy-starting-mode",
-            "remote",
-            "--started-by",
-            "daemon",
-            ...((options.claudeArgs || []))
-          ];""",
-    ),
+    # NOTE (#2054, 2026-08-04): the four claudeArgs-forwarding patches
+    # (schema body / HTTP handler destructure / tmux fullCommand / non-tmux
+    # args array) were REMOVED here. happy 1.2.0 implements model + effort
+    # selection natively -- its spawn schema carries `modelMode` and
+    # `effortLevel` as free-form strings and pushes them onto the child argv
+    # as `--model` / `--effort`. spawn_session.py now sends those fields
+    # instead of the patched `claudeArgs` channel, so the local patch set
+    # shrinks to the two behaviours upstream still does not provide.
+    # `--betas` had no native equivalent and no live caller (default None);
+    # re-add a ported claudeArgs patch here if it is ever needed.
     (
         "nextMessage initial-prompt seed",
         """nextMessage: async () => {
