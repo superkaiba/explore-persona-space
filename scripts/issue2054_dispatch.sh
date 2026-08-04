@@ -16,9 +16,11 @@
 #   phase_c  — on-policy continuation (Qwen2.5-7B x 2, lora-7b intent, 15 GPU-h)
 #   phase_d  — v4-new cell (c): STORY-authored answer, CHAT presentation (VM CPU, 0 GPU-h)
 #   capture  — teacher-forced activation capture at layer 19 (eval intent x 2 models, 100 GPU-h)
+#   fits     — per-cell ambient-basis ridge + identity+bias baseline + kNN + shuffled-answer null
+#              + reduced-k1024 diagnostic + conv-within-intersection bootstrap CI + kill gates 4/5
+#              (VM CPU or cpu-mid; 0 GPU-h)
 #
 # Not yet wired (exit 3):
-#   fits     — ambient-basis fits + baselines + kNN + null battery (VM CPU or cpu-mid/bigmem)
 #   ladder   — 9-rung transfer ladder (VM CPU, batched)
 #
 # Pass-through: every arg after <phase> is appended verbatim to the entrypoint's argv,
@@ -36,8 +38,8 @@ PARENT_REPO="superkaiba1/explore-persona-space-data"
 PARENT_PREFIX="issue1345_framing"
 AUDIT_OUT_DIR="eval_results/issue_2054/audits"
 
-WIRED_PHASES=(audit_i audit_ii phase_a phase_b phase_c phase_d capture)
-UNWIRED_PHASES=(fits ladder)
+WIRED_PHASES=(audit_i audit_ii phase_a phase_b phase_c phase_d capture fits)
+UNWIRED_PHASES=(ladder)
 
 # Print the leading comment block (everything after the shebang, up to the first
 # non-comment line) as the usage text, so help can never drift from the header.
@@ -130,6 +132,25 @@ build_cmd() {
         --layer 19
       )
       ;;
+    fits)
+      # Unit D: per-cell ambient-basis ridge fit at layer 19 (K=5 shared
+      # conversation-grouped folds via shared_fold_map.json from Unit A).
+      # BOTH mapping arms — context AND prefix — per the CLAUDE.md standing
+      # rule. Reports identity+learned-bias baseline + kNN retrieval per fitted
+      # map (CLAUDE.md standing rule), a shuffled-answer matched-capacity null,
+      # the reduced-k1024 diagnostic, conv-within-intersection bootstrap CI,
+      # and kill-gate outcomes 4/5 (plan §7).
+      # --dry-run / --pilot exercise the pipeline on a tiny slice without HF.
+      CMD=(
+        uv run python scripts/issue2054_fits.py
+        --activations-dir data/issue_2054/activations/
+        --fold-map eval_results/issue_2054/shared_fold_map.json
+        --output-dir data/issue_2054/fits/
+        --seed 137
+        --layer 19
+        --n-null-draws 200
+      )
+      ;;
     *)
       return 1
       ;;
@@ -151,7 +172,7 @@ print_plan_for() {
     printf ' %q' "${CMD[@]}"
     printf '\n'
   elif is_unwired_phase "$phase"; then
-    printf '%s: NOT WIRED (Unit B/C follow-up round) — exits 3\n' "$phase"
+    printf '%s: NOT WIRED (Unit E — 9-rung transfer ladder) — exits 3\n' "$phase"
   else
     echo "unknown phase: $phase" >&2
     return 2
@@ -195,7 +216,7 @@ main() {
   fi
 
   if is_unwired_phase "$phase"; then
-    echo "phase=$phase not yet wired (Unit B/C follow-up round)" >&2
+    echo "phase=$phase not yet wired (Unit E — 9-rung transfer ladder)" >&2
     exit 3
   fi
 
