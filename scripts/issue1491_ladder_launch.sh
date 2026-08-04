@@ -1,0 +1,213 @@
+#!/usr/bin/env bash
+# Task #1491: ladder generate+capture — MULTI-GPU fan-out launcher (POD-side / GCE-side).
+#
+# For ONE (scale, split, capture-mode) triple, fans G shards across G local GPUs
+# (CUDA_VISIBLE_DEVICES-pinned, per the CVD-clobber gotcha) with GLOBAL indices
+# = --shard-offset + local_gpu, detached (setsid nohup < /dev/null), so shards
+# outlive the SSH session. The orchestrator polls the pod-side sentinel /
+# per-phase log breadcrumbs; markers post from the VM side.
+#
+# Ladder-specific vs the parent (#779) launcher:
+#   * --scale {0.5B, 1.5B, 3B, 7B, 14B, 32B}: resolves --model + --layers +
+#     --hf-prefix; plan §4.2 depth-fraction-mapped layers per scale.
+#   * --split <name> | --all-splits: one of {train_25k, val_400, test_1000,
+#     wc_test_1k, tierB_3600, ceiling_draw_43, ceiling_draw_44}, or the ordered
+#     sweep default (train_25k, then val/test, then wc_test, then ceiling draws).
+#   * --capture-mode coresident (default; ≤7B) | phase_split_gen | phase_split_capture.
+#     For 14B/32B the launch script chains phase_split_gen then phase_split_capture.
+#   * ENV KNOBS exported explicitly (plan §11 + parent driver commit
+#     4cb9d6ea8d): EPM_VLLM_ENFORCE_EAGER=1, EPM_VLLM_DISABLE_PREFIX_CACHING=1.
+#     Never assume defaults — the ENV-gated knobs are OFF unless exported.
+#   * HF Hub accelerators: HF_HUB_ENABLE_HF_TRANSFER=1 + HF_XET_HIGH_PERFORMANCE=1
+#     are re-asserted here so the GCE lane (which has no bootstrap_pod.sh) also
+#     inherits the fast upload path (upload-policy §HF-uploads-accelerated-by-default).
+#
+# Example — pod 0 of 1 (8 GPUs) doing all splits for the 0.5B rung:
+#   bash scripts/issue1491_ladder_launch.sh --scale 0.5B --all-splits \
+#        --num-shards 8 --shard-offset 0
+#
+# Example — 32B rung across 2× 8-GPU pods (16 shards total), gen phase:
+#   pod A: bash scripts/issue1491_ladder_launch.sh --scale 32B --all-splits \
+#            --capture-mode phase_split_gen --num-shards 16 --shard-offset 0
+#   pod B: (same, --shard-offset 8)
+#
+# Pod-side: NO VM thread-cap prefix (dedicated GPUs keep full width).
+
+set -euo pipefail
+
+REPO_ROOT="${REPO_ROOT:-${WORKLOAD_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}}"
+cd "$REPO_ROOT"
+
+# Conditional .env source (GCE lane has no .env; the driver also load_dotenv()s).
+if [ -f ./.env ]; then set -a; . ./.env; set +a; fi
+
+# ---- ENV knobs (plan §11 + parent driver commit 4cb9d6ea8d) ----------------
+# H100 long-prompt hang / IMA mitigation, ENV-gated in the parent driver.
+export EPM_VLLM_ENFORCE_EAGER="${EPM_VLLM_ENFORCE_EAGER:-1}"
+export EPM_VLLM_DISABLE_PREFIX_CACHING="${EPM_VLLM_DISABLE_PREFIX_CACHING:-1}"
+
+# ---- HF Hub upload accelerators (upload-policy default-ON) -----------------
+# Re-assert in this shell — the GCE lane has no bootstrap_pod.sh to set them
+# and the huggingface_hub constants freeze HF_HUB_ENABLE_HF_TRANSFER at
+# import time. RunPod pods already get these from bootstrap_pod.sh; setting
+# them again is idempotent.
+export HF_XET_HIGH_PERFORMANCE="${HF_XET_HIGH_PERFORMANCE:-1}"
+export HF_HUB_ENABLE_HF_TRANSFER="${HF_HUB_ENABLE_HF_TRANSFER:-1}"
+
+# WandB project pin for --workload-cmd launches (plan-consistency; irrelevant
+# in this driver — no training — but keeps run-visibility uniform in case a
+# nested tool logs).
+export WANDB_PROJECT="${WANDB_PROJECT:-issue1491}"
+
+DRIVER="scripts/issue1491_ladder_generate_capture.py"
+LOG_DIR="${EPM_LADDER_LOG_DIR:-/workspace/logs}"
+[ -d "$LOG_DIR" ] || LOG_DIR="$REPO_ROOT/logs"
+mkdir -p "$LOG_DIR"
+
+# ---- CLI parsing -----------------------------------------------------------
+
+SCALE=""
+SPLIT=""
+ALL_SPLITS=0
+CAPTURE_MODE="coresident"
+CAPTURE_BATCH_SIZE=8
+NUM_SHARDS=8
+SHARD_OFFSET=0
+GPUS_PER_POD=""
+SHARD_SIZE="${EPM_LADDER_SHARD_SIZE:-500}"
+FIRST_CHUNK_SELF_GATE=0
+DRY_RUN=0
+EXTRA_ARGS=()
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --scale) SCALE="$2"; shift 2 ;;
+    --split) SPLIT="$2"; shift 2 ;;
+    --all-splits) ALL_SPLITS=1; shift ;;
+    --capture-mode) CAPTURE_MODE="$2"; shift 2 ;;
+    --capture-batch-size) CAPTURE_BATCH_SIZE="$2"; shift 2 ;;
+    --num-shards) NUM_SHARDS="$2"; shift 2 ;;
+    --shard-offset) SHARD_OFFSET="$2"; shift 2 ;;
+    --gpus-per-pod) GPUS_PER_POD="$2"; shift 2 ;;
+    --shard-size) SHARD_SIZE="$2"; shift 2 ;;
+    --first-chunk-self-gate) FIRST_CHUNK_SELF_GATE=1; shift ;;
+    --dry-run) DRY_RUN=1; shift ;;
+    *) EXTRA_ARGS+=("$1"); shift ;;
+  esac
+done
+
+if [ -z "$SCALE" ]; then
+  echo "FATAL: --scale is required (one of 0.5B 1.5B 3B 7B 14B 32B)" >&2
+  exit 2
+fi
+
+# ---- Per-scale resolution (plan §4.2) -------------------------------------
+
+MODEL=""
+LAYERS=""
+SCALE_SLUG=""
+case "$SCALE" in
+  0.5B) MODEL="Qwen/Qwen2.5-0.5B-Instruct"; LAYERS="12,16,22"; SCALE_SLUG="scale05" ;;
+  1.5B) MODEL="Qwen/Qwen2.5-1.5B-Instruct"; LAYERS="14,19,26"; SCALE_SLUG="scale15" ;;
+  3B)   MODEL="Qwen/Qwen2.5-3B-Instruct";   LAYERS="18,24,33"; SCALE_SLUG="scale3"  ;;
+  7B)   MODEL="Qwen/Qwen2.5-7B-Instruct";   LAYERS="14,19,26"; SCALE_SLUG="scale7_refit" ;;
+  14B)  MODEL="Qwen/Qwen2.5-14B-Instruct";  LAYERS="24,33,45"; SCALE_SLUG="scale14" ;;
+  32B)  MODEL="Qwen/Qwen2.5-32B-Instruct";  LAYERS="32,43,59"; SCALE_SLUG="scale32" ;;
+  *)
+    echo "FATAL: unknown --scale '$SCALE' (expected one of 0.5B 1.5B 3B 7B 14B 32B)" >&2
+    exit 2
+    ;;
+esac
+HF_PREFIX="issue1491_scale_ladder/$SCALE_SLUG"
+
+# ---- Split resolution ------------------------------------------------------
+
+# Default sweep order (per plan §4.2): the generation-side splits, then the
+# ceiling draws (seed 43, seed 44 on the SAME 1,000 test contexts).
+DEFAULT_SPLITS=(train_25k val_400 test_1000 wc_test_1k tierB_3600 ceiling_draw_43 ceiling_draw_44)
+
+SPLITS_TO_RUN=()
+if [ "$ALL_SPLITS" -eq 1 ]; then
+  SPLITS_TO_RUN=("${DEFAULT_SPLITS[@]}")
+elif [ -n "$SPLIT" ]; then
+  SPLITS_TO_RUN=("$SPLIT")
+else
+  echo "FATAL: pass either --split <name> or --all-splits" >&2
+  exit 2
+fi
+
+# ---- GPU discovery + shard arithmetic --------------------------------------
+
+if [ -z "$GPUS_PER_POD" ]; then
+  if command -v nvidia-smi >/dev/null 2>&1; then
+    GPUS_PER_POD="$(nvidia-smi -L 2>/dev/null | wc -l | tr -d ' ')"
+  fi
+  # if [ empty or 0 ] fall back to 8 (the default 8-GPU pod shape)
+  if ! [ "${GPUS_PER_POD:-0}" -ge 1 ] 2>/dev/null; then GPUS_PER_POD=8; fi
+fi
+if ! [ "$NUM_SHARDS" -ge 1 ] 2>/dev/null || ! [ "$SHARD_OFFSET" -ge 0 ] 2>/dev/null; then
+  echo "FATAL: bad --num-shards ($NUM_SHARDS) / --shard-offset ($SHARD_OFFSET)" >&2
+  exit 2
+fi
+LAST=$((SHARD_OFFSET + GPUS_PER_POD - 1))
+if [ "$LAST" -ge "$NUM_SHARDS" ]; then
+  echo "FATAL: shard-offset $SHARD_OFFSET + gpus-per-pod $GPUS_PER_POD exceeds --num-shards $NUM_SHARDS (last global index $LAST)" >&2
+  exit 2
+fi
+
+echo "== issue1491 ladder launch =="
+echo "  scale=$SCALE  model=$MODEL  layers=$LAYERS  hf_prefix=$HF_PREFIX"
+echo "  splits=${SPLITS_TO_RUN[*]}  capture_mode=$CAPTURE_MODE  batch=$CAPTURE_BATCH_SIZE"
+echo "  num_shards=$NUM_SHARDS  shard_offset=$SHARD_OFFSET  gpus_per_pod=$GPUS_PER_POD  shard_size=$SHARD_SIZE"
+echo "  ENV: EPM_VLLM_ENFORCE_EAGER=$EPM_VLLM_ENFORCE_EAGER EPM_VLLM_DISABLE_PREFIX_CACHING=$EPM_VLLM_DISABLE_PREFIX_CACHING"
+echo "       HF_HUB_ENABLE_HF_TRANSFER=$HF_HUB_ENABLE_HF_TRANSFER HF_XET_HIGH_PERFORMANCE=$HF_XET_HIGH_PERFORMANCE"
+echo "  log_dir=$LOG_DIR"
+
+# Extra flag(s) passed through to the driver.
+DRIVER_EXTRAS=()
+if [ "$FIRST_CHUNK_SELF_GATE" -eq 1 ]; then
+  DRIVER_EXTRAS+=(--first-chunk-self-gate)
+fi
+[ ${#EXTRA_ARGS[@]} -gt 0 ] && DRIVER_EXTRAS+=("${EXTRA_ARGS[@]}")
+
+# ---- Per-split, per-shard fan-out ------------------------------------------
+
+for split_name in "${SPLITS_TO_RUN[@]}"; do
+  echo "-- split=$split_name --"
+  for g in $(seq 0 $((GPUS_PER_POD - 1))); do
+    gidx=$((SHARD_OFFSET + g))
+    log="$LOG_DIR/issue-1491-${SCALE_SLUG}-${split_name}-shard${gidx}.log"
+    pidf="$LOG_DIR/issue-1491-${SCALE_SLUG}-${split_name}-shard${gidx}.pid"
+    cmd=(
+      uv run python "$DRIVER"
+        --model "$MODEL"
+        --layers "$LAYERS"
+        --split "$split_name"
+        --hf-prefix "$HF_PREFIX"
+        --capture-mode "$CAPTURE_MODE"
+        --capture-batch-size "$CAPTURE_BATCH_SIZE"
+        --num-shards "$NUM_SHARDS"
+        --shard-index "$gidx"
+        --shard-size "$SHARD_SIZE"
+        --device cuda
+        --verbose
+    )
+    [ ${#DRIVER_EXTRAS[@]} -gt 0 ] && cmd+=("${DRIVER_EXTRAS[@]}")
+
+    if [ "$DRY_RUN" -eq 1 ]; then
+      echo "  shard $gidx -> GPU $g | log=$log pid=$pidf"
+      echo "    CUDA_VISIBLE_DEVICES=$g setsid nohup ${cmd[*]} > $log 2>&1 < /dev/null &"
+      continue
+    fi
+
+    # $! after `setsid nohup ... &` is the intermediate; capture the real
+    # workload pid via bash -c so the pidfile names the child, not the
+    # launcher subshell (parent parity).
+    PID=$(CUDA_VISIBLE_DEVICES=$g bash -c "setsid nohup ${cmd[*]} > $log 2>&1 < /dev/null & echo \$!")
+    echo "$PID" > "$pidf"
+    echo "[launch] scale=$SCALE_SLUG split=$split_name shard=$gidx -> GPU $g pid=$PID log=$log"
+  done
+done
+
+if [ "$DRY_RUN" -eq 1 ]; then echo "[dry-run] no processes launched."; exit 0; fi
+echo "== fan-out complete; watch $LOG_DIR/issue-1491-${SCALE_SLUG}-*.log =="
