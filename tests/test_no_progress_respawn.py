@@ -13,12 +13,45 @@ from __future__ import annotations
 
 import pytest
 
+from scripts.autonomous_session_watch import (
+    _NO_PROGRESS_RESPAWN_CAP_NOTE_SENTINEL,
+    _NO_PROGRESS_RESPAWN_NOTE_SENTINEL,
+    _WATCHER_NOTE_SENTINELS,
+    decide_no_progress_respawn,
+)
 from scripts.tick_triage import (
     _HEARTBEAT_NOTE_SENTINELS,
     compute_issue_verdict,
     compute_progress_fingerprint,
     latest_nonwatcher_nonheartbeat_ts,
 )
+
+
+def _mk_predicate_kwargs(**overrides) -> dict:
+    """Baseline all-positive kwargs for `decide_no_progress_respawn`. Every
+    field is at its fire-eligible default; a test overrides just the arm it
+    exercises. Threshold = 3, tick_streak = 3 (>= threshold), all vetoes
+    off, fingerprint pair matching (no advance)."""
+    defaults = {
+        "kill_switch": False,
+        "status_class": "active",
+        "tick_streak": 3,
+        "tick_threshold": 3,
+        "respawns_today": 0,
+        "respawns_per_day": 3,
+        "episode_respawn_count": 0,
+        "episode_belt_max": 3,
+        "worktree_activity_fresh": False,
+        "park_exemption_fires": False,
+        "daemon_reachable": True,
+        "transcript_resolvable": True,
+        "live_pod_present": False,
+        "prev_fingerprint": "abcd",
+        "curr_fingerprint": "abcd",
+    }
+    defaults.update(overrides)
+    return defaults
+
 
 # ── Unit A — the pure predicate + fingerprint helper ────────────────────────
 
@@ -324,57 +357,99 @@ def test_heartbeat_sentinel_set_matches_skill_md():
 # ── Unit B assertions — deferred to the watcher-pass follow-up ──────────────
 
 
-@pytest.mark.skip(reason="Unit B: decide_no_progress_respawn watcher predicate + fires")
 def test_decide_no_progress_respawn_fires_after_n_ticks():
     """Assertion 8 (durability pin — the plan §10 Reproducibility Card
-    names this test as the durability pin). Lands in Unit B alongside the
-    `decide_no_progress_respawn` predicate + `no_progress_respawn_pass`
-    in `scripts/autonomous_session_watch.py`."""
+    names this test as the durability pin). All-positive kwargs at the
+    tick_streak >= tick_threshold boundary must return ``("respawn", ...)``.
+    """
+    action, reason = decide_no_progress_respawn(**_mk_predicate_kwargs())
+    assert action == "respawn", (action, reason)
+    # Idempotent at streak > threshold too — the predicate keeps firing.
+    action2, _ = decide_no_progress_respawn(**_mk_predicate_kwargs(tick_streak=10))
+    assert action2 == "respawn", action2
 
 
-@pytest.mark.skip(reason="Unit B: worktree-activity veto")
 def test_decide_no_progress_respawn_holds_on_worktree_activity():
-    """Assertion 9."""
+    """Assertion 9 — an implementer mid-edit freezes the streak, not fires."""
+    action, reason = decide_no_progress_respawn(
+        **_mk_predicate_kwargs(worktree_activity_fresh=True)
+    )
+    assert action == "hold" and "worktree" in reason, (action, reason)
 
 
-@pytest.mark.skip(reason="Unit B: daemon-unreachable freeze")
 def test_decide_no_progress_respawn_holds_on_daemon_unreachable():
-    """Assertion 10."""
+    """Assertion 10 — a daemon-probe failure (None) freezes the streak."""
+    action, reason = decide_no_progress_respawn(**_mk_predicate_kwargs(daemon_reachable=None))
+    assert action == "hold" and "daemon" in reason, (action, reason)
 
 
-@pytest.mark.skip(reason="Unit B: unresolvable-transcript freeze")
 def test_decide_no_progress_respawn_holds_on_unresolvable_transcript():
-    """Assertion 11."""
+    """Assertion 11 — a transcript-resolver failure (None) freezes the streak."""
+    action, reason = decide_no_progress_respawn(**_mk_predicate_kwargs(transcript_resolvable=None))
+    assert action == "hold" and "transcript" in reason, (action, reason)
 
 
-@pytest.mark.skip(reason="Unit B: park-exemption veto re-probe at act time")
 def test_decide_no_progress_respawn_holds_on_park_exemption():
-    """Assertion 12."""
+    """Assertion 12 — any park-exemption re-probe at act time freezes."""
+    action, reason = decide_no_progress_respawn(**_mk_predicate_kwargs(park_exemption_fires=True))
+    assert action == "hold" and "park exemption" in reason, (action, reason)
 
 
-@pytest.mark.skip(reason="Unit B: fingerprint-advanced clear")
 def test_decide_no_progress_respawn_clears_on_fingerprint_advance():
-    """Assertion 13."""
+    """Assertion 13 — a fingerprint that ADVANCED since the tick's read
+    ENDS the episode (streak resets), even if the tick verdict said fire."""
+    action, reason = decide_no_progress_respawn(
+        **_mk_predicate_kwargs(prev_fingerprint="abcd", curr_fingerprint="EFGH")
+    )
+    assert action == "clear" and "fingerprint" in reason, (action, reason)
 
 
-@pytest.mark.skip(reason="Unit B: per-UTC-day cap exhaustion")
 def test_decide_no_progress_respawn_cap_exhausted():
-    """Assertion 14."""
+    """Assertion 14 — fire conditions ALL hold but the per-UTC-day cap is
+    exhausted (respawns_today >= respawns_per_day) => ``"cap-exhausted"``.
+    Also covers the episode-belt exhaustion arm."""
+    day_cap, _ = decide_no_progress_respawn(
+        **_mk_predicate_kwargs(respawns_today=3, respawns_per_day=3)
+    )
+    assert day_cap == "cap-exhausted", day_cap
+    belt_cap, _ = decide_no_progress_respawn(
+        **_mk_predicate_kwargs(episode_respawn_count=3, episode_belt_max=3)
+    )
+    assert belt_cap == "cap-exhausted", belt_cap
 
 
-@pytest.mark.skip(reason="Unit B: kill switch")
 def test_decide_no_progress_respawn_kill_switch():
-    """Assertion 15."""
+    """Assertion 15 — ``kill_switch=True`` returns ``("clear", "kill switch")``
+    unconditionally, regardless of every other input."""
+    action, reason = decide_no_progress_respawn(**_mk_predicate_kwargs(kill_switch=True))
+    assert action == "clear" and "kill switch" in reason, (action, reason)
 
 
-@pytest.mark.skip(reason="Unit B: terminal-status act guard (#1247)")
 def test_decide_no_progress_respawn_park_status_act_guard():
-    """Assertion 16."""
+    """Assertion 16 (#1247) — a non-active live-status re-read at act time
+    ends the episode without firing (the park-status act guard)."""
+    for status in ("park", "terminal", "unknown"):
+        action, reason = decide_no_progress_respawn(**_mk_predicate_kwargs(status_class=status))
+        assert action == "clear" and "park-status" in reason, (status, action, reason)
 
 
-@pytest.mark.skip(reason="Unit B: watcher-sentinel membership for both markers")
 def test_no_progress_markers_in_watcher_note_sentinels():
-    """Assertion 17."""
+    """Assertion 17 — both no-progress-respawn note sentinels are members
+    of ``_WATCHER_NOTE_SENTINELS`` so they never reset the very
+    staleness/orphan-progress clocks the pass measures against."""
+    assert _NO_PROGRESS_RESPAWN_NOTE_SENTINEL in _WATCHER_NOTE_SENTINELS
+    assert _NO_PROGRESS_RESPAWN_CAP_NOTE_SENTINEL in _WATCHER_NOTE_SENTINELS
+
+
+def test_decide_no_progress_respawn_holds_on_live_pod():
+    """Assertion 24 — a live workload's orchestrator is a healthy monitor
+    and a ``progress: none`` heartbeat is expected there; freeze the streak
+    (never respawn against a live pod / instance). Unresolvable pod probe
+    (None) freezes for the same reason."""
+    live, reason = decide_no_progress_respawn(**_mk_predicate_kwargs(live_pod_present=True))
+    assert live == "hold" and "live-pod" in reason, (live, reason)
+    unresolvable, _ = decide_no_progress_respawn(**_mk_predicate_kwargs(live_pod_present=None))
+    assert unresolvable == "hold", unresolvable
 
 
 @pytest.mark.skip(reason="Unit B: NEVER-MUTATES-STATUS invariant argv-spy")
@@ -400,11 +475,6 @@ def test_no_progress_sidecar_row_shape():
 @pytest.mark.skip(reason="Unit B: dry-run kwarg thread — zero side effects")
 def test_no_progress_respawn_dry_run_writes_nothing():
     """Assertion 22."""
-
-
-@pytest.mark.skip(reason="Unit B: live-pod / live-instance veto")
-def test_no_progress_respawn_holds_on_live_pod():
-    """Assertion 24."""
 
 
 @pytest.mark.skip(reason="Unit B: degraded-key (sha-null) freeze — streak not reset, not advanced")
