@@ -77,6 +77,7 @@ import argparse
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -302,6 +303,96 @@ def write_runaway_flag(issue: int, status: str, streak: int) -> None:
     except OSError:
         Path(tmp).unlink(missing_ok=True)
         raise
+
+
+# ── #2058 no-progress-respawn state ─────────────────────────────────────────
+
+
+def no_progress_state_path(issue: int) -> Path:
+    """State file for the #2058 no-progress-respawn arm — the tick writes the
+    streak + fingerprint; the watcher pass reads its own state independently
+    (per plan §4 "Fingerprint duplication note")."""
+    return state_dir() / f"no-progress-{issue}.json"
+
+
+def read_no_progress_state(issue: int) -> dict:
+    """Prior tick's no-progress state (``{}`` on missing / garbled — fail
+    toward a fresh episode; the pure predicate is fail-open when
+    prev_fingerprint is None)."""
+    path = no_progress_state_path(issue)
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def write_no_progress_state(issue: int, fingerprint: str | None, streak: int) -> None:
+    """Atomic tmp+rename write of the #2058 per-issue no-progress state.
+
+    ONLY the tick's streak + fingerprint components are the tick's to write;
+    the watcher pass's `respawns_today` / `respawn_day` / `stop_pending_*`
+    fields (plan §5) are the WATCHER's — preserve any it has already
+    written by round-tripping unknown keys through the read."""
+    prev = read_no_progress_state(issue)
+    payload = dict(prev)  # preserve watcher-owned fields
+    payload["issue"] = issue
+    payload["fingerprint"] = fingerprint
+    payload["streak"] = streak
+    payload["ts"] = datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    path = no_progress_state_path(issue)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=f".no-progress-{issue}-")
+    try:
+        with os.fdopen(fd, "w") as fh:
+            json.dump(payload, fh)
+        os.replace(tmp, path)
+    except OSError:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+
+
+def compute_head_sha(issue: int) -> str | None:
+    """Read ``origin/issue-<N>`` HEAD sha for the fingerprint's sha component.
+
+    Fail-open — every failure mode returns None (never raises to the tick):
+    * `git rev-parse` errors (ref not resolved, git binary missing);
+    * `git fetch` errors (network, remote unreachable);
+    * a bounded 5s timeout on either subprocess.
+
+    NEVER `git rev-parse HEAD` unqualified against the SHARED repo root
+    (per plan §1 methodology finding) — the shared root sits on `main`,
+    so every fleet commit would advance the fingerprint and reset the
+    no-progress streak. Fetch the issue's own branch and read that ref."""
+    ref = f"origin/issue-{issue}"
+    try:
+        # Bounded fetch (fail-soft — a rate-limit/network blip must not
+        # crash the tick). The fetch is best-effort; the rev-parse below
+        # reads whatever the shared repo root has cached.
+        subprocess.run(
+            ["git", "fetch", "origin", f"issue-{issue}", "--quiet"],
+            check=False,
+            timeout=5.0,
+            capture_output=True,
+        )
+        result = subprocess.run(
+            ["git", "rev-parse", ref],
+            check=False,
+            timeout=5.0,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            return None
+        sha = result.stdout.strip()
+        # Full 40-hex commit SHA — anything else is a git-side surprise.
+        if len(sha) == 40 and all(c in "0123456789abcdef" for c in sha):
+            return sha
+        return None
+    except (subprocess.TimeoutExpired, OSError):
+        return None
 
 
 # ── task-state readers (lazy task_workflow imports; monkeypatchable) ────────
@@ -1076,6 +1167,21 @@ def runaway_streak_threshold() -> int:
     return val if val > 0 else RUNAWAY_STREAK_DEFAULT
 
 
+def no_progress_threshold() -> int:
+    """#2058 no-progress-respawn threshold — N consecutive ticks with an
+    unchanged fingerprint before the pure predicate emits
+    NO-PROGRESS-RESPAWN. Default 3 (per plan §11 Decision Rationale).
+    Configurable via ``EPM_NO_PROGRESS_RESPAWN_TICKS``; malformed / <2 →
+    default 3 (NEVER a kill switch — the watcher-pass env var
+    ``EPM_DISABLE_NO_PROGRESS_RESPAWN`` is the kill)."""
+    raw = os.environ.get("EPM_NO_PROGRESS_RESPAWN_TICKS", "")
+    try:
+        val = int(raw)
+    except ValueError:
+        return 3
+    return val if val >= 2 else 3
+
+
 # CONTENT INVARIANT (#1000; the #866/#906 refusal-prevention rule): verdict
 # reason strings AND the snapshot payload stay free of task TEXT — status
 # tokens, marker ages, child ids, disk bands only. Never embed the task
@@ -1270,18 +1376,62 @@ def triage(issue: int, kind: str, now: float | None = None) -> tuple[str, str]:
     else:
         marker_ts = latest_event_ts(events)
         marker_age = (now - marker_ts) if marker_ts is not None else None
-        # #2058 no-progress-respawn: extend to a 3-tuple (verdict, reason,
-        # streak). The kwargs stay unwired here (default fingerprints=None,
-        # streak=0) — Unit A ships the pure predicate; Unit B wires the
-        # fingerprint + streak persistence in main() and the watcher pass
-        # reads its own state file for the ACT.
-        verdict, reason, _no_progress_streak = compute_issue_verdict(
+        # #2058 no-progress-respawn wiring — compute fingerprint + thread
+        # the prior streak/fp through the pure predicate; persist the
+        # updated pair below.
+        no_progress_prev = read_no_progress_state(issue)
+        prev_fingerprint = no_progress_prev.get("fingerprint")
+        prev_no_progress_streak = no_progress_prev.get("streak")
+        prev_no_progress_streak = (
+            prev_no_progress_streak
+            if isinstance(prev_no_progress_streak, int) and prev_no_progress_streak >= 0
+            else 0
+        )
+        prev_sha = None
+        if isinstance(prev_fingerprint, str):
+            # "progress: X | payload | sha | status" OR "ts | sha | status" —
+            # the sha is either the 2nd (progress-token) or 1st non-ts pipe
+            # segment; the fingerprint helper is authoritative on shape.
+            # For the degraded-key freeze we only need to know whether the
+            # PRIOR fingerprint carried a real 40-hex sha somewhere.
+            for part in prev_fingerprint.split("|"):
+                p = part.strip()
+                if len(p) == 40 and all(c in "0123456789abcdef" for c in p):
+                    prev_sha = p
+                    break
+        head_sha = compute_head_sha(issue)
+        # Degraded-key freeze (plan §1): when THIS tick's sha is None but
+        # the previous tick carried a real sha, freeze the streak (don't
+        # advance, don't reset) — same fail-toward-freeze posture as
+        # daemon-unreachable / unresolvable-transcript. Achieved by
+        # passing the PRIOR fingerprint through as this tick's — the
+        # equality check reads unchanged and streak advances by 1, but we
+        # bump BOTH sides to the prior value so the pure predicate sees
+        # NO change AND we do not persist an advance.
+        if head_sha is None and prev_sha is not None:
+            fingerprint = prev_fingerprint  # freeze — same value, same streak semantics
+            freeze_active = True
+        else:
+            fingerprint = compute_progress_fingerprint(events, head_sha, status)
+            freeze_active = False
+        verdict, reason, no_progress_streak = compute_issue_verdict(
             status,
             prev_status,
             marker_age,
             plan_pending_over_cap(events),
             stale_after_s=stale_s(),
+            progress_fingerprint=fingerprint,
+            prev_fingerprint=prev_fingerprint if isinstance(prev_fingerprint, str) else None,
+            no_progress_streak=prev_no_progress_streak,
+            no_progress_threshold=no_progress_threshold(),
         )
+        # Persist the updated streak + fingerprint. On a degraded-key
+        # freeze, the streak advance from the equal-fingerprint path is
+        # ROLLED BACK to the prior value so the freeze is fingerprint-
+        # and-streak-preserving as designed.
+        if freeze_active:
+            no_progress_streak = prev_no_progress_streak
+        write_no_progress_state(issue, fingerprint, no_progress_streak)
         if verdict == "STALE-REDRIVE":
             # Detached-phase liveness screen (issue #1051): fires ONLY on a
             # would-be STALE-REDRIVE, on BOTH stale branches — PARK and
