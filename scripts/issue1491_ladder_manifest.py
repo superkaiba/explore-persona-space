@@ -528,7 +528,12 @@ def build_manifest(out_dir: Path, *, smoke: bool = False, dry_run: bool = False)
         """Return (kept, skipped) for a split."""
         prompts = [r["prompt"] for r in rows]
         cis = list(range(len(prompts)))
-        kept_ids = set(_filter_overlength_prompts(prompts, cis, token_len_fn, OVERLENGTH_BUDGET))
+        # _filter_overlength_prompts returns (kept_prompts, kept_cis, skipped_dicts).
+        # We only need the kept_cis (local indices that survived the budget) —
+        # the parent helper is deterministic + order-preserving, so kept_cis is
+        # a subset of the input `cis` (= range(len(prompts))).
+        _, kept_cis, _ = _filter_overlength_prompts(prompts, cis, token_len_fn, OVERLENGTH_BUDGET)
+        kept_ids = set(kept_cis)
         kept, skipped = [], []
         for local_i, r in enumerate(rows):
             enriched = {**r, "split": split, "ladder_local_id": local_i}
