@@ -1,0 +1,267 @@
+{
+  "commit": "897177bfbb",
+  "created": "2026-08-04T01:01:29Z",
+  "figsize": [
+    12.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "within-cell ceiling R$^2$": 0.3658727634828677,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "within-cell ceiling R$^2$": 0.2386113380378868,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "within-cell ceiling R$^2$": 0.37627728166547847,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "within-cell ceiling R$^2$": 0.2628453862772142,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "within-cell ceiling R$^2$": 0.3381999244132955,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "within-cell ceiling R$^2$": 0.2340116333485155,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.81,
+      "within-cell ceiling R$^2$": 0.34108068227095134,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.81,
+      "within-cell ceiling R$^2$": 0.25055632417224927,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.81,
+      "within-cell ceiling R$^2$": 0.3093375186151729,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 8.81,
+      "within-cell ceiling R$^2$": 0.2263871757712963,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 9.81,
+      "within-cell ceiling R$^2$": 0.3277400353884574,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 10.81,
+      "within-cell ceiling R$^2$": 0.2410702847381292,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 11.81,
+      "within-cell ceiling R$^2$": 0.30623440648622524,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 12.81,
+      "within-cell ceiling R$^2$": 0.17709813415813613,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 13.81,
+      "within-cell ceiling R$^2$": 0.32325835274944126,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 14.81,
+      "within-cell ceiling R$^2$": 0.2053158091767674,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "within-cell ceiling R$^2$": 0.05698486921803447,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "within-cell ceiling R$^2$": 0.02384086749553671,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "within-cell ceiling R$^2$": 0.054247638147652766,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "within-cell ceiling R$^2$": 0.027940075170568734,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "within-cell ceiling R$^2$": 0.040690450481364326,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "within-cell ceiling R$^2$": 0.018259181624109,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.19,
+      "within-cell ceiling R$^2$": 0.03078709126858392,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.19,
+      "within-cell ceiling R$^2$": 0.020655251642444528,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.19,
+      "within-cell ceiling R$^2$": 0.026109719699194178,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 9.19,
+      "within-cell ceiling R$^2$": 0.019898843820913115,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 10.19,
+      "within-cell ceiling R$^2$": 0.02776294416345504,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 11.19,
+      "within-cell ceiling R$^2$": 0.018694658631170036,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 12.19,
+      "within-cell ceiling R$^2$": 0.02022546125047009,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 13.19,
+      "within-cell ceiling R$^2$": 0.015198846367543317,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 14.19,
+      "within-cell ceiling R$^2$": 0.020362883290057976,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 15.19,
+      "within-cell ceiling R$^2$": 0.016085230127266592,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "within-cell ceiling R$^2$": 0.1,
+      "series": "H3 floor 0.10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "within-cell ceiling R$^2$": 0.1,
+      "series": "H3 floor 0.10",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 34,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "within-cell ceiling R$^2$",
+        "legend_labels": [
+          "assistant-story band (0.26-0.37)",
+          "H3 floor 0.10",
+          "context arm",
+          "prefix arm"
+        ],
+        "xticklabels": [
+          "helios",
+          "helios_op",
+          "helios_base",
+          "helios_op_base",
+          "wren",
+          "wren_op",
+          "wren_base",
+          "wren_op_base",
+          "dana",
+          "dana_op",
+          "dana_base",
+          "dana_op_base",
+          "vex",
+          "vex_op",
+          "vex_base",
+          "vex_op_base"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      }
+    ],
+    "series": [
+      "H3 floor 0.10",
+      "context arm",
+      "prefix arm"
+    ]
+  }
+}

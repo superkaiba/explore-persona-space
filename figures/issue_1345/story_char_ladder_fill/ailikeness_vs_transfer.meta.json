@@ -1,0 +1,100 @@
+{
+  "commit": "897177bfbb",
+  "created": "2026-08-04T01:01:30Z",
+  "figsize": [
+    5.2,
+    4.0
+  ],
+  "points": [
+    {
+      "banked AI-likeness (own answers, base; 0-100)": 74.1662,
+      "rung-4 transfer R$^2$ / target ceiling": 0.9224225900148435,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "banked AI-likeness (own answers, base; 0-100)": 63.4954,
+      "rung-4 transfer R$^2$ / target ceiling": 0.8517103933372197,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "banked AI-likeness (own answers, base; 0-100)": 53.2431,
+      "rung-4 transfer R$^2$ / target ceiling": 0.7975889984359189,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "banked AI-likeness (own answers, base; 0-100)": 57.4527,
+      "rung-4 transfer R$^2$ / target ceiling": 0.729632657218258,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "banked AI-likeness (own answers, base; 0-100)": 74.1662,
+      "rung-4 transfer R$^2$ / target ceiling": 0.8347174717630594,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "banked AI-likeness (own answers, base; 0-100)": 63.4954,
+      "rung-4 transfer R$^2$ / target ceiling": 0.743025035214986,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "banked AI-likeness (own answers, base; 0-100)": 53.2431,
+      "rung-4 transfer R$^2$ / target ceiling": 0.6827085922864959,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "banked AI-likeness (own answers, base; 0-100)": 57.4527,
+      "rung-4 transfer R$^2$ / target ceiling": 0.5799026528757327,
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "banked AI-likeness (own answers, base; 0-100)",
+        "ylabel": "rung-4 transfer R$^2$ / target ceiling",
+        "annotations": [
+          "HELIOS",
+          "Wren",
+          "Dana",
+          "Vex",
+          "HELIOS (op)",
+          "Wren (op)",
+          "Dana (op)",
+          "Vex (op)"
+        ],
+        "xticklabels": [
+          "50",
+          "55",
+          "60",
+          "65",
+          "70",
+          "75",
+          "80"
+        ],
+        "yticklabels": [
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85",
+          "0.90",
+          "0.95"
+        ]
+      }
+    ]
+  }
+}

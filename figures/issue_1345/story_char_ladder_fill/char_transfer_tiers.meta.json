@@ -1,0 +1,1102 @@
+{
+  "commit": "897177bfbb",
+  "created": "2026-08-04T01:01:25Z",
+  "figsize": [
+    13.5,
+    4.2
+  ],
+  "points": [
+    {
+      "correction tier (rung)": 1.0,
+      "held-out R$^2$ (source$\\to$char)": 0.30640251072555813,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "correction tier (rung)": 2.0,
+      "held-out R$^2$ (source$\\to$char)": 0.31697614338444113,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "correction tier (rung)": 3.0,
+      "held-out R$^2$ (source$\\to$char)": 0.2911321777594694,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "correction tier (rung)": 4.0,
+      "held-out R$^2$ (source$\\to$char)": 0.3319096135835403,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "correction tier (rung)": 5.0,
+      "held-out R$^2$ (source$\\to$char)": 0.33172136149484854,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "correction tier (rung)": 6.0,
+      "held-out R$^2$ (source$\\to$char)": 0.3400553388795875,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "correction tier (rung)": 7.0,
+      "held-out R$^2$ (source$\\to$char)": 0.2835288967596796,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "correction tier (rung)": 8.0,
+      "held-out R$^2$ (source$\\to$char)": 0.3030682959893535,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "correction tier (rung)": 9.0,
+      "held-out R$^2$ (source$\\to$char)": 0.27993218036477874,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "correction tier (rung)": 1.0,
+      "held-out R$^2$ (source$\\to$char)": 0.22111061071511495,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "correction tier (rung)": 2.0,
+      "held-out R$^2$ (source$\\to$char)": 0.24852235322931415,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "correction tier (rung)": 3.0,
+      "held-out R$^2$ (source$\\to$char)": 0.2084514112170477,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "correction tier (rung)": 4.0,
+      "held-out R$^2$ (source$\\to$char)": 0.27795378310538954,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "correction tier (rung)": 5.0,
+      "held-out R$^2$ (source$\\to$char)": 0.27787223545833006,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "correction tier (rung)": 6.0,
+      "held-out R$^2$ (source$\\to$char)": 0.305319105105867,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "correction tier (rung)": 7.0,
+      "held-out R$^2$ (source$\\to$char)": 0.24483274095401553,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "correction tier (rung)": 8.0,
+      "held-out R$^2$ (source$\\to$char)": 0.22620688914793552,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "correction tier (rung)": 9.0,
+      "held-out R$^2$ (source$\\to$char)": 0.24844616185350898,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "correction tier (rung)": 1.0,
+      "held-out R$^2$ (source$\\to$char)": 0.183419289431074,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "correction tier (rung)": 2.0,
+      "held-out R$^2$ (source$\\to$char)": 0.20967517644681988,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "correction tier (rung)": 3.0,
+      "held-out R$^2$ (source$\\to$char)": 0.15745551470951957,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "correction tier (rung)": 4.0,
+      "held-out R$^2$ (source$\\to$char)": 0.2437856364343428,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "correction tier (rung)": 5.0,
+      "held-out R$^2$ (source$\\to$char)": 0.24684923208165477,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "correction tier (rung)": 6.0,
+      "held-out R$^2$ (source$\\to$char)": 0.27728704446242813,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "correction tier (rung)": 7.0,
+      "held-out R$^2$ (source$\\to$char)": 0.15463191605622628,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "correction tier (rung)": 8.0,
+      "held-out R$^2$ (source$\\to$char)": 0.19063200092123234,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "correction tier (rung)": 9.0,
+      "held-out R$^2$ (source$\\to$char)": 0.15286122178854344,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "correction tier (rung)": 1.0,
+      "held-out R$^2$ (source$\\to$char)": 0.14090539968544347,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "correction tier (rung)": 2.0,
+      "held-out R$^2$ (source$\\to$char)": 0.17017193851321477,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "correction tier (rung)": 3.0,
+      "held-out R$^2$ (source$\\to$char)": 0.10472147546824995,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "correction tier (rung)": 4.0,
+      "held-out R$^2$ (source$\\to$char)": 0.22073071154167023,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "correction tier (rung)": 5.0,
+      "held-out R$^2$ (source$\\to$char)": 0.22184581622270372,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "correction tier (rung)": 6.0,
+      "held-out R$^2$ (source$\\to$char)": 0.2573350861980406,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "correction tier (rung)": 7.0,
+      "held-out R$^2$ (source$\\to$char)": 0.17130428078528004,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "correction tier (rung)": 8.0,
+      "held-out R$^2$ (source$\\to$char)": 0.1482240159230902,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "correction tier (rung)": 9.0,
+      "held-out R$^2$ (source$\\to$char)": 0.17134311956057646,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "correction tier (rung)": 1.0,
+      "y": 0.1404821402280484,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "correction tier (rung)": 2.0,
+      "y": 0.12792416943281992,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "correction tier (rung)": 3.0,
+      "y": 0.14397877133026182,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "correction tier (rung)": 4.0,
+      "y": 0.16853319421746815,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "correction tier (rung)": 5.0,
+      "y": 0.18234284784039212,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "correction tier (rung)": 6.0,
+      "y": 0.17542475513574984,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "correction tier (rung)": 7.0,
+      "y": 0.09724055531033904,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "correction tier (rung)": 8.0,
+      "y": 0.12102604162350317,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "correction tier (rung)": 9.0,
+      "y": 0.07397410258284576,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "correction tier (rung)": 1.0,
+      "y": 0.1193840629520101,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "correction tier (rung)": 2.0,
+      "y": 0.09717323621769547,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "correction tier (rung)": 3.0,
+      "y": 0.1272436731856822,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "correction tier (rung)": 4.0,
+      "y": 0.16498508233812847,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "correction tier (rung)": 5.0,
+      "y": 0.16909121297065055,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "correction tier (rung)": 6.0,
+      "y": 0.18494356498283304,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "correction tier (rung)": 7.0,
+      "y": 0.07231263715412284,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "correction tier (rung)": 8.0,
+      "y": 0.12492844301236627,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "correction tier (rung)": 9.0,
+      "y": 0.05848163107927051,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "correction tier (rung)": 1.0,
+      "y": 0.07493919009332617,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "correction tier (rung)": 2.0,
+      "y": 0.04589819153894614,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "correction tier (rung)": 3.0,
+      "y": 0.10549392615336284,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "correction tier (rung)": 4.0,
+      "y": 0.14576424160940227,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "correction tier (rung)": 5.0,
+      "y": 0.14778325292827899,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "correction tier (rung)": 6.0,
+      "y": 0.17453020121809837,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "correction tier (rung)": 7.0,
+      "y": 0.05966177686480012,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "correction tier (rung)": 8.0,
+      "y": 0.10831769083997977,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "correction tier (rung)": 9.0,
+      "y": 0.04963708211923923,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "correction tier (rung)": 1.0,
+      "y": -0.06226158057197284,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "correction tier (rung)": 2.0,
+      "y": -0.19602448684666895,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "correction tier (rung)": 3.0,
+      "y": -0.0031384589490162096,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "correction tier (rung)": 4.0,
+      "y": 0.1054796902136994,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "correction tier (rung)": 5.0,
+      "y": 0.10586493485411741,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "correction tier (rung)": 6.0,
+      "y": 0.14594065603242856,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "correction tier (rung)": 7.0,
+      "y": 0.05729136023039327,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "correction tier (rung)": 8.0,
+      "y": 0.06022843781662546,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "correction tier (rung)": 9.0,
+      "y": 0.031156646268585386,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "correction tier (rung)": 1.0,
+      "y": -0.9382961230579656,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "correction tier (rung)": 2.0,
+      "y": -0.07590655123368006,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "correction tier (rung)": 3.0,
+      "y": -0.7973056855624505,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "correction tier (rung)": 4.0,
+      "y": 0.06787620972192476,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "correction tier (rung)": 5.0,
+      "y": 0.134984842578859,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "correction tier (rung)": 6.0,
+      "y": 0.20115494421059665,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "correction tier (rung)": 7.0,
+      "y": 0.3236547155432883,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "correction tier (rung)": 8.0,
+      "y": -0.6233579071252295,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "correction tier (rung)": 9.0,
+      "y": 0.3426188862352889,
+      "series": "HELIOS (AI-likeness 74.2)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "correction tier (rung)": 1.0,
+      "y": -0.9215254362545122,
+      "series": "HELIOS (AI-likeness 74.2) [own answer]",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "correction tier (rung)": 2.0,
+      "y": -0.196180330788003,
+      "series": "HELIOS (AI-likeness 74.2) [own answer]",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "correction tier (rung)": 3.0,
+      "y": -0.8091924109146735,
+      "series": "HELIOS (AI-likeness 74.2) [own answer]",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "correction tier (rung)": 4.0,
+      "y": 0.05040551152361583,
+      "series": "HELIOS (AI-likeness 74.2) [own answer]",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "correction tier (rung)": 5.0,
+      "y": 0.09981266123393329,
+      "series": "HELIOS (AI-likeness 74.2) [own answer]",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "correction tier (rung)": 6.0,
+      "y": 0.16124477618638378,
+      "series": "HELIOS (AI-likeness 74.2) [own answer]",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "correction tier (rung)": 7.0,
+      "y": 0.16978766691369462,
+      "series": "HELIOS (AI-likeness 74.2) [own answer]",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "correction tier (rung)": 8.0,
+      "y": -0.17016818780091247,
+      "series": "HELIOS (AI-likeness 74.2) [own answer]",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "correction tier (rung)": 9.0,
+      "y": 0.1789172983369156,
+      "series": "HELIOS (AI-likeness 74.2) [own answer]",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "correction tier (rung)": 1.0,
+      "y": -0.9794822022548149,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "correction tier (rung)": 2.0,
+      "y": -0.10231744228300887,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "correction tier (rung)": 3.0,
+      "y": -0.8536609109696931,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "correction tier (rung)": 4.0,
+      "y": 0.04819944406155385,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "correction tier (rung)": 5.0,
+      "y": 0.10609928906151134,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "correction tier (rung)": 6.0,
+      "y": 0.17678465466275517,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "correction tier (rung)": 7.0,
+      "y": 0.28905951837747734,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "correction tier (rung)": 8.0,
+      "y": -0.7128892256993324,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "correction tier (rung)": 9.0,
+      "y": 0.3151270259999833,
+      "series": "Wren (AI-likeness 63.5)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "correction tier (rung)": 1.0,
+      "y": -1.1890297276319113,
+      "series": "Wren (AI-likeness 63.5) [own answer]",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "correction tier (rung)": 2.0,
+      "y": -0.24587769150075944,
+      "series": "Wren (AI-likeness 63.5) [own answer]",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "correction tier (rung)": 3.0,
+      "y": -1.1829566320558267,
+      "series": "Wren (AI-likeness 63.5) [own answer]",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "correction tier (rung)": 4.0,
+      "y": 0.04297899133675387,
+      "series": "Wren (AI-likeness 63.5) [own answer]",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "correction tier (rung)": 5.0,
+      "y": 0.08446543157293496,
+      "series": "Wren (AI-likeness 63.5) [own answer]",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "correction tier (rung)": 6.0,
+      "y": 0.1549684492663469,
+      "series": "Wren (AI-likeness 63.5) [own answer]",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "correction tier (rung)": 7.0,
+      "y": 0.15967198354770562,
+      "series": "Wren (AI-likeness 63.5) [own answer]",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "correction tier (rung)": 8.0,
+      "y": -0.1886421231236166,
+      "series": "Wren (AI-likeness 63.5) [own answer]",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "correction tier (rung)": 9.0,
+      "y": 0.1671498470929096,
+      "series": "Wren (AI-likeness 63.5) [own answer]",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "correction tier (rung)": 1.0,
+      "y": -1.0785943271852965,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "correction tier (rung)": 2.0,
+      "y": -0.10655288028890375,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "correction tier (rung)": 3.0,
+      "y": -1.0059014409290943,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "correction tier (rung)": 4.0,
+      "y": 0.024190139893802143,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "correction tier (rung)": 5.0,
+      "y": 0.10112480108756616,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "correction tier (rung)": 6.0,
+      "y": 0.1558986770127846,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "correction tier (rung)": 7.0,
+      "y": 0.2807215898138029,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "correction tier (rung)": 8.0,
+      "y": -0.8355251875433081,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "correction tier (rung)": 9.0,
+      "y": 0.30582826753238057,
+      "series": "Dana (AI-likeness 53.2)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "correction tier (rung)": 1.0,
+      "y": -0.9401441775514117,
+      "series": "Dana (AI-likeness 53.2) [own answer]",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "correction tier (rung)": 2.0,
+      "y": -0.2691573267873524,
+      "series": "Dana (AI-likeness 53.2) [own answer]",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "correction tier (rung)": 3.0,
+      "y": -1.0019108313965392,
+      "series": "Dana (AI-likeness 53.2) [own answer]",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "correction tier (rung)": 4.0,
+      "y": 0.03410698418840663,
+      "series": "Dana (AI-likeness 53.2) [own answer]",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "correction tier (rung)": 5.0,
+      "y": 0.08064438618342984,
+      "series": "Dana (AI-likeness 53.2) [own answer]",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "correction tier (rung)": 6.0,
+      "y": 0.1495497604993209,
+      "series": "Dana (AI-likeness 53.2) [own answer]",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "correction tier (rung)": 7.0,
+      "y": 0.10913527963348035,
+      "series": "Dana (AI-likeness 53.2) [own answer]",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "correction tier (rung)": 8.0,
+      "y": -0.20294739804345374,
+      "series": "Dana (AI-likeness 53.2) [own answer]",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "correction tier (rung)": 9.0,
+      "y": 0.09606157691199058,
+      "series": "Dana (AI-likeness 53.2) [own answer]",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "correction tier (rung)": 1.0,
+      "y": -1.3147775005437938,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "correction tier (rung)": 2.0,
+      "y": -0.15182787427527655,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "correction tier (rung)": 3.0,
+      "y": -1.0775883147001246,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "correction tier (rung)": 4.0,
+      "y": 0.02289890916256576,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "correction tier (rung)": 5.0,
+      "y": 0.08804079058561542,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "correction tier (rung)": 6.0,
+      "y": 0.14286034081634058,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "correction tier (rung)": 7.0,
+      "y": 0.2755886787350942,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "correction tier (rung)": 8.0,
+      "y": -0.8679227235540752,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "correction tier (rung)": 9.0,
+      "y": 0.30337901936871414,
+      "series": "Vex (AI-likeness 57.5)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "correction tier (rung)": 1.0,
+      "y": -1.1639409744237037,
+      "series": "Vex (AI-likeness 57.5) [own answer]",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "correction tier (rung)": 2.0,
+      "y": -0.6237849041755152,
+      "series": "Vex (AI-likeness 57.5) [own answer]",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "correction tier (rung)": 3.0,
+      "y": -1.1213862570668365,
+      "series": "Vex (AI-likeness 57.5) [own answer]",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "correction tier (rung)": 4.0,
+      "y": -0.024754694627370233,
+      "series": "Vex (AI-likeness 57.5) [own answer]",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "correction tier (rung)": 5.0,
+      "y": 0.05765176907580549,
+      "series": "Vex (AI-likeness 57.5) [own answer]",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "correction tier (rung)": 6.0,
+      "y": 0.10524705160583403,
+      "series": "Vex (AI-likeness 57.5) [own answer]",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "correction tier (rung)": 7.0,
+      "y": 0.09302514108871396,
+      "series": "Vex (AI-likeness 57.5) [own answer]",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "correction tier (rung)": 8.0,
+      "y": -0.24993486976860524,
+      "series": "Vex (AI-likeness 57.5) [own answer]",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "correction tier (rung)": 9.0,
+      "y": 0.09367676750926557,
+      "series": "Vex (AI-likeness 57.5) [own answer]",
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 144,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "inserted (instruct): story_inserted -> char",
+        "xlabel": "correction tier (rung)",
+        "ylabel": "held-out R$^2$ (source$\\to$char)",
+        "legend_labels": [
+          "HELIOS (AI-likeness 74.2)",
+          "Wren (AI-likeness 63.5)",
+          "Dana (AI-likeness 53.2)",
+          "Vex (AI-likeness 57.5)"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "ceil"
+        ],
+        "yticklabels": [
+          "\u22121.50",
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50"
+        ]
+      },
+      {
+        "title_left": "own answer (instruct): story_onpolicy -> char_op",
+        "xlabel": "correction tier (rung)",
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "ceil"
+        ]
+      },
+      {
+        "title_left": "base: chat -> char_base (solid) / char_op_base (dashed)",
+        "xlabel": "correction tier (rung)",
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "ceil"
+        ]
+      }
+    ],
+    "series": [
+      "HELIOS (AI-likeness 74.2)",
+      "Wren (AI-likeness 63.5)",
+      "Dana (AI-likeness 53.2)",
+      "Vex (AI-likeness 57.5)",
+      "HELIOS (AI-likeness 74.2) [own answer]",
+      "Wren (AI-likeness 63.5) [own answer]",
+      "Dana (AI-likeness 53.2) [own answer]",
+      "Vex (AI-likeness 57.5) [own answer]"
+    ]
+  }
+}
