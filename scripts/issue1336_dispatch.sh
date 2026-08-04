@@ -1803,6 +1803,38 @@ PY
     echo "[c_stage] staging complete"
 }
 
+phase_c_pool() {
+    # Phase C_pool (plan v15 §4): pooled-multidataset cross-corpus dedup +
+    # sentence-transformers/all-mpnet-base-v2 embed + KMeans k=50 + 80/20
+    # cluster-aware split. Reuses the shared corpora_v2 reader
+    # (issue1336_stage_corpora.load_v2_corpus_rows) — local-first, HF
+    # fallback — so c_pool can run alone or after c_stage on the same box.
+    # CONCERN M1: the driver measures the 5-way (5 checkpoints × 7 corpora)
+    # prompt_id intersection FIRST via list_repo_tree + sha-verified answers
+    # reassembly before dedup/embed/split. CONCERN M3: pins the mpnet
+    # revision via HfApi().repo_info at invocation time and records it in
+    # the output manifest.
+    echo "[phase=c_pool]"
+    if [ "$SMOKE" -eq 1 ]; then
+        if [ ! -f "$DONE_DIR/c_pool__smoke.done" ]; then
+            uv run python scripts/issue1336_pooled_split.py --smoke \
+                >> "$JOB_LOG_DIR/c_pool.log" 2>&1
+            touch "$DONE_DIR/c_pool__smoke.done"
+        fi
+        echo "[c_pool] smoke split written (local scratch; no HF upload)"
+        return 0
+    fi
+    _headroom_v2 c_pool 5
+    if [ ! -f "$DONE_DIR/c_pool__full.done" ]; then
+        uv run python scripts/issue1336_pooled_split.py --full --upload \
+            >> "$JOB_LOG_DIR/c_pool.log" 2>&1
+        touch "$DONE_DIR/c_pool__full.done"
+        grep -h '\[pool\] c_pool complete' "$JOB_LOG_DIR/c_pool.log" | tail -n 1
+    fi
+    emit_signal "epm:progress" "c_pool" "issue1336 pooled_split_v3 manifest committed (smoke=$SMOKE); see analysis_tensors/pooled_split_v3/split_manifest.json"
+    echo "[c_pool] pooled split complete"
+}
+
 phase_g0v2() {
     echo "[phase=g0v2]"
     local rc=0
@@ -2665,6 +2697,21 @@ c_stage | g0v2 | g2_parity | gen_v2 | extract_v2 | fit_v2 | ladder | upload_v2)
     run_phase "$PHASE_ARG"
     echo "[dispatch1336] single-phase invocation of $PHASE_ARG complete (no terminal done line)"
     ;;
+all_v3)
+    # Plan v15 chain (pooled-multidataset on-off-policy stage-transfer). This
+    # composite is INCREMENTAL against all_v2: it prepends c_pool (pooled
+    # split_manifest builder consumed by later v3 phases). Subsequent Unit B/C
+    # v3 phases (g0v3, extract_offpolicy, fit_pool, ladder_pool, ladder_cluster,
+    # upload_v3) will be added in later units; the c_pool block is the Unit A
+    # deliverable and can be exercised standalone via `c_pool`.
+    run_phase c_pool
+    write_results_sentinel_v2 false
+    echo "[phase=done]"
+    ;;
+c_pool)
+    run_phase "$PHASE_ARG"
+    echo "[dispatch1336] single-phase invocation of $PHASE_ARG complete (no terminal done line)"
+    ;;
 d1_battery)
     # Standalone GPU-leg workload (plan v7 D1.4/D1.6): full poller contract —
     # results sentinel BEFORE the single terminal done line.
@@ -2706,7 +2753,7 @@ __phase_key)
     exit 0
     ;;
 *)
-    echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload|d1_battery|d1_vmsteps|d2_probe|e1_recal|e2_refit|all_v2|c_stage|g0v2|g2_parity|gen_v2|extract_v2|fit_v2|ladder|upload_v2 [--smoke]" >&2
+    echo "usage: bash scripts/issue1336_dispatch.sh all|g0_gate|gen|extract|fit|align|upload|d1_battery|d1_vmsteps|d2_probe|e1_recal|e2_refit|all_v2|c_stage|g0v2|g2_parity|gen_v2|extract_v2|fit_v2|ladder|upload_v2|all_v3|c_pool [--smoke]" >&2
     exit 2
     ;;
 esac
