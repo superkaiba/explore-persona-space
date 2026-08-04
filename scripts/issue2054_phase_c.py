@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 """Phase C driver for task #2054: on-policy continuation via vLLM prefill.
 
-For each scaffold under `--scaffolds-dir`, render a prefill via the parent's
-`render_prefill(scaffold_text, "attrib_quoted", char_name)`, drop the trailing
-SLOT_SENTINEL segment (the head of scaffold up to the slot + the form's
-opening becomes the prompt), and let the model continue. The generated tokens
-BEFORE the form's stop string ARE the answer span (100% keep by construction;
-no post-hoc verbatim matcher).
+For each scaffold under `--scaffolds-dir`, render a prefill for the REQUIRED
+`--form` framing (plan §4 — the lattice's central manipulated variable; no
+default): story forms via the parent's `render_prefill(scaffold_text, form,
+char_name)` (drop the trailing SLOT_SENTINEL segment — the head of scaffold
+up to the slot + the form's opening becomes the prompt), chat / bare_text via
+`issue2054_forms.render_prefill_form` (the scaffold's question re-framed in
+the chat / bare template; narrative prose dropped). The model continues; the
+generated tokens BEFORE the form's stop string ARE the answer span (100% keep
+by construction; no post-hoc verbatim matcher).
 
 Writes per-row rollouts under `data/issue_2054/on_policy/{variant}/` with the
 final spliced text + exact answer offsets recorded via `sc.splice_answer`, and
@@ -43,6 +46,7 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 load_dotenv()
 
 import issue1345_scaffold_common as sc  # noqa: E402
+import issue2054_forms as forms  # noqa: E402
 
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 TASK_PREFIX = "issue2054_lattice"
@@ -96,20 +100,24 @@ def _char_name_from_scaffold_row(row: dict, variant: str) -> str:
     return _CHAR_NAME_FROM_VARIANT.get(variant, "ARIA")
 
 
-def _prepare_prefill(row: dict, variant: str) -> dict | None:
+def _prepare_prefill(row: dict, variant: str, form: str) -> dict | None:
     """Return {conv_id, scaffold_text, prefix_text, stop, char_name, ...} or None.
 
-    Uses the parent's `render_prefill` — the same rendering the story-slot arm
-    of issue1345 used (raw text continuation, stop at the closing quote for
-    the attributed form). SLOT_SENTINEL is stripped by the renderer (the head
-    up to the slot + the form's opening is returned as the raw prefix).
+    Story forms use the parent's `render_prefill` — the same rendering the
+    story-slot arm of issue1345 used (raw text continuation, per-form stop);
+    SLOT_SENTINEL is stripped by the renderer (the head up to the slot + the
+    form's opening is returned as the raw prefix). Template forms (chat /
+    bare_text) route through `issue2054_forms.render_prefill_form` and
+    require the row's question (a row lacking it is a counted skip).
     """
     scaffold = row.get("scaffold_text")
-    if not isinstance(scaffold, str) or sc.SLOT_SENTINEL not in scaffold:
+    if not isinstance(scaffold, str):
+        return None
+    if form in forms.STORY_FORMS and sc.SLOT_SENTINEL not in scaffold:
         return None
     char_name = _char_name_from_scaffold_row(row, variant)
     try:
-        spec = sc.render_prefill(scaffold, "attrib_quoted", char_name)
+        spec = forms.render_prefill_form(row, form, char_name)
     except (ValueError, NotImplementedError) as exc:
         _log(f"prefill skip {row.get('scaffold_id')}: {exc}")
         return None
@@ -122,21 +130,26 @@ def _prepare_prefill(row: dict, variant: str) -> dict | None:
         "prefix_text": spec.prefix_text,
         "stop": list(spec.stop),
         "scaffold_text": scaffold,
+        # Question-recovery fields ride along so _splice_generated can render
+        # template forms + record the pre-query prefix boundary (plan §6 v_P).
+        "question": row.get("question") if isinstance(row.get("question"), str) else None,
+        "q_start": row.get("q_start") if isinstance(row.get("q_start"), int) else None,
+        "q_end": row.get("q_end") if isinstance(row.get("q_end"), int) else None,
         "attrib_template": row.get("attrib_template")
         if isinstance(row.get("attrib_template"), str)
         else None,
     }
 
 
-def _splice_generated(base: dict, answer: str) -> dict | None:
-    """Splice the generated answer into the scaffold; return the row-out dict."""
+def _splice_generated(base: dict, answer: str, form: str) -> dict | None:
+    """Render the generated answer under `form`; return the row-out dict."""
     if not answer:
         return None
     try:
-        result = sc.splice_answer(
-            base["scaffold_text"],
+        result = forms.splice_answer_form(
+            base,
             answer,
-            "attrib_quoted",
+            form,
             base["character"],
             attrib_template=base["attrib_template"],
         )
@@ -154,6 +167,7 @@ def _splice_generated(base: dict, answer: str) -> dict | None:
         "answer_start": result.answer_start,
         "answer_end": result.answer_end,
         "answer_len_chars": len(answer),
+        "prefix_end_char": result.prefix_end_char,
     }
 
 
@@ -198,7 +212,7 @@ def _run_dry_run(
         tmp = out_path.with_suffix(".jsonl.tmp")
         with tmp.open("w", encoding="utf-8") as f:
             for row in scaffolds:
-                base = _prepare_prefill(row, variant)
+                base = _prepare_prefill(row, variant, args.form)
                 if base is None:
                     continue
                 mock = {
@@ -249,7 +263,7 @@ def _run_vllm(
 
         prepared: list[dict] = []
         for row in scaffolds:
-            base = _prepare_prefill(row, variant)
+            base = _prepare_prefill(row, variant, args.form)
             if base is not None:
                 prepared.append(base)
 
@@ -259,7 +273,7 @@ def _run_vllm(
             continue
 
         prompts = [b["prefix_text"] for b in prepared]
-        stops = prepared[0]["stop"]  # all attrib_quoted; identical stop tuple
+        stops = prepared[0]["stop"]  # one --form per invocation ⇒ identical stop tuple
         sampling = SamplingParams(
             temperature=args.temperature,
             max_tokens=args.max_new_tokens,
@@ -277,7 +291,7 @@ def _run_vllm(
                 # Preserve verbatim (no re-encoding). The generated text is the
                 # answer span (vLLM default include_stop_str_in_output=False).
                 answer = gen_text
-                row_out = _splice_generated(base, answer)
+                row_out = _splice_generated(base, answer, args.form)
                 if row_out is None:
                     continue
                 row_out["finish_reason"] = o.outputs[0].finish_reason
@@ -341,7 +355,7 @@ def run_phase(args: argparse.Namespace) -> int:
 
     _log(
         f"start: target_conv_ids={args.target_conv_ids} model={args.model} "
-        f"dry_run={args.dry_run} variants={list(per_variant_paths.keys())}"
+        f"form={args.form} dry_run={args.dry_run} variants={list(per_variant_paths.keys())}"
     )
 
     if args.dry_run:
@@ -371,6 +385,7 @@ def run_phase(args: argparse.Namespace) -> int:
 
     digest = {
         "phase": "phase_c",
+        "form": args.form,
         "target_conv_ids": args.target_conv_ids,
         "model": args.model,
         "temperature": args.temperature,
@@ -398,6 +413,16 @@ def run_phase(args: argparse.Namespace) -> int:
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--scaffolds-dir", default="data/issue_2054/scaffolds/")
+    p.add_argument(
+        "--form",
+        required=True,
+        choices=forms.FORMS,
+        help=(
+            "framing to render (plan §4 — the lattice's central manipulated "
+            "variable; REQUIRED, no default so a caller can never silently "
+            "fall back to attrib_quoted)"
+        ),
+    )
     p.add_argument("--target-conv-ids", type=int, default=8_000)
     p.add_argument("--output-dir", default="data/issue_2054/on_policy/")
     p.add_argument("--seed", type=int, default=137)

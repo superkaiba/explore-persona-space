@@ -6,11 +6,15 @@ parent #1345 on-policy paired_op stories from HF
 `superkaiba1/explore-persona-space-data/issue1345_framing/{variant}/raw_completions/stories/*stories_paired_op*.jsonl`,
 extract the STORY-authored answer span via
 `issue1345_gen_stories_paired.confident_op_turn` (the same op-turn parse the
-extraction path uses), and splice it into the corresponding CHAT-TEMPLATE
-scaffold from Unit A's phase_a output. NO NEW generation — capture-only.
+extraction path uses), and render it under the REQUIRED `--form` framing
+against the corresponding phase_a scaffold row (`issue2054_forms`). NO NEW
+generation — capture-only.
 
-Produces cell (c) — "answer authored STORY, presented CHAT" — of the v4
-lattice. Match on conv_id (v4's shared conv_id draw is the pairing key). Cells
+Cell (c) — "answer authored STORY, presented CHAT" — is produced by invoking
+this driver with `--form chat` (plan §4 Phase D; the chat render re-frames the
+story-authored answer through the chat template, prose dropped). `--form` is
+REQUIRED with no default so a caller can never silently fall back to a story
+form. Match on conv_id (v4's shared conv_id draw is the pairing key). Cells
 whose conv_id is not in the shared fold map are skipped and reported.
 
 Plan §12 assumption #7 (SLOT_SENTINEL literal escape): before splicing, SCAN
@@ -47,6 +51,7 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 load_dotenv()
 
 import issue1345_scaffold_common as sc  # noqa: E402
+import issue2054_forms as forms  # noqa: E402
 
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 PARENT_PREFIX = "issue1345_framing"
@@ -230,17 +235,21 @@ def _index_parent_answers(story_files: list[str], char_name: str) -> dict[str, s
     return answers_by_conv
 
 
-def _splice_one(scaffold_row: dict, answer: str, char_name: str, variant: str) -> dict | None:
-    """Splice STORY-authored answer into the CHAT-TEMPLATE scaffold."""
+def _splice_one(
+    scaffold_row: dict, answer: str, char_name: str, variant: str, form: str
+) -> dict | None:
+    """Render the STORY-authored answer under `form` (cell (c) uses `chat`)."""
     scaffold = scaffold_row.get("scaffold_text")
-    if not isinstance(scaffold, str) or sc.SLOT_SENTINEL not in scaffold:
+    if not isinstance(scaffold, str):
+        return None
+    if form in forms.STORY_FORMS and sc.SLOT_SENTINEL not in scaffold:
         return None
     attrib_template = scaffold_row.get("attrib_template")
     try:
-        result = sc.splice_answer(
-            scaffold,
+        result = forms.splice_answer_form(
+            scaffold_row,
             answer,
-            "attrib_quoted",
+            form,
             char_name,
             attrib_template=attrib_template if isinstance(attrib_template, str) else None,
         )
@@ -258,6 +267,7 @@ def _splice_one(scaffold_row: dict, answer: str, char_name: str, variant: str) -
         "answer_start": result.answer_start,
         "answer_end": result.answer_end,
         "answer_len_chars": len(answer),
+        "prefix_end_char": result.prefix_end_char,
     }
 
 
@@ -268,6 +278,7 @@ def _process_variant(
     api,
     fold_conv_ids: set[str] | None,
     target_conv_ids: int,
+    form: str,
 ) -> dict:
     """Splice parent's on-policy answers into scaffolds for one variant."""
     base_variant = _base_variant_for(variant)
@@ -324,7 +335,7 @@ def _process_variant(
                 n_sentinel_escaped_rows += 1
                 n_sentinel_hits_total += hits
             char_name = str(row.get("character") or "").strip() or char_name_default
-            spliced = _splice_one(row, escaped, char_name, variant)
+            spliced = _splice_one(row, escaped, char_name, variant, form)
             if spliced is None:
                 continue
             f.write(json.dumps(spliced, ensure_ascii=False) + "\n")
@@ -391,7 +402,7 @@ def run_phase(args: argparse.Namespace) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     variants = list(args.variants)
-    _log(f"start: target_conv_ids={args.target_conv_ids} variants={variants}")
+    _log(f"start: target_conv_ids={args.target_conv_ids} form={args.form} variants={variants}")
 
     try:
         from huggingface_hub import HfApi
@@ -420,6 +431,7 @@ def run_phase(args: argparse.Namespace) -> int:
             api,
             fold_conv_ids,
             args.target_conv_ids,
+            args.form,
         )
         per_variant_reports.append(report)
         if report.get("out_path") is not None:
@@ -439,6 +451,7 @@ def run_phase(args: argparse.Namespace) -> int:
 
     digest = {
         "phase": "phase_d",
+        "form": args.form,
         "target_conv_ids": args.target_conv_ids,
         "variants": variants,
         "per_variant": [
@@ -465,6 +478,16 @@ def run_phase(args: argparse.Namespace) -> int:
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--scaffolds-dir", default="data/issue_2054/scaffolds/")
+    p.add_argument(
+        "--form",
+        required=True,
+        choices=forms.FORMS,
+        help=(
+            "framing to render (plan §4; REQUIRED, no default). Cell (c) — "
+            "story-authored answer presented in CHAT — uses `chat` (plan §4 "
+            "Phase D); the dispatch wires that choice explicitly"
+        ),
+    )
     p.add_argument("--target-conv-ids", type=int, default=8_000)
     p.add_argument("--output-dir", default="data/issue_2054/cell_c/")
     p.add_argument("--seed", type=int, default=137)
