@@ -580,8 +580,25 @@ def _batched_capture_parity_gate(
     ci = cis[:n]
     orig_dtype = next(hf.parameters()).dtype
     cast = orig_dtype != torch.float32
+    saved_buffers: dict[str, torch.Tensor] = {}
     if cast:
         _assert_fp32_probe_feasible(hf)  # raises — never a bf16 fallback (M4)
+        # Snapshot floating-point BUFFERS before the cast, preserving dtype.
+        #
+        # Module.to(dtype) casts floating-point buffers as well as parameters,
+        # and Qwen2's rotary `inv_freq` is fp32 EVEN ON a bf16-loaded model. A
+        # bare fp32 -> bf16 round-trip therefore leaves inv_freq permanently
+        # DEGRADED to bf16 (measured on the pinned stack: max rel err 3.65e-3),
+        # so every production capture after the probe would run a numerically
+        # different RoPE than the parent/#779 convention — and the probe legs
+        # themselves would run clean fp32 inv_freq, meaning the gate certifies
+        # a rig production does not use. Params alone round-trip exactly, which
+        # is why a params-only equality check misses this entirely.
+        saved_buffers = {
+            name: buf.detach().clone()
+            for name, buf in hf.named_buffers()
+            if buf.is_floating_point()
+        }
     try:
         if cast:
             hf.to(torch.float32)
@@ -603,6 +620,15 @@ def _batched_capture_parity_gate(
     finally:
         if cast:
             hf.to(orig_dtype)
+            # Restore buffers by ASSIGNMENT, not copy_: hf.to() has already
+            # rewritten them to orig_dtype, and copying fp32 values into a bf16
+            # tensor would preserve the degraded dtype. Assigning through the
+            # owning module's setattr writes back into its _buffers entry,
+            # restoring the original dtype AND bits.
+            for name, buf in saved_buffers.items():
+                parent_path, _, leaf = name.rpartition(".")
+                owner = hf.get_submodule(parent_path) if parent_path else hf
+                setattr(owner, leaf, buf.to(device=getattr(owner, leaf).device))
             if next(hf.parameters()).is_cuda:
                 torch.cuda.empty_cache()
 
