@@ -225,7 +225,7 @@ mapping is bad at predicting. To do this, I first looked at the top 100 and wors
 context -> answer, where the answer is always the same one generated under the
 full context) among the held-out set and tried to see the differences between
 them, both manually and with Claude Fable 5 (see
-[dashboard for features and Claude Fable analysis](https://eps.superkaiba.com/context-extremes-1482.html))
+[dashboard](https://eps.superkaiba.com/context-extremes-1482.html))
 
 **Takeaways** (summarized from Fable's analysis and me looking at the features):
 -
