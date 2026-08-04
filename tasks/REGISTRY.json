@@ -8185,8 +8185,8 @@
     "2057": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2057",
-      "status": "proposed",
+      "path": "tasks/planning/2057",
+      "status": "planning",
       "title": "workflow-fix: re-arm bg poll chain first on every wake (message consumes tick wake)"
     },
     "207": {
