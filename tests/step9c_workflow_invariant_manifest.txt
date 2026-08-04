@@ -78,6 +78,7 @@ tests/test_ruff_format_hook_tmp_exclusion.py
 tests/test_sparse_worktree.py
 tests/test_step0_enumerator_total_form.py
 tests/test_step10d_guard3.py
+tests/test_step10d_guards.py
 tests/test_step_completed_resume.py
 tests/test_suffixed_pod_completion_teardown_pin.py
 tests/test_task_workflow.py
@@ -99,5 +100,6 @@ tests/test_workflow_fix_rule_closed_sibling_reconciliation.py
 tests/test_workflow_hub_upload_as_file.py
 tests/test_workflow_lint.py
 tests/test_workflow_lint_dotenv_check.py
+tests/test_workflow_lint_failover_pivot_pin.py
 tests/test_workflow_lint_inline_round_duty_mirror.py
 tests/test_workflow_yaml.py

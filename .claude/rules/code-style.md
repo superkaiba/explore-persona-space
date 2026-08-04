@@ -91,6 +91,20 @@ CLAUDE.md as always-on rules; the rest live here and load when you touch code.)
   strict `git rev-parse` shellout kills the workload (git exits 128 → the workload dies rc=1) —
   degrade `EPS_GIT_SHA` env → `check=False` → `"unavailable-no-git-checkout"` (full entry:
   `.claude/rules/gotchas.md`; incident #1902).
+  **Dirty-tree flag (#1482, #2065):** the commit hash alone is a lie when the producing script
+  is uncommitted-dirty — a committed artifact can then claim provenance from a commit that does
+  NOT contain the code that produced it (#1482: a `+369/-40`-line modified script stamped a
+  clean SHA). New reproducibility-metadata writers use
+  `explore_persona_space.orchestrate.provenance.git_provenance()` and merge
+  `as_metadata_dict(prov)` into the metadata block: it adds `git_dirty` (`True`/`False`/`None`)
+  and, when dirty, `git_dirty_paths` (working-tree-wide, capped at 50 with an overflow tail).
+  Default = RECORD, never fail loud (`git_dirty=None` on the git-less lane above). Non-JSON
+  channels (PDF Keywords, PNG pnginfo, WandB run names) render the human-legible
+  `commit_string(prov)` → `<sha>` or `<sha>+dirty`. The three duplicate `_git_commit_hash()`
+  helpers previously scattered across `analysis/convexity_meta.py`, `artifacts/organisms.py`,
+  and `analysis/paper_plots.py` are consolidated into the new helper (the paper_plots copy is
+  kept as a thin deprecated shim delegating to `_git_short_sha` for the one out-of-scope
+  external importer under `experiments/leave_one_out_505/`).
 - **Supersede → delete the old version.** When an improved version of a script
   / helper supersedes an old one, DELETE the old version after rewiring every
   reference to it — do NOT keep both. Two live scripts that do the same job
