@@ -2971,6 +2971,24 @@ def _terminate_clear_stale_sidecar(
         _remove_from_pods_conf(name)
 
 
+@contextlib.contextmanager
+def _verified_teardown_grant(*, target: str, reason: str):
+    """Owner-teardown grant for the kill gate; a no-op if the package is absent.
+
+    Thin wrapper over ``backends.kill_approval.verified_teardown`` so this
+    scripts-dir module stays importable without the installed package (the
+    gate then simply refuses unless the user set the env approval — fail
+    toward NOT destroying).
+    """
+    try:
+        from explore_persona_space.backends.kill_approval import verified_teardown
+    except Exception:
+        yield
+        return
+    with verified_teardown(target=target, reason=reason):
+        yield
+
+
 def cmd_terminate(args: argparse.Namespace) -> None:
     """Destroy every live pod for issue #N. Volume(s) gone.
 
@@ -2993,6 +3011,14 @@ def cmd_terminate(args: argparse.Namespace) -> None:
     """
     # getattr: hand-built Namespaces predate the flags; argparse always sets them.
     name_suffix = getattr(args, "name_suffix", None)
+
+    # --approve carries the user's explicit consent for the irreversible
+    # destroy into runpod_api.terminate_pod's approval gate (standing directive
+    # 2026-08-04). Set only for THIS process; never persisted, so no cron or
+    # autonomous session can inherit it. Without it terminate_pod raises
+    # PodTerminateNotApproved and nothing is destroyed.
+    if getattr(args, "approve", False):
+        os.environ["EPS_ALLOW_POD_TERMINATE"] = "1"
 
     # #1485 keep-running teardown shield — FIRST, before the upload-verify
     # guard: a shielded issue must refuse before the operator is told to run
@@ -3040,10 +3066,22 @@ def cmd_terminate(args: argparse.Namespace) -> None:
         print("[dry-run] Would call terminate_pod on each.")
         return
 
+    # The upload-verification guard above (_guard_upload_verification_before_
+    # terminate) is what proves "everything is uploaded". Passing it is the
+    # authorization for THIS teardown: the flow that drove the job may close
+    # its own pod once artifacts are verified (standing user directive
+    # 2026-08-04). The grant is in-process and scoped to this loop, so no
+    # cron / watcher / janitor can ever hold it — those are refused at
+    # runpod_api.terminate_pod. --approve (user-set env) is the other,
+    # independent authorization and needs no grant here.
     terminated_names: list[str] = []
-    for p in live_matches:
-        terminate_pod(p.pod_id)
-        terminated_names.append(p.name)
+    with _verified_teardown_grant(
+        target=f"issue {args.issue}" + (f" ({target})" if target else ""),
+        reason="upload-verification guard passed (or explicitly waived by the operator)",
+    ):
+        for p in live_matches:
+            terminate_pod(p.pod_id)
+            terminated_names.append(p.name)
 
     # Re-query the live API and fail loud if anything still resolves to this
     # issue. terminate_pod is async on RunPod's side — the pod may still
@@ -3261,6 +3299,17 @@ def _parser_terminate(sub: argparse._SubParsersAction) -> None:
             "the keep-running tag (or the tag is unreadable). Logs a LOUD "
             "warning. Automated Step-8 flows must never pass this - the "
             "remedy there is task.py remove-tag <N> keep-running."
+        ),
+    )
+    p.add_argument(
+        "--approve",
+        action="store_true",
+        help=(
+            "USER APPROVAL for the irreversible destroy (standing directive "
+            "2026-08-04: pods are terminated only with explicit approval). "
+            "Sets EPS_ALLOW_POD_TERMINATE=1 for this invocation; without it "
+            "runpod_api.terminate_pod refuses and nothing is destroyed. "
+            "Automation must NEVER pass this - surface the pod for approval."
         ),
     )
     p.set_defaults(func=cmd_terminate)

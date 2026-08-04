@@ -3551,7 +3551,17 @@ def render_guest_attributes_argv(
 
 
 def render_delete_argv(*, config: GcpConfig, name: str, zone: str) -> list[str]:
-    """Build a ``gcloud compute instances delete`` argv (``--quiet`` for non-interactive)."""
+    """Build a ``gcloud compute instances delete`` argv (``--quiet`` for non-interactive).
+
+    NOT approval-gated, deliberately (2026-08-04). Every caller of this
+    renderer is an OWNER teardown of an EPS-created instance (the lifecycle
+    teardown / re-delete paths) or the `eps-issue-`-scoped stale-VM janitor —
+    and GCP PROVISIONING IS DISABLED (#2028), so no new GCE instance can be
+    created here at all. Gating it would block in-flight owner teardown and
+    leak billing VMs for no safety gain. The scheduled janitor — the only
+    "shuts down on its own" actor on this lane — is contained at the cron:
+    its entry passes ``EPS_GCP_JANITOR_DRY_RUN=1`` (report-only).
+    """
     argv = _base_gcloud_argv(config, "compute", "instances", "delete", name)
     argv += [f"--zone={zone}", "--quiet"]
     return argv

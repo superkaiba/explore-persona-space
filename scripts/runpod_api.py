@@ -157,6 +157,83 @@ class RunPodError(RuntimeError):
     """Wraps a non-2xx response or a 'errors' field in the GraphQL payload."""
 
 
+class PodTerminateNotApproved(RunPodError):
+    """Raised when :func:`terminate_pod` is called without explicit user approval.
+
+    Standing user directive (2026-08-04): **pods are destroyed only with
+    Thomas's approval.** No automation may terminate a pod on its own.
+    """
+
+
+#: Env var that carries the user's per-invocation terminate approval.
+POD_TERMINATE_APPROVAL_ENV = "EPS_ALLOW_POD_TERMINATE"
+
+
+def _notify_terminate_blocked(pod_id: str) -> None:
+    """Best-effort push when an unapproved terminate is refused (fail-soft).
+
+    Deduped once per (pod_id, UTC day) via a sentinel so a caller that retries
+    in a loop cannot storm the channel. Every failure mode here is swallowed:
+    the REFUSAL is the safety property, the push is only the notification.
+    """
+    try:
+        import subprocess
+        from datetime import UTC, datetime
+
+        day = datetime.now(UTC).strftime("%Y%m%d")
+        sentinel = Path.home() / ".eps-autonomous" / f"terminate-blocked-{pod_id}-{day}"
+        if sentinel.exists():
+            return
+        sentinel.parent.mkdir(parents=True, exist_ok=True)
+        sentinel.touch()
+        script = Path.home() / "my-goat" / "scripts" / "telegram_push.sh"
+        if not script.exists():
+            return
+        subprocess.run(
+            [
+                str(script),
+                f"Pod terminate BLOCKED (needs your approval): {pod_id}. "
+                f"Approve: pod.py terminate --issue <N> --yes --approve",
+            ],
+            timeout=20,
+            check=False,
+            capture_output=True,
+        )
+    except Exception:
+        pass  # notification is best-effort; the refusal above is the guarantee
+
+
+def pod_terminate_approved() -> bool:
+    """True when this terminate is authorized. Two authorizations exist:
+
+    1. **Explicit user approval** via env (``EPS_ALLOW_COMPUTE_KILL=1``, or the
+       legacy pod-specific ``EPS_ALLOW_POD_TERMINATE=1`` that
+       ``pod.py terminate --approve`` sets). Per-invocation, never persisted,
+       and absent from the crontab environment — which is what disarms every
+       scheduled destructive path at once.
+    2. **An owner-driven verified teardown** — an active
+       ``backends.kill_approval.verified_teardown`` block on this thread,
+       entered by the flow that DROVE the job after its upload-verification
+       guard passed. Standing user directive (2026-08-04): the agent driving a
+       job may close its own pod once everything is uploaded; nothing may be
+       shut down on its own.
+
+    A cron / watcher / janitor / wedge sweep holds neither and is refused.
+
+    The shared implementation lives in the installed package; the env-only
+    fallback keeps this module importable from a bare scripts-dir context.
+    """
+    try:
+        from explore_persona_space.backends.kill_approval import compute_kill_approved
+
+        return compute_kill_approved()
+    except Exception:
+        return any(
+            os.environ.get(name) == "1"
+            for name in ("EPS_ALLOW_COMPUTE_KILL", POD_TERMINATE_APPROVAL_ENV)
+        )
+
+
 class RunPodTransientError(RunPodError):
     """A transport failure that is worth retrying (5xx, 429, CF-1010, network).
 
@@ -933,7 +1010,39 @@ start_pod = resume_pod
 
 
 def terminate_pod(pod_id: str) -> bool:
-    """Destroy a pod permanently. Volume is gone. Returns True on success."""
+    """Destroy a pod permanently. Volume is gone. Returns True on success.
+
+    APPROVAL-GATED (standing user directive, 2026-08-04). This is the single
+    choke point every RunPod destruction path routes through — the daily
+    stale-pod audit, ``/issue`` Step 8 teardown, the ``backend_poll`` wedge
+    failovers, and the watcher. Calling it without
+    ``EPS_ALLOW_POD_TERMINATE=1`` in the environment raises
+    :class:`PodTerminateNotApproved` and destroys nothing.
+
+    Why a hard gate rather than per-caller flags: on 2026-08-04 the stale-pod
+    audit was found to have terminated 77 teammate-owned pods on the SHARED
+    RunPod team account over 14 days (mis-attributed by a substring ownership
+    match, with no grace window and no alerting). A gate at each call site
+    would have to be re-litigated for every future call site; a gate here
+    cannot be bypassed by adding one.
+
+    Approving a terminate:
+      - CLI:  ``pod.py terminate --issue <N> --yes --approve``
+      - Ad hoc: ``EPS_ALLOW_POD_TERMINATE=1 <command>``
+
+    The refusal fires a best-effort push so an approval-blocked teardown
+    surfaces instead of silently idle-billing.
+    """
+    if not pod_terminate_approved():
+        _notify_terminate_blocked(pod_id)
+        raise PodTerminateNotApproved(
+            f"REFUSED to terminate pod {pod_id}: no user approval.\n"
+            f"Pods are destroyed only with explicit approval (standing directive "
+            f"2026-08-04, after the stale-pod audit destroyed 77 teammate pods).\n"
+            f"  Approve this one:  pod.py terminate --issue <N> --yes --approve\n"
+            f"  Or ad hoc:         {POD_TERMINATE_APPROVAL_ENV}=1 <command>\n"
+            f"Automation must NOT set this — surface the pod for approval instead."
+        )
     query = """
     mutation Terminate($id: String!) {
       podTerminate(input: {podId: $id})
