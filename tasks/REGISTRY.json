@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2067,
+  "highest_id": 2068,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8259,6 +8259,13 @@
       "path": "tasks/proposed/2067",
       "status": "proposed",
       "title": "workflow-fix: cross-session lane pivot must resolve the owni"
+    },
+    "2068": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2068",
+      "status": "proposed",
+      "title": "workflow-fix: forensics \u2014 concurrent root working-tree rever"
     },
     "207": {
       "has_clean_result": true,
