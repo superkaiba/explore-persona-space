@@ -6,11 +6,17 @@ Step 2c, so a spawned `--auto` session would only auto-approve a plan if the
 LLM orchestrator read that deeply-nested step and chose to obey it over the
 always-loaded "ask before spending money" prior. It systematically did not
 (4/4 sessions asked the user instead). `_resolve_autonomous_plan_gate` moves
-the decision into code, keyed on `EPM_AUTONOMOUS_SESSION` +
-`EPM_PLAN_AUTOAPPROVE_GPU_HOURS`, so it no longer depends on LLM discretion.
+the decision into code, keyed on `EPM_AUTONOMOUS_SESSION`, so it no longer
+depends on LLM discretion.
 
-FAIL SAFE: a missing/None gpu_hours parks (never auto-approves on a blank
-estimate).
+As of #1771 the gate is GPU-HOUR-BLIND: an autonomous session auto-approves
+ANY plan carrying a parseable GPU-hour estimate, regardless of magnitude.
+`EPM_PLAN_AUTOAPPROVE_GPU_HOURS` is no longer read by the resolver; it
+survives inert in argv/registry plumbing for provenance only.
+
+FAIL SAFE (retained): a missing/None gpu_hours parks
+(`parked_no_estimate`) — a correctness guard against an unestimated plan,
+not a cost control.
 """
 
 from __future__ import annotations
@@ -39,16 +45,15 @@ def _clear_env(monkeypatch):
 
 def test_interactive_when_env_unset(monkeypatch):
     _clear_env(monkeypatch)
-    decision, cap, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+    decision, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
     assert decision == "interactive_pending"
     assert autonomous is False
-    assert cap == 24.0
 
 
 def test_interactive_when_env_zero(monkeypatch):
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "0")
-    decision, _cap, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+    decision, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
     assert decision == "interactive_pending"
     assert autonomous is False
 
@@ -56,80 +61,90 @@ def test_interactive_when_env_zero(monkeypatch):
 def test_interactive_when_env_false(monkeypatch):
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "false")
-    decision, _cap, _autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+    decision, _autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
     assert decision == "interactive_pending"
 
 
 def test_interactive_ignores_gpu_hours_when_not_autonomous(monkeypatch):
     """Even a huge estimate stays interactive (the human will decide)."""
     _clear_env(monkeypatch)
-    decision, _cap, _autonomous = task_cli._resolve_autonomous_plan_gate(9999.0)
+    decision, _autonomous = task_cli._resolve_autonomous_plan_gate(9999.0)
     assert decision == "interactive_pending"
 
 
-# ─── autonomous + under cap → auto_approved ───────────────────────────────
+# ─── autonomous + any finite gpu_hours → auto_approved ────────────────────
 
 
-def test_auto_approve_under_default_cap(monkeypatch):
+def test_auto_approve_any_finite_estimate(monkeypatch):
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
-    decision, cap, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+    decision, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
     assert decision == "auto_approved"
     assert autonomous is True
-    assert cap == 24.0
 
 
-def test_auto_approve_at_cap_boundary(monkeypatch):
-    """gpu_hours == cap auto-approves (<= comparison)."""
+def test_auto_approve_large_estimate(monkeypatch):
+    """Under the GPU-hour-blind gate (#1771), a huge estimate that would
+    have parked pre-#1771 (24h cap) now auto-approves."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
-    decision, _cap, _autonomous = task_cli._resolve_autonomous_plan_gate(24.0)
+    decision, _autonomous = task_cli._resolve_autonomous_plan_gate(10000.0)
     assert decision == "auto_approved"
 
 
-def test_auto_approve_respects_custom_cap(monkeypatch):
-    _clear_env(monkeypatch)
-    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
-    monkeypatch.setenv("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "48")
-    decision, cap, _autonomous = task_cli._resolve_autonomous_plan_gate(40.0)
-    assert decision == "auto_approved"
-    assert cap == 48.0
-
-
-# ─── autonomous + over cap / blank → parked_over_cap ──────────────────────
-
-
-def test_park_over_default_cap(monkeypatch):
-    _clear_env(monkeypatch)
-    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
-    decision, _cap, autonomous = task_cli._resolve_autonomous_plan_gate(30.0)
-    assert decision == "parked_over_cap"
-    assert autonomous is True
-
-
-def test_park_over_custom_cap(monkeypatch):
+def test_cap_env_var_is_inert_never_parks_on_gpu_hours(monkeypatch):
+    """DURABILITY PIN (#1771): even a small EPM_PLAN_AUTOAPPROVE_GPU_HOURS
+    with a gpu_hours estimate exceeding it MUST auto-approve — the resolver
+    no longer reads the env var. If a future change re-introduces the cap
+    comparison, this test flips to parked_* and fails loud."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
     monkeypatch.setenv("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "4")
-    decision, _cap, _autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
-    assert decision == "parked_over_cap"
+    decision, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+    assert decision == "auto_approved"
+    assert autonomous is True
+
+
+# ─── autonomous + blank → parked_no_estimate (fail-safe) ──────────────────
+
+
+def test_auto_approve_at_former_default_cap(monkeypatch):
+    """Formerly test_park_over_default_cap: gpu_hours=30 exceeded the 24h
+    default cap and parked. Under #1771 it auto-approves."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    decision, autonomous = task_cli._resolve_autonomous_plan_gate(30.0)
+    assert decision == "auto_approved"
+    assert autonomous is True
+
+
+def test_auto_approve_at_former_custom_cap(monkeypatch):
+    """Formerly test_park_over_custom_cap: gpu_hours=8 vs custom cap=4
+    parked. Under #1771 it auto-approves — the env var is inert."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    monkeypatch.setenv("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "4")
+    decision, _autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+    assert decision == "auto_approved"
 
 
 def test_park_when_gpu_hours_missing_fail_safe(monkeypatch):
-    """A blank/None estimate MUST park, never auto-approve (fail safe)."""
+    """A blank/None estimate MUST park, never auto-approve (fail safe).
+    The retained fail-safe — a correctness guard against an unestimated
+    plan, not a cost control."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
-    decision, _cap, _autonomous = task_cli._resolve_autonomous_plan_gate(None)
-    assert decision == "parked_over_cap"
+    decision, _autonomous = task_cli._resolve_autonomous_plan_gate(None)
+    assert decision == "parked_no_estimate"
 
 
-def test_unparseable_cap_falls_back_to_default(monkeypatch):
-    """A garbage cap env value falls back to 24.0 rather than crashing."""
+def test_garbage_cap_env_is_ignored(monkeypatch):
+    """A garbage cap env value is ignored (the env var is no longer read
+    by the resolver). Under #1771 the estimate alone drives the decision."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
     monkeypatch.setenv("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "not-a-number")
-    decision, cap, _autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
-    assert cap == 24.0
+    decision, _autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
     assert decision == "auto_approved"
 
 
@@ -140,12 +155,12 @@ def test_case_insensitive_truthiness(monkeypatch):
     _clear_env(monkeypatch)
     for falsy in ("", "0", "false", "False", "FALSE", "no", "No", "NO"):
         monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", falsy)
-        decision, _cap, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+        decision, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
         assert autonomous is False, f"{falsy!r} should be falsy"
         assert decision == "interactive_pending"
     for truthy in ("1", "yes", "true", "True"):
         monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", truthy)
-        _decision, _cap, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+        _decision, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
         assert autonomous is True, f"{truthy!r} should be truthy"
 
 
@@ -304,7 +319,7 @@ def test_hook_truthiness_matches_python_resolver(monkeypatch):
     _clear_env(monkeypatch)
     for value in ("", "0", "false", "False", "FALSE", "no", "No", "1", "yes", "true"):
         monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", value)
-        _d, _c, py_autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+        _d, py_autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
         hook_blocks = _run_ask_hook(_PLAN_APPROVAL_PAYLOAD, value) == 2
         assert hook_blocks == py_autonomous, (
             f"divergence on {value!r}: python_autonomous={py_autonomous} hook_blocks={hook_blocks}"

@@ -197,9 +197,11 @@ def test_set_status_plan_gate_holds_at_followups_running(monkeypatch, capsys):
     assert "followups_running hold: status unchanged" in out
 
 
-def test_set_status_plan_gate_hold_parked_over_cap(monkeypatch, capsys):
-    """The over-cap sub-branch of the plan-gate hold: posts
-    epm:awaiting-spend-approval, never moves the status."""
+def test_set_status_plan_gate_hold_parked_no_estimate(monkeypatch, capsys):
+    """The missing-estimate (fail-safe) sub-branch of the plan-gate hold:
+    posts epm:awaiting-spend-approval, never moves the status. Under
+    #1771 the gate is GPU-hour-blind, so parking triggers ONLY on a
+    missing/unparseable gpu_hours."""
     moved = []
     posted = []
     monkeypatch.setattr(
@@ -221,21 +223,20 @@ def test_set_status_plan_gate_hold_parked_over_cap(monkeypatch, capsys):
 
     monkeypatch.setattr(task_cli, "post_event", fake_post_event)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
-    monkeypatch.setenv("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "24")
 
     ns = argparse.Namespace(
         number=537,
         status="plan_pending",
         note=None,
         auto_approve_if_autonomous=True,
-        gpu_hours=200.0,  # over the 24h cap
+        gpu_hours=None,  # missing estimate → fail-safe park
     )
     task_cli.cmd_set_status(ns)
 
     assert moved == []
     assert posted == [(537, "epm:awaiting-spend-approval")]
     out = capsys.readouterr().out
-    assert "parked_over_cap" in out
+    assert "parked_no_estimate" in out
     assert "followups_running hold: status unchanged" in out
 
 
