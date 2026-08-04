@@ -84,6 +84,23 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
+
+def _ensure_scripts_dir_on_sys_path() -> None:
+    """Insert THIS file's dir (scripts/) so a lazy ``import session_resolver`` resolves.
+
+    In script mode scripts/ is already ``sys.path[0]``; in MODULE mode
+    (``from scripts.tick_triage import ...`` — the scan
+    ``test_every_lazy_scripts_local_import_is_bootstrap_guarded`` derives
+    tick_triage as a module-mode consumer because
+    ``autonomous_session_watch`` imports fingerprint helpers from it) only
+    the repo root is on sys.path, so a bare lazy ``session_resolver``
+    import would raise ``ModuleNotFoundError`` (#1296/#1304). Idempotent.
+    """
+    scripts_dir = str(Path(__file__).resolve().parent)
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+
+
 # ── status sets (issue mode) ────────────────────────────────────────────────
 # Mirror the /issue-tick skill's branch sets. Members must stay inside the
 # runtime enum `task_workflow.STATUSES`.
@@ -914,6 +931,7 @@ def _own_node_wrapper_pid() -> int | None:
     (it strips the trailing newline — an inline unstripped
     ``/proc/<pid>/comm`` read comparing ``== "claude"`` would never
     match)."""
+    _ensure_scripts_dir_on_sys_path()
     import session_resolver  # lazy: sys.path[0]=scripts/ per the SKILL contract
 
     pid = os.getpid()
@@ -934,6 +952,7 @@ def _own_session_transcript_path() -> str | None:
     wrong-session match is worse than a miss). ``None`` at every miss
     (fail toward ticking); the ``st_size`` guard runs BEFORE the
     whole-file log read so a pathological log never stalls the tick."""
+    _ensure_scripts_dir_on_sys_path()
     import session_resolver  # lazy: an import failure is a caller-guarded miss
 
     node = _own_node_wrapper_pid()
