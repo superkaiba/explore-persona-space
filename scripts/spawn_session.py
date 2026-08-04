@@ -1721,9 +1721,37 @@ def _ancestor_pids(max_depth: int = 50) -> list[int]:
 # ``sonnet``, ``haiku``, ``fable``, etc., OR a full model id like
 # ``claude-opus-4-8``. ``--betas`` is a comma-separated list of beta headers
 # (e.g. ``context-1m-2025-08-07`` for 1M-context). ``--effort`` is one of
-# ``low|medium|high|xhigh|max``. All three default to None and are simply not
-# passed to Claude when unset (session inherits ~/.claude/settings.json).
+# ``low|medium|high|xhigh|max``. ``--betas`` / ``--effort`` default to None and
+# are simply not passed to Claude when unset (session inherits
+# ~/.claude/settings.json).
+#
+# ``--model`` is the ONE exception: it defaults to ``fable`` (2026-08-04, user
+# directive "flip the spawner default"). The split it implements — TERMINAL
+# sessions on the global picker's Opus, every SPAWNED session + every Agent-tool
+# subagent on Fable — cannot be expressed in ~/.claude/settings.json, because
+# that file's ``model`` key is the single default BOTH terminal and spawned
+# sessions inherit. Pinning it here is what separates them. Agent-tool subagents
+# are already covered by per-agent ``model:`` frontmatter. Pass ``--model opus``
+# explicitly to opt a single spawn back onto Opus.
+#
+# NOTE: the value is ``fable`` (or ``claude-fable-5``) and NEVER
+# ``claude-fable-5[1m]`` — Fable is natively 1M and exposes no ``[1m]`` routing
+# variant; the harness rejects the suffixed id at spawn and every session dies
+# (task #545 / commit d07424178, ~72h fleet-wide outage).
+#
+# Side effect of a non-None default: ``_build_extra_claude_args`` now always
+# returns a non-empty list from the CLI paths, so the ``claudeArgs`` injection
+# branch — and with it ``_verify_happy_patch_or_die`` — is always taken. The
+# unguarded ``model=None`` branch survives as a function-level code path (still
+# exercised by tests/test_happy_patch_check.py case D) but is no longer
+# reachable from the CLI. That is the intended trade: an always-verified Happy
+# patch is strictly safer than a silently-unguarded spawn.
 _VALID_EFFORTS = ("low", "medium", "high", "xhigh", "max")
+
+# Default --model for every spawned session (spawn-pm / spawn-issue /
+# spawn-campaign). See the block comment above for why this lives here rather
+# than in ~/.claude/settings.json. NEVER append a "[1m]" suffix (task #545).
+DEFAULT_SPAWN_MODEL = "fable"
 
 
 def _add_claude_session_args(parser: argparse.ArgumentParser) -> None:
@@ -1733,12 +1761,14 @@ def _add_claude_session_args(parser: argparse.ArgumentParser) -> None:
     set of overrides."""
     parser.add_argument(
         "--model",
-        default=None,
+        default=DEFAULT_SPAWN_MODEL,
         help=(
             "Claude model alias or full id for the spawned session "
             "(e.g. 'opus', 'sonnet', 'fable', or 'claude-opus-4-8'). Forwarded "
-            "as --model to the underlying `claude` invocation. Default: unset "
-            "(session inherits the user's global Claude Code model)."
+            f"as --model to the underlying `claude` invocation. Default: "
+            f"'{DEFAULT_SPAWN_MODEL}' — spawned sessions run Fable while "
+            "TERMINAL sessions keep the global picker's model; pass "
+            "--model opus to opt this spawn back onto Opus."
         ),
     )
     parser.add_argument(
