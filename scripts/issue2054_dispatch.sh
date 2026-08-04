@@ -32,13 +32,16 @@
 #   bash scripts/issue2054_dispatch.sh audit_ii --output /tmp/issue-2054-smoke/ii.json
 #
 # FRAMING AXIS (plan §4): phase_b / phase_c / phase_d REQUIRE --form
-# (chat | bare_text | attrib_quoted | bare_label | bare_paragraph | indirect),
-# passed through per-cell — argparse refuses a form-less invocation, so the
-# router deliberately bakes NO default (the lattice's central manipulated
-# variable can never silently fall back to attrib_quoted). Cell (c) = phase_d
-# --form chat.
+# (chat | bare_text | attrib_quoted | bare_label | bare_paragraph | indirect).
+# phase_b / phase_c run MULTIPLE forms per cell, so --form passes through
+# per-cell and the router bakes NO default there (the lattice's central
+# manipulated variable can never silently fall back to attrib_quoted).
+# phase_d's ONLY planned cell is cell (c) — STORY-authored answer, CHAT
+# presentation (plan §4 Phase D / Block 3) — so the router PINS --form chat
+# on the phase_d wire; pass-through can still override for a deliberate
+# non-(c) rerun (argparse: last occurrence wins).
 #   bash scripts/issue2054_dispatch.sh phase_b --form attrib_quoted --answers-source <jsonl>
-#   bash scripts/issue2054_dispatch.sh phase_d --form chat
+#   bash scripts/issue2054_dispatch.sh phase_d
 
 set -euo pipefail
 
@@ -121,14 +124,21 @@ build_cmd() {
     phase_d)
       # Unit B: v4-new cell (c) transpose — STORY-authored answer, CHAT
       # presentation. Reads parent #1345 paired_op answers from HF and renders
-      # them under --form (REQUIRED; cell (c) = --form chat, plan §4 Phase D);
-      # NO NEW generation.
+      # them through the chat template. Cell (c)'s presentation is PINNED here
+      # (--form chat, plan §4 Phase D / framing 1): phase_d exists only to
+      # produce cell (c), and its form must not depend on the caller
+      # remembering the plan (C4). The driver keeps --form REQUIRED for
+      # direct invocations; router pass-through can override deliberately.
+      # NO NEW generation. The conv_id join to parent answers canonizes the
+      # stripper's `stripped_` prefix (C5) and requires phase_a's shared fold
+      # map (default eval_results/issue_2054/shared_fold_map.json).
       CMD=(
         uv run python scripts/issue2054_phase_d.py
         --scaffolds-dir data/issue_2054/scaffolds/
         --target-conv-ids 8000
         --output-dir data/issue_2054/cell_c/
         --seed 137
+        --form chat
       )
       ;;
     capture)
