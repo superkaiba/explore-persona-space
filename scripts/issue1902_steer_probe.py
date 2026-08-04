@@ -16,6 +16,14 @@ Arms (one batched pass over the SAME batches per arm; shifts are vs baseline):
                           positions of layer ell
   rand_L24_ctx            + norm-matched fixed-seed random vector (null)
 
+Null-band mode (--null-band 'seeds=1903,...;layers=16,24'): the preimage/random
+science arms are REPLACED by seeds x layers norm-matched (||v|| = ||v_pre||)
+fixed-seed random arms (same RNG recipe as issue1902_steer_vectors.py);
+baseline + rig-sanity are kept. --reuse-baseline stages the prior round's
+committed baseline arm npz from HF outputs (resume-hit reuse), and
+--baseline-recheck-rows N cross-checks it with a fresh unsteered forward
+(per-row cos > 0.9999 on the first N rows; rc=4 on failure = staging bug).
+
 GATE: rig-sanity must reproduce dy (cos > 0.99, norm ratio 0.95-1.05) or the
 summary is marked FAIL and the process exits rc=3 (summary written first —
 route on the artifact, not the rc).
@@ -60,6 +68,24 @@ INPUT_FILES = (
 )
 RIG_COS_MIN = 0.99
 RIG_NORM_RATIO = (0.95, 1.05)
+OUTPUTS_HF_DIR = f"{C.HF_PREFIX}/steer_probe/outputs"
+BASELINE_RECHECK_COS = 0.9999
+
+
+def parse_null_band(spec: str) -> dict:
+    """Parse 'seeds=1903,1904;layers=16,24' into {'seeds': [...], 'layers': [...]}."""
+    parts = dict(kv.split("=", 1) for kv in spec.split(";") if kv.strip())
+    out = {k: [int(x) for x in parts[k].split(",") if x.strip()] for k in ("seeds", "layers")}
+    assert out["seeds"] and out["layers"], f"empty null-band spec: {spec!r}"
+    assert len(set(out["seeds"])) == len(out["seeds"]), f"duplicate null-band seeds: {spec!r}"
+    return out
+
+
+def null_vector(seed: int, dim: int, norm: float) -> np.ndarray:
+    """Fixed-seed random direction scaled to `norm` (issue1902_steer_vectors recipe)."""
+    rng = np.random.default_rng(seed)
+    v = rng.standard_normal(dim)
+    return (v * (norm / np.linalg.norm(v))).astype(np.float32)
 
 
 def stage_inputs(inputs_dir: Path) -> None:
@@ -195,6 +221,50 @@ def run_arm(
     return states.astype(np.float32)
 
 
+def baseline_recheck(
+    model,
+    blocks,
+    entries: list[dict],
+    baseline_states: np.ndarray,
+    *,
+    n: int,
+    capture_layer: int,
+    device: str,
+) -> dict:
+    """Fresh unsteered forward over the first n rows vs the resolved baseline states.
+
+    Guards committed-baseline reuse across pods (same rows, same render, same
+    pooling): per-row cos <= 0.9999 is a staging/render bug -> rc=4 fail-loud."""
+    fresh = (
+        pool_batch_steered(
+            model,
+            blocks,
+            entries[:n],
+            capture_layer=capture_layer,
+            steer_vec=None,
+            steer_layer=None,
+            steer_positions=None,
+            device=device,
+        )
+        .numpy()
+        .astype(np.float32)
+    )
+    ref = baseline_states[:n].astype(np.float32)
+    cos = (fresh * ref).sum(1) / (
+        np.linalg.norm(fresh, axis=1) * np.linalg.norm(ref, axis=1) + 1e-12
+    )
+    stats = {"n_rows": int(n), "cos_min": float(cos.min()), "cos_mean": float(cos.mean())}
+    ok = stats["cos_min"] > BASELINE_RECHECK_COS
+    print(
+        f"[steer] BASELINE-RECHECK {'PASS' if ok else 'FAIL'}: {stats} "
+        f"(gate: cos_min>{BASELINE_RECHECK_COS})",
+        flush=True,
+    )
+    if not ok:
+        sys.exit(4)
+    return stats
+
+
 def _cos(a: np.ndarray, b: np.ndarray) -> float:
     return float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b)))
 
@@ -233,6 +303,31 @@ def main() -> None:
     ap.add_argument("--layer-rand", type=int, default=24)
     ap.add_argument("--layer-capture", type=int, default=31)
     ap.add_argument("--stage-only", action="store_true", help="stage inputs then exit")
+    ap.add_argument(
+        "--null-band",
+        default="",
+        help="'seeds=1903,1904;layers=16,24' — replace the preimage/random science arms "
+        "with norm-matched (||v_pre||) fixed-seed random null arms",
+    )
+    ap.add_argument(
+        "--reuse-baseline",
+        action="store_true",
+        help="stage the prior round's committed baseline arm npz from HF outputs "
+        "(resume-hit reuse)",
+    )
+    ap.add_argument(
+        "--baseline-recheck-rows",
+        type=int,
+        default=0,
+        help="N>0: fresh unsteered forward over the first N rows; require per-row "
+        "cos > 0.9999 vs the resolved baseline states (rc=4 on failure)",
+    )
+    ap.add_argument(
+        "--upload",
+        action="store_true",
+        help="upload this run's NEW null-arm npzs + summary to the HF outputs dir "
+        "(one commit, exact-set verified); committed prior-round arms are never overwritten",
+    )
     args = ap.parse_args()
 
     import torch
@@ -273,7 +368,9 @@ def main() -> None:
     blocks, _embed, _depth = _resolve_decoder_blocks(model)
     assert blocks is not None, "decoder blocks unresolvable — steering hooks need the hook path"
     layers_sci = [int(x) for x in args.layers_sci.split(",") if x.strip()]
-    for layer in [*layers_sci, args.layer_rand, args.layer_capture]:
+    null_spec = parse_null_band(args.null_band) if args.null_band else None
+    null_layers = null_spec["layers"] if null_spec else []
+    for layer in [*layers_sci, args.layer_rand, args.layer_capture, *null_layers]:
         assert 0 <= layer < n_layers, f"layer {layer} out of range (n_layers={n_layers})"
 
     dev = torch.device(args.device)
@@ -284,8 +381,24 @@ def main() -> None:
         ("baseline", None, None, None),
         (f"rig_sanity_dy_L{args.layer_capture}_ans", vt["dy"], args.layer_capture, "answer"),
     ]
-    arms += [(f"pre_L{ell}_ctx", vt["v_pre"], ell, "ctx") for ell in layers_sci]
-    arms += [(f"rand_L{args.layer_rand}_ctx", vt["v_rand"], args.layer_rand, "ctx")]
+    norm_target = float(np.linalg.norm(vecs["v_pre"]))
+    if null_spec:
+        for seed in null_spec["seeds"]:
+            nv = torch.tensor(
+                null_vector(seed, hidden, norm_target), dtype=torch.float32, device=dev
+            )
+            arms += [(f"null_s{seed}_L{ell}_ctx", nv, ell, "ctx") for ell in null_spec["layers"]]
+    else:
+        arms += [(f"pre_L{ell}_ctx", vt["v_pre"], ell, "ctx") for ell in layers_sci]
+        arms += [(f"rand_L{args.layer_rand}_ctx", vt["v_rand"], args.layer_rand, "ctx")]
+
+    if args.reuse_baseline:
+        baseline_npz = args.out_root / "arms" / "baseline.npz"
+        if not baseline_npz.exists():
+            from explore_persona_space.orchestrate import hub
+
+            hub.stage_hub_file(C.HF_DATA_REPO, f"{OUTPUTS_HF_DIR}/arms/baseline.npz", baseline_npz)
+            print("[steer] staged committed baseline.npz <- hf outputs (resume reuse)", flush=True)
 
     entries = [
         R._capture_row_entry(
@@ -301,6 +414,7 @@ def main() -> None:
 
     out_states: dict[str, np.ndarray] = {}
     rig_gate: dict | None = None
+    recheck_stats: dict | None = None
     t_run = time.time()
     for k, (name, vec, layer, positions) in enumerate(arms, start=1):
         out_states[name] = run_arm(
@@ -319,6 +433,16 @@ def main() -> None:
             steer_positions=positions,
             device=args.device,
         )
+        if name == "baseline" and args.baseline_recheck_rows > 0:
+            recheck_stats = baseline_recheck(
+                model,
+                blocks,
+                entries,
+                out_states["baseline"],
+                n=args.baseline_recheck_rows,
+                capture_layer=args.layer_capture,
+                device=args.device,
+            )
         if name.startswith("rig_sanity"):
             shift = out_states[name] - out_states["baseline"]
             mean_shift = shift.mean(0)
@@ -337,13 +461,18 @@ def main() -> None:
     assert rig_gate is not None
     baseline = out_states["baseline"]
     summary = {
-        "round": "steer_probe (user-chat inline override, task #1902)",
+        "round": (
+            "steer_probe null_band leg (inline scope-completion, task #1902)"
+            if null_spec
+            else "steer_probe (user-chat inline override, task #1902)"
+        ),
         "model_id": args.model_id,
         "revision": revision,
         "device": args.device,
         "layer_capture": args.layer_capture,
         "n_rows": len(rows),
         "rig_sanity_gate": rig_gate,
+        "baseline_recheck": recheck_stats,
         "predicted_reachable_magnitude": meta["vector_stats"]["predicted_reachable_magnitude"],
         "vector_norms": {n: float(np.linalg.norm(v)) for n, v in vecs.items()},
         "arms": {
@@ -358,7 +487,25 @@ def main() -> None:
             "script": "scripts/issue1902_steer_probe.py",
         },
     }
-    out_json = args.out_root / "steer_probe.json"
+    if null_spec:
+        bands: dict[str, dict] = {}
+        for ell in null_spec["layers"]:
+            names = [f"null_s{s}_L{ell}_ctx" for s in null_spec["seeds"]]
+            for key, field in (("c_star", "cos_mean_shift_c_star"), ("dy", "cos_mean_shift_dy")):
+                vals = [summary["arms"][n][field] for n in names]
+                bands.setdefault(str(ell), {})[key] = {
+                    "values": [round(float(v), 6) for v in vals],
+                    "mean": float(np.mean(vals)),
+                    "min": float(np.min(vals)),
+                    "max": float(np.max(vals)),
+                }
+        summary["null_band"] = {
+            "seeds": null_spec["seeds"],
+            "layers": null_spec["layers"],
+            "norm_target": norm_target,
+            "bands": bands,
+        }
+    out_json = args.out_root / ("steer_probe_null_band.json" if null_spec else "steer_probe.json")
     R._write_json_atomic(out_json, summary)
     for name, s in summary["arms"].items():
         print(
@@ -366,6 +513,38 @@ def main() -> None:
             f"cos(dy)={s['cos_mean_shift_dy']:+.4f} |mean_shift|={s['norm_mean_shift']:.3f}",
             flush=True,
         )
+    if args.upload:
+        assert null_spec, "--upload is wired for the null-band leg only (new files, no overwrite)"
+        from explore_persona_space.orchestrate import hub
+
+        api = R._hf_api()
+        new_rel = sorted(f"arms/{name}.npz" for name, *_ in arms if name.startswith("null_"))
+        new_rel.append(out_json.name)
+        # allow_patterns restricts the commit to THIS run's new files — the committed
+        # prior-round arms (baseline/pre_*/rand_*/rig_sanity) are never re-uploaded.
+        hub.assert_hub_dir_filecounts(  # deterministic guard, outside the retry wrapper
+            str(args.out_root),
+            OUTPUTS_HF_DIR,
+            allow_patterns=["arms/null_s*_ctx.npz", out_json.name],
+        )
+        hub.retry_transient(
+            lambda: api.upload_folder(
+                folder_path=str(args.out_root),
+                path_in_repo=OUTPUTS_HF_DIR,
+                repo_id=C.HF_DATA_REPO,
+                repo_type="dataset",
+                allow_patterns=["arms/null_s*_ctx.npz", out_json.name],
+                commit_message="issue1902 steer_probe: null-band arms",
+            ),
+            what=f"upload_folder {OUTPUTS_HF_DIR} (null band)",
+        )
+        expected = [f"{OUTPUTS_HF_DIR}/{p}" for p in new_rel]
+        missing = hub.verify_repo_paths_uploaded(
+            api, C.HF_DATA_REPO, expected, path_in_repo=OUTPUTS_HF_DIR, repo_type="dataset"
+        )
+        if missing:
+            raise RuntimeError(f"null-band outputs upload verify FAILED, missing: {missing}")
+        print(f"[steer] uploaded + verified {len(expected)} files -> {OUTPUTS_HF_DIR}", flush=True)
     print(f"[steer] done: {out_json} (rig_sanity pass={rig_gate['pass']})", flush=True)
     sys.stdout.flush()
     sys.stderr.flush()

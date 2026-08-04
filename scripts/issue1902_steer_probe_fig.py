@@ -42,40 +42,75 @@ def main() -> None:
         set_paper_style,
     )
 
+    import numpy as np
+
     s = json.load(open(args.summary))
     arms = s["arms"]
-    order = [n for n in arms if n.startswith("pre_")]
-    order += [n for n in arms if n.startswith("rand_")]
-    order += [n for n in arms if n.startswith("rig_sanity")]
-    labels = {
-        n: n.replace("pre_", "preimage\n").replace("_ctx", " @ctx").replace("rand_", "random\n")
-        for n in order
-    }
-    for n in order:
-        if n.startswith("rig_sanity"):
-            labels[n] = f"rig sanity\n(+dy @ans, L{s['layer_capture']})"
+    null_band = s.get("null_band")
+    bands = null_band["bands"] if null_band else {}
+
+    # Tick sequence: each preimage arm, followed by its matched-layer null cloud
+    # (when present), then the original single random draw, then rig-sanity.
+    ticks: list[tuple[str, str]] = []  # (kind, key): kind in {arm, null}
+    for n in (n for n in arms if n.startswith("pre_")):
+        ticks.append(("arm", n))
+        ell = n.removeprefix("pre_L").removesuffix("_ctx")
+        if ell in bands:
+            ticks.append(("null", ell))
+    ticks += [("arm", n) for n in arms if n.startswith("rand_")]
+    ticks += [("arm", n) for n in arms if n.startswith("rig_sanity")]
+
+    labels = []
+    for kind, key in ticks:
+        if kind == "null":
+            labels.append(f"random null\nx{len(null_band['seeds'])} @ctx L{key}")
+        elif key.startswith("rig_sanity"):
+            labels.append(f"rig sanity\n(+dy @ans, L{s['layer_capture']})")
+        else:
+            labels.append(
+                key.replace("pre_", "preimage\n")
+                .replace("_ctx", " @ctx")
+                .replace("rand_", "random\n")
+            )
 
     set_paper_style()
-    fig, ax = plt.subplots(figsize=(7.0, 4.2))
-    x = range(len(order))
-    cos_c = [arms[n]["cos_mean_shift_c_star"] for n in order]
-    cos_dy = [arms[n]["cos_mean_shift_dy"] for n in order]
-    ax.scatter(x, cos_c, s=90, color=paper_palette_role("primary"), label="cos(mean shift, c*)")
-    ax.scatter(
-        x,
-        cos_dy,
-        s=90,
-        marker="D",
-        color=paper_palette_role("baseline"),
-        label="cos(mean shift, dy)",
-    )
-    for xi, (cc, cd) in zip(x, zip(cos_c, cos_dy)):
-        ax.vlines(
-            xi, min(cc, cd), max(cc, cd), color=paper_palette_role("neutral"), lw=1, alpha=0.5
-        )
-    ax.axhline(0.0, color=paper_palette_role("neutral"), lw=1, ls="--", alpha=0.7)
-    ax.set_xticks(list(x))
-    ax.set_xticklabels([labels[n] for n in order])
+    fig, ax = plt.subplots(figsize=(8.6 if bands else 7.0, 4.2))
+    c_primary = paper_palette_role("primary")
+    c_baseline = paper_palette_role("baseline")
+    c_neutral = paper_palette_role("neutral")
+    for xi, (kind, key) in enumerate(ticks):
+        if kind == "arm":
+            cc = arms[key]["cos_mean_shift_c_star"]
+            cd = arms[key]["cos_mean_shift_dy"]
+            ax.scatter([xi], [cc], s=90, color=c_primary, zorder=3)
+            ax.scatter([xi], [cd], s=90, marker="D", color=c_baseline, zorder=3)
+            ax.vlines(xi, min(cc, cd), max(cc, cd), color=c_neutral, lw=1, alpha=0.5)
+        else:
+            band = bands[key]
+            k = len(band["c_star"]["values"])
+            jit = np.linspace(-0.18, 0.18, k)
+            ax.scatter(
+                xi + jit, band["c_star"]["values"], s=36, color=c_primary, alpha=0.55, zorder=2
+            )
+            ax.scatter(
+                xi + jit,
+                band["dy"]["values"],
+                s=36,
+                marker="D",
+                color=c_baseline,
+                alpha=0.55,
+                zorder=2,
+            )
+            for off, tgt, col in ((-0.28, "c_star", c_primary), (0.28, "dy", c_baseline)):
+                ax.vlines(xi + off, band[tgt]["min"], band[tgt]["max"], color=col, lw=2, alpha=0.4)
+    # Legend proxies (loop-drawn points carry no labels).
+    ax.scatter([], [], s=90, color=c_primary, label="cos(mean shift, c*)")
+    ax.scatter([], [], s=90, marker="D", color=c_baseline, label="cos(mean shift, dy)")
+    if bands:
+        ax.scatter([], [], s=36, color=c_neutral, alpha=0.55, label="matched random nulls")
+    ax.axhline(0.0, color=c_neutral, lw=1, ls="--", alpha=0.7)
+    ax.set_xticks(range(len(ticks)))
+    ax.set_xticklabels(labels)
     ax.set_ylabel("cos(mean answer-state shift, target)")
     ax.set_title(
         "OLMo-2-7B base: residual-stream intervention at context positions\n"
