@@ -158,14 +158,14 @@ SPLIT_FILES = {
 
 def _load_env() -> None:
     """Load .env for HF_TOKEN — used by huggingface_hub calls."""
-    try:
-        from explore_persona_space.orchestrate.env import load_dotenv  # type: ignore
+    # NO bare-dotenv fallback. The project wrapper is the required loader
+    # (`workflow_lint.py --check-dotenv-before-hf-import`), and the previous
+    # `except Exception:` fallback swallowed genuine project-loader faults —
+    # then loaded a DIFFERENT env, so an HF_TOKEN problem surfaced later as an
+    # opaque auth error instead of here. If the helper moves, this fails loud.
+    from explore_persona_space.orchestrate.env import load_dotenv  # type: ignore
 
-        load_dotenv()
-    except Exception:  # pragma: no cover - fallback if the helper moves
-        from dotenv import load_dotenv as _ld  # type: ignore
-
-        _ld()
+    load_dotenv()
 
 
 def _hf_api():
@@ -245,6 +245,12 @@ def _verify_parent_meta(cache_dir: Path) -> dict:
 def _verify_ladder_manifest_present() -> bool:
     """Return True iff the ladder manifest already exists on HF with the
     expected file set."""
+    from huggingface_hub.errors import (  # type: ignore
+        EntryNotFoundError,
+        HfHubHTTPError,
+        RepositoryNotFoundError,
+    )
+
     api = _hf_api()
     try:
         entries = list(
@@ -255,8 +261,20 @@ def _verify_ladder_manifest_present() -> bool:
                 recursive=True,
             )
         )
-    except Exception:
+    except (EntryNotFoundError, RepositoryNotFoundError):
+        # Genuinely not-yet-uploaded — the ONLY case that legitimately means
+        # "absent". Everything else re-raises.
         return False
+    except HfHubHTTPError as exc:
+        # NOTE (issue-1491): this was `except Exception: return False`, so a
+        # transient 429/5xx or an auth fault read as "prefix absent" and
+        # silently triggered a full rebuild + in-place re-upload of the
+        # manifest — i.e. a network blip could REPLACE the pinned contexts
+        # mid-experiment. A transport fault is not evidence of absence.
+        status = getattr(getattr(exc, "response", None), "status_code", None)
+        if status == 404:
+            return False
+        raise
     present = {e.path.split("/")[-1] for e in entries if not e.path.endswith("/")}
     expected = {MANIFEST_META_NAME, *SPLIT_FILES.values()}
     return expected.issubset(present)
@@ -278,6 +296,7 @@ def _tokenizer_identity_assert() -> dict:
     per_model = []
     templates: set[str] = set()
     vocab_hashes: set[str] = set()
+    merges_hashes: set[str] = set()
     tokenizer_config_hashes: dict[str, str] = {}
     for model_id in QWEN_LADDER:
         cfg_local = hf_hub_download(repo_id=model_id, filename="tokenizer_config.json")
@@ -294,11 +313,25 @@ def _tokenizer_identity_assert() -> dict:
             vocab_bytes = fh.read()
         vocab_hash = hashlib.sha256(vocab_bytes).hexdigest()
         vocab_hashes.add(vocab_hash)
+        # BPE MERGE TABLE — load-bearing, and previously unchecked.
+        #
+        # NOTE (issue-1491): the gate hashed chat_template + vocab.json only.
+        # Identical vocabularies with DIFFERENT merge tables segment the same
+        # string differently, so a merge-table divergence across the ladder
+        # would silently invalidate both things this gate exists to justify:
+        # the shared over-length token budget, and the premise that one
+        # tokenizer-derived context filter is valid for all six scales.
+        merges_local = hf_hub_download(repo_id=model_id, filename="merges.txt")
+        with open(merges_local, "rb") as fh:
+            merges_bytes = fh.read()
+        merges_hash = hashlib.sha256(merges_bytes).hexdigest()
+        merges_hashes.add(merges_hash)
         per_model.append(
             {
                 "model_id": model_id,
                 "tokenizer_config_sha256": cfg_sha,
                 "vocab_sha256": vocab_hash,
+                "merges_sha256": merges_hash,
             }
         )
     assert len(templates) == 1, (
@@ -307,10 +340,17 @@ def _tokenizer_identity_assert() -> dict:
     assert len(vocab_hashes) == 1, (
         f"vocab hash mismatch across ladder — {len(vocab_hashes)} distinct vocabs"
     )
+    assert len(merges_hashes) == 1, (
+        f"BPE merge-table mismatch across ladder — {len(merges_hashes)} distinct "
+        "merges.txt. Identical vocabs with different merge tables segment text "
+        "differently, so neither the shared over-length token budget nor the "
+        "single-tokenizer context filter is valid across these scales."
+    )
     chat_template = templates.pop()
     return {
         "chat_template_sha256": hashlib.sha256(chat_template.encode("utf-8")).hexdigest(),
         "vocab_sha256": next(iter(vocab_hashes)),
+        "merges_sha256": next(iter(merges_hashes)),
         "per_model": per_model,
         "tokenizer_config_hashes": tokenizer_config_hashes,
     }
@@ -614,10 +654,104 @@ def build_manifest(out_dir: Path, *, smoke: bool = False, dry_run: bool = False)
         },
         "output_files": SPLIT_FILES,
     }
+
+    # Per-split CONTENT shas — the cross-scale-identity guard.
+    #
+    # NOTE (issue-1491): only val_400 / test_1000 carried a sha (the pinned
+    # parent values). train_25k / wc_test_1k / tierB_3600 recorded COUNTS only,
+    # so a rebuild producing DIFFERENT content at the SAME counts was
+    # undetectable. That is the cross-scale-mismatch scenario this whole design
+    # rests on avoiding: numpy does not guarantee Generator.choice stream
+    # stability across versions, so a rebuild under a different numpy silently
+    # re-draws the training contexts — and any scale already captured against
+    # the previous draw becomes incomparable, with no signal anywhere. Hash
+    # exactly the bytes that get uploaded.
+    for split_name, fname in SPLIT_FILES.items():
+        fpath = out_dir / fname
+        if fpath.exists():
+            meta["splits"].setdefault(split_name, {})["content_sha256"] = hashlib.sha256(
+                fpath.read_bytes()
+            ).hexdigest()
+
     (out_dir / MANIFEST_META_NAME).write_text(
         json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     return meta
+
+
+def _remote_manifest_meta() -> dict | None:
+    """Fetch the ALREADY-UPLOADED ladder meta.json, or None if absent.
+
+    Transport faults re-raise (never read as absent) — same discipline as
+    `_verify_ladder_manifest_present`.
+    """
+    from huggingface_hub import hf_hub_download  # type: ignore
+    from huggingface_hub.errors import (  # type: ignore
+        EntryNotFoundError,
+        HfHubHTTPError,
+        RepositoryNotFoundError,
+    )
+
+    try:
+        local = hf_hub_download(
+            repo_id=LADDER_HF_REPO,
+            filename=f"{LADDER_HF_PREFIX}/{MANIFEST_META_NAME}",
+            repo_type="dataset",
+        )
+    except (EntryNotFoundError, RepositoryNotFoundError):
+        return None
+    except HfHubHTTPError as exc:
+        if getattr(getattr(exc, "response", None), "status_code", None) == 404:
+            return None
+        raise
+    with open(local, encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def assert_no_silent_content_drift(new_meta: dict) -> None:
+    """Refuse an in-place re-upload that would CHANGE any split's content.
+
+    A `--force` rebuild is legitimate for re-uploading identical bytes (a
+    partial upload, a corrupted remote file). It is NOT legitimate for
+    replacing the pinned contexts of an experiment whose earlier scales have
+    already been captured: those captures silently become incomparable with the
+    later ones, and the cross-scale comparison — the entire point of the
+    ladder — is invalidated with no signal.
+
+    So: identical content re-uploads freely; CHANGED content must go to a new
+    `recipe_version` (a version bump), never over the existing prefix.
+    """
+    remote = _remote_manifest_meta()
+    if remote is None:
+        return  # nothing published yet — nothing to drift from
+    drifted = []
+    for split_name, new_split in new_meta.get("splits", {}).items():
+        new_sha = new_split.get("content_sha256")
+        old_sha = remote.get("splits", {}).get(split_name, {}).get("content_sha256")
+        if new_sha and old_sha and new_sha != old_sha:
+            drifted.append((split_name, old_sha[:12], new_sha[:12]))
+    if drifted:
+        detail = "; ".join(f"{s}: {o} -> {n}" for s, o, n in drifted)
+        raise RuntimeError(
+            "REFUSING in-place re-upload — split content changed vs the published "
+            f"manifest ({detail}). Any scale already captured against the published "
+            "manifest would become incomparable with scales captured against this "
+            "one, silently invalidating the cross-scale comparison. Publish under a "
+            "new recipe_version / prefix instead of overwriting. "
+            f"(published recipe_version={remote.get('recipe_version')!r}, "
+            f"new={new_meta.get('recipe_version')!r})"
+        )
+    if remote.get("recipe_version") and not any(
+        remote.get("splits", {}).get(s, {}).get("content_sha256")
+        for s in new_meta.get("splits", {})
+    ):
+        # Published BEFORE content shas existed — cannot prove identity.
+        print(
+            "[manifest] WARNING: published manifest predates content shas; "
+            "identity with the new build is UNPROVEN. Verify before reusing "
+            "captures made against it.",
+            flush=True,
+        )
 
 
 def upload_manifest(local_dir: Path) -> None:
@@ -709,6 +843,9 @@ def main() -> int:
         return 0
 
     meta = build_manifest(args.out_dir, smoke=False)
+    # Fail BEFORE the upload: a rebuild whose content differs from the published
+    # manifest must never silently replace it (see assert_no_silent_content_drift).
+    assert_no_silent_content_drift(meta)
     upload_manifest(args.out_dir)
     print(f"UPLOAD OK — wrote and uploaded {LADDER_HF_REPO}:{LADDER_HF_PREFIX}")
     print(json.dumps(meta["splits"], indent=2))
