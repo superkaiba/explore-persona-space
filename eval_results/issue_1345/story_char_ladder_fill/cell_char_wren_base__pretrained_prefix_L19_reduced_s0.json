@@ -1,0 +1,113 @@
+{
+  "regime": "char_wren_base",
+  "arm": "prefix",
+  "metadata": {
+    "git_commit": "32c70a36739d0b4fb33ca70aee5effcbf411448f",
+    "script": "scripts/issue1345_story_char_ladder_fill.py",
+    "timestamp": "2026-08-03T22:04:41Z",
+    "seed": 0,
+    "layer": 19,
+    "arm": "prefix",
+    "n_folds": 5,
+    "fold_scheme": "conversation-grouped K=5 (fit825._cv_folds on the matched conv-id set)",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "store_pins": {
+      "parent_turnstore": {
+        "prefix": "issue1345_framing/analysis_tensors/turnstore",
+        "revision": "e151f8fd30a466cd9e2f05b9b86cf6dde76bca74"
+      },
+      "conversation_paired_stories_assistant_turnstore": {
+        "prefix": "issue1345_framing/conversation_paired_stories_assistant/analysis_tensors/turnstore",
+        "revision": "1ef6def108678c458a03d190c8105ced55fe58a7"
+      },
+      "onpolicy_assistant_story_turnstore": {
+        "prefix": "issue1345_framing/onpolicy_assistant_story/analysis_tensors/turnstore",
+        "revision": "eca4accbf8eef9d4eebe546dbc8f3131c4031df4"
+      }
+    },
+    "model": "pretrained",
+    "max_rows": 0
+  },
+  "reduced": {
+    "ceiling_r2": [
+      0.03078709126858392
+    ],
+    "identity_bias_r2": [
+      -1.6893176528103027
+    ],
+    "fold_ceiling_r2": [
+      [
+        0.03674102661372314
+      ],
+      [
+        0.03190820690470619
+      ],
+      [
+        0.0341402683163371
+      ],
+      [
+        0.026598313058283196
+      ],
+      [
+        0.024291038914065366
+      ]
+    ],
+    "fold_ids": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "knn_retrieval_fold0": {
+      "n_pool": 429,
+      "ceiling": {
+        "acc@1": [
+          0.004662004662004662
+        ],
+        "chance@1": 0.002331002331002331,
+        "acc@5": [
+          0.037296037296037296
+        ],
+        "chance@5": 0.011655011655011656
+      },
+      "identity_bias": {
+        "acc@1": [
+          0.013986013986013986
+        ],
+        "chance@1": 0.002331002331002331,
+        "acc@5": [
+          0.04195804195804196
+        ],
+        "chance@5": 0.011655011655011656
+      }
+    },
+    "selected_lambda_per_fold": [
+      3162.2776601683795,
+      10000.0,
+      10000.0,
+      3162.2776601683795,
+      3162.2776601683795
+    ],
+    "dof_frac_per_fold": [
+      0.17568230121528058,
+      0.07312387927217377,
+      0.07312387927061034,
+      0.17564633305374583,
+      0.17564633305197036
+    ],
+    "dof_frac_max": 0.17568230121528058,
+    "n": 2143,
+    "n_train_min": 1714,
+    "d": 3584,
+    "basis": "reduced",
+    "reduced_basis_k": 857,
+    "reduced_basis_k_rule": "min(1024, floor(n_train_min/2), d)",
+    "slot_degeneracy": {
+      "n_unique_slot_rows": 2143,
+      "cos_to_mean_min": 0.13622426986694336,
+      "cos_to_mean_mean": 0.8337669968605042
+    }
+  }
+}
