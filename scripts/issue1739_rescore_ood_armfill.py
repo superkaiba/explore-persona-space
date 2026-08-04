@@ -579,6 +579,17 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
     dv_ev = np.asarray(tbl_ev.dv, dtype=np.float64)
     rungs_ev = [str(r) for r in tbl_ev.row_rungs]
 
+    # rb-INDEPENDENT fit cache, hoisted ABOVE the (variant, regime) group loop
+    # — same rationale as issue1739_rescore_ood.py: the rb_indep arms never
+    # read ``data.rb`` (the only regime-varying input; arms.py _rowset_seed
+    # contract), and the per-group whitening/map refits are deterministic
+    # functions of regime-free inputs, so one fit per (variant, row-set)
+    # serves every regime. Keyed (variant, rs_key) — the whitened tables
+    # differ per variant. ``_ridge_folds_arg(args)`` is a run-level constant,
+    # so it does not enter the key. Pinned by
+    # tests/test_issue1739_rbindep_cache_hoist.py. rb_dep fits stay per-group.
+    rbindep_cache: dict[tuple[str, str], tuple[dict, dict]] = {}
+
     for (variant, regime), group_cells in sorted(groups_by_vr.items()):
         _log(f"--- variant={variant} regime={regime} ({len(group_cells)} cells) ---")
 
@@ -638,9 +649,9 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
         za_tr_w = fits.apply_whitening(za_tr_raw, wh)
         za_ev_w = fits.apply_whitening(za_ev_raw, wh)
 
-        # --- rb-caching: one fit per realized row-set for rb_indep,
-        #                 per (regime, row-set, seed) for rb_dep ---
-        rbindep_cache: dict[str, tuple[dict, dict]] = {}
+        # --- rb-caching: one fit per (variant, realized row-set) for rb_indep
+        #                 (hoisted cache above), per (regime, row-set, seed)
+        #                 for rb_dep ---
         rbdep_cache: dict[tuple, tuple[dict, dict]] = {}
 
         t0 = time.time()
@@ -673,9 +684,10 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
             )
 
             rs_key = hashlib.sha1(cell.row_idx.tobytes()).hexdigest()
+            ik = (variant, rs_key)
 
-            if rb_indep and rs_key not in rbindep_cache:
-                rbindep_cache[rs_key] = arms.run_transfer_cell(
+            if rb_indep and ik not in rbindep_cache:
+                rbindep_cache[ik] = arms.run_transfer_cell(
                     data,
                     cell,
                     z_ev_w,
@@ -699,7 +711,7 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
                     ridge_folds=_ridge_folds_arg(args),
                 )
 
-            s_indep, sk_indep = rbindep_cache.get(rs_key, ({}, {}))
+            s_indep, sk_indep = rbindep_cache.get(ik, ({}, {}))
             s_dep, sk_dep = rbdep_cache.get(ck, ({}, {}))
             scores_ev: dict[str, np.ndarray] = {**s_dep, **s_indep}
 
