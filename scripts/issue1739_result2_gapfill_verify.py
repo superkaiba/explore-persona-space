@@ -200,12 +200,90 @@ def check_n_eval_parity(cov: dict, repo_root: Path) -> list[str]:
     return notes
 
 
+def _row_key(row: dict) -> tuple:
+    """Identity of one replicate row, for cross-leg de-duplication."""
+    return (
+        row.get("arm"),
+        row.get("eval_rung"),
+        row.get("variant"),
+        row.get("regime"),
+        row.get("u_rung_label"),
+        row.get("budget_l"),
+        row.get("draw"),
+        row.get("seed"),
+        row.get("layer"),
+        row.get("rung_kind"),
+    )
+
+
+def merge_legs(legs_root: Path, dest_root: Path) -> dict:
+    """Union the per-leg summaries into ONE summary at ``dest_root``.
+
+    The grid is fanned out across parallel legs (one out-root per
+    (variant, draw) — two legs sharing an out-root would clobber each other's
+    ``percell/`` resume state), so the fold needs the legs stitched back into
+    the single ``all_arms_spearman.json`` shape every downstream reader
+    expects. Rows are de-duplicated on their full replicate identity, so a
+    re-run leg cannot double-count. Leg metas are recorded under
+    ``meta.merged_from`` rather than silently collapsed.
+    """
+    leg_summaries = sorted(legs_root.glob("*/*/arm_results/all_arms_spearman.json"))
+    if not leg_summaries:
+        raise SystemExit(f"[gapfill-verify] no leg summaries under {legs_root}")
+    arm_rows: dict[tuple, dict] = {}
+    transfer_rows: dict[tuple, dict] = {}
+    skips: list = []
+    metas = {}
+    for path in leg_summaries:
+        with open(path) as fh:
+            blob = json.load(fh)
+        leg = path.parents[2].name
+        metas[leg] = {
+            "path": str(path),
+            "n_arm_rows": len(blob.get("arm_rows") or []),
+            "n_transfer_rows": len(blob.get("transfer_rows") or []),
+            "meta": blob.get("meta"),
+        }
+        for row in blob.get("arm_rows") or []:
+            arm_rows.setdefault(_row_key(row), row)
+        for row in blob.get("transfer_rows") or []:
+            transfer_rows.setdefault(_row_key(row), row)
+        skips.extend(blob.get("transfer_skips") or [])
+    base = json.loads(Path(leg_summaries[0]).read_text())
+    merged = {
+        "n_cells": len(arm_rows),
+        "n_arm_rows": len(arm_rows),
+        "arm_rows": list(arm_rows.values()),
+        "headlines": base.get("headlines"),
+        "nulls": base.get("nulls"),
+        "meta": {**(base.get("meta") or {}), "merged_from": metas},
+        "ts": base.get("ts"),
+        "transfer_rows": list(transfer_rows.values()),
+        "transfer_skips": skips,
+    }
+    dest = dest_root / "arm_results" / "all_arms_spearman.json"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(json.dumps(merged, indent=1))
+    print(
+        f"[gapfill-verify] merged {len(leg_summaries)} leg(s) -> {dest} "
+        f"({len(arm_rows)} arm_rows, {len(transfer_rows)} transfer_rows)"
+    )
+    return merged
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument(
         "--out-root",
         type=Path,
         default=Path("eval_results/issue_1739/result2_gapfill/hallucination"),
+    )
+    ap.add_argument(
+        "--merge-legs",
+        type=Path,
+        default=None,
+        help="union every <legs-root>/<leg>/<behavior>/arm_results/all_arms_spearman.json "
+        "into --out-root before verifying (parallel-leg fan-out)",
     )
     ap.add_argument("--tensors-root", type=Path, default=Path("analysis_tensors/issue_1739"))
     ap.add_argument("--repo-root", type=Path, default=Path("."))
@@ -216,6 +294,9 @@ def main() -> int:
         help="on PASS, write map_kind into the summary meta + every emitted row",
     )
     args = ap.parse_args()
+
+    if args.merge_legs is not None:
+        merge_legs(args.merge_legs, args.out_root)
 
     summary_path = args.out_root / "arm_results" / "all_arms_spearman.json"
     with open(summary_path) as fh:
