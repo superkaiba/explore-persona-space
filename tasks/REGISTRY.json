@@ -7603,8 +7603,8 @@
     "1982": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1982",
-      "status": "running",
+      "path": "tasks/completed/1982",
+      "status": "completed",
       "title": "workflow-fix: carry-over gate bare-name channel \u2014 HF-staged inputs WARN not FAIL"
     },
     "1983": {
