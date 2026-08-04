@@ -8242,8 +8242,8 @@
     "2065": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2065",
-      "status": "proposed",
+      "path": "tasks/planning/2065",
+      "status": "planning",
       "title": "workflow-fix: flag dirty-tree provenance in result-JSON repr"
     },
     "2066": {
