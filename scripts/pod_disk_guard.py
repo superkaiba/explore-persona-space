@@ -37,6 +37,7 @@ import fnmatch
 import os
 import shutil
 import sys
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -80,7 +81,12 @@ def probe_quota_headroom(root: Path, min_gb: int) -> tuple[bool, float, str]:
     share_free_gb = shutil.disk_usage(str(root)).free / GB
 
     root.mkdir(parents=True, exist_ok=True)
-    probe_path = root / ".pod_disk_guard_probe.tmp"
+    # Unique per-invocation probe path: multiple concurrent probes on the same
+    # shared filesystem must not collide. A sibling worker's unlink of the same
+    # fixed path can invalidate this fd mid-fallocate → EBADF. Mirrors
+    # `_probe_writable_bytes` in `src/explore_persona_space/orchestrate/preflight.py`
+    # (fixed under #1979 at commit 22c2ddb2d3).
+    probe_path = root / f".pod_disk_guard_probe.{os.getpid()}.{uuid.uuid4().hex[:8]}.tmp"
     fd = None
     try:
         fd = os.open(str(probe_path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
@@ -96,9 +102,14 @@ def probe_quota_headroom(root: Path, min_gb: int) -> tuple[bool, float, str]:
                     f"`reclaim --apply` or delete intermediate checkpoints."
                 )
                 return False, share_free_gb, detail
-            if e.errno == errno.EOPNOTSUPP:
-                # Filesystem doesn't support fallocate (e.g. local tmpfs in tests);
-                # fall back to share-level free, which CANNOT see a per-pod quota.
+            if e.errno in (errno.EOPNOTSUPP, errno.ENOSYS, errno.EINVAL, errno.EBADF):
+                # Filesystem/kernel doesn't support fallocate here (local tmpfs in
+                # tests → EOPNOTSUPP/EINVAL; older kernels → ENOSYS; a concurrent
+                # sibling probe that unlinks the fd mid-call → EBADF). Fall back to
+                # share-level free, which CANNOT see a per-pod quota. Mirrors the
+                # errno set widened in `preflight._probe_writable_bytes` under
+                # #1979 (commit 22c2ddb2d3) after a fleet-wide EBADF wave from
+                # concurrent workers colliding on a fixed-name probe file.
                 ok = share_free_gb >= min_gb
                 detail = (
                     f"posix_fallocate unsupported on {root}; fell back to "
