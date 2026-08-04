@@ -11,12 +11,13 @@
 #               STORY_MIN_TURNS=1, judge max_tokens=1024, rule-26 pilot gate n=200.
 #   audit_ii  — permissive span-locator sweep over parent #1345 inserted rejects. VM Python.
 #
-# Not yet wired (exit 3):
 #   phase_a  — diverse scaffold generation (Qwen2.5-7B, lora-7b intent, 5 GPU-h)
 #   phase_b  — deterministic inserted splice (VM CPU, 0 GPU-h)
 #   phase_c  — on-policy continuation (Qwen2.5-7B x 2, lora-7b intent, 15 GPU-h)
 #   phase_d  — v4-new cell (c): STORY-authored answer, CHAT presentation (VM CPU, 0 GPU-h)
-#   capture  — teacher-forced activation capture (eval intent x 2 models, 100 GPU-h)
+#   capture  — teacher-forced activation capture at layer 19 (eval intent x 2 models, 100 GPU-h)
+#
+# Not yet wired (exit 3):
 #   fits     — ambient-basis fits + baselines + kNN + null battery (VM CPU or cpu-mid/bigmem)
 #   ladder   — 9-rung transfer ladder (VM CPU, batched)
 #
@@ -35,8 +36,8 @@ PARENT_REPO="superkaiba1/explore-persona-space-data"
 PARENT_PREFIX="issue1345_framing"
 AUDIT_OUT_DIR="eval_results/issue_2054/audits"
 
-WIRED_PHASES=(audit_i audit_ii phase_a phase_b phase_c phase_d)
-UNWIRED_PHASES=(capture fits ladder)
+WIRED_PHASES=(audit_i audit_ii phase_a phase_b phase_c phase_d capture)
+UNWIRED_PHASES=(fits ladder)
 
 # Print the leading comment block (everything after the shebang, up to the first
 # non-comment line) as the usage text, so help can never drift from the header.
@@ -112,6 +113,21 @@ build_cmd() {
         --target-conv-ids 8000
         --output-dir data/issue_2054/cell_c/
         --seed 137
+      )
+      ;;
+    capture)
+      # Unit C: teacher-forced HF forward at layer 19, per (variant, model)
+      # cell. Emits {conv_id: {v_C, v_A, v_P}} per cell + DV 7 answer-length
+      # parity and DV 8 conv_id intersection diagnostics.
+      # --input-dir / --variants / --phase / --model pass through per-cell;
+      # --dry-run exercises the CLI + tokenization on <=3 rows without GPU.
+      # max_new_tokens is irrelevant here (teacher-forced, no generation).
+      CMD=(
+        uv run python scripts/issue2054_capture.py
+        --input-dir data/issue_2054/spliced_inserted/
+        --output-dir data/issue_2054/activations/
+        --seed 137
+        --layer 19
       )
       ;;
     *)
