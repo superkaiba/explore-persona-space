@@ -7687,8 +7687,8 @@
     "1993": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1993",
-      "status": "planning",
+      "path": "tasks/approved/1993",
+      "status": "approved",
       "title": "daily-fix: crash-fix: shared-module propagation + stale disp"
     },
     "1994": {
