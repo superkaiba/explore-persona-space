@@ -174,6 +174,16 @@ def _git_tracked(path: Path) -> bool:
     return proc.returncode == 0
 
 
+def _ridge_folds_arg(args) -> tuple[int, ...] | None:
+    """None when --ridge-folds all; the default (0,) otherwise.
+
+    ``(0,)`` skips computing the reverse (train-block) fold whose predictions
+    are discarded -- an optimization, output-identical for every arm that does
+    not consume it. arm10_stacked DOES consume it, so it requires ``None``.
+    """
+    return None if getattr(args, "ridge_folds", "discarded-skip") == "all" else (0,)
+
+
 def _assert_outputs_safe(paths: list[Path], *, out_root: Path, allow: bool) -> None:
     """Refuse to overwrite committed artifacts / escape the wildchat_rung subtree."""
     if out_root.resolve().name != RUNG:
@@ -603,7 +613,8 @@ def score_behavior(args, behavior: str) -> dict:  # noqa: C901 — one linear pe
             za_ev=za_ev_w,
             arms=roster,
             device=args.device,
-            ridge_folds=(0,),  # the reverse (train-block) fold is discarded
+            ridge_folds=_ridge_folds_arg(args),  # (0,) skips the discarded
+            # reverse (train-block) fold; arm10_stacked needs every fold
         )
         rows_u, skips_u = arms.evaluate_transfer(
             scores_ev,
@@ -794,6 +805,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--mlp-map-width", type=int, default=None)
     ap.add_argument("--krr-map-centers", type=int, default=None)
     ap.add_argument("--device", default="cpu")
+    ap.add_argument(
+        "--ridge-folds",
+        choices=("discarded-skip", "all"),
+        default="discarded-skip",
+        help="'all' -> ridge_folds=None. REQUIRED for arm10_stacked, which needs ridge "
+        "predictions on EVERY fold (run_cell_multi RAISES under the default (0,) "
+        "discarded-fold skip). Default preserves byte-identical behavior.",
+    )
     ap.add_argument(
         "--rb-source",
         default="auto",
