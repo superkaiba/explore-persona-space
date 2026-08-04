@@ -176,6 +176,52 @@ def extract_hf_cited_basenames(text: str) -> set[str]:
     return {m.group("name") for m in _HF_CITED_RE.finditer(text)}
 
 
+def _downgrade_untracked_local_only(pending: list[Finding], name: str, hf_cited: set[str]) -> None:
+    """Post-classify downgrade for Channel-B untracked-local-only fails (#1982).
+
+    Rewrites `fail`/`untracked-local-only` findings in `pending` to WARN in two
+    narrow cases, preserving the #1434 protection (unmodified when neither
+    evidence branch fires):
+
+      * `hf-staged` — the bare name is cited under an HF data-repo prefix in
+        the plan (`name in hf_cited`); a coincidental VM-local mirror is not
+        a repro-blocker (#1979 shape).
+      * `duplicate-resolution` — a sibling resolution passed the ladder as
+        `in-ref`; the plan reproduces from that committed sibling (#1739).
+
+    Precedence: `hf-staged` wins when both would apply. Mutates `pending` in
+    place; returns None.
+    """
+    in_ref_paths = [f.path for f in pending if f.verdict == "pass" and f.reason == "in-ref"]
+    if not (name in hf_cited or in_ref_paths):
+        return
+    for i, f in enumerate(pending):
+        if f.verdict != "fail" or f.reason != "untracked-local-only":
+            continue
+        if name in hf_cited:
+            pending[i] = Finding(
+                f.path,
+                "warn",
+                "hf-staged",
+                f"bare name {name} is cited under an HF data-repo prefix in the "
+                f"plan; local-only path {f.path} is a coincidental VM-side mirror, "
+                "not a repro-blocker (#1982 / #1979)",
+                "B",
+            )
+        elif in_ref_paths:
+            head = ", ".join(in_ref_paths[:3])
+            more = f" (+{len(in_ref_paths) - 3} more)" if len(in_ref_paths) > 3 else ""
+            pending[i] = Finding(
+                f.path,
+                "warn",
+                "duplicate-resolution",
+                f"bare name {name} resolves to multiple paths; a sibling is "
+                f"in-ref ({head}{more}) so the plan can reproduce from it — "
+                f"local-only path {f.path} is not a repro-blocker (#1982 / #1739)",
+                "B",
+            )
+
+
 def plan_issue_scope(text: str, issue: int) -> set[int]:
     """Issue-scope set = {this issue} | every issue-number token in the plan text."""
     scope = {issue}
@@ -651,45 +697,11 @@ def run_check(plan_text: str, *, repo_root: Path, issue: int, check_ref: str) ->
                     check_ref=check_ref,
                 )
             )
-        # Post-classify downgrade (#1982): the Channel-B ladder mints
-        # `untracked-local-only` FAILs against coincidental VM-local mirrors
-        # of HF-staged inputs (#1979) or extra siblings of a citation whose
-        # PRIMARY resolution already committed / is in-ref (#1739). Both are
-        # false-fails on the "unconsumable input" bar: the plan clearly cites
-        # the file via HF (evidence: `name in hf_cited`) OR a sibling
-        # resolution passed the ladder as `in-ref` (evidence: at least one
-        # `pass`/`in-ref` finding in `pending`). Rewrite the remaining
-        # untracked-local-only fails to WARN in-place. This runs AFTER the
-        # per-path ladder to preserve the #1434 protection (a truly
-        # untracked-local-only cite with NEITHER an HF citation NOR an
-        # in-ref sibling STAYS a fail).
-        in_ref_paths = [f.path for f in pending if f.verdict == "pass" and f.reason == "in-ref"]
-        if name in hf_cited or in_ref_paths:
-            for i, f in enumerate(pending):
-                if f.verdict != "fail" or f.reason != "untracked-local-only":
-                    continue
-                if name in hf_cited:
-                    pending[i] = Finding(
-                        f.path,
-                        "warn",
-                        "hf-staged",
-                        f"bare name {name} is cited under an HF data-repo prefix in the "
-                        f"plan; local-only path {f.path} is a coincidental VM-side mirror, "
-                        "not a repro-blocker (#1982 / #1979)",
-                        "B",
-                    )
-                elif in_ref_paths:
-                    head = ", ".join(in_ref_paths[:3])
-                    more = f" (+{len(in_ref_paths) - 3} more)" if len(in_ref_paths) > 3 else ""
-                    pending[i] = Finding(
-                        f.path,
-                        "warn",
-                        "duplicate-resolution",
-                        f"bare name {name} resolves to multiple paths; a sibling is "
-                        f"in-ref ({head}{more}) so the plan can reproduce from it — "
-                        f"local-only path {f.path} is not a repro-blocker (#1982 / #1739)",
-                        "B",
-                    )
+        # Post-classify downgrade (#1982): #1979 HF-staged + #1739 in-ref
+        # sibling. The helper preserves the #1434 protection (no-op when
+        # neither evidence branch fires). Extracted from run_check() to hold
+        # its cyclomatic complexity under the C901 threshold.
+        _downgrade_untracked_local_only(pending, name, hf_cited)
         findings.extend(pending)
         if foreign:
             head = ", ".join(foreign[:5])
