@@ -280,23 +280,47 @@ def _confound_status(fits: dict) -> dict:
             or any(k in fj.get(section, {}) for k in keys for section in ("predictors", "floors"))
             for fj in fits.values()
         )
-    # (c) the 7B truncation-cost read is available whenever the 7B refit cell
-    # ran — its n=25k value against the committed 963k anchor quantifies, in R²
-    # units, exactly what the 25k truncation costs.
-    present["truncation_cost_7b"] = "scale7_refit" in fits
+    # (c) the 7B truncation-cost read. This requires the COMPUTED value — the
+    # n=25k R² against the committed 963k anchor — not merely the existence of
+    # the 7B refit cell. Keying on `"scale7_refit" in fits` marked the control
+    # satisfied whenever that cell ran, while nothing anywhere computes the
+    # quantity; fail toward confounded instead.
+    _refit = fits.get("scale7_refit")
+    present["truncation_cost_7b"] = isinstance(_refit, dict) and isinstance(
+        _refit.get("truncation_cost_r2"), (int, float)
+    )
 
     all_present = all(present.values())
-    return {
-        "status": "controls-present" if all_present else "sample-efficiency-confounded",
-        "controls_present": present,
-        "note": (
+
+    # PRESENCE IS NOT SUFFICIENT. Plan §4 makes a verdict readable as a scale
+    # effect only under Δ/ΔΓ SIGN STABILITY across the controls — that check is
+    # not implemented here, and no caller computes it. Emitting a bare
+    # "controls-present" on key presence alone would mean that the moment a
+    # later round starts emitting n_ladder/rp896, verdicts silently ship as
+    # unconfounded with the sign check never having run anywhere. So the
+    # strongest status this function can honestly return is the explicit
+    # sign-stability-unchecked form; promoting to a clean "controls-present"
+    # requires implementing the sign check.
+    if all_present:
+        status = "controls-present-sign-stability-unchecked"
+        note = (
+            "All plan §4 d-confound control KEYS are present in this cut, but the "
+            "Δ/ΔΓ sign-stability check those controls exist to support is NOT "
+            "implemented — this verdict is not yet readable as a scale effect."
+        )
+    else:
+        status = "sample-efficiency-confounded"
+        note = (
             "Plan §4: train-n is fixed at 25k while hidden dim grows 896→5120, so at "
             "fixed n the larger models are relatively more data-starved. Absent the "
             "registered protections, a registered Δ/ΔΓ verdict is NOT readable as a "
             "scale effect — report it as sample-efficiency-confounded."
         )
-        if not all_present
-        else "All plan §4 d-confound protections present in this cut.",
+    return {
+        "status": status,
+        "controls_present": present,
+        "sign_stability_checked": False,
+        "note": note,
     }
 
 
@@ -442,23 +466,22 @@ def _write_hero_figure(rows: list[dict], contrasts: dict, out_path: Path) -> Pat
     ax.legend(loc="lower right", fontsize=8)
     ax.set_ylim(-0.05, 1.05)
 
-    # Verdict annotation from the primary contrast.
+    # Primary contrast — carried into the figure's meta sidecar below, NOT
+    # rendered onto the plot (see the note directly following).
     delta = contrasts.get("delta_r2_ridge_32B_vs_05B", {})
-    if delta.get("available"):
-        d = delta["delta_point"]
-        lo = delta["delta_ci_low"]
-        hi = delta["delta_ci_high"]
-        v = delta["verdict"]
-        ax.text(
-            0.02,
-            0.98,
-            f"Δ = R²(32B) − R²(0.5B) = {d:+.3f} [95% CI: {lo:+.3f}, {hi:+.3f}]\nVerdict: {v}",
-            transform=ax.transAxes,
-            fontsize=8,
-            va="top",
-            ha="left",
-            bbox={"facecolor": "white", "edgecolor": "gray", "alpha": 0.8},
-        )
+
+    # NO on-plot verdict annotation, deliberately.
+    #
+    # It used to render "Δ = ... / Verdict: {v}" as a text box here. Two
+    # reasons that is wrong. (1) It printed the registered verdict WITHOUT the
+    # sample-efficiency confound qualifier, on the single surface a human reads
+    # first — so on this cut, which is confounded by construction (fixed n with
+    # d growing 896→5120), a PNG reader saw a bare "predictability-increases".
+    # That is exactly the leak the qualifier exists to prevent, surviving on the
+    # most-read surface. (2) The project figure convention bans effect-size
+    # labels and explanatory text overlays on plots (see the sibling note
+    # below). The numbers live in the JSON and in the figure's meta sidecar,
+    # both of which carry `confound_controls` alongside them.
 
     fig.tight_layout()
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -773,9 +796,12 @@ def main() -> int:
     dg = delta_gamma
     if d.get("available"):
         v = d["verdict"]
+        # The confound qualifier rides EVERY verdict surface, stdout included:
+        # a log reader must not see a bare "predictability-increases" on a cut
+        # that is sample-efficiency-confounded by construction.
         print(
             f"OK — Δ_primary = {d['delta_point']:+.3f} [{d['delta_ci_low']:+.3f}, {d['delta_ci_high']:+.3f}] "
-            f"verdict={v}; wrote {args.out_json}"
+            f"verdict={v} confound={d.get('confound_status', 'unknown')}; wrote {args.out_json}"
         )
     else:
         print(
@@ -784,7 +810,8 @@ def main() -> int:
     if dg.get("available"):
         print(
             f"    ΔΓ_secondary = {dg['delta_gamma_point']:+.3f} "
-            f"[{dg['delta_gamma_ci_low']:+.3f}, {dg['delta_gamma_ci_high']:+.3f}] verdict={dg['verdict']}"
+            f"[{dg['delta_gamma_ci_low']:+.3f}, {dg['delta_gamma_ci_high']:+.3f}] "
+            f"verdict={dg['verdict']} confound={dg.get('confound_status', 'unknown')}"
         )
     return 0
 

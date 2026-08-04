@@ -185,14 +185,21 @@ def _iter_parent_rows(cache_dir: Path) -> Iterable[dict]:
     """
     from huggingface_hub import hf_hub_download  # type: ignore
 
+    from explore_persona_space.orchestrate import hub  # type: ignore
+
     api = _hf_api()
-    files = list(
-        api.list_repo_tree(
-            repo_id=PARENT_MANIFEST_HF_REPO,
-            path_in_repo=PARENT_MANIFEST_HF_PATH,
-            repo_type="dataset",
-            recursive=True,
-        )
+    # list_repo_tree is LAZY — materialize the list INSIDE the thunk so the
+    # retry covers iteration, not just the call (the #1482 429-storm class).
+    files = hub.retry_transient(
+        lambda: list(
+            api.list_repo_tree(
+                repo_id=PARENT_MANIFEST_HF_REPO,
+                path_in_repo=PARENT_MANIFEST_HF_PATH,
+                repo_type="dataset",
+                recursive=True,
+            )
+        ),
+        what=f"list_repo_tree({PARENT_MANIFEST_HF_PATH})",
     )
     parts = sorted(f.path for f in files if f.path.endswith(".jsonl"))
     if not parts:
@@ -202,11 +209,14 @@ def _iter_parent_rows(cache_dir: Path) -> Iterable[dict]:
         )
     logger.info("streaming %d parts from parent manifest", len(parts))
     for part in parts:
-        local = hf_hub_download(
-            repo_id=PARENT_MANIFEST_HF_REPO,
-            filename=part,
-            repo_type="dataset",
-            cache_dir=str(cache_dir),
+        local = hub.retry_transient(
+            lambda part=part: hf_hub_download(
+                repo_id=PARENT_MANIFEST_HF_REPO,
+                filename=part,
+                repo_type="dataset",
+                cache_dir=str(cache_dir),
+            ),
+            what=f"hf_hub_download({part})",
         )
         with open(local, encoding="utf-8") as fh:
             for line in fh:
@@ -220,11 +230,16 @@ def _verify_parent_meta(cache_dir: Path) -> dict:
     """Fetch + verify the parent manifest's meta.json."""
     from huggingface_hub import hf_hub_download  # type: ignore
 
-    local = hf_hub_download(
-        repo_id=PARENT_MANIFEST_HF_REPO,
-        filename=f"{PARENT_MANIFEST_HF_PATH}/{MANIFEST_META_NAME}",
-        repo_type="dataset",
-        cache_dir=str(cache_dir),
+    from explore_persona_space.orchestrate import hub  # type: ignore
+
+    local = hub.retry_transient(
+        lambda: hf_hub_download(
+            repo_id=PARENT_MANIFEST_HF_REPO,
+            filename=f"{PARENT_MANIFEST_HF_PATH}/{MANIFEST_META_NAME}",
+            repo_type="dataset",
+            cache_dir=str(cache_dir),
+        ),
+        what=f"hf_hub_download({MANIFEST_META_NAME})",
     )
     with open(local, encoding="utf-8") as fh:
         meta = json.load(fh)
@@ -253,20 +268,37 @@ def _verify_ladder_manifest_present() -> bool:
         RepositoryNotFoundError,
     )
 
+    from explore_persona_space.orchestrate import hub  # type: ignore
+
     api = _hf_api()
     try:
-        entries = list(
-            api.list_repo_tree(
-                repo_id=LADDER_HF_REPO,
-                path_in_repo=LADDER_HF_PREFIX,
-                repo_type="dataset",
-                recursive=True,
-            )
+        # Retry the transient class BEFORE deciding absence. The narrowing
+        # below correctly stopped swallowing faults, but without a retry a
+        # single 429/5xx blip then CRASHES Phase 0 outright. retry_transient
+        # re-raises 404s unchanged, so the absence semantics below survive.
+        # list_repo_tree is LAZY — materialize inside the thunk so the retry
+        # covers iteration too (#1482).
+        entries = hub.retry_transient(
+            lambda: list(
+                api.list_repo_tree(
+                    repo_id=LADDER_HF_REPO,
+                    path_in_repo=LADDER_HF_PREFIX,
+                    repo_type="dataset",
+                    recursive=True,
+                )
+            ),
+            what=f"list_repo_tree({LADDER_HF_PREFIX})",
         )
-    except (EntryNotFoundError, RepositoryNotFoundError):
+    except EntryNotFoundError:
         # Genuinely not-yet-uploaded — the ONLY case that legitimately means
         # "absent". Everything else re-raises.
         return False
+    except RepositoryNotFoundError:
+        # Deliberately NOT absence: a missing or inaccessible data repo is a
+        # config / token-scope fault. Reading it as "manifest not uploaded"
+        # would trigger a full rebuild + upload against the wrong target.
+        # Matches the policy in the fits driver's reliability-ceiling probe.
+        raise
     except HfHubHTTPError as exc:
         # NOTE (issue-1491): this was `except Exception: return False`, so a
         # transient 429/5xx or an auth fault read as "prefix absent" and
@@ -295,13 +327,28 @@ def _tokenizer_identity_assert() -> dict:
     """
     from huggingface_hub import hf_hub_download  # type: ignore
 
+    from explore_persona_space.orchestrate import hub  # type: ignore
+
+    def _fetch(model_id: str, filename: str) -> str:
+        """Download one tokenizer file, retrying the transient class.
+
+        Bare hf_hub_download here meant a single 429/5xx during the 6-model
+        gate crashed Phase 0 outright (the gate runs before any capture, so
+        the whole run dies on a blip). retry_transient re-raises 404s
+        unchanged, so a genuinely-missing file still fails loud.
+        """
+        return hub.retry_transient(
+            lambda: hf_hub_download(repo_id=model_id, filename=filename),
+            what=f"hf_hub_download({model_id}:{filename})",
+        )
+
     per_model = []
     templates: set[str] = set()
     vocab_hashes: set[str] = set()
     merges_hashes: set[str] = set()
     tokenizer_config_hashes: dict[str, str] = {}
     for model_id in QWEN_LADDER:
-        cfg_local = hf_hub_download(repo_id=model_id, filename="tokenizer_config.json")
+        cfg_local = _fetch(model_id, "tokenizer_config.json")
         with open(cfg_local, "rb") as fh:
             cfg_bytes = fh.read()
         cfg_sha = hashlib.sha256(cfg_bytes).hexdigest()
@@ -310,7 +357,7 @@ def _tokenizer_identity_assert() -> dict:
         chat_template = cfg.get("chat_template")
         assert chat_template, f"{model_id}: missing chat_template"
         templates.add(chat_template)
-        vocab_local = hf_hub_download(repo_id=model_id, filename="vocab.json")
+        vocab_local = _fetch(model_id, "vocab.json")
         with open(vocab_local, "rb") as fh:
             vocab_bytes = fh.read()
         vocab_hash = hashlib.sha256(vocab_bytes).hexdigest()
@@ -323,7 +370,7 @@ def _tokenizer_identity_assert() -> dict:
         # would silently invalidate both things this gate exists to justify:
         # the shared over-length token budget, and the premise that one
         # tokenizer-derived context filter is valid for all six scales.
-        merges_local = hf_hub_download(repo_id=model_id, filename="merges.txt")
+        merges_local = _fetch(model_id, "merges.txt")
         with open(merges_local, "rb") as fh:
             merges_bytes = fh.read()
         merges_hash = hashlib.sha256(merges_bytes).hexdigest()
@@ -701,14 +748,26 @@ def _remote_manifest_meta() -> dict | None:
         RepositoryNotFoundError,
     )
 
+    from explore_persona_space.orchestrate import hub  # type: ignore
+
     try:
-        local = hf_hub_download(
-            repo_id=LADDER_HF_REPO,
-            filename=f"{LADDER_HF_PREFIX}/{MANIFEST_META_NAME}",
-            repo_type="dataset",
+        # Retry the transient class before concluding absence — a blip here
+        # would otherwise read as "no published manifest" and let the drift
+        # refusal be skipped entirely. 404s re-raise unchanged.
+        local = hub.retry_transient(
+            lambda: hf_hub_download(
+                repo_id=LADDER_HF_REPO,
+                filename=f"{LADDER_HF_PREFIX}/{MANIFEST_META_NAME}",
+                repo_type="dataset",
+            ),
+            what=f"hf_hub_download({MANIFEST_META_NAME})",
         )
-    except (EntryNotFoundError, RepositoryNotFoundError):
+    except EntryNotFoundError:
         return None
+    except RepositoryNotFoundError:
+        # Not absence — a config / token-scope fault. Same policy as
+        # _verify_ladder_manifest_present and the fits ceiling probe.
+        raise
     except HfHubHTTPError as exc:
         if getattr(getattr(exc, "response", None), "status_code", None) == 404:
             return None
@@ -772,16 +831,24 @@ def upload_manifest(local_dir: Path) -> None:
         LADDER_HF_REPO,
         LADDER_HF_PREFIX,
     )
-    api.upload_folder(
-        folder_path=str(local_dir),
-        path_in_repo=LADDER_HF_PREFIX,
-        repo_id=LADDER_HF_REPO,
-        repo_type="dataset",
-        commit_message=(
-            f"issue1491 ladder manifest v1 (train_25k+val+test+wc+tierB; "
-            f"budget={OVERLENGTH_BUDGET})"
+    from explore_persona_space.orchestrate import hub  # type: ignore
+
+    # The manifest upload is the single durability point for the pinned
+    # contexts every scale is captured against — a transient 429/5xx here
+    # must retry, not abort Phase 0 after the whole build already ran.
+    hub.retry_transient(
+        lambda: api.upload_folder(
+            folder_path=str(local_dir),
+            path_in_repo=LADDER_HF_PREFIX,
+            repo_id=LADDER_HF_REPO,
+            repo_type="dataset",
+            commit_message=(
+                f"issue1491 ladder manifest v1 (train_25k+val+test+wc+tierB; "
+                f"budget={OVERLENGTH_BUDGET})"
+            ),
+            allow_patterns=list(SPLIT_FILES.values()) + [MANIFEST_META_NAME],
         ),
-        allow_patterns=list(SPLIT_FILES.values()) + [MANIFEST_META_NAME],
+        what=f"upload_folder({LADDER_HF_PREFIX})",
     )
 
 
