@@ -332,6 +332,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1701) — workflow_lint --check-inline-round-duty-mirror + no-flags
     # bundling + drift-detection semantics pin
     "tests/test_workflow_lint_inline_round_duty_mirror.py",
+    # NEW (#2067) — .claude/rules/compute-backend-failover.md
+    # `### Cross-session pivot — resolve the owner before provisioning (#2067)`
+    # prose pin: H3 header + pivoter-duty sentence + UNKNOWN-treat-as-LIVE token.
+    "tests/test_workflow_lint_failover_pivot_pin.py",
     "tests/test_workflow_yaml.py",
     "tests/test_workflow_fix_dedup.py",
     # NEW (#1735) — rule reconciliation pin: workflow-fix-on-bug.md §

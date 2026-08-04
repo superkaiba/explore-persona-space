@@ -487,6 +487,85 @@ artifacts on an explicit `--backend <slurm>` pin) STILL surfaces
 `WorkloadSurfacedError` (it is not GCP; no failover) → `failure_class:
 code` → `status:blocked`.
 
+### Cross-session pivot — resolve the owner before provisioning (#2067)
+
+**A pivoting session that provisions a pod on a task it does not own MUST
+first resolve the owner.** A durable marker alone does NOT wake a live
+owner: on 2026-08-03 a session pivoted #1345's lane and provisioned
+`pod-1345-charcapa` (8×H200) recording only an `epm:progress` marker; the
+owning session kept waiting on the abandoned fellows queue (~20h out) while
+the pod sat 74+ min at 0% GPU (~$54) until a third session found the orphan.
+"I do not own this task" means: this session is not the registered /
+issue-mapped session for task N (check `scripts/spawn_session.py list`'s
+issue column), and it was not spawned to run `/issue N`.
+
+**Pre-pivot owner resolution (tri-state — the pivoter-side sibling of the
+#1667 `_wedge_owner_live` probe).** Resolve the owner to LIVE | DEAD |
+UNKNOWN from three evidence sources, ALL read fresh at pivot time:
+
+- **Registration:** a registration file for task N exists —
+  `~/.eps-autonomous/issue-<N>.json` (autonomous spawn) or
+  `~/.eps-autonomous/manual-issue-<N>.json` (`spawn_session.py
+  register-current`) — naming a `happy_session_id` that
+  `spawn_session.py list` still shows as a live session; a cwd-mapped
+  daemon child on the issue worktree counts the same as a registration.
+- **Recent markers:** any non-watcher marker on task N's events within
+  the last 2h (the `EPM_WEDGE_OWNER_RECENT_H` window #1667 uses) — read
+  via `task.py view <N> --json`, excluding watcher-posted kinds.
+- **Transcript freshness:** the registered session's transcript mtime
+  within the same 2h window.
+
+LIVE = a live registered/cwd-mapped session exists (regardless of
+transcript age) OR any recent non-watcher marker within the window.
+DEAD = registration absent-or-stale (no live session for the recorded
+`happy_session_id`) AND no non-watcher marker within the window AND no
+fresh transcript. UNKNOWN = any evidence source unreadable (list RPC
+failure, marker read failure, missing daemon) — never coerce a read
+failure to DEAD.
+
+**Action table:**
+
+| Owner state | Pivoting session does |
+|---|---|
+| **LIVE** | REFUSE the pivot — do NOT provision. Post `epm:progress` on N (`pivot-refused: owner <sid> LIVE via <evidence>; proposed lane <old> -> <new>`) so the owner's next marker read sees the proposal; the LIVE owner decides its own lane. Never `spawn_session.py stop` a LIVE owner to clear the way. |
+| **DEAD** | SANCTIONED TAKEOVER, in order: (1) `spawn_session.py stop --session-id <sid>` on the dead owner's session id if one is registered (clean stop; auto-unregisters, #1455) — else `spawn_session.py unregister --issue N` for a stale registration (never `rm` on `~/.eps-autonomous/`); (2) post the takeover marker (recording contract below); (3) cancel/tear down the abandoned lane's queued work (e.g. `scancel` the SLURM job) so the old lane cannot double-run — **on teardown FAILURE, do NOT proceed to (4)**: HOLD the provision (refuse this pivot), record the teardown-failure in the takeover marker's `residual` field (`residual=lane-teardown-failed: <cmd> exit <rc>`), and surface for user triage. Provisioning past a live abandoned-lane job re-opens the double-run risk this rule exists to close; (4) provision. |
+| **UNKNOWN** | REFUSE — treat as LIVE (the fail-safe direction, mirroring #1667: uncertainty never licenses the destructive/irreversible arm). Post the same `pivot-refused` marker with `owner UNKNOWN via <which read failed>`; retry resolution next tick or surface to the user. |
+
+**Recording contract.** Every resolution outcome posts ONE
+`epm:progress` marker on task N via `task.py post-marker` BEFORE any
+provision, note grammar:
+`pivot-ownership: <refused|takeover>; owner=<sid|none>; state=<LIVE|DEAD|UNKNOWN>; evidence=<registration|markers|transcript reads, one clause each>; lane <old> -> <new>; by-session=<this sid>`.
+On a DEAD takeover the marker is posted AFTER the stop/unregister and
+BEFORE the provision, so any concurrent reader sees ownership already
+resolved to the pivoter. The marker is the durable RECORD; the
+stop/unregister is what actually prevents the dead owner's respawn from
+re-claiming the lane — neither substitutes for the other.
+
+**Relation to the #1667 wedge owner-liveness guard (Part C watcher
+backstop):** #1667 is WATCHER-side — it gates terminate-vs-defer on an
+already-wedged pod; #2067 is PIVOTER-side — it gates
+provision-vs-abort/takeover before a pod exists. Two different call
+sites, one shared conceptual probe (tri-state owner liveness, literal-DEAD
+required for the irreversible arm, uncertainty fails safe).
+
+**Race note — owner returns alive between DEAD determination and
+`spawn_session.py stop`.** The DEAD arm is guarded by TRIPLE
+simultaneous evidence (registration absent-or-stale AND no non-watcher
+marker within 2h AND no fresh transcript), so a mis-classification would
+require all three sources reading stale at the same instant an owner is
+in fact live — an adversarial contrivance, not a normal-operation shape.
+The residual race (owner genuinely dies, then respawns during the ~1s
+window between DEAD determination and `spawn_session.py stop`) degrades
+safely: `stop`'s auto-unregister (#1455) prevents the respawned owner
+from re-claiming ownership, and the takeover marker posted BEFORE
+`provision` is the durable record any concurrent reader sees. The window
+is therefore safe by construction — no split-ownership can arise from
+this race.
+
+**Sibling rule:** CLAUDE.md § teammate coordination ("one implementer per
+file set") — the compute analogue: one owner per task's compute; never
+provision into split-ownership.
+
 ### Ladder order (length-aware, #680)
 
 NOTE (#1609/#2028): under the standing auto default the free `fellows`
