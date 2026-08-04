@@ -68,6 +68,18 @@ categorical it sat beside, for the same reason.
 1.0 (here, nonzero features only — apples-to-apples by construction); and treat
 the point mass as a RESULT rather than a nuisance.
 
+**The subset read trades a tie gradient for a SAMPLE-SIZE gradient — disclose
+both.** The kept fraction IS the varying quantity, so restricting to it makes n
+vary by the same factor: #1482 kept 677/11,327 (6.0%) at d1 vs 8,200/11,498
+(71.3%) at d10, a 12x range, so d1's CI is ~3.5x wider. Two duties follow:
+per-bin CIs are mandatory (a point-estimate profile invites reading low-bin
+noise as signal), and the question NARROWS — selection is on the predictor, so
+it becomes "among units where the variable is nonzero...". That narrowing is
+why reporting the point mass as its own result is load-bearing rather than
+presentational: it is what answers the unrestricted question the subset read
+gives up. Still the better trade — a sample-size gradient is disclosable and
+fixable with CIs; a counterfactual divisor is neither.
+
 **Cardinality is not the diagnostic — tie MASS is.** A zero-inflated continuous
 variable with 46,167 distinct values was capped at 0.9203 pooled, right beside a
 4-level categorical at 0.4537. A rank-based R2 decomposition under-credits any
