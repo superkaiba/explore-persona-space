@@ -8256,8 +8256,8 @@
     "2067": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2067",
-      "status": "proposed",
+      "path": "tasks/planning/2067",
+      "status": "planning",
       "title": "workflow-fix: cross-session lane pivot must resolve the owni"
     },
     "2068": {
