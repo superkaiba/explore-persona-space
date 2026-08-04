@@ -931,7 +931,12 @@ def fig_spectrum(spec: dict, fig_dir: Path, suffix: str = "", note: str = PROVIS
                 color="#7A7A7A",
             )
         if j == 0:
-            ax.set_ylabel(r"median $R^2$ (PROVISIONAL)", fontsize=8.2)
+            # Derive the tag from `note` — the same source the subtitle below uses.
+            # Hardcoding it here let a REAL-TARGET render carry a stale
+            # "(PROVISIONAL)" axis label directly under a subtitle saying the
+            # opposite (#1482: both densesae arms shipped self-contradictory).
+            tag = " (PROVISIONAL)" if "PROVISIONAL" in note else ""
+            ax.set_ylabel(rf"median $R^2${tag}", fontsize=8.2)
         ax.tick_params(labelsize=7.0)
 
     fig.suptitle("Is output-ness a continuous property or a binary one?", fontsize=12.5, y=0.995)
