@@ -201,7 +201,11 @@ def test_phase_a_to_phase_d_join_e2e_without_fold_bypass(tmp_path, monkeypatch):
         phase_d.main()
     assert exc.value.code == 0
 
-    out_path = out_dir / "char_helios_op" / "cell_c_char_helios_op.jsonl"
+    # Form-aware output name (C6): the cell (c) file embeds the --form axis.
+    out_path = (
+        out_dir / "char_helios_op" / forms.phase_output_name("cell_c", "char_helios_op", "chat")
+    )
+    assert out_path.name == "cell_c_char_helios_op__chat.jsonl"
     out_rows = [json.loads(line) for line in out_path.open(encoding="utf-8")]
     assert len(out_rows) == 1  # s0001 in fold; s0002 filtered out-of-fold
     row = out_rows[0]
@@ -215,7 +219,8 @@ def test_phase_a_to_phase_d_join_e2e_without_fold_bypass(tmp_path, monkeypatch):
     assert row["conv_id"] == "stripped_s0001"
     assert row["parent_conv_id"] == "s0001"
 
-    digest = json.loads((out_dir / "phase_d_digest.json").read_text(encoding="utf-8"))
+    # Form-keyed digest name (C6): one digest per (condition, form) run.
+    digest = json.loads((out_dir / "phase_d_digest__chat.json").read_text(encoding="utf-8"))
     assert digest["n_total_out"] == 1
     assert digest["form"] == "chat"
     assert digest["fold_map"] == str(fold_map.resolve())

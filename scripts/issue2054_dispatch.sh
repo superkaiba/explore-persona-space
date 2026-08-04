@@ -142,10 +142,15 @@ build_cmd() {
       )
       ;;
     capture)
-      # Unit C: teacher-forced HF forward at layer 19, per (variant, model)
-      # cell. Emits {conv_id: {v_C, v_A, v_P}} per cell + DV 7 answer-length
-      # parity and DV 8 conv_id intersection diagnostics.
-      # --input-dir / --variants / --phase / --model pass through per-cell;
+      # Unit C: teacher-forced HF forward at layer 19, per 4-axis cell
+      # (variant x condition x form x model — C6; outputs named by
+      # issue2054_forms.cell_key). Emits {conv_id: {v_C, v_A, v_P}} per cell
+      # + DV 7 answer-length parity and DV 8 conv_id intersection diagnostics
+      # (per-row block included in PRODUCTION too — C7 gate-5 source).
+      # --input-dir / --variants / --phase / --form / --model pass through
+      # per-cell (--phase AND --form are REQUIRED by the driver; the default
+      # --input-dir matches --phase inserted — override it for on_policy /
+      # cell_c captures).
       # --dry-run exercises the CLI + tokenization on <=3 rows without GPU.
       # max_new_tokens is irrelevant here (teacher-forced, no generation).
       CMD=(
@@ -163,7 +168,10 @@ build_cmd() {
       # rule. Reports identity+learned-bias baseline + kNN retrieval per fitted
       # map (CLAUDE.md standing rule), a shuffled-answer matched-capacity null,
       # the reduced-k1024 diagnostic, conv-within-intersection bootstrap CI,
-      # and kill-gate outcomes 4/5 (plan §7).
+      # and kill-gate outcomes 4/5 (plan §7). Cells are keyed on all four
+      # lattice axes (C6): --conditions / --forms default to the full closed
+      # registries and only located .npz combos run; gate 5 pairs (b) vs (d)
+      # as inserted <-> on_policy of the SAME (variant, form, model).
       # --dry-run / --pilot exercise the pipeline on a tiny slice without HF.
       CMD=(
         uv run python scripts/issue2054_fits.py

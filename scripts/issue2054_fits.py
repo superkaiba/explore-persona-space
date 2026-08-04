@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 """Fits driver for task #2054: per-cell ambient-basis fit at layer 19.
 
-For each cell (variant, model, arm), read the .npz activations Unit C
+For each cell — keyed on ALL FOUR lattice axes (variant/identity,
+condition/phase, framing/form, model; C6 — `issue2054_forms.cell_key`) times
+arm — read the .npz activations the capture driver
 (`scripts/issue2054_capture.py`) wrote, join per-fold to the shared conv_id →
 fold map artifact from Unit A (`eval_results/issue_2054/shared_fold_map.json`,
 K=5, conversation-grouped), and fit the per-fold ambient-basis ridge map:
@@ -37,8 +39,8 @@ Kill-gate outcomes (v7→v8 statistics-critic Must-Fix, plan §4/§7):
   length-stratified refit is not tractable at the row count.
 
 Emits `[phase=fits]` log lines terminating in `[phase=done]` on graceful
-completion. Uploads per-cell fit JSONs to HF
-`issue2054_lattice/fits/{variant}_{model}/` (best-effort, non-fatal). The
+completion. Uploads per-cell fit JSONs (`{cell_key}.json`) to HF
+`issue2054_lattice/fits/` (best-effort, non-fatal). The
 `--dry-run` (and `--pilot`) mode exercises the CLI + fit/null/baseline/kNN
 pipeline on a tiny slice (1 fold, ≤1 cell), skips uploads, and writes the
 diagnostics JSON to a scratch tree.
@@ -69,6 +71,7 @@ load_dotenv()
 
 import numpy as np  # noqa: E402
 
+import issue2054_forms as forms  # noqa: E402
 from explore_persona_space.analysis.mapping_baselines import (  # noqa: E402
     identity_bias_predict,
     knn_retrieval,
@@ -103,15 +106,35 @@ DEFAULT_BOOTSTRAP_DRAWS = 200
 # canonical (a,b,c,d) 2x2 per (character, model) pair maps to specific variant
 # slugs on this task; when the driver runs a single cell (the smoke path) the
 # gates only score availability, not comparison — see `_equalize_and_gate`.
+# The cell (c) `char_*_op*` variants (phase_d output) are IN the default so the
+# 2x2's (c) leg is discoverable without operator memory (C6 review note).
 DEFAULT_VARIANTS = (
     "char_helios",
     "char_wren",
     "char_dana",
     "char_vex",
     "conversation_paired_stories_assistant",
+    "char_helios_op",
+    "char_helios_op_base",
+    "char_wren_op",
+    "char_wren_op_base",
+    "char_dana_op",
+    "char_dana_op_base",
+    "char_vex_op",
+    "char_vex_op_base",
 )
 
 DEFAULT_MODELS = ("qwen2.5-7b", "qwen2.5-7b-instruct")
+
+# Condition (phase) + framing (form) axes — C6: cells are keyed on all four
+# lattice axes; `_resolve_cells` keeps only combinations whose .npz exists, so
+# the full default product is safe to enumerate.
+DEFAULT_CONDITIONS = forms.CONDITIONS
+DEFAULT_FORMS = forms.FORMS
+
+# Kill-gate 5 pairs cell (b) with cell (d): SAME (variant, form, model), the
+# inserted vs on_policy conditions. cell_c cells have no length-parity peer.
+_GATE5_PEER_CONDITION = {"inserted": "on_policy", "on_policy": "inserted"}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -140,13 +163,19 @@ def _load_fold_map(path: Path) -> dict:
     return d
 
 
-def _find_activation_path(activations_dir: Path, variant: str, model: str) -> Path | None:
-    """Locate the .npz per Unit C's layout:  <activations-dir>/<variant>/<variant>_<model>.npz.
+def _find_activation_path(
+    activations_dir: Path, variant: str, condition: str, form: str, model: str
+) -> Path | None:
+    """Locate the .npz per the capture layout:
+    `<activations-dir>/<variant>/<cell_key>.npz` (4-axis key, C6).
 
-    Falls back to any *.npz directly under `<activations-dir>` when the variant
-    subtree is missing (smoke fixture convention, matching Unit C's _flat).
+    Falls back to any *.npz directly under `<activations-dir>` when the cell
+    file is missing (smoke fixture convention, matching capture's _flat) — the
+    caller dedupes fallback hits so one flat fixture never multiplies into a
+    cell per (condition, form) combination.
     """
-    canonical = activations_dir / variant / f"{variant}_{model}.npz"
+    key = forms.cell_key(variant, condition, form, model)
+    canonical = activations_dir / variant / f"{key}.npz"
     if canonical.is_file() and canonical.stat().st_size > 0:
         return canonical
     # smoke fixture fallback
@@ -180,17 +209,18 @@ def _load_activation_npz(path: Path) -> dict | None:
     }
 
 
-def _find_capture_diagnostics(variant: str, model: str) -> Path | None:
-    """Unit C emits per-cell diagnostics at eval_results/issue_2054/capture_diagnostics/.
-    The `answer_token_length_stats` block is where DV 7 / kill-gate 5 reads answer-length
-    parity for a (character, model) pair.
+def _find_capture_diagnostics(variant: str, condition: str, form: str, model: str) -> Path | None:
+    """Capture emits per-cell diagnostics at eval_results/issue_2054/capture_diagnostics/
+    named by the 4-axis cell key (C6). The `per_row` block is where DV 7 /
+    kill-gate 5 read answer-length parity for a (character, model) pair.
     """
-    p = _REPO_ROOT / "eval_results/issue_2054/capture_diagnostics" / f"{variant}_{model}.json"
+    key = forms.cell_key(variant, condition, form, model)
+    p = _REPO_ROOT / "eval_results/issue_2054/capture_diagnostics" / f"{key}.json"
     return p if p.is_file() else None
 
 
-def _load_capture_diagnostics(variant: str, model: str) -> dict | None:
-    p = _find_capture_diagnostics(variant, model)
+def _load_capture_diagnostics(variant: str, condition: str, form: str, model: str) -> dict | None:
+    p = _find_capture_diagnostics(variant, condition, form, model)
     if p is None:
         return None
     with p.open(encoding="utf-8") as f:
@@ -787,18 +817,25 @@ def _answer_length_ks_from_diagnostics(
 
 def _evaluate_kill_gates(
     variant: str,
+    condition: str,
+    form: str,
     model: str,
     conv_ids_this_cell: list[str],
     peer_cells_conv_ids: dict[str, list[str]] | None,
     diag_this: dict | None,
     peer_diag: dict | None,
+    gate5_peer_cell: str | None,
 ) -> dict:
-    """Return kill-gate outcomes for this (variant, model) cell.
+    """Return kill-gate outcomes for this (variant, condition, form, model) cell.
 
     peer_cells_conv_ids: {peer_cell_key: conv_ids} for the 2x2 (a,b,c,d) pair;
       when None (single-cell driver run), gate 4 reports a single-cell floor
       check against the ambient-basis n_train ≥ d requirement.
-    peer_diag: the paired (d) cell's capture diagnostics (for the KS gate).
+    peer_diag: the (b)<->(d) length-parity peer's capture diagnostics — the
+      SAME (variant, form, model) under the paired condition (inserted <->
+      on_policy); None for cell_c cells (no length-parity peer) or when the
+      peer was never captured (KS gate reports missing-diagnostics).
+    gate5_peer_cell: the peer's cell key, for the report (None when N/A).
     """
     intersection_size = len(conv_ids_this_cell)
     peer_report: dict = {}
@@ -817,7 +854,10 @@ def _evaluate_kill_gates(
         )
     return {
         "variant": variant,
+        "condition": condition,
+        "form": form,
         "model": model,
+        "kill_gate_5_peer_cell": gate5_peer_cell,
         "min_pair_intersection": int(intersection_size),
         "kill_gate_4_threshold": KILL_GATE_4_MIN_INTERSECTION,
         "kill_gate_4_fire": bool(gate4_fire),
@@ -886,15 +926,33 @@ def _write_json(path: Path, payload: dict) -> None:
 
 
 def _resolve_cells(
-    activations_dir: Path, variants: list[str], models: list[str]
-) -> list[tuple[str, str, Path]]:
-    """Return (variant, model, activation path) for every cell we can locate."""
-    out: list[tuple[str, str, Path]] = []
+    activations_dir: Path,
+    variants: list[str],
+    conditions: list[str],
+    form_list: list[str],
+    models: list[str],
+) -> list[tuple[str, str, str, str, Path]]:
+    """Return (variant, condition, form, model, activation path) for every cell
+    we can locate (4-axis enumeration, C6). A flat smoke-fixture .npz (one that
+    lives directly under `activations_dir`, resolved by the fallback) is
+    attached to AT MOST ONE cell so the default condition×form product cannot
+    multiply one fixture into duplicate cells.
+    """
+    out: list[tuple[str, str, str, str, Path]] = []
+    used_fallback: set[Path] = set()
     for variant in variants:
-        for model in models:
-            path = _find_activation_path(activations_dir, variant, model)
-            if path is not None:
-                out.append((variant, model, path))
+        for condition in conditions:
+            for form in form_list:
+                for model in models:
+                    path = _find_activation_path(activations_dir, variant, condition, form, model)
+                    if path is None:
+                        continue
+                    is_fallback = path.parent.resolve() == activations_dir.resolve()
+                    if is_fallback:
+                        if path in used_fallback:
+                            continue
+                        used_fallback.add(path)
+                    out.append((variant, condition, form, model, path))
     return out
 
 
@@ -914,17 +972,25 @@ def run_phase(args: argparse.Namespace) -> int:
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    cells = _resolve_cells(activations_dir, list(args.variants), list(args.models))
+    cells = _resolve_cells(
+        activations_dir,
+        list(args.variants),
+        list(args.conditions),
+        list(args.forms),
+        list(args.models),
+    )
     if not cells:
         print(
             f"ERROR: no activation .npz found under {activations_dir} for "
-            f"variants={list(args.variants)} models={list(args.models)}",
+            f"variants={list(args.variants)} conditions={list(args.conditions)} "
+            f"forms={list(args.forms)} models={list(args.models)}",
             file=sys.stderr,
         )
         return 2
 
     _log(
-        f"start: variants={list(args.variants)} models={list(args.models)} arms={list(args.arms)} "
+        f"start: variants={list(args.variants)} conditions={list(args.conditions)} "
+        f"forms={list(args.forms)} models={list(args.models)} arms={list(args.arms)} "
         f"layer={args.layer} n_null_draws={args.n_null_draws} pilot={args.pilot} "
         f"dry_run={args.dry_run}"
     )
@@ -934,14 +1000,14 @@ def run_phase(args: argparse.Namespace) -> int:
     fold_of = fold_map["fold_of"]
     # Cross-cell equalize-down: the shared conv_id set across every located cell.
     conv_ids_by_cell: dict[str, list[str]] = {}
-    activations_by_cell: dict[tuple[str, str], dict] = {}
-    for variant, model, path in cells:
+    activations_by_cell: dict[tuple[str, str, str, str], dict] = {}
+    for variant, condition, form, model, path in cells:
         activations = _load_activation_npz(path)
         if activations is None:
             _log(f"WARN empty .npz: {_rel(path)} (dry-run shell?); skipping")
             continue
-        activations_by_cell[(variant, model)] = activations
-        conv_ids_by_cell[f"{variant}_{model}"] = activations["conv_ids"]
+        activations_by_cell[(variant, condition, form, model)] = activations
+        conv_ids_by_cell[forms.cell_key(variant, condition, form, model)] = activations["conv_ids"]
 
     if not activations_by_cell:
         # Every located .npz was empty (dry-run shell scenario). In pilot/dry
@@ -949,11 +1015,13 @@ def run_phase(args: argparse.Namespace) -> int:
         # wiring parses to shape.
         if args.dry_run or args.pilot:
             _log("dry-run: no populated .npz activations under --activations-dir; emitting stubs")
-            for variant, model, path in cells:
-                cell_key = f"{variant}_{model}"
+            for variant, condition, form, model, path in cells:
+                cell_key = forms.cell_key(variant, condition, form, model)
                 stub = {
                     "cell": cell_key,
                     "variant": variant,
+                    "condition": condition,
+                    "form": form,
                     "model": model,
                     "status": "dry-run-empty-activation",
                     "activation_path": _rel(path),
@@ -963,7 +1031,7 @@ def run_phase(args: argparse.Namespace) -> int:
                 }
                 out_path = output_dir / f"{cell_key}.json"
                 _write_json(out_path, stub)
-                _log(f"variant={variant} model={model} stub={_rel(out_path)}")
+                _log(f"cell={cell_key} stub={_rel(out_path)}")
             # The fits driver IS the standalone dispatcher on the VM CPU lane
             # (no pod-side sentinel path); the sibling capture driver waives
             # this on the same grounds. A future orchestrating dispatcher
@@ -1012,22 +1080,21 @@ def run_phase(args: argparse.Namespace) -> int:
     # (per Unit A/B/C, the surface EMITS + FLAGS; the analyzer / user pauses on
     # a kill-gate-fire before shipping the headline claim).
     t0 = time.time()
-    for (variant, model), activations in activations_by_cell.items():
-        cell_key = f"{variant}_{model}"
+    for (variant, condition, form, model), activations in activations_by_cell.items():
+        cell_key = forms.cell_key(variant, condition, form, model)
         arm_reports: dict[str, dict] = {}
-        # Answer-length parity for the KS gate. We treat the current cell as
-        # (b) and the panel-paired _op sibling as (d); when smoke has only one
-        # cell, the KS gate reports missing-diagnostics.
-        diag_this = _load_capture_diagnostics(variant, model)
-        # Heuristic: paired-op sibling name for the KS gate. If the variant
-        # already ends in `_op` we compare to the corresponding non-op variant.
-        if variant.endswith("_op"):
-            peer_variant = variant[: -len("_op")]
-        elif variant.endswith("_op_base"):
-            peer_variant = variant[: -len("_op_base")]
-        else:
-            peer_variant = f"{variant}_op"
-        peer_diag = _load_capture_diagnostics(peer_variant, model)
+        # Answer-length parity for the KS gate — the plan §7 "(b) vs (d)"
+        # comparison: SAME (variant, form, model), inserted <-> on_policy
+        # conditions (C6: the pre-fix `_op`-suffix heuristic compared against
+        # the cell_c output — a (c)-labeled cell — because the condition axis
+        # was absent from the key). cell_c cells have no length-parity peer.
+        diag_this = _load_capture_diagnostics(variant, condition, form, model)
+        peer_condition = _GATE5_PEER_CONDITION.get(condition)
+        gate5_peer_cell: str | None = None
+        peer_diag: dict | None = None
+        if peer_condition is not None:
+            gate5_peer_cell = forms.cell_key(variant, peer_condition, form, model)
+            peer_diag = _load_capture_diagnostics(variant, peer_condition, form, model)
 
         peer_cells_conv_ids = {
             other_key: ids for other_key, ids in conv_ids_by_cell.items() if other_key != cell_key
@@ -1035,11 +1102,14 @@ def run_phase(args: argparse.Namespace) -> int:
 
         gate_report = _evaluate_kill_gates(
             variant=variant,
+            condition=condition,
+            form=form,
             model=model,
             conv_ids_this_cell=activations["conv_ids"],
             peer_cells_conv_ids=peer_cells_conv_ids,
             diag_this=diag_this,
             peer_diag=peer_diag,
+            gate5_peer_cell=gate5_peer_cell,
         )
 
         # Run per-arm fits (context AND prefix — CLAUDE.md standing rule).
@@ -1062,6 +1132,8 @@ def run_phase(args: argparse.Namespace) -> int:
         cell_payload = {
             "cell": cell_key,
             "variant": variant,
+            "condition": condition,
+            "form": form,
             "model": model,
             "layer": int(args.layer),
             "seed": int(args.seed),
@@ -1089,6 +1161,8 @@ def run_phase(args: argparse.Namespace) -> int:
             {
                 "cell": cell_key,
                 "variant": variant,
+                "condition": condition,
+                "form": form,
                 "model": model,
                 "path": _rel(out_path),
                 "status": "ok",
@@ -1109,7 +1183,10 @@ def run_phase(args: argparse.Namespace) -> int:
     if not is_smoke and not args.skip_upload and not args.dry_run:
         try:
             for model in args.models:
-                model_fits = {k: v for k, v in fits_by_cell.items() if k.endswith(f"_{model}")}
+                # Model is the LAST cell-key axis, so the __-anchored suffix
+                # match is exact (C6: `_{model}` would also match substrings).
+                suffix = f"{forms.CELL_KEY_SEP}{model}"
+                model_fits = {k: v for k, v in fits_by_cell.items() if k.endswith(suffix)}
                 _upload_to_hf(model_fits, model)
         except Exception as exc:  # noqa: BLE001
             _log(f"WARN upload stage failed: {exc}")
@@ -1118,6 +1195,8 @@ def run_phase(args: argparse.Namespace) -> int:
     digest = {
         "phase": "fits",
         "variants": list(args.variants),
+        "conditions": list(args.conditions),
+        "forms": list(args.forms),
         "models": list(args.models),
         "arms": list(args.arms),
         "layer": int(args.layer),
@@ -1171,6 +1250,21 @@ def main() -> int:
         type=lambda s: [x.strip() for x in s.split(",") if x.strip()],
         default=list(DEFAULT_MODELS),
         help="Comma-separated model slugs (qwen2.5-7b, qwen2.5-7b-instruct).",
+    )
+    p.add_argument(
+        "--conditions",
+        type=lambda s: [x.strip() for x in s.split(",") if x.strip()],
+        default=list(DEFAULT_CONDITIONS),
+        help=(
+            "Comma-separated condition (capture --phase) axis values; cells are "
+            "keyed on all four lattice axes (C6). Only located .npz combos run."
+        ),
+    )
+    p.add_argument(
+        "--forms",
+        type=lambda s: [x.strip() for x in s.split(",") if x.strip()],
+        default=list(DEFAULT_FORMS),
+        help="Comma-separated framing (form) axis values (plan §4; C6).",
     )
     p.add_argument("--layer", type=int, default=19, help="Hidden-state layer (plan §11).")
     p.add_argument(

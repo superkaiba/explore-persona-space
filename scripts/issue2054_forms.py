@@ -73,6 +73,69 @@ TEMPLATE_FORMS = ("chat", "bare_text")
 STORY_FORMS = sc.BOUNDARY_FORMS
 FORMS = TEMPLATE_FORMS + STORY_FORMS
 
+# --- 4-axis cell naming (C6) -------------------------------------------------
+# The plan §4 lattice cell identity is (identity/variant, condition/phase,
+# framing/form, model) — every output filename and downstream cell key joins
+# ALL FOUR axes, or two runs differing only in condition/form OVERWRITE each
+# other (the C6 collision: `--phase inserted` then `--phase on_policy` on one
+# variant clobbered cell (b) with cell (d)). Axes join on a DOUBLE underscore;
+# collisions are impossible BY CONSTRUCTION: condition + form come from closed
+# registries and every free-text axis value (variant, model) is validated
+# non-empty and separator-free. Single underscores stay legal INSIDE axis
+# values (char_helios, bare_text, on_policy).
+CONDITIONS = ("inserted", "on_policy", "cell_c")
+CELL_KEY_SEP = "__"
+
+_CONDITION_FILE_PREFIX = {
+    "inserted": "spliced_inserted",
+    "on_policy": "on_policy",
+    "cell_c": "cell_c",
+}
+
+
+def _check_axis(name: str, value: str) -> None:
+    """Fail loud on a cell-key axis value that would make the joined key ambiguous."""
+    if not value or CELL_KEY_SEP in value:
+        raise ValueError(
+            f"cell-key axis {name}={value!r} must be non-empty and must not contain "
+            f"{CELL_KEY_SEP!r} (the axis separator)"
+        )
+
+
+def cell_key(variant: str, condition: str, form: str, model: str) -> str:
+    """Canonical 4-axis cell key ``variant__condition__form__model``.
+
+    The single naming source for capture .npz / diagnostics filenames and the
+    fits/ladder cell keys; raises on unknown condition/form or a separator-
+    bearing variant/model (collision-impossible by construction).
+    """
+    if condition not in CONDITIONS:
+        raise ValueError(f"unknown condition {condition!r} (expected one of {CONDITIONS})")
+    if form not in FORMS:
+        raise ValueError(f"unknown form {form!r} (expected one of {FORMS})")
+    for axis, value in (("variant", variant), ("model", model)):
+        _check_axis(axis, value)
+    return CELL_KEY_SEP.join((variant, condition, form, model))
+
+
+def phase_output_name(condition: str, variant: str, form: str, *, mock: bool = False) -> str:
+    """Form-aware per-variant output JSONL filename for the phase_b/c/d units.
+
+    ``spliced_inserted_{variant}__{form}.jsonl`` (condition ``inserted``),
+    ``on_policy_{variant}__{form}[.mock].jsonl``, ``cell_c_{variant}__{form}.jsonl``
+    — two ``--form`` runs of one condition+variant land on DISTINCT files (C6).
+    """
+    prefix = _CONDITION_FILE_PREFIX.get(condition)
+    if prefix is None:
+        raise ValueError(f"unknown condition {condition!r} (expected one of {CONDITIONS})")
+    if form not in FORMS:
+        raise ValueError(f"unknown form {form!r} (expected one of {FORMS})")
+    _check_axis("variant", variant)
+    if mock and condition != "on_policy":
+        raise ValueError("mock outputs exist only for the on_policy condition")
+    suffix = ".mock.jsonl" if mock else ".jsonl"
+    return f"{prefix}_{variant}{CELL_KEY_SEP}{form}{suffix}"
+
 
 @dataclass(frozen=True)
 class FormRender:
