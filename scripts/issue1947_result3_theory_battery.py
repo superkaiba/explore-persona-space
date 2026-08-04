@@ -107,6 +107,14 @@ SRC_CONDITION_BY_CTX = {
     "bare": "bare",
     "conv": "wildchat_prefix_real545",
 }  # icl resolves per behavior: icl_prefix_<behavior>
+# v2 battery spec (post-dispatch teammate directives, 2026-08-03):
+DUP_TARGET_DROP = ("neg_default_assistant",)  # render-identical to `bare` (sha 83840f5e82);
+#   kept in capture, DROPPED from every target set so the duplicate condition never
+#   double-counts in Delta_V spectra / gate races.
+M0_HUB_PATH = "issue1900_leakrace/maps/m0_L19.pt"  # the banked base map (pinned @ I1900_PIN)
+PSI_LAYER = 19  # psi + map-residual live at L19 only (the banked M0's layer)
+PSI_LAMBDAS = tuple(float(x) for x in (1e-2, 1e-1, 1.0, 10.0, 100.0, 1e3, 1e4))
+LADDER_KS = (128, 256, 512)  # PCA input reduction sweep (n<d discipline, #1701)
 N_NULL_COND = 200  # n-matched null draws, condition grain
 N_NULL_PROMPT = 50  # n-matched null draws, prompt grain (L19 only)
 N_PERM_GATE = 2000  # gate permutation null draws
@@ -419,22 +427,38 @@ def build_work_items(cfg: Cfg, manifests: dict) -> list[Item]:
             )
         )
         items.append(Item(key=f"anchor:{a}", phase="anchor"))
-    items.append(Item(key="battery:sigma", phase="battery"))
+    items.append(Item(key="battery2:sigma", phase="battery"))
     for a in arms:
         items.append(
             Item(
-                key=f"battery:{a}",
+                key=f"battery2:{a}",
                 phase="battery",
-                deps=(f"gen:base_content", f"gen:{a}", f"mt:{a}", f"anchor:{a}", "battery:sigma"),
+                deps=("gen:base_content", f"gen:{a}", f"mt:{a}", f"anchor:{a}", "battery2:sigma"),
             )
         )
     # summary sentinel keyed by arm-set size: a pilot-leg summary (1 arm) must
     # never satisfy the full run's aggregation (resume-regime key discipline)
     items.append(
         Item(
-            key=f"battery:summary:{len(arms)}",
+            key=f"battery2:summary:{len(arms)}",
             phase="battery",
-            deps=tuple(f"battery:{a}" for a in arms),
+            deps=tuple(f"battery2:{a}" for a in arms),
+        )
+    )
+    items.append(Item(key="ladder:prep", phase="battery", deps=("gen:base_content",)))
+    for a in arms:
+        items.append(
+            Item(
+                key=f"ladder:{a}",
+                phase="battery",
+                deps=("gen:base_content", f"gen:{a}", f"mt:{a}", "ladder:prep"),
+            )
+        )
+    items.append(
+        Item(
+            key=f"ladder:summary:{len(arms)}",
+            phase="battery",
+            deps=tuple(f"ladder:{a}" for a in arms),
         )
     )
     return items
@@ -452,12 +476,20 @@ def run_unit(cfg: Cfg, manifests: dict, key: str) -> list[str]:
         prep_pos_filtered(cfg, parts[1])
         G.ensure_arm_registry(gcfg, manifests)
         return G.run_f1c(gcfg, manifests, parts[1])
-    if parts[0] == "battery" and parts[1] == "sigma":
-        return run_battery_sigma(cfg)
-    if parts[0] == "battery" and parts[1] == "summary":
+    if parts[0] == "battery2" and parts[1] == "sigma":
+        outs = run_battery_sigma(cfg)
+        outs.append(str(build_psi_operator(cfg)))
+        return outs
+    if parts[0] == "battery2" and parts[1] == "summary":
         return run_battery_summary(cfg, manifests)
-    if parts[0] == "battery":
+    if parts[0] == "battery2":
         return run_battery_arm(cfg, manifests, parts[1])
+    if parts[0] == "ladder" and parts[1] == "prep":
+        return run_ladder_prep(cfg, manifests)
+    if parts[0] == "ladder" and parts[1] == "summary":
+        return run_ladder_summary(cfg, manifests)
+    if parts[0] == "ladder":
+        return run_ladder_arm(cfg, manifests, parts[1])
     raise ValueError(f"unknown work-item key: {key}")
 
 
@@ -580,6 +612,115 @@ def _load_store(cfg: Cfg, rel: str) -> dict:
     return torch.load(_ensure_local(cfg, rel), map_location="cpu", weights_only=False)
 
 
+def _corpus_train_rows(cfg: Cfg, layer: int, span: str) -> "object":
+    """Corpus TRAIN rows for one span at one layer (the corpus_sigma slicing)."""
+    import numpy as np
+    import torch
+
+    store = torch.load(
+        cfg.out_root / "corpus_capture" / "base_content" / "pooled.pt",
+        map_location="cpu",
+        weights_only=False,
+    )
+    mat = np.asarray(store["arms"][span][layer].float().numpy(), dtype=np.float64)
+    sample = X.load_corpus_sample(cfg.out_root)
+    qidx = np.asarray(store["row_question_idx"])
+    return mat[qidx < sample["n_train"]]
+
+
+def build_psi_operator(cfg: Cfg) -> Path:
+    """psi := ridge-regularized pseudo-inverse of the banked base map M0 (L19).
+
+    The paper leaves psi undefined; PINNED (stated deviation) as
+    psi_lambda(y) = unstd(SVD-ridge-inverse of M0's W applied to (y - ymu)).
+    lambda is selected on corpus TRAIN rows only (never gate-race targets), by
+    minimizing || z_tr - psi_z(v0_tr) ||_F^2 against the ACTUAL base response
+    rows (criterion: invert real (c0, v0) pairs, not the map's own outputs).
+    Reports selected lambda + effective rank sum(S^2/(S^2+lambda))."""
+    import numpy as np
+
+    from explore_persona_space.orchestrate import hub
+
+    out = cfg.out_root / "battery2" / f"psi_L{PSI_LAYER}.npz"
+    if out.exists():
+        return out
+    m0_local = cfg.out_root / "battery2" / "m0_L19.pt"
+    if not m0_local.exists():
+        hub.stage_hub_file(
+            X.HF_DATA_REPO, M0_HUB_PATH, m0_local, repo_type="dataset", revision=G.I1900_PIN
+        )
+    import torch
+
+    payload = torch.load(m0_local, map_location="cpu", weights_only=False)
+    if isinstance(payload, dict) and isinstance(payload.get("payload"), dict):
+        payload = payload["payload"]
+    for k in ("W", "xmu", "xsd", "ymu"):
+        assert k in payload, (sorted(payload), "m0 payload schema drift")
+    W = np.asarray(payload["W"], dtype=np.float64)
+    xmu = np.asarray(payload["xmu"], dtype=np.float64).ravel()
+    xsd = np.asarray(payload["xsd"], dtype=np.float64).ravel()
+    ymu = np.asarray(payload["ymu"], dtype=np.float64).ravel()
+    U, S, Vt = np.linalg.svd(W, full_matrices=False)  # z @ W = z @ U S Vt
+    C_tr = _corpus_train_rows(cfg, PSI_LAYER, "context")
+    V0_tr = _corpus_train_rows(cfg, PSI_LAYER, "response")
+    z_tr = (C_tr - xmu) / xsd
+    y_tr = V0_tr - ymu
+    yV = y_tr @ Vt.T  # (n, r)
+    zU = z_tr @ U  # (n, r) — target in the U basis (exact: ||z - zhat|| decomposes)
+    errs = {}
+    for lam in PSI_LAMBDAS:
+        shrink = S / (S**2 + lam)
+        zhat_U = yV * shrink
+        # || z - zhat ||^2 = || zU - zhat_U ||^2 + const (U orthonormal, full rank)
+        errs[lam] = float(((zU - zhat_U) ** 2).sum())
+    lam_star = min(errs, key=errs.get)
+    eff_rank = float((S**2 / (S**2 + lam_star)).sum())
+    out.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out.with_suffix(".npz.tmp")
+    with open(tmp, "wb") as fh:
+        np.savez(
+            fh,
+            U=U,
+            S=S,
+            Vt=Vt,
+            xmu=xmu,
+            xsd=xsd,
+            ymu=ymu,
+            lam_star=lam_star,
+            eff_rank=eff_rank,
+            n_train_rows=z_tr.shape[0],
+            errs_grid=np.array([[lam, errs[lam]] for lam in PSI_LAMBDAS]),
+        )
+    os.replace(tmp, out)
+    logger.info(
+        "[psi] L%d lambda*=%.4g eff_rank=%.1f (criterion: invert actual (c0,v0) train rows)",
+        PSI_LAYER,
+        lam_star,
+        eff_rank,
+    )
+    return out
+
+
+def _psi_apply(psi, y: "object") -> "object":
+    """psi(y): answer-space vector -> context-space vector (raw, unstandardized)."""
+    shrink = psi["S"] / (psi["S"] ** 2 + float(psi["lam_star"]))
+    z = ((y - psi["ymu"]) @ psi["Vt"].T) * shrink @ psi["U"].T
+    return z * psi["xsd"] + psi["xmu"]
+
+
+def _m0_predict(cfg: Cfg, c_vec: "object") -> "object":
+    """Banked-M0 forward prediction for one raw context vector (L19)."""
+    import torch
+
+    payload = torch.load(
+        cfg.out_root / "battery2" / "m0_L19.pt", map_location="cpu", weights_only=False
+    )
+    pred = G._apply_saved_map(payload, c_vec[None, :], "cpu")
+    import numpy as np
+
+    return np.asarray(pred, dtype=np.float64)[0]
+
+
 def run_battery_sigma(cfg: Cfg) -> list[str]:
     """Corpus second moment Sigma_c per layer (the #1768 recipe: 15k bare TRAIN
     context span-means at the pinned corpus revision; shrinkage 0.1)."""
@@ -603,7 +744,7 @@ def run_battery_sigma(cfg: Cfg) -> list[str]:
             p.parent.mkdir(parents=True, exist_ok=True)
             hub.stage_hub_file(X.HF_DATA_REPO, rel_hub, p, repo_type="dataset", revision=rev)
     for li in LAYERS:
-        out = cfg.out_root / "battery" / f"sigma_L{li}.npz"
+        out = cfg.out_root / "battery2" / f"sigma_L{li}.npz"
         if out.exists():
             outs.append(str(out))
             continue
@@ -861,7 +1002,9 @@ def run_battery_arm(cfg: Cfg, manifests: dict, arm_id: str) -> list[str]:
 
     row = manifests["arm_rows"][arm_id]
     src_id = row["source_condition"]
-    target_ids = [t for t in manifests["target_ids"] if t != src_id]
+    # duplicate-condition drop: neg_default_assistant renders byte-identical to
+    # `bare` (verified content-sha match) — captured but never a target.
+    target_ids = [t for t in manifests["target_ids"] if t != src_id and t not in DUP_TARGET_DROP]
     queries = manifests["queries"]
     q_shas = [q["sha"] for q in queries]
     assert len(q_shas) >= 2, "need >= 2 queries for the aligned split-half CV"
@@ -877,8 +1020,19 @@ def run_battery_arm(cfg: Cfg, manifests: dict, arm_id: str) -> list[str]:
 
     anchors = torch.load(anch_p, map_location="cpu", weights_only=False)
     rb = DIR.load_rb_tensors(cfg.out_root)
+    psi = np.load(cfg.out_root / "battery2" / f"psi_L{PSI_LAYER}.npz")
     rng = np.random.default_rng(SEED)
-    out: dict = {"arm": row, "trees": {}, **_meta()}
+    out: dict = {
+        "arm": row,
+        "trees": {},
+        "dup_targets_dropped": list(DUP_TARGET_DROP),
+        "psi": {
+            "definition": "ridge-pinv of banked M0 (L19); paper leaves psi undefined",
+            "lambda_star": float(psi["lam_star"]),
+            "effective_rank": float(psi["eff_rank"]),
+        },
+        **_meta(),
+    }
     for tree, arm_store in (("onpolicy", own), ("matched_text", mt)):
         per_layer: dict = {}
         for li in LAYERS:
@@ -919,28 +1073,46 @@ def run_battery_arm(cfg: Cfg, manifests: dict, arm_id: str) -> list[str]:
             dd = float(delta @ delta)
             eta = float(delta @ w_hat) / (dd + 1e-12)
             rel_res = float(np.linalg.norm(w_hat - eta * delta) / (np.linalg.norm(w_hat) + 1e-12))
-            sig_npz = np.load(cfg.out_root / "battery" / f"sigma_L{li}.npz")
+            sig_npz = np.load(cfg.out_root / "battery2" / f"sigma_L{li}.npz")
             sigma = {"sigma": sig_npz["sigma"], "chol": sig_npz["chol"]}
             DIR.N_NULL_DRAWS = cfg.perm_gate  # null band draws (smoke-scaled)
             bands = DIR.null_bands(w_hat, sigma, rng)
             beh_rb = rb[row["beh_key"]]
             assert beh_rb.shape[0] > max(LAYERS), (row["beh_key"], beh_rb.shape)
             rbl = beh_rb[li]
+
+            def _cos(a, b):
+                return float((a @ b) / (np.linalg.norm(a) * np.linalg.norm(b) + 1e-12))
+
+            # three-object family (kept DISTINCT — the theory's delta is NOT
+            # #1768's map residual): t_bar (banked base TF over mix positives),
+            # delta_theory = t_bar - v0(C) (base PROFILE at the source condition,
+            # this panel, condition grain), map_residual = t_bar - M0(c_C)
+            # (what #1768's operator-KV read actually raced; L19 only — the
+            # banked M0's layer). One norm-matched null band covers all three
+            # cosines (the band is over random directions vs w_hat).
             dirs = {
-                "cos_w_delta": float(
-                    (w_hat @ delta) / (np.linalg.norm(w_hat) * np.linalg.norm(delta) + 1e-12)
-                ),
+                "cos_w_delta": _cos(w_hat, delta),
+                "cos_w_tbar": _cos(w_hat, t_vec),
                 "eta_hat": eta,
                 "rel_residual": rel_res,
-                "cos_w_rb": float(
-                    (w_hat @ rbl) / (np.linalg.norm(w_hat) * np.linalg.norm(rbl) + 1e-12)
-                ),
+                "cos_w_rb": _cos(w_hat, rbl),
                 "delta_norm": float(np.sqrt(dd)),
+                "tbar_norm": float(np.linalg.norm(t_vec)),
                 "w_norm": float(np.sqrt(ww)),
                 "null_bands": bands,
                 "anchor_n_rows": int(anchors["n_rows"]),
             }
-            # C: the six-way gate race (+ psi(delta) supplement), two q poolings
+            map_resid = None
+            if li == PSI_LAYER:
+                ctx_prof_l19 = _profiles(base, li, "context")
+                map_resid = t_vec - _m0_predict(cfg, ctx_prof_l19[src_id][0])
+                dirs["cos_w_map_residual"] = _cos(w_hat, map_resid)
+                dirs["map_residual_norm"] = float(np.linalg.norm(map_resid))
+            # C: the gate race, two q poolings. psi HEADLINE = ridge-pinv of the
+            # banked M0 (L19 only); psi = identity kept as a LABELED sensitivity
+            # arm at every layer (type confusion: answer-space vector used as a
+            # context-space key — dimensions coincide, semantics do not).
             ctx_prof = _profiles(base, li, "context")
             lp_prof = _profiles(base, li, "context", pos="last_prompt")
             gates: dict = {}
@@ -949,10 +1121,18 @@ def run_battery_arm(cfg: Cfg, manifests: dict, arm_id: str) -> list[str]:
                 Q = np.stack([prof[t][0] for t in tids], axis=1)
                 keys = {
                     "c_C": c_src,
-                    "psi_t": t_vec,
-                    "c_C_plus_psi_delta": c_src + delta,
-                    "psi_delta": delta,  # paper's 4th ablation key (supplement)
+                    "psiId_t": t_vec,
+                    "c_C_plus_psiId_delta": c_src + delta,
+                    "psiId_delta": delta,  # paper's 4th ablation key (supplement)
                 }
+                if li == PSI_LAYER:
+                    psi_t = _psi_apply(psi, t_vec)
+                    psi_d = _psi_apply(psi, delta)
+                    keys |= {
+                        "psiPinv_t": psi_t,
+                        "c_C_plus_psiPinv_delta": c_src + psi_d,
+                        "psiPinv_delta": psi_d,  # supplement
+                    }
                 metrics = {"I": None}
                 if pooling == "span_mean":
                     metrics["whitened"] = sigma  # Sigma bank is span-mean pooled only
@@ -990,9 +1170,9 @@ def run_battery_arm(cfg: Cfg, manifests: dict, arm_id: str) -> list[str]:
                 },
             }
         out["trees"][tree] = per_layer
-    dest = cfg.out_root / "battery" / "arms" / f"{arm_id}.json"
+    dest = cfg.out_root / "battery2" / "arms" / f"{arm_id}.json"
     _atomic_json(dest, out)
-    G._upload_paths(cfg.gcfg(), [dest], f"{HF_PREFIX}/battery/arms")
+    G._upload_paths(cfg.gcfg(), [dest], f"{HF_PREFIX}/battery2/arms")
     return [str(dest)]
 
 
@@ -1004,7 +1184,7 @@ def run_battery_summary(cfg: Cfg, manifests: dict) -> list[str]:
     arms = [r["arm_id"] for r in manifests["content_arms"]]
     per_arm = {}
     for a in arms:
-        p = cfg.out_root / "battery" / "arms" / f"{a}.json"
+        p = cfg.out_root / "battery2" / "arms" / f"{a}.json"
         if not p.exists():
             _ensure_local(cfg, f"battery/arms/{a}.json")
         per_arm[a] = json.loads(p.read_text())
@@ -1039,6 +1219,8 @@ def run_battery_summary(cfg: Cfg, manifests: dict) -> list[str]:
                         np.quantile(list(L["scalarity_residual"].values()), 0.9)
                     ),
                     "cos_w_delta": L["direction"]["cos_w_delta"],
+                    "cos_w_tbar": L["direction"]["cos_w_tbar"],
+                    "cos_w_map_residual": L["direction"].get("cos_w_map_residual"),
                     "eta_hat": L["direction"]["eta_hat"],
                     "rel_residual": L["direction"]["rel_residual"],
                     "cos_w_rb": L["direction"]["cos_w_rb"],
@@ -1053,9 +1235,271 @@ def run_battery_summary(cfg: Cfg, manifests: dict) -> list[str]:
                 }
             )
         summary[tree] = rows
-    dest = cfg.out_root / "battery" / "summary.json"
+    summary["panel_note"] = (
+        "targets = the verbatim #1979 50-member panel MINUS neg_default_assistant "
+        "(render-identical duplicate of `bare`) MINUS each arm's own source condition; "
+        "two SOURCE-ONLY extension members (icl_prefix_impolite, icl_prefix_writing_style) "
+        "serve the 8 imp/cas ICL arms' w_hat only and never enter any target set "
+        "(stated deviation from the capture-all-52 redirect; per-arm realized-n nulls "
+        "mediate every cross-arm rank comparison). The 44 non-ICL arms never see the two "
+        "extension prefixes as targets — the cross-behavior swapped-prefix probe is a "
+        "named coverage gap."
+    )
+    dest = cfg.out_root / "battery2" / "summary.json"
     _atomic_json(dest, summary)
-    G._upload_paths(cfg.gcfg(), [dest], f"{HF_PREFIX}/battery")
+    G._upload_paths(cfg.gcfg(), [dest], f"{HF_PREFIX}/battery2")
+    return [str(dest)]
+
+
+# ── ablation ladder (addendum): context-vs-map at condition grain ─────────────
+
+
+def _joined_rows(arm_store: dict, base_store: dict, layer: int, q_shas: list[str]) -> dict:
+    """Row-aligned (c0, v0, cp, vp) arrays over (prefix, query) keys present in
+    BOTH stores, restricted to the query subset. Returns float64 (n, d) arrays."""
+    import numpy as np
+
+    qsel = set(q_shas)
+
+    def _index(store):
+        return {
+            (pid, qsha): i
+            for i, (pid, qsha) in enumerate(
+                zip(store["row_prefix_id"], store["row_query_sha"], strict=True)
+            )
+            if qsha in qsel
+        }
+
+    bi, ai = _index(base_store), _index(arm_store)
+    keys = sorted(k for k in bi if k in ai)
+    assert keys, "ladder join produced zero rows"
+    b_ctx = np.asarray(base_store["spans"]["context"][layer].float().numpy(), dtype=np.float64)
+    b_res = np.asarray(base_store["spans"]["response"][layer].float().numpy(), dtype=np.float64)
+    a_ctx = np.asarray(arm_store["spans"]["context"][layer].float().numpy(), dtype=np.float64)
+    a_res = np.asarray(arm_store["spans"]["response"][layer].float().numpy(), dtype=np.float64)
+    bidx = [bi[k] for k in keys]
+    aidx = [ai[k] for k in keys]
+    return {
+        "keys": keys,
+        "c0": b_ctx[bidx],
+        "v0": b_res[bidx],
+        "cp": a_ctx[aidx],
+        "vp": a_res[aidx],
+    }
+
+
+def _pca_fit(X_train: "object", k: int) -> dict:
+    """Train-fold PCA of context rows: mean + top-k components + retained var."""
+    import numpy as np
+
+    mu = X_train.mean(axis=0)
+    Xc = X_train - mu
+    _u, s, vt = np.linalg.svd(Xc, full_matrices=False)
+    k_real = int(min(k, vt.shape[0]))
+    var = s**2
+    return {
+        "mu": mu,
+        "components": vt[:k_real].T,  # (d, k_real)
+        "k_requested": int(k),
+        "k_real": k_real,
+        "retained_var_frac": float(var[:k_real].sum() / (var.sum() + 1e-12)),
+    }
+
+
+def _pca_apply(pca: dict, X: "object") -> "object":
+    return (X - pca["mu"]) @ pca["components"]
+
+
+def run_ladder_prep(cfg: Cfg, manifests: dict) -> list[str]:
+    """Shared base-side ladder prep per (layer, k): train-fold PCA of BASE
+    context rows + the shared M0 ridge fit (PCA(c0_train) -> v0_train). M0 is
+    fit ONCE and shared across arms/trees (the addendum's estimator rule)."""
+    import torch
+
+    import issue825_map_alignment as MA
+
+    q_shas = [q["sha"] for q in manifests["queries"]]
+    train_q = [s for i, s in enumerate(q_shas) if i % 2 == 0]  # the aligned partition
+    base = _load_store(cfg, "stores/onpolicy/base_content/store.pt")
+    outs = []
+    for li in LAYERS:
+        j = _joined_rows(base, base, li, train_q)  # base joined with itself: c0/v0 train rows
+        for k in LADDER_KS:
+            out = cfg.out_root / "ladder" / f"prep_L{li}_k{k}.pt"
+            if out.exists():
+                outs.append(str(out))
+                continue
+            pca = _pca_fit(j["c0"], k)
+            X_tr = torch.as_tensor(_pca_apply(pca, j["c0"]), dtype=torch.float64)
+            Y_tr = torch.as_tensor(j["v0"], dtype=torch.float64)
+            prep = MA._ridge_prep(X_tr)
+            # materialize the selected lambda once via the memoized predict path
+            _ = MA._ridge_predict(prep, Y_tr, X_tr[:1], lam_key="m0")
+            lam_m0 = float(prep["_lam_memo"]["m0"][2])
+            out.parent.mkdir(parents=True, exist_ok=True)
+            tmp = out.with_suffix(".pt.tmp")
+            torch.save(
+                {
+                    "pca": pca,
+                    "prep": prep,
+                    "Y_train_v0": Y_tr,
+                    "lambda_m0": lam_m0,
+                    "n_train": int(X_tr.shape[0]),
+                    "layer": li,
+                    "k": k,
+                    "metadata": _meta(),
+                },
+                tmp,
+            )
+            os.replace(tmp, out)
+            logger.info(
+                "[ladder:prep] L%d k%d n_train=%d retained_var=%.3f lambda_m0=%.4g",
+                li,
+                k,
+                int(X_tr.shape[0]),
+                pca["retained_var_frac"],
+                lam_m0,
+            )
+            outs.append(str(out))
+    return outs
+
+
+def _pooled_r2(pred: "object", truth: "object", baseline_mean: "object") -> float:
+
+    num = float(((pred - truth) ** 2).sum())
+    den = float(((truth - baseline_mean) ** 2).sum())
+    return 1.0 - num / (den + 1e-12)
+
+
+def run_ladder_arm(cfg: Cfg, manifests: dict, arm_id: str) -> list[str]:
+    """Four-rung context-vs-map ablation for one arm: M0c0 / M0c+ / M+c0 / M+c+,
+    held-out pooled R^2 vs the measured v+, per tree x layer x k. TREE
+    COHERENCE: each tree's M+ fits that tree's own (c+, v+) rows; M0 is the
+    shared base fit. kNN retrieval attached per fitted map; the identity+bias
+    baseline is stated INAPPLICABLE (PCA-k inputs vs full-d outputs)."""
+    import numpy as np
+    import torch
+
+    import issue825_map_alignment as MA
+    from explore_persona_space.analysis.mapping_baselines import knn_retrieval
+
+    q_shas = [q["sha"] for q in manifests["queries"]]
+    train_q = [s for i, s in enumerate(q_shas) if i % 2 == 0]
+    eval_q = [s for i, s in enumerate(q_shas) if i % 2 == 1]
+    base = _load_store(cfg, "stores/onpolicy/base_content/store.pt")
+    own = _load_store(cfg, f"stores/onpolicy/{arm_id}/store.pt")
+    mt = _load_store(cfg, f"stores/matched_tf/{arm_id}/store.pt")
+    out: dict = {"arm": arm_id, "trees": {}, **_meta()}
+    for tree, arm_store in (("onpolicy", own), ("matched_text", mt)):
+        per: dict = {}
+        for li in LAYERS:
+            jtr = _joined_rows(arm_store, base, li, train_q)
+            jev = _joined_rows(arm_store, base, li, eval_q)
+            for k in LADDER_KS:
+                bundle = torch.load(
+                    cfg.out_root / "ladder" / f"prep_L{li}_k{k}.pt",
+                    map_location="cpu",
+                    weights_only=False,
+                )
+                pca, m0_prep, m0_Y = bundle["pca"], bundle["prep"], bundle["Y_train_v0"]
+                Xp_tr = torch.as_tensor(_pca_apply(pca, jtr["cp"]), dtype=torch.float64)
+                Yp_tr = torch.as_tensor(jtr["vp"], dtype=torch.float64)
+                mp_prep = MA._ridge_prep(Xp_tr)
+                c0_ev = torch.as_tensor(_pca_apply(pca, jev["c0"]), dtype=torch.float64)
+                cp_ev = torch.as_tensor(_pca_apply(pca, jev["cp"]), dtype=torch.float64)
+                vp_ev = jev["vp"]
+                vp_tr_mean = jtr["vp"].mean(axis=0)
+                preds = {
+                    "rung1_M0_c0": MA._ridge_predict(m0_prep, m0_Y, c0_ev, lam_key="m0"),
+                    "rung2_M0_cplus": MA._ridge_predict(m0_prep, m0_Y, cp_ev, lam_key="m0"),
+                    "rung3_Mplus_c0": MA._ridge_predict(mp_prep, Yp_tr, c0_ev, lam_key="mp"),
+                    "rung4_Mplus_cplus": MA._ridge_predict(mp_prep, Yp_tr, cp_ev, lam_key="mp"),
+                }
+                r2 = {
+                    name: _pooled_r2(np.asarray(p, dtype=np.float64), vp_ev, vp_tr_mean)
+                    for name, p in preds.items()
+                }
+                span = r2["rung4_Mplus_cplus"] - r2["rung1_M0_c0"]
+                gap2 = (r2["rung2_M0_cplus"] - r2["rung1_M0_c0"]) / (span + 1e-12)
+                gap3 = (r2["rung3_Mplus_c0"] - r2["rung1_M0_c0"]) / (span + 1e-12)
+                interaction = (
+                    (r2["rung4_Mplus_cplus"] - r2["rung1_M0_c0"])
+                    - (r2["rung2_M0_cplus"] - r2["rung1_M0_c0"])
+                    - (r2["rung3_Mplus_c0"] - r2["rung1_M0_c0"])
+                )
+                knn = {
+                    "rung4_Mplus_cplus": knn_retrieval(
+                        np.asarray(preds["rung4_Mplus_cplus"], dtype=np.float64), vp_ev
+                    ),
+                    "rung1_M0_c0": knn_retrieval(
+                        np.asarray(preds["rung1_M0_c0"], dtype=np.float64), vp_ev
+                    ),
+                }
+                per[f"L{li}_k{k}"] = {
+                    "r2": r2,
+                    "gap_closure_rung2": float(gap2),
+                    "gap_closure_rung3": float(gap3),
+                    "interaction": float(interaction),
+                    "span_floor_to_ceiling": float(span),
+                    "n_train": int(Xp_tr.shape[0]),
+                    "n_eval": int(vp_ev.shape[0]),
+                    "k_requested": int(k),
+                    "k_real": int(pca["k_real"]),
+                    "retained_var_frac": pca["retained_var_frac"],
+                    "lambda_m0": bundle["lambda_m0"],
+                    "lambda_mplus": float(mp_prep["_lam_memo"]["mp"][2]),
+                    "knn": knn,
+                    "identity_bias_baseline": "INAPPLICABLE — PCA-k inputs vs full-d outputs",
+                }
+        out["trees"][tree] = per
+    dest = cfg.out_root / "ladder" / "arms" / f"{arm_id}.json"
+    _atomic_json(dest, out)
+    G._upload_paths(cfg.gcfg(), [dest], f"{HF_PREFIX}/ladder/arms")
+    return [str(dest)]
+
+
+def run_ladder_summary(cfg: Cfg, manifests: dict) -> list[str]:
+    """Aggregate the per-arm ladder JSONs (four rungs, gap closures, interaction)."""
+    arms = [r["arm_id"] for r in manifests["content_arms"]]
+    per_arm = {}
+    for a in arms:
+        p = cfg.out_root / "ladder" / "arms" / f"{a}.json"
+        if not p.exists():
+            _ensure_local(cfg, f"ladder/arms/{a}.json")
+        per_arm[a] = json.loads(p.read_text())
+    rows = []
+    for a, rec in per_arm.items():
+        meta = manifests["arm_rows"][a]
+        for tree, per in rec["trees"].items():
+            for cell_key, cell in per.items():
+                rows.append(
+                    {
+                        "arm": a,
+                        "behavior": meta["behavior"],
+                        "ctx": meta["ctx_key"],
+                        "regime": meta["regime"],
+                        "tree": tree,
+                        "cell": cell_key,
+                        **{
+                            kk: cell[kk]
+                            for kk in (
+                                "r2",
+                                "gap_closure_rung2",
+                                "gap_closure_rung3",
+                                "interaction",
+                                "k_real",
+                                "retained_var_frac",
+                                "lambda_m0",
+                                "lambda_mplus",
+                                "n_train",
+                                "n_eval",
+                            )
+                        },
+                    }
+                )
+    dest = cfg.out_root / "ladder" / "summary.json"
+    _atomic_json(dest, {"rows": rows, "n_arms": len(arms), **_meta()})
+    G._upload_paths(cfg.gcfg(), [dest], f"{HF_PREFIX}/ladder")
     return [str(dest)]
 
 
@@ -1069,22 +1513,93 @@ def harvest(cfg: Cfg, manifests: dict) -> None:
     EVAL_DIR.mkdir(parents=True, exist_ok=True)
     hub.stage_hub_file(
         X.HF_DATA_REPO,
-        f"{HF_PREFIX}/battery/summary.json",
+        f"{HF_PREFIX}/battery2/summary.json",
         EVAL_DIR / "summary.json",
         repo_type="dataset",
         overwrite=True,
     )
     (EVAL_DIR / "arms").mkdir(exist_ok=True)
+    (EVAL_DIR / "ladder_arms").mkdir(exist_ok=True)
+    hub.stage_hub_file(
+        X.HF_DATA_REPO,
+        f"{HF_PREFIX}/ladder/summary.json",
+        EVAL_DIR / "ladder_summary.json",
+        repo_type="dataset",
+        overwrite=True,
+    )
     for r in manifests["content_arms"]:
         a = r["arm_id"]
         hub.stage_hub_file(
             X.HF_DATA_REPO,
-            f"{HF_PREFIX}/battery/arms/{a}.json",
+            f"{HF_PREFIX}/battery2/arms/{a}.json",
             EVAL_DIR / "arms" / f"{a}.json",
             repo_type="dataset",
             overwrite=True,
         )
-    logger.info("[harvest] %d arm JSONs + summary -> %s", len(manifests["content_arms"]), EVAL_DIR)
+        hub.stage_hub_file(
+            X.HF_DATA_REPO,
+            f"{HF_PREFIX}/ladder/arms/{a}.json",
+            EVAL_DIR / "ladder_arms" / f"{a}.json",
+            repo_type="dataset",
+            overwrite=True,
+        )
+    logger.info(
+        "[harvest] %d arm JSONs + summaries -> %s", len(manifests["content_arms"]), EVAL_DIR
+    )
+
+
+def cap_hit_report(cfg: Cfg, manifests: dict) -> None:
+    """VM-side: realized cap-hit fraction per (state x panel family) from the
+    uploaded raw generation shards; the >2% per-family re-gen trigger input."""
+    from huggingface_hub.utils import EntryNotFoundError
+
+    from explore_persona_space.orchestrate import hub
+
+    panel = json.loads((cfg.config_dir / "prefix_panel.json").read_text())
+    ext = json.loads((cfg.config_dir / "ext_members.json").read_text())["members"]
+    fam_of = {m["prefix_id"]: m["family"] for m in panel["members"]}
+    fam_of |= {m["prefix_id"]: EXT_FAMILY for m in ext}
+    states = ["base_content"] + [r["arm_id"] for r in manifests["content_arms"]]
+    out: dict = {"max_new_tokens": MAX_NEW_R3, "per_state": {}, **_meta()}
+    fam_tot: dict[str, int] = {}
+    fam_hit: dict[str, int] = {}
+    for st in states:
+        stage_dir = cfg.out_root / "caphit" / st
+        rows: list[dict] = []
+        for i in range(40):  # raw shards are <9 MB line-splits; probe until first miss
+            rel = f"raw_completions/generation/{st}/{st}_generation.shard{i:02d}.jsonl"
+            local = stage_dir / f"shard{i:02d}.jsonl"
+            if not local.exists():
+                try:
+                    hub.stage_hub_file(
+                        X.HF_DATA_REPO, f"{HF_PREFIX}/{rel}", local, repo_type="dataset"
+                    )
+                except EntryNotFoundError as exc:  # first missing index = end of shard set
+                    if i == 0:
+                        raise RuntimeError(f"no raw shards on HF for state {st}") from exc
+                    break
+            rows.extend(json.loads(line) for line in local.read_text().splitlines() if line.strip())
+        n_hit = sum(1 for r in rows if r["finish_reason"] == "length")
+        out["per_state"][st] = {"n_rows": len(rows), "n_cap_hit": n_hit}
+        for r in rows:
+            fam = fam_of.get(r["prefix_id"], "?")
+            fam_tot[fam] = fam_tot.get(fam, 0) + 1
+            if r["finish_reason"] == "length":
+                fam_hit[fam] = fam_hit.get(fam, 0) + 1
+    out["per_family"] = {
+        f: {
+            "n_rows": fam_tot[f],
+            "n_cap_hit": fam_hit.get(f, 0),
+            "frac": fam_hit.get(f, 0) / fam_tot[f],
+            "over_2pct_trigger": (fam_hit.get(f, 0) / fam_tot[f]) > 0.02,
+        }
+        for f in sorted(fam_tot)
+    }
+    _atomic_json(EVAL_DIR / "cap_hit.json", out)
+    logger.info(
+        "[cap-hit] per-family: %s",
+        {f: round(v["frac"], 4) for f, v in out["per_family"].items()},
+    )
 
 
 BEH_ORDER = ("sycophancy", "impolite", "writing_style")
@@ -1148,14 +1663,15 @@ def figures(cfg: Cfg) -> None:
     _save_fig(fig, "scalarity_residual_ecdf")
     plt.close(fig)
 
-    # 3) six-way gate race (span-mean pooling; spearman per arm + perm null)
+    # 3) six-way gate race (span-mean pooling, L19, psi = ridge-pinv headline;
+    #    spearman per arm + perm null)
     combos = [
         ("c_C", "I"),
         ("c_C", "whitened"),
-        ("psi_t", "I"),
-        ("psi_t", "whitened"),
-        ("c_C_plus_psi_delta", "I"),
-        ("c_C_plus_psi_delta", "whitened"),
+        ("psiPinv_t", "I"),
+        ("psiPinv_t", "whitened"),
+        ("c_C_plus_psiPinv_delta", "I"),
+        ("c_C_plus_psiPinv_delta", "whitened"),
     ]
     fig, ax = plt.subplots(figsize=(9.5, 4.6))
     xs = np.arange(len(combos))
@@ -1231,7 +1747,44 @@ def figures(cfg: Cfg) -> None:
     ax.set_title("Write direction: circles on-policy, squares matched-text")
     _save_fig(fig, "direction_cosines")
     plt.close(fig)
-    logger.info("[figures] wrote 5 figures -> %s", FIG_DIR)
+
+    # 6) ablation ladder: four rungs faceted by tree, per-arm points behind bars
+    lad = json.loads((EVAL_DIR / "ladder_summary.json").read_text())["rows"]
+    rungs = ("rung1_M0_c0", "rung2_M0_cplus", "rung3_Mplus_c0", "rung4_Mplus_cplus")
+    rung_labels = (
+        "base map,\nbase context",
+        "base map,\nfine-tuned context",
+        "fine-tuned map,\nbase context",
+        "fine-tuned map,\nfine-tuned context",
+    )
+    k_show = 512
+    cell = f"L{PRIMARY_LAYER}_k{k_show}"
+    fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.4), sharey=True)
+    rngj2 = np.random.default_rng(1)
+    for ax, tree in zip(axes, ("onpolicy", "matched_text"), strict=True):
+        rows = [r for r in lad if r["tree"] == tree and r["cell"] == cell]
+        for i, rung in enumerate(rungs):
+            vals = [r["r2"][rung] for r in rows]
+            ax.bar(i, float(np.mean(vals)), width=0.6, color="lightgray", zorder=1)
+            for r in rows:
+                ax.scatter(
+                    i + rngj2.uniform(-0.18, 0.18),
+                    r["r2"][rung],
+                    s=12,
+                    color=colors[r["behavior"]],
+                    alpha=0.55,
+                    zorder=2,
+                )
+        ax.set_xticks(range(4))
+        ax.set_xticklabels(rung_labels, fontsize=7)
+        ax.set_title(
+            {"onpolicy": "on-policy (primary)", "matched_text": "matched-text"}[tree]
+            + f"  [L{PRIMARY_LAYER}, PCA k={k_show} inputs]"
+        )
+    axes[0].set_ylabel("held-out pooled R^2 vs measured fine-tuned profile")
+    _save_fig(fig, "ablation_ladder")
+    plt.close(fig)
+    logger.info("[figures] wrote 6 figures -> %s", FIG_DIR)
 
 
 # ── verification modes ────────────────────────────────────────────────────────
@@ -1266,12 +1819,19 @@ def import_check() -> None:
         assert_out_root_headroom,
     )
 
+    import issue825_map_alignment as MA
+    from explore_persona_space.analysis.mapping_baselines import (  # noqa: F401
+        identity_bias_predict,
+        knn_retrieval,
+    )
+
     binds = [
         (G.run_f1a, (None, None, "state")),
         (G.run_f1b_writes, (None, None, "arm", "base_content")),
         (G.run_f1c, (None, None, "mix")),
         (G.ensure_arm_registry, (None, None)),
         (G._upload_paths, (None, [], "dest")),
+        (G._apply_saved_map, ({}, None, "cpu")),
         (CAP._mix_positive_rows, (None, None)),
         (DIR.corpus_sigma, (Path("/tmp"), 19)),
         (DIR.load_rb_tensors, (Path("/tmp"),)),
@@ -1279,6 +1839,9 @@ def import_check() -> None:
         (PREP._member, ("cid", "fam", "tier", "src", None, {})),
         (hub.stage_hub_file, ("repo", "rel", Path("/tmp/x"))),
         (X.pfx_resolve_context, ("cid",)),
+        (MA._ridge_prep, (None,)),
+        (MA._ridge_predict, (None, None, None)),
+        (knn_retrieval, (None, None)),
     ]
     for fn, args in binds:
         inspect.signature(fn).bind(*args)
@@ -1316,6 +1879,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--perm-gate", type=int, default=N_PERM_GATE)
     ap.add_argument("--terminal-token", default="done", help=argparse.SUPPRESS)
     ap.add_argument("--harvest", action="store_true")
+    ap.add_argument("--cap-hit", action="store_true", help="VM-side per-family cap-hit report")
     ap.add_argument("--figures", action="store_true")
     ap.add_argument("--worker-unit", default=None, help=argparse.SUPPRESS)
     ap.add_argument("--plan-only", action="store_true")
@@ -1378,9 +1942,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.plan_only:
         plan_only(cfg, manifests, items)
         return 0
-    if args.harvest or args.figures:
+    if args.harvest or args.figures or args.cap_hit:
         if args.harvest:
             harvest(cfg, manifests)
+        if args.cap_hit:
+            cap_hit_report(cfg, manifests)
         if args.figures:
             figures(cfg)
         return 0
