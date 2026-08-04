@@ -85,10 +85,18 @@ build_cmd() {
       )
       ;;
     phase_a)
-      # Unit A: diverse scaffold generation driver + shared fold map.
+      # Units A + D: scaffold supply (recovery + shortfall GENERATION via the
+      # parent issue1345_gen_scaffolds subprocess against ONE shared #1738
+      # question draw), per-row judge ADMISSION (kept.json), + shared fold map.
       # Target = 8,000 conv_ids (33% oversample pad over the plan §7 gate-4
-      # floor of 4,480); recovers from parent stories via strip_scaffolds,
-      # then writes eval_results/issue_2054/shared_fold_map.json.
+      # floor of 4,480); writes eval_results/issue_2054/shared_fold_map.json
+      # from the ADMITTED conv_ids.
+      # Lane split (plan §10 off_pod_phases): the pod (lora-7b) leg runs
+      # `--stage gen` (recovery + vLLM generation + prejudge upload, fail-loud);
+      # the VM Batch-API leg runs `--stage judge [--prejudge-from-hf]`.
+      # Default `--stage all` = both in-process (smoke / single box); pass
+      # the stage per lane via the router's verbatim pass-through. CPU smoke:
+      # `phase_a --gen-mock --questions-jsonl <tiny pool>`.
       CMD=(
         uv run python scripts/issue2054_phase_a.py
         --target-conv-ids 8000

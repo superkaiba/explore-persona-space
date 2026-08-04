@@ -1,24 +1,53 @@
 #!/usr/bin/env python
-"""Phase A driver for task #2054: diverse scaffold generation + shared fold map.
+"""Phase A driver for task #2054: diverse scaffold supply + judge admission + fold map.
 
-Recovers scaffolds from parent #1345's ~38,700 existing on-policy stories via
-`issue1345_strip_scaffolds.strip_file` (byte-exact round-trip verified per row);
-generates ONLY the SHORTFALL up to `--target-conv-ids` via the parent's own
-`issue1345_gen_scaffolds` phase (verbatim question preserved). Judge-filters
-scaffolds via `explore_persona_space.eval.batch_judge.judge_completions_batch`
-(claude-sonnet-4-5-20250929, `max_tokens=1024`, drop-never-coerce); a ≥5k-call
-production wave is pilot-gated at 200 draws (`judge_pilot_gate`, rule 26).
+Three legs (plan §4 Phase A / §10 `off_pod_phases`), selected by ``--stage``:
 
-Writes `eval_results/issue_2054/shared_fold_map.json` (K=5 conversation-grouped
-folds, seed 137) as the SINGLE artifact every downstream fit/ladder invocation
-consumes.
+- RECOVERY (stage gen|all): strip scaffolds from parent #1345's existing
+  on-policy stories via ``issue1345_strip_scaffolds.strip_file`` (byte-exact
+  round-trip verified per row).
+- GENERATION (stage gen|all; C8(i)): the recovered supply is far below the
+  8,000-conv-id target (gate-4 floor 4,480), so Phase A GENERATES the
+  shortfall by invoking the parent generator ``issue1345_gen_scaffolds.py
+  --phase scaffolds`` as a subprocess, once per variant, against ONE shared
+  question draw (plan req 1: one shared conversation draw underlies every
+  cell). The draw is materialized once from the #1738 multi-turn manifest
+  (``issue1738_multiturn/sampling_manifest``, seed 137, revision-pinned,
+  exact-dupe deduped, token-budget validated — the #1738/#952 over-length
+  add_request class is filtered at draw time). ``--gen-mock`` threads the
+  generator's deterministic ``--mock`` path for CPU smokes. Sequential across
+  variants; per-GPU sharding is Unit F.
+- JUDGE ADMISSION (stage judge|all; C8(ii)): every scaffold row (recovered +
+  generated) is judge-scored per row via ``eval.graded_judge.judge_graded``
+  (claude-sonnet-4-5-20250929, ``max_tokens=1024``, reason-then-score rubric
+  conforming to the harness parse contract ``parse_judge_json`` ->
+  ``_score_from_parsed`` — llm-judging rule 27; the earlier two-field rubric
+  dropped 100% of draws). Rows with mean score >= ``--judge-keep-threshold``
+  (default 50, persona-vectors convention) are ADMITTED; drops are counted
+  (content-drop vs below-threshold vs transport, rule 24 — transport residue
+  fails LOUD, never a silent drop). A >=5k-call wave is pilot-gated first
+  (rule 26); a pilot FAIL exits rc=7 with the report JSON (designed halt).
+  Admitted rows are written to the canonical ``scaffolds_{variant}.jsonl``
+  the downstream phases consume, the full pool to
+  ``scaffolds_{variant}_prejudge.jsonl``, and the admission record to
+  ``kept.json`` (plan output ``issue2054_lattice/scaffolds/kept.json``).
 
-Emits `[phase=phase_a]` log lines terminating in `[phase=done]` on graceful
-completion. Deferred imports (huggingface_hub, judge helpers) keep --pilot smokes
-free of import-time HF cost when the shortfall is 0.
+Writes ``eval_results/issue_2054/shared_fold_map.json`` (K=5
+conversation-grouped folds, seed 137) from the ADMITTED conv_ids — the SINGLE
+artifact every downstream fit/ladder invocation consumes. Recovered rows keep
+``conv_id == scaffold_id`` (``stripped_<story_id>`` — the Unit B fold-map key
+pin; phase_d canonizes via ``_canon_conv_id``); generated rows carry
+``conv_id == qid`` (the ``mt_<hash>`` manifest draw key, which
+``_canon_conv_id`` passes through unchanged).
 
-Exit 0 on success. Exit 1 on judge / HF / preflight failure. Exit 2 on missing
-dependency.
+Emits ``[phase=phase_a]`` log lines terminating in ``[phase=done]``.
+Exit 0 on success. Exit 1 on judge / HF / preflight failure. Exit 2 on
+missing dependency. Exit 7 on a rule-26 pilot-gate refusal (report JSON at
+``<out>/_judge_cache/pilot_gate_report.json``).
+
+The parent registries live at import top-level; a tokenizer/regex compile
+reads EPM_STORY_CHARACTER_NAME + EPM_I1345_VARIANT — Phase A does neither,
+so the strict [A-Za-z0-9_]+ default ("ARIA", "") passes untouched.
 """
 
 from __future__ import annotations
@@ -26,15 +55,14 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
+import subprocess
 import sys
 from dataclasses import asdict, is_dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-# The parent registries live at import top-level; a tokenizer/regex compile
-# reads EPM_STORY_CHARACTER_NAME + EPM_I1345_VARIANT — Phase A does neither,
-# so the strict [A-Za-z0-9_]+ default ("ARIA", "") passes untouched.
 _SCRIPT_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = _SCRIPT_DIR.parent
 for _p in (str(_SCRIPT_DIR), str(_REPO_ROOT / "src")):
@@ -59,9 +87,33 @@ HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 PARENT_PREFIX = "issue1345_framing"
 TASK_PREFIX = "issue2054_lattice"
 
+# Shared question draw source (plan: "this task's corpus build draws from
+# #1738 by default"): the persisted #1738 selection manifest (99,778 real
+# multi-turn conversations, 55 JSONL parts, ~455 MB — a bounded fetch).
+QUESTION_MANIFEST_PREFIX = "issue1738_multiturn/sampling_manifest"
+QUESTION_MIN_CHARS = 16
+QUESTION_MAX_CHARS = 8000
+# Prompt-budget cap for the generator render (gen MAX_MODEL_LEN 4096 −
+# SCAFFOLD_MAX_NEW_TOKENS 1024 − ~500 tokens of scaffold-prompt overhead,
+# with margin). Over-budget questions are DROPPED, never truncated (#952).
+QUESTION_MAX_TOKENS = 2048
+QUESTION_TOKENIZER_ID = "Qwen/Qwen2.5-7B-Instruct"
+
+# Admission floor report (on-policy-completions.md 80% floor). Phase A
+# REPORTS + FLAGS below-floor variants in kept.json; the registered DROP
+# mechanism for this design is kill gate 4 (fits-side intersection >= 4,480),
+# so no variant is silently excluded here.
+YIELD_FLOOR_FRACTION = 0.8
+
+# Upload shard budget (upload-policy.md: text >9.5 MB per file line-splits
+# into <9 MB shards — never gzip; >10 MB force-routes to LFS).
+UPLOAD_SHARD_LIMIT_BYTES = 9_500_000
+UPLOAD_SHARD_TARGET_BYTES = 9_000_000
+
 # The character-name → parent-story character mapping. parent stories were
 # written with EPM_STORY_CHARACTER_NAME=<Name>; strip must be told the same
-# name so the answer-attribution regex matches.
+# name so the answer-attribution regex matches. The GENERATION leg reuses the
+# same in-scene name (downstream splice/render reads row["character"]).
 _CHAR_NAME_FROM_VARIANT = {
     "char_helios": "Helios",
     "char_wren": "Wren",
@@ -71,13 +123,44 @@ _CHAR_NAME_FROM_VARIANT = {
     "conversation_paired_stories": "ARIA",  # legacy v8 scope; addressable
 }
 
-_SCAFFOLD_JUDGE_RUBRIC = (
-    "You are grading a narrative SCAFFOLD for diversity + question containment.\n"
-    "The scaffold is a short scene containing exactly one question utterance and a "
-    "sentinel token '<<<ANSWER>>>' where an answer would go. First reason briefly, "
-    'then output JSON: {"diverse": <0-100>, "single_question": <0-100>}.\n\n'
-    "Question:\n{question}\n\nAnswer:\n{answer}"
-)
+
+class PilotGateRefusal(RuntimeError):
+    """Rule-26 pilot gate FAILed — a designed halt (exit 7), not a crash."""
+
+
+def _scaffold_judge_rubric() -> str:
+    """The per-row admission rubric (llm-judging rules 6/7/27).
+
+    Single 0-100 reason-then-score instrument with anchored endpoints,
+    ``{question}``/``{answer}`` slots (the ``judge_graded`` ``.replace``
+    substitution), and a reply shape whose parse lands a ``score`` key —
+    ``parse_judge_json`` -> ``_score_from_parsed`` keeps it. The scaffold
+    text rides the ``{answer}`` slot. (The superseded two-field
+    ``{"diverse": ..., "single_question": ...}`` shape had NO ``score`` key,
+    so every draw parse-dropped — the C8(iii) pilot FAIL.)
+    """
+    import issue1345_scaffold_common as sc
+
+    return (
+        "You are grading a narrative SCAFFOLD for an experiment. A scaffold is a "
+        "short prose scene that embeds exactly ONE question and a literal "
+        f"answer-slot sentinel '{sc.SLOT_SENTINEL}' where an answer will later be "
+        "spliced.\n\n"
+        "Grade how usable the scaffold is, on one 0-100 scale:\n"
+        "- 0: degenerate or template-like (a bare Q&A wrapper with no scene, "
+        "repeated boilerplate), or the scene mangles or paraphrases the question, "
+        "or other questions compete with it.\n"
+        "- 50: borderline — a thin but real scene; the question appears verbatim "
+        "but the framing is generic.\n"
+        "- 100: a vivid, specific scene (setting, situation, and register all "
+        "realized) in which the question below appears verbatim as the scene's "
+        "single question.\n\n"
+        "Question:\n{question}\n\n"
+        "Scaffold:\n{answer}\n\n"
+        "Before scoring, reason briefly. Output a single JSON object of the form "
+        '{"reasoning": "<one or two sentences>", "score": <an integer from 0 to '
+        "100>} — the reasoning key FIRST, then the score."
+    )
 
 
 def _log(msg: str) -> None:
@@ -102,6 +185,64 @@ def _serialize_report(rep: object) -> object:
     return {k: v for k, v in vars(rep).items() if not k.startswith("_")}
 
 
+def _read_jsonl(path: Path) -> list[dict]:
+    """Text-mode line iteration — NEVER splitlines() (gotchas.md U+2028 class)."""
+    rows: list[dict] = []
+    with path.open(encoding="utf-8") as f:
+        for line in f:
+            if line.strip():
+                rows.append(json.loads(line))
+    return rows
+
+
+def _atomic_write_jsonl(path: Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    with tmp.open("w", encoding="utf-8") as f:
+        for r in rows:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    os.replace(tmp, path)
+
+
+def _atomic_write_json(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    with tmp.open("w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, sort_keys=True, default=float)
+    os.replace(tmp, path)
+
+
+def _metadata(seed: int, n: int) -> dict:
+    import issue1345_common as c
+
+    return c.metadata(seed, n, Path(__file__).name)
+
+
+def _canon_conv_id(conv_id: str) -> str:
+    """Parent-story key space (phase_d's `_canon_conv_id` twin): recovered rows
+    read `stripped_<story_id>`; a bare id (incl. the generated `mt_*` draw
+    keys) passes through unchanged."""
+    return conv_id.removeprefix("stripped_")
+
+
+def _question_of(row: dict) -> str | None:
+    """The judge/verbatim question for a scaffold row, or None.
+
+    Generated rows carry an explicit ``question`` field; recovered (stripped)
+    rows carry the Unit A ``q_start``/``q_end`` char span into
+    ``scaffold_text`` (field sets preserved — the Unit A carry-forward).
+    """
+    q = str(row.get("question") or "").strip()
+    if q:
+        return q
+    text = str(row.get("scaffold_text") or "")
+    q_start, q_end = row.get("q_start"), row.get("q_end")
+    if isinstance(q_start, int) and isinstance(q_end, int) and 0 <= q_start < q_end <= len(text):
+        span = text[q_start:q_end].strip()
+        return span or None
+    return None
+
+
 def _conv_grouped_folds(conv_ids: list[str], k: int, seed: int) -> dict[str, int]:
     """Assign each conv_id to a fold in [0, k) via seeded hash-based bucketing.
 
@@ -118,7 +259,7 @@ def _conv_grouped_folds(conv_ids: list[str], k: int, seed: int) -> dict[str, int
     return fold_map
 
 
-def _recover_scaffolds_from_hf(variants: list[str], out_dir: Path, api) -> dict[str, list[dict]]:
+def _recover_scaffolds_from_hf(variants: list[str], api) -> dict[str, list[dict]]:
     """Download parent kept-stories JSONLs per variant and strip → scaffolds.
 
     Returns {variant: [scaffold row dicts]}. Uses parent
@@ -186,184 +327,682 @@ def _recover_scaffolds_from_hf(variants: list[str], out_dir: Path, api) -> dict[
                 f"kept={counts.get('kept', 0)}/{counts.get('total', 0)}"
             )
             variant_out.extend(rows)
-        # Each recovered scaffold carries a conv_id derived from source_id;
-        # the parent's story_id encodes the conv (source: `stripped_{sid}`).
+        # Each recovered scaffold keeps conv_id == scaffold_id
+        # (`stripped_<story_id>` — the Unit B fold-map key pin; phase_d
+        # canonizes via _canon_conv_id).
         for i, row in enumerate(variant_out):
             row.setdefault("conv_id", row.get("scaffold_id", f"{variant}_{i}"))
             row.setdefault("variant", variant)
+            row.setdefault("provenance", "recovered")
         recovered[variant] = variant_out
     return recovered
 
 
+def _shared_recovered_intersection(recovered: dict[str, list[dict]]) -> set[str]:
+    """Canonical conv_ids recovered in EVERY variant (the shared-draw core)."""
+    sets = [{_canon_conv_id(str(r.get("conv_id"))) for r in rows} for rows in recovered.values()]
+    return set.intersection(*sets) if sets else set()
+
+
+# ---------------------------------------------------------------------------
+# Shared question draw (generation input; plan req 1 — ONE shared draw)
+# ---------------------------------------------------------------------------
+def _draw_shared_questions(
+    n: int,
+    seed: int,
+    *,
+    staging_dir: Path,
+    manifest_prefix: str = QUESTION_MANIFEST_PREFIX,
+    revision: str | None = None,
+    manifest_dir: Path | None = None,
+    tokenizer=None,
+) -> tuple[list[dict], dict]:
+    """Seeded draw of n first-user-turn questions from the #1738 manifest.
+
+    Returns (rows, draw_record); each row is {"conv_id", "qid", "question"}
+    with ``conv_id == qid == "mt_<source_hash[:12]>"`` (content-derived,
+    stable across re-uploads; ``_canon_conv_id`` passes it through). Filters:
+    non-empty first user turn, char bounds, no slot sentinel, exact-dupe
+    dedupe (question text AND conv_id — the #1768 real-corpus dupes class),
+    and a token cap against the generator's prompt budget (over-length rows
+    are ENGINE-FATAL at vLLM add_request — the #1738 lesson — so they are
+    dropped at draw time, never truncated).
+
+    The manifest scan is a bounded fetch (55 parts, ~100k rows) — exempt from
+    the external-stream checkpoint presumption. ``manifest_dir``/``tokenizer``
+    are injection seams for offline tests; production stages via
+    ``hub.stage_hub_prefix`` at ONE resolved revision.
+    """
+    import numpy as np
+
+    import issue1345_scaffold_common as sc
+
+    if manifest_dir is None:
+        from huggingface_hub import HfApi
+
+        from explore_persona_space.orchestrate.hub import retry_transient, stage_hub_prefix
+
+        if revision is None:
+            revision = retry_transient(
+                lambda: HfApi().repo_info(HF_DATA_REPO, repo_type="dataset").sha,
+                what="repo_info(data repo)",
+            )
+        _log(f"question draw: staging {manifest_prefix} @ {revision[:12]} -> {staging_dir}")
+        stage_hub_prefix(
+            HF_DATA_REPO, manifest_prefix, staging_dir, repo_type="dataset", revision=revision
+        )
+        # stage_hub_prefix's dest is a MIRROR ROOT: files land at
+        # dest/<repo-relative path> (gotchas.md stage_hub_prefix entry).
+        manifest_dir = staging_dir / manifest_prefix
+    if not manifest_dir.is_dir():
+        raise FileNotFoundError(f"manifest dir missing after staging: {manifest_dir}")
+    parts = sorted(manifest_dir.glob("part_*.jsonl"))
+    if not parts:
+        raise FileNotFoundError(f"no manifest part_*.jsonl under {manifest_dir}")
+
+    counters = {
+        "scanned": 0,
+        "no_user_turn": 0,
+        "char_bounds": 0,
+        "sentinel_in_question": 0,
+        "dupe_question": 0,
+        "dupe_conv_id": 0,
+        "over_token_budget": 0,
+    }
+    candidates: list[dict] = []
+    seen_q: set[str] = set()
+    seen_cid: set[str] = set()
+    for part in parts:
+        with part.open(encoding="utf-8") as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                row = json.loads(line)
+                counters["scanned"] += 1
+                msgs = row.get("messages") or []
+                q = next(
+                    (str(m.get("content") or "") for m in msgs if m.get("role") == "user"),
+                    "",
+                ).strip()
+                if not q:
+                    counters["no_user_turn"] += 1
+                    continue
+                if not (QUESTION_MIN_CHARS <= len(q) <= QUESTION_MAX_CHARS):
+                    counters["char_bounds"] += 1
+                    continue
+                if sc.SLOT_SENTINEL in q:
+                    counters["sentinel_in_question"] += 1
+                    continue
+                if q in seen_q:
+                    counters["dupe_question"] += 1
+                    continue
+                cid = "mt_" + str(row.get("source_hash") or "").removeprefix("sha:")[:12]
+                if cid == "mt_" or cid in seen_cid:
+                    counters["dupe_conv_id"] += 1
+                    continue
+                seen_q.add(q)
+                seen_cid.add(cid)
+                candidates.append({"conv_id": cid, "qid": cid, "question": q})
+
+    # Token-budget filter (batched; CPU) — drop, never truncate (#952).
+    if tokenizer is None:
+        from transformers import AutoTokenizer
+
+        tokenizer = AutoTokenizer.from_pretrained(QUESTION_TOKENIZER_ID)
+    kept: list[dict] = []
+    chunk = 2048
+    for i in range(0, len(candidates), chunk):
+        batch = candidates[i : i + chunk]
+        enc = tokenizer([r["question"] for r in batch], add_special_tokens=False)
+        for r, ids in zip(batch, enc["input_ids"], strict=True):
+            if len(ids) <= QUESTION_MAX_TOKENS:
+                kept.append(r)
+            else:
+                counters["over_token_budget"] += 1
+
+    if len(kept) < n:
+        raise RuntimeError(
+            f"question draw short: eligible={len(kept)} < requested n={n} (counters={counters})"
+        )
+    rng = np.random.default_rng(seed)
+    idx = rng.permutation(len(kept))[:n]
+    drawn = [kept[int(i)] for i in idx]
+    record = {
+        "n": n,
+        "seed": seed,
+        "manifest_prefix": manifest_prefix,
+        "revision": revision,
+        "eligible": len(kept),
+        "counters": counters,
+        "filters": {
+            "min_chars": QUESTION_MIN_CHARS,
+            "max_chars": QUESTION_MAX_CHARS,
+            "max_tokens": QUESTION_MAX_TOKENS,
+            "tokenizer": QUESTION_TOKENIZER_ID,
+        },
+    }
+    _log(f"question draw: kept {n}/{len(kept)} eligible (counters={counters})")
+    return drawn, record
+
+
+def _question_pool_fingerprint(n: int, seed: int, revision: str | None) -> str:
+    key = json.dumps(
+        {
+            "kind": "shared_question_draw_v1",
+            "n": n,
+            "seed": seed,
+            "revision": revision,
+            "min_chars": QUESTION_MIN_CHARS,
+            "max_chars": QUESTION_MAX_CHARS,
+            "max_tokens": QUESTION_MAX_TOKENS,
+            "manifest_prefix": QUESTION_MANIFEST_PREFIX,
+        },
+        sort_keys=True,
+    )
+    return hashlib.sha256(key.encode()).hexdigest()[:16]
+
+
+def _ensure_question_pool(args, n_needed: int, out_dir: Path) -> tuple[list[dict], dict]:
+    """Load (--questions-jsonl) or draw-and-cache the shared question pool."""
+    if args.questions_jsonl:
+        rows = _read_jsonl(Path(args.questions_jsonl))
+        for r in rows:
+            if not (
+                str(r.get("question") or "").strip()
+                and str(r.get("qid") or r.get("conv_id") or "").strip()
+            ):
+                raise ValueError(
+                    f"--questions-jsonl rows need non-empty 'question' + 'qid'/'conv_id': "
+                    f"{args.questions_jsonl}"
+                )
+            r.setdefault("qid", r.get("conv_id"))
+            r.setdefault("conv_id", r.get("qid"))
+        if len(rows) < n_needed:
+            raise ValueError(f"--questions-jsonl has {len(rows)} rows < shortfall n={n_needed}")
+        return rows[:n_needed], {"source": str(args.questions_jsonl), "n": n_needed}
+
+    pool_path = out_dir / "shared_question_draw.jsonl"
+    meta_path = out_dir / "shared_question_draw.meta.json"
+    fp = _question_pool_fingerprint(n_needed, args.seed, args.manifest_revision)
+    if pool_path.is_file() and meta_path.is_file():
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        if meta.get("fingerprint") == fp:
+            rows = _read_jsonl(pool_path)
+            _log(f"question draw: resume {len(rows)} rows from {_rel(pool_path)}")
+            return rows, meta
+        raise RuntimeError(
+            f"{pool_path} exists with a DIFFERENT draw fingerprint "
+            f"({meta.get('fingerprint')} != {fp}) — refusing to mix draws; "
+            "move the stale file aside"
+        )
+    rows, record = _draw_shared_questions(
+        n_needed,
+        args.seed,
+        staging_dir=out_dir / "_manifest_stage",
+        revision=args.manifest_revision,
+    )
+    record["fingerprint"] = fp
+    _atomic_write_jsonl(pool_path, rows)
+    _atomic_write_json(meta_path, record)
+    return rows, record
+
+
+# ---------------------------------------------------------------------------
+# Generation leg (C8(i)) — invoke the parent generator for the shortfall
+# ---------------------------------------------------------------------------
+def _gen_char_and_description(variant: str) -> tuple[str, str]:
+    """(in-scene character name, generator description) for one variant.
+
+    The name follows the lattice convention (row['character'] downstream);
+    the description comes from the parent generator's CHARACTERS panel,
+    matched case-insensitively (panel key 'HELIOS' vs lattice name 'Helios').
+    Passing --description explicitly means panel-key casing never gates the
+    subprocess.
+    """
+    import issue1345_gen_scaffolds as gen_mod
+
+    name = _CHAR_NAME_FROM_VARIANT.get(variant)
+    if not name or name == "ARIA":
+        raise ValueError(f"no generation character mapping for variant {variant!r}")
+    by_lower = {k.lower(): v for k, v in gen_mod.CHARACTERS.items()}
+    desc = by_lower.get(name.lower())
+    if not desc:
+        raise ValueError(f"no generator description for variant {variant!r} (char {name!r})")
+    return name, desc
+
+
+def _generate_shortfall(
+    variant: str,
+    questions: list[dict],
+    out_root: Path,
+    *,
+    seed: int,
+    mock: bool,
+    gen_model: str,
+) -> tuple[list[dict], dict]:
+    """Generate scaffolds for the SAME shared question draw via the parent
+    generator subprocess; return (rows in phase-a schema, counts).
+
+    make_scaffold_specs pairs question i with scaffold i (n == len(questions),
+    so each question is used exactly once — conv_id uniqueness per variant by
+    construction, plan assumption 29). The generator has its own fingerprint-
+    gated per-chunk resume, so a re-invocation with identical inputs resumes.
+    """
+    char_name, description = _gen_char_and_description(variant)
+    gen_dir = out_root / variant / "gen"
+    gen_dir.mkdir(parents=True, exist_ok=True)
+    qfile = gen_dir / "questions.jsonl"
+    _atomic_write_jsonl(qfile, questions)
+
+    cmd = [
+        sys.executable,
+        str(_SCRIPT_DIR / "issue1345_gen_scaffolds.py"),
+        "--phase",
+        "scaffolds",
+        "--character",
+        char_name,
+        "--description",
+        description,
+        "--model",
+        gen_model,
+        "--n",
+        str(len(questions)),
+        "--seed",
+        str(seed),
+        "--questions-jsonl",
+        str(qfile),
+        "--out-dir",
+        str(gen_dir),
+    ]
+    if mock:
+        cmd.append("--mock")
+    _log(
+        f"variant={variant} generation subprocess: n={len(questions)} char={char_name} mock={mock}"
+    )
+    # Explicit env passthrough (experiment-implementer subprocess contract);
+    # load_dotenv() ran at module top.
+    subprocess.run(cmd, check=True, env={**os.environ}, cwd=str(_REPO_ROOT))
+
+    model_key = "mock" if mock else gen_model
+    kept_path = gen_dir / f"scaffolds_{char_name.lower()}_{model_key}.jsonl"
+    if not kept_path.is_file():
+        raise FileNotFoundError(f"generator produced no kept file: {kept_path}")
+    raw_rows = _read_jsonl(kept_path)
+
+    rows: list[dict] = []
+    n_not_verbatim = 0
+    for r in raw_rows:
+        q = str(r.get("question") or "")
+        qid = str(r.get("qid") or "")
+        if not (q and qid):
+            raise AssertionError(
+                f"generated scaffold missing question/qid: {r.get('scaffold_id')!r} "
+                "(was --questions-jsonl threaded?)"
+            )
+        # Verbatim-question admission filter (plan req 6): a paraphrased
+        # question breaks downstream span location — reject, never keep.
+        if q not in str(r.get("scaffold_text") or ""):
+            n_not_verbatim += 1
+            continue
+        rows.append({**r, "conv_id": qid, "variant": variant, "provenance": "generated"})
+    # Plan req 6 non-regression ASSERT on the first 100 generated scaffolds
+    # (upgraded from the earlier WARN; trivially true post-filter — it pins
+    # the filter itself against regressions).
+    for r in rows[:100]:
+        assert r["question"] in r["scaffold_text"], (
+            f"req-6 verbatim-question regression: {r['scaffold_id']}"
+        )
+    counts = {
+        "requested": len(questions),
+        "generator_kept": len(raw_rows),
+        "question_not_verbatim": n_not_verbatim,
+        "merged": len(rows),
+    }
+    _log(f"variant={variant} generation merged: {counts}")
+    return rows, counts
+
+
+# ---------------------------------------------------------------------------
+# Judge admission (C8(ii)) — per-row gate emitting kept.json
+# ---------------------------------------------------------------------------
+def _variant_judge_items(
+    variant: str, rows: list[dict]
+) -> tuple[list[tuple[str, str, str]], list[dict], int]:
+    """(items for judge_graded, the judged rows aligned 1:1, n_no_question).
+
+    item_id = "<variant>-<i:06d>" — [a-zA-Z0-9_-], no "__", <= 53 chars
+    (the Batch custom_id grammar + judge_graded's delimiter guard).
+    """
+    items: list[tuple[str, str, str]] = []
+    judged: list[dict] = []
+    n_no_question = 0
+    for row in rows:
+        q = _question_of(row)
+        text = str(row.get("scaffold_text") or "")
+        if not q or not text:
+            n_no_question += 1
+            continue
+        item_id = f"{variant}-{len(judged):06d}"
+        items.append((item_id, q, text))
+        judged.append(row)
+    return items, judged, n_no_question
+
+
+def _admit_variant_rows(
+    judged_rows: list[dict],
+    items: list[tuple[str, str, str]],
+    result,
+    threshold: float,
+) -> tuple[list[dict], dict]:
+    """Apply the admission threshold to one variant's JudgeResult.
+
+    Pure reduce (unit-testable). Drop-never-coerce: a None score with NO
+    transport losses is a content drop (not admitted); a None score WITH
+    transport losses raises (rule 24 — freely re-judgeable, never silently
+    censored; the judge cache makes the re-run resumable).
+    """
+    admitted: list[dict] = []
+    drops = {"below_threshold": 0, "judge_content_drop": 0}
+    transport_failed: list[str] = []
+    for row, (item_id, _q, _a) in zip(judged_rows, items, strict=True):
+        score = result.scores.get(item_id)
+        if score is None:
+            if result.per_item_transport_losses.get(item_id, 0) > 0:
+                transport_failed.append(item_id)
+            else:
+                drops["judge_content_drop"] += 1
+            continue
+        if score < threshold:
+            drops["below_threshold"] += 1
+            continue
+        admitted.append({**row, "judge_score": float(score)})
+    if transport_failed:
+        raise RuntimeError(
+            f"{len(transport_failed)} items lost ALL draws to transport "
+            f"(rule 24 — re-run to re-judge; cache resumes): "
+            f"{transport_failed[:10]}"
+        )
+    return admitted, drops
+
+
+def _run_judge_pilot(variant_rows: dict[str, list[dict]], args, cache_root: Path) -> dict:
+    """Rule-26 pilot at the exact production instrument; returns the report dict."""
+    from explore_persona_space.eval.judge_pilot import judge_pilot_gate
+
+    arms: dict[str, list[tuple[str, str, str]]] = {}
+    for variant, rows in variant_rows.items():
+        items, _judged, _n_no_q = _variant_judge_items(variant, rows)
+        if items:
+            arms[variant] = items
+    if not arms:
+        return {"verdict": "PASS", "note": "no-scaffolds-to-judge"}
+    report = judge_pilot_gate(
+        arms,
+        _scaffold_judge_rubric(),
+        max_tokens=args.max_tokens,
+        cache_dir=cache_root / "pilot_cache",
+        save_raw_dir=cache_root / "pilot_raw",
+        n_draws=max(1, args.judge_draws),
+        target_total_draws=args.pilot_n,
+        report_path=cache_root / "pilot_gate_report.json",
+    )
+    rep = _serialize_report(report)
+    if hasattr(report, "to_json"):
+        rep = report.to_json()
+    return rep if isinstance(rep, dict) else {"verdict": str(rep)}
+
+
+def _judge_admission(
+    variant_rows: dict[str, list[dict]], args, out_dir: Path
+) -> tuple[dict[str, list[dict]], dict]:
+    """Per-row judge admission over every variant (recovered + generated).
+
+    Returns ({variant: admitted rows}, judge_record). Pilot-gates any
+    >=5,000-call wave (rule 26) — a FAIL raises PilotGateRefusal (exit 7).
+    """
+    from explore_persona_space.eval.graded_judge import judge_graded
+
+    cache_root = out_dir / "_judge_cache"
+    cache_root.mkdir(parents=True, exist_ok=True)
+    rubric = _scaffold_judge_rubric()
+
+    per_variant_items: dict[str, tuple[list, list, int]] = {
+        v: _variant_judge_items(v, rows) for v, rows in variant_rows.items()
+    }
+    total_calls = sum(len(items) for items, _r, _n in per_variant_items.values()) * max(
+        1, args.judge_draws
+    )
+
+    pilot_report: dict | None = None
+    if total_calls >= 5000:
+        _log(f"judge wave {total_calls} calls >= 5000 — running rule-26 pilot gate")
+        pilot_report = _run_judge_pilot(variant_rows, args, cache_root)
+        verdict = str(pilot_report.get("verdict", "")).upper()
+        if verdict not in {"PASS", "PASS_WAIVED"}:
+            raise PilotGateRefusal(
+                f"judge pilot verdict={verdict!r} — production wave refused "
+                f"(report: {_rel(cache_root / 'pilot_gate_report.json')})"
+            )
+
+    admitted: dict[str, list[dict]] = {}
+    record: dict = {
+        "judge_model": None,
+        "max_tokens": args.max_tokens,
+        "n_draws": max(1, args.judge_draws),
+        "threshold": args.judge_keep_threshold,
+        "rubric_sha256": hashlib.sha256(rubric.encode()).hexdigest()[:16],
+        "n_calls": total_calls,
+        "pilot": pilot_report,
+        "variants": {},
+    }
+    from explore_persona_space.eval.graded_judge import DEFAULT_JUDGE_MODEL
+
+    record["judge_model"] = DEFAULT_JUDGE_MODEL
+    raw_dir = out_dir / "judge_raw"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    for variant, (items, judged_rows, n_no_question) in per_variant_items.items():
+        if not items:
+            admitted[variant] = []
+            record["variants"][variant] = {
+                "judged": 0,
+                "admitted": 0,
+                "structural_no_question": n_no_question,
+            }
+            continue
+        result = judge_graded(
+            items,
+            rubric,
+            n_draws=max(1, args.judge_draws),
+            cache_dir=cache_root / "prod" / variant,
+            save_raw=raw_dir / f"judge_raw_{variant}.json",
+            max_tokens=args.max_tokens,
+        )
+        kept_rows, drops = _admit_variant_rows(
+            judged_rows, items, result, args.judge_keep_threshold
+        )
+        admitted[variant] = kept_rows
+        record["variants"][variant] = {
+            "judged": len(items),
+            "admitted": len(kept_rows),
+            "structural_no_question": n_no_question,
+            "judge_drops": drops,
+            "judge_telemetry": {
+                "n_total_draws": result.n_total_draws,
+                "n_dropped_draws": result.n_dropped_draws,
+                "n_transport_lost_draws": result.n_transport_lost_draws,
+                "n_refusal_draws": result.n_refusal_draws,
+                "n_truncation_dropped_draws": result.n_truncation_dropped_draws,
+                "stop_reason_tally": result.stop_reason_tally,
+            },
+        }
+        _log(
+            f"variant={variant} judge admission: {len(kept_rows)}/{len(items)} kept "
+            f"(drops={drops}, no_question={n_no_question})"
+        )
+    return admitted, record
+
+
+# ---------------------------------------------------------------------------
+# Local writes + upload
+# ---------------------------------------------------------------------------
 def _write_scaffolds_local(
-    variants_scaffolds: dict[str, list[dict]], out_dir: Path
+    variants_scaffolds: dict[str, list[dict]], out_dir: Path, suffix: str = ""
 ) -> dict[str, Path]:
     """Write per-variant scaffolds JSONL locally; return {variant: path}."""
     paths: dict[str, Path] = {}
     for variant, rows in variants_scaffolds.items():
-        vdir = out_dir / variant
-        vdir.mkdir(parents=True, exist_ok=True)
-        p = vdir / f"scaffolds_{variant}.jsonl"
-        # Write via atomic tmp+rename (avoid partial reads by a concurrent
-        # verify step); explicit UTF-8.
-        tmp = p.with_suffix(".jsonl.tmp")
-        with tmp.open("w", encoding="utf-8") as f:
-            for r in rows:
-                f.write(json.dumps(r, ensure_ascii=False) + "\n")
-        os.replace(tmp, p)
+        p = out_dir / variant / f"scaffolds_{variant}{suffix}.jsonl"
+        _atomic_write_jsonl(p, rows)
         paths[variant] = p
         _log(f"variant={variant} wrote {len(rows)} scaffolds -> {_rel(p)}")
     return paths
 
 
-def _judge_gate_scaffolds(
-    variants_scaffolds: dict[str, list[dict]],
-    *,
-    pilot: bool,
-    max_tokens: int,
-    pilot_n: int,
-    cache_root: Path,
-) -> dict:
-    """Judge-filter scaffolds via batch_judge; pilot-gate a ≥5k-call wave.
+def _shard_large_jsonl_for_upload(files: list[Path]) -> list[Path]:
+    """Replace any >9.5 MB .jsonl with <9 MB line-shards + a manifest.
 
-    Only asks the judge whether the scaffold is DIVERSE + carries a SINGLE
-    question. A malformed / REFUSAL / out-of-range judge return DROPS the
-    row (never coerced — rule 9).
+    upload-policy.md: text >9.5 MB per file line-splits into <9 MB shards
+    (`<stem>.shardNN.jsonl` + `<stem>.manifest.json`), NEVER gzip — the Hub
+    force-routes any >10 MB blob to LFS. Non-jsonl oversized files pass
+    through with a WARN (they ride LFS).
     """
-    from explore_persona_space.eval.batch_judge import judge_completions_batch
-    from explore_persona_space.eval.judge_pilot import judge_pilot_gate
-
-    # Cap 100 scaffolds per variant for the judge probe (Unit A smoke bound;
-    # a full-production judge sweep is a follow-up unit — this driver's
-    # judge step is a diversity spot-check, not a per-row admission gate).
-    completions: dict[str, dict[str, list[str]]] = {}
-    arm_rows: dict[str, list[tuple[str, str, str]]] = {}
-    for variant, rows in variants_scaffolds.items():
-        head = rows[:100]
-        completions[variant] = {}
-        arm_rows[variant] = []
-        for i, r in enumerate(head):
-            q = str(r.get("question") or "")
-            a = str(r.get("scaffold_text") or "")
-            if not a:
-                continue
-            completions[variant].setdefault(q, []).append(a)
-            arm_rows[variant].append((f"{variant}_{i}", q, a))
-
-    total_calls = sum(sum(len(v) for v in q.values()) for q in completions.values())
-    if total_calls == 0:
-        return {
-            "n_calls": 0,
-            "pilot_gate": None,
-            "verdict": "PASS",
-            "note": "no-scaffolds-to-judge",
-        }
-
-    # Pilot-gate any ≥5,000-call wave OR when --pilot is explicit.
-    do_pilot = pilot or total_calls >= 5000
-    pilot_report = None
-    if do_pilot:
-        pilot_report = judge_pilot_gate(
-            arm_rows,
-            _SCAFFOLD_JUDGE_RUBRIC,
-            max_tokens=max_tokens,
-            cache_dir=cache_root / "pilot_cache",
-            save_raw_dir=cache_root / "pilot_raw",
-            target_total_draws=pilot_n,
-            report_path=cache_root / "pilot_gate_report.json",
-        )
-        rep = _serialize_report(pilot_report)
-        v = rep.get("verdict") if isinstance(rep, dict) else None
-        if v is not None and str(v).upper() not in {"PASS", "PASS_WAIVED"}:
-            _log(f"judge pilot verdict={v!r} — skipping production judge sweep")
-            return {"n_calls": total_calls, "pilot_gate": rep, "verdict": v, "n_judged": 0}
-        pilot_report = rep
-
-    # In --pilot mode we only run the pilot itself; skip the production sweep.
-    if pilot:
-        return {
-            "n_calls": total_calls,
-            "pilot_gate": pilot_report,
-            "verdict": "PASS",
-            "n_judged": 0,
-        }
-
-    scores = judge_completions_batch(
-        completions,
-        format_user_msg=lambda q, a: _SCAFFOLD_JUDGE_RUBRIC.replace("{question}", q).replace(
-            "{answer}", a
-        ),
-        max_tokens=max_tokens,
-        cache_dir=cache_root / "judge_cache",
-        save_raw=cache_root / "raw_judge.json",
-        checkpoint_dir=cache_root / "checkpoints",
-    )
-    n_judged = 0
-    for arm_scores in scores.values():
-        n_judged += int(arm_scores.get("n_samples") or 0)
-    return {
-        "n_calls": total_calls,
-        "pilot_gate": pilot_report,
-        "verdict": "PASS",
-        "n_judged": n_judged,
-    }
-
-
-def _upload_to_hf(scaffolds_root: Path, fold_map_path: Path, variants: list[str], api) -> None:
-    """Best-effort mirror of scaffolds + fold map to HF data repo.
-
-    Non-fatal — a Hub outage logs a WARN but does not fail the phase; the
-    local artifacts under `data/issue_2054/` and `eval_results/` remain the
-    canonical local record. All scaffolds ride ONE bulk `_upload_folder_filtered`
-    commit (avoids the #664/#1481 per-file 504-storm class), and the fold map
-    lands via a single `_upload` call (bounded — one file, no loop).
-    """
-    from explore_persona_space.orchestrate.hub import _upload, _upload_folder_filtered
-
-    # Bulk scaffolds upload: ONE upload_folder commit across all variants.
-    allow_patterns: list[str] = []
-    expected_paths: list[str] = []
-    for variant in variants:
-        p = scaffolds_root / variant / f"scaffolds_{variant}.jsonl"
-        if not p.is_file():
+    out: list[Path] = []
+    for f in files:
+        if not f.is_file():
             continue
-        rel = p.relative_to(scaffolds_root).as_posix()
-        allow_patterns.append(rel)
-        expected_paths.append(f"{TASK_PREFIX}/scaffolds/{rel}")
-    if allow_patterns:
-        try:
-            _upload_folder_filtered(
-                scaffolds_root,
-                repo_id=HF_DATA_REPO,
+        size = f.stat().st_size
+        if size <= UPLOAD_SHARD_LIMIT_BYTES:
+            out.append(f)
+            continue
+        if f.suffix != ".jsonl":
+            _log(f"WARN oversized non-jsonl upload rides LFS: {_rel(f)} ({size} B)")
+            out.append(f)
+            continue
+        shards: list[Path] = []
+        line_counts: list[int] = []
+        shard_lines: list[str] = []
+        shard_bytes = 0
+
+        def _flush() -> None:
+            nonlocal shard_lines, shard_bytes
+            if not shard_lines:
+                return
+            sp = f.with_name(f"{f.stem}.shard{len(shards):02d}.jsonl")
+            tmp = sp.with_name(sp.name + ".tmp")
+            tmp.write_text("".join(shard_lines), encoding="utf-8")
+            os.replace(tmp, sp)
+            shards.append(sp)
+            line_counts.append(len(shard_lines))
+            shard_lines, shard_bytes = [], 0
+
+        with f.open(encoding="utf-8") as fh:
+            for line in fh:
+                b = len(line.encode("utf-8"))
+                if shard_bytes + b > UPLOAD_SHARD_TARGET_BYTES:
+                    _flush()
+                shard_lines.append(line)
+                shard_bytes += b
+        _flush()
+        manifest = f.with_name(f"{f.stem}.manifest.json")
+        _atomic_write_json(
+            manifest,
+            {
+                "source": f.name,
+                "parts": [s.name for s in shards],
+                "line_counts": line_counts,
+                "sha256": {s.name: hashlib.sha256(s.read_bytes()).hexdigest() for s in shards},
+            },
+        )
+        _log(f"sharded {_rel(f)} ({size} B) -> {len(shards)} shards")
+        out.extend(shards)
+        out.append(manifest)
+    return out
+
+
+def _upload_scaffold_files(out_dir: Path, files: list[Path], *, fail_loud: bool) -> None:
+    """One bulk upload_folder commit of the named files under the scaffolds
+    prefix (plan output ``issue2054_lattice/scaffolds/``). ``fail_loud=True``
+    on the pod gen leg — the prejudge upload is the cross-machine seam the VM
+    judge stage consumes (#1482 class), so a failed upload must not exit 0.
+    """
+    from explore_persona_space.orchestrate.hub import _upload_folder_filtered
+
+    files = _shard_large_jsonl_for_upload(files)
+    allow = sorted({f.relative_to(out_dir).as_posix() for f in files if f.is_file()})
+    if not allow:
+        _log("upload: nothing to upload")
+        return
+    expected = [f"{TASK_PREFIX}/scaffolds/{rel}" for rel in allow]
+    try:
+        _upload_folder_filtered(
+            out_dir,
+            repo_id=HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=f"{TASK_PREFIX}/scaffolds",
+            allow_patterns=allow,
+            expected_repo_paths=expected,
+        )
+        _log(f"uploaded {len(allow)} scaffold file(s) in one bulk commit")
+    except Exception as exc:  # noqa: BLE001
+        if fail_loud:
+            raise
+        _log(f"WARN scaffold bulk upload failed: {exc}")
+
+
+def _upload_fold_map(fold_map_path: Path, *, fail_loud: bool) -> None:
+    from explore_persona_space.orchestrate.hub import _upload
+
+    if not fold_map_path.is_file():
+        return
+    # UPLOAD_LOOP_EXEMPT: single fold-map file, not a loop — direct _upload
+    try:
+        _upload(
+            fold_map_path,
+            repo_id=HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=f"{TASK_PREFIX}/shared_fold_map.json",
+            upload_as_file=True,
+        )
+        _log("uploaded shared_fold_map.json")
+    except Exception as exc:  # noqa: BLE001
+        if fail_loud:
+            raise
+        _log(f"WARN fold-map upload failed: {exc}")
+
+
+def _load_prejudge(out_dir: Path, variants: list[str], *, from_hf: bool) -> dict[str, list[dict]]:
+    """Load per-variant prejudge pools for --stage judge (staging from HF on
+    request — the gen pod uploaded them; fail-loud when absent)."""
+    missing = [v for v in variants if not (out_dir / v / f"scaffolds_{v}_prejudge.jsonl").is_file()]
+    if missing and from_hf:
+        from explore_persona_space.orchestrate.hub import stage_hub_file
+
+        for v in missing:
+            stage_hub_file(
+                HF_DATA_REPO,
+                f"{TASK_PREFIX}/scaffolds/{v}/scaffolds_{v}_prejudge.jsonl",
+                out_dir / v / f"scaffolds_{v}_prejudge.jsonl",
                 repo_type="dataset",
-                path_in_repo=f"{TASK_PREFIX}/scaffolds",
-                allow_patterns=allow_patterns,
-                expected_repo_paths=expected_paths,
             )
-            _log(f"uploaded {len(allow_patterns)} scaffold file(s) in one bulk commit")
-        except Exception as exc:  # noqa: BLE001
-            _log(f"WARN scaffold bulk upload failed: {exc}")
-
-    if fold_map_path.is_file():
-        # UPLOAD_LOOP_EXEMPT: single fold-map file, not a loop — direct _upload
-        try:
-            _upload(
-                fold_map_path,
-                repo_id=HF_DATA_REPO,
-                repo_type="dataset",
-                path_in_repo=f"{TASK_PREFIX}/shared_fold_map.json",
-                upload_as_file=True,
-            )
-            _log("uploaded shared_fold_map.json")
-        except Exception as exc:  # noqa: BLE001
-            _log(f"WARN fold-map upload failed: {exc}")
+        missing = [
+            v for v in variants if not (out_dir / v / f"scaffolds_{v}_prejudge.jsonl").is_file()
+        ]
+    if missing:
+        raise FileNotFoundError(
+            f"prejudge inputs missing for {missing}: run --stage gen first "
+            f"(uploads to {TASK_PREFIX}/scaffolds/) or pass --prejudge-from-hf"
+        )
+    return {v: _read_jsonl(out_dir / v / f"scaffolds_{v}_prejudge.jsonl") for v in variants}
 
 
+# ---------------------------------------------------------------------------
+# Driver
+# ---------------------------------------------------------------------------
 def run_phase(args: argparse.Namespace) -> int:
     variants = list(args.variants)
     out_dir = Path(args.output_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
-    _log(f"start: target_conv_ids={args.target_conv_ids} variants={variants}")
+    _log(f"start: stage={args.stage} target_conv_ids={args.target_conv_ids} variants={variants}")
 
     try:
         from huggingface_hub import HfApi
@@ -372,62 +1011,165 @@ def run_phase(args: argparse.Namespace) -> int:
         return 2
     api = HfApi()
 
-    _log("recover: strip parent stories -> scaffolds")
-    recovered = _recover_scaffolds_from_hf(variants, out_dir, api)
+    gen_counts: dict[str, dict] = {}
+    question_record: dict | None = None
+    shared_recovered: set[str] = set()
+    if args.stage in ("all", "gen"):
+        _log("recover: strip parent stories -> scaffolds")
+        variant_rows = _recover_scaffolds_from_hf(variants, api)
+        n_total_recovered = sum(len(rs) for rs in variant_rows.values())
+        _log(f"recovered {n_total_recovered} scaffolds across {len(variant_rows)} variants")
 
-    n_total_recovered = sum(len(rs) for rs in recovered.values())
-    _log(f"recovered {n_total_recovered} scaffolds across {len(recovered)} variants")
+        shared_recovered = _shared_recovered_intersection(variant_rows)
+        n_gen = max(0, args.target_conv_ids - len(shared_recovered))
+        _log(
+            f"shared recovered intersection={len(shared_recovered)} "
+            f"-> shared generation draw n={n_gen}"
+        )
+        if args.pilot or args.no_generate or n_gen == 0:
+            _log(
+                f"generation SKIPPED (pilot={args.pilot} no_generate={args.no_generate} "
+                f"n_gen={n_gen})"
+            )
+        else:
+            questions, question_record = _ensure_question_pool(args, n_gen, out_dir)
+            for v in variants:
+                gen_rows, counts = _generate_shortfall(
+                    v,
+                    questions,
+                    out_dir,
+                    seed=args.seed,
+                    mock=args.gen_mock,
+                    gen_model=args.gen_model,
+                )
+                variant_rows[v] = variant_rows[v] + gen_rows
+                gen_counts[v] = counts
+        # One conversation per row within each variant (plan assumption 29).
+        for v, rows in variant_rows.items():
+            cids = [str(r.get("conv_id")) for r in rows]
+            n_dupes = len(cids) - len(set(cids))
+            assert n_dupes == 0, f"variant {v}: {n_dupes} duplicate conv_ids in pool"
 
-    # For Unit A we do NOT invoke fresh GPU generation. Fresh generation of
-    # the shortfall is a follow-up unit gated on a pilot judge PASS + Phase C
-    # capacity (--shortfall is a downstream unit). Report the shortfall
-    # numerically so downstream units know how much to generate.
-    per_variant_shortfall: dict[str, int] = {}
-    for variant in variants:
-        got = len(recovered.get(variant, []))
-        per_variant_shortfall[variant] = max(0, args.target_conv_ids - got)
+        prejudge_paths = _write_scaffolds_local(variant_rows, out_dir, suffix="_prejudge")
 
-    scaffold_paths = _write_scaffolds_local(recovered, out_dir)
+        if args.stage == "gen":
+            # Pod leg ends here: persist the seam the VM judge stage consumes
+            # (fail-loud — #1482 off-pod read class), plus the gen raws +
+            # question draw (raw completions upload ALWAYS).
+            upload_files = list(prejudge_paths.values())
+            for v in variants:
+                upload_files.extend(sorted((out_dir / v / "gen").glob("*.jsonl")))
+                upload_files.extend(sorted((out_dir / v / "gen").glob("*.json")))
+            for name in (
+                "shared_question_draw.jsonl",
+                "shared_question_draw.meta.json",
+            ):
+                if (out_dir / name).is_file():
+                    upload_files.append(out_dir / name)
+            _upload_scaffold_files(out_dir, upload_files, fail_loud=True)
+            digest = {
+                "phase": "phase_a",
+                "stage": "gen",
+                "target_conv_ids": args.target_conv_ids,
+                "recovered_per_variant": {
+                    v: sum(1 for r in rows if r.get("provenance") == "recovered")
+                    for v, rows in variant_rows.items()
+                },
+                "generated_per_variant": gen_counts,
+                "shared_recovered_intersection": len(shared_recovered),
+                "question_draw": question_record,
+                "prejudge_paths": {v: _rel(p) for v, p in prejudge_paths.items()},
+                "metadata": _metadata(args.seed, args.target_conv_ids),
+            }
+            _atomic_write_json(out_dir / "phase_a_digest.json", digest)
+            print(
+                f"[phase=phase_a] gen digest: prejudge="
+                f"{ {v: len(r) for v, r in variant_rows.items()} }",
+                flush=True,
+            )
+            print("[phase=done]", flush=True)  # noqa: phase-done-reserved
+            sys.stdout.flush()
+            sys.exit(0)
+    else:  # stage == "judge"
+        variant_rows = _load_prejudge(out_dir, variants, from_hf=args.prejudge_from_hf)
+        _log(f"loaded prejudge pools: { {v: len(r) for v, r in variant_rows.items()} }")
 
-    # Verbatim-question invariant is a per-row property of the parent stripper
-    # (parent gen scripts enforced it; stripper preserves it). We assert it on
-    # the first 100 recovered scaffolds per variant that carry a `question`
-    # field: the question substring must appear inside `scaffold_text`.
-    q_check_fails: dict[str, int] = {}
-    for variant, rows in recovered.items():
-        fails = 0
-        for r in rows[:100]:
-            q = str(r.get("question") or "")
-            if not q:
-                continue
-            if q not in r.get("scaffold_text", ""):
-                fails += 1
-        if fails:
-            q_check_fails[variant] = fails
-    if q_check_fails:
-        _log(f"WARN verbatim-question check failures: {q_check_fails}")
-
-    # Judge-gate diversity (Unit A: pilot-only unless the full sweep is asked).
     cache_root = out_dir / "_judge_cache"
     cache_root.mkdir(parents=True, exist_ok=True)
-    try:
-        judge_result = _judge_gate_scaffolds(
-            recovered,
-            pilot=args.pilot,
-            max_tokens=args.max_tokens,
-            pilot_n=args.pilot_n,
-            cache_root=cache_root,
-        )
-    except Exception as exc:  # noqa: BLE001
-        print(f"ERROR judge stage failed: {exc}", file=sys.stderr)
-        return 1
-    _log(
-        f"judge stage: {judge_result.get('n_calls', 0)} calls, verdict={judge_result.get('verdict')}"
-    )
 
-    # Build the shared fold map ONCE at Phase A end.
+    if args.pilot:
+        rep = _run_judge_pilot(variant_rows, args, cache_root)
+        verdict = str(rep.get("verdict", "")).upper()
+        digest = {
+            "phase": "phase_a",
+            "stage": f"{args.stage}:pilot",
+            "pilot": rep,
+            "metadata": _metadata(args.seed, args.target_conv_ids),
+        }
+        _atomic_write_json(out_dir / "phase_a_pilot_digest.json", digest)
+        print(f"[phase=phase_a] pilot verdict={verdict}", flush=True)
+        print("[phase=done]", flush=True)  # noqa: phase-done-reserved
+        sys.stdout.flush()
+        sys.exit(0 if verdict in {"PASS", "PASS_WAIVED"} else 7)
+
+    # Full per-row judge admission (C8(ii)).
+    admitted, judge_record = _judge_admission(variant_rows, args, out_dir)
+
+    admitted_paths = _write_scaffolds_local(admitted, out_dir)
+    # Unit A carry-forward: every admitted row must carry the q-fields the
+    # chat/bare renderers consume (question, or the stripper's q_start/q_end).
+    for v, rows in admitted.items():
+        for r in rows:
+            assert _question_of(r), (
+                f"admitted row without q-fields: variant={v} scaffold_id={r.get('scaffold_id')!r}"
+            )
+
+    floor = math.ceil(YIELD_FLOOR_FRACTION * args.target_conv_ids)
+    kept_variants: dict[str, dict] = {}
+    for v in variants:
+        rows = admitted.get(v, [])
+        rec = dict(judge_record["variants"].get(v, {}))
+        rec.update(
+            {
+                "recovered": sum(1 for r in rows if r.get("provenance") == "recovered"),
+                "generated": sum(1 for r in rows if r.get("provenance") == "generated"),
+                "prejudge_total": len(variant_rows.get(v, [])),
+                "generation": gen_counts.get(v),
+                "floor": {
+                    "target": args.target_conv_ids,
+                    "floor": floor,
+                    "below_floor": len(rows) < floor,
+                },
+                "admitted_conv_ids": sorted(str(r.get("conv_id")) for r in rows),
+            }
+        )
+        if rec["floor"]["below_floor"]:
+            # Reported, never backfilled (on-policy-completions.md); the
+            # registered drop mechanism is fits-side kill gate 4 (>= 4,480
+            # intersection), which reads these counts downstream.
+            _log(
+                f"WARN variant={v} admitted {len(rows)} < 80% floor {floor} "
+                "(reported; kill gate 4 owns the drop decision)"
+            )
+        kept_variants[v] = rec
+
+    kept_payload = {
+        "artifact": "phase_a_admission",
+        "target_conv_ids": args.target_conv_ids,
+        "judge": {k: v for k, v in judge_record.items() if k != "variants"},
+        "question_draw": question_record,
+        "shared_recovered_intersection": len(shared_recovered),
+        "variants": kept_variants,
+        "metadata": _metadata(args.seed, args.target_conv_ids),
+    }
+    kept_path = out_dir / "kept.json"
+    _atomic_write_json(kept_path, kept_payload)
+    _log(f"wrote admission record -> {_rel(kept_path)}")
+
+    # Build the shared fold map ONCE, from the ADMITTED conv_ids (the shared
+    # draw that survives Phase A is what every downstream phase consumes).
     all_conv_ids: list[str] = []
-    for rows in recovered.values():
+    for rows in admitted.values():
         all_conv_ids.extend(str(r.get("conv_id")) for r in rows if r.get("conv_id") is not None)
     fold_map = _conv_grouped_folds(all_conv_ids, k=5, seed=args.seed)
 
@@ -443,46 +1185,36 @@ def run_phase(args: argparse.Namespace) -> int:
         "utc": datetime.now(tz=timezone.utc).isoformat(),
         "variants": variants,
     }
-    tmp = fold_map_path.with_suffix(".json.tmp")
-    with tmp.open("w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=2, sort_keys=True)
-    os.replace(tmp, fold_map_path)
+    _atomic_write_json(fold_map_path, payload)
     _log(f"wrote shared_fold_map.json (n_conv_ids={len(fold_map)}) -> {_rel(fold_map_path)}")
 
-    # Upload best-effort (skip for --pilot: the smoke does not need to touch HF).
-    if not args.pilot:
-        try:
-            _upload_to_hf(out_dir, fold_map_path, variants, api)
-        except Exception as exc:  # noqa: BLE001
-            _log(f"WARN upload stage failed: {exc}")
+    upload_files = [kept_path, *admitted_paths.values()]
+    upload_files.extend(sorted((out_dir / "judge_raw").glob("*.json")))
+    _upload_scaffold_files(out_dir, upload_files, fail_loud=False)
+    _upload_fold_map(fold_map_path, fail_loud=False)
 
-    # Digest artifact.
-    digest_path = out_dir / "phase_a_digest.json"
     digest = {
         "phase": "phase_a",
+        "stage": args.stage,
         "target_conv_ids": args.target_conv_ids,
-        "recovered_per_variant": {v: len(rows) for v, rows in recovered.items()},
-        "shortfall_per_variant": per_variant_shortfall,
-        "n_total_recovered": n_total_recovered,
-        "verbatim_question_check_failures": q_check_fails,
-        "judge_stage": judge_result,
+        "admitted_per_variant": {v: len(r) for v, r in admitted.items()},
+        "prejudge_per_variant": {v: len(r) for v, r in variant_rows.items()},
+        "generated_per_variant": gen_counts,
+        "judge": {k: v for k, v in judge_record.items() if k != "variants"},
         "shared_fold_map_path": str(_rel(fold_map_path)),
-        "scaffold_paths": {v: str(_rel(p)) for v, p in scaffold_paths.items()},
+        "kept_path": str(_rel(kept_path)),
         "seed": args.seed,
         "utc": datetime.now(tz=timezone.utc).isoformat(),
+        "metadata": _metadata(args.seed, args.target_conv_ids),
     }
-    with (digest_path.with_suffix(".json.tmp")).open("w", encoding="utf-8") as f:
-        json.dump(digest, f, indent=2, sort_keys=True)
-    os.replace(digest_path.with_suffix(".json.tmp"), digest_path)
+    _atomic_write_json(out_dir / "phase_a_digest.json", digest)
 
     print(
-        f"[phase=phase_a] digest: recovered={n_total_recovered} "
-        f"shortfall={sum(per_variant_shortfall.values())} "
-        f"n_conv_ids={len(fold_map)} judge_calls={judge_result.get('n_calls', 0)}",
+        f"[phase=phase_a] digest: admitted={ {v: len(r) for v, r in admitted.items()} } "
+        f"n_conv_ids={len(fold_map)} judge_calls={judge_record.get('n_calls', 0)}",
         flush=True,
     )
-    # noqa: phase-done-reserved
-    print("[phase=done]", flush=True)
+    print("[phase=done]", flush=True)  # noqa: phase-done-reserved
     sys.stdout.flush()
     sys.exit(0)  # explicit exit before finalize-time C-extension teardown
 
@@ -497,9 +1229,22 @@ def main() -> int:
     )
     p.add_argument("--seed", type=int, default=137)
     p.add_argument(
+        "--stage",
+        choices=("all", "gen", "judge"),
+        default="all",
+        help=(
+            "gen = recovery + shortfall generation + prejudge upload (pod, "
+            "lora-7b intent); judge = per-row judge admission + kept.json + "
+            "fold map (VM, Batch API); all = both in-process (smoke / single box)"
+        ),
+    )
+    p.add_argument(
         "--pilot",
         action="store_true",
-        help="run only the judge pilot (200-draw gate); skip production judge sweep",
+        help=(
+            "run ONLY the rule-26 judge pilot (200-draw gate) over the stage's "
+            "scaffold pool; skips generation + uploads; exit 0 on PASS, 7 on FAIL"
+        ),
     )
     p.add_argument(
         "--variants",
@@ -509,8 +1254,62 @@ def main() -> int:
     )
     p.add_argument("--max-tokens", type=int, default=1024)
     p.add_argument("--pilot-n", type=int, default=200)
+    p.add_argument(
+        "--judge-draws",
+        type=int,
+        default=1,
+        help="judge draws per row (default 1 — the plan §9 ~35k-call arithmetic)",
+    )
+    p.add_argument(
+        "--judge-keep-threshold",
+        type=float,
+        default=50.0,
+        help="admit rows with mean judge score >= this (persona-vectors convention)",
+    )
+    p.add_argument(
+        "--questions-jsonl",
+        default=None,
+        help=(
+            "explicit shared question draw (rows: question + qid/conv_id); "
+            "default draws seed-pinned from the #1738 manifest"
+        ),
+    )
+    p.add_argument(
+        "--manifest-revision",
+        default=None,
+        help="pin the #1738 manifest revision for the question draw",
+    )
+    p.add_argument(
+        "--no-generate",
+        action="store_true",
+        help="skip the shortfall generation leg (recovered-only pool)",
+    )
+    p.add_argument(
+        "--gen-mock",
+        action="store_true",
+        help="thread the generator's deterministic --mock path (CPU smoke)",
+    )
+    p.add_argument(
+        "--gen-model",
+        choices=("instruct", "pretrained"),
+        default="instruct",
+        help="generator model for the shortfall leg (parent #1345 default: instruct)",
+    )
+    p.add_argument(
+        "--prejudge-from-hf",
+        action="store_true",
+        help="--stage judge: stage missing prejudge inputs from the HF scaffolds prefix",
+    )
     args = p.parse_args()
-    return run_phase(args)
+    if args.stage == "gen" and args.pilot:
+        p.error("--pilot is a judge-stage probe; use --stage judge or all")
+    if args.gen_mock and args.no_generate:
+        p.error("--gen-mock and --no-generate are mutually exclusive")
+    try:
+        return run_phase(args)
+    except PilotGateRefusal as exc:
+        print(f"ERROR {exc}", file=sys.stderr)
+        sys.exit(7)
 
 
 if __name__ == "__main__":
