@@ -252,7 +252,11 @@ section wins on invocation form.
    `FAIL_NO_CANARY`. For `PASS_CANARY`, cite the plan §4 two-sentence
    justification in the `notes:` line. For `PASS_PARTIAL`, list the
    fallback-rowed arm names verbatim (as a set they must equal the
-   arms whose per-arm row reads `FALLBACK`). For `FAIL_NO_CANARY`,
+   arms whose `per-arm-resolution:` row reads `FALLBACK` — the
+   `arms_stubbed=<comma-list>` set-equality scopes to
+   `per-arm-resolution:` rows ONLY, NOT the `resume-matrix:` or
+   `production-outroot-unit:` sub-blocks' own `FALLBACK` rows).
+   For `FAIL_NO_CANARY`,
    post the marker AND additionally emit a one-line
    `<!-- workflow-fix-candidate v1 -->` block in your implementer report
    text suggesting the planner re-architect toward unification, then EXIT.
