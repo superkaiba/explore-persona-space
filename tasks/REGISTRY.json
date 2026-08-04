@@ -7673,8 +7673,8 @@
     "1991": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1991",
-      "status": "planning",
+      "path": "tasks/approved/1991",
+      "status": "approved",
       "title": "workflow-fix: blanket-add latch misses equivalent-blanket sp"
     },
     "1992": {
