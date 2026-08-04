@@ -15,6 +15,7 @@
 #   phase_a  — diverse scaffold generation (Qwen2.5-7B, lora-7b intent, 5 GPU-h)
 #   phase_b  — deterministic inserted splice (VM CPU, 0 GPU-h)
 #   phase_c  — on-policy continuation (Qwen2.5-7B x 2, lora-7b intent, 15 GPU-h)
+#   phase_d  — v4-new cell (c): STORY-authored answer, CHAT presentation (VM CPU, 0 GPU-h)
 #   capture  — teacher-forced activation capture (eval intent x 2 models, 100 GPU-h)
 #   fits     — ambient-basis fits + baselines + kNN + null battery (VM CPU or cpu-mid/bigmem)
 #   ladder   — 9-rung transfer ladder (VM CPU, batched)
@@ -34,8 +35,8 @@ PARENT_REPO="superkaiba1/explore-persona-space-data"
 PARENT_PREFIX="issue1345_framing"
 AUDIT_OUT_DIR="eval_results/issue_2054/audits"
 
-WIRED_PHASES=(audit_i audit_ii phase_a phase_b)
-UNWIRED_PHASES=(phase_c capture fits ladder)
+WIRED_PHASES=(audit_i audit_ii phase_a phase_b phase_c phase_d)
+UNWIRED_PHASES=(capture fits ladder)
 
 # Print the leading comment block (everything after the shebang, up to the first
 # non-comment line) as the usage text, so help can never drift from the header.
@@ -85,6 +86,31 @@ build_cmd() {
         uv run python scripts/issue2054_phase_b.py
         --scaffolds-dir data/issue_2054/scaffolds/
         --output-dir data/issue_2054/spliced_inserted/
+        --seed 137
+      )
+      ;;
+    phase_c)
+      # Unit B: on-policy continuation via vLLM prefill (attrib_quoted form).
+      # Model + variants pass through; --dry-run skips vLLM for CPU-side smokes.
+      # max_new_tokens 2048 per plan §11 (>=2x longest trained completion).
+      CMD=(
+        uv run python scripts/issue2054_phase_c.py
+        --scaffolds-dir data/issue_2054/scaffolds/
+        --target-conv-ids 8000
+        --output-dir data/issue_2054/on_policy/
+        --seed 137
+        --max-new-tokens 2048
+      )
+      ;;
+    phase_d)
+      # Unit B: v4-new cell (c) transpose — STORY-authored answer, CHAT
+      # presentation. Reads parent #1345 paired_op answers from HF, splices into
+      # phase_a CHAT-template scaffolds; NO NEW generation.
+      CMD=(
+        uv run python scripts/issue2054_phase_d.py
+        --scaffolds-dir data/issue_2054/scaffolds/
+        --target-conv-ids 8000
+        --output-dir data/issue_2054/cell_c/
         --seed 137
       )
       ;;
