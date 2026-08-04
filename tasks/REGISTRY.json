@@ -7666,8 +7666,8 @@
     "1990": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1990",
-      "status": "proposed",
+      "path": "tasks/planning/1990",
+      "status": "planning",
       "title": "workflow-fix: sidecar canary tolerant of foreign concurrent "
     },
     "1991": {
