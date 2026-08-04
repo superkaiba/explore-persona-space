@@ -39,7 +39,11 @@ Persist-by-default (Upload Policy v2): rollout TEXT uploads unconditionally
 on the non-LFS path (quota-immune) — in EVERY mode, including
 ``phase_split_gen`` (whose only output IS the rollout text); trimmed capture
 tensors upload per K=20 chunks; the driver never discards generations or
-capture tensors.
+capture tensors. ``phase_split_capture`` never generates and never re-writes
+raw completions: it JOINS the gen wave's persisted per-chunk raw JSONs back
+by context id (local scratch first, then HF fetch — the gen wave purges
+local copies after its verified upload; fail-loud when neither exists) and
+uploads ONLY the capture ``.pt`` chunks.
 
 Measurement contracts (Unit 2 blocker-fix round):
 
@@ -673,6 +677,90 @@ def _remote_index(hf_prefix: str, subdir: str) -> set[str]:
     return {e.path.split("/")[-1] for e in entries if not e.path.endswith("/")}
 
 
+def _load_persisted_gen_chunk(
+    scratch: Path,
+    stage_prefix: str,
+    raw_name: str,
+    cache_dir: Path,
+    done_raw: set[str],
+    *,
+    expect_split: str,
+    expect_seed: int,
+    expect_shard_index: int,
+    expect_chunk: int,
+) -> dict[int, dict]:
+    """Load ONE gen-wave raw-completions chunk for ``phase_split_capture``.
+
+    Local-first, then HF fetch, then FAIL LOUD: the gen wave writes each
+    chunk JSON atomically to the SAME scratch dir before uploading, and
+    purges the local copy only after the verified Hub commit — so a local
+    file is always a complete atomic write with content identical to (or
+    pending upload as) the Hub copy, and reading it avoids a re-download on
+    same-pod gen->capture chaining and on ``--no-upload`` smokes. A chunk
+    that is neither local nor on the Hub means the gen wave is incomplete
+    (or the prefix/shard config is wrong) — the capture wave must crash,
+    never silently skip rows.
+
+    The wave-alignment asserts pin the join contract: the capture wave must
+    iterate the SAME manifest slice under the SAME
+    --num-shards/--shard-index/--shard-size arithmetic as the gen wave that
+    wrote this chunk, and the SAME split seed — a mismatch would silently
+    mispair responses with contexts through the ci join.
+
+    Returns ``{ci: row}`` (row = {"ci", "prompt", "response",
+    "finish_reason"}) keyed by the manifest context id."""
+    local = scratch / raw_name
+    if not local.exists():
+        if raw_name not in done_raw:
+            raise RuntimeError(
+                f"phase_split_capture: gen-wave raw completions missing for {raw_name} — "
+                f"neither local ({local}) nor on Hub under {stage_prefix}/raw_completions. "
+                "Run the phase_split_gen wave to completion first (launcher wave sequencing)."
+            )
+        from huggingface_hub import hf_hub_download  # type: ignore
+
+        local = Path(
+            hub.retry_transient(
+                lambda: hf_hub_download(
+                    repo_id=LADDER_HF_REPO,
+                    filename=f"{stage_prefix}/raw_completions/{raw_name}",
+                    repo_type="dataset",
+                    cache_dir=str(cache_dir),
+                ),
+                what=f"hf_hub_download {stage_prefix}/raw_completions/{raw_name}",
+            )
+        )
+    with open(local, encoding="utf-8") as fh:
+        payload = json.load(fh)
+    assert int(payload["shard_index"]) == expect_shard_index, (
+        "gen/capture shard mismatch",
+        raw_name,
+        payload["shard_index"],
+        expect_shard_index,
+    )
+    assert int(payload["chunk"]) == expect_chunk, (
+        "gen/capture chunk mismatch",
+        raw_name,
+        payload["chunk"],
+        expect_chunk,
+    )
+    assert payload["split"] == expect_split, (
+        "gen/capture split mismatch",
+        raw_name,
+        payload["split"],
+        expect_split,
+    )
+    assert int(payload["seed"]) == expect_seed, (
+        "gen/capture seed mismatch",
+        raw_name,
+        payload["seed"],
+        expect_seed,
+    )
+    rows = {int(r["ci"]): r for r in payload["rows"]}
+    assert len(rows) == len(payload["rows"]), f"{raw_name}: duplicate ci in gen rows"
+    return rows
+
+
 def run_capture(args) -> int:
     """Run generation + trimmed capture for ONE (model, split) combination
     across ``args.num_shards`` shards; process shard ``args.shard_index``.
@@ -736,32 +824,34 @@ def run_capture(args) -> int:
         tok = _load_tokenizer(args.model)
         hf = None
     else:
+        # coresident AND phase_split_capture: full HF model (bf16 on cuda).
+        # phase_split_capture holds ONLY the HF model — no vLLM engine is
+        # ever constructed (the llm gate below excludes it), which is the
+        # whole point of the split: a 14B/32B HF model + vLLM engine cannot
+        # co-reside on one GPU (plan §4.2 per-shard architecture).
         tok, hf = N10.load_models(args.model, args.device)
 
     llm = None
     if args.capture_mode in ("coresident", "phase_split_gen"):
         llm = _build_capture_engine(args.model, gen_seed) if args.device == "cuda" else None
 
-    if args.capture_mode == "phase_split_capture":
-        # Capture-only pass: free vLLM engine and rely on persisted responses.
-        # We do NOT build an engine at all — the launcher's earlier gen-only
-        # invocation already produced raw_completions/ on HF; this pass just
-        # re-loads them, forwards them through the HF model, and uploads
-        # tensors. Deferred to a follow-up implementation cycle within Unit 2.
-        raise SystemExit(
-            "phase_split_capture mode not yet implemented — coresident + phase_split_gen only. "
-            "See Unit 2 return manifest for the deferred TODO."
-        )
-
     # 4. Capture method selection: batched (default) with parity fallback.
+    # The gate runs in BOTH capturing modes — coresident AND
+    # phase_split_capture (14B/32B are exactly where batched capture
+    # matters, plan §4.2 "Parity gate (run-start, per scale)").
     capture_fn_choice = "perrow"
-    if args.capture_batch_size > 1 and args.capture_mode == "coresident":
+    if args.capture_batch_size > 1 and args.capture_mode in ("coresident", "phase_split_capture"):
         # Run the parity gate on ~32 probe rows — OVER-LENGTH-FILTERED first:
         # an over-length prompt is ENGINE-FATAL at vLLM add_request (kills
         # the engine, not the row — gotchas.md #1738 subsample-bypass class),
         # so the probe must apply the SAME admission filter as the chunk
-        # loop. Take 64 candidates so the filter still leaves ~32.
-        cand = shard_rows[: min(64, len(shard_rows))]
+        # loop. Take 64 candidates so the filter still leaves ~32. In
+        # phase_split_capture the probe responses come from the gen wave's
+        # chunk-0 raw JSON, so candidates stay within chunk 0's row range.
+        n_cand = min(64, len(shard_rows))
+        if args.capture_mode == "phase_split_capture":
+            n_cand = min(n_cand, args.shard_size)
+        cand = shard_rows[:n_cand]
         cand_prompts = [r["prompt"] for r in cand]
         cand_cis = [int(r.get("ladder_local_id", r.get("i", i))) for i, r in enumerate(cand)]
         kept_probe_prompts, kept_probe_cis, probe_skipped = _filter_overlength_prompts(
@@ -777,10 +867,36 @@ def run_capture(args) -> int:
             )
         probe_prompts = kept_probe_prompts[:32]
         probe_cis = kept_probe_cis[:32]
-        # Generate responses for probe rows (small — safe). llm None (CPU
-        # smoke) returns stub responses through the same path, so the probe
-        # exercises the REAL capture code on CPU too.
-        probe_responses, _probe_finish = _generate_seeded(llm, tok, probe_prompts, gen_seed)
+        if not probe_cis:
+            probe_responses: list[str] = []  # all-over-length head — gate no-ops
+        elif args.capture_mode == "phase_split_capture":
+            # Probe responses = the gen wave's chunk-0 persisted rows (the
+            # capture pass never generates). Same admission filter + shard
+            # arithmetic ⇒ every probe ci is in chunk 0's kept set.
+            probe_raw_name = f"shard{args.shard_index:02d}_chunk0000.json"
+            probe_map = _load_persisted_gen_chunk(
+                scratch,
+                stage_prefix,
+                probe_raw_name,
+                cache_dir,
+                done_raw,
+                expect_split=args.split,
+                expect_seed=gen_seed,
+                expect_shard_index=args.shard_index,
+                expect_chunk=0,
+            )
+            probe_missing = [c for c in probe_cis if c not in probe_map]
+            assert not probe_missing, (
+                "parity probe: gen-wave rows missing (shard config drift?)",
+                probe_raw_name,
+                probe_missing[:8],
+            )
+            probe_responses = [probe_map[c]["response"] for c in probe_cis]
+        else:
+            # Generate responses for probe rows (small — safe). llm None (CPU
+            # smoke) returns stub responses through the same path, so the
+            # probe exercises the REAL capture code on CPU too.
+            probe_responses, _probe_finish = _generate_seeded(llm, tok, probe_prompts, gen_seed)
         gate_pass, gate_reason = _batched_capture_parity_gate(
             hf,
             tok,
@@ -824,6 +940,7 @@ def run_capture(args) -> int:
 
     def _flush_pending() -> None:
         # phase_split_gen produces ONLY raw completions (pending_pt stays
+        # empty) and phase_split_capture ONLY .pt chunks (pending_raw stays
         # empty), so the gate must key on EITHER kind being pending — a
         # `not pending_pt` early-return strands the whole gen phase's
         # rollout text pod-locally (persist-by-default; upload-policy §v2:
@@ -863,9 +980,13 @@ def run_capture(args) -> int:
             skipped_all.extend(skipped)
             # Resume predicate is MODE-scoped: the gen-only pass never
             # produces a .pt, so requiring `name in done_pt` there would
-            # make every restart regenerate the shard from scratch.
+            # make every restart regenerate the shard from scratch; the
+            # capture-only pass never (re-)uploads raw completions — the gen
+            # wave owns them — so its resume keys on the .pt alone.
             if args.capture_mode == "phase_split_gen":
                 chunk_done = raw_name in done_raw
+            elif args.capture_mode == "phase_split_capture":
+                chunk_done = name in done_pt
             else:
                 chunk_done = name in done_pt and raw_name in done_raw
             if chunk_done:
@@ -883,36 +1004,68 @@ def run_capture(args) -> int:
                 continue
 
             ts = time.time()
-            # Generate responses (split-seeded; llm None on the CPU smoke
-            # path returns stub responses through the same capture code).
-            responses, finish_reasons = _generate_seeded(llm, tok, kept_prompts, gen_seed)
-            n_cap_hit = sum(1 for f in finish_reasons if f == "length")
-            cap_hit_total += n_cap_hit
-            gen_total += len(responses)
+            if args.capture_mode == "phase_split_capture":
+                # No generation: JOIN the gen wave's persisted responses back
+                # by context id. Missing cis are FAIL-LOUD (a silent subset
+                # would ship a .pt whose row set diverges from the raw pair).
+                raw_map = _load_persisted_gen_chunk(
+                    scratch,
+                    stage_prefix,
+                    raw_name,
+                    cache_dir,
+                    done_raw,
+                    expect_split=args.split,
+                    expect_seed=gen_seed,
+                    expect_shard_index=args.shard_index,
+                    expect_chunk=ci_idx,
+                )
+                missing = [c for c in kept_cis if c not in raw_map]
+                if missing:
+                    raise RuntimeError(
+                        f"phase_split_capture: {len(missing)} kept cis absent from gen-wave "
+                        f"{raw_name} (first: {missing[:10]}) — the gen wave ran under a "
+                        "different shard config / manifest; refusing a partial join."
+                    )
+                for c, p in zip(kept_cis, kept_prompts, strict=True):
+                    assert raw_map[c]["prompt"] == p, (
+                        "prompt drift between manifest row and gen-wave row",
+                        c,
+                    )
+                responses = [raw_map[c]["response"] for c in kept_cis]
+                # Cap-hit accounting belongs to the GEN wave (already
+                # reported there); do not double-count here.
+                n_cap_hit = 0
+            else:
+                # Generate responses (split-seeded; llm None on the CPU smoke
+                # path returns stub responses through the same capture code).
+                responses, finish_reasons = _generate_seeded(llm, tok, kept_prompts, gen_seed)
+                n_cap_hit = sum(1 for f in finish_reasons if f == "length")
+                cap_hit_total += n_cap_hit
+                gen_total += len(responses)
 
-            # Persist raw completions FIRST (persist-by-default; text path,
-            # non-LFS, quota-immune — upload-policy §v2). finish_reason per
-            # row + n_cap_hit make cap-hit rows re-generable post-hoc
-            # (CLAUDE.md cap-hit accounting).
-            C.write_json_atomic(
-                scratch / raw_name,
-                {
-                    "shard_index": args.shard_index,
-                    "chunk": ci_idx,
-                    "split": args.split,
-                    "seed": gen_seed,
-                    "sampling_seed": gen_seed,
-                    "engine_seed": gen_seed,
-                    "gen_max_tokens": GEN_MAX_TOKENS,
-                    "n_cap_hit": n_cap_hit,
-                    "rows": [
-                        {"ci": int(c), "prompt": p, "response": r, "finish_reason": f}
-                        for c, p, r, f in zip(
-                            kept_cis, kept_prompts, responses, finish_reasons, strict=True
-                        )
-                    ],
-                },
-            )
+                # Persist raw completions FIRST (persist-by-default; text
+                # path, non-LFS, quota-immune — upload-policy §v2).
+                # finish_reason per row + n_cap_hit make cap-hit rows
+                # re-generable post-hoc (CLAUDE.md cap-hit accounting).
+                C.write_json_atomic(
+                    scratch / raw_name,
+                    {
+                        "shard_index": args.shard_index,
+                        "chunk": ci_idx,
+                        "split": args.split,
+                        "seed": gen_seed,
+                        "sampling_seed": gen_seed,
+                        "engine_seed": gen_seed,
+                        "gen_max_tokens": GEN_MAX_TOKENS,
+                        "n_cap_hit": n_cap_hit,
+                        "rows": [
+                            {"ci": int(c), "prompt": p, "response": r, "finish_reason": f}
+                            for c, p, r, f in zip(
+                                kept_cis, kept_prompts, responses, finish_reasons, strict=True
+                            )
+                        ],
+                    },
+                )
 
             # Trimmed capture (skipped in phase_split_gen mode — gen only).
             if args.capture_mode == "phase_split_gen":
@@ -941,22 +1094,29 @@ def run_capture(args) -> int:
                         self_gate_rows.extend(rows)
                     pending_pt.append(name)
                 else:
-                    # All responses empty: no .pt, but the raw completions
-                    # still upload (persist-by-default). NOTE: with no .pt
-                    # this chunk re-runs on resume (capture-mode resume
-                    # requires both kinds) — idempotent, and vanishingly
-                    # rare at chunk size 500.
+                    # All responses empty: no .pt. In generating modes the
+                    # raw completions still upload (persist-by-default); in
+                    # phase_split_capture the gen wave already owns them.
+                    # NOTE: with no .pt this chunk re-runs on resume —
+                    # idempotent, and vanishingly rare at chunk size 500.
                     logger.warning(
-                        "[shard %d] chunk %d: 0 captured rows (all empty responses); "
-                        "raw completions still upload",
+                        "[shard %d] chunk %d: 0 captured rows (all empty responses)",
                         args.shard_index,
                         ci_idx,
                     )
                 n_kept = len(rows)
-                pending_raw.append(raw_name)
+                if args.capture_mode != "phase_split_capture":
+                    # The gen wave owns raw_completions; re-uploading them
+                    # from the capture wave would double-commit identical
+                    # content (and burn the fleet commit budget).
+                    pending_raw.append(raw_name)
 
             kept_total += n_kept
-            if not args.no_upload and len(pending_raw) >= UPLOAD_BATCH:
+            # Key the flush trigger on EITHER pending kind: phase_split_capture
+            # accumulates ONLY .pt names (pending_raw stays empty), so a
+            # raw-only trigger would defer every upload to the terminal flush
+            # — the #664 write-at-end anti-pattern.
+            if not args.no_upload and max(len(pending_pt), len(pending_raw)) >= UPLOAD_BATCH:
                 _flush_pending()
 
             logger.info(
@@ -1105,7 +1265,8 @@ def _parse_args() -> argparse.Namespace:
         choices=["coresident", "phase_split_gen", "phase_split_capture"],
         help="coresident: vLLM engine + HF capture on the same GPU (≤7B). "
         "phase_split_gen: only vLLM generation, persist responses. "
-        "phase_split_capture: only HF capture from persisted responses (14B/32B; deferred in this Unit 2 build).",
+        "phase_split_capture: only HF capture (no vLLM engine) from the gen "
+        "wave's persisted responses, joined by context id (14B/32B).",
     )
     ap.add_argument(
         "--capture-batch-size",

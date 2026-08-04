@@ -24,11 +24,15 @@
 #     wc_test_1k, tierB_3600, ceiling_draw_43, ceiling_draw_44}, or the ordered
 #     sweep default (train_25k, then val/test, then wc_test, then ceiling draws).
 #   * --capture-mode coresident (default; ≤7B) | phase_split_gen | phase_split_capture.
-#     14B/32B run --capture-mode phase_split_gen (gen only, raw completions to
-#     HF). NOTE: phase_split_capture is DEFERRED in the driver (raises
-#     SystemExit — Unit 2 return manifest) — do NOT chain to it yet. Once it
-#     lands, `launch.sh ... phase_split_gen && launch.sh ... phase_split_capture`
-#     is valid sequencing: this launcher only exits after its waves are dead.
+#     14B/32B run TWO passes: --capture-mode phase_split_gen (vLLM gen only,
+#     raw completions to HF), THEN --capture-mode phase_split_capture (HF
+#     model only — no vLLM engine — one teacher-forced forward per persisted
+#     response, joined by context id; resume keys on the .pt alone).
+#     `launch.sh ... phase_split_gen && launch.sh ... phase_split_capture`
+#     is VALID sequencing: this launcher blocks (wait_wave_dead) until every
+#     shard pid of every wave is dead before exiting, so the capture
+#     invocation starts only after the last gen shard has died and its GPU
+#     memory is released.
 #   * ENV KNOBS exported explicitly (plan §11 + parent driver commit
 #     4cb9d6ea8d): EPM_VLLM_ENFORCE_EAGER=1, EPM_VLLM_DISABLE_PREFIX_CACHING=1.
 #     Never assume defaults — the ENV-gated knobs are OFF unless exported.
@@ -45,6 +49,11 @@
 #   pod A: (same detached shape) --scale 32B --all-splits \
 #            --capture-mode phase_split_gen --num-shards 16 --shard-offset 0
 #   pod B: (same, --shard-offset 8)
+#   then per pod, after the gen waves drain (chainable in one detached
+#   command via `&&` — the launcher blocks until its waves are dead):
+#            --capture-mode phase_split_capture with IDENTICAL
+#            --num-shards/--shard-offset/--shard-size — the capture wave's
+#            ci join asserts the gen wave's shard arithmetic verbatim.
 #
 # Pod-side: NO VM thread-cap prefix (dedicated GPUs keep full width).
 
