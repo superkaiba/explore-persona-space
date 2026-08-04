@@ -1,10 +1,15 @@
 #!/usr/bin/env python
 """Phase B driver for task #2054: deterministic inserted splice.
 
-For each scaffold under `--scaffolds-dir`, splice a per-scaffold answer at
-the `<<<ANSWER>>>` slot via the parent's `splice_answer` (100% keep by
-construction; span offsets known by construction). The answer pool comes
-from `--answers-source` — a JSONL of {conv_id, answer} or {scaffold_id,
+For each scaffold under `--scaffolds-dir`, render the REQUIRED `--form`
+framing (plan §4 "Framings" — the lattice's central manipulated variable; no
+default, argparse refuses a form-less invocation): story forms splice at the
+`<<<ANSWER>>>` slot via the parent's `splice_answer` (100% keep by
+construction; span offsets known by construction), and the chat / bare_text
+framings re-frame the scaffold's question + answer through
+`issue2054_forms` (narrative prose dropped — chat/bare are structurally
+assistant-only per plan §4 Cells). The answer pool comes from
+`--answers-source` — a JSONL of {conv_id, answer} or {scaffold_id,
 answer} rows (sanctioned, chat-authored — the parent's inserted-arm answers).
 
 Writes spliced texts + exact answer-span offsets per row under
@@ -38,6 +43,7 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 load_dotenv()
 
 import issue1345_scaffold_common as sc  # noqa: E402
+import issue2054_forms as forms  # noqa: E402
 
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 TASK_PREFIX = "issue2054_lattice"
@@ -101,17 +107,19 @@ def _char_name_from_scaffold_row(row: dict, variant: str) -> str:
     return from_variant.get(variant, "ARIA")
 
 
-def _splice_one(row: dict, answer: str, variant: str) -> dict | None:
+def _splice_one(row: dict, answer: str, variant: str, form: str) -> dict | None:
     scaffold = row.get("scaffold_text")
-    if not isinstance(scaffold, str) or sc.SLOT_SENTINEL not in scaffold:
+    if not isinstance(scaffold, str):
+        return None
+    if form in forms.STORY_FORMS and sc.SLOT_SENTINEL not in scaffold:
         return None
     char_name = _char_name_from_scaffold_row(row, variant)
     attrib_template = row.get("attrib_template")  # stripper-recorded template
     try:
-        result = sc.splice_answer(
-            scaffold,
+        result = forms.splice_answer_form(
+            row,
             answer,
-            "attrib_quoted",
+            form,
             char_name,
             attrib_template=attrib_template if isinstance(attrib_template, str) else None,
         )
@@ -119,7 +127,7 @@ def _splice_one(row: dict, answer: str, variant: str) -> dict | None:
         _log(f"splice skip {row.get('scaffold_id')}: {exc}")
         return None
     # Guard: the spliced offsets identify the exact answer bytes (asserted in
-    # splice_answer). Persist the whole row.
+    # splice_answer / splice_answer_form). Persist the whole row.
     return {
         "scaffold_id": row.get("scaffold_id"),
         "conv_id": row.get("conv_id") or row.get("scaffold_id"),
@@ -130,11 +138,16 @@ def _splice_one(row: dict, answer: str, variant: str) -> dict | None:
         "answer": answer,
         "answer_start": result.answer_start,
         "answer_end": result.answer_end,
+        "prefix_end_char": result.prefix_end_char,
     }
 
 
 def _process_variant(
-    variant: str, scaffolds_path: Path, answers_by_key: dict[str, str], out_dir: Path
+    variant: str,
+    scaffolds_path: Path,
+    answers_by_key: dict[str, str],
+    out_dir: Path,
+    form: str,
 ) -> tuple[int, int, Path]:
     """Splice every scaffold whose conv_id has an answer; return (n_in, n_out, out_path)."""
     scaffolds = _read_jsonl(scaffolds_path)
@@ -158,7 +171,7 @@ def _process_variant(
                 answer = str(row.get("answer") or "")
             if not answer:
                 continue
-            spliced = _splice_one(row, answer, variant)
+            spliced = _splice_one(row, answer, variant, form)
             if spliced is None:
                 continue
             f.write(json.dumps(spliced, ensure_ascii=False) + "\n")
@@ -249,7 +262,7 @@ def run_phase(args: argparse.Namespace) -> int:
     out_paths: dict[str, Path] = {}
     counts: dict[str, dict] = {}
     for variant, sp in per_variant_paths.items():
-        n_in, n_out, op = _process_variant(variant, sp, answers_by_key, out_dir)
+        n_in, n_out, op = _process_variant(variant, sp, answers_by_key, out_dir, args.form)
         counts[variant] = {"n_in": n_in, "n_out": n_out}
         out_paths[variant] = op
         _log(f"variant={variant} spliced {n_out}/{n_in} -> {_rel(op)}")
@@ -270,6 +283,7 @@ def run_phase(args: argparse.Namespace) -> int:
 
     digest = {
         "phase": "phase_b",
+        "form": args.form,
         "counts": counts,
         "n_total_out": total_out,
         "n_answers_loaded": len(answers_by_key),
@@ -294,6 +308,16 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--scaffolds-dir", default="data/issue_2054/scaffolds/")
     p.add_argument("--answers-source", required=True, help="JSONL with {conv_id, answer} rows")
+    p.add_argument(
+        "--form",
+        required=True,
+        choices=forms.FORMS,
+        help=(
+            "framing to render (plan §4 — the lattice's central manipulated "
+            "variable; REQUIRED, no default so a caller can never silently "
+            "fall back to attrib_quoted)"
+        ),
+    )
     p.add_argument("--output-dir", default="data/issue_2054/spliced_inserted/")
     p.add_argument("--seed", type=int, default=137)
     p.add_argument("--skip-upload", action="store_true", help="skip HF mirror step")

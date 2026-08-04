@@ -12,16 +12,20 @@ arms" contract:
   via the tokenizer's offset mapping).
 - `v_A` (answer arm target) — mean of layer-19 hidden states over answer tokens
   (tokens whose byte range lies within `[answer_start, answer_end)`).
-- `v_P` (prefix arm) — layer-19 hidden state at the last token of the PREFIX
-  (per Critical Rule: system + user query, before the assistant/story turn).
-  Located deterministically for each row_form:
-  * story-form rows (form=`attrib_quoted`): the last token before the
-    attribution marker ` replied: "` / ` said, "` (the character's dialogue
-    opening); v_P is undefined when no marker is found and that row's v_P is
-    recorded as null (never coerced).
-  * chat-form rows (spliced through a chat template): the last prompt token
-    before the assistant/user turn, per the tokenizer's offset mapping on the
-    prompt text ending at `answer_start`.
+- `v_P` (prefix arm) — layer-19 hidden state at the last token BEFORE the user
+  query (plan §6 pooling row: last-token pooling at the PRE-QUERY position).
+  Located per row:
+  * rows carrying the renderer-recorded `prefix_end_char` field (every
+    phase_b/c/d row as of the framing-axis build — `issue2054_forms` records
+    the pre-query boundary BY CONSTRUCTION for all forms): use it directly.
+  * rows lacking the field (parent-legacy / round-1 outputs): a form-aware
+    fallback — chat / bare_text rows read the fixed turn-header length;
+    attrib_quoted (or form-less) rows keep the legacy attribution-marker
+    search ` replied: "` / ` said, "` (NOTE: pre-ATTRIBUTION, not pre-query —
+    a plan-divergent legacy convention, surfaced per-row as
+    `prefix_src="legacy_marker"` so a mixed-convention cell is visible);
+    bare_label rows locate the `{character}: ` label; v_P is undefined when
+    nothing resolves and that row's v_P is recorded as null (never coerced).
 
 Activations persist to `<output-dir>/{variant}_{model}.npz` as three
 `{conv_id: <d-vec>}` fp16 arrays keyed by conv_id (never materializes the full
@@ -61,6 +65,8 @@ for _p in (str(_SCRIPT_DIR), str(_REPO_ROOT / "src")):
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
+
+import issue2054_forms as forms  # noqa: E402
 
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 TASK_PREFIX = "issue2054_lattice"
@@ -153,21 +159,15 @@ def _resolve_input_paths(input_dir: Path, variants: list[str], phase: str) -> di
 
 
 def _locate_prefix_end_char(text: str, answer_start: int, form: str | None) -> int | None:
-    """Return the CHAR position of the last prefix char (before the user query),
-    or None when the prefix arm cannot be located deterministically.
+    """LEGACY attribution-marker search (rows lacking `prefix_end_char` only).
 
-    Convention: for `attrib_quoted` rows the prefix ends immediately BEFORE the
-    attribution marker ` replied: "` / ` said, "` — i.e. the last character of
-    the story preamble that ANNOUNCES the answering turn. `text[:prefix_end]`
-    is the pre-query narrative + the user's question and everything up to (but
-    not including) the attribution.
-
-    For non-attrib_quoted rows (chat-formatted templates that phase_d may emit
-    via the chat splice form), we currently return None: chat-form prefix
-    resolution requires the tokenizer's chat-template offsets, which are the
-    fits-phase's concern — the capture rig records prefix arm as null for
-    those rows and reports the null fraction as a diagnostic. Downstream fits
-    can re-locate via the chat-template offset recipe on-VM.
+    Returns the CHAR position immediately BEFORE the attribution marker
+    ` replied: "` / ` said, "` — the last character of the story preamble that
+    ANNOUNCES the answering turn. NOTE this is the pre-ATTRIBUTION boundary
+    (round-1 convention), NOT the plan §6 pre-query boundary the renderers now
+    record; rows resolved through this path are tagged
+    `prefix_src="legacy_marker"` in the diagnostics so a mixed-convention cell
+    is visible. None when no marker is found.
     """
     before = text[:answer_start]
     best: int = -1
@@ -178,6 +178,55 @@ def _locate_prefix_end_char(text: str, answer_start: int, form: str | None) -> i
     if best < 0:
         return None
     return best
+
+
+def _prefix_end_char_for_row(row: dict, text: str, answer_start: int) -> tuple[int | None, str]:
+    """(pre-query char boundary, source tag) for one row — every form covered.
+
+    Preference order:
+      1. `prefix_end_char` recorded by the renderer (`issue2054_forms` — the
+         plan §6 pre-query convention, by construction) -> "recorded".
+      2. Form-aware fallback for legacy rows:
+         chat / bare_text -> the fixed turn-header length ("form_header");
+         attrib_quoted (or form-less) -> legacy attribution-marker search
+         ("legacy_marker" — pre-attribution, plan-divergent; see
+         `_locate_prefix_end_char`);
+         bare_label -> the `{character}: ` label before the answer
+         ("legacy_label");
+         bare_paragraph -> end of the pre-answer prose, trailing newlines
+         stripped ("legacy_paragraph").
+      3. (None, "none") — v_P recorded null, never coerced.
+    """
+    rec = row.get("prefix_end_char")
+    if isinstance(rec, int) and not isinstance(rec, bool) and 0 <= rec <= answer_start:
+        return rec, "recorded"
+    form = row.get("form")
+    if form == "chat":
+        if text.startswith(forms.CHAT_USER_HEADER):
+            return len(forms.CHAT_USER_HEADER), "form_header"
+        return None, "none"
+    if form == "bare_text":
+        if text.startswith(forms.BARE_USER_PREFIX):
+            return len(forms.BARE_USER_PREFIX), "form_header"
+        return None, "none"
+    if form in (None, "attrib_quoted"):
+        idx = _locate_prefix_end_char(text, answer_start, form)
+        if idx is not None:
+            return idx, "legacy_marker"
+        return None, "none"
+    if form == "bare_label":
+        character = str(row.get("character") or "").strip()
+        if character:
+            label = f"{character}: "
+            if text[:answer_start].endswith(label):
+                return answer_start - len(label), "legacy_label"
+        return None, "none"
+    if form == "bare_paragraph":
+        stripped = len(text[:answer_start].rstrip("\n"))
+        if 0 < stripped < answer_start:
+            return stripped, "legacy_paragraph"
+        return None, "none"
+    return None, "none"
 
 
 def _char_span_to_token_span(
@@ -247,9 +296,10 @@ def _compute_positions(tokenizer, row: dict) -> dict | None:
     if answer_hi <= answer_lo:
         return None
     v_C_pos = max(0, answer_lo - 1)
-    prefix_end_char = _locate_prefix_end_char(text, a_start, row.get("form"))
+    prefix_end_char, prefix_src = _prefix_end_char_for_row(row, text, a_start)
     if prefix_end_char is None or prefix_end_char <= 0:
         v_P_pos = None
+        prefix_src = "none"
     else:
         v_P_pos = _token_before_char(offsets, prefix_end_char)
     return {
@@ -258,6 +308,7 @@ def _compute_positions(tokenizer, row: dict) -> dict | None:
         "answer_hi": answer_hi,
         "v_C_pos": v_C_pos,
         "v_P_pos": v_P_pos,
+        "prefix_src": prefix_src,
         "n_tokens": len(input_ids),
     }
 
@@ -298,6 +349,18 @@ def _answer_length_stats(lengths: list[int]) -> dict:
         "p10": _pct(0.10),
         "p90": _pct(0.90),
     }
+
+
+def _prefix_src_counts(per_row: list[dict]) -> dict[str, int]:
+    """Per-cell tally of prefix-boundary sources (mixed-convention visibility:
+    `recorded` = plan §6 pre-query, `legacy_*` = fallback conventions)."""
+    counts: dict[str, int] = {}
+    for r in per_row:
+        if r.get("status") != "ok":
+            continue
+        src = str(r.get("prefix_src") or "none")
+        counts[src] = counts.get(src, 0) + 1
+    return counts
 
 
 def _load_tokenizer(model_id: str):
@@ -370,6 +433,7 @@ def _capture_positions_only(
                 "answer_hi": pos["answer_hi"],
                 "v_C_pos": pos["v_C_pos"],
                 "v_P_pos": pos["v_P_pos"],
+                "prefix_src": pos["prefix_src"],
             }
         )
     return per_row, ok, prefix_null, skipped
@@ -435,6 +499,7 @@ def _run_dry_variant(
         "n_ok": ok,
         "n_skipped": skipped,
         "n_prefix_null": prefix_null,
+        "prefix_src_counts": _prefix_src_counts(per_row),
         "answer_token_length_stats": _answer_length_stats(lengths),  # DV 7 stub
         "conv_ids": conv_ids,  # DV 8 stub (post-any-filter set on sampled subset)
         "per_row": per_row,
@@ -600,6 +665,7 @@ def _run_gpu_variant(
                     "answer_hi": pos["answer_hi"],
                     "v_C_pos": pos["v_C_pos"],
                     "v_P_pos": pos["v_P_pos"],
+                    "prefix_src": pos["prefix_src"],
                 }
             )
 
@@ -672,6 +738,7 @@ def _run_gpu_variant(
         "n_ok": len(conv_ids),
         "n_skipped": n_skipped,
         "n_prefix_null": n_prefix_null,
+        "prefix_src_counts": _prefix_src_counts(per_row_diag),
         "answer_token_length_stats": _answer_length_stats(lengths),  # DV 7
         "conv_ids": sorted(set(conv_ids)),  # DV 8
         "peak_gpu_bytes": peak_gpu_bytes if device == "cuda" else 0,

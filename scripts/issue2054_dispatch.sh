@@ -30,6 +30,15 @@
 # occurrence). Both audit entrypoints expose a no-network --dry-run self-test.
 #   bash scripts/issue2054_dispatch.sh audit_i --dry-run
 #   bash scripts/issue2054_dispatch.sh audit_ii --output /tmp/issue-2054-smoke/ii.json
+#
+# FRAMING AXIS (plan §4): phase_b / phase_c / phase_d REQUIRE --form
+# (chat | bare_text | attrib_quoted | bare_label | bare_paragraph | indirect),
+# passed through per-cell — argparse refuses a form-less invocation, so the
+# router deliberately bakes NO default (the lattice's central manipulated
+# variable can never silently fall back to attrib_quoted). Cell (c) = phase_d
+# --form chat.
+#   bash scripts/issue2054_dispatch.sh phase_b --form attrib_quoted --answers-source <jsonl>
+#   bash scripts/issue2054_dispatch.sh phase_d --form chat
 
 set -euo pipefail
 
@@ -87,6 +96,7 @@ build_cmd() {
     phase_b)
       # Unit A: deterministic inserted splice driver over Phase A scaffolds.
       # 100% keep by construction; answers pool must be passed via pass-through.
+      # REQUIRES --form <framing> per cell (plan §4 framing axis; no default).
       CMD=(
         uv run python scripts/issue2054_phase_b.py
         --scaffolds-dir data/issue_2054/scaffolds/
@@ -95,7 +105,8 @@ build_cmd() {
       )
       ;;
     phase_c)
-      # Unit B: on-policy continuation via vLLM prefill (attrib_quoted form).
+      # Unit B: on-policy continuation via vLLM prefill.
+      # REQUIRES --form <framing> per cell (plan §4 framing axis; no default).
       # Model + variants pass through; --dry-run skips vLLM for CPU-side smokes.
       # max_new_tokens 2048 per plan §11 (>=2x longest trained completion).
       CMD=(
@@ -109,8 +120,9 @@ build_cmd() {
       ;;
     phase_d)
       # Unit B: v4-new cell (c) transpose — STORY-authored answer, CHAT
-      # presentation. Reads parent #1345 paired_op answers from HF, splices into
-      # phase_a CHAT-template scaffolds; NO NEW generation.
+      # presentation. Reads parent #1345 paired_op answers from HF and renders
+      # them under --form (REQUIRED; cell (c) = --form chat, plan §4 Phase D);
+      # NO NEW generation.
       CMD=(
         uv run python scripts/issue2054_phase_d.py
         --scaffolds-dir data/issue_2054/scaffolds/
