@@ -1,0 +1,140 @@
+{
+  "commit": "c57a4aef+dirty",
+  "git_commit": "c57a4aef",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_1482/context_extremes/context_extremes.json",
+    "figures/issue_1482/context_category_by_arm.meta.json",
+    "figures/issue_1482/context_category_by_arm.pdf",
+    "figures/issue_1482/context_category_by_arm.png",
+    "figures/issue_1482/context_category_context_notrunc.meta.json",
+    "figures/issue_1482/context_category_context_notrunc.pdf",
+    "figures/issue_1482/context_category_context_notrunc.png",
+    "figures/issue_1482/context_category_prefix_notrunc.meta.json",
+    "figures/issue_1482/context_category_prefix_notrunc.pdf",
+    "figures/issue_1482/context_category_prefix_notrunc.png",
+    "figures/issue_1482/context_category_query_notrunc.meta.json",
+    "figures/issue_1482/context_category_query_notrunc.pdf",
+    "figures/issue_1482/context_category_query_notrunc.png",
+    "scripts/issue1482_arm_drop_by_predictor.py",
+    "scripts/issue1482_context_extremes_dashboard.py",
+    "scripts/issue1739_r5_collect.py",
+    "scripts/issue1739_r5_ladder.py",
+    "scripts/issue1739_result2_method_fig.py",
+    "scripts/issue1739_result2_method_fig_v2.py"
+  ],
+  "created": "2026-08-04T22:16:52Z",
+  "figsize": [
+    7.0,
+    4.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "cos(mean answer-state shift, target)": 0.2520965039730072,
+      "series": "cos(mean shift, c*)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "cos(mean answer-state shift, target)": 0.041220635175704956,
+      "series": "cos(mean shift, c*)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "cos(mean answer-state shift, target)": -0.005297882482409477,
+      "series": "cos(mean shift, c*)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "cos(mean answer-state shift, target)": 0.09106868505477905,
+      "series": "cos(mean shift, c*)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "cos(mean answer-state shift, target)": 0.9405342936515808,
+      "series": "cos(mean shift, c*)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "cos(mean answer-state shift, target)": 0.2847175896167755,
+      "series": "cos(mean shift, dy)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "cos(mean answer-state shift, target)": 0.05707854405045509,
+      "series": "cos(mean shift, dy)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "cos(mean answer-state shift, target)": 0.0018870651256293058,
+      "series": "cos(mean shift, dy)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "cos(mean answer-state shift, target)": 0.10909122228622437,
+      "series": "cos(mean shift, dy)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "cos(mean answer-state shift, target)": 0.9999970197677612,
+      "series": "cos(mean shift, dy)",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 10,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "OLMo-2-7B base: residual-stream intervention at context positions\n(n=256 contexts, layer-31 answer-pooled states; rig-sanity gate PASS)",
+        "ylabel": "cos(mean answer-state shift, target)",
+        "legend_labels": [
+          "cos(mean shift, c*)",
+          "cos(mean shift, dy)"
+        ],
+        "xticklabels": [
+          "preimage\nL16 @ctx",
+          "preimage\nL24 @ctx",
+          "preimage\nL28 @ctx",
+          "random\nL24 @ctx",
+          "rig sanity\n(+dy @ans, L31)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "cos(mean shift, c*)",
+      "cos(mean shift, dy)"
+    ]
+  }
+}

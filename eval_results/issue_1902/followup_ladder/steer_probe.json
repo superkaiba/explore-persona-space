@@ -1,0 +1,200 @@
+{
+  "round": "steer_probe (user-chat inline override, task #1902)",
+  "model_id": "allenai/OLMo-2-1124-7B",
+  "revision": "7df9a82518afdecae4e8c026b27adccc8c1f0032",
+  "device": "cuda:0",
+  "layer_capture": 31,
+  "n_rows": 256,
+  "rig_sanity_gate": {
+    "cos_vs_dy": 0.9999970197677612,
+    "norm_ratio": 1.0002254247665405,
+    "pass": true
+  },
+  "predicted_reachable_magnitude": 13.849321764570389,
+  "vector_norms": {
+    "c_star": 15.883883476257324,
+    "dy": 18.046262741088867,
+    "v_pre": 7.4401350021362305,
+    "v_rand": 7.4401350021362305
+  },
+  "arms": {
+    "rig_sanity_dy_L31_ans": {
+      "n_rows": 256,
+      "norm_mean_shift": 18.050331115722656,
+      "cos_mean_shift_c_star": 0.9405342936515808,
+      "cos_mean_shift_dy": 0.9999970197677612,
+      "mean_row_shift_norm": 18.05038070678711,
+      "row_cos_c_star_deciles": [
+        0.9402,
+        0.9405,
+        0.9405,
+        0.9405,
+        0.9405,
+        0.9405,
+        0.9405,
+        0.9405,
+        0.9406,
+        0.9406,
+        0.9416
+      ],
+      "row_cos_dy_deciles": [
+        0.9999,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "pre_L16_ctx": {
+      "n_rows": 256,
+      "norm_mean_shift": 19.948698043823242,
+      "cos_mean_shift_c_star": 0.2520965039730072,
+      "cos_mean_shift_dy": 0.2847175896167755,
+      "mean_row_shift_norm": 26.403594970703125,
+      "row_cos_c_star_deciles": [
+        -0.0942,
+        0.0894,
+        0.1202,
+        0.1417,
+        0.167,
+        0.1884,
+        0.2051,
+        0.2212,
+        0.2443,
+        0.2744,
+        0.3815
+      ],
+      "row_cos_dy_deciles": [
+        -0.1082,
+        0.0892,
+        0.1322,
+        0.1625,
+        0.1853,
+        0.2092,
+        0.2332,
+        0.2495,
+        0.2749,
+        0.316,
+        0.4128
+      ]
+    },
+    "pre_L24_ctx": {
+      "n_rows": 256,
+      "norm_mean_shift": 8.904826164245605,
+      "cos_mean_shift_c_star": 0.041220635175704956,
+      "cos_mean_shift_dy": 0.05707854405045509,
+      "mean_row_shift_norm": 10.383030891418457,
+      "row_cos_c_star_deciles": [
+        -0.2199,
+        -0.074,
+        -0.0396,
+        -0.0187,
+        0.0051,
+        0.0222,
+        0.036,
+        0.0563,
+        0.0733,
+        0.1115,
+        0.2399
+      ],
+      "row_cos_dy_deciles": [
+        -0.2294,
+        -0.0764,
+        -0.0348,
+        -0.0123,
+        0.0127,
+        0.0311,
+        0.0531,
+        0.0748,
+        0.0947,
+        0.1246,
+        0.3163
+      ]
+    },
+    "pre_L28_ctx": {
+      "n_rows": 256,
+      "norm_mean_shift": 4.995805740356445,
+      "cos_mean_shift_c_star": -0.005297882482409477,
+      "cos_mean_shift_dy": 0.0018870651256293058,
+      "mean_row_shift_norm": 5.522852897644043,
+      "row_cos_c_star_deciles": [
+        -0.2361,
+        -0.1085,
+        -0.0644,
+        -0.0409,
+        -0.0275,
+        -0.0099,
+        0.0131,
+        0.0331,
+        0.0526,
+        0.0878,
+        0.1845
+      ],
+      "row_cos_dy_deciles": [
+        -0.2448,
+        -0.1187,
+        -0.062,
+        -0.0385,
+        -0.0206,
+        -0.0025,
+        0.0208,
+        0.0463,
+        0.0671,
+        0.1047,
+        0.2119
+      ]
+    },
+    "rand_L24_ctx": {
+      "n_rows": 256,
+      "norm_mean_shift": 9.10876750946045,
+      "cos_mean_shift_c_star": 0.09106868505477905,
+      "cos_mean_shift_dy": 0.10909122228622437,
+      "mean_row_shift_norm": 10.63100528717041,
+      "row_cos_c_star_deciles": [
+        -0.1587,
+        -0.0164,
+        0.0093,
+        0.0263,
+        0.0484,
+        0.0642,
+        0.0812,
+        0.0969,
+        0.1171,
+        0.1521,
+        0.2241
+      ],
+      "row_cos_dy_deciles": [
+        -0.1619,
+        -0.0137,
+        0.0132,
+        0.0397,
+        0.0566,
+        0.0778,
+        0.0939,
+        0.1152,
+        0.1374,
+        0.1743,
+        0.2761
+      ]
+    }
+  },
+  "wall_s": 18.8,
+  "inputs_meta_sha": {
+    "c_star.npy": "59bb10e4bafa6ac2d16e889939966fa5efcb09e5a1ea3231ac2d3cce0c3b984f",
+    "dy.npy": "0b94e3564e0545e4219fd94ffad91fb5a7aa9c4bdc46dfdac58a478c2636cb1f",
+    "probe_inputs.jsonl": "97ac0173402309fb135999363161e2c5b7e7e680f4e294185a2d41a7aa20c2c5",
+    "v_pre.npy": "28117f3ff3342e77b6606e1ce3432fdcb01f96d3b77513c8d75a33764bdaf697",
+    "v_rand.npy": "72586b41fd627b86a6e7d08ed2fa4f72b8739019445e0f311f8667a407efcc61"
+  },
+  "metadata": {
+    "git_commit": "23e2205b",
+    "git_dirty": false,
+    "script": "scripts/issue1902_steer_probe.py"
+  }
+}
