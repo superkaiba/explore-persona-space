@@ -350,6 +350,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_no_dollar_budget_caps.py",
     "tests/test_no_per_file_raw_completions_loop.py",
     "tests/test_no_pod_side_task_py_shellout.py",
+    # NEW (#2058) — no-progress respawn lane: fingerprint helper +
+    # `compute_issue_verdict` NO-PROGRESS-RESPAWN arm + heartbeat sentinel
+    # set. Unit A ships the pure predicate; Unit B wires the watcher pass.
+    "tests/test_no_progress_respawn.py",
     # group 4 — verifiers
     "tests/test_verify_plan.py",
     "tests/test_verify_task_body.py",

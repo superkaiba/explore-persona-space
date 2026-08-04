@@ -75,20 +75,22 @@ def _neutralize_human_probe(monkeypatch):
 
 @pytest.mark.parametrize("status", sorted(tick_triage.ISSUE_ACTIVE | tick_triage.ISSUE_PARK))
 def test_issue_fresh_marker_is_healthy(status):
-    verdict, _ = tick_triage.compute_issue_verdict(status, status, 60.0, False, stale_after_s=1500)
+    verdict, _, _ = tick_triage.compute_issue_verdict(
+        status, status, 60.0, False, stale_after_s=1500
+    )
     assert verdict == "HEALTHY"
 
 
 @pytest.mark.parametrize("status", sorted(tick_triage.ISSUE_ACTIVE | tick_triage.ISSUE_PARK))
 def test_issue_stale_marker_is_redrive(status):
-    verdict, _ = tick_triage.compute_issue_verdict(
+    verdict, _, _ = tick_triage.compute_issue_verdict(
         status, status, 3600.0, False, stale_after_s=1500
     )
     assert verdict == "STALE-REDRIVE"
 
 
 def test_issue_no_markers_counts_as_stale():
-    verdict, _ = tick_triage.compute_issue_verdict(
+    verdict, _, _ = tick_triage.compute_issue_verdict(
         "running", "running", None, False, stale_after_s=1500
     )
     assert verdict == "STALE-REDRIVE"
@@ -96,7 +98,9 @@ def test_issue_no_markers_counts_as_stale():
 
 @pytest.mark.parametrize("status", sorted(tick_triage.ISSUE_TERMINAL))
 def test_issue_steady_terminal_is_terminal(status):
-    verdict, _ = tick_triage.compute_issue_verdict(status, status, 60.0, False, stale_after_s=1500)
+    verdict, _, _ = tick_triage.compute_issue_verdict(
+        status, status, 60.0, False, stale_after_s=1500
+    )
     assert verdict == "TERMINAL"
 
 
@@ -122,7 +126,7 @@ def test_issue_status_sets_cover_runtime_enum():
 
 @pytest.mark.parametrize("status", sorted(tick_triage.ISSUE_GATE))
 def test_issue_gate_transition_fires_on_status_change(status):
-    verdict, _ = tick_triage.compute_issue_verdict(
+    verdict, _, _ = tick_triage.compute_issue_verdict(
         status, "running", 60.0, False, stale_after_s=1500
     )
     assert verdict == "GATE-TRANSITION"
@@ -131,7 +135,7 @@ def test_issue_gate_transition_fires_on_status_change(status):
 def test_issue_gate_transition_on_missing_snapshot():
     # Previous status unknown + currently at a gate: fire the transition
     # branch (a duplicate push beats a missed one — the tick skill's rule).
-    verdict, _ = tick_triage.compute_issue_verdict(
+    verdict, _, _ = tick_triage.compute_issue_verdict(
         "awaiting_promotion", None, 60.0, False, stale_after_s=1500
     )
     assert verdict == "GATE-TRANSITION"
@@ -139,25 +143,25 @@ def test_issue_gate_transition_on_missing_snapshot():
 
 def test_issue_completed_transition_is_plain_terminal():
     # completed/archived are terminal but NOT user gates — no push branch.
-    verdict, _ = tick_triage.compute_issue_verdict(
+    verdict, _, _ = tick_triage.compute_issue_verdict(
         "completed", "reviewing", 60.0, False, stale_after_s=1500
     )
     assert verdict == "TERMINAL"
 
 
 def test_issue_plan_pending_over_cap_is_gate():
-    verdict, _ = tick_triage.compute_issue_verdict(
+    verdict, _, _ = tick_triage.compute_issue_verdict(
         "plan_pending", "planning", 60.0, True, stale_after_s=1500
     )
     assert verdict == "GATE-TRANSITION"
-    verdict, _ = tick_triage.compute_issue_verdict(
+    verdict, _, _ = tick_triage.compute_issue_verdict(
         "plan_pending", "plan_pending", 60.0, True, stale_after_s=1500
     )
     assert verdict == "TERMINAL"
 
 
 def test_issue_plan_pending_under_cap_is_park():
-    verdict, _ = tick_triage.compute_issue_verdict(
+    verdict, _, _ = tick_triage.compute_issue_verdict(
         "plan_pending", "plan_pending", 3600.0, False, stale_after_s=1500
     )
     assert verdict == "STALE-REDRIVE"
