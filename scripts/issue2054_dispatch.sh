@@ -19,9 +19,11 @@
 #   fits     — per-cell ambient-basis ridge + identity+bias baseline + kNN + shuffled-answer null
 #              + reduced-k1024 diagnostic + conv-within-intersection bootstrap CI + kill gates 4/5
 #              (VM CPU or cpu-mid; 0 GPU-h)
-#
-# Not yet wired (exit 3):
-#   ladder   — 9-rung transfer ladder (VM CPU, batched)
+#   ladder   — 9-rung transfer ladder between cells: for each ordered (source, target) cell pair,
+#              compute the 9 mapping-transformation rungs (direct, ctx_offset, ans_offset,
+#              bias_refit, global_scale, rotation, ctx_reparam, ans_reparam, full_AMB) and
+#              score held-out R² per rung + the ratio to the target's own within-cell ceiling
+#              (VM CPU, batched; 0 GPU-h)
 #
 # Pass-through: every arg after <phase> is appended verbatim to the entrypoint's argv,
 # so it overrides the router default of the same name (argparse takes the last
@@ -38,8 +40,8 @@ PARENT_REPO="superkaiba1/explore-persona-space-data"
 PARENT_PREFIX="issue1345_framing"
 AUDIT_OUT_DIR="eval_results/issue_2054/audits"
 
-WIRED_PHASES=(audit_i audit_ii phase_a phase_b phase_c phase_d capture fits)
-UNWIRED_PHASES=(ladder)
+WIRED_PHASES=(audit_i audit_ii phase_a phase_b phase_c phase_d capture fits ladder)
+UNWIRED_PHASES=()
 
 # Print the leading comment block (everything after the shebang, up to the first
 # non-comment line) as the usage text, so help can never drift from the header.
@@ -151,6 +153,26 @@ build_cmd() {
         --n-null-draws 200
       )
       ;;
+    ladder)
+      # Unit E: 9-rung transfer ladder between cells. For each ordered
+      # (source, target) cell pair, computes the 9 mapping-transformation
+      # rungs of the parent #1345 line (direct / ctx_offset / ans_offset /
+      # bias_refit / global_scale / rotation / ctx_reparam / ans_reparam /
+      # full_AMB) and scores held-out R² per rung + the ratio to the target's
+      # own within-cell ceiling (from Unit D's fit JSONs).
+      # BOTH mapping arms — context AND prefix — per CLAUDE.md standing rule.
+      # Per-conversation bootstrap CI over the equalized-down intersection
+      # (statistics-critic concern #2). --dry-run / --pilot skip HF + run 1
+      # fold / self-transfer on the smoke fixture.
+      CMD=(
+        uv run python scripts/issue2054_ladder.py
+        --activations-dir data/issue_2054/activations/
+        --fits-dir data/issue_2054/fits/
+        --fold-map eval_results/issue_2054/shared_fold_map.json
+        --output-dir data/issue_2054/ladder/
+        --seed 137
+      )
+      ;;
     *)
       return 1
       ;;
@@ -172,7 +194,7 @@ print_plan_for() {
     printf ' %q' "${CMD[@]}"
     printf '\n'
   elif is_unwired_phase "$phase"; then
-    printf '%s: NOT WIRED (Unit E — 9-rung transfer ladder) — exits 3\n' "$phase"
+    printf '%s: NOT WIRED — exits 3\n' "$phase"
   else
     echo "unknown phase: $phase" >&2
     return 2
@@ -216,7 +238,7 @@ main() {
   fi
 
   if is_unwired_phase "$phase"; then
-    echo "phase=$phase not yet wired (Unit E — 9-rung transfer ladder)" >&2
+    echo "phase=$phase not yet wired" >&2
     exit 3
   fi
 
