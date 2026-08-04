@@ -1,27 +1,38 @@
 {
-  "commit": "3a8727b0+dirty",
-  "git_commit": "3a8727b0",
+  "commit": "4d171ed0+dirty",
+  "git_commit": "4d171ed0",
   "git_dirty": true,
   "git_dirty_paths": [
-    "dashboard/public/context-extremes-1482.html",
-    "eval_results/issue_1482/context_extremes/category_r2_by_arm.json",
-    "eval_results/issue_1482/context_extremes/context_extremes.json",
-    "figures/issue_1482/concordance/writeup_concordance_matched.pdf",
-    "figures/issue_1482/concordance/writeup_concordance_pooled.pdf",
-    "figures/issue_1482/concordance/writeup_concordance_tails.pdf",
-    "figures/issue_1482/concordance/writeup_concordance_tails.png",
     "figures/issue_1482/context_category_by_arm.meta.json",
     "figures/issue_1482/context_category_by_arm.pdf",
     "figures/issue_1482/context_category_by_arm.png",
+    "figures/issue_1482/context_category_context.meta.json",
+    "figures/issue_1482/context_category_context.pdf",
+    "figures/issue_1482/context_category_context.png",
+    "figures/issue_1482/context_category_context_notrunc.meta.json",
+    "figures/issue_1482/context_category_context_notrunc.pdf",
+    "figures/issue_1482/context_category_context_notrunc.png",
+    "figures/issue_1482/context_category_prefix.meta.json",
+    "figures/issue_1482/context_category_prefix.pdf",
+    "figures/issue_1482/context_category_prefix.png",
+    "figures/issue_1482/context_category_prefix_notrunc.meta.json",
+    "figures/issue_1482/context_category_prefix_notrunc.pdf",
+    "figures/issue_1482/context_category_prefix_notrunc.png",
+    "figures/issue_1482/context_category_query.meta.json",
+    "figures/issue_1482/context_category_query.pdf",
+    "figures/issue_1482/context_category_query.png",
+    "figures/issue_1482/context_category_query_notrunc.meta.json",
+    "figures/issue_1482/context_category_query_notrunc.pdf",
+    "figures/issue_1482/context_category_query_notrunc.png",
     "scripts/issue1482_concordance_writeup_figs.py",
     "scripts/issue1482_context_category_by_arm.py",
     "scripts/issue1482_context_extremes_dashboard.py",
     "scripts/issue1739_result1_spread_fig_v2.py",
     "scripts/issue1739_result2_method_fig.py",
     "scripts/issue1739_result2_method_fig_v2.py",
-    "tasks/planning/1995/plans/v2.md"
+    "tasks/approved/1990/events.jsonl"
   ],
-  "created": "2026-08-04T17:33:39Z",
+  "created": "2026-08-04T17:55:33Z",
   "figsize": [
     9.4,
     5.2
@@ -263,7 +274,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Query only \u2192 answer: prediction quality by judged context category\n#1738 multi-turn holdout (n=9,941), L19 ridge \u00b7 sorted best-predicted first \u00b7 95% paired bootstrap CI",
+        "title_left": "Query only \u2192 answer: prediction quality by judged context category\n#1738 multi-turn holdout (n=9,941), L19 ridge \u00b7 each panel sorted best-predicted first by its OWN arm \u00b7 shared y-limit \u00b7 95% paired bootstrap CI",
         "ylabel": "Mean per-context $R^2$  ($1 - $ normalized error)",
         "legend_labels": [
           "advice_howto",

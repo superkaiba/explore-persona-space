@@ -140,7 +140,7 @@
     },
     {
       "name": "Side ratio (answer-side firing fraction)",
-      "family": "io",
+      "family": "side",
       "n_pos": null,
       "pooled": 0.6034991269911939,
       "matched": 0.5517953933238579,
@@ -214,8 +214,8 @@
       "tail_matched_f0.15": 0.5292511352066547
     },
     {
-      "name": "SAE encoder norm",
-      "family": "geometry",
+      "name": "SAE encoder norm (read strength)",
+      "family": "io",
       "n_pos": null,
       "pooled": 0.42310578026896745,
       "matched": 0.49868685517323413,
@@ -229,8 +229,8 @@
       "tail_matched_f0.15": 0.5302422232273898
     },
     {
-      "name": "Encoder-decoder cosine",
-      "family": "geometry",
+      "name": "Encoder-decoder cosine (OUTPUTNESS)",
+      "family": "io",
       "n_pos": null,
       "pooled": 0.5935087901846833,
       "matched": 0.4390120702054453,
@@ -259,7 +259,7 @@
       "tail_matched_f0.15": 0.5387935342553619
     },
     {
-      "name": "Write norm, gamma-scaled (output effect)",
+      "name": "Write norm, gamma-scaled (OUTPUTNESS)",
       "family": "io",
       "n_pos": null,
       "pooled": 0.5181591902994656,
@@ -274,8 +274,23 @@
       "tail_matched_f0.15": 0.49229098231905455
     },
     {
-      "name": "Logit-footprint kurtosis",
-      "family": "output",
+      "name": "SAE decoder norm (write strength)",
+      "family": "io",
+      "n_pos": null,
+      "pooled": 0.5000449103876311,
+      "matched": 0.5039235136706063,
+      "m_answer": 0.5047494133621127,
+      "m_both": 0.5041340728460434,
+      "tail_pooled_f0.0125": 0.5085157771753145,
+      "tail_matched_f0.0125": 0.5038282064060164,
+      "tail_pooled": 0.5010137474851486,
+      "tail_matched": 0.5040652876134295,
+      "tail_pooled_f0.15": 0.49939860175875594,
+      "tail_matched_f0.15": 0.5013742714782689
+    },
+    {
+      "name": "Logit-footprint kurtosis (OUTPUTNESS)",
+      "family": "io",
       "n_pos": null,
       "pooled": 0.5781839915594975,
       "matched": 0.4619298442089816,
@@ -289,8 +304,8 @@
       "tail_matched_f0.15": 0.4794793145205528
     },
     {
-      "name": "Logit-footprint skew",
-      "family": "output",
+      "name": "Logit-footprint skew (OUTPUTNESS)",
+      "family": "io",
       "n_pos": null,
       "pooled": 0.5268751702973512,
       "matched": 0.49444778587318644,
@@ -319,8 +334,8 @@
       "tail_matched_f0.15": 0.49879791777795435
     },
     {
-      "name": "Logit-footprint concentration",
-      "family": "output",
+      "name": "Logit-footprint concentration (OUTPUTNESS)",
+      "family": "io",
       "n_pos": null,
       "pooled": 0.5232956808436311,
       "matched": 0.48332700440934884,
@@ -334,8 +349,23 @@
       "tail_matched_f0.15": 0.48467419796868805
     },
     {
-      "name": "Fires on BOTH context and answer side",
+      "name": "Fires on the context side only",
       "family": "io",
+      "n_pos": 0,
+      "pooled": NaN,
+      "matched": NaN,
+      "m_answer": NaN,
+      "m_both": NaN,
+      "tail_pooled_f0.0125": NaN,
+      "tail_matched_f0.0125": NaN,
+      "tail_pooled": NaN,
+      "tail_matched": NaN,
+      "tail_pooled_f0.15": NaN,
+      "tail_matched_f0.15": NaN
+    },
+    {
+      "name": "Fires on BOTH context and answer side",
+      "family": "side",
       "n_pos": 119934,
       "pooled": 0.7683011355307653,
       "matched": 0.4579482542075983,
@@ -350,7 +380,7 @@
     },
     {
       "name": "Fires on the answer side only",
-      "family": "io",
+      "family": "side",
       "n_pos": 782,
       "pooled": 0.2316988644692347,
       "matched": 0.5420517457924017,
