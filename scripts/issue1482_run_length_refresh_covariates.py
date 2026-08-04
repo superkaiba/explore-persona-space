@@ -176,8 +176,13 @@ def main() -> None:
         if not backup.exists():
             shutil.copy2(args.covariates, backup)
             _log(f"backup -> {backup.name}")
+        # Write through a HANDLE: np.savez APPENDS .npz to a path argument that
+        # lacks the suffix, so this dotted temp name would land at "<tmp>.npz"
+        # and the os.replace below would raise FileNotFoundError (same class as
+        # the capture driver's _atomic_savez).
         tmp = args.covariates.parent / f".{args.covariates.name}.tmp{os.getpid()}"
-        np.savez(tmp, **after_cov)
+        with open(tmp, "wb") as fh:
+            np.savez(fh, **after_cov)
         os.replace(tmp, args.covariates)
         _log(f"wrote {args.covariates.name} ({args.covariates.stat().st_size / 1e6:.1f} MB)")
     else:
