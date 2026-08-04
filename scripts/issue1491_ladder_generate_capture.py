@@ -36,8 +36,25 @@ Reads the ladder manifest from
 (built by ``scripts/issue1491_ladder_manifest.py`` at Phase 0).
 
 Persist-by-default (Upload Policy v2): rollout TEXT uploads unconditionally
-on the non-LFS path (quota-immune); trimmed capture tensors upload per
-K=20 chunks; the driver never discards generations or capture tensors.
+on the non-LFS path (quota-immune) — in EVERY mode, including
+``phase_split_gen`` (whose only output IS the rollout text); trimmed capture
+tensors upload per K=20 chunks; the driver never discards generations or
+capture tensors.
+
+Measurement contracts (Unit 2 blocker-fix round):
+
+- The SPLIT's generation seed (``SPLIT_TO_MANIFEST``) is threaded into BOTH
+  the vLLM engine and the per-request ``SamplingParams`` — ceiling draws
+  43/44 sample fresh responses on the same 1,000 test contexts instead of
+  reproducing the seed-42 ``test_1000`` generations.
+- Teacher-forced capture inputs are built by concatenating PER-SEGMENT token
+  ids (prompt render / response / turn-end tail) — never by re-tokenizing
+  the concatenated string, whose BPE seam merges silently shift the
+  ``cx_last`` position + ``v_x`` span (gotchas.md "Teacher-forced capture
+  inputs").
+- Every generation records the per-row ``finish_reason``; the shard digest
+  reports the realized cap-hit fraction against the pre-registered >2%
+  re-gen trigger.
 """
 
 from __future__ import annotations
@@ -52,10 +69,9 @@ import sys
 import time
 from pathlib import Path
 
-import numpy as np
-
-# Load .env BEFORE importing torch (shared-VM thread caps + HF_TOKEN;
-# code-style.md § shared-VM CPU thread caps).
+# Load .env BEFORE importing numpy/torch (shared-VM thread caps + HF_TOKEN;
+# code-style.md § shared-VM CPU thread caps — numpy freezes its BLAS pool at
+# import, so it must come AFTER load_dotenv() too).
 _SCRIPTS = Path(__file__).resolve().parent
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
@@ -64,7 +80,16 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
 
+import numpy as np  # noqa: E402
 import torch  # noqa: E402
+from huggingface_hub.errors import (  # noqa: E402
+    EntryNotFoundError,
+    HfHubHTTPError,
+    RepositoryNotFoundError,
+)
+
+from explore_persona_space.analysis.extraction import extract_layer_activations  # noqa: E402
+from explore_persona_space.orchestrate import hub  # noqa: E402
 
 # Import parent-branch modules (per Unit 1 Deliverable A port-source
 # decision, epm:progress v6: port_source: origin/main; no vendoring).
@@ -112,6 +137,17 @@ assert PROMPT_TOKEN_BUDGET == OVERLENGTH_BUDGET, (
 GEN_TEMP = 1.0
 GEN_TOP_P = 0.95
 GEN_SEED_DEFAULT = 42  # seed 43/44 rides ceiling_draw_{43,44} split arg
+
+# Assistant turn-end tail appended after the response in the teacher-forced
+# capture input (parent parity: COL.capture_answer_vector's v_x span is
+# prompt_len:full_len of the full chat render, which ends with this tail).
+IM_END_TAIL = "<|im_end|>\n"
+
+# Pre-registered cap-hit re-gen trigger (CLAUDE.md: every generation stage
+# reports its realized finish_reason=='length' fraction; >2% per cell ⇒
+# re-generate cap-hit rows at >=2x the cap — an orchestrator decision, this
+# driver reports + WARNs).
+CAP_HIT_REGEN_TRIGGER = 0.02
 
 # Sub-chunk (contexts per capture chunk file) — parent parity.
 DEFAULT_SHARD_SIZE = 500
@@ -183,12 +219,18 @@ def _resolve_h_dim(model_id: str, override: int | None) -> int:
     return int(cfg.hidden_size)
 
 
-def _build_capture_engine(model_id: str) -> object | None:
+def _build_capture_engine(model_id: str, seed: int) -> object | None:
     """Build the vLLM capture engine, honoring the H100 long-prompt hang /
     IMA mitigation ENV knobs (default OFF — the launch script sets them
     per plan §11 "enforce_eager + prefix-caching off"; commit 4cb9d6ea8d
     made these ENV-GATED in the parent driver, so the ladder driver MUST
-    NOT re-hardcode them here)."""
+    NOT re-hardcode them here).
+
+    ``seed`` is the SPLIT's generation seed (SPLIT_TO_MANIFEST) — threaded
+    into the engine so ceiling draws 43/44 do NOT reproduce the seed-42
+    test_1000 generations (the two-draw reliability ceiling would read ~1.0
+    instead of across-draw sampling variance). Per-request sampling seeds
+    ride SamplingParams (_sampling_params); both carry the same value."""
     from explore_persona_space.eval.generation import create_vllm_engine
 
     llm_kwargs: dict = {}
@@ -196,9 +238,88 @@ def _build_capture_engine(model_id: str) -> object | None:
         llm_kwargs["enforce_eager"] = True
     if os.environ.get("EPM_VLLM_DISABLE_PREFIX_CACHING") == "1":
         llm_kwargs["enable_prefix_caching"] = False
-    if llm_kwargs:
-        logger.info("[engine-knobs] %s", llm_kwargs)
-    return create_vllm_engine(model_id, max_model_len=MAX_MODEL_LEN, seed=42, **llm_kwargs)
+    logger.info("[engine-knobs] %s engine_seed=%d", llm_kwargs, seed)
+    return create_vllm_engine(model_id, max_model_len=MAX_MODEL_LEN, seed=int(seed), **llm_kwargs)
+
+
+def _load_tokenizer(model_id: str):
+    """Tokenizer-only load for phase_split_gen: the gen pass must NOT co-load
+    the full HF model beside a vLLM engine of the same model — vLLM's
+    gpu_memory_utilization is a fraction of TOTAL device memory, so the
+    co-resident pair is a deterministic init failure/OOM at 14B/32B. Carries
+    the same GENERATION_SUFFIX fail-loud probe as N10.load_models (the
+    rendered-length filter + per-segment token ids rely on the template)."""
+    from transformers import AutoTokenizer
+
+    tok = AutoTokenizer.from_pretrained(model_id)
+    probe = tok.apply_chat_template(
+        [{"role": "user", "content": "hi"}], tokenize=False, add_generation_prompt=True
+    )
+    assert tok.decode(tok(probe)["input_ids"][-3:]) == C.GENERATION_SUFFIX, (
+        "tokenizer GENERATION_SUFFIX drift — expected the Qwen-2.5-Instruct chat template"
+    )
+    return tok
+
+
+def _render_prompt(tok, prompt: str) -> str:
+    """The EXACT prompt render vLLM generation consumes (and the render
+    _rendered_prompt_token_len budgets against)."""
+    return tok.apply_chat_template(
+        [{"role": "user", "content": prompt}], tokenize=False, add_generation_prompt=True
+    )
+
+
+def _sampling_params(gen_seed: int):
+    """#779 pass-B sampling recipe with the SPLIT's seed threaded (never the
+    parent's hardcoded seed=42 — ceiling draws ride 43/44)."""
+    from vllm import SamplingParams
+
+    sp = SamplingParams(
+        n=1, temperature=GEN_TEMP, top_p=GEN_TOP_P, max_tokens=GEN_MAX_TOKENS, seed=int(gen_seed)
+    )
+    assert sp.seed == int(gen_seed), ("realized sampling seed drift", sp.seed, gen_seed)
+    return sp
+
+
+def _generate_seeded(llm, tok, prompts, gen_seed: int) -> tuple[list[str], list[str]]:
+    """1 rollout per prompt with the #779 pass-B recipe (vLLM, chunked), the
+    split's generation seed threaded into SamplingParams.
+
+    Returns ``(responses, finish_reasons)`` — ``finish_reason == 'length'``
+    rows are cap-hits (CLAUDE.md cap-hit accounting). CPU-smoke path
+    (llm is None) returns fixed stub responses through the SAME downstream
+    capture code, finish_reason 'stop'."""
+    if llm is None:  # --device cpu smoke: capture-path structural check only
+        return (
+            ["This is a short stub response for the CPU capture smoke."] * len(prompts),
+            ["stop"] * len(prompts),
+        )
+    sp = _sampling_params(gen_seed)
+    logger.info(
+        "[ladder] generation: realized sampling seed=%s temp=%s top_p=%s max_tokens=%s",
+        sp.seed,
+        sp.temperature,
+        sp.top_p,
+        sp.max_tokens,
+    )
+    prompt_texts = [_render_prompt(tok, p) for p in prompts]
+    texts: list[str] = []
+    finish: list[str] = []
+    n_chunks = (len(prompt_texts) + COL.VLLM_CHUNK_SIZE - 1) // COL.VLLM_CHUNK_SIZE
+    for i in range(0, len(prompt_texts), COL.VLLM_CHUNK_SIZE):
+        chunk = prompt_texts[i : i + COL.VLLM_CHUNK_SIZE]
+        logger.info(
+            "[vllm-chunk] ladder-generate chunk %d/%d (%d prompts, seed=%s)",
+            i // COL.VLLM_CHUNK_SIZE + 1,
+            n_chunks,
+            len(chunk),
+            sp.seed,
+        )
+        chunk_out = llm.generate(chunk, sp, use_tqdm=False)
+        for o in chunk_out:
+            texts.append(o.outputs[0].text)
+            finish.append(str(o.outputs[0].finish_reason))
+    return texts, finish
 
 
 # ---------------------------------------------------------------------------
@@ -206,158 +327,170 @@ def _build_capture_engine(model_id: str) -> object | None:
 # ---------------------------------------------------------------------------
 
 
-def _capture_perrow(hf, tok, prompts, responses, cis, layers, h_dim):
-    """Parent-verbatim per-row capture (safe fallback + parity oracle for the
-    batched implementation below).
+def _is_empty_response(resp: str) -> bool:
+    """Empty/whitespace-only responses carry no usable v_x span — drop the
+    row (recorded), identically in batched AND per-row modes. NOTE the naive
+    render-length check (`full_len <= prompt_len`) can NEVER fire: rendering
+    an assistant turn appends the '<|im_end|>\\n' tail, so an empty response
+    still adds 2 tokens — filter on response CONTENT instead."""
+    return not resp.strip()
 
-    Returns rows = [{"ci", "prompt", "response", "cx_last": (L,H), "v_x": (L,H)}].
-    Drops rows whose response teacher-forces to zero tokens (parent parity)."""
-    rows = []
+
+def _segment_token_ids(
+    tok, prompt: str, response: str
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Per-segment token ids for the teacher-forced capture input.
+
+    NEVER re-tokenize the concatenated string (gotchas.md 'Teacher-forced
+    capture inputs: concatenate per-segment TOKEN IDS'): BPE merges at the
+    prompt/response seam — e.g. a '\\n'-leading response merging into the
+    template's trailing 'assistant\\n' — make full_ids[:n_prompt] !=
+    prompt_ids and silently shift cx_last + the v_x span (answer tokens
+    would leak into c(x), FAKING c(x)->v(x) predictivity). The forward input
+    is torch.cat([prompt_ids, resp_ids, tail_ids]), so the prompt segment is
+    bit-identical to what vLLM generation consumed BY CONSTRUCTION.
+
+    - prompt_ids: the generation render tokenized EXACTLY as vLLM consumed
+      it (add_special_tokens=False — the template carries its own special
+      tokens; same call as _rendered_prompt_token_len).
+    - resp_ids: the response text alone; len(resp_ids) is the response token
+      count (excludes the turn-end tail).
+    - tail_ids: the assistant turn-end tail '<|im_end|>\\n'. Parent parity:
+      COL.capture_answer_vector's v_x span is prompt_len:full_len of the
+      full chat render, which INCLUDES this tail — kept inside the v_x span
+      here so the ladder matches the #779 anchor's v(x) convention.
+    """
+    prompt_text = _render_prompt(tok, prompt)
+    p_ids = tok(prompt_text, add_special_tokens=False)["input_ids"]
+    r_ids = tok(response, add_special_tokens=False)["input_ids"]
+    t_ids = tok(IM_END_TAIL, add_special_tokens=False)["input_ids"]
+    im_end_id = tok.convert_tokens_to_ids("<|im_end|>")
+    assert t_ids and t_ids[0] == im_end_id, ("turn-end tail tokenization drift", t_ids)
+    return (
+        torch.tensor(p_ids, dtype=torch.long),
+        torch.tensor(r_ids, dtype=torch.long),
+        torch.tensor(t_ids, dtype=torch.long),
+    )
+
+
+def _reduce_row(captured: dict, row_i: int, p_len: int, f_len: int, layers, h_dim):
+    """cx_last + v_x for one row of an extract_layer_activations capture.
+
+    cx_last = hidden state at the LAST prompt token (index p_len-1, the
+    pre-generation state); v_x = mean over positions p_len..f_len-1 (the
+    response + turn-end tail — parent parity, see _segment_token_ids).
+    ``captured[li]`` is (B, T, H) from the OOM-safe hook with block-``li``-
+    output semantics — the SAME helper the parent per-row path used, so
+    layer indexing agrees by construction (``output_hidden_states[li]``
+    would be off by one: it equals block li-1's output)."""
+    cx_last_stack: list[torch.Tensor] = []
+    v_x_stack: list[torch.Tensor] = []
+    for li in layers:
+        hs = captured[li][row_i]  # (T, H); right-pad positions >= f_len never read
+        cx_last_stack.append(hs[p_len - 1, :].float().cpu())
+        v_x_stack.append(hs[p_len:f_len, :].float().cpu().mean(dim=0))
+    cx_last = torch.stack(cx_last_stack)  # (L, H)
+    v_x = torch.stack(v_x_stack)  # (L, H)
+    assert cx_last.shape == (len(layers), h_dim), ("cx_last", cx_last.shape)
+    assert v_x.shape == (len(layers), h_dim), ("v_x", v_x.shape)
+    return cx_last, v_x
+
+
+def _capture_perrow(hf, tok, prompts, responses, cis, layers, h_dim):
+    """Per-row capture (parity oracle + safe fallback for the batched path).
+
+    Shares _segment_token_ids + _reduce_row with _capture_batched, so the two
+    modes agree on token-id construction, span boundaries, and the
+    empty-response drop set BY CONSTRUCTION — the parity gate then isolates
+    padding/batching effects only.
+
+    Returns (rows, dropped_cis) where rows =
+    [{"ci", "prompt", "response", "cx_last": (L,H), "v_x": (L,H)}] and
+    dropped_cis lists the empty/whitespace-response rows."""
+    rows: list[dict] = []
+    dropped: list[int] = []
     for p, resp, ci in zip(prompts, responses, cis, strict=True):
-        msgs = [{"role": "user", "content": p}]
-        cx = COL.capture_context_vector(hf, tok, msgs, layers)
-        av = COL.capture_answer_vector(hf, tok, msgs, resp, layers, {}, keep_per_token=False)
-        if av is None:  # empty response
+        if _is_empty_response(resp):
+            dropped.append(int(ci))
             continue
-        assert cx["last"].shape == (len(layers), h_dim), ("cx_last", cx["last"].shape)
-        assert av["v_x"].shape == (len(layers), h_dim), ("v_x", av["v_x"].shape)
-        rows.append(
-            {
-                "ci": int(ci),
-                "prompt": p,
-                "response": resp,
-                "cx_last": cx["last"],
-                "v_x": av["v_x"],
-            }
-        )
-    return rows
+        p_ids, r_ids, t_ids = _segment_token_ids(tok, p, resp)
+        assert r_ids.shape[0] >= 1, ("non-empty response tokenized to 0 tokens", ci)
+        input_ids = torch.cat([p_ids, r_ids, t_ids]).unsqueeze(0).to(hf.device)
+        attn = torch.ones_like(input_ids)
+        captured = extract_layer_activations(hf, input_ids, layers, attention_mask=attn)
+        p_len = int(p_ids.shape[0])
+        f_len = int(input_ids.shape[1])
+        cx_last, v_x = _reduce_row(captured, 0, p_len, f_len, layers, h_dim)
+        rows.append({"ci": int(ci), "prompt": p, "response": resp, "cx_last": cx_last, "v_x": v_x})
+    return rows, dropped
 
 
 def _capture_batched(hf, tok, prompts, responses, cis, layers, h_dim, batch_size):
     """Batched teacher-forced capture (plan §4.2 item (i)).
 
-    Length-sorted padded batches. For each batch:
-      - Build full-render token ids for prompt-only and prompt+response.
-      - Pad + attention-mask; forward through ``hf`` with
-        ``output_hidden_states=True``.
-      - For each row: cx_last = hidden_states at the LAST prompt token;
-        v_x = attention-masked mean over the response-token span, per
-        layer in ``layers``, fp32 on CPU.
+    Same per-segment token-id construction + row reduction as
+    _capture_perrow (shared helpers); this function adds ONLY length-sorted
+    RIGHT-padded batching. Right padding keeps every real token at positions
+    0..f_len-1, so the default position_ids (arange) are correct for real
+    tokens and the causal mask makes pad positions unreachable from them.
 
-    Drops rows with empty response (v_x undefined). Same output shape as
-    ``_capture_perrow``.
-    """
-    if not prompts:
-        return []
-
-    # 1. Tokenize prompt + full (prompt + response) per row, single shot.
-    prompt_texts, full_texts = [], []
-    for p, resp in zip(prompts, responses, strict=True):
-        pt = tok.apply_chat_template(
-            [{"role": "user", "content": p}], tokenize=False, add_generation_prompt=True
-        )
-        ft = tok.apply_chat_template(
-            [
-                {"role": "user", "content": p},
-                {"role": "assistant", "content": resp},
-            ],
-            tokenize=False,
-            add_generation_prompt=False,
-        )
-        prompt_texts.append(pt)
-        full_texts.append(ft)
-
-    prompt_ids_list = [
-        tok(t, return_tensors="pt", padding=False)["input_ids"][0] for t in prompt_texts
-    ]
-    full_ids_list = [tok(t, return_tensors="pt", padding=False)["input_ids"][0] for t in full_texts]
-
-    # 2. Filter empty-response rows (v_x undefined) — parent parity.
-    active_indices, prompt_lens, full_lens = [], [], []
-    for k, (p_ids, f_ids) in enumerate(zip(prompt_ids_list, full_ids_list, strict=True)):
-        p_len = int(p_ids.shape[0])
-        f_len = int(f_ids.shape[0])
-        if f_len <= p_len:
-            continue  # empty / non-lengthening response
-        active_indices.append(k)
-        prompt_lens.append(p_len)
-        full_lens.append(f_len)
-
-    if not active_indices:
-        return []
-
-    # 3. Length-sort active rows for padding efficiency.
-    order = sorted(range(len(active_indices)), key=lambda i: full_lens[i])
+    Returns (rows, dropped_cis) — same shapes as _capture_perrow."""
     rows: list[dict] = []
+    dropped: list[int] = []
+    if not prompts:
+        return rows, dropped
+
+    # 1. Per-row segment ids; drop empty responses (recorded).
+    seg: list[tuple[int, torch.Tensor, torch.Tensor, torch.Tensor]] = []
+    for k, (p, resp) in enumerate(zip(prompts, responses, strict=True)):
+        if _is_empty_response(resp):
+            dropped.append(int(cis[k]))
+            continue
+        p_ids, r_ids, t_ids = _segment_token_ids(tok, p, resp)
+        assert r_ids.shape[0] >= 1, ("non-empty response tokenized to 0 tokens", cis[k])
+        seg.append((k, p_ids, r_ids, t_ids))
+    if not seg:
+        return rows, dropped
 
     pad_id = tok.pad_token_id
     if pad_id is None:
         pad_id = tok.eos_token_id
 
+    # 2. Length-sort for padding efficiency (output order follows batches;
+    #    downstream joins key on ci, not position).
+    order = sorted(
+        range(len(seg)),
+        key=lambda i: int(seg[i][1].shape[0] + seg[i][2].shape[0] + seg[i][3].shape[0]),
+    )
     for bs in range(0, len(order), batch_size):
-        batch_order = order[bs : bs + batch_size]
-        batch_full_ids = [full_ids_list[active_indices[i]] for i in batch_order]
-        batch_prompt_lens = [prompt_lens[i] for i in batch_order]
-        batch_full_lens = [full_lens[i] for i in batch_order]
+        batch = [seg[i] for i in order[bs : bs + batch_size]]
+        full_ids = [torch.cat([p_ids, r_ids, t_ids]) for _, p_ids, r_ids, t_ids in batch]
+        p_lens = [int(p_ids.shape[0]) for _, p_ids, _r, _t in batch]
+        f_lens = [int(x.shape[0]) for x in full_ids]
 
-        max_len = max(batch_full_lens)
-        padded = torch.full((len(batch_full_ids), max_len), pad_id, dtype=batch_full_ids[0].dtype)
-        attn = torch.zeros((len(batch_full_ids), max_len), dtype=torch.long)
-        for row_i, f_ids in enumerate(batch_full_ids):
-            L = f_ids.shape[0]
-            padded[row_i, :L] = f_ids
-            attn[row_i, :L] = 1
+        max_len = max(f_lens)
+        padded = torch.full((len(batch), max_len), pad_id, dtype=torch.long)
+        attn = torch.zeros((len(batch), max_len), dtype=torch.long)
+        for row_i, ids in enumerate(full_ids):
+            padded[row_i, : ids.shape[0]] = ids
+            attn[row_i, : ids.shape[0]] = 1
 
         padded = padded.to(hf.device)
         attn = attn.to(hf.device)
+        captured = extract_layer_activations(hf, padded, layers, attention_mask=attn)
 
-        with torch.no_grad():
-            out = hf(
-                input_ids=padded,
-                attention_mask=attn,
-                output_hidden_states=True,
-                use_cache=False,
-            )
-        # out.hidden_states = tuple(L+1) of (B, T, H); we index per layer.
-
-        for row_i, k in enumerate(batch_order):
-            p_len = batch_prompt_lens[row_i]
-            f_len = batch_full_lens[row_i]
-            cx_last_stack: list[torch.Tensor] = []
-            v_x_stack: list[torch.Tensor] = []
-            for li in layers:
-                # Correct offset: hidden_states index 0 is embeddings, layer
-                # `li` is index li in the tuple (0-indexed layer 0 == embed,
-                # layer 1 == first block, ...). Parent's COL.capture_* uses
-                # ``captured[li]`` where captured is a dict from the OOM-safe
-                # hook keyed on 0-indexed layer number; keep the same
-                # semantics: hidden_states[li] here IS layer li (they align
-                # by convention when both use the same 0-indexed li list).
-                hs = out.hidden_states[li][row_i]  # (T, H)
-                # last-prompt-token cx: index p_len - 1 (the token BEFORE the
-                # assistant header starts). Parent parity: capture_context_vector
-                # runs a prompt-only forward and reads hs[-1]; here we run the
-                # FULL forward and read hs at the last prompt position.
-                cx_last_stack.append(hs[p_len - 1, :].float().cpu())
-                # v_x: mean over response tokens (positions p_len .. f_len - 1).
-                resp_span = hs[p_len:f_len, :].float().cpu()
-                v_x_stack.append(resp_span.mean(dim=0))
-            cx_last = torch.stack(cx_last_stack)  # (L, H)
-            v_x = torch.stack(v_x_stack)  # (L, H)
-            assert cx_last.shape == (len(layers), h_dim), ("cx_last (batched)", cx_last.shape)
-            assert v_x.shape == (len(layers), h_dim), ("v_x (batched)", v_x.shape)
-
-            orig_k = active_indices[k]
+        for row_i, (k, _p, _r, _t) in enumerate(batch):
+            cx_last, v_x = _reduce_row(captured, row_i, p_lens[row_i], f_lens[row_i], layers, h_dim)
             rows.append(
                 {
-                    "ci": int(cis[orig_k]),
-                    "prompt": prompts[orig_k],
-                    "response": responses[orig_k],
+                    "ci": int(cis[k]),
+                    "prompt": prompts[k],
+                    "response": responses[k],
                     "cx_last": cx_last,
                     "v_x": v_x,
                 }
             )
-    return rows
+    return rows, dropped
 
 
 def _batched_capture_parity_gate(
@@ -377,11 +510,17 @@ def _batched_capture_parity_gate(
     r = responses[:n]
     ci = cis[:n]
     try:
-        rows_serial = _capture_perrow(hf, tok, p, r, ci, layers, h_dim)
-        rows_batched = _capture_batched(hf, tok, p, r, ci, layers, h_dim, batch_size)
+        rows_serial, drop_serial = _capture_perrow(hf, tok, p, r, ci, layers, h_dim)
+        rows_batched, drop_batched = _capture_batched(hf, tok, p, r, ci, layers, h_dim, batch_size)
     except Exception as e:  # noqa: BLE001
         return False, f"probe crashed: {type(e).__name__}: {e}"
 
+    if set(drop_serial) != set(drop_batched):
+        # By construction (shared _is_empty_response) this cannot differ;
+        # defense in depth against future drift between the two paths.
+        return False, (
+            f"empty-drop mismatch: serial={sorted(drop_serial)} batched={sorted(drop_batched)}"
+        )
     by_ci_batched = {row["ci"]: row for row in rows_batched}
     matched = 0
     max_cos_dev = 0.0
@@ -497,19 +636,40 @@ def _split_shard_range(n_total: int, num_shards: int, shard_index: int) -> tuple
 
 
 def _remote_index(hf_prefix: str, subdir: str) -> set[str]:
-    """List the leaf filenames already on HF under ``hf_prefix/subdir``."""
+    """List the leaf filenames already on HF under ``hf_prefix/subdir``.
+
+    Rides ``hub.retry_transient`` — a transient 429/5xx must NOT silently
+    read as "nothing uploaded" (that disables resume for the whole
+    (shard, split) and re-runs everything). The ONE legitimately-empty case
+    is a 404 on a prefix no upload has created yet; a
+    ``RepositoryNotFoundError`` (typo'd repo id) stays loud, and every other
+    error propagates (fail fast — the crash IS the signal)."""
     api = _hf_api()
-    try:
-        entries = list(
+    prefix = f"{hf_prefix}/{subdir}"
+
+    def _list():
+        # Materialize INSIDE the retry: list_repo_tree is a LAZY generator —
+        # the HTTP error raises at iteration time (gotchas.md, #779 n50k).
+        return list(
             api.list_repo_tree(
                 repo_id=LADDER_HF_REPO,
-                path_in_repo=f"{hf_prefix}/{subdir}",
+                path_in_repo=prefix,
                 repo_type="dataset",
                 recursive=True,
             )
         )
-    except Exception:  # noqa: BLE001
-        return set()
+
+    try:
+        entries = hub.retry_transient(_list, what=f"list_repo_tree {prefix}")
+    except RepositoryNotFoundError:
+        raise  # load-bearing ordering: subclass of HfHubHTTPError, must stay loud
+    except EntryNotFoundError:
+        return set()  # prefix not yet created — expected before the first upload
+    except HfHubHTTPError as e:
+        status = getattr(getattr(e, "response", None), "status_code", None)
+        if status == 404:
+            return set()  # same legitimate not-yet-created case
+        raise
     return {e.path.split("/")[-1] for e in entries if not e.path.endswith("/")}
 
 
@@ -567,11 +727,20 @@ def run_capture(args) -> int:
 
     # 3. Load models. Capture mode governs which we hold at once.
     C.phase("load_model")
-    tok, hf = N10.load_models(args.model, args.device)
+    if args.capture_mode == "phase_split_gen":
+        # Gen-only pass: tokenizer ONLY. Co-loading the full HF model beside
+        # a vLLM engine of the same model is a deterministic init
+        # failure/OOM at exactly the 14B/32B scales phase-split serves
+        # (vLLM gpu_memory_utilization is a fraction of TOTAL device
+        # memory). Nothing on the gen path touches `hf`.
+        tok = _load_tokenizer(args.model)
+        hf = None
+    else:
+        tok, hf = N10.load_models(args.model, args.device)
 
     llm = None
     if args.capture_mode in ("coresident", "phase_split_gen"):
-        llm = _build_capture_engine(args.model) if args.device == "cuda" else None
+        llm = _build_capture_engine(args.model, gen_seed) if args.device == "cuda" else None
 
     if args.capture_mode == "phase_split_capture":
         # Capture-only pass: free vLLM engine and rely on persisted responses.
@@ -587,18 +756,31 @@ def run_capture(args) -> int:
     # 4. Capture method selection: batched (default) with parity fallback.
     capture_fn_choice = "perrow"
     if args.capture_batch_size > 1 and args.capture_mode == "coresident":
-        # Run the parity gate on the first 32 rows of shard 0's first chunk.
-        probe_end = min(32, len(shard_rows))
-        probe_prompts = [r["prompt"] for r in shard_rows[:probe_end]]
-        probe_cis = [
-            int(r.get("ladder_local_id", r.get("i", i)))
-            for i, r in enumerate(shard_rows[:probe_end])
-        ]
-        # Generate responses for probe rows (small — safe).
-        if llm is not None:
-            probe_responses = N10._generate(llm, tok, probe_prompts)  # noqa: SLF001
-        else:  # CPU device — fake empty responses (probe skipped)
-            probe_responses = ["" for _ in probe_prompts]
+        # Run the parity gate on ~32 probe rows — OVER-LENGTH-FILTERED first:
+        # an over-length prompt is ENGINE-FATAL at vLLM add_request (kills
+        # the engine, not the row — gotchas.md #1738 subsample-bypass class),
+        # so the probe must apply the SAME admission filter as the chunk
+        # loop. Take 64 candidates so the filter still leaves ~32.
+        cand = shard_rows[: min(64, len(shard_rows))]
+        cand_prompts = [r["prompt"] for r in cand]
+        cand_cis = [int(r.get("ladder_local_id", r.get("i", i))) for i, r in enumerate(cand)]
+        kept_probe_prompts, kept_probe_cis, probe_skipped = _filter_overlength_prompts(
+            cand_prompts,
+            cand_cis,
+            lambda p: _rendered_prompt_token_len(tok, p),
+            PROMPT_TOKEN_BUDGET,
+        )
+        if probe_skipped:
+            logger.info(
+                "[ladder] parity probe: %d over-length rows excluded from probe",
+                len(probe_skipped),
+            )
+        probe_prompts = kept_probe_prompts[:32]
+        probe_cis = kept_probe_cis[:32]
+        # Generate responses for probe rows (small — safe). llm None (CPU
+        # smoke) returns stub responses through the same path, so the probe
+        # exercises the REAL capture code on CPU too.
+        probe_responses, _probe_finish = _generate_seeded(llm, tok, probe_prompts, gen_seed)
         gate_pass, gate_reason = _batched_capture_parity_gate(
             hf,
             tok,
@@ -641,7 +823,13 @@ def run_capture(args) -> int:
     pending_raw: list[str] = []
 
     def _flush_pending() -> None:
-        if args.no_upload or not pending_pt:
+        # phase_split_gen produces ONLY raw completions (pending_pt stays
+        # empty), so the gate must key on EITHER kind being pending — a
+        # `not pending_pt` early-return strands the whole gen phase's
+        # rollout text pod-locally (persist-by-default; upload-policy §v2:
+        # text is never discardable). _flush_upload_batch no-ops per empty
+        # kind internally.
+        if args.no_upload or (not pending_pt and not pending_raw):
             return
         _flush_upload_batch(scratch, stage_prefix, pending_pt, pending_raw)
         pending_pt.clear()
@@ -652,6 +840,9 @@ def run_capture(args) -> int:
 
     prev_sigterm = signal.signal(signal.SIGTERM, _on_sigterm)
     skipped_all: list[dict] = []
+    dropped_empty_all: list[int] = []
+    cap_hit_total = 0
+    gen_total = 0
     self_gate_rows: list[dict] = []
     self_gate_fired = False
 
@@ -670,7 +861,14 @@ def run_capture(args) -> int:
                 PROMPT_TOKEN_BUDGET,
             )
             skipped_all.extend(skipped)
-            if name in done_pt and raw_name in done_raw:
+            # Resume predicate is MODE-scoped: the gen-only pass never
+            # produces a .pt, so requiring `name in done_pt` there would
+            # make every restart regenerate the shard from scratch.
+            if args.capture_mode == "phase_split_gen":
+                chunk_done = raw_name in done_raw
+            else:
+                chunk_done = name in done_pt and raw_name in done_raw
+            if chunk_done:
                 logger.info(
                     "[shard %d] chunk %d/%d already on Hub; skip",
                     args.shard_index,
@@ -685,14 +883,17 @@ def run_capture(args) -> int:
                 continue
 
             ts = time.time()
-            # Generate responses.
-            if llm is not None:
-                responses = N10._generate(llm, tok, kept_prompts)  # noqa: SLF001
-            else:
-                responses = ["" for _ in kept_prompts]  # CPU path (smoke)
+            # Generate responses (split-seeded; llm None on the CPU smoke
+            # path returns stub responses through the same capture code).
+            responses, finish_reasons = _generate_seeded(llm, tok, kept_prompts, gen_seed)
+            n_cap_hit = sum(1 for f in finish_reasons if f == "length")
+            cap_hit_total += n_cap_hit
+            gen_total += len(responses)
 
             # Persist raw completions FIRST (persist-by-default; text path,
-            # non-LFS, quota-immune — upload-policy §v2).
+            # non-LFS, quota-immune — upload-policy §v2). finish_reason per
+            # row + n_cap_hit make cap-hit rows re-generable post-hoc
+            # (CLAUDE.md cap-hit accounting).
             C.write_json_atomic(
                 scratch / raw_name,
                 {
@@ -700,9 +901,15 @@ def run_capture(args) -> int:
                     "chunk": ci_idx,
                     "split": args.split,
                     "seed": gen_seed,
+                    "sampling_seed": gen_seed,
+                    "engine_seed": gen_seed,
+                    "gen_max_tokens": GEN_MAX_TOKENS,
+                    "n_cap_hit": n_cap_hit,
                     "rows": [
-                        {"ci": int(c), "prompt": p, "response": r}
-                        for c, p, r in zip(kept_cis, kept_prompts, responses, strict=True)
+                        {"ci": int(c), "prompt": p, "response": r, "finish_reason": f}
+                        for c, p, r, f in zip(
+                            kept_cis, kept_prompts, responses, finish_reasons, strict=True
+                        )
                     ],
                 },
             )
@@ -712,18 +919,40 @@ def run_capture(args) -> int:
                 n_kept = len(kept_prompts)  # gen-side row count
                 # No .pt to write; only raw_completions uploads.
                 pending_raw.append(raw_name)
+                n_dropped_empty = 0
             else:
-                rows = _do_capture(kept_prompts, responses, kept_cis)
-                if not rows:
-                    logger.warning(
-                        "[shard %d] chunk %d: 0 captured rows; skip", args.shard_index, ci_idx
+                rows, dropped_cis = _do_capture(kept_prompts, responses, kept_cis)
+                dropped_empty_all.extend(dropped_cis)
+                n_dropped_empty = len(dropped_cis)
+                if dropped_cis:
+                    logger.info(
+                        "[shard %d] chunk %d: dropped %d empty-response rows (cis %s%s)",
+                        args.shard_index,
+                        ci_idx,
+                        len(dropped_cis),
+                        dropped_cis[:20],
+                        "..." if len(dropped_cis) > 20 else "",
                     )
-                    continue
-                torch.save(_stack_chunk(rows, layers, args.shard_index, ci_idx), scratch / name)
-                if not self_gate_fired:
-                    self_gate_rows.extend(rows)
+                if rows:
+                    bundle = _stack_chunk(rows, layers, args.shard_index, ci_idx)
+                    bundle["dropped_empty_cis"] = [int(c) for c in dropped_cis]
+                    torch.save(bundle, scratch / name)
+                    if not self_gate_fired:
+                        self_gate_rows.extend(rows)
+                    pending_pt.append(name)
+                else:
+                    # All responses empty: no .pt, but the raw completions
+                    # still upload (persist-by-default). NOTE: with no .pt
+                    # this chunk re-runs on resume (capture-mode resume
+                    # requires both kinds) — idempotent, and vanishingly
+                    # rare at chunk size 500.
+                    logger.warning(
+                        "[shard %d] chunk %d: 0 captured rows (all empty responses); "
+                        "raw completions still upload",
+                        args.shard_index,
+                        ci_idx,
+                    )
                 n_kept = len(rows)
-                pending_pt.append(name)
                 pending_raw.append(raw_name)
 
             kept_total += n_kept
@@ -731,13 +960,16 @@ def run_capture(args) -> int:
                 _flush_pending()
 
             logger.info(
-                "[shard %d] chunk %d/%d: %d/%d captured (%d over-length skipped, %.0fs) [%s]",
+                "[shard %d] chunk %d/%d: %d/%d captured (%d over-length skipped, "
+                "%d empty-response dropped, %d cap-hit, %.0fs) [%s]",
                 args.shard_index,
                 ci_idx + 1,
                 n_sub,
                 n_kept,
                 len(chunk),
                 len(skipped),
+                n_dropped_empty,
+                n_cap_hit,
                 time.time() - ts,
                 capture_fn_choice if args.capture_mode != "phase_split_gen" else "gen-only",
             )
@@ -791,16 +1023,42 @@ def run_capture(args) -> int:
         signal.signal(signal.SIGTERM, prev_sigterm)
 
     logger.info(
-        "[shard %d] done: %d kept rows across %d chunks (%d over-length skipped)",
+        "[shard %d] done: %d kept rows across %d chunks (%d over-length skipped, "
+        "%d empty-response dropped)",
         args.shard_index,
         kept_total,
         n_sub,
         len(skipped_all),
+        len(dropped_empty_all),
     )
+    # Cap-hit digest (CLAUDE.md: every generation stage REPORTS its realized
+    # finish_reason=='length' fraction, with the pre-registered re-gen
+    # trigger). gen_total == 0 on a fully-resumed shard — nothing generated.
+    if gen_total > 0:
+        cap_frac = cap_hit_total / gen_total
+        logger.info(
+            "[shard %d] cap-hit: %d/%d = %.4f (finish_reason=='length', gen_max_tokens=%d)",
+            args.shard_index,
+            cap_hit_total,
+            gen_total,
+            cap_frac,
+            GEN_MAX_TOKENS,
+        )
+        if cap_frac > CAP_HIT_REGEN_TRIGGER:
+            logger.warning(
+                "[shard %d] cap-hit fraction %.2f%% exceeds the pre-registered re-gen "
+                "trigger (%.0f%%): re-generate finish_reason=='length' rows at >=2x "
+                "max_tokens (orchestrator decision; rows identifiable from the per-row "
+                "finish_reason in raw_completions)",
+                args.shard_index,
+                100.0 * cap_frac,
+                100.0 * CAP_HIT_REGEN_TRIGGER,
+            )
 
     # Free GPU allocator + release engine before the process exits (parent
     # parity; helps a phase_split follow-up capture invocation not OOM).
-    del hf
+    if hf is not None:
+        del hf
     if llm is not None:
         del llm
     gc.collect()

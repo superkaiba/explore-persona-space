@@ -1,11 +1,21 @@
 #!/usr/bin/env bash
 # Task #1491: ladder generate+capture — MULTI-GPU fan-out launcher (POD-side / GCE-side).
 #
-# For ONE (scale, split, capture-mode) triple, fans G shards across G local GPUs
+# For ONE (scale, capture-mode) pair, runs the requested splits as SEQUENTIAL
+# WAVES: each wave fans G shards across G local GPUs
 # (CUDA_VISIBLE_DEVICES-pinned, per the CVD-clobber gotcha) with GLOBAL indices
-# = --shard-offset + local_gpu, detached (setsid nohup < /dev/null), so shards
-# outlive the SSH session. The orchestrator polls the pod-side sentinel /
-# per-phase log breadcrumbs; markers post from the VM side.
+# = --shard-offset + local_gpu, detached (setsid nohup < /dev/null), then
+# BLOCKS until every shard pid of the wave is dead before launching the next
+# split (gotchas.md "Chained waves on a detached-spawn launcher fan out
+# CONCURRENTLY", #1738 — a detached-spawn launcher that exits after its spawn
+# loop makes &&-chained waves simultaneous, N_waves × G engines per GPU). At
+# most ONE driver per GPU is live at any time.
+#
+# BECAUSE the launcher now blocks for the whole sweep, launch IT detached too
+# (the standard pod-side shape): setsid nohup bash scripts/issue1491_ladder_launch.sh
+# ... > /workspace/logs/issue-1491-launch-<scale>.log 2>&1 < /dev/null &
+# The orchestrator polls the pod-side sentinel / per-phase log breadcrumbs;
+# markers post from the VM side.
 #
 # Ladder-specific vs the parent (#779) launcher:
 #   * --scale {0.5B, 1.5B, 3B, 7B, 14B, 32B}: resolves --model + --layers +
@@ -14,7 +24,11 @@
 #     wc_test_1k, tierB_3600, ceiling_draw_43, ceiling_draw_44}, or the ordered
 #     sweep default (train_25k, then val/test, then wc_test, then ceiling draws).
 #   * --capture-mode coresident (default; ≤7B) | phase_split_gen | phase_split_capture.
-#     For 14B/32B the launch script chains phase_split_gen then phase_split_capture.
+#     14B/32B run --capture-mode phase_split_gen (gen only, raw completions to
+#     HF). NOTE: phase_split_capture is DEFERRED in the driver (raises
+#     SystemExit — Unit 2 return manifest) — do NOT chain to it yet. Once it
+#     lands, `launch.sh ... phase_split_gen && launch.sh ... phase_split_capture`
+#     is valid sequencing: this launcher only exits after its waves are dead.
 #   * ENV KNOBS exported explicitly (plan §11 + parent driver commit
 #     4cb9d6ea8d): EPM_VLLM_ENFORCE_EAGER=1, EPM_VLLM_DISABLE_PREFIX_CACHING=1.
 #     Never assume defaults — the ENV-gated knobs are OFF unless exported.
@@ -23,11 +37,12 @@
 #     inherits the fast upload path (upload-policy §HF-uploads-accelerated-by-default).
 #
 # Example — pod 0 of 1 (8 GPUs) doing all splits for the 0.5B rung:
-#   bash scripts/issue1491_ladder_launch.sh --scale 0.5B --all-splits \
-#        --num-shards 8 --shard-offset 0
+#   setsid nohup bash scripts/issue1491_ladder_launch.sh --scale 0.5B --all-splits \
+#        --num-shards 8 --shard-offset 0 \
+#        > /workspace/logs/issue-1491-launch-scale05.log 2>&1 < /dev/null &
 #
 # Example — 32B rung across 2× 8-GPU pods (16 shards total), gen phase:
-#   pod A: bash scripts/issue1491_ladder_launch.sh --scale 32B --all-splits \
+#   pod A: (same detached shape) --scale 32B --all-splits \
 #            --capture-mode phase_split_gen --num-shards 16 --shard-offset 0
 #   pod B: (same, --shard-offset 8)
 #
@@ -170,10 +185,54 @@ if [ "$FIRST_CHUNK_SELF_GATE" -eq 1 ]; then
 fi
 [ ${#EXTRA_ARGS[@]} -gt 0 ] && DRIVER_EXTRAS+=("${EXTRA_ARGS[@]}")
 
-# ---- Per-split, per-shard fan-out ------------------------------------------
+# ---- Wave helpers -----------------------------------------------------------
 
+# A shard pid is LIVE iff /proc/<pid> exists AND its cmdline still names the
+# driver (guards PID reuse across multi-hour waves; a `uv run` wrapper's
+# cmdline carries the driver path, and if uv execs into python the cmdline
+# still does).
+_shard_live() {
+  local p="$1"
+  [ -n "$p" ] || return 1
+  [ -d "/proc/$p" ] || return 1
+  tr '\0' ' ' < "/proc/$p/cmdline" 2>/dev/null | grep -q "issue1491_ladder_generate_capture" || return 1
+  return 0
+}
+
+# Block until every pid passed is dead. This poll loop is what makes the
+# per-split waves SEQUENTIAL: the shards are setsid-detached (reparented to
+# pid 1), so bash `wait` cannot apply and a spawn-and-exit launcher would fan
+# every wave out concurrently (gotchas.md "Chained waves on a detached-spawn
+# launcher", #1738 — 16 shards over 8 GPUs within seconds, MooseFS wedge).
+wait_wave_dead() {
+  local poll=30
+  local hb=20   # heartbeat every hb polls (~10 min) — no silent multi-hour phases
+  local n=0
+  local total=$#
+  while :; do
+    local live=0
+    local p
+    for p in "$@"; do
+      if _shard_live "$p"; then live=$((live + 1)); fi
+    done
+    [ "$live" -eq 0 ] && break
+    if [ $((n % hb)) -eq 0 ]; then
+      echo "[wave] $(date -u +%Y-%m-%dT%H:%M:%SZ) live=$live/$total shards; polling every ${poll}s"
+    fi
+    n=$((n + 1))
+    sleep "$poll"
+  done
+}
+
+# ---- Per-split SEQUENTIAL waves, per-shard fan-out within each wave ---------
+
+ABORT=0
 for split_name in "${SPLITS_TO_RUN[@]}"; do
+  if [ "$ABORT" -eq 1 ]; then break; fi
   echo "-- split=$split_name --"
+  WAVE_PIDS=()
+  WAVE_LOGS=()
+  WAVE_IDX=()
   for g in $(seq 0 $((GPUS_PER_POD - 1))); do
     gidx=$((SHARD_OFFSET + g))
     log="$LOG_DIR/issue-1491-${SCALE_SLUG}-${split_name}-shard${gidx}.log"
@@ -206,8 +265,38 @@ for split_name in "${SPLITS_TO_RUN[@]}"; do
     PID=$(CUDA_VISIBLE_DEVICES=$g bash -c "setsid nohup ${cmd[*]} > $log 2>&1 < /dev/null & echo \$!")
     echo "$PID" > "$pidf"
     echo "[launch] scale=$SCALE_SLUG split=$split_name shard=$gidx -> GPU $g pid=$PID log=$log"
+    WAVE_PIDS+=("$PID")
+    WAVE_LOGS+=("$log")
+    WAVE_IDX+=("$gidx")
   done
+
+  if [ "$DRY_RUN" -eq 1 ]; then continue; fi
+
+  wait_wave_dead "${WAVE_PIDS[@]}"
+
+  # Wave verdict: count terminal [phase=done] breadcrumbs (C.phase("done")).
+  n_done=0
+  failed=()
+  for i in "${!WAVE_LOGS[@]}"; do
+    if grep -q "\[phase=done\]" "${WAVE_LOGS[$i]}" 2>/dev/null; then
+      n_done=$((n_done + 1))
+    else
+      failed+=("${WAVE_IDX[$i]}")
+    fi
+  done
+  if [ "$n_done" -eq 0 ]; then
+    echo "FATAL: split=$split_name — 0/${#WAVE_LOGS[@]} shards reached [phase=done]; systemic failure, aborting remaining splits" >&2
+    ABORT=1
+  elif [ "${#failed[@]}" -gt 0 ]; then
+    echo "WARNING: split=$split_name — shards missing [phase=done]: ${failed[*]} (${n_done}/${#WAVE_LOGS[@]} done); continuing to next split (shards are independent; resume re-runs the gaps)" >&2
+  else
+    echo "[wave] split=$split_name complete: ${n_done}/${#WAVE_LOGS[@]} shards done"
+  fi
 done
 
 if [ "$DRY_RUN" -eq 1 ]; then echo "[dry-run] no processes launched."; exit 0; fi
-echo "== fan-out complete; watch $LOG_DIR/issue-1491-${SCALE_SLUG}-*.log =="
+if [ "$ABORT" -eq 1 ]; then
+  echo "== aborted after a fully-failed wave; logs at $LOG_DIR/issue-1491-${SCALE_SLUG}-*.log ==" >&2
+  exit 1
+fi
+echo "== ordered sweep complete; logs at $LOG_DIR/issue-1491-${SCALE_SLUG}-*.log =="
